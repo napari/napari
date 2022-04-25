@@ -26,17 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    _append_features,
-    _features_from_properties,
-    _features_to_choices,
-    _features_to_properties,
-    _remove_features,
-    _resize_features,
-    _validate_features,
-    coerce_current_properties,
-    get_current_properties,
-)
+from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -225,6 +215,8 @@ class Shapes(Layer):
     features : Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -491,6 +483,8 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -499,16 +493,12 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=number_of_shapes(data),
-            )
-        else:
-            self._features = _validate_features(
-                features, num_data=number_of_shapes(data)
-            )
+        self._feature_table = _FeatureTable.from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=number_of_shapes(data),
+        )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -592,14 +582,9 @@ class Shapes(Layer):
                 default="black",
             )
 
-        self.current_properties = get_current_properties(
-            self.properties, self.property_choices, len(data)
-        )
-
         self._text = TextManager._from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self.features,
         )
 
         # Trigger generation of view slice and thumbnail
@@ -734,27 +719,16 @@ class Shapes(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features, num_data=self.nshapes)
-
-    @property
-    def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return _features_to_properties(self._features)
-
-    @properties.setter
-    def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(
-            properties=properties, num_data=self.nshapes
-        )
+        self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
-            self._face_color_property not in self.properties
+            self._face_color_property not in self.features
         ):
             self._face_color_property = ''
             warnings.warn(
@@ -766,7 +740,7 @@ class Shapes(Layer):
             )
 
         if self._edge_color_property and (
-            self._edge_color_property not in self.properties
+            self._edge_color_property not in self.features
         ):
             self._edge_color_property = ''
             warnings.warn(
@@ -777,13 +751,31 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        if self.text.values is not None:
-            self.refresh_text()
+        self.text.refresh(self.features)
+
         self.events.properties()
+        self.events.features()
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_table.defaults
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
+        return self._feature_table.properties()
+
+    @properties.setter
+    def properties(self, properties: Dict[str, Array]):
+        self.features = properties
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return _features_to_choices(self._features)
+        return self._feature_table.choices()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -862,24 +854,26 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._current_properties
+        return self._feature_table.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
-        )
+        update_indices = None
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
-            for k in current_properties:
-                self.features[k][
-                    list(self.selected_data)
-                ] = current_properties[k]
+            update_indices = list(self.selected_data)
+        self._feature_table.set_currents(
+            current_properties, update_indices=update_indices
+        )
+        if update_indices is not None:
             self.refresh_colors()
+            self.events.properties()
+            self.events.features()
         self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def shape_type(self):
@@ -1249,7 +1243,7 @@ class Shapes(Layer):
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
             setattr(self, f'_{attribute}_color_property', color)
-            self.refresh_colors()
+            self.refresh_colors(update_color_mapping=True)
 
         else:
             if len(self.data) > 0:
@@ -1565,6 +1559,9 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
+        # This may be triggered when the string encoding instance changed,
+        # in which case it has no cached values, so generate them here.
+        self.text.string._apply(self.features)
         return self.text.view_text(self._indices_view)
 
     @property
@@ -2022,27 +2019,9 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            if len(self.properties) > 0:
-                first_prop_key = next(iter(self.properties))
-                n_prop_values = len(self.properties[first_prop_key])
-            else:
-                n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
-            self._features = _resize_features(
-                self._features,
-                total_shapes,
-                current_values=self._current_properties,
-            )
-            if total_shapes > n_prop_values:
-                n_props_to_add = total_shapes - n_prop_values
-                self.text.add(self.current_properties, n_props_to_add)
-            if total_shapes < n_prop_values:
-                n_props_to_remove = n_prop_values - total_shapes
-                indices_to_remove = np.arange(n_prop_values)[
-                    -n_props_to_remove:
-                ]
-                self.text.remove(indices_to_remove)
-
+            self._feature_table.resize(total_shapes)
+            self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -2298,8 +2277,7 @@ class Shapes(Layer):
     def text(self, text):
         self._text._update_from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self.features,
         )
 
     def refresh_text(self):
@@ -2307,7 +2285,7 @@ class Shapes(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh(self.features)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -2560,15 +2538,23 @@ class Shapes(Layer):
     @contextmanager
     def block_thumbnail_update(self):
         """Use this context manager to block thumbnail updates"""
+        previous = self._allow_thumbnail_update
         self._allow_thumbnail_update = False
-        yield
-        self._allow_thumbnail_update = True
+        try:
+            yield
+        finally:
+            self._allow_thumbnail_update = previous
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""
-
+        # Set the thumbnail to black, opacity 1
+        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
+        # if the shapes layer is empty, don't update, just leave it black
+        if len(self.data) == 0:
+            self.thumbnail = colormapped
         # don't update the thumbnail if dragging a shape
-        if self._is_moving is False and self._allow_thumbnail_update is True:
+        elif self._is_moving is False and self._allow_thumbnail_update is True:
             # calculate min vals for the vertices and pad with 0.5
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
@@ -2601,7 +2587,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            self._features = _remove_features(self._features, index)
+            self._feature_table.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2910,11 +2896,8 @@ class Shapes(Layer):
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
+                'text': self.text._copy(index),
             }
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2928,9 +2911,8 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            self._features = _append_features(
-                self._features, self._clipboard['features']
-            )
+            self._feature_table.append(self._clipboard['features'])
+            self.text._paste(**self._clipboard['text'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
@@ -2944,11 +2926,6 @@ class Shapes(Layer):
                 edge_color = self._clipboard['edge_color'][i]
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
-                )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
                 )
 
             self.selected_data = set(

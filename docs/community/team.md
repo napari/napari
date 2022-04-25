@@ -2,24 +2,18 @@
 
 napari is a consensus-based community project. Anyone with an interest in the project can join the community, contribute to the project design, and participate in the decision making process. You can learn more about how the project is run by reading our [governance model](https://napari.org/community/governance.html). This page lists our current and emeritus [core developers](https://napari.org/community/governance.html#core-developers). Core developers are community members that have demonstrated a sustained commitment to the project through ongoing contributions and that they can maintain napari with care.
 
-## Meeting schedule
-
-We hold regular meetings, the timings of which are available on our [public calendar](https://calendar.google.com/calendar/embed?src=c_35r93ec6vtp8smhm7dv5uot0v4%40group.calendar.google.com). 
-
-<iframe src="https://calendar.google.com/calendar/embed?src=c_35r93ec6vtp8smhm7dv5uot0v4%40group.calendar.google.com" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
-
-If you are using napari or interested in how napari could be used in your work, please join one of our regular community meetings. If you're interested in diving deep on particular topic you could join the closest working group meeting. We currently have four working groups 'Bundled Application', 'Plugins', 'Architecture', and 'Documentation' that meet on a semi-regular candence. You can learn more about our working groups and community meetings in the corresponding discussion streams on the [napari Zulip](https://napari.zulipchat.com/login/).
-
 ## Current Core Developers
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - [@AhmetCanSolak](https://github.com/AhmetCanSolak)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - [@alisterburt](https://github.com/alisterburt)
+- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - [@DragaDoncila](https://github.com/DragaDoncila)
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - [@GenevieveBuckley](https://github.com/GenevieveBuckley)
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - [@jni](https://github.com/jni)*
 - [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - [@justinelarsen](https://github.com/justinelarsen)
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - [@kevinyamauchi](https://github.com/kevinyamauchi)
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - [@kne42](https://github.com/kne42)
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - [@royerloic](https://github.com/royerloic)*
+- [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - [@brisvag](https://github.com/brisvag)
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn)*
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - [@ziyangczi](https://github.com/ziyangczi)
@@ -47,9 +41,9 @@ Read more about napari’s [mission and values](https://napari.org/community/mis
 
 ## Funding and support
 
-The napari project and community have been generously supported by the [CZI Science Imaging Program](https://chanzuckerberg.com/science/programs-resources/imaging/). 
+The napari project and community have been generously supported by the [CZI Science Imaging Program.](https://chanzuckerberg.com/science/programs-resources/imaging/)
 
-![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)
+![](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)
 
 - Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
 - The CZI Imaging Technology Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.

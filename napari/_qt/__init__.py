@@ -1,6 +1,5 @@
 import os
 import sys
-from distutils.version import StrictVersion
 from pathlib import Path
 from warnings import warn
 
@@ -30,14 +29,11 @@ if API_NAME == 'PySide2':
 
 
 # When QT is not the specific version, we raise a warning:
-if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
-    if sys.version_info >= (3, 8):
-        from importlib import metadata as importlib_metadata
-    else:
-        import importlib_metadata
+if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
+    import importlib.metadata
 
     try:
-        dist_info_version = importlib_metadata.version(API_NAME)
+        dist_info_version = importlib.metadata.version(API_NAME)
         if dist_info_version != QtCore.__version__:
             warn_message = trans._(
                 "\n\nIMPORTANT:\nYou are using QT version {version}, but version {dversion} was also found in your environment.\nThis usually happens when you 'conda install' something that also depends on PyQt\n*after* you have pip installed napari (such as jupyter notebook).\nYou will likely run into problems and should create a fresh environment.\nIf you want to install conda packages into the same environment as napari,\nplease add conda-forge to your channels: https://conda-forge.org\n",

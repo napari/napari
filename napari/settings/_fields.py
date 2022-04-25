@@ -1,3 +1,8 @@
+import re
+from dataclasses import dataclass
+from functools import total_ordering
+from typing import Any, Dict, Optional, SupportsInt, Tuple, Union
+
 from ..utils.theme import available_themes
 from ..utils.translations import _load_language, get_language_packs, trans
 
@@ -76,30 +81,102 @@ class Language(str):
         return v
 
 
-class SchemaVersion(str):
+@total_ordering
+@dataclass
+class Version:
+    """A semver compatible version class.
+
+    mostly vendored from python-semver (BSD-3):
+    https://github.com/python-semver/python-semver/
     """
-    Custom schema version type to handle both tuples and version strings.
 
-    Provides also a `as_tuple` method for convenience when doing version
-    comparison.
-    """
+    major: SupportsInt
+    minor: SupportsInt = 0
+    patch: SupportsInt = 0
+    prerelease: Union[bytes, str, int, None] = None
+    build: Union[bytes, str, int, None] = None
 
-    def __new__(cls, value):
-        if isinstance(value, (tuple, list)):
-            value = ".".join(str(item) for item in value)
+    _SEMVER_PATTERN = re.compile(
+        r"""
+            ^
+            (?P<major>0|[1-9]\d*)
+            \.
+            (?P<minor>0|[1-9]\d*)
+            \.
+            (?P<patch>0|[1-9]\d*)
+            (?:-(?P<prerelease>
+                (?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)
+                (?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*
+            ))?
+            (?:\+(?P<build>
+                [0-9a-zA-Z-]+
+                (?:\.[0-9a-zA-Z-]+)*
+            ))?
+            $
+        """,
+        re.VERBOSE,
+    )
 
-        return str.__new__(cls, value)
+    @classmethod
+    def parse(cls, version: Union[bytes, str]) -> 'Version':
+        """Convert string or bytes into Version object."""
+        if isinstance(version, bytes):
+            version = version.decode("UTF-8")
+        match = cls._SEMVER_PATTERN.match(version)
+        if match is None:
+            raise ValueError(f"{version} is not valid SemVer string")
+        matched_version_parts: Dict[str, Any] = match.groupdict()
+        return cls(**matched_version_parts)
 
-    def __init__(self, value):
-        if isinstance(value, (tuple, list)):
-            value = ".".join(str(item) for item in value)
+    # NOTE: we're only comparing the numeric parts for now.
+    # ALSO: the rest of the comparators come  from functools.total_ordering
+    def __eq__(self, other) -> bool:
+        try:
+            return self.to_tuple()[:3] == self._from_obj(other).to_tuple()[:3]
+        except TypeError:
+            return NotImplemented
 
-        self._value = value
+    def __lt__(self, other) -> bool:
+        try:
+            return self.to_tuple()[:3] < self._from_obj(other).to_tuple()[:3]
+        except TypeError:
+            return NotImplemented
 
-    def __eq__(self, other):
-        if isinstance(other, (tuple, list)):
-            other = ".".join(str(item) for item in other)
-        return self._value == other
+    @classmethod
+    def _from_obj(cls, other):
+        if isinstance(other, (str, bytes)):
+            other = Version.parse(other)
+        elif isinstance(other, dict):
+            other = Version(**other)
+        elif isinstance(other, (tuple, list)):
+            other = Version(*other)
+        elif not isinstance(other, Version):
+            raise TypeError(
+                f"Expected str, bytes, dict, tuple, list, or {cls} instance, "
+                f"but got {type(other)}"
+            )
+        return other
+
+    def to_tuple(self) -> Tuple[int, int, int, Optional[str], Optional[str]]:
+        """Return version as tuple (first three are int, last two Opt[str])."""
+        return (
+            int(self.major),
+            int(self.minor),
+            int(self.patch),
+            str(self.prerelease) if self.prerelease is not None else None,
+            str(self.build) if self.build is not None else None,
+        )
+
+    def __iter__(self):
+        yield from self.to_tuple()
+
+    def __str__(self) -> str:
+        v = f"{self.major}.{self.minor}.{self.patch}"
+        if self.prerelease:  # pragma: no cover
+            v += str(self.prerelease)
+        if self.build:  # pragma: no cover
+            v += str(self.build)
+        return v
 
     @classmethod
     def __get_validators__(cls):
@@ -107,44 +184,7 @@ class SchemaVersion(str):
 
     @classmethod
     def validate(cls, v):
-        if isinstance(v, (tuple, list)):
-            v = ".".join(str(item) for item in v)
+        return cls._from_obj(v)
 
-        if not isinstance(v, str):
-            raise ValueError(
-                trans._(
-                    "A schema version must be a 3 element tuple or string!",
-                    deferred=True,
-                )
-            )
-
-        parts = v.split(".")
-        if len(parts) != 3:
-            raise ValueError(
-                trans._(
-                    "A schema version must be a 3 element tuple or string!",
-                    deferred=True,
-                )
-            )
-
-        for part in parts:
-            try:
-                int(part)
-            except Exception:
-                raise ValueError(
-                    trans._(
-                        "A schema version subparts must be positive integers or parseable as integers!",
-                        deferred=True,
-                    )
-                )
-
-        return cls(v)
-
-    def __repr__(self):
-        return f'SchemaVersion("{self._value}")'
-
-    def __str__(self):
-        return f'"{self._value}"'
-
-    def as_tuple(self):
-        return tuple(int(p) for p in self._value.split('.'))
+    def _json_encode(self):
+        return str(self)

@@ -1,16 +1,19 @@
 try:
     __import__('dotenv').load_dotenv()
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 import os
-import sys
 from functools import partial
+from multiprocessing.pool import ThreadPool
+from unittest.mock import MagicMock, patch
 
 import dask.threaded
 import numpy as np
 import pooch
 import pytest
+from IPython.core.history import HistoryManager
+from npe2 import DynamicPlugin, PluginManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -276,8 +279,7 @@ def single_tiff():
 @pytest.fixture(scope="session", autouse=True)
 def configure_loading(request):
     """Configure async/async loading."""
-    async_mode = request.config.getoption("--async_only")
-    if async_mode:
+    if request.config.getoption("--async_only"):
         # Late import so we don't import experimental code unless using it.
         from napari.components.experimental.chunk import synchronous_loading
 
@@ -359,25 +361,83 @@ def fresh_settings(monkeypatch):
     yield
 
 
-if sys.version_info > (
-    3,
-    8,
-):
-    # There seem to be on issue on 3.7 where ThreadPool has not shutdown method.
-    # just do nothing. No need to define it on 3.7 as we are not requesting the
-    # fixture explicitely ever.
-    @pytest.fixture(autouse=True)
-    def auto_shutdown_dask_threadworkers():
-        """
-        This automatically shutdown dask thread workers.
+@pytest.fixture(autouse=True)
+def auto_shutdown_dask_threadworkers():
+    """
+    This automatically shutdown dask thread workers.
 
-        We don't assert the number of threads in unchanged as other things
-        modify the number of threads.
-        """
-        assert dask.threaded.default_pool is None
-        try:
+    We don't assert the number of threads in unchanged as other things
+    modify the number of threads.
+    """
+    assert dask.threaded.default_pool is None
+    try:
+        yield
+    finally:
+        if isinstance(dask.threaded.default_pool, ThreadPool):
+            dask.threaded.default_pool.close()
+            dask.threaded.default_pool.join()
+        elif dask.threaded.default_pool:
+            dask.threaded.default_pool.shutdown()
+        dask.threaded.default_pool = None
+
+
+# this is not the proper way to configure IPython, but it's an easy one.
+# This will prevent IPython to try to write history on its sql file and do
+# everything in memory.
+# 1) it saves a thread and
+# 2) it can prevent issues with slow or read-only file systems in CI.
+HistoryManager.enabled = False
+
+
+@pytest.fixture
+def napari_svg_name():
+    """the plugin name changes with npe2 to `napari-svg` from `svg`."""
+    from importlib.metadata import metadata
+
+    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+        return 'svg'
+    else:
+        return 'napari-svg'
+
+
+@pytest.fixture(autouse=True, scope='session')
+def _no_error_reports():
+    """Turn off napari_error_reporter if it's installed."""
+    try:
+        p1 = patch('napari_error_reporter.capture_exception')
+        p2 = patch('napari_error_reporter.install_error_reporter')
+        with p1, p2:
             yield
-        finally:
-            if dask.threaded.default_pool is not None:
-                dask.threaded.default_pool.shutdown()
-                dask.threaded.default_pool = None
+    except (ModuleNotFoundError, AttributeError):
+        yield
+
+
+@pytest.fixture
+def tmp_reader():
+    """Return a temporary reader registered with the given plugin manager."""
+
+    def make_plugin(
+        pm,
+        name,
+        filename_patterns=['*.fake'],
+    ):
+        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
+
+        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
+        def read_func(pth):
+            ...
+
+        reader_plugin.register()
+        return reader_plugin
+
+    return make_plugin
+
+
+@pytest.fixture
+def mock_npe2_pm():
+    """Mock plugin manager with no registered plugins."""
+    mock_reg = MagicMock()
+    with patch.object(PluginManager, 'discover'):
+        _pm = PluginManager(reg=mock_reg)
+    with patch('npe2.PluginManager.instance', return_value=_pm):
+        yield _pm

@@ -33,6 +33,15 @@ class Source(BaseModel):
         arbitrary_types_allowed = True
         frozen = True
 
+    def __deepcopy__(self, memo):
+        """Custom deepcopy implementation.
+
+        this prevents deep copy. `Source` doesn't really need to be copied
+        (i.e. if we deepcopy a layer, it essentially has the same `Source`).
+        Moreover, deepcopying a widget is challenging, and maybe odd anyway.
+        """
+        return self
+
 
 # layer source context management
 

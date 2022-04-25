@@ -1,20 +1,15 @@
 import os
 
 import numpy as np
+import pytest
 
 from napari._tests.utils import assert_layer_state_equal
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS = 'napari'
-    SVG = 'napari-svg'
-except ImportError:
-    BUILTINS = 'builtins'
-    SVG = 'svg'
+BUILTINS = 'napari'
 
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py
+@pytest.mark.filterwarnings('ignore:distutils Version classes are deprecated')
 def test_layer_save(tmpdir, layer_writer_and_data):
     """Test saving layer data."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data
@@ -59,7 +54,9 @@ def test_layer_save(tmpdir, layer_writer_and_data):
 
 
 # the layer fixture is defined in napari/conftest.py
-def test_layer_save_svg(tmpdir, layer):
+@pytest.mark.filterwarnings('ignore:`np.int` is a deprecated alias')
+@pytest.mark.filterwarnings('ignore:distutils Version classes are deprecated')
+def test_layer_save_svg(tmpdir, layer, napari_svg_name):
     """Test saving layer data to an svg."""
     path = os.path.join(tmpdir, 'layer_file.svg')
 
@@ -67,7 +64,7 @@ def test_layer_save_svg(tmpdir, layer):
     assert not os.path.isfile(path)
 
     # Write data
-    assert layer.save(path, plugin=SVG)
+    assert layer.save(path, plugin=napari_svg_name)
 
     # Check file now exists
     assert os.path.isfile(path)

@@ -23,6 +23,9 @@ from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
+BUILTINS_DISP = 'napari'
+BUILTINS_NAME = 'builtins'
+
 
 def test_qt_viewer(make_napari_viewer):
     """Test instantiating viewer."""
@@ -226,7 +229,7 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window._qt_viewer.screenshot(flash=False)
+        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
 
@@ -290,7 +293,7 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
 def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
     image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2 ** 14
+    image *= 200 if dtype.endswith('8') else 2**14
     image = image.astype(dtype)
     imean = image.mean()
 
@@ -334,7 +337,7 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
 
     # capture screenshot
     with pytest.warns(FutureWarning):
-        viewer.window._qt_viewer.clipboard(flash=True)
+        viewer.window.qt_viewer.clipboard(flash=True)
 
     viewer.window.clipboard(flash=False, canvas_only=True)
 
@@ -381,7 +384,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
 
     # capture screenshot
     with pytest.warns(FutureWarning):
-        viewer.window._qt_viewer.clipboard(flash=False)
+        viewer.window.qt_viewer.clipboard(flash=False)
 
     viewer.window.clipboard(flash=False, canvas_only=True)
 
@@ -595,3 +598,46 @@ def test_remove_add_image_3D(make_napari_viewer):
     layer = viewer.add_image(img)
     viewer.layers.remove(layer)
     viewer.layers.append(layer)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
+    """Test out-of-view multiscale image viewing fix.
+
+    Just verifies that no RuntimeError is raised in this scenario.
+
+    see: https://github.com/napari/napari/issues/3863.
+    """
+    # show=True required to test fix for OpenGL error
+    viewer = make_napari_viewer(ndisplay=2, show=True)
+    viewer.add_shapes(
+        data=[
+            np.array(
+                [[1500, 4500], [4500, 4500], [4500, 1500], [1500, 1500]],
+                dtype=float,
+            )
+        ],
+        shape_type=['polygon'],
+    )
+    viewer.add_image([np.eye(1024), np.eye(512), np.eye(256)])
+
+
+def test_surface_mixed_dim(make_napari_viewer):
+    """Test that adding a layer that changes the world ndim
+    when ndisplay=3 before the mouse cursor has been updated
+    doesn't raise an error.
+
+    See PR: https://github.com/napari/napari/pull/3881
+    """
+    viewer = make_napari_viewer(ndisplay=3)
+
+    verts = np.array([[0, 0, 0], [0, 20, 10], [10, 0, -10], [10, 10, -10]])
+    faces = np.array([[0, 1, 2], [1, 2, 3]])
+    values = np.linspace(0, 1, len(verts))
+    data = (verts, faces, values)
+    viewer.add_surface(data)
+
+    timeseries_values = np.vstack([values, values])
+    timeseries_data = (verts, faces, timeseries_values)
+    viewer.add_surface(timeseries_data)

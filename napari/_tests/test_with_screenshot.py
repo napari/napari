@@ -3,11 +3,7 @@ import collections
 import numpy as np
 import pytest
 
-from napari._tests.utils import (
-    skip_local_popups,
-    skip_on_mac_ci,
-    skip_on_win_ci,
-)
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -17,7 +13,6 @@ from napari.utils.interactions import (
 
 
 @skip_on_win_ci
-@skip_on_mac_ci
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""
@@ -132,6 +127,7 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
+@pytest.mark.skip('Image is 1 pixel thick in 3D, so point is swallowed')
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):

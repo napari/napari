@@ -452,7 +452,7 @@ def triangulate_ellipse(corners, num_segments=100):
     corners : np.ndarray
         4xD array of four bounding corners of the ellipse. The ellipse will
         still be computed properly even if the rectangle determined by the
-        corners is not axis aligned
+        corners is not axis aligned. D in {2,3}
     num_segments : int
         Integer determining the number of segments to use when triangulating
         the ellipse
@@ -460,12 +460,23 @@ def triangulate_ellipse(corners, num_segments=100):
     Returns
     -------
     vertices : np.ndarray
-        Mx2 array coordinates of vertices for triangulating an ellipse.
+        Mx2/Mx3 array coordinates of vertices for triangulating an ellipse.
         Includes the center vertex of the ellipse, followed by `num_segments`
-        vertices around the boundary of the ellipse
+        vertices around the boundary of the ellipse (M = `num_segments`+1)
     triangles : np.ndarray
-        Px2 array of the indices of the vertices for the triangles of the
-        triangulation. Has length given by `num_segments`
+        Px3 array of the indices of the vertices for the triangles of the
+        triangulation. Has length (P) given by `num_segments`,
+        (P = M-1 = num_segments)
+
+    Notes
+    -----
+    Despite it's name the ellipse will have num_segments-1 segments on their outline.
+    That is to say num_segments=7 will lead to ellipses looking like hexagons.
+
+    The behavior of this function is not well defined if the ellipse is degenerate
+    in the current plane/volume you are currently observing.
+
+
     """
     if not corners.shape[0] == 4:
         raise ValueError(
@@ -474,45 +485,40 @@ def triangulate_ellipse(corners, num_segments=100):
                 deferred=True,
             )
         )
-
+    assert corners.shape in {(4, 2), (4, 3)}
     center = corners.mean(axis=0)
     adjusted = corners - center
 
-    vec = adjusted[1] - adjusted[0]
-    len_vec = np.linalg.norm(vec)
-    if len_vec > 0:
-        # rotate to be axis aligned
-        norm_vec = vec / len_vec
-        if corners.shape[1] == 2:
-            transform = np.array(
-                [[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]]
-            )
-        else:
-            transform = np.array(
-                [
-                    [0, 0],
-                    [norm_vec[0], -norm_vec[1]],
-                    [norm_vec[1], norm_vec[0]],
-                ]
-            )
-        adjusted = np.matmul(adjusted, transform)
+    # Take to consecutive corners difference
+    # that give us the 1/2 minor and major axes.
+    ax1 = (adjusted[1] - adjusted[0]) / 2
+    ax2 = (adjusted[2] - adjusted[1]) / 2
+    # Compute the transformation matrix from the unit circle
+    # to our current ellipse.
+    # ... it's easy just the 1/2 minor/major axes for the two column
+    # note that our transform shape will depends on wether we are 2D-> 2D (matrix, 2 by 2),
+    # or 2D -> 3D (matrix 2 by 3).
+    transform = np.stack((ax1, ax2))
+    if corners.shape == (4, 2):
+        assert transform.shape == (2, 2)
     else:
-        transform = np.eye(corners.shape[1])
+        assert transform.shape == (2, 3)
 
-    radii = abs(adjusted[0])
-    vertices = np.zeros((num_segments + 1, 2), dtype=np.float32)
+    # we discretize the unit circle always in 2D.
+    v2d = np.zeros((num_segments + 1, 2), dtype=np.float32)
     theta = np.linspace(0, np.deg2rad(360), num_segments)
-    vertices[1:, 0] = radii[0] * np.cos(theta)
-    vertices[1:, 1] = radii[1] * np.sin(theta)
+    v2d[1:, 0] = np.cos(theta)
+    v2d[1:, 1] = np.sin(theta)
 
-    if len_vec > 0:
-        # rotate back
-        vertices = np.matmul(vertices, transform.T)
+    # ! vertices shape can be 2,M or 3,M depending on the transform.
+    vertices = np.matmul(v2d, transform)
 
     # Shift back to center
     vertices = vertices + center
 
-    triangles = np.array([[0, i + 1, i + 2] for i in range(num_segments)])
+    triangles = (
+        np.arange(num_segments) + np.array([[0], [1], [2]])
+    ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
     return vertices, triangles
@@ -976,6 +982,9 @@ def points_in_poly(points, vertices):
         )
         cond_3 = np.logical_or(cond_1, cond_2)
         d = vertices[j] - vertices[i]
+        # Prevents floating point imprecision from generating false positives
+        tolerance = 1e-12
+        d = np.where(abs(d) < tolerance, 0, d)
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
             cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])

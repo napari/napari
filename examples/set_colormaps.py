@@ -1,4 +1,7 @@
 """
+Set colormaps
+=============
+
 Add named or unnamed vispy colormaps to existing layers.
 """
 
@@ -26,4 +29,5 @@ blayer = v.add_image(bch, name='blue channel')
 blayer.blending = 'additive'
 blayer.colormap = {'blue': blue}
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

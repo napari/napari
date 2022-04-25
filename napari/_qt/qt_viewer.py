@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import traceback
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from weakref import WeakSet
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -14,6 +16,7 @@ from ..components._interaction_box_mouse_bindings import (
 )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..utils import config, perf
@@ -39,6 +42,7 @@ from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
+from .dialogs.qt_reader_dialog import handle_gui_reading
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
@@ -177,11 +181,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
+    _instances = WeakSet()
+
     def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        self._instances.add(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
@@ -216,6 +223,7 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer list',
+            close_btn=False,
         )
         self.dockLayerControls = QtViewerDockWidget(
             self,
@@ -224,6 +232,7 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer controls',
+            close_btn=False,
         )
         self.dockConsole = QtViewerDockWidget(
             self,
@@ -232,6 +241,7 @@ class QtViewer(QSplitter):
             area='bottom',
             allowed_areas=['top', 'bottom'],
             object_name='console',
+            close_btn=False,
         )
         self.dockConsole.setVisible(False)
         # because the console is loaded lazily in the @getter, this line just
@@ -425,11 +435,19 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
-            except ImportError:
+            except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
+                    )
+                )
+                self._console = None
+            except ImportError:
+                traceback.print_exc()
+                warnings.warn(
+                    trans._(
+                        'error importing napari-console. See console for full error.'
                     )
                 )
                 self._console = None
@@ -637,15 +655,6 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        import warnings
-
-        warnings.warn(
-            trans._(
-                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
 
         img = QImg2array(self._screenshot(flash))
         if path is not None:
@@ -662,15 +671,6 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
-        import warnings
-
-        warnings.warn(
-            trans._(
-                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
         cb = QGuiApplication.clipboard()
         cb.setImage(self._screenshot(flash))
 
@@ -699,7 +699,8 @@ class QtViewer(QSplitter):
         )
 
         if (filenames != []) and (filenames is not None):
-            self.viewer.open(filenames)
+            for filename in filenames:
+                self._qt_open([filename], stack=False)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self):
@@ -720,7 +721,7 @@ class QtViewer(QSplitter):
         )
 
         if (filenames != []) and (filenames is not None):
-            self.viewer.open(filenames, stack=True)
+            self._qt_open(filenames, stack=True)
             update_open_history(filenames[0])
 
     def _open_folder_dialog(self):
@@ -741,8 +742,28 @@ class QtViewer(QSplitter):
         )
 
         if folder not in {'', None}:
-            self.viewer.open([folder])
+            self._qt_open([folder], stack=False)
             update_open_history(folder)
+
+    def _qt_open(self, filenames: List[str], stack: bool):
+        """Open files, potentially popping reader dialog for plugin selection.
+
+        Call ViewerModel._open_or_raise_error and catch errors that could
+        be fixed by user making a plugin choice.
+
+        Parameters
+        ----------
+        filenames : List[str]
+            paths to open
+        stack : bool
+            whether to stack files or not
+        """
+        try:
+            self.viewer._open_or_raise_error(filenames, stack=stack)
+        except ReaderPluginError as e:
+            handle_gui_reading(filenames, self, stack, e.reader_plugin, e)
+        except MultipleReaderError:
+            handle_gui_reading(filenames, self, stack)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
@@ -787,6 +808,9 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
+        if in_ipython():
+            return
+
         # force instantiation of console if not already instantiated
         _ = self.console
 
@@ -828,6 +852,11 @@ class QtViewer(QSplitter):
         mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
+        # handle position for 3D views of 2D data
+        nd_point = len(self.viewer.dims.point)
+        if nd_point < nd:
+            position_world_slice = position_world_slice[-nd_point:]
+
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
@@ -867,6 +896,8 @@ class QtViewer(QSplitter):
             position: the position of the click in world coordinates.
             view_direction: a unit vector giving the direction of the camera in
                 world coordinates.
+            up_direction: a unit vector giving the direction of the camera that is
+                up in world coordinates.
             dims_displayed: a list of the dimensions currently being displayed
                 in the viewer. This comes from viewer.dims.displayed.
             dims_point: the indices for the data in view in world coordinates.
@@ -884,6 +915,9 @@ class QtViewer(QSplitter):
 
         # Add the view ray to the event
         event.view_direction = self.viewer.camera.calculate_nd_view_direction(
+            self.viewer.dims.ndim, self.viewer.dims.displayed
+        )
+        event.up_direction = self.viewer.camera.calculate_nd_up_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
         )
 
@@ -1037,6 +1071,12 @@ class QtViewer(QSplitter):
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
 
+        For each file, attempt to open with existing associated reader
+        (if available). If no reader is associated or opening fails,
+        and more than one reader is available, open dialog and ask
+        user to choose among available readers. User can choose to persist
+        this choice.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -1050,7 +1090,13 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        self.viewer.open(filenames, stack=bool(shift_down))
+        # if trying to open as a stack, open with any available reader
+        if shift_down:
+            self._qt_open(filenames, stack=bool(shift_down))
+            return
+
+        for filename in filenames:
+            self._qt_open([filename], stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Cleanup and close.

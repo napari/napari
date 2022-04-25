@@ -1,4 +1,7 @@
 """
+Layers
+======
+
 Display multiple image layers using the add_image API and then reorder them
 using the layers swap method and remove one
 """
@@ -18,4 +21,5 @@ viewer.add_image(np.random.random((512, 512)), name='random')
 viewer.add_image(data.binary_blobs(length=512, volume_fraction=0.2, n_dim=2), name='blobs')
 viewer.grid.enabled = True
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -12,6 +12,17 @@ from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
 from .events import Event, EventEmitter
 from .misc import StringEnum
 
+try:
+    from napari_error_reporter import capture_exception, install_error_reporter
+except ImportError:
+
+    def _noop(*_, **__):
+        pass
+
+    install_error_reporter = _noop
+    capture_exception = _noop
+
+
 name2num = {
     'error': 40,
     'warning': 30,
@@ -19,6 +30,17 @@ name2num = {
     'debug': 10,
     'none': 0,
 }
+
+__all__ = [
+    'NotificationSeverity',
+    'Notification',
+    'ErrorNotification',
+    'WarningNotification',
+    'NotificationManager',
+    'show_info',
+    'show_error',
+    'show_console_notification',
+]
 
 
 class NotificationSeverity(StringEnum):
@@ -111,8 +133,15 @@ class Notification(Event):
     def from_warning(cls, warning: Warning, **kwargs) -> Notification:
         return WarningNotification(warning, **kwargs)
 
+    def __str__(self):
+        return f'{str(self.severity).upper()}: {self.message}'
+
 
 class ErrorNotification(Notification):
+    """
+    Notification at an Error severity level.
+    """
+
     exception: BaseException
 
     def __init__(self, exception: BaseException, *args, **kwargs):
@@ -145,6 +174,10 @@ class ErrorNotification(Notification):
 
 
 class WarningNotification(Notification):
+    """
+    Notification at a Warning severity level.
+    """
+
     warning: Warning
 
     def __init__(
@@ -221,6 +254,7 @@ class NotificationManager:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
 
+        install_error_reporter()
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
@@ -254,12 +288,16 @@ class NotificationManager:
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit("Closed by KeyboardInterrupt")
+
+        capture_exception(value)
+
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
             sys.exit("Exit on error")
         if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
+
         try:
             self.dispatch(Notification.from_exception(value))
         except Exception:
@@ -288,10 +326,36 @@ notification_manager = NotificationManager()
 
 
 def show_info(message: str):
-    notification_manager.receive_info(message)
+    """
+    Show an info message in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.INFO)
+    )
+
+
+def show_warning(message: str):
+    """
+    Show a warning in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.WARNING)
+    )
+
+
+def show_error(message: str):
+    """
+    Show an error in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.ERROR)
+    )
 
 
 def show_console_notification(notification: Notification):
+    """
+    Show a notification in the console.
+    """
     try:
         from ..settings import get_settings
 

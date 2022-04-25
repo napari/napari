@@ -86,7 +86,7 @@ def test_viewer(make_napari_viewer):
 
 
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 3,
+    'Image': 8,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
@@ -340,3 +340,12 @@ def test_emitting_data_doesnt_change_cursor_position(
     layer.events.data(value=layer.data)
 
     assert viewer.cursor.position == new_position
+
+
+@skip_local_popups
+@skip_on_win_ci
+def test_empty_shapes_dims(make_napari_viewer):
+    """make sure an empty shapes layer can render in 3D"""
+    viewer = make_napari_viewer(show=True)
+    viewer.add_shapes(None)
+    viewer.dims.ndisplay = 3
