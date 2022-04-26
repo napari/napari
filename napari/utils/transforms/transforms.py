@@ -101,7 +101,7 @@ class Transform:
     def _is_diagonal(self) -> bool:
         """Indicate when a transform does not mix or permute dimensions.
 
-        Can be overriden in subclasses to enable performance optimizations
+        Can be overridden in subclasses to enable performance optimizations
         that are specific to this case.
         """
         return False
@@ -110,7 +110,7 @@ class Transform:
     def _is_permutation(self) -> bool:
         """Indicate a transform corresponding to a permutation of dimensions.
 
-        Can be overriden in subclasses to enable performance optimizations
+        Can be overridden in subclasses to enable performance optimizations
         that are specific to this case.
         """
         return False
@@ -158,13 +158,11 @@ class TransformChain(EventedList, Transform):
 
     @property
     def _is_diagonal(self) -> bool:
-        if all(getattr(tf, '_is_diagonal', False) for tf in self):
-            return True
-        return getattr(self.simplified, '_is_diagonal', False)
+        return all(tf._is_diagonal for tf in self)
 
     @property
     def _is_permutation(self) -> bool:
-        return getattr(self.simplified, '_is_permutation', False)
+        return self.simplified._is_permutation
 
     @property
     def simplified(self) -> 'Transform':
