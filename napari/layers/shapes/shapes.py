@@ -1279,8 +1279,9 @@ class Shapes(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-
+        print('ajajaj')
         self._refresh_color('face', update_color_mapping)
+        print('hahah')
         self._refresh_color('edge', update_color_mapping)
 
     def _refresh_color(

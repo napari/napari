@@ -8,6 +8,12 @@ from vispy.visuals.tube import _frenet_frames
 from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
 
+try:
+    # see https://github.com/vispy/vispy/issues/1029
+    from triangle import triangulate
+except ModuleNotFoundError:
+    triangulate = None
+
 
 def inside_boxes(boxes):
     """Checks which boxes contain the origin. Boxes need not be axis aligned
@@ -541,20 +547,18 @@ def triangulate_face(data):
         triangles of the triangulation
     """
 
-    try:
-        # see https://github.com/vispy/vispy/issues/1029
-        import triangle
+    if triangulate is not None:
+        len_data = len(data)
 
-        edges = np.empty((len(data), 2), dtype=np.uint32)
-        edges[:, 0] = np.arange(len(data))
-        edges[:, 1] = edges[:, 0] + 1
+        edges = np.empty((len_data, 2), dtype=np.uint32)
+        edges[:, 0] = np.arange(len_data)
+        edges[:, 1] = np.arange(1, len_data + 1)
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangle.triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate(dict(vertices=data, segments=edges), "p")
         vertices, triangles = res['vertices'], res['triangles']
-
-    except ImportError:
+    else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
 
     triangles = triangles.astype(np.uint32)
@@ -614,6 +618,26 @@ def triangulate_edge(path, closed=False):
     return centers, offsets, triangles
 
 
+def _mirror_point(x, y):
+    return 2 * y - x
+
+
+def _sign_nonzero(x):
+    y = np.sign(x).astype(int)
+    y[y == 0] = 1
+    return y
+
+
+def _sign_cross(x, y):
+    """sign of cross product (faster for 2d)"""
+    if x.shape[1] == y.shape[1] == 2:
+        return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
+    elif x.shape[1] == y.shape[1] == 3:
+        return _sign_nonzero(np.cross(x, y))
+    else:
+        raise ValueError(x.shape[1], y.shape[1])
+
+
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """Determines the triangulation of a path in 2D. The resulting `offsets`
     can be multiplied by a `width` scalar and be added to the resulting
@@ -648,23 +672,6 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles of the triangulation
     """
 
-    def _mirror_point(x, y):
-        return 2 * y - x
-
-    def _sign_nonzero(x):
-        y = np.sign(x).astype(int)
-        y[y == 0] = 1
-        return y
-
-    def _sign_cross(x, y):
-        """sign of cross product (faster for 2d)"""
-        if x.shape[1] == y.shape[1] == 2:
-            return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-        elif x.shape[1] == y.shape[1] == 3:
-            return _sign_nonzero(np.cross(x, y))
-        else:
-            raise ValueError(x.shape[1], y.shape[1])
-
     path = np.asarray(path, dtype=float)
 
     # add first vertex to the end if closed
@@ -696,11 +703,10 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     miters = np.divide(
         miters,
         _mf_dot,
-        out=np.zeros_like(miters),
         where=np.abs(_mf_dot) > 1e-10,
     )
 
-    miter_lengths = np.linalg.norm(miters, axis=1)
+    miter_lengths_squared = (miters**2).sum(axis=1)
 
     # miter_signs -> +1 if edges turn clockwise, -1 if anticlockwise
     # used later to discern bevel positions
@@ -718,7 +724,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     )
 
     # get vertex indices that are to be beveled
-    idx_bevel = np.where(np.bitwise_or(bevel, miter_lengths > limit))[0]
+    idx_bevel = np.where(
+        np.bitwise_or(bevel, miter_lengths_squared > (limit**2))
+    )[0]
 
     if len(idx_bevel) > 0:
         # only the 'outwards sticking' offsets should be changed

@@ -68,11 +68,22 @@ if __name__ == "__main__":
     print(f'number of polygons: {len(coords)}')
     print(f'layer type: {args.type}')
 
+    properties = {
+        'class': ['A', 'B', 'C', 'D'] * (args.n_polys // 4),
+    }
+    face_color_cycle = ['blue', 'magenta', 'green']
+
+    kwargs = dict(
+        shape_type=args.type,
+        edge_color=[1, 0.5, 0.2, 1],
+        properties=properties,
+        face_color='class',
+        face_color_cycle=face_color_cycle,
+    )
+
     layer = time_me(
         "time to create layer",
-        lambda: napari.layers.Shapes(
-            coords, shape_type=args.type, edge_color=[1, 0.5, 0.2, 1]
-        ),
+        lambda: napari.layers.Shapes(coords, **kwargs),
     )
 
     if args.view:
