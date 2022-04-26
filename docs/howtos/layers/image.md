@@ -224,7 +224,7 @@ viewer = napari.view_image(image, colormap=('diverging', cmap))
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="napari viewer with colormap example using random data")
 ```
 
 Note in this example how we passed the colormap keyword argument as a tuple
