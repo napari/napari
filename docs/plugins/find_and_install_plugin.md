@@ -23,10 +23,10 @@ directly from within napari:
 
 1. From the “Plugins” menu, select “Install/Uninstall Plugins...”.
 
-   ![napari plugin menu](/images/plugin-menu.png)
+   ![napari viewer's Plugins menu with Install/Uninstall Plugins as thr first item.](/images/plugin-menu.png)
 
 2. In the resulting window that opens, where it says “Install by name/URL”, type the name of the plugin you want to install.
 
-   ![napari plugin installation dialog](/images/plugin-install-dialog.png)
+   ![napari viewer's Plugin dialog. At the bottom of the dialog, there is a place to install by name, URL, or dropping in a file.](/images/plugin-install-dialog.png)
 
 3. Click the “Install” button next to the input bar.
