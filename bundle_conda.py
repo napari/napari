@@ -47,6 +47,7 @@ import platform
 import re
 import subprocess
 import sys
+from tkinter import ARC
 import zipfile
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
@@ -209,20 +210,6 @@ def _patch_napari_recipe(recipe_path: str):
     return recipe
 
 
-def _get_channels():
-    channels = []
-    if _use_local():
-        channels.append("local")
-    channels.append("napari/label/nightly")
-    # temporary: needed for pyqt/qt on this platform
-    if ARCH == "arm64":
-        channels.append("andfoy")
-    # /temporary
-    channels.append("napari/label/bundle_tools")
-    channels.append("conda-forge")
-    return channels
-
-
 def _lines_from_cfg_block(block: str, comments=False):
     lines = []
     for line in block.splitlines():
@@ -251,6 +238,7 @@ def _get_dependencies():
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
+    base_channels = _lines_from_cfg_block(cfg["conda_installer"]["base_run_channels"])
     base_specs = _lines_from_cfg_block(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
 
@@ -259,6 +247,14 @@ def _get_dependencies():
     napari_specs[napari_idx] += f"={napari_version_str}={napari_build_str}"
     napari_menu_idx = napari_specs.index("napari-menu")
     napari_specs[napari_menu_idx] += f"={napari_version_str}"
+
+    napari_channels = []
+    if _use_local():
+        napari_channels.append("local")
+    if ARCH == "arm64":
+        # temporary workaround for missing packages
+        napari_channels.append("andfoy")
+    napari_channels += _lines_from_cfg_block(cfg["conda_installer"]["napari_run_channels"])
 
     menu_specs = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_shortcuts"]
@@ -275,7 +271,9 @@ def _get_dependencies():
 
     return {
         "base": base_specs,
+        "base_channels": base_channels,
         "napari": napari_specs,
+        "napari_channels": napari_channels,
         "menu_packages": menu_specs,
         "run_constrained": napari_pinnings,
         "napari_recipe": napari_recipe_run,
@@ -308,7 +306,7 @@ def _constructor():
         "company": "Napari",
         "reverse_domain_identifier": "org.napari",
         "version": version,
-        "channels": _get_channels(),
+        "channels": dependencies["base_channels"],
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
@@ -317,6 +315,7 @@ def _constructor():
         "extra_envs": {
             f"napari-{version}": {
                 "specs": dependencies["napari"],
+                "channels": dependencies["napari_channels"]
             },
         },
         "menu_packages": dependencies["menu_packages"],
