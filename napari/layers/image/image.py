@@ -313,9 +313,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         displayed_axes = self._displayed_axes
+        if self._data_to_world._permutation:
+            inv_perm = self._data_to_world.inverse._permutation
+            displayed_data_axes = [inv_perm[i] for i in displayed_axes]
+        else:
+            displayed_data_axes = displayed_axes
         self.corner_pixels[1][displayed_axes] = self.level_shapes[
             self._data_level
-        ][displayed_axes]
+        ][displayed_data_axes]
 
         self._new_empty_slice()
 
@@ -466,10 +471,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         shape = self.level_shapes[0]
         ndim = len(shape)
-        data_to_world = self._data_to_world
-        if data_to_world._is_permutation and not data_to_world._is_diagonal:
-            permutation = data_to_world._permutation
-            shape = tuple(shape[permutation[d]] for d in range(ndim))
         extent = np.zeros((2, ndim))
         extent[1, :] = shape
         return extent
@@ -492,6 +493,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shapes = self.data.shapes if self.multiscale else [self.data.shape]
         if self.rgb:
             shapes = [s[:-1] for s in shapes]
+        permutation = self._data_to_world._permutation
+        if permutation and not self._data_to_world._is_diagonal:
+            shapes = [[shape[i] for i in permutation] for shape in shapes]
         return np.array(shapes)
 
     @property

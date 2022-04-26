@@ -398,7 +398,7 @@ def test_world_data_extent(rgb, permuted_physical2world):
         shapes = [shape + (3,) for shape in shapes]
     data = [np.ones(s) for s in shapes]
     if permuted_physical2world:
-        # non-identity permutation matrix
+        # non-identity physical2world permutation matrix
         affine = np.asarray(
             [[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0], [0, 0, 0, 1]]
         )
