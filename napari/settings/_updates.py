@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
@@ -16,7 +18,7 @@ class UpdateSettings(EventedModel):
         title=trans._("Update to the latest version automatically"),
         description=trans._("Update to the latest version automatically."),
     )
-    check_previews = Field(
+    check_previews: bool = Field(
         False,
         title=trans._("Check preview candidates "),
         description=trans._(
@@ -28,7 +30,7 @@ class UpdateSettings(EventedModel):
         title=trans._("Check nightly builds"),
         description=trans._("Check nightly builds."),
     )
-    update_version_skip = Field(
+    update_version_skip: List[str] = Field(
         [],
         title=trans._("Skip napari versions"),
         description=trans._(

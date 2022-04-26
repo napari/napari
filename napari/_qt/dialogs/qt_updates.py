@@ -1,6 +1,6 @@
 from enum import Enum
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -11,10 +11,12 @@ from qtpy.QtWidgets import (
 )
 
 from ... import settings
+from ...utils.misc import running_as_constructor_app
 from ...utils.theme import get_theme
 from ...utils.translations import trans
 from ...utils.updates import InstallerTypes
 from ..qt_resources import QColoredSVGIcon
+from ..updates import get_update_manager
 
 
 class UpdateAction(Enum):
@@ -204,19 +206,74 @@ class UpdateStatusDialog(QDialog):
 class UpdateTroubleshootDialog(QDialog):
     """Dialog for troubleshooting the update process."""
 
+    started = Signal()
+    finished = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self._update_manager = get_update_manager()
+
+        # Widgets
+        self._clean_button = QPushButton(trans._("Clean"))
+        self._clear_button = QPushButton(trans._("Clear"))
+        self._remove_installs_button = QPushButton(
+            trans._("Remove previous installs")
+        )
+        self._skip_button = QPushButton(trans._("Remove version skips"))
+
+        # Setup
         self.setWindowTitle(trans._("Update troubleshoot"))
+        self.setMinimumWidth(500)
+        self._refresh()
 
-        self._clean_packages_button = QPushButton(trans._("Clean packages"))
-        self._clear_cache_button = QPushButton(trans._("Clear cache"))
+        # Signals
+        self._clear_button.clicked.connect(self.clear)
+        self._clean_button.clicked.connect(self.clean)
+        self._remove_installs_button.clicked.connect(self.remove)
+        self._skip_button.clicked.connect(self.remove_skips)
 
-    def clear_cache(self):
-        """"""
-        pass
+        self._clear_button.clicked.connect(self._refresh)
+        self._clean_button.clicked.connect(self._refresh)
+        self._remove_installs_button.clicked.connect(self._refresh)
+        self._skip_button.clicked.connect(self._refresh)
+
+        self._update_manager.started.connect(self.started)
+        self._update_manager.finished.connect(self.finished)
+        self._update_manager.finished.connect(self._refresh)
+
+        # Layout
+        layout = QVBoxLayout()
+        layout.addWidget(self._clean_button)
+        layout.addWidget(self._clear_button)
+        layout.addWidget(self._remove_installs_button)
+        layout.addWidget(self._skip_button)
+        self.setLayout(layout)
+
+    def _refresh(self):
+        """Update state of buttons."""
+        for button in [
+            self._clean_button,
+            self._clear_button,
+            self._remove_installs_button,
+        ]:
+            button.setEnabled(self._update_manager._finished)
+
+    def clear(self):
+        """Remove broken installs."""
         # conda clean -a
+        self._update_manager.clear()
 
-    def clean_packages(self):
-        """"""
-        pass
+    def clean(self):
+        """Clean package cache."""
         # Remove any folders that start with napari- and end with -broken
+        self._update_manager.clean()
+
+    def remove(self):
+        """"""
+        # Remove any folders that start with napari- and end with -broken
+        pass
+
+    def remove_skips(self):
+        """"""
+        if running_as_constructor_app():
+            settings.get_settings().updates.update_version_skip = []

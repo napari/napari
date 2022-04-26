@@ -50,8 +50,13 @@ def _get_installed_versions() -> List[str]:
         ]
         for env_path in env_paths:
             conda_meta_folder = envs_folder / env_path / 'conda-meta'
-            if conda_meta_folder.exists():
-                for p in (envs_folder / env_path / 'conda-meta').iterdir():
+            napari_file = conda_meta_folder / 'napari'
+            if (
+                conda_meta_folder.exists()
+                and napari_file.exists()
+                and napari_file.is_file()
+            ):
+                for p in conda_meta_folder.iterdir():
                     if p.suffix == '.json':
                         # Check environment contains a napari package
                         parts = p.stem.rsplit('-')
@@ -123,14 +128,19 @@ def check_updates(
 
     update = False
     latest_version = versions[-1] if versions else None
+    installed_versions_builds = _get_installed_versions()
+    installed_versions = [vb[0] for vb in installed_versions_builds]
     if __version__ != 'dev':
-        update = parse_version(latest_version) > parse_version(__version__)
+        update = (
+            parse_version(latest_version) > parse_version(__version__)
+            and latest_version not in installed_versions
+        )
 
     return {
         "release": versions,
         "current": __version__,
         "latest": latest_version,
-        "found": _get_installed_versions(),
+        "found": installed_versions,
         "installer": installer,
         "update": update,
     }

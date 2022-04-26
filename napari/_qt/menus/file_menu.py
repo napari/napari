@@ -102,6 +102,12 @@ class FileMenu(NapariMenu):
                 'slot': window._qt_window.check_updates,
                 'menuRole': QAction.ApplicationSpecificRole,
             },
+            {
+                'when': running_as_constructor_app(),
+                'text': trans._('Updates troubleshoot...'),
+                'slot': window._qt_window.run_update_troubleshooter,
+                'menuRole': QAction.ApplicationSpecificRole,
+            },
             {},
             {
                 'text': trans._('Close Window'),

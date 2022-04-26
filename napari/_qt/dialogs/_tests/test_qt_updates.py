@@ -22,7 +22,7 @@ class DummySettings:
 def dummy_get_settings():
     DummySettings.updates.update_version_skip = []
     DummySettings.updates.check_for_updates = True
-    DummySettings.updates.appearance.theme = 'dark'
+    DummySettings.appearance.theme = 'dark'
     return DummySettings
 
 

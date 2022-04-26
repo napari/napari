@@ -42,6 +42,7 @@ from ..utils.io import imsave
 from ..utils.misc import (
     in_ipython,
     in_jupyter,
+    is_dev,
     running_as_bundled_app,
     running_as_constructor_app,
 )
@@ -52,7 +53,11 @@ from ..utils.updates import check_updates
 from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
-from .dialogs.qt_updates import UpdateOptionsDialog, UpdateStatusDialog
+from .dialogs.qt_updates import (
+    UpdateOptionsDialog,
+    UpdateStatusDialog,
+    UpdateTroubleshootDialog,
+)
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
@@ -92,7 +97,7 @@ class _QtMainWindow(QMainWindow):
         self._quit_app = False
         self._update_on_quit = False
         self._update_info = None
-        self._update_manager = None
+        self._update_manager = get_update_manager()
         self._update_worker = None
 
         self.setWindowIcon(QIcon(self._window_icon))
@@ -118,6 +123,7 @@ class _QtMainWindow(QMainWindow):
         )
         act_dlg.hide()
         self._activity_dialog = act_dlg
+        self._troubleshoot_dialog = None
 
         self.setStatusBar(ViewerStatusBar(self))
 
@@ -360,24 +366,23 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        if self._update_manager:
+        if self._update_manager and not self._update_manager.is_finished():
             # Update in progress, ask if quiting!?
             reply = QMessageBox.question(
                 self,
                 trans._("Quit and cancel update?"),
                 trans._(
-                    "There is an update in progress. Do you want to quit napari and cancel it?"
+                    "There is an process in progress. Do you want to quit napari and cancel it?"
                 ),
             )
             if reply == QMessageBox.Yes:
                 self._update_manager.stop()
-                self._update_manager = None
                 self._update_on_quit = False
             elif reply == QMessageBox.No:
                 event.ignore()
                 return
 
-        if self._update_on_quit and self._update_manager is None:
+        if self._update_on_quit:
             self._update_napari()
             event.ignore()
             return
@@ -436,14 +441,20 @@ class _QtMainWindow(QMainWindow):
             Dictionary with information on updates incluyding version,
             installer type and installed versions found.
         """
+        print(update_info)
         _settings = get_settings()
         startup = self._update_worker._startup
         self._update_info = update_info
         self._update_version = update_info["latest"]
-        # FIXME: To test
+        # FIXME: To test failure
+        # self._update_version = '0.4.16'
+        # FIXME: To test success
         self._update_version = '0.4.15'
+        # FIXME: To test update options dialog
         update_info["update"] = True
         if self._update_version in _settings.updates.update_version_skip:
+            dlg = UpdateStatusDialog(self)
+            dlg.exec_()
             return
 
         if update_info["update"]:
@@ -484,8 +495,13 @@ class _QtMainWindow(QMainWindow):
         """Launch napari update process and show the notification area."""
         _settings = get_settings()
         nightly = _settings.updates.check_nightly_builds
-        self.statusBar()._toggle_activity_dock(True)
         self._update_manager = get_update_manager(self)
+        self._update_manager.started.connect(
+            lambda: self._show_activity_dock(True)
+        )
+        self._update_manager.finished.connect(
+            lambda: self._show_activity_dock(False)
+        )
         self._update_manager.run_update(
             version=self._update_version,
             nightly=nightly,
@@ -495,8 +511,11 @@ class _QtMainWindow(QMainWindow):
     def _update_finished(self):
         """Run cleanup actions when the update process finishes."""
         # FIXME: Needs to show a dialog in case of errors.
-        self._update_manager = None
         self._update_on_quit = False
+
+    def _show_activity_dock(self, value):
+        """FIXME:"""
+        self.statusBar()._toggle_activity_dock(value)
 
     def check_updates(self, startup=False):
         """Check for napari available updates.
@@ -506,13 +525,16 @@ class _QtMainWindow(QMainWindow):
         startup: bool
             This check is running this check on startup. Default is ``False``.
         """
-        if self._update_manager:
-            self.statusBar()._toggle_activity_dock(True)
+        # FIXME: toggle for local testing
+        # if is_dev():
+        #     return
+
+        if not self._update_manager.is_finished() and not startup:
+            self._show_activity_dock(True)
         else:
             _settings = get_settings()
             stable = not _settings.updates.check_previews
             nightly = _settings.updates.check_nightly_builds
-            # TODO: Handle the pip case!
             self._update_worker = create_worker(
                 check_updates,
                 stable=stable,
@@ -524,6 +546,21 @@ class _QtMainWindow(QMainWindow):
             self._update_worker._nightly = nightly
             self._update_worker.returned.connect(self._check_updates)
             self._update_worker.start()
+
+    def run_update_troubleshooter(self):
+        """Run the update troubleshooter."""
+        if self._troubleshoot_dialog:
+            self._troubleshoot_dialog.show()
+            self._troubleshoot_dialog.raise_()
+        else:
+            self._troubleshoot_dialog = UpdateTroubleshootDialog(self)
+            self._troubleshoot_dialog.started.connect(
+                lambda: self._show_activity_dock(True)
+            )
+            self._troubleshoot_dialog.finished.connect(
+                lambda: self._show_activity_dock(False)
+            )
+            self._troubleshoot_dialog.show()
 
 
 class Window:
