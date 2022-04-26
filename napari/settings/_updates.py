@@ -1,6 +1,7 @@
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
+from ..utils.misc import is_dev
 from ..utils.translations import trans
 
 
@@ -17,9 +18,9 @@ class UpdateSettings(EventedModel):
     )
     check_previews = Field(
         False,
-        title=trans._("Check for preview candidates "),
+        title=trans._("Check preview candidates "),
         description=trans._(
-            "Check for napari non-stable release.",
+            "Check preview candidates.",
         ),
     )
     check_nightly_builds: bool = Field(
@@ -37,4 +38,12 @@ class UpdateSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'update_version_skip']
+        if is_dev():
+            preferences_exclude = ['schema_version', 'update_version_skip']
+        else:
+            preferences_exclude = [
+                'schema_version',
+                'update_version_skip',
+                'check_nightly_builds',
+                'check_previews',
+            ]

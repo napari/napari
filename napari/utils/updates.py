@@ -8,7 +8,7 @@ from typing import Dict, List, Literal, Tuple, Union
 from urllib import request
 
 from ..plugins.pypi import get_package_versions
-from .misc import parse_version, running_as_constructor_app
+from .misc import is_dev, parse_version, running_as_constructor_app
 
 InstallerTypes = Literal['pip', 'conda']
 LETTERS_PATTERN = re.compile(r'[a-zA-Z]')
@@ -71,16 +71,6 @@ def _is_stable_version(version: Union[Tuple[str], str]) -> bool:
         version = version.split('.')
 
     return not LETTERS_PATTERN.search(version[-1])
-
-
-def is_dev() -> bool:
-    """Check if napari is running from development version."""
-    dev_check = False
-    try:
-        from napari._version import __version__  # noqa: F401
-    except ImportError:
-        dev_check = True
-    return dev_check
 
 
 def check_updates(

@@ -98,7 +98,13 @@ class UpdateManager(QObject):
         return process
 
     def _on_stdout_ready(self, process):
-        """"""
+        """Hanlde standard output from the process.
+
+        Parameters
+        ----------
+        process : QProcess
+            The process to handle.
+        """
         text = process.readAllStandardOutput().data().decode()
         # print([text])
 
@@ -111,7 +117,7 @@ class UpdateManager(QObject):
                 break
 
     def _on_process_finished(self, process, exit_code, exit_status):
-        """"""
+        """Handle process finish."""
         self._finished = True
         if exit_code == 0:
             msg = trans._("Version updated successfully!")
@@ -172,7 +178,13 @@ class UpdateManager(QObject):
         self._run_process()
 
     def install(self, packages):
-        """"""
+        """Install plugins in batch on the environment.
+
+        Parameters
+        ----------
+        packages: List[str]
+            Packages should be a list of tuples of the form.
+        """
         env_path = self._envs_path() / "envs" / f"napari-{self._version}"
         args = [
             "install",

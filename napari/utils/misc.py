@@ -93,6 +93,16 @@ def running_napari_with_conda() -> bool:
     return False
 
 
+def is_dev() -> bool:
+    """Check if napari is running from development version."""
+    dev_check = False
+    try:
+        from napari._version import __version__  # noqa: F401
+    except ImportError:
+        dev_check = True
+    return dev_check
+
+
 def bundle_bin_dir() -> Optional[str]:
     """Return path to briefcase app_packages/bin if it exists."""
     bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')

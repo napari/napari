@@ -11,6 +11,7 @@ from napari.utils.misc import (
     abspath_or_url,
     ensure_iterable,
     ensure_sequence_of_iterables,
+    is_dev,
     pick_equality_operator,
 )
 
@@ -211,3 +212,7 @@ def test_is_array_type_with_xarray():
     )
     assert not _is_array_type([], 'xarray.DataArray')
     assert not _is_array_type(np.array([]), 'xarray.DataArray')
+
+
+def test_is_dev():
+    assert is_dev() is True

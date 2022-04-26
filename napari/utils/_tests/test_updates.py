@@ -38,9 +38,5 @@ def test_is_stable_version(test_input, expected):
     assert updates._is_stable_version(test_input) == expected
 
 
-def test_is_dev():
-    assert updates.is_dev() is True
-
-
 def test_check_updates():
     pass
