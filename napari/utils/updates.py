@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Dict, List, Literal, Tuple, Union
 from urllib import request
 
-from napari.plugins.pypi import get_package_versions
-from napari.utils.misc import parse_version, running_as_constructor_app
+from ..plugins.pypi import get_package_versions
+from .misc import parse_version, running_as_constructor_app
 
 InstallerTypes = Literal['pip', 'conda']
 LETTERS_PATTERN = re.compile(r'[a-zA-Z]')
@@ -88,7 +88,7 @@ def check_updates(
     nightly: bool = False,
     installer: InstallerTypes = None,
 ) -> Dict:
-    """Check for updates.
+    """Check for napari bundle updates.
 
     Parameters
     ----------
@@ -97,8 +97,9 @@ def check_updates(
     nightly : bool, optional
         If ``True``, check for nightly versions. Only applicable to conda
         installer. Default is ``False``.
-    installer : str, optional
-        Installer type. Default is ``None``.
+    installer : InstallerTypes, optional
+        Installer type. If ``None`` is provided, the isntaller will be
+        detected based on the system. Default is ``None``.
 
     Returns
     -------
@@ -127,7 +128,7 @@ def check_updates(
     elif installer == 'conda':
         versions = _get_napari_conda_versions(nightly=nightly)
 
-    if stable and not is_dev():
+    if stable:
         versions = list(filter(_is_stable_version, versions))
 
     update = False
@@ -135,7 +136,7 @@ def check_updates(
     if __version__ != 'dev':
         update = parse_version(latest_version) > parse_version(__version__)
 
-    data = {
+    return {
         "release": versions,
         "current": __version__,
         "latest": latest_version,
@@ -143,7 +144,3 @@ def check_updates(
         "installer": installer,
         "update": update,
     }
-    return data
-
-
-# print(check_updates(stable=False, nightly=True, installer='conda'))

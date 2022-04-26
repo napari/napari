@@ -39,7 +39,12 @@ from ..settings import get_settings
 from ..utils import perf
 from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
-from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
+from ..utils.misc import (
+    in_ipython,
+    in_jupyter,
+    running_as_bundled_app,
+    running_as_constructor_app,
+)
 from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
@@ -52,7 +57,7 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
 from .qthreading import create_worker
-from .updates import UpdateManager
+from .updates import get_update_manager
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
@@ -117,8 +122,9 @@ class _QtMainWindow(QMainWindow):
         self.setStatusBar(ViewerStatusBar(self))
 
         settings = get_settings()
-        if settings.updates.check_for_updates:
-            self.check_updates(startup=True)
+        if running_as_constructor_app():
+            if settings.updates.check_for_updates:
+                self.check_updates(startup=True)
 
         # TODO:
         # settings.plugins.defaults.call_order = plugin_manager.call_order()
@@ -372,7 +378,7 @@ class _QtMainWindow(QMainWindow):
                 return
 
         if self._update_on_quit and self._update_manager is None:
-            self._update_napari(True)
+            self._update_napari()
             event.ignore()
             return
 
@@ -420,51 +426,75 @@ class _QtMainWindow(QMainWindow):
     # --- Updates
     # ------------------------------------------------------------------------
     def _check_updates(self, update_info):
-        """
+        """Check if an update is needed based on settings and show a
+        confirmation dialog, start the update process, skip or display
+        an information message box.
 
         Parameters
         ----------
         update_info: dict
-            TODO
+            Dictionary with information on updates incluyding version,
+            installer type and installed versions found.
         """
-        print(update_info)
+        _settings = get_settings()
+        startup = self._update_worker._startup
         self._update_info = update_info
-        # self._update_version = "0.5.0"  # Simulate failure
-        # self._update_version = "0.4.16.dev75"
-        self._update_version = "0.4.15"  # Simulate new update
+        self._update_version = update_info["latest"]
+        # FIXME: To test
+        self._update_version = '0.4.15'
+        update_info["update"] = True
+        if self._update_version in _settings.updates.update_version_skip:
+            return
 
-        # TODO: Handle the pypi case and point to the napari website
-        if True:
-            dlg = UpdateOptionsDialog(self, version=self._update_version)
-            dlg.exec_()
+        if update_info["update"]:
+            if running_as_constructor_app():
+                if _settings.updates.update_automatically and startup:
+                    # if automatic, do not prompt a dialog, but start the
+                    # update process right away. Only do this for startup
+                    # Manual checks will not start and automatic update.
+                    self._update_napari()
+                else:
+                    # prompt a dialog for confirmation
+                    dlg = UpdateOptionsDialog(
+                        self, version=self._update_version
+                    )
+                    dlg.exec_()
 
-            self._update_on_quit = dlg.is_update_on_quit()
-
-            if dlg.is_update():
-                self._update_napari()
-            elif dlg.is_update_on_quit():
-                self._update_manager = None
+                    if dlg.is_update():
+                        self._update_napari()
+                    elif dlg.is_update_on_quit():
+                        self._update_on_quit = dlg.is_update_on_quit()
+                        self._update_manager = None
+            elif update_info["installer"] == "conda":
+                # TODO: handle de conda not bundled case
+                pass
+            elif update_info["installer"] == "pip":
+                # TODO: handle de pip not bundled case
+                pass
         else:
-            # TODO: Update dialog
-            dlg = UpdateStatusDialog(self, version=self._update_version)
+            if startup:
+                # If we are running automatically on startup, do not inform
+                # if no update needed
+                return
+            else:
+                dlg = UpdateStatusDialog(self)
+                dlg.exec_()
 
-    def _update_napari(self, modal=False):
-        """Launch napari update dialog.
-
-        Parameters
-        ----------
-        modal: bool, optional
-            Show dialog as modal. Default is ``False``.
-        """
+    def _update_napari(self):
+        """Launch napari update process and show the notification area."""
+        _settings = get_settings()
+        nightly = _settings.updates.check_nightly_builds
         self.statusBar()._toggle_activity_dock(True)
-        self._update_manager = UpdateManager(
-            self, version=self._update_version, update=True
+        self._update_manager = get_update_manager(self)
+        self._update_manager.run_update(
+            version=self._update_version,
+            nightly=nightly,
         )
-        self._update_manager.quit_requested.connect(lambda: self.close(True))
         self._update_manager.finished.connect(self._update_finished)
 
     def _update_finished(self):
         """Run cleanup actions when the update process finishes."""
+        # FIXME: Needs to show a dialog in case of errors.
         self._update_manager = None
         self._update_on_quit = False
 
@@ -474,18 +504,24 @@ class _QtMainWindow(QMainWindow):
         Parameters
         ----------
         startup: bool
-            TODO:
+            This check is running this check on startup. Default is ``False``.
         """
         if self._update_manager:
             self.statusBar()._toggle_activity_dock(True)
         else:
-            settings = get_settings()
-            stable = not settings.updates.check_previews
-            # FIXME: Change to use defaults
+            _settings = get_settings()
+            stable = not _settings.updates.check_previews
+            nightly = _settings.updates.check_nightly_builds
+            # TODO: Handle the pip case!
             self._update_worker = create_worker(
-                check_updates, stable, True, 'conda'
+                check_updates,
+                stable=stable,
+                nightly=nightly,
+                installer='conda',
             )
             self._update_worker._startup = startup
+            self._update_worker._stable = stable
+            self._update_worker._nightly = nightly
             self._update_worker.returned.connect(self._check_updates)
             self._update_worker.start()
 

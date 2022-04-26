@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
 from ... import settings
 from ...utils.theme import get_theme
 from ...utils.translations import trans
+from ...utils.updates import InstallerTypes
 from ..qt_resources import QColoredSVGIcon
 
 
@@ -31,15 +32,22 @@ class UpdateOptionsDialog(QDialog):
         Default is ``None``.
     version : str, optional
         The new napari version available for update. Default is ``None``.
+    installer : str, optional
+        The new napari version available for update. Default is ``None``.
     """
 
-    def __init__(self, parent=None, version=None):
+    def __init__(
+        self, parent=None, version=None, installer: InstallerTypes = None
+    ):
         super().__init__(parent)
         self._version = version
         self._action = None
+        self._installer = installer
 
         if version:
             msg = trans._(
+                # FIXME: Check if link in docs is stable
+                # https://napari.org/stable/release/release_{version_underscores}.html
                 'A new version of napari is available!<br><br>Install <a href="https://napari.org/release/release_{version_underscores}.html">napari {version}</a> to stay up to date.<br>',
                 version=self._version,
                 version_underscores=self._version.replace(".", "_"),
@@ -60,7 +68,7 @@ class UpdateOptionsDialog(QDialog):
         # Setup
         theme_name = settings.get_settings().appearance.theme
         theme = get_theme(theme_name, as_dict=True)
-        icon = QColoredSVGIcon.from_resources("update_download")
+        icon = QColoredSVGIcon.from_resources("update_available")
         self._icon.setPixmap(icon.colored(color=theme['icon']).pixmap(60, 60))
         self._text.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self._text.setOpenExternalLinks(True)
@@ -68,6 +76,11 @@ class UpdateOptionsDialog(QDialog):
         self._button_update_on_quit.setObjectName("primary")
         self.setWindowTitle(trans._("Update napari"))
         self.setMinimumWidth(500)
+
+        if self._installer == "pip":
+            self._button_skip.setVisible(False)
+            self._button_update.setVisible(False)
+            self._button_update_on_quit.setVisible(False)
 
         # Signals
         self._button_dismiss.clicked.connect(self.accept)
@@ -136,10 +149,13 @@ class UpdateStatusDialog(QDialog):
     parent : QWidget, optional
         Parent of the dialog, to correctly inherit and apply theme.
         Default is None.
+    installer : str, optional
+        The new napari version available for update. Default is ``None``.
     """
 
-    def __init__(self, parent=None, version=None):
+    def __init__(self, parent=None, installer: InstallerTypes = None):
         super().__init__(parent)
+        _settings = settings.get_settings()
 
         # Widgets
         self._icon = QLabel()
@@ -154,10 +170,11 @@ class UpdateStatusDialog(QDialog):
         # Setup
         self.setMinimumWidth(500)
         self.setWindowTitle(trans._("Update napari"))
-        _settings = settings.get_settings()
+        theme_name = _settings.appearance.theme
+        theme = get_theme(theme_name, as_dict=True)
+        icon = QColoredSVGIcon.from_resources("update_ready")
+        self._icon.setPixmap(icon.colored(color=theme['icon']).pixmap(60, 60))
         self._check.setChecked(_settings.updates.check_for_updates)
-        icon = QColoredSVGIcon.from_resources("warning")
-        self._icon.setPixmap(icon.colored(color="#E3B617").pixmap(60, 60))
 
         # Signals
         self._check.clicked.connect(self._update_settings)

@@ -70,9 +70,27 @@ def running_as_bundled_app() -> bool:
 
 def running_as_constructor_app() -> bool:
     """Infer whether we are running as a constructor bundle."""
-    return (
-        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
-    ).exists()
+    # return (
+    #     Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+    # ).exists()
+    return True
+
+
+def running_in_conda_environment() -> bool:
+    """Check if we are running inside a conda environment."""
+    return (Path(sys.prefix) / 'conda-meta' / 'history').exists()
+
+
+def running_napari_with_conda() -> bool:
+    """Check if we are running inside a conda environment
+    and napari is installed as a conda package.
+    """
+    if running_in_conda_environment():
+        for p in (Path(sys.prefix) / 'conda-meta').iterdir():
+            parts = p.name.split("-")
+            if parts[0] == 'napari' and len(parts) == 3:
+                return True
+    return False
 
 
 def bundle_bin_dir() -> Optional[str]:

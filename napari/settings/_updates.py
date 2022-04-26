@@ -1,14 +1,7 @@
-from enum import Enum
-
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
 from ..utils.translations import trans
-
-
-class UpdateOn(str, Enum):
-    closing = 'closing'
-    opening = 'opening'
 
 
 class UpdateSettings(EventedModel):
@@ -17,15 +10,10 @@ class UpdateSettings(EventedModel):
         title=trans._("Automatically check for napari updates"),
         description=trans._("Automatically check for napari updates."),
     )
-    update_to_latest: bool = Field(
-        True,
+    update_automatically: bool = Field(
+        False,
         title=trans._("Update to the latest version automatically"),
         description=trans._("Update to the latest version automatically."),
-    )
-    notify_update: bool = Field(
-        True,
-        title=trans._("Notify me before updating"),
-        description=trans._("Notify me before updating."),
     )
     check_previews = Field(
         False,
@@ -33,6 +21,11 @@ class UpdateSettings(EventedModel):
         description=trans._(
             "Check for napari non-stable release.",
         ),
+    )
+    check_nightly_builds: bool = Field(
+        False,
+        title=trans._("Check nightly builds"),
+        description=trans._("Check nightly builds."),
     )
     update_version_skip = Field(
         [],

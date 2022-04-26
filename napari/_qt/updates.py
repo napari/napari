@@ -17,21 +17,16 @@ class UpdateManager(QObject):
     ----------
     parent : QObject, optional
         Parent of the manager. Default is None.
-    version: str, optional
-        Default is ``None``.
-    update : boo., optional
-        Default is ``False``.
     """
 
     finished = Signal()
 
-    def __init__(self, parent=None, version=None, update=False):
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self._version = version
         self._finished = False
         self._process = None
+        self._processes = []
         self._worker_thread = None
-        self._current_progress = [(0, 'update')]
         self._update_keys = [
             ('conda-forge/noarch', trans._('update - repodata')),
             ('Updating specs:', trans._('update - specs')),
@@ -42,41 +37,111 @@ class UpdateManager(QObject):
             ('To activate this environment', trans._('update - shortcuts')),
         ]
 
-        self._worker_thread = create_worker(
-            self._dummy_process,
-            _progress={'total': len(self._update_keys), 'desc': "update"},
-        )
-        self._worker_thread.yielded.connect(self._handle_yield)
-
-        if update:
-            self._update_napari()
-
     def _handle_yield(self, total):
+        """Handle yielded progress for the dummy process."""
         i, msg = self._current_progress[-1]
         pbar = self._worker_thread.pbar
         pbar.set_description(msg)
+        # FIXME: This is a hack to get the progress bar to update
+        # ensure the bar is always larger and does not decrease due
+        # to rounding
         pbar.total = (
             int(round(((total * len(self._update_keys)) / (i + 1)), 0)) + 1
         )
 
     def _dummy_process(self):
-        i = 0
+        """Dummy process to trigger the progress bars in the notification area."""
+        total = 0
         while not self._finished:
             sleep(1)
-            i += 1
-            yield i
+            total += 1
+            yield total
 
     def _envs_path(self):
+        """Return the path to the conda environments."""
         # Check if running from base, and adjust accordingly
         envs_path = Path(sys.prefix).parent.parent
         if envs_path.exists():
             return envs_path
 
-    def _update_napari(self):
+    def _create_process(self, conda=True):
+        """Create a conda/mamba process.
+
+        Parameters
+        ----------
+        conda : bool, optional
+            If ``True`` use conda, otherwise use ``mamba``.
+            Default is ``True``.
+
+        Return
+        ------
+        process : QProcess or None
+            Return the created conda/mambda process.
+        """
+        envs_path = self._envs_path()
+        if conda:
+            conda_exec = str(envs_path / "condabin" / "conda")
+        else:
+            conda_exec = str(envs_path / "condabin" / "mamba")
+
+        process = QProcess()
+        process.setProgram(conda_exec)
+        process.setProcessChannelMode(QProcess.MergedChannels)
+        process.readyReadStandardOutput.connect(
+            lambda process=process: self._on_stdout_ready(process)
+        )
+        process.finished.connect(
+            lambda ec, es: self._on_process_finished(process, ec, es)
+        )
+        process.finished.connect(self._run_process)
+        self._processes.append(process)
+        return process
+
+    def _on_stdout_ready(self, process):
         """"""
-        self._worker_thread.start()
-        envs_path = Path(sys.prefix).parent.parent
-        env_path = envs_path / "envs" / f"napari-{self._version}"
+        text = process.readAllStandardOutput().data().decode()
+        # print([text])
+
+        # Handle common known messages
+        for i, (key, value) in enumerate(self._update_keys):
+            data = (i, value)
+            if key in text and data not in self._current_progress:
+                print(f'\n\nFound {key}\n\n')
+                self._current_progress.append(data)
+                break
+
+    def _on_process_finished(self, process, exit_code, exit_status):
+        """"""
+        self._finished = True
+        if exit_code == 0:
+            msg = trans._("Version updated successfully!")
+        else:
+            msg = trans._("Version could not be updated!")
+
+        notification_manager.receive_info(trans._(msg))
+        self.finished.emit()
+
+    def _run_process(self):
+        """Run the process in the process queue."""
+        if self._processes:
+            self._process = self._processes.pop(0)
+            self._process.start()
+
+            # FIXME: Generalize to other commands
+            self._current_progress = [(0, trans._('update'))]
+            self._worker_thread = create_worker(
+                self._dummy_process,
+                _progress={
+                    'total': len(self._update_keys),
+                    'desc': trans._("update"),
+                },
+            )
+            self._worker_thread.yielded.connect(self._handle_yield)
+            self._worker_thread.start()
+
+    def run_update(self, version, nightly=False):
+        """"""
+        env_path = self._envs_path() / "envs" / f"napari-{version}"
         if env_path.exists():
             old_path = str(env_path) + '-' + str(uuid.uuid4()) + "-broken"
             env_path.rename(old_path)
@@ -87,56 +152,62 @@ class UpdateManager(QObject):
             "create",
             "-p",
             str(env_path),
-            f"napari={self._version}=*pyside*",
-            # f"napari-menu={self._version}",
+            f"napari={version}=*pyside*",
+            # f"napari-menu={version}",
             "--channel",
             "conda-forge",
-            "--channel",  # For testing nightly builds
-            "napari",  # For testing nightly builds
             # "--shortcuts-only=napari-menu",
-            # "--json",
             "--yes",
         ]
-        print(' '.join(args))
-        conda_exec = str(envs_path / "condabin" / "conda")
-        conda_exec = str(envs_path / "condabin" / "mamba")
-        print(conda_exec)
-        self._process = QProcess()
-        self._process.setProgram(conda_exec)
-        self._process.setArguments(args)
-        self._process.setProcessChannelMode(QProcess.MergedChannels)
-        self._process.readyReadStandardOutput.connect(self._on_stdout_ready)
-        self._process.finished.connect(self._finished_update)
-        self._process.start()
+        if nightly:
+            args.extend(
+                [
+                    "--channel",
+                    "napari",
+                ]
+            )
 
-    def _on_stdout_ready(self):
+        process = self._create_process(conda=False)
+        process.setArguments(args)
+        self._run_process()
+
+    def install(self, packages):
         """"""
-        text = self._process.readAllStandardOutput().data().decode()
-        print([text])
+        env_path = self._envs_path() / "envs" / f"napari-{self._version}"
+        args = [
+            "install",
+            "-p",
+            str(env_path),
+            "--channel",
+            "conda-forge",
+            "--yes",
+        ] + packages
+        process = self._create_process(conda=False)
+        process.setArguments(args)
+        self._run_process()
 
-        # Handle common known messages
-        for i, (key, value) in enumerate(self._update_keys):
-            data = (i, value)
-            if key in text and data not in self._current_progress:
-                print(f'\n\nFound {key}\n\n')
-                self._current_progress.append(data)
-                break
-
-    def _finished_update(self):
-        """"""
-        self._finished = True
-        if self._process.exitCode() == 0:
-            msg = trans._("Version updated successfully!")
-        else:
-            msg = trans._("Version could not be updated!")
-
-        notification_manager.receive_info(trans._(msg))
-        self.finished.emit()
+    def clean_cache(self):
+        """Clean the cache."""
+        args = ["clean", "--yes"]
+        process = self._create_process(conda=True)
+        process.setArguments(args)
+        self._run_process()
 
     def stop(self):
-        """Stop the installation process."""
+        """Stop the running processes."""
         if self._worker_thread:
             self._worker_thread.quit()
 
+        self._processes = []
         if self._process:
             self._process.kill()
+
+
+_MANAGER = None
+
+
+def get_update_manager(parent=None):
+    global _MANAGER
+    if _MANAGER is None:
+        _MANAGER = UpdateManager(parent)
+    return _MANAGER
