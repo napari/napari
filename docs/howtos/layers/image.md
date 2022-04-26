@@ -73,7 +73,7 @@ object that you can index into and when you call
 [`np.asarray`](https://numpy.org/doc/stable/reference/generated/numpy.asarray.html)
 on it you get back a numpy array.
 
-The great thing about napari support array-like objects is that you get to keep
+The great thing about napari support of array-like objects is that you get to keep
 on using your favorite array libraries without worrying about any conversions as
 we'll handle all of that for you.
 
