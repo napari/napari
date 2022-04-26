@@ -2,7 +2,7 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union, get_origin
+from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
@@ -247,22 +247,16 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return attr
 
         # wrap objects returned by properties in evented objects
-        prop = self.__property_setters__[name]
-        ret_annotation = prop.fget.__annotations__.get(
-            'return', lambda x: None
-        )
-        ret_type = get_origin(ret_annotation) or ret_annotation
-        evented_attr = ret_type(attr)
-        if not hasattr(evented_attr, 'events'):
+        if not hasattr(attr, 'events'):
             return attr
 
         # hook up events to dependencies
-        def update(event):
-            prop.fset(self, event.source)
+        def _call_setter(event):
+            self.__property_setters__[name].fset(self, event.source)
 
-        evented_attr.events.connect(update)
+        attr.events.connect(_call_setter)
 
-        return evented_attr
+        return attr
 
     # expose the private EmitterGroup publically
     @property
