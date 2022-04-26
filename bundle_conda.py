@@ -47,7 +47,6 @@ import platform
 import re
 import subprocess
 import sys
-from tkinter import ARC
 import zipfile
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
@@ -238,7 +237,9 @@ def _get_dependencies():
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
-    base_channels = _lines_from_cfg_block(cfg["conda_installer"]["base_run_channels"])
+    base_channels = _lines_from_cfg_block(
+        cfg["conda_installer"]["base_run_channels"]
+    )
     base_specs = _lines_from_cfg_block(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
 
@@ -254,7 +255,9 @@ def _get_dependencies():
     if ARCH == "arm64":
         # temporary workaround for missing packages
         napari_channels.append("andfoy")
-    napari_channels += _lines_from_cfg_block(cfg["conda_installer"]["napari_run_channels"])
+    napari_channels += _lines_from_cfg_block(
+        cfg["conda_installer"]["napari_run_channels"]
+    )
 
     menu_specs = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_shortcuts"]
@@ -315,7 +318,7 @@ def _constructor():
         "extra_envs": {
             f"napari-{version}": {
                 "specs": dependencies["napari"],
-                "channels": dependencies["napari_channels"]
+                "channels": dependencies["napari_channels"],
             },
         },
         "menu_packages": dependencies["menu_packages"],
