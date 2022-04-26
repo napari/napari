@@ -753,8 +753,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     self.corner_pixels[0] * self._transforms['tile2data'].scale
                 )
             indices = tuple(indices)
-            image = self.data[level][indices]
             image_indices = self._permute_indices(indices)
+            image = self.data[level][image_indices]
 
             # Slice thumbnail
             indices = np.array(self._slice_indices)

@@ -158,7 +158,7 @@ class TransformChain(EventedList, Transform):
 
     @property
     def _is_diagonal(self) -> bool:
-        return all(tf._is_diagonal for tf in self)
+        return self.simplified._is_diagonal
 
     @property
     def _is_permutation(self) -> bool:
