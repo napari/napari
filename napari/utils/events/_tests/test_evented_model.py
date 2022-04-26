@@ -1,6 +1,6 @@
 import inspect
 from enum import auto
-from typing import ClassVar, List, Sequence, Union
+from typing import ClassVar, Sequence, Union
 from unittest.mock import Mock
 
 import dask.array as da
@@ -11,7 +11,7 @@ from dask.delayed import Delayed
 from pydantic import Field
 from typing_extensions import Protocol, runtime_checkable
 
-from napari.utils.events import EmitterGroup, EventedModel
+from napari.utils.events import EmitterGroup, EventedList, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 
@@ -439,7 +439,7 @@ class T(EventedModel):
     b: int = 1
 
     @property
-    def c(self) -> List[int]:
+    def c(self) -> EventedList[int]:
         return [self.a, self.b]
 
     @c.setter
@@ -490,3 +490,10 @@ def test_evented_model_with_property_setters_events():
     t.events.c.assert_called_with(value=[5, 20])
     t.events.b.assert_not_called()
     assert t.c == [5, 20]
+
+    # setting an *element* of c correctly sets its dependencies
+    t.c[1] = 0
+    t.events.c.assert_called_with(value=[5, 0])
+    t.events.a.assert_called_with(value=5)
+    t.events.b.assert_called_with(value=0)
+    assert t.c == [5, 0]
