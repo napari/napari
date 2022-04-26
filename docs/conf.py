@@ -135,6 +135,7 @@ exclude_patterns = [
 
 napoleon_custom_sections = [('Events', 'params_style')]
 
+
 def reset_napari_theme(gallery_conf, fname):
     from napari.settings import get_settings
 
