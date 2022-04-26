@@ -2,7 +2,7 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union
+from typing import Any, Callable, ClassVar, Dict, Set, Union, get_origin
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
@@ -248,8 +248,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         # wrap objects returned by properties in evented objects
         prop = self.__property_setters__[name]
-        ret_class = prop.fget.__annotations__.get('return', lambda x: x)
-        evented_attr = ret_class(attr)
+        ret_annotation = prop.fget.__annotations__.get('return', lambda x: x)
+        ret_type = get_origin(ret_annotation) or ret_annotation
+        evented_attr = ret_type(attr)
         if not hasattr(evented_attr, 'events'):
             return attr
 
