@@ -249,7 +249,6 @@ class Labels(_ImageBase):
         if name is None and data is not None:
             name = magic_name(data)
 
-        self._selected_label = 1
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
@@ -308,6 +307,7 @@ class Labels(_ImageBase):
         self._contiguous = True
         self._brush_size = 10
 
+        self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
 
@@ -415,7 +415,8 @@ class Labels(_ImageBase):
     @_ImageBase.colormap.setter
     def colormap(self, colormap):
         super()._set_colormap(colormap)
-        self._selected_color = self.get_color(self.selected_label)
+        if hasattr(self, '_selected_label'):
+            self._selected_color = self.get_color(self.selected_label)
         self.refresh()
 
     @property
