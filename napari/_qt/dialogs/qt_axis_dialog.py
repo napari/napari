@@ -35,7 +35,6 @@ class QAxisDialog(QDialog):
 
         self._combobox = QComboBox(self)
         self._combobox.addItems([str(v) for v in range(ndim)])
-        self._combobox.setCurrentIndex(0)
 
         self._confirm_btn = QPushButton()
         self._confirm_btn.setText(trans._("Confirm"))

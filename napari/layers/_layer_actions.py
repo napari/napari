@@ -11,7 +11,6 @@ from typing import (
     Callable,
     Dict,
     Mapping,
-    Optional,
     Sequence,
     Union,
     cast,
@@ -55,12 +54,14 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.selection = set(images)  # type: ignore
 
 
-def _split_stack_axis_popup(ll: LayerList, axis: Optional[int] = None) -> None:
+def _split_stack_axis_popup(ll: LayerList, axis: int = 0) -> None:
     layer = ll.selection.active
     if not layer:
         return
 
     dialog = QAxisDialog(layer.ndim)
+    dialog.value = axis
+
     if dialog.exec() == QAxisDialog.Rejected:
         return
 
@@ -322,7 +323,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
                     'show_when': True,
                 },
                 'napari:split_arbitrary_axis': {
-                    'description': trans._('split arbitrary axis'),
+                    'description': trans._('split arbitrary axis ...'),
                     'action': _split_stack_axis_popup,
                     'enable_when': True,
                     'show_when': True,
