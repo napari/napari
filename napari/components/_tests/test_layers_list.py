@@ -499,6 +499,21 @@ def test_world_extent_mixed_flipped():
     np.testing.assert_allclose(layers.extent.step, (1, 2))
 
 
+def test_world_extent_reflection():
+    """Test world extent after reflection along an axis."""
+    np.random.seed(0)
+    layers = LayerList()
+
+    layer = Image(
+        np.random.random((15, 15)), affine=[[1, 0, 0], [0, -1, 0], [0, 0, 1]]
+    )
+    layers.append(layer)
+    # scale and step reflect the values AFTER the affine has been applied.
+    # i.e. axis 0 of the data is axis 1 after application of the affine
+    np.testing.assert_allclose(layer._data_to_world.scale, (1, -1, 1))
+    np.testing.assert_allclose(layers.extent.step, (1, 1))
+
+
 def test_ndim():
     """Test world extent after adding layers."""
     np.random.seed(0)
