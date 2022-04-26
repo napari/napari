@@ -20,7 +20,7 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
-from .._qt.widgets.qt_axis_popup import QAxisPopup
+from .._qt.dialogs.qt_axis_dialog import QAxisDialog
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
 from .base.base import Layer
@@ -60,17 +60,11 @@ def _split_stack_axis_popup(ll: LayerList, axis: Optional[int] = None) -> None:
     if not layer:
         return
 
-    popup = QAxisPopup(layer.ndim)
-    popup.exec()
-    if axis is not None:
-        # condition to aid testing
-        popup.value = axis
-
-    if popup.value is None:
-        # no axis selected
+    dialog = QAxisDialog(layer.ndim)
+    if dialog.exec() == QAxisDialog.Rejected:
         return
 
-    _split_stack(ll, popup.value)
+    _split_stack(ll, dialog.value)
 
 
 def _project(ll: LayerList, axis: int = 0, mode='max'):
