@@ -16,7 +16,8 @@ kernelspec:
 In this document, you will learn how to use the `napari` image layer, including
 the types of images that can be displayed, and how to set properties like the
 contrast, opacity, colormaps and blending mode. You will also understand how
-to add and manipulate a variety of different types of images both from the
+to add and manipulate a variety of different types of images both from the GUI
+and from the console.
 
 ## A simple example
 
