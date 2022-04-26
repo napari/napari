@@ -440,7 +440,7 @@ class T(EventedModel):
 
     @property
     def c(self) -> EventedList[int]:
-        return [self.a, self.b]
+        return EventedList([self.a, self.b])
 
     @c.setter
     def c(self, val: Sequence[int]):
