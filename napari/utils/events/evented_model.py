@@ -248,7 +248,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         # wrap objects returned by properties in evented objects
         prop = self.__property_setters__[name]
-        ret_annotation = prop.fget.__annotations__.get('return', lambda x: x)
+        ret_annotation = prop.fget.__annotations__.get(
+            'return', lambda x: None
+        )
         ret_type = get_origin(ret_annotation) or ret_annotation
         evented_attr = ret_type(attr)
         if not hasattr(evented_attr, 'events'):
@@ -259,10 +261,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             prop.fset(self, event.source)
 
         evented_attr.events.connect(update)
-        # block depending events when update is fired, to prevent infinite loops
-        for field, deps in self.__field_dependents__.items():
-            if name in deps:
-                getattr(self.events, field).block(callback=update)
 
         return evented_attr
 
