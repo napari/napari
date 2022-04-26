@@ -647,7 +647,7 @@ class Labels(_ImageBase):
                 custom_colormap,
                 label_color_index,
             ) = color_dict_to_colormap(self.color)
-            super()._set_colormap(self._random_colormap)
+            super()._set_colormap(custom_colormap)
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
