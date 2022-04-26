@@ -415,8 +415,7 @@ class Labels(_ImageBase):
     @_ImageBase.colormap.setter
     def colormap(self, colormap):
         super()._set_colormap(colormap)
-        if hasattr(self, '_selected_label'):
-            self._selected_color = self.get_color(self.selected_label)
+        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
 
     @property
