@@ -1,18 +1,18 @@
----
-Author: \<list of authors' real names and, optionally, email addresses>
-Created: \<date created on, in yyyy-mm-dd format>
-Resolution: \<url> (required for Accepted | Rejected | Withdrawn)
-Resolved: \<date resolved, in yyyy-mm-dd format>
-Status: |-
-  \<Draft | Provisional | Active | Accepted | Deferred | Rejected | Withdrawn |
-  Final | Superseded>
-Type: \<Standards Track | Process>
-Version effective: \<version-number> (for accepted NAPs)
----
+:orphan:
 
 (nap-template)=
 
 # NAP-X — Template and Instructions
+
+```{eval-rst}
+:Author: <list of authors' real names and, optionally, email addresses>
+:Created: <date created on, in yyyy-mm-dd format>
+:Resolution: <url> (required for Accepted | Rejected | Withdrawn)
+:Resolved: <date resolved, in yyyy-mm-dd format>
+:Status: <Draft | Provisional | Active | Accepted | Deferred | Rejected | Withdrawn | Final | Superseded>
+:Type: <Standards Track | Process>
+:Version effective: <version-number> (for accepted NAPs)
+```
 
 ## Abstract
 
