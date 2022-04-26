@@ -129,7 +129,7 @@ request][github pull request] to the `docs/source/naps` directory with the
 name `nap-<n>-<short-title>.md` where `<n>` is an appropriately assigned
 number (typically sequential) and `<short-title>` is a one or two word title
 for the idea (e.g., `nap-35-lazy-slicing.md`). The draft must use the
-{ref}`nap_template` file.
+{ref}`nap-template` file.
 
 Once the PR is in place, the NAP should be announced on various channels
 for discussion, including the [#naps channel on Zulip]() and, if the NAP
@@ -275,7 +275,7 @@ these cases will depend on the nature and purpose of the NAP being updated.
 ## Format and Template
 
 NAPs are UTF-8 encoded text files using the [MyST markdown] format.  Please
-see the {ref}`nap_template` file and the [MyST markdown cheat sheet] for
+see the {ref}`nap-template` file and the [MyST markdown cheat sheet] for
 more information.  We use [Sphinx] to convert NAPs to HTML for viewing on
 the web [^id4].
 
