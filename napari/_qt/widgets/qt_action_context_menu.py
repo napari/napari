@@ -101,7 +101,7 @@ class QtActionContextMenu(QMenu):
     def update_from_context(self, ctx: Mapping) -> None:
         """Update the enabled/visible state of each menu item with `ctx`.
 
-        `ctx` is a namepsace dict that will be used to `eval()` the
+        `ctx` is a namespace dict that will be used to `eval()` the
         `'enable_when'` and `'show_when'` expressions provided for each action
         in the menu. *ALL variables used in these expressions must either be
         present in the `ctx` dict, or be builtins*.
