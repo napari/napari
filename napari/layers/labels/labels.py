@@ -416,7 +416,6 @@ class Labels(_ImageBase):
     def colormap(self, colormap):
         super()._set_colormap(colormap)
         self._selected_color = self.get_color(self.selected_label)
-        self.refresh()
 
     @property
     def num_colors(self):
