@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import skimage
 from skimage.transform import pyramid_gaussian
 
@@ -388,13 +389,23 @@ def test_not_create_random_multiscale():
     assert layer.multiscale is False
 
 
-def test_world_data_extent():
+@pytest.mark.parametrize('permuted_physical2world', [False, True])
+@pytest.mark.parametrize('rgb', [False, True])
+def test_world_data_extent(rgb, permuted_physical2world):
     """Test extent after applying transforms."""
-    np.random.seed(0)
     shapes = [(6, 40, 80), (3, 20, 40), (1, 10, 20)]
-    data = [np.random.random(s) for s in shapes]
-    layer = Image(data)
-    extent = np.array(((0,) * 3, shapes[0]))
+    if rgb:
+        shapes = [shape + (3,) for shape in shapes]
+    data = [np.ones(s) for s in shapes]
+    if permuted_physical2world:
+        # non-identity permutation matrix
+        affine = np.asarray(
+            [[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0], [0, 0, 0, 1]]
+        )
+    else:
+        affine = None
+    layer = Image(data, affine=affine)
+    extent = np.array(((0,) * 3, shapes[0][:3]))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 

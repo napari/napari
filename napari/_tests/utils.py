@@ -228,19 +228,30 @@ def check_layer_world_data_extent(
     translate : array, shape (D,)
         Translation to be applied to layer.
     """
+    permutation = layer._data_to_world._permutation
+    if permutation is not None:
+        extent = np.stack([extent[:, i] for i in permutation], axis=-1)
+
     np.testing.assert_almost_equal(layer.extent.data, extent)
     world_extent = extent - 0.5 if pixels else extent
     np.testing.assert_almost_equal(layer.extent.world, world_extent)
 
+    # Note: Scale and translate properties get set on
+    #       layer._transforms['data2physical'], so need to take any permutation
+    #       on layer._transforms['physical2world'] into account when computing
+    #       the expected world coordinate extent.
+    permuted_scale = [scale[i] for i in permutation]
+    permuted_translate = [translate[i] for i in permutation]
+
     # Apply scale transformation
     layer.scale = scale
-    scaled_world_extent = np.multiply(world_extent, scale)
+    scaled_world_extent = np.multiply(world_extent, permuted_scale)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, scaled_world_extent)
 
     # Apply translation transformation
     layer.translate = translate
-    translated_world_extent = np.add(scaled_world_extent, translate)
+    translated_world_extent = np.add(scaled_world_extent, permuted_translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
 
