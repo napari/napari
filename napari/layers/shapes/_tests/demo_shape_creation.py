@@ -46,7 +46,11 @@ if __name__ == "__main__":
         help='number of polygons to show',
     )
     parser.add_argument(
-        "-t", "--type", type=str, default="path", choices=['path', 'polygon']
+        "-t",
+        "--type",
+        type=str,
+        default="path",
+        choices=['path', 'polygon', 'rectangle'],
     )
     parser.add_argument(
         "-c",
@@ -62,6 +66,9 @@ if __name__ == "__main__":
 
     coords = create_sample_coords(args.n_polys)
 
+    if args.type == 'rectangle':
+        coords = coords[:, [2, 10]]
+
     if args.concat:
         coords = coords.reshape((1, -1, 2))
 
@@ -69,7 +76,9 @@ if __name__ == "__main__":
     print(f'layer type: {args.type}')
 
     properties = {
-        'class': ['A', 'B', 'C', 'D'] * (args.n_polys // 4),
+        'class': (['A', 'B', 'C', 'D'] * (args.n_polys // 4 + 1))[
+            : args.n_polys
+        ],
     }
     face_color_cycle = ['blue', 'magenta', 'green']
 
@@ -79,6 +88,11 @@ if __name__ == "__main__":
         properties=properties,
         face_color='class',
         face_color_cycle=face_color_cycle,
+    )
+
+    path = time_me(
+        "time to create path",
+        lambda: napari.layers.shapes._shapes_models.Path(coords[0]),
     )
 
     layer = time_me(
