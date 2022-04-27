@@ -71,3 +71,26 @@ def normalized_name(name: str) -> str:
     lower casing it.
     """
     return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def get_filename_patterns_for_reader(plugin_name: str):
+    reader_contributions = next(
+        iter(
+            [
+                manifest.contributions.readers
+                for manifest in _npe2.iter_manifests()
+                if manifest.name == plugin_name
+            ]
+        ),
+        [],
+    )
+    all_fn_patterns = {
+        fn_pattern
+        for reader in reader_contributions
+        for fn_pattern in reader.filename_patterns
+    }
+    return all_fn_patterns
+    # Then add tooltips to each reader
+    # Then add autocomplete to extension box
+    # Then add instructions on how to use
+    # Then check we're loading display name correctly
