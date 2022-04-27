@@ -155,6 +155,7 @@ sphinx_gallery_conf = {
     'reset_modules': (reset_napari_theme,),
 }
 
+
 def setup(app):
     """Ignore .ipynb files.
 
