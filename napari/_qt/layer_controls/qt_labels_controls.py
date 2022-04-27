@@ -261,20 +261,20 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        self.grid_layout.addRow(button_row)
-        self.grid_layout.addRow(trans._('label:'), color_layout)
-        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
-        self.grid_layout.addRow(trans._('brush size:'), self.brushSizeSlider)
-        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
-        self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
-        self.grid_layout.addRow(trans._('color mode:'), self.colorModeComboBox)
-        self.grid_layout.addRow(trans._('contour:'), self.contourSpinBox)
-        self.grid_layout.addRow(trans._('n edit dim:'), self.ndimSpinBox)
-        self.grid_layout.addRow(trans._('contiguous:'), self.contigCheckBox)
-        self.grid_layout.addRow(
+        self.layout().addRow(button_row)
+        self.layout().addRow(trans._('label:'), color_layout)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
+        self.layout().addRow(trans._('contour:'), self.contourSpinBox)
+        self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
+        self.layout().addRow(trans._('contiguous:'), self.contigCheckBox)
+        self.layout().addRow(
             trans._('preserve\nlabels:'), self.preserveLabelsCheckBox
         )
-        self.grid_layout.addRow(
+        self.layout().addRow(
             trans._('show\nselected:'), self.selectedColorCheckbox
         )
 

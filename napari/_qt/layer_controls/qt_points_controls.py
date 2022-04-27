@@ -177,19 +177,15 @@ class QtPointsControls(QtLayerControls):
         button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)
 
-        self.grid_layout.addRow(button_row)
-        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
-        self.grid_layout.addRow(trans._('point size:'), self.sizeSlider)
-        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
-        self.grid_layout.addRow(trans._('symbol:'), self.symbolComboBox)
-        self.grid_layout.addRow(trans._('face color:'), self.faceColorEdit)
-        self.grid_layout.addRow(trans._('edge color:'), self.edgeColorEdit)
-        self.grid_layout.addRow(
-            trans._('display text:'), self.textDispCheckBox
-        )
-        self.grid_layout.addRow(
-            trans._('out of slice:'), self.outOfSliceCheckBox
-        )
+        self.layout().addRow(button_row)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('point size:'), self.sizeSlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
+        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
+        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
+        self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
+        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.

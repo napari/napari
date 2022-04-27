@@ -151,23 +151,21 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
-        self.grid_layout.addRow(
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
-        self.grid_layout.addRow(trans._('auto-contrast:'), self.autoScaleBar)
-        self.grid_layout.addRow(trans._('gamma:'), self.gammaSlider)
-        self.grid_layout.addRow(trans._('colormap:'), colormap_layout)
-        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
-        self.grid_layout.addRow(self.interpLabel, self.interpComboBox)
-        self.grid_layout.addRow(self.depictionLabel, self.depictionComboBox)
-        self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
-        self.grid_layout.addRow(
-            self.isoThresholdLabel, self.isoThresholdSlider
-        )
-        self.grid_layout.addRow(self.attenuationLabel, self.attenuationSlider)
-        self.grid_layout.addRow(self.planeNormalLabel, self.planeNormalButtons)
-        self.grid_layout.addRow(
+        self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
+        self.layout().addRow(trans._('gamma:'), self.gammaSlider)
+        self.layout().addRow(trans._('colormap:'), colormap_layout)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(self.interpLabel, self.interpComboBox)
+        self.layout().addRow(self.depictionLabel, self.depictionComboBox)
+        self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
+        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
+        self.layout().addRow(self.planeNormalLabel, self.planeNormalButtons)
+        self.layout().addRow(
             self.planeThicknessLabel, self.planeThicknessSlider
         )
 

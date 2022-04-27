@@ -40,15 +40,15 @@ class QtSurfaceControls(QtBaseImageControls):
         shading_comboBox.activated[str].connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
 
-        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
-        self.grid_layout.addRow(
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
-        self.grid_layout.addRow(trans._('auto-contrast:'), self.autoScaleBar)
-        self.grid_layout.addRow(trans._('gamma:'), self.gammaSlider)
-        self.grid_layout.addRow(trans._('colormap:'), colormap_layout)
-        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
-        self.grid_layout.addRow(trans._('shading:'), self.shadingComboBox)
+        self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
+        self.layout().addRow(trans._('gamma:'), self.gammaSlider)
+        self.layout().addRow(trans._('colormap:'), colormap_layout)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('shading:'), self.shadingComboBox)
 
     def changeShading(self, text):
         """Change shading value on the surface layer.

@@ -48,8 +48,7 @@ class QtLayerControls(QFrame):
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.grid_layout = LayerFormLayout(self)
-        self.setLayout(self.grid_layout)
+        self.setLayout(LayerFormLayout(self))
 
         sld = QDoubleSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
