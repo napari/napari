@@ -239,15 +239,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def __getattribute__(self, name: str) -> None:
         attr = super().__getattribute__(name)
-        # avoid recursion
+        # avoid recursion or anything non-evented
         if (
             name == '__property_setters__'
             or name not in self.__property_setters__
+            or not hasattr(attr, 'events')
         ):
-            return attr
-
-        # wrap objects returned by properties in evented objects
-        if not hasattr(attr, 'events'):
             return attr
 
         # hook up events to dependencies
