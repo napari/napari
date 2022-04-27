@@ -101,7 +101,6 @@ class UpdateManager(QObject):
         else:
             conda_exec = str(base_path / "condabin" / "mamba")
 
-        print([conda_exec])
         process = QProcess()
         process.setProgram(conda_exec)
         process.setProcessChannelMode(QProcess.MergedChannels)
@@ -128,7 +127,6 @@ class UpdateManager(QObject):
         for i, (key, value) in enumerate(self._update_keys):
             data = (i, value)
             if key in text and data not in self._current_progress:
-                print(f'\n\nFound {key}\n\n')
                 self._current_progress.append(data)
                 break
 
@@ -168,9 +166,6 @@ class UpdateManager(QObject):
         if self._processes:
             self._process = self._processes.pop(0)
             self._process.start()
-
-            print(self._process, self._process._action)
-            print(self._process.program(), self._process.arguments())
             self._current_progress = [(0, desc)]
 
             _progress = {}
@@ -320,10 +315,8 @@ class UpdateManager(QObject):
 
     def clear(self):
         """Clear previous broken installations."""
-        print(str(self._envs_path()))
         for path in self._envs_path().iterdir():
             parts = path.name.split("-")
-            print(parts)
             if (
                 path.is_dir()
                 and parts[0] == "napari"

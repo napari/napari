@@ -82,7 +82,6 @@ class TestUpdateOptionsDialog:
             qtbot.addWidget(dlg)
             dlg.show()
             qtbot.mouseClick(dlg._button_skip, Qt.LeftButton)
-            print(version, expected)
             assert _settings.updates.update_version_skip == expected
 
     def test_installer_pip(self, qtbot):
