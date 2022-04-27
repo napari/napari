@@ -18,7 +18,6 @@ from ...layers.utils._slice_input import _SliceInput
 from ...layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
 )
-from ...settings import get_settings
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import (
     add_layer_to_viewer,
@@ -259,12 +258,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.layers._source import current_source
 
         self._source = current_source()
-        settings = get_settings()
-        cache = settings.application.dask['enabled']
-        nbytes = settings.application.dask['cache']
-        self.dask_optimized_slicing = configure_dask(
-            data, cache, nbytes=nbytes
-        )
+        self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
