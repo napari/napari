@@ -15,6 +15,7 @@ class ManagerActions:
     update = "update"
     clear = "clear"
     clean = "clean"
+    remove = "remove"
 
 
 class UpdateManager(QObject):
@@ -52,9 +53,8 @@ class UpdateManager(QObject):
         i, msg = self._current_progress[-1]
         pbar = self._worker_thread.pbar
         pbar.set_description(msg)
-        # FIXME: This is a hack to get the progress bar to update
-        # ensure the bar is always larger and does not decrease due
-        # to rounding
+        # This is a hack to get the progress bar to update when runnning a
+        # QProcess
         pbar.total = (
             int(round(((total * len(self._update_keys)) / (i + 1)), 0)) + 1
         )
@@ -137,7 +137,6 @@ class UpdateManager(QObject):
         print("\n".join(self._messages))
         if exit_code == 0:
             if self._process._action == ManagerActions.update:
-                # FIXME: If update, add the drone file to the env
                 notification_manager.receive_info(
                     trans._("Version updated successfully!")
                 )
@@ -193,8 +192,8 @@ class UpdateManager(QObject):
             self.finished.emit()
 
     @staticmethod
-    def removeDirs(dirNames):
-        """Remove a directory.
+    def remove_dirs(dirNames):
+        """Remove a list of directories.
 
         Parameters
         ----------
@@ -207,7 +206,7 @@ class UpdateManager(QObject):
         return results
 
     @staticmethod
-    def removeDir(dirName):
+    def remove_dir(dirName):
         """Remove a directory."""
         result = True
         qdir = QDir(dirName)
@@ -221,7 +220,7 @@ class UpdateManager(QObject):
                 QDir.DirsFirst,
             ):
                 if info.isDir():
-                    result = UpdateManager.removeDir(info.absoluteFilePath())
+                    result = UpdateManager.remove_dir(info.absoluteFilePath())
                 else:
                     result = QFile.remove(info.absoluteFilePath())
 
@@ -268,7 +267,7 @@ class UpdateManager(QObject):
         process._env_path = env_path
         self._run_process(total=len(self._update_keys), desc=trans._("update"))
 
-    def install(self, packages):
+    def install(self, version, packages):
         """Install plugins in batch on the environment.
 
         Parameters
@@ -276,7 +275,7 @@ class UpdateManager(QObject):
         packages: List[str]
             Packages should be a list of tuples of the form.
         """
-        env_path = self._envs_path() / "envs" / f"napari-{self._version}"
+        env_path = self._envs_path() / "envs" / f"napari-{version}"
         args = [
             "install",
             "-p",
@@ -288,7 +287,28 @@ class UpdateManager(QObject):
         process = self._create_process(conda=False)
         process.setArguments(args)
         process._action = ManagerActions.install
-        self._run_process()
+        self._run_process(total=0, desc=trans._("install"))
+
+    def remove(self, version):
+        """Remove older napari versions.
+
+        Parameters
+        ----------
+        version: str
+            Version to remove.
+        """
+        env_path = self._envs_path() / "envs" / f"napari-{version}"
+        args = [
+            "remove",
+            "-p",
+            str(env_path),
+            "--all",
+            "--yes",
+        ]
+        process = self._create_process(conda=True)
+        process.setArguments(args)
+        process._action = ManagerActions.remove
+        self._run_process(total=0, desc=trans._("remove"))
 
     def clean(self):
         """Clean the cache."""
@@ -311,11 +331,8 @@ class UpdateManager(QObject):
             ):
                 print(f"removing {str(path)}")
 
-    def remove_installs(self):
-        """Clear previous broken installations."""
-        print(str(self._envs_path()))
-
-    def is_finished(self):
+    def is_finished(self) -> bool:
+        """Return whether the process is finished."""
         return self._finished
 
     def stop(self):

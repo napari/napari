@@ -151,11 +151,9 @@ class UpdateStatusDialog(QDialog):
     parent : QWidget, optional
         Parent of the dialog, to correctly inherit and apply theme.
         Default is None.
-    installer : str, optional
-        The new napari version available for update. Default is ``None``.
     """
 
-    def __init__(self, parent=None, installer: InstallerTypes = None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         _settings = settings.get_settings()
 
@@ -214,6 +212,11 @@ class UpdateTroubleshootDialog(QDialog):
         self._update_manager = get_update_manager()
 
         # Widgets
+        self._text = QLabel(
+            trans._(
+                "The following actions can be taken if the update process is failing.<br>"
+            )
+        )
         self._clean_button = QPushButton(trans._("Clean"))
         self._clear_button = QPushButton(trans._("Clear"))
         self._remove_installs_button = QPushButton(
@@ -222,7 +225,7 @@ class UpdateTroubleshootDialog(QDialog):
         self._skip_button = QPushButton(trans._("Remove version skips"))
 
         # Setup
-        self.setWindowTitle(trans._("Update troubleshoot"))
+        self.setWindowTitle(trans._("Updates troubleshooter"))
         self.setMinimumWidth(500)
         self._refresh()
 
@@ -243,10 +246,14 @@ class UpdateTroubleshootDialog(QDialog):
 
         # Layout
         layout = QVBoxLayout()
-        layout.addWidget(self._clean_button)
-        layout.addWidget(self._clear_button)
-        layout.addWidget(self._remove_installs_button)
-        layout.addWidget(self._skip_button)
+        hlayout = QHBoxLayout()
+        hlayout.addStretch()
+        hlayout.addWidget(self._clean_button)
+        hlayout.addWidget(self._clear_button)
+        hlayout.addWidget(self._remove_installs_button)
+        hlayout.addWidget(self._skip_button)
+        layout.addWidget(self._text)
+        layout.addLayout(hlayout)
         self.setLayout(layout)
 
     def _refresh(self):
@@ -260,17 +267,17 @@ class UpdateTroubleshootDialog(QDialog):
 
     def clear(self):
         """Remove broken installs."""
-        # conda clean -a
+        # Remove any folders that start with napari- and end with -broken
         self._update_manager.clear()
 
     def clean(self):
         """Clean package cache."""
-        # Remove any folders that start with napari- and end with -broken
+        # conda clean -a
         self._update_manager.clean()
 
     def remove(self):
         """"""
-        # Remove any folders that start with napari- and end with -broken
+        # Remove old napari installations
         pass
 
     def remove_skips(self):

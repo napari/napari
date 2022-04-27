@@ -791,6 +791,6 @@ QPushButton#primary {
   background-color: {{ current }}
 }
 
-QPushButton:diabled {
-  background-color: {{ lighten(current, 20) }}
+QPushButton:disabled {
+  background-color: {{ darken(foreground, 20) }}
 }

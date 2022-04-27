@@ -41,7 +41,10 @@ class UpdateSettings(EventedModel):
     class NapariConfig:
         # Napari specific configuration
         if is_dev():
-            preferences_exclude = ['schema_version', 'update_version_skip']
+            preferences_exclude = [
+                'schema_version',
+                'update_version_skip',
+            ]
         else:
             preferences_exclude = [
                 'schema_version',

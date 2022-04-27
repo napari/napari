@@ -476,18 +476,8 @@ class _QtMainWindow(QMainWindow):
                     elif dlg.is_update_on_quit():
                         self._update_on_quit = dlg.is_update_on_quit()
                         self._update_manager = None
-            elif update_info["installer"] == "conda":
-                # TODO: handle de conda not bundled case
-                pass
-            elif update_info["installer"] == "pip":
-                # TODO: handle de pip not bundled case
-                pass
         else:
-            if startup:
-                # If we are running automatically on startup, do not inform
-                # if no update needed
-                return
-            else:
+            if not startup:
                 dlg = UpdateStatusDialog(self)
                 dlg.exec_()
 
@@ -514,7 +504,7 @@ class _QtMainWindow(QMainWindow):
         self._update_on_quit = False
 
     def _show_activity_dock(self, value):
-        """FIXME:"""
+        """Show/hide activity dock."""
         self.statusBar()._toggle_activity_dock(value)
 
     def check_updates(self, startup=False):
@@ -526,8 +516,8 @@ class _QtMainWindow(QMainWindow):
             This check is running this check on startup. Default is ``False``.
         """
         # FIXME: toggle for local testing
-        # if is_dev():
-        #     return
+        if is_dev():
+            return
 
         if not self._update_manager.is_finished() and not startup:
             self._show_activity_dock(True)
@@ -539,7 +529,7 @@ class _QtMainWindow(QMainWindow):
                 check_updates,
                 stable=stable,
                 nightly=nightly,
-                installer='conda',
+                installer='conda',  # TODO: handle non constructor cases
             )
             self._update_worker._startup = startup
             self._update_worker._stable = stable
