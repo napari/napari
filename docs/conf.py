@@ -154,3 +154,12 @@ sphinx_gallery_conf = {
     'image_scrapers': (qtgallery.qtscraper,),
     'reset_modules': (reset_napari_theme,),
 }
+
+def setup(app):
+    """Ignore .ipynb files.
+
+    Prevents sphinx from complaining about multiple files found for document
+    when generating the gallery.
+
+    """
+    app.registry.source_suffix.pop(".ipynb", None)
