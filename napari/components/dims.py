@@ -1,5 +1,4 @@
 import warnings
-from typing import Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -137,9 +136,9 @@ class Dims(EventedModel):
         # order and label defailt computation is too weird to include in ensure_ndim()
         # Check the order tuple has same number of elements as ndim
         if len(values['order']) < ndim:
-            values['order'] = tuple(
-                range(ndim - len(values['order']))
-            ) + tuple(o + ndim - len(values['order']) for o in values['order'])
+            values['order'] = [range(ndim - len(values['order']))] + [
+                o + ndim - len(values['order']) for o in values['order']
+            ]
         elif len(values['order']) > ndim:
             values['order'] = reorder_after_dim_reduction(
                 values['order'][-ndim:]
@@ -159,13 +158,13 @@ class Dims(EventedModel):
         # Check the axis labels tuple has same number of elements as ndim
         if len(values['axis_labels']) < ndim:
             # Append new "default" labels to existing ones
-            if values['axis_labels'] == tuple(
+            if values['axis_labels'] == list(
                 map(str, range(len(values['axis_labels'])))
             ):
-                values['axis_labels'] = tuple(map(str, range(ndim)))
+                values['axis_labels'] = list(map(str, range(ndim)))
             else:
                 values['axis_labels'] = (
-                    tuple(map(str, range(ndim - len(values['axis_labels']))))
+                    list(map(str, range(ndim - len(values['axis_labels']))))
                     + values['axis_labels']
                 )
         elif len(values['axis_labels']) > ndim:
@@ -192,9 +191,14 @@ class Dims(EventedModel):
 
     @_span_step.setter
     def _span_step(self, value):
-        self.step = [
-            min_val + step * val
-            for (min_val, _), step, val in zip(self.range, self.step, value)
+        self.span = [
+            (
+                min_val + low * step,
+                min_val + high * step,
+            )
+            for (low, high), (min_val, _), step in zip(
+                value, self.range, self.step
+            )
         ]
 
     @property
@@ -231,15 +235,14 @@ class Dims(EventedModel):
     @property
     def _thickness_step(self) -> EventedList[float]:
         return EventedList(
-            int(round((high - low) / step))
-            for (high, low), step in zip(self.range, self.step)
+            thickness / step
+            for thickness, step in zip(self.thickness, self.step)
         )
 
     @_thickness_step.setter
     def _thickness_step(self, value):
-        self.step = [
-            min_val + step * val
-            for (min_val, _), step, val in zip(self.range, self.step, value)
+        self.thickness = [
+            thickness * step for thickness, step in zip(value, self.step)
         ]
 
     @property
@@ -259,17 +262,37 @@ class Dims(EventedModel):
         self.span = span
 
     @property
-    def current_step(self) -> EventedList[int]:
+    def _point_step(self):
         return EventedList(
             int(round((point - min_val) / step))
-            for point, (min_val, _, step) in zip(self.point, self.range)
+            for point, (min_val, _), step in zip(
+                self.point, self.range, self.step
+            )
         )
 
-    @current_step.setter
-    def current_step(self, value: Tuple[int, ...]):
+    @_point_step.setter
+    def _point_step(self, value):
+        self.point = [
+            min_val + point * step
+            for point, (min_val, _), step in zip(value, self.range, self.step)
+        ]
+
+    @property
+    def current_step(self) -> EventedList[int]:
         warnings.warn(
             trans._(
-                'Dims.current_step is deprecated. Use Dims.set_point_step instead.'
+                'Dims.current_step is deprecated. Use Dims._point_step instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._point_step
+
+    @current_step.setter
+    def current_step(self, value: EventedList[int]):
+        warnings.warn(
+            trans._(
+                'Dims.current_step is deprecated. Use Dims._point_step instead.'
             ),
             DeprecationWarning,
             stacklevel=2,
@@ -277,34 +300,25 @@ class Dims(EventedModel):
         self._point_step = value
 
     @property
-    def displayed(self) -> Tuple[int, ...]:
-        """Tuple: Dimensions that are displayed."""
+    def displayed(self) -> EventedList[int]:
+        """EventedList: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
+    @displayed.setter
+    def displayed(self, value):
+        self.order = value
+
     @property
-    def not_displayed(self) -> Tuple[int, ...]:
-        """Tuple: Dimensions that are not displayed."""
+    def not_displayed(self) -> EventedList[int]:
+        """EventedList: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
-    def displayed_order(self) -> Tuple[int, ...]:
+    def displayed_order(self) -> EventedList[int]:
         displayed = self.displayed
         # equivalent to: order = np.argsort(self.displayed)
         order = sorted(range(len(displayed)), key=lambda x: displayed[x])
         return tuple(order)
-
-    def set_span_step(
-        self,
-        axis: Union[int, Sequence[int]],
-        value: Union[Sequence[int], Sequence[Sequence[int]]],
-    ):
-        axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
-        range = list(self.range)
-        value_world = []
-        for ax, val in zip(axis, value):
-            min_val, _, step_size = range[ax]
-            value_world.append([min_val + v * step_size for v in val])
-        self.set_span(axis, value_world)
 
     def reset(self):
         """Reset dims values to initial states."""
