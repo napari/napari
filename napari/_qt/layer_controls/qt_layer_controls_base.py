@@ -6,8 +6,8 @@ from ...utils.events import disconnect_events
 from ..widgets._slider_compat import QDoubleSlider
 
 
-class LayerGridLayout(QFormLayout):
-    """Reusable grid layout for subwidgets in each QtLayerControls class"""
+class LayerFormLayout(QFormLayout):
+    """Reusable form layout for subwidgets in each QtLayerControls class"""
 
     def __init__(self, QWidget=None):
         super().__init__(QWidget)
@@ -48,7 +48,7 @@ class QtLayerControls(QFrame):
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.grid_layout = LayerGridLayout(self)
+        self.grid_layout = LayerFormLayout(self)
         self.setLayout(self.grid_layout)
 
         sld = QDoubleSlider(Qt.Horizontal, parent=self)
