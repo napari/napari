@@ -54,6 +54,7 @@ from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .dialogs.qt_updates import (
+    UpdateErrorDialog,
     UpdateOptionsDialog,
     UpdateStatusDialog,
     UpdateTroubleshootDialog,
@@ -447,9 +448,9 @@ class _QtMainWindow(QMainWindow):
         self._update_info = update_info
         self._update_version = update_info["latest"]
         # FIXME: To test failure
-        # self._update_version = '0.4.16'
+        self._update_version = '0.4.16'
         # FIXME: To test success
-        self._update_version = '0.4.15'
+        # self._update_version = '0.4.15'
         # FIXME: To test update options dialog
         update_info["update"] = True
         if self._update_version in _settings.updates.update_version_skip:
@@ -497,6 +498,13 @@ class _QtMainWindow(QMainWindow):
             nightly=nightly,
         )
         self._update_manager.finished.connect(self._update_finished)
+        self._update_manager.errored.connect(self._update_errored)
+
+    def _update_errored(self, messages):
+        """Run cleanup when the update process failed."""
+        dlg = UpdateErrorDialog(self)
+        dlg.setErrorText(messages)
+        dlg.exec_()
 
     def _update_finished(self):
         """Run cleanup actions when the update process finishes."""

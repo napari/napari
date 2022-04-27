@@ -29,6 +29,7 @@ class UpdateManager(QObject):
 
     started = Signal()
     finished = Signal()
+    errored = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -132,7 +133,7 @@ class UpdateManager(QObject):
 
     def _on_process_finished(self, exit_code, exit_status):
         """Handle process finish."""
-        print("\n".join(self._messages))
+        messages = "\n".join(self._messages)
         if exit_code == 0:
             if self._process._action == ManagerActions.update:
                 notification_manager.receive_info(
@@ -154,6 +155,7 @@ class UpdateManager(QObject):
             if self._process._action == ManagerActions.update:
                 # FIXME: Show dialog
                 trans._("Version could not be updated!")
+                self.errored.emit(messages)
             elif self._process._action == ManagerActions.install:
                 pass
             elif self._process._action == ManagerActions.clean:

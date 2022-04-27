@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
 )
 
@@ -199,6 +200,69 @@ class UpdateStatusDialog(QDialog):
     def _update_settings(self, value: bool) -> None:
         """Update settings for automatically checking updates."""
         settings.get_settings().updates.check_for_updates = value
+
+
+class UpdateErrorDialog(QDialog):
+    """Qt dialog window for displaying Update errors.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        Parent of the dialog, to correctly inherit and apply theme.
+        Default is None.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        _settings = settings.get_settings()
+
+        # Widgets
+        self._icon = QLabel()
+        self._text = QLabel(
+            trans._(
+                'napari could not be updated!',
+            )
+        )
+        self._error = QTextEdit()
+        self._button_clean_cache = QPushButton(trans._("Clean cache"))
+        self._button_dismiss = QPushButton(trans._("Dismiss"))
+
+        # Setup
+        self.setMinimumWidth(500)
+        self.setMaximumHeight(200)
+        self.setWindowTitle(trans._("Update napari"))
+        self._button_clean_cache.setObjectName("primary")
+        theme_name = _settings.appearance.theme
+        theme = get_theme(theme_name, as_dict=True)
+        icon = QColoredSVGIcon.from_resources("warning")
+        self._icon.setPixmap(icon.colored(color=theme['icon']).pixmap(60, 60))
+
+        # Signals
+        self._button_dismiss.clicked.connect(self.accept)
+
+        # Layout
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(self._button_dismiss)
+        buttons_layout.addWidget(self._button_clean_cache)
+
+        vertical_layout = QVBoxLayout()
+        vertical_layout.addWidget(self._text)
+        vertical_layout.addWidget(self._error)
+        vertical_layout.addLayout(buttons_layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self._icon, alignment=Qt.AlignTop)
+        layout.addLayout(vertical_layout)
+
+        self.setLayout(layout)
+
+    def setErrorText(self, error):
+        """"""
+        self._error.setText(error)
+        self._error.verticalScrollBar().setValue(
+            self._error.verticalScrollBar().maximum()
+        )
 
 
 class UpdateTroubleshootDialog(QDialog):

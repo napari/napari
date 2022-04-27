@@ -70,10 +70,11 @@ def running_as_bundled_app() -> bool:
 
 def running_as_constructor_app() -> bool:
     """Infer whether we are running as a constructor bundle."""
-    # return (
-    #     Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
-    # ).exists()
-    return True
+    return (
+        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+    ).exists()
+    # FIXME: For local testing
+    # return True
 
 
 def running_in_conda_environment() -> bool:
