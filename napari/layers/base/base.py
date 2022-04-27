@@ -13,10 +13,17 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending
-from napari.layers.utils._slice_input import _SliceInput
-from napari.layers.utils.interactivity_utils import (
+from ...layers.base._base_constants import Blending
+from ...layers.utils._slice_input import _SliceInput
+from ...layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
+)
+from ...settings import get_settings
+from ...utils._dask_utils import configure_dask
+from ...utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
 )
 from napari.layers.utils.layer_utils import (
     coerce_affine,
@@ -252,7 +259,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.layers._source import current_source
 
         self._source = current_source()
-        self.dask_optimized_slicing = configure_dask(data, cache)
+        settings = get_settings()
+        cache = settings.application.dask['enabled']
+        nbytes = settings.application.dask['cache']
+        self.dask_optimized_slicing = configure_dask(
+            data, cache, nbytes=nbytes
+        )
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)

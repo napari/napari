@@ -62,6 +62,7 @@ def resize_dask_cache(
         nbytes = virtual_memory().total * mem_fraction
 
     avail = _DASK_CACHE.cache.available_bytes
+
     # if we don't have a cache already, create one.
     if avail == 1:
         # If neither nbytes nor mem_fraction was provided, use default
@@ -73,6 +74,7 @@ def resize_dask_cache(
         # resize_dask_cache() without supplying either mem_fraction or nbytes
         # is a no-op:
         _DASK_CACHE.cache.resize(nbytes)
+
     return _DASK_CACHE
 
 
@@ -134,7 +136,7 @@ def configure_dask(data, cache=True) -> DaskIndexer:
     if not _is_dask_data(data):
         return contextlib.nullcontext
 
-    _cache = resize_dask_cache() if cache else contextlib.nullcontext()
+    _cache = resize_dask_cache(nbytes) if cache else contextlib.nullcontext()
 
     @contextlib.contextmanager
     def dask_optimized_slicing(memfrac=0.5):

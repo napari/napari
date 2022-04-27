@@ -5,6 +5,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
+from ...._qt.widgets.qt_dask_settings import QtDaskSettingsWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
@@ -599,6 +600,30 @@ class HighlightSizePreviewWidget(
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
+class DaskSettingsWidget(
+    SchemaWidgetMixin, QtDaskSettingsWidget
+):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+
+    @state.setter
+    def state(self, state: dict):
+        self.setValue(state)
+        # return None
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+        if 'max_cache' in self.schema:
+            self.setMaximum(self.schema['max_cache'])
+
+        if "inc" in self.schema:
+            self.setIncrement(self.schema['inc'])
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property

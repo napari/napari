@@ -34,15 +34,18 @@ from napari.components.layerlist import LayerList
 from napari.components.overlays._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
-from napari.errors import MultipleReaderError, ReaderPluginError
-from napari.layers.base.base import Layer
-from napari.plugins import _npe2
-from napari.settings import get_settings
-from napari.utils import config, perf
-from napari.utils._proxies import ReadOnlyWrapper
-from napari.utils.action_manager import action_manager
-from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.history import (
+
+from ..components.camera import Camera
+from ..components.layerlist import LayerList
+from ..errors import MultipleReaderError, ReaderPluginError
+from ..layers.base.base import Layer
+from ..plugins import _npe2
+from ..settings import get_settings
+from ..utils import config, perf, resize_dask_cache
+from ..utils._proxies import ReadOnlyWrapper
+from ..utils.action_manager import action_manager
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.history import (
     get_open_history,
     get_save_history,
     update_open_history,
@@ -296,8 +299,24 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
+        settings = get_settings()
+
+        self._update_dask_settings()
+
+        settings.application.events.dask.connect(self._update_dask_settings)
+
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+    def _update_dask_settings(self, event=None):
+        """Update dask cache to match settings."""
+
+        if get_settings().application.dask['enabled']:
+            # If dask is enabled, then resize cache
+            resize_dask_cache(get_settings().application.dask['cache'])
+        else:
+            # Disable dask.
+            resize_dask_cache(0)
 
     @property
     def controls(self) -> QtLayerControlsContainer:
@@ -393,6 +412,9 @@ class QtViewer(QSplitter):
         """enable status on canvas enter"""
         self.viewer.status = "Ready"
         self.viewer.mouse_over_canvas = True
+        # set dask preferences from settings.
+
+        
 
     def _ensure_connect(self):
         # lazy load console

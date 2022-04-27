@@ -28,6 +28,7 @@ class WidgetBuilder:
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
+            "dask": widgets.DaskSettingsWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
