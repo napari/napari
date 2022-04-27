@@ -680,8 +680,12 @@ class Points(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max(self.data, axis=0)
-            mins = np.min(self.data, axis=0)
+            data = self.data
+            permutation = self._data_to_world._permutation
+            if permutation:
+                data = data[:, permutation]
+            maxs = np.max(data, axis=0)
+            mins = np.min(data, axis=0)
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -1332,7 +1336,9 @@ class Points(Layer):
             Array of coordinates for the N points in view
         """
         if len(self._indices_view) > 0:
-            data = self.data[np.ix_(self._indices_view, self._dims_displayed)]
+            data = self.data[
+                np.ix_(self._indices_view, self._data_dims_displayed)
+            ]
         else:
             # if no points in this slice send dummy data
             data = np.zeros((0, self._ndisplay))
@@ -1459,10 +1465,13 @@ class Points(Layer):
         """
         # Get a list of the data for the points in this slice
         not_disp = list(self._dims_not_displayed)
+        not_disp_data = list(self._data_dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
             if self.out_of_slice_display is True and self.ndim > 2:
-                distances = abs(self.data[:, not_disp] - indices[not_disp])
+                distances = abs(
+                    self.data[:, not_disp_data] - indices[not_disp]
+                )
                 sizes = self.size[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
                 size_match = sizes[matches]
@@ -1473,7 +1482,7 @@ class Points(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, scale
             else:
-                data = self.data[:, not_disp]
+                data = self.data[:, not_disp_data]
                 distances = np.abs(data - indices[not_disp])
                 matches = np.all(distances <= 0.5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
@@ -1831,13 +1840,14 @@ class Points(Layer):
         if len(index) > 0:
             index = list(index)
             disp = list(self._dims_displayed)
+            disp_data = list(self._data_dims_displayed)
             if self._drag_start is None:
-                center = self.data[np.ix_(index, disp)].mean(axis=0)
+                center = self.data[np.ix_(index, disp_data)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
-            center = self.data[np.ix_(index, disp)].mean(axis=0)
+            center = self.data[np.ix_(index, disp_data)].mean(axis=0)
             shift = np.array(coord)[disp] - center - self._drag_start
-            self.data[np.ix_(index, disp)] = (
-                self.data[np.ix_(index, disp)] + shift
+            self.data[np.ix_(index, disp_data)] = (
+                self.data[np.ix_(index, disp_data)] + shift
             )
             self.refresh()
         self.events.data(value=self.data)
@@ -1849,12 +1859,13 @@ class Points(Layer):
 
         if len(self._clipboard.keys()) > 0:
             not_disp = self._dims_not_displayed
+            not_disp_data = self._data_dims_not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
                 for i in not_disp
             ]
-            data[:, not_disp] = data[:, not_disp] + np.array(offset)
+            data[:, not_disp_data] = data[:, not_disp_data] + np.array(offset)
             self._data = np.append(self.data, data, axis=0)
             self._shown = np.append(
                 self.shown, deepcopy(self._clipboard['shown']), axis=0
