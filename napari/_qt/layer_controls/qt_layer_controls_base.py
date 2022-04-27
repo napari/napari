@@ -1,21 +1,19 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
 from ..widgets._slider_compat import QDoubleSlider
 
 
-class LayerListGridLayout(QGridLayout):
-    """Reusable grid layout for subwidgets in each QtLayerControls class"""
+class LayerFormLayout(QFormLayout):
+    """Reusable form layout for subwidgets in each QtLayerControls class"""
 
     def __init__(self, QWidget=None):
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(2)
-        self.setColumnMinimumWidth(0, 94)
-        self.setColumnStretch(1, 1)
         self.setSpacing(4)
+        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
 
 class QtLayerControls(QFrame):
@@ -50,8 +48,7 @@ class QtLayerControls(QFrame):
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.grid_layout = LayerListGridLayout(self)
-        self.setLayout(self.grid_layout)
+        self.setLayout(LayerFormLayout(self))
 
         sld = QDoubleSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)

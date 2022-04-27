@@ -261,38 +261,22 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 0, 1, 4)
-        self.grid_layout.addWidget(QLabel(trans._('label:')), 1, 0, 1, 1)
-        self.grid_layout.addLayout(color_layout, 1, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 2, 0, 1, 1)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel(trans._('brush size:')), 3, 0, 1, 1)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0, 1, 1)
-        self.grid_layout.addWidget(self.blendComboBox, 5, 1, 1, 3)
-        self.grid_layout.addWidget(self.renderLabel, 6, 0, 1, 1)
-        self.grid_layout.addWidget(self.renderComboBox, 6, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel(trans._('color mode:')), 7, 0, 1, 1)
-        self.grid_layout.addWidget(self.colorModeComboBox, 7, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel(trans._('contour:')), 8, 0, 1, 1)
-        self.grid_layout.addWidget(self.contourSpinBox, 8, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('n edit dim:')), 9, 0, 1, 1)
-        self.grid_layout.addWidget(self.ndimSpinBox, 9, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('contiguous:')), 10, 0, 1, 1)
-        self.grid_layout.addWidget(self.contigCheckBox, 10, 1, 1, 1)
-        self.grid_layout.addWidget(
-            QLabel(trans._('preserve\nlabels:')), 11, 0, 1, 2
+        self.layout().addRow(button_row)
+        self.layout().addRow(trans._('label:'), color_layout)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
+        self.layout().addRow(trans._('contour:'), self.contourSpinBox)
+        self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
+        self.layout().addRow(trans._('contiguous:'), self.contigCheckBox)
+        self.layout().addRow(
+            trans._('preserve\nlabels:'), self.preserveLabelsCheckBox
         )
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 11, 1, 1, 1)
-        self.grid_layout.addWidget(
-            QLabel(trans._('show\nselected:')), 11, 2, 1, 1
+        self.layout().addRow(
+            trans._('show\nselected:'), self.selectedColorCheckbox
         )
-        self.grid_layout.addWidget(self.selectedColorCheckbox, 11, 3, 1, 1)
-        self.grid_layout.setRowStretch(12, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
 
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.
