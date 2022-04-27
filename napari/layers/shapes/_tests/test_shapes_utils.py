@@ -10,6 +10,39 @@ from napari.layers.shapes._shapes_utils import (
 
 W_DATA = [[0, 3], [1, 0], [2, 3], [5, 0], [2.5, 5]]
 
+
+def _regen_testcases():
+    """
+    In case the below test cases need to be update here
+    is a simple function you can run to regenerate the `cases` variable below.
+    """
+    exec(
+        """
+from napari.layers.shapes._tests.test_shapes_utils import (
+    generate_2D_edge_meshes,
+    W_DATA,
+)
+
+
+mesh_cases = [
+    (W_DATA, False, 3, False),
+    (W_DATA, True, 3, False),
+    (W_DATA, False, 3, True),
+    (W_DATA, True, 3, True),
+]
+
+
+s = '['
+for args in mesh_cases:
+    cot = generate_2D_edge_meshes(*args)
+    s = s + str(['W_DATA', *args[1:], cot]) + ','
+s += ']'
+s = s.replace("'W_DATA'", 'W_DATA')
+print(s)
+"""
+    )
+
+
 cases = [
     [
         W_DATA,
