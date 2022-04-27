@@ -396,6 +396,12 @@ class ShapeList:
 
         m_mesh_vertices_count = len(self._mesh.vertices)
 
+        if face_colors is None:
+            face_colors = np.tile(np.array([1, 1, 1, 1]), (len(shapes), 1))
+
+        if edge_colors is None:
+            edge_colors = np.tile(np.array([0, 0, 0, 1]), (len(shapes), 1))
+
         for shape, face_color, edge_color in zip(
             shapes, face_colors, edge_colors
         ):
@@ -412,12 +418,7 @@ class ShapeList:
             self.shapes.append(shape)
             all_z_index.append(shape.z_index)
 
-            if face_color is None:
-                face_color = np.array([1, 1, 1, 1])
             all_face_color.append(face_color)
-
-            if edge_color is None:
-                edge_color = np.array([0, 0, 0, 1])
             all_edge_color.append(edge_color)
 
             all_vertices.append(shape.data_displayed)

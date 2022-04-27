@@ -85,7 +85,7 @@ if __name__ == "__main__":
     kwargs = dict(
         shape_type=args.type,
         edge_color=[1, 0.5, 0.2, 1],
-        properties=properties,
+        # properties=properties,
         face_color='class',
         face_color_cycle=face_color_cycle,
     )
