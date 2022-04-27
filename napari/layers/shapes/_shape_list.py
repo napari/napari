@@ -381,6 +381,13 @@ class ShapeList:
         `shape_index`, whereas `add_multiple` will append them as a full batch
         """
 
+        def _make_index(length, shape_index, cval=0):
+            """Same but faster than `np.repeat([[shape_index, cval]], length, axis=0)`"""
+            index = np.empty((length, 2), np.int32)
+            index.fill(cval)
+            index[:, 0] = shape_index
+            return index
+
         all_z_index = list()
         all_face_color = list()
         all_edge_color = list()
@@ -427,7 +434,7 @@ class ShapeList:
             all_index.append(index)
 
             # Add faces to mesh
-            m = m_mesh_vertices_count
+            m_tmp = m_mesh_vertices_count
             vertices = shape._face_vertices
             all_mesh_vertices.append(vertices)
             m_mesh_vertices_count += len(vertices)
@@ -435,28 +442,19 @@ class ShapeList:
             all_mesh_vertices_centers.append(vertices)
             vertices = np.zeros(shape._face_vertices.shape)
             all_mesh_vertices_offsets.append(vertices)
-
-            # same but faster than:
-            # index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
-            index = np.zeros((len(vertices), 2), np.int32)
-            index[:, 0] = shape_index
+            index = _make_index(len(vertices), shape_index, cval=0)
             all_mesh_vertices_index.append(index)
 
-            triangles = shape._face_triangles + m
+            triangles = shape._face_triangles + m_tmp
             all_mesh_triangles.append(triangles)
-
-            # same but faster than:
-            # index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
-            index = np.zeros((len(triangles), 2), np.int32)
-            index[:, 0] = shape_index
-
+            index = _make_index(len(triangles), shape_index, cval=0)
             all_mesh_triangles_index.append(index)
 
             color_array = np.repeat([face_color], len(triangles), axis=0)
             all_mesh_triangles_colors.append(color_array)
 
             # Add edges to mesh
-            m = m_mesh_vertices_count
+            m_tmp = m_mesh_vertices_count
 
             vertices = (
                 shape._edge_vertices + shape.edge_width * shape._edge_offsets
@@ -470,19 +468,13 @@ class ShapeList:
             vertices = shape._edge_offsets
             all_mesh_vertices_offsets.append(vertices)
 
-            # same but faster than:
-            # index = np.repeat([[shape_index, 1]], len(vertices), axis=0)
-            index = np.ones((len(vertices), 2), np.int32)
-            index[:, 0] = shape_index
+            index = _make_index(len(vertices), shape_index, cval=1)
             all_mesh_vertices_index.append(index)
 
-            triangles = shape._edge_triangles + m
+            triangles = shape._edge_triangles + m_tmp
             all_mesh_triangles.append(triangles)
 
-            # same but faster than:
-            # index = np.repeat([[shape_index, 1]], len(triangles), axis=0)
-            index = np.ones((len(triangles), 2), np.int32)
-            index[:, 0] = shape_index
+            index = _make_index(len(triangles), shape_index, cval=1)
             all_mesh_triangles_index.append(index)
 
             color_array = np.repeat([edge_color], len(triangles), axis=0)
