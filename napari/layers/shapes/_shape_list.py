@@ -162,10 +162,9 @@ class ShapeList:
                 )
             )
 
-        update_method = getattr(self, f'update_{attribute}_color')
-
-        for i, col in enumerate(colors):
-            update_method(i, col, update=False)
+        update_method = getattr(self, f'update_{attribute}_colors')
+        indices = np.arange(len(colors))
+        update_method(indices, colors, update=False)
         self._update_displayed()
 
     @property
@@ -715,6 +714,19 @@ class ShapeList:
         if update:
             self._update_displayed()
 
+    def update_edge_colors(self, indices, edge_colors, update=True):
+        """same as update_edge_color() but for multiple indices/edgecolors at once"""
+        self._edge_color[indices] = edge_colors
+        all_indices = np.bitwise_and(
+            np.isin(self._mesh.triangles_index[:, 0], indices),
+            self._mesh.triangles_index[:, 1] == 1,
+        )
+        self._mesh.triangles_colors[all_indices] = self._edge_color[
+            self._mesh.triangles_index[all_indices, 0]
+        ]
+        if update:
+            self._update_displayed()
+
     def update_face_color(self, index, face_color, update=True):
         """Updates the face color of a single shape located at index.
 
@@ -733,6 +745,19 @@ class ShapeList:
         self._face_color[index] = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         self._mesh.triangles_colors[indices] = self._face_color[index]
+        if update:
+            self._update_displayed()
+
+    def update_face_colors(self, indices, face_colors, update=True):
+        """same as update_face_color() but for multiple indices/facecolors at once"""
+        self._face_color[indices] = face_colors
+        all_indices = np.bitwise_and(
+            np.isin(self._mesh.triangles_index[:, 0], indices),
+            self._mesh.triangles_index[:, 1] == 0,
+        )
+        self._mesh.triangles_colors[all_indices] = self._face_color[
+            self._mesh.triangles_index[all_indices, 0]
+        ]
         if update:
             self._update_displayed()
 

@@ -6,7 +6,7 @@ import numpy as np
 import napari
 
 
-def create_sample_coords(n_polys=3000, n_vertices=16):
+def create_sample_coords(n_polys=3000, n_vertices=32):
     """random circular polygons with given number of vertices"""
     center = np.random.randint(0, 1000, (n_polys, 2))
     radius = (
@@ -61,37 +61,42 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v", "--view", action="store_true", help='show napari viewer'
     )
+    parser.add_argument(
+        "--properties", action="store_true", help='add dummy shape properties'
+    )
 
     args = parser.parse_args()
 
     coords = create_sample_coords(args.n_polys)
 
     if args.type == 'rectangle':
-        coords = coords[:, [2, 10]]
+        coords = coords[:, [4, 20]]
 
     if args.concat:
         coords = coords.reshape((1, -1, 2))
 
     print(f'number of polygons: {len(coords)}')
     print(f'layer type: {args.type}')
+    print(f'properties: {args.properties}')
 
     properties = {
         'class': (['A', 'B', 'C', 'D'] * (args.n_polys // 4 + 1))[
             : args.n_polys
         ],
     }
-    face_color_cycle = ['blue', 'magenta', 'green']
+    color_cycle = ['blue', 'magenta', 'green']
 
     kwargs = dict(
         shape_type=args.type,
-        edge_color=[1, 0.5, 0.2, 1],
-        # properties=properties,
-        face_color='class',
-        face_color_cycle=face_color_cycle,
+        properties=properties if args.properties else None,
+        face_color='class' if args.properties else [1,1,1,1],
+        face_color_cycle=color_cycle,
+        edge_color='class' if args.properties else [1,1,1,1],
+        edge_color_cycle=color_cycle,
     )
 
     path = time_me(
-        "time to create path",
+        "time to create single path",
         lambda: napari.layers.shapes._shapes_models.Path(coords[0]),
     )
 

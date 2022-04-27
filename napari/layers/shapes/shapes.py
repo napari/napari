@@ -1306,7 +1306,6 @@ class Shapes(Layer):
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 colors = self._map_color(attribute, update_color_mapping)
                 setattr(self._data_view, f'{attribute}_color', colors)
-
                 color_event = getattr(self.events, f'{attribute}_color')
                 color_event()
 
