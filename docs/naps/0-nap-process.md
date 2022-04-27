@@ -1,15 +1,15 @@
----
-Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
-Author: "Andy Sweet <mailto:andrewdsweet@gmail.com>"
-Author: "Kevin Yamauchi <mailto:kevin.yamauchi@gmail.com>"
-Created: '2022-03-23'
-Status: Active
-Type: Process
----
-
 (nap0)=
 
 # NAP 0 — Purpose and Process
+
+```{eval-rst}
+:Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
+:Author: "Andy Sweet <mailto:andrewdsweet@gmail.com>"
+:Author: "Kevin Yamauchi <mailto:kevin.yamauchi@gmail.com>"
+:Created: '2022-03-23'
+:Status: Active
+:Type: Process
+```
 
 ## What is a NAP?
 
@@ -105,7 +105,7 @@ There are three kinds of NAPs:
    library itself. They may propose an implementation, but not to
    napari's codebase; they require community consensus. Examples include
    procedures, guidelines, changes to the
-   {doc}`decision-making process <napari-governance>`, and
+   {ref}`decision-making process <napari-governance>`, and
    changes to the tools or environment used in napari development.
    Any meta-NAP is also considered a Process NAP.
 
@@ -132,8 +132,10 @@ for the idea (e.g., `nap-35-lazy-slicing.md`). The draft must use the
 {ref}`nap-template` file.
 
 Once the PR is in place, the NAP should be announced on various channels
-for discussion, including the [#naps channel on Zulip]() and, if the NAP
-has significant user implications, on the [image.sc forum]().
+for discussion, including the
+[#naps channel on Zulip](https://napari.zulipchat.com/#narrow/stream/322105-naps) and, if the NAP
+has significant user implications, on the
+[image.sc forum](https://forum.image.sc/).
 
 At the earliest convenience, the PR should be merged (regardless of whether
 it is accepted during discussion). A NAP that outlines a coherent argument
@@ -259,7 +261,7 @@ proposed for acceptance again later once the objections are resolved.
 In unusual cases, when no consensus can be reached between core developers,
 the [napari Steering Council] may be asked to decide whether a
 controversial NAP is accepted, according to our
-{doc}`governance <napari-governance>`.
+{ref}`governance <napari-governance>`.
 
 ### Maintenance
 
