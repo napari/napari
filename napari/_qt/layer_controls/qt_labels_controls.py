@@ -517,6 +517,7 @@ class QtColorBox(QWidget):
             self._on_selected_label_change
         )
         self.layer.events.opacity.connect(self._on_opacity_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
 
         self.setAttribute(Qt.WA_DeleteOnClose)
 
@@ -525,12 +526,18 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip(trans._('Selected label color'))
 
+        self.color = None
+
     def _on_selected_label_change(self):
         """Receive layer model label selection change event & update colorbox."""
         self.update()
 
     def _on_opacity_change(self):
         """Receive layer model label selection change event & update colorbox."""
+        self.update()
+
+    def _on_colormap_change(self):
+        """Receive label colormap change event & update colorbox."""
         self.update()
 
     def paintEvent(self, event):
@@ -543,6 +550,7 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self.layer._selected_color is None:
+            self.color = None
             for i in range(self._height // 4):
                 for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
@@ -560,6 +568,7 @@ class QtColorBox(QWidget):
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
+            self.color = tuple(color)
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
