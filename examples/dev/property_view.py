@@ -4,36 +4,51 @@ from napari.utils.property_view import property_view
 
 
 class A(EventedModel):
-    x: EventedList[int] = [1, 2]
-    y: EventedList[int] = [3, 5]
+    a: EventedList = EventedList([10, 20])
+
+
+class B(EventedModel):
+    b: A = A()
+
+
+class M(EventedModel):
+    x: B = B()
+    y: B = B(b=A(a=EventedList(([1, 2]))))
+    f: int = 2
 
     class Config:
-        dependencies = {'z': ['x', 'y']}
+        dependencies = {
+            'z': ['x', 'y'],
+            'w': ['x', 'f'],
+        }
 
     @property_view
-    def z(self) -> list[int]:
-        return [x + y for x, y in zip(self.x, self.y)]
+    def z(self):
+        return B(b=A(a=EventedList([self.x.b.a[0], self.y.b.a[1]])))
 
     @z.setter
     def z(self, value):
-        self.x = [(z - y) for y, z in zip(self.y, value)]
+        self.x.b.a[0] = value.b.a[0]
+        self.y.b.a[1] = value.b.a[1]
 
     @property_view
-    def xy(self) -> list[list[int]]:
-        return [[x, y] for x, y in zip(self.x, self.y)]
+    def w(self):
+        return [[el * self.f for el in self.x.b.a], [el // self.f for el in self.y.b.a]]
 
-    @xy.setter
-    def xy(self, value):
-        self.x, self.y = zip(*value)
+    @w.setter
+    def w(self, value):
+        self.x.b.a[0] = value[0][0] // self.f
+        self.x.b.a[1] = value[0][1] // self.f
+        self.y.b.a[0] = value[1][0] * self.f
+        self.y.b.a[1] = value[1][1] * self.f
 
 
-a = A()
-a.events.connect(lambda x: print(f'event {x.type} from source {x.source}'))
+m = M()
+for field in 'xyzw':
+    getattr(m.events, field).connect(lambda _, field=field: print(f'Event {field} triggered'))
 
-print(a)
-print('a.z[0] = 8')
-a.z[0] = 8
-print(a)
-print('a.xy[0][0] = 100')
-a.xy[0][0] = 100
-print(a)
+print(m)
+m.z.b.a[1] = 12
+print(m)
+m.w = [[1, 2], [3, 4]]
+print(m)

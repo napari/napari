@@ -198,13 +198,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         self._events.source = self
         # add event emitters for each field which is mutable
-        event_names = [
+        mutable_fields = [
             name
             for name, field in self.__fields__.items()
             if field.field_info.allow_mutation
         ]
-        event_names.extend(self.__property_setters__)
-        self._events.add(**dict.fromkeys(event_names))
+        self._events.add(
+            **dict.fromkeys(mutable_fields + list(self.__property_setters__))
+        )
+
+        # hook up events from children
+        for name, field in self.__fields__.items():
+            value = getattr(self, name)
+            if hasattr(value, 'events'):
+                # TODO: won't track source all the way in...
+                value.events.connect(getattr(self.events, name))
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed

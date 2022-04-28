@@ -1,51 +1,95 @@
-class PropertyView:
+from wrapt import ObjectProxy
+
+
+class _BlackHole:
+    """
+    Dummy object that accepts setattr and setitem and does nothing
+    """
+
+    def __setattr__(self, name, value):
+        pass
+
+    def __setitem__(self, key, value):
+        pass
+
+
+class PropertyView(ObjectProxy):
     """
     Proxy object that wraps the return value of a property so that any changes
     to it are redirected to the property setter (therefore changing the parent object)
     """
 
-    def __init__(self, viewed, key, parent, prop=None):
-        self._viewed = viewed
-        self._key = key
-        self._parent = parent
-        self._prop = prop
+    def __init__(self, wrapped, parent=None, key=None, attr=None, setter=None):
+        super().__init__(wrapped)
+        self._self_parent = parent
+        self._self_key = key
+        self._self_attr = attr
+        self._self_setter = setter
 
-    def _call_setter(self):
-        # this won't fire for nested views, so only the top level does something
-        if self._prop is not None:
-            self._prop.fset(self._parent, self._viewed)
+    def _self_call_setter(self):
+        """
+        Call the first ancestor's setter
+        """
+        if self._self_setter is None:
+            self._self_parent._self_call_setter()
+        else:
+            self._self_setter(self.__wrapped__)
+
+    def _self_ascend(self):
+        """
+        Return the same as self, but as an element/attribute of the parent's wrapped object.
+        For example:
+            self == PropertyView(parent.__wrapped__)[1]
+            self._self_ascend() == parent.__wrapped__[1]
+        This allows to cascade setting items/attributes up the chain without going recursive.
+        """
+        if self._self_key is not None:
+            one_up = self._self_parent.__wrapped__[self._self_key]
+        elif self._self_attr is not None:
+            one_up = getattr(self._self_parent.__wrapped__, self._self_attr)
+        else:
+            one_up = _BlackHole()
+        return one_up
 
     def __getattribute__(self, name):
-        # proxy as much as possible
-        if name in ('_viewed', '_key', '_prop', '_parent', '_call_setter'):
+        # _self_ methods are special for ObjectProxy, and we never really want views on dunder methods
+        # anything else should be safe to proxy
+        if name.startswith('_self_') or (
+            name.startswith('__') and name.endswith('__')
+        ):
             return super().__getattribute__(name)
-        return getattr(self._viewed, name)
+        return PropertyView(
+            getattr(self.__wrapped__, name), attr=name, parent=self
+        )
 
-    def __getitem__(self, k):
+    def __setattr__(self, name, value):
+        if name.startswith('_self_') or (
+            name.startswith('__') and name.endswith('__')
+        ):
+            super().__setattr__(name, value)
+            return
+
+        setattr(self.__wrapped__, name, value)
+        setattr(self._self_ascend(), name, value)
+
+        self._self_call_setter()
+
+    def __getitem__(self, key):
         # recursively return views so you can index as deep as you want
-        return PropertyView(self._viewed[k], k, self)
+        return PropertyView(self.__wrapped__[key], key=key, parent=self)
 
-    def __setitem__(self, k, v):
-        self._viewed[k] = v
-        if self._prop is None:
-            # if nested, update the *parent*. (directly the viewed object to avoid recursion)
-            self._parent._viewed[self._key][k] = v
-            self._parent._call_setter()
-        else:
-            # call directly setter
-            self._call_setter()
-
-    def __iter__(self, k, v):
-        yield from self._viewed
+    def __setitem__(self, key, value):
+        self.__wrapped__[key] = value
+        self._self_ascend()[key] = value
+        self._self_call_setter()
 
     def __repr__(self):
-        return f'View({repr(self._viewed)})'
-
-    # more proxy methods
+        return f'PropertyView({repr(self.__wrapped__)})'
 
 
 class property_view(property):
     def __get__(self, obj, objtype=None):
-        return PropertyView(
-            super().__get__(obj, objtype), key=None, parent=obj, prop=self
-        )
+        def bound_setter(x):
+            self.fset(obj, x)
+
+        return PropertyView(super().__get__(obj, objtype), setter=bound_setter)
