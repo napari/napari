@@ -47,8 +47,14 @@ m = M()
 for field in 'xyzw':
     getattr(m.events, field).connect(lambda _, field=field: print(f'Event {field} triggered'))
 
-print(m)
+print(f'>>> {m=}')
+print('>>> m.z.b.a[1] = 12')
+# deep nested properties are fine
 m.z.b.a[1] = 12
-print(m)
+print('>>> m.w = [[1, 2], [3, 4]]')
+# complex properties trigger all the appropriate events
 m.w = [[1, 2], [3, 4]]
-print(m)
+print('>>> m.w[1][0] = 2')
+# but if only some parts of nested properties are updated, only the relative events are triggered
+m.w[1][0] = 2
+print(f'>>> {m=}')
