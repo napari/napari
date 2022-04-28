@@ -16,7 +16,6 @@
 
 
 import qtgallery
-
 import napari
 
 release = napari.__version__
@@ -166,3 +165,21 @@ def setup(app):
 
     """
     app.registry.source_suffix.pop(".ipynb", None)
+
+
+from jinja2.filters import FILTERS
+from importlib import import_module
+
+def get_attributes(item, obj, modulename):
+    """Filters attributes to be used in autosummary.
+
+    Fixes import errors when documenting inherited attributes with autosummary.
+
+    """
+    module = import_module(modulename)
+    if hasattr(getattr(module, obj), item):
+        return f"~{obj}.{item}"
+    else:
+        return ""
+
+FILTERS["get_attributes"] = get_attributes
