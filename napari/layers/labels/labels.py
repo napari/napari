@@ -412,6 +412,11 @@ class Labels(_ImageBase):
         self.refresh()
         self.events.selected_label()
 
+    @_ImageBase.colormap.setter
+    def colormap(self, colormap):
+        super()._set_colormap(colormap)
+        self._selected_color = self.get_color(self.selected_label)
+
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
@@ -641,11 +646,11 @@ class Labels(_ImageBase):
                 custom_colormap,
                 label_color_index,
             ) = color_dict_to_colormap(self.color)
-            self.colormap = custom_colormap
+            super()._set_colormap(custom_colormap)
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
-            self.colormap = self._random_colormap
+            super()._set_colormap(self._random_colormap)
 
         else:
             raise ValueError(trans._("Unsupported Color Mode"))

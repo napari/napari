@@ -22,10 +22,17 @@ import numpy as np
 from pydantic import Extra, Field, validator
 
 from .. import layers
+from ..errors import (
+    MissingAssociatedReaderError,
+    MultipleReaderError,
+    NoAvailableReaderError,
+    ReaderPluginError,
+)
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
@@ -594,8 +601,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             expanded as channels.
         depiction : str
             Selects a preset volume depiction mode in vispy
-              * volume: images are rendered as 3D volumes.
-              * plane: images are rendered as 2D planes embedded in 3D.
+
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
         iso_threshold : float or list
             Threshold for isosurface. If a list then must be same length as the
             axis that is being expanded as channels.
@@ -886,24 +894,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers : list
             A list of any layers that were added to the viewer.
         """
+
         paths = [path] if isinstance(path, (Path, str)) else path
-        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-        if not isinstance(paths, (tuple, list)):
-            raise ValueError(
-                trans._(
-                    "'path' argument must be a string, list, or tuple",
-                    deferred=True,
-                )
-            )
 
         if stack:
-            return self._add_layers_with_plugins(
-                paths,
-                kwargs=kwargs,
-                plugin=plugin,
-                layer_type=layer_type,
-                stack=stack,
+            layers = self._open_or_raise_error(
+                paths, kwargs, layer_type, stack
             )
+            return layers
 
         added: List[Layer] = []  # for layers that get added
         with progress(
@@ -914,15 +912,148 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
-                added.extend(
-                    self._add_layers_with_plugins(
-                        [_path],
-                        kwargs=kwargs,
-                        plugin=plugin,
-                        layer_type=layer_type,
-                        stack=stack,
+                if plugin:
+                    added.extend(
+                        self._add_layers_with_plugins(
+                            [_path],
+                            kwargs=kwargs,
+                            plugin=plugin,
+                            layer_type=layer_type,
+                            stack=stack,
+                        )
                     )
+                # no plugin choice was made
+                else:
+                    layers = self._open_or_raise_error(
+                        [_path], kwargs, layer_type, stack
+                    )
+                    added.extend(layers)
+
+        return added
+
+    def _open_or_raise_error(
+        self,
+        paths: List[Path | str],
+        kwargs: Dict[str, Any] = {},
+        layer_type: Optional[str] = None,
+        stack: bool = False,
+    ):
+        """Open paths if plugin choice is unambiguous, raising any errors.
+
+        This function will open paths if there is no plugin choice to be made
+        i.e. there is a preferred reader associated with this file extension,
+        or there is only one plugin available. Any errors that occur during
+        the opening process are raised. If multiple plugins
+        are available to read these paths, an error is raised specifying
+        this.
+
+        Errors are also raised by this function when the given paths are not
+        a list or tuple, or if no plugins are available to read the files.
+        This assumes all files have the same extension, as other cases
+        are not yet supported.
+
+        This function is called from ViewerModel.open, which raises any
+        errors returned. The QtViewer also calls this method but catches
+        exceptions and opens a dialog for users to make a plugin choice.
+
+        Parameters
+        ----------
+        paths : List[Path | str]
+            list of file paths to open
+        kwargs : Dict[str, Any], optional
+            keyword arguments to pass to layer adding method, by default {}
+        layer_type : Optional[str], optional
+            layer type for paths, by default None
+        stack : bool, optional
+            True if files should be opened as a stack, by default False
+
+        Returns
+        -------
+        added
+            list of layers added
+        plugin
+            plugin used to try opening paths, if any
+
+        Raises
+        ------
+        TypeError
+            when paths is *not* a list or tuple
+        NoAvailableReaderError
+            when no plugins are available to read path
+        ReaderPluginError
+            when reading with only available or prefered plugin fails
+        MultipleReaderError
+            when multiple readers are available to read the path
+        """
+        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
+
+        added = []
+        plugin = None
+        _path = paths[0]
+        # we want to display the paths nicely so make a help string here
+        path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
+
+        readers = get_potential_readers(_path)
+        if not readers:
+            raise NoAvailableReaderError(
+                trans._(
+                    'No plugin found capable of reading {path_message}.',
+                    path_message=path_message,
+                    deferred=True,
+                ),
+                paths,
+            )
+
+        plugin = get_preferred_reader(_path)
+
+        # preferred plugin exists, or we just have one plugin available
+        if plugin in readers or (not plugin and len(readers) == 1):
+            plugin = plugin or next(iter(readers.keys()))
+            try:
+                added = self._add_layers_with_plugins(
+                    paths,
+                    kwargs=kwargs,
+                    stack=stack,
+                    plugin=plugin,
+                    layer_type=layer_type,
                 )
+            # plugin failed
+            except Exception as e:
+                raise ReaderPluginError(
+                    trans._(
+                        'Tried opening with {plugin}, but failed.',
+                        deferred=True,
+                        plugin=plugin,
+                    ),
+                    plugin,
+                    paths,
+                ) from e
+
+        # preferred plugin doesn't exist
+        elif plugin:
+            raise MissingAssociatedReaderError(
+                trans._(
+                    "Can't find {plugin} plugin associated with {extension} files.",
+                    plugin=plugin,
+                    extension=os.path.splitext(paths[0])[1],
+                    deferred=True,
+                ),
+                plugin,
+                paths,
+            )
+        # multiple plugins
+        else:
+            raise MultipleReaderError(
+                trans._(
+                    "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
+                    path_message=path_message,
+                    plugins=readers,
+                    deferred=True,
+                ),
+                list(readers.keys()),
+                paths,
+            )
+
         return added
 
     def _add_layers_with_plugins(
