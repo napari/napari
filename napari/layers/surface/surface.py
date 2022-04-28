@@ -322,9 +322,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(self.vertices) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max(self.vertices, axis=0)
-            mins = np.min(self.vertices, axis=0)
-
+            vertices = self.vertices
+            maxs = np.max(vertices, axis=0)
+            mins = np.min(vertices, axis=0)
+            permutation = list(self._data_to_world._permutation)
+            if permutation:
+                maxs = maxs[permutation]
+                mins = mins[permutation]
             # The full dimensionality and shape of the layer is determined by
             # the number of additional vertex value dimensions and the
             # dimensionality of the vertices themselves
@@ -396,27 +400,29 @@ class Surface(IntensityVisualizationMixin, Layer):
             # and not displayed, ignoring the additional dimensions
             # corresponding to the vertex_values.
             indices = np.array(self._slice_indices[-vertex_ndim:])
-            disp = [
-                d
-                for d in np.subtract(self._dims_displayed, values_ndim)
-                if d >= 0
-            ]
-            not_disp = [
-                d
-                for d in np.subtract(self._dims_not_displayed, values_ndim)
-                if d >= 0
-            ]
+
+            def _trim_dims(dims):
+                return [
+                    d
+                    for d in np.subtract(self._dims_displayed, values_ndim)
+                    if d >= 0
+                ]
+
+            not_disp = _trim_dims(self._dims_not_displayed)
+            disp_data = _trim_dims(self._data_dims_displayed)
+            not_disp_data = _trim_dims(self._data_dims_not_displayed)
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
             not_disp = list(self._dims_not_displayed)
-            disp = list(self._dims_displayed)
+            not_disp_data = list(self._data_dims_not_displayed)
+            disp_data = list(self._data_dims_displayed)
 
-        self._data_view = self.vertices[:, disp]
+        self._data_view = self.vertices[:, disp_data]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
         elif vertex_ndim > self._ndisplay:
-            vertices = self.vertices[:, not_disp].astype('int')
+            vertices = self.vertices[:, not_disp_data].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
             matches = np.where(matches)[0]
