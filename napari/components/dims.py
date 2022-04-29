@@ -66,31 +66,51 @@ class Dims(EventedModel):
         ``displayed`` dimensions.
     """
 
-    # fields
+    # fields (order matters for validation!)
     ndim: int = 2
+    range: NestableEventedList[
+        NestableEventedList[float]
+    ] = NestableEventedList([[0.0, 2.0], [0.0, 2.0]])
+    span: NestableEventedList[
+        NestableEventedList[float]
+    ] = NestableEventedList([[0.0, 0.0], [0.0, 0.0]])
+    step: EventedList[float] = EventedList([1.0, 1.0])
+    order: EventedList[int] = EventedList([0, 1])
+    axis_labels: EventedList[str] = EventedList(['0', '1'])
     ndisplay: Literal[2, 3] = 2
-    order: EventedList[int] = ()
-    axis_labels: EventedList[str] = ()
-    range: EventedList[EventedList[float, float]] = ()
-    span: EventedList[EventedList[float, float]] = ()
-    step: EventedList[float] = ()
     last_used: int = 0
 
     # private vars
     _scroll_progress: int = 0
 
-    # validators
-    @validator('axis_labels', pre=True)
-    def _string_to_list(v):
-        if isinstance(v, str):
-            return list(v)
-        return v
+    # pre validators (applied first, on the raw inputs)
 
     @validator('range', 'span', pre=True)
     def _sort_values(v):
-        return [sorted(d) for d in v]
+        return [sorted([v1, v2]) for v1, v2 in v]
 
-    @root_validator
+    @validator('step', 'order', 'axis_labels')
+    def _listify(v):
+        return list(v)
+
+    class Config:
+        dependencies = {
+            '_span_step': ['span', 'range', 'step'],
+            'nsteps': ['range', 'step'],
+            'thickness': ['span'],
+            '_thickness_step': ['span', 'step'],
+            'point': ['span'],
+            '_point_step': ['span', 'range', 'step'],
+            'current_step': ['span', 'range', 'step'],
+            'displayed': ['order', 'ndisplay'],
+            'not_displayed': ['order', 'ndisplay'],
+            'displayed_order': ['order', 'ndisplay'],
+        }
+
+    # basic root validator, applied after pre but before anything else
+    # (including normal pydantic validation)
+    # this is exectuted ALWAYS, including on any one setattribute
+    @root_validator(skip_on_failure=True)
     def _check_dims(cls, values):
         """Check the consitency of dimensionaity for all attributes
 
@@ -102,10 +122,11 @@ class Dims(EventedModel):
         ndim = values['ndim']
 
         values['range'] = ensure_ndim(
-            values['range'], ndim, default=(0.0, 2.0)
+            values['range'], ndim, default=[0.0, 2.0]
         )
 
-        values['span'] = ensure_ndim(values['span'], ndim, default=(0.0, 0.0))
+        values['span'] = ensure_ndim(values['span'], ndim, default=[0.0, 0.0])
+
         # ensure span is limited to range
         for (low, high), (min_val, max_val) in zip(
             values['span'], values['range']
@@ -133,10 +154,10 @@ class Dims(EventedModel):
                     )
                 )
 
-        # order and label defailt computation is too weird to include in ensure_ndim()
+        # order and label default computation is too weird to include in ensure_ndim()
         # Check the order tuple has same number of elements as ndim
         if len(values['order']) < ndim:
-            values['order'] = [range(ndim - len(values['order']))] + [
+            values['order'] = list(range(ndim - len(values['order']))) + [
                 o + ndim - len(values['order']) for o in values['order']
             ]
         elif len(values['order']) > ndim:
@@ -178,35 +199,35 @@ class Dims(EventedModel):
         self.events.span.connect(self.events.current_step)
 
     @property
-    def _span_step(self) -> NestableEventedList[float]:
-        return NestableEventedList(
-            (
+    def _span_step(self) -> list[float]:
+        return [
+            [
                 int(round((low - min_val) / step)),
                 int(round((high - min_val) / step)),
-            )
+            ]
             for (low, high), (min_val, _), step in zip(
                 self.span, self.range, self.step
             )
-        )
+        ]
 
     @_span_step.setter
     def _span_step(self, value):
         self.span = [
-            (
+            [
                 min_val + low * step,
                 min_val + high * step,
-            )
+            ]
             for (low, high), (min_val, _), step in zip(
                 value, self.range, self.step
             )
         ]
 
     @property
-    def nsteps(self) -> EventedList[float]:
-        return EventedList(
+    def nsteps(self) -> list[float]:
+        return [
             int((max_val - min_val) // step)
             for (min_val, max_val), step in zip(self.range, self.step)
-        )
+        ]
 
     @nsteps.setter
     def nsteps(self, value):
@@ -216,8 +237,8 @@ class Dims(EventedModel):
         ]
 
     @property
-    def thickness(self) -> EventedList[float]:
-        return EventedList(high - low for low, high in self.span)
+    def thickness(self) -> list[float]:
+        return [high - low for low, high in self.span]
 
     @thickness.setter
     def thickness(self, value):
@@ -229,15 +250,15 @@ class Dims(EventedModel):
             thickness_change = min((thickness - (high - low)) / 2, max_change)
             new_low = max(min_val, low - thickness_change)
             new_high = min(max_val, high + thickness_change)
-            span.append(new_low, new_high)
+            span.append([new_low, new_high])
         self.span = span
 
     @property
-    def _thickness_step(self) -> EventedList[float]:
-        return EventedList(
+    def _thickness_step(self) -> list[float]:
+        return [
             thickness / step
             for thickness, step in zip(self.thickness, self.step)
-        )
+        ]
 
     @_thickness_step.setter
     def _thickness_step(self, value):
@@ -246,8 +267,8 @@ class Dims(EventedModel):
         ]
 
     @property
-    def point(self) -> EventedList[float]:
-        return EventedList((low + high) / 2 for low, high in self.span)
+    def point(self) -> list[float]:
+        return [(low + high) / 2 for low, high in self.span]
 
     @point.setter
     def point(self, value):
@@ -258,17 +279,17 @@ class Dims(EventedModel):
             half_thk = thickness / 2
             min_pt, max_pt = (min_val + half_thk, max_val - half_thk)
             point = np.clip(point, min_pt, max_pt)
-            span.append(point - half_thk, point + half_thk)
+            span.append([point - half_thk, point + half_thk])
         self.span = span
 
     @property
     def _point_step(self):
-        return EventedList(
+        return [
             int(round((point - min_val) / step))
             for point, (min_val, _), step in zip(
                 self.point, self.range, self.step
             )
-        )
+        ]
 
     @_point_step.setter
     def _point_step(self, value):
@@ -278,7 +299,7 @@ class Dims(EventedModel):
         ]
 
     @property
-    def current_step(self) -> EventedList[int]:
+    def current_step(self) -> list[int]:
         warnings.warn(
             trans._(
                 'Dims.current_step is deprecated. Use Dims._point_step instead.'
@@ -289,7 +310,7 @@ class Dims(EventedModel):
         return self._point_step
 
     @current_step.setter
-    def current_step(self, value: EventedList[int]):
+    def current_step(self, value: list[int]):
         warnings.warn(
             trans._(
                 'Dims.current_step is deprecated. Use Dims._point_step instead.'
@@ -300,32 +321,37 @@ class Dims(EventedModel):
         self._point_step = value
 
     @property
-    def displayed(self) -> EventedList[int]:
-        """EventedList: Dimensions that are displayed."""
+    def displayed(self) -> list[int]:
+        """list: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @displayed.setter
     def displayed(self, value):
-        self.order = value
+        self.order[-self.ndisplay :] = value
 
     @property
-    def not_displayed(self) -> EventedList[int]:
-        """EventedList: Dimensions that are not displayed."""
+    def not_displayed(self) -> list[int]:
+        """list: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
+    @not_displayed.setter
+    def not_displayed(self, value):
+        self.order[: -self.ndisplay] = value
+
     @property
-    def displayed_order(self) -> EventedList[int]:
+    def displayed_order(self) -> list[int]:
         displayed = self.displayed
         # equivalent to: order = np.argsort(self.displayed)
         order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
+        return list(order)
 
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
-        self.range = ((0, 2, 1),) * self.ndim
-        self.span = ((0, 0),) * self.ndim
-        self.order = tuple(range(self.ndim))
+        self.range = [[0, 2]] * self.ndim
+        self.span = [[0, 0]] * self.ndim
+        self.step = [1] * self.ndim
+        self.order = list(range(self.ndim))
 
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
@@ -337,7 +363,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_step(axis, self.current_step[axis] + 1)
+        self._point_step[axis] += 1
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -349,7 +375,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_step(axis, self.current_step[axis] - 1)
+        self._point_step[axis] -= 1
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -398,14 +424,14 @@ def reorder_after_dim_reduction(order):
         thrown away.
     """
     arr = sorted(range(len(order)), key=lambda x: order[x])
-    return tuple(arr)
+    return list(arr)
 
 
 def ensure_ndim(value, ndim, default):
     """Ensure that the value has same number of elements as ndim"""
     if len(value) < ndim:
         # left pad
-        value = (default,) * (ndim - len(value)) + value
+        value = [default] * (ndim - len(value)) + value
     elif len(value) > ndim:
         # right-crop
         value = value[-ndim:]

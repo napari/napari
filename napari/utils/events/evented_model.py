@@ -8,6 +8,7 @@ import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
+from ...utils.property_view import View
 from ..translations import trans
 from .event import EmitterGroup, Event
 
@@ -94,12 +95,12 @@ class EventedMetaclass(main.ModelMetaclass):
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
                 EventedModel.__config__.json_encoders[f.type_] = encoder
-        # check for @_.setters defined on the class, so we can allow them
-        # in EventedModel.__setattr__
-        cls.__property_setters__ = {}
+        # check for properties defined on the class, so we can allow them
+        # in EventedModel.__setattr__ and enable events for them
+        cls.__properties__ = {}
         for name, attr in namespace.items():
-            if isinstance(attr, property) and attr.fset is not None:
-                cls.__property_setters__[name] = attr
+            if isinstance(attr, property):
+                cls.__properties__[name] = attr
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
@@ -128,7 +129,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
             class Config:
                 dependencies={'c': ['a', 'b']}
     """
-    if not cls.__property_setters__:
+    if not cls.__properties__:
         return {}
 
     deps: Dict[str, Set[str]] = {}
@@ -136,9 +137,9 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     _deps = getattr(cls.__config__, 'dependencies', None)
     if _deps:
         for prop, fields in _deps.items():
-            if prop not in cls.__property_setters__:
+            if prop not in cls.__properties__:
                 raise ValueError(
-                    'Fields with dependencies must be property.setters. '
+                    'Fields with dependencies must be properties. '
                     f'{prop!r} is not.'
                 )
             for field in fields:
@@ -148,8 +149,9 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     else:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
-        for prop, setter in cls.__property_setters__.items():
-            for name in setter.fget.__code__.co_names:
+        # TODO: this does not seem to work very well with variables in the form of self.*
+        for prop_name, prop in cls.__properties__.items():
+            for name in prop.fget.__code__.co_names:
                 if name in cls.__fields__:
                     deps.setdefault(name, set()).add(prop)
     return deps
@@ -165,8 +167,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
 
-    # mapping of name -> property obj for methods that are property setters
-    __property_setters__: ClassVar[Dict[str, property]]
+    # mapping of name -> property obj for methods that are properties
+    __properties__: ClassVar[Dict[str, property]]
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
@@ -205,7 +207,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 field_events.append(name)
 
         self._events.add(
-            **dict.fromkeys(field_events + list(self.__property_setters__))
+            **dict.fromkeys(field_events + list(self.__properties__))
         )
 
         # hook up events from children
@@ -215,12 +217,26 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 # TODO: won't track source all the way in?
                 value.events.connect(getattr(self.events, name))
 
+    def __getattribute__(self, name):
+        attr = super().__getattribute__(name)
+        # avoid recursion
+        if name in ('__fields__', '__properties__'):
+            return attr
+        if name in self.__fields__ or (
+            name in self.__properties__
+            and self.__properties__[name].fset is not None
+        ):
+            return View(attr, attr=name)
+        return attr
+
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
         # so we first check to see if this field has a property.setter.
         # if so, we use it instead.
-        if name in self.__property_setters__:
-            self.__property_setters__[name].fset(self, value)
+        if name in self.__properties__:
+            if self.__properties__[name].fset is None:
+                raise AttributeError(f"can't set attribute '{name}'")
+            self.__properties__[name].fset(self, value)
         else:
             super().__setattr__(name, value)
 
@@ -238,12 +254,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         # if different we emit the event with new value
         after = getattr(self, name)
+
+        # re-hook child events if needed
+        if hasattr(after, 'events'):
+            after.events.connect(getattr(self.events, name))
+
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if not are_equal(after, before):
             getattr(self.events, name)(value=after)  # emit event
 
-            # emit events for any dependent computed property setters as well
+            # emit events for any dependent computed properties as well
             for dep in self.__field_dependents__.get(name, {}):
+                print(name, before, after)
                 getattr(self.events, dep)(value=getattr(self, dep))
 
     # expose the private EmitterGroup publically

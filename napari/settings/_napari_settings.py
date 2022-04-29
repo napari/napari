@@ -68,7 +68,7 @@ class NapariSettings(EventedConfigFileSettings):
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
         # (you can still mutate attributes in the subfields)
-        allow_mutation = False
+        # allow_mutation = False
 
         @classmethod
         def _config_file_settings_source(cls, settings) -> dict:

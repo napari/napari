@@ -13,18 +13,19 @@ class _BlackHole:
         pass
 
 
-class PropertyView(ObjectProxy):
+class View(ObjectProxy):
     """
-    Proxy object that wraps the return value of a property so that any changes
-    to it are redirected to the property setter (therefore changing the parent object)
+    Proxy object that wraps a mutable object so that any changes
+    to it or its items/attributes are recursively redirected to the ancestor
     """
 
-    def __init__(self, wrapped, parent=None, key=None, attr=None, setter=None):
+    def __init__(self, wrapped, parent=None, key=None, attr=None):
+        if isinstance(wrapped, View):
+            wrapped = wrapped.__wrapped__
         super().__init__(wrapped)
         self._self_parent = parent
         self._self_key = key
         self._self_attr = attr
-        self._self_setter = setter
 
     def _self_call_setter(self):
         """
@@ -39,7 +40,7 @@ class PropertyView(ObjectProxy):
         """
         Return the same as self, but as an element/attribute of the parent's wrapped object.
         For example:
-            self == PropertyView(parent.__wrapped__)[1]
+            self == View(parent.__wrapped__)[1]
             self._self_ascend() == parent.__wrapped__[1]
         This allows to cascade setting items/attributes up the chain without going recursive.
         """
@@ -58,9 +59,7 @@ class PropertyView(ObjectProxy):
             name.startswith('__') and name.endswith('__')
         ):
             return super().__getattribute__(name)
-        return PropertyView(
-            getattr(self.__wrapped__, name), attr=name, parent=self
-        )
+        return View(getattr(self.__wrapped__, name), attr=name, parent=self)
 
     def __setattr__(self, name, value):
         if name.startswith('_self_') or (
@@ -69,27 +68,57 @@ class PropertyView(ObjectProxy):
             super().__setattr__(name, value)
             return
 
+        old = getattr(self.__wrapped__, name)
         setattr(self.__wrapped__, name, value)
         setattr(self._self_ascend(), name, value)
 
-        self._self_call_setter()
+        try:
+            self._self_call_setter()
+        except Exception:
+            setattr(self.__wrapped__, name, old)
+            setattr(self._self_ascend(), name, old)
+            raise
 
     def __getitem__(self, key):
         # recursively return views so you can index as deep as you want
-        return PropertyView(self.__wrapped__[key], key=key, parent=self)
+        return View(self.__wrapped__[key], key=key, parent=self)
 
     def __setitem__(self, key, value):
+        old = self.__wrapped__[key]
         self.__wrapped__[key] = value
         self._self_ascend()[key] = value
-        self._self_call_setter()
+        try:
+            self._self_call_setter()
+        except Exception:
+            self.__wrapped__[key] = old
+            self._self_ascend()[key] = old
+            raise
+
+    def __call__(self, *args, **kwargs):
+        return self.__wrapped__(*args, **kwargs)
 
     def __repr__(self):
-        return f'PropertyView({repr(self.__wrapped__)})'
+        return f'View({repr(self.__wrapped__)})'
+
+    def __str__(self):
+        return repr(self)
 
 
 class property_view(property):
-    def __get__(self, obj, objtype=None):
-        def bound_setter(x):
-            self.fset(obj, x)
+    def __set_name__(self, owner, name):
+        self._name = name
 
-        return PropertyView(super().__get__(obj, objtype), setter=bound_setter)
+    def __get__(self, obj, objtype=None):
+        # use setattr in case anything else needs to happen other than just the property
+        # setter (for example events in EventedModel)
+        def setter(value):
+            setattr(obj, self._name, value)
+
+        return View(super().__get__(obj, objtype), setter=setter)
+
+
+def field_view(model, field, value):
+    def setter(value):
+        setattr(model, field, value)
+
+    return View(value, setter=setter)
