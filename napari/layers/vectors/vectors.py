@@ -231,7 +231,7 @@ class Vectors(Layer):
         self._data = data
 
         vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
+            self._data[:, :, list(self._data_dims_displayed)],
             self.edge_width,
             self.length,
         )
@@ -282,7 +282,7 @@ class Vectors(Layer):
         n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
+            self._data[:, :, list(self._data_dims_displayed)],
             self.edge_width,
             self.length,
         )
@@ -426,6 +426,10 @@ class Vectors(Layer):
             data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
+            permutation = list(self._data_to_world._permutation)
+            if permutation:
+                maxs = maxs[permutation]
+                mins = mins[permutation]
             extrema = np.vstack([mins, maxs])
         return extrema
 
@@ -450,7 +454,7 @@ class Vectors(Layer):
         self._edge_width = edge_width
 
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
+            self.data[:, :, list(self._data_dims_displayed)],
             self._edge_width,
             self.length,
         )
@@ -471,7 +475,7 @@ class Vectors(Layer):
         self._length = float(length)
 
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
+            self.data[:, :, list(self._data_dims_displayed)],
             self.edge_width,
             self._length,
         )
@@ -651,13 +655,14 @@ class Vectors(Layer):
             values, based on how far from the current slice they originate.
         """
         not_disp = list(self._dims_not_displayed)
+        not_disp_data = list(self._data_dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            data = self.data[:, 0, not_disp]
+            data = self.data[:, 0, not_disp_data]
             distances = abs(data - indices[not_disp])
             if self.out_of_slice_display is True:
                 projected_lengths = abs(
-                    self.data[:, 1, not_disp] * self.length
+                    self.data[:, 1, not_disp_data] * self.length
                 )
                 matches = np.all(distances <= projected_lengths, axis=1)
                 alpha_match = projected_lengths[matches]
@@ -682,7 +687,7 @@ class Vectors(Layer):
         indices, alphas = self._slice_data(self._slice_indices)
         if not self._dims_displayed == self._displayed_stored:
             vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims_displayed)],
+                self.data[:, :, list(self._data_dims_displayed)],
                 self.edge_width,
                 self.length,
             )
@@ -691,7 +696,7 @@ class Vectors(Layer):
             self._displayed_stored = copy(self._dims_displayed)
 
         vertices = self._mesh_vertices
-        disp = list(self._dims_displayed)
+        disp_data = list(self._data_dims_displayed)
 
         if len(self.data) == 0:
             faces = []
@@ -701,7 +706,7 @@ class Vectors(Layer):
             indices, alphas = self._slice_data(self._slice_indices)
             self._view_indices = indices
             self._view_alphas = alphas
-            self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
+            self._view_data = self.data[np.ix_(indices, [0, 1], disp_data)]
             if len(indices) == 0:
                 faces = []
             else:
@@ -718,7 +723,7 @@ class Vectors(Layer):
                 faces = self._mesh_triangles[keep_inds]
         else:
             faces = self._mesh_triangles
-            self._view_data = self.data[:, :, disp]
+            self._view_data = self.data[:, :, disp_data]
             self._view_indices = np.arange(self.data.shape[0])
             self._view_alphas = 1.0
 
