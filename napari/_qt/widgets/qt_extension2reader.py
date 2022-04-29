@@ -30,8 +30,17 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, npe2_readers=None, npe1_readers=None):
         super().__init__(parent=parent)
+
+        npe2, npe1 = get_all_readers()
+        if not npe2_readers:
+            npe2_readers = npe2
+        if not npe1_readers:
+            npe1_readers = npe1
+
+        self._npe2_readers = npe2_readers
+        self._npe1_readers = npe1_readers
 
         self._table = QTableWidget()
         self._table.setShowGrid(False)
@@ -96,7 +105,6 @@ class Extension2ReaderTable(QWidget):
         add_reader_widg.setFixedWidth(250)
 
         self._new_reader_dropdown = QComboBox()
-        self._npe2_readers, self._npe1_readers = get_all_readers()
         for i, (plugin_name, display_name) in enumerate(
             sorted(dict(self._npe2_readers, **self._npe1_readers).items())
         ):
