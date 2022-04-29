@@ -114,23 +114,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Whether the layer visual is currently being displayed.
     blending : Blending
         Determines how RGB and alpha values get mixed.
-            Blending.OPAQUE
-                Allows for only the top layer to be visible and corresponds to
-                depth_test=True, cull_face=False, blend=False.
-            Blending.TRANSLUCENT
-                Allows for multiple layers to be blended with different opacity
-                and corresponds to depth_test=True, cull_face=False,
-                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            Blending.TRANSLUCENT_NO_DEPTH
-                Allows for multiple layers to be blended with different opacity,
-                but no depth testing is performed.
-                and corresponds to depth_test=False, cull_face=False,
-                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            Blending.ADDITIVE
-                Allows for multiple layers to be blended together with
-                different colors and opacity. Useful for creating overlays. It
-                corresponds to depth_test=False, cull_face=False, blend=True,
-                blend_func=('src_alpha', 'one').
+
+        * ``Blending.OPAQUE``
+          Allows for only the top layer to be visible and corresponds to
+          ``depth_test=True``, ``cull_face=False``, ``blend=False``.
+        * ``Blending.TRANSLUCENT``
+          Allows for multiple layers to be blended with different opacity and
+          corresponds to ``depth_test=True``, ``cull_face=False``,
+          ``blend=True``, ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+        * ``Blending.TRANSLUCENT_NO_DEPTH``
+          Allows for multiple layers to be blended with different opacity, but
+          no depth testing is performed. Corresponds to ``depth_test=False``,
+          ``cull_face=False``, ``blend=True``,
+          ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+        * ``Blending.ADDITIVE``
+          Allows for multiple layers to be blended together with different
+          colors and opacity. Useful for creating overlays. It corresponds to
+          ``depth_test=False``, ``cull_face=False``, ``blend=True``,
+          ``blend_func=('src_alpha', 'one')``.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -191,12 +192,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     Notes
     -----
     Must define the following:
-        * `_extent_data`: property
-        * `data` property (setter & getter)
+
+    * `_extent_data`: property
+    * `data` property (setter & getter)
 
     May define the following:
-        * `_set_view_slice()`: called to set currently viewed slice
-        * `_basename()`: base/default name of the layer
+
+    * `_set_view_slice()`: called to set currently viewed slice
+    * `_basename()`: base/default name of the layer
     """
 
     def __init__(

@@ -60,7 +60,7 @@ extensions = [
 ]
 
 external_toc_path = "_toc.yml"
-external_toc_exclude_missing = True
+external_toc_exclude_missing = False
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -132,6 +132,8 @@ exclude_patterns = [
     'jupyter_execute',
 ]
 
+napoleon_custom_sections = [('Events', 'params_style')]
+
 
 def reset_napari_theme(gallery_conf, fname):
     from napari.settings import get_settings
@@ -154,3 +156,13 @@ sphinx_gallery_conf = {
     'image_scrapers': (qtgallery.qtscraper,),
     'reset_modules': (reset_napari_theme,),
 }
+
+
+def setup(app):
+    """Ignore .ipynb files.
+
+    Prevents sphinx from complaining about multiple files found for document
+    when generating the gallery.
+
+    """
+    app.registry.source_suffix.pop(".ipynb", None)

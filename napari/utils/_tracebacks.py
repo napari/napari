@@ -6,7 +6,7 @@ import numpy as np
 from ..types import ExcInfo
 
 
-def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
+def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
     """Return a formatter callable that uses IPython VerboseTB if available.
 
     Imports IPython lazily if available to take advantage of ultratb.VerboseTB.
