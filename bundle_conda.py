@@ -123,6 +123,7 @@ def _generate_background_images(installer_type, outpath="resources"):
 def _get_condarc():
     # we need defaults for tensorflow and others on windows only
     defaults = "- defaults" if WINDOWS else ""
+    prompt = "[napari]({default_env}) "
     contents = dedent(
         f"""
         channels:  #!final
@@ -133,8 +134,11 @@ def _get_condarc():
           - repodata.json
         auto_update_conda: false  #!final
         channel_priority: strict  #!final
+        env_prompt: '{prompt}'  #! final
         """
     )
+    # the undocumented #!final comment is explained here
+    # https://www.anaconda.com/blog/conda-configuration-engine-power-users
     with NamedTemporaryFile(delete=False) as f:
         f.write(contents)
     return f.name
