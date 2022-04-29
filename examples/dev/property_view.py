@@ -1,6 +1,5 @@
 from rich import print
 from napari.utils.events import EventedModel, EventedList
-from napari.utils.property_view import property_view
 
 
 class A(EventedModel):
@@ -22,7 +21,7 @@ class M(EventedModel):
             'w': ['x', 'f'],
         }
 
-    @property_view
+    @property
     def z(self):
         return B(b=A(a=EventedList([self.x.b.a[0], self.y.b.a[1]])))
 
@@ -31,7 +30,7 @@ class M(EventedModel):
         self.x.b.a[0] = value.b.a[0]
         self.y.b.a[1] = value.b.a[1]
 
-    @property_view
+    @property
     def w(self):
         return [[el * self.f for el in self.x.b.a], [el // self.f for el in self.y.b.a]]
 

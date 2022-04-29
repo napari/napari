@@ -226,7 +226,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             name in self.__properties__
             and self.__properties__[name].fset is not None
         ):
-            return View(attr, attr=name)
+            return View(attr, attr=name, parent=self)
         return attr
 
     def _super_setattr_(self, name: str, value: Any) -> None:
