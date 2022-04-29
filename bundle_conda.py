@@ -350,6 +350,11 @@ def cli(argv=None):
         help="Print local napari version and exit.",
     )
     p.add_argument(
+        "--installer-version",
+        action="store_true",
+        help="Print installer version and exit.",
+    )
+    p.add_argument(
         "--arch",
         action="store_true",
         help="Print machine architecture tag and exit.",
@@ -387,6 +392,9 @@ if __name__ == "__main__":
     args = cli()
     if args.version:
         print(_version())
+        sys.exit()
+    if args.installer_version:
+        print(INSTALLER_VERSION)
         sys.exit()
     if args.arch:
         print(ARCH)
