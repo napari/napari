@@ -366,8 +366,8 @@ class ShapeList:
         shapes : iterable of Shape
             Each Shape must be a subclass of Shape, one of "{'Line', 'Rectangle',
             'Ellipse', 'Path', 'Polygon'}"
-        face_colors: iterable of face_color
-        edge_colors: iterable of edge_color
+        face_colors : iterable of face_color
+        edge_colors : iterable of edge_color
         z_refresh : bool
             If set to true, the mesh elements are reindexed with the new z order.
             When shape_index is provided, z_refresh will be overwritten to false,
