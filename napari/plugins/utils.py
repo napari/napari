@@ -91,6 +91,5 @@ def get_filename_patterns_for_reader(plugin_name: str):
     }
     return all_fn_patterns
     # Then add instructions on how to use
-    # Then check we're loading display name correctly
     # Then check what happens with complex fn patterns
     # Then add tests

@@ -178,6 +178,8 @@ class Extension2ReaderTable(QWidget):
     def _edit_existing_preference(self, extension, reader):
         """Edit existing extension preference"""
         current_reader_label = self.findChild(QLabel, extension)
+        if reader in self._npe2_readers:
+            reader = self._npe2_readers[reader]
         current_reader_label.setText(reader)
 
     def _add_new_row(self, extension, reader):
@@ -186,7 +188,7 @@ class Extension2ReaderTable(QWidget):
         self._table.insertRow(last_row)
         item = QTableWidgetItem(extension)
         item.setFlags(Qt.NoItemFlags)
-        self._table.setItem(last_row - 1, self._extension_col, item)
+        self._table.setItem(last_row, self._extension_col, item)
 
         plugin_widg = QWidget()
         # need object name to easily find row
@@ -208,7 +210,7 @@ class Extension2ReaderTable(QWidget):
 
         plugin_widg.layout().addWidget(plugin_label)
         plugin_widg.layout().addWidget(remove_btn)
-        self._table.setCellWidget(last_row - 1, self._reader_col, plugin_widg)
+        self._table.setCellWidget(last_row, self._reader_col, plugin_widg)
 
     def remove_existing_preference(self, event):
         """Delete extension to reader mapping setting and remove table row"""
