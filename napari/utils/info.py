@@ -76,8 +76,9 @@ def sys_info(as_html=False):
     as_html : bool
         if True, info will be returned as HTML, suitable for a QTextEdit widget
     """
-    from napari.plugins import plugin_manager
     from npe2 import PluginManager as Npe2PluginManager
+
+    from napari.plugins import plugin_manager
 
     sys_version = sys.version.replace('\n', ' ')
     text = (
