@@ -209,7 +209,7 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["installer_type"] = "sh"
 
     if MACOS:
-        # These two options control the default install location:
+        # These two options control the default install location:
         # ~/<default_location_pkg>/<pkg_name>
         definitions["pkg_name"] = f"{APP}-{INSTALLER_VERSION}"
         definitions["default_location_pkg"] = "Library"
