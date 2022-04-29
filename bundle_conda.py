@@ -221,8 +221,12 @@ def _constructor(version=_version(), extra_specs=None):
     if _use_local():
         definitions["channels"].insert(0, "local")
     if LINUX:
-        definitions["default_prefix"] = os.path.join("$HOME", ".local", f"{APP}-{version}")
-        definitions["license_file"] = os.path.join(HERE, "resources", "bundle_license.txt")
+        definitions["default_prefix"] = os.path.join(
+            "$HOME", ".local", f"{APP}-{version}"
+        )
+        definitions["license_file"] = os.path.join(
+            HERE, "resources", "bundle_license.txt"
+        )
         definitions["installer_type"] = "sh"
 
     if MACOS:
@@ -231,18 +235,26 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["name"] = f"{APP}-{version}"
         definitions["default_location_pkg"] = "Library"
         definitions["installer_type"] = "pkg"
-        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
-        welcome_text_tmpl = (Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl").read_text()
+        definitions["welcome_image"] = os.path.join(
+            HERE, "resources", "napari_1227x600.png"
+        )
+        welcome_text_tmpl = (
+            Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl"
+        ).read_text()
         welcome_file = Path(HERE) / "resources" / "osx_pkg_welcome.rtf"
         clean_these_files.append(welcome_file)
-        welcome_file.write_text(welcome_text_tmpl.replace("__VERSION__", version))
+        welcome_file.write_text(
+            welcome_text_tmpl.replace("__VERSION__", version)
+        )
         definitions["welcome_file"] = str(welcome_file)
         definitions["conclusion_text"] = ""
         definitions["readme_text"] = ""
         signing_identity = os.environ.get("CONSTRUCTOR_SIGNING_IDENTITY")
         if signing_identity:
             definitions["signing_identity_name"] = signing_identity
-        notarization_identity = os.environ.get("CONSTRUCTOR_NOTARIZATION_IDENTITY")
+        notarization_identity = os.environ.get(
+            "CONSTRUCTOR_NOTARIZATION_IDENTITY"
+        )
         if notarization_identity:
             definitions["notarization_identity_name"] = notarization_identity
 
@@ -250,13 +262,25 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
-                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
-                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
+                "welcome_image": os.path.join(
+                    HERE, "resources", "napari_164x314.png"
+                ),
+                "header_image": os.path.join(
+                    HERE, "resources", "napari_150x57.png"
+                ),
+                "icon_image": os.path.join(
+                    HERE, "napari", "resources", "icon.ico"
+                ),
                 "register_python_default": False,
-                "default_prefix": os.path.join('%LOCALAPPDATA%', f"{APP}-{version}"),
-                "default_prefix_domain_user": os.path.join('%LOCALAPPDATA%', f"{APP}-{version}"),
-                "default_prefix_all_users": os.path.join('%ALLUSERSPROFILE%', f"{APP}-{version}"),
+                "default_prefix": os.path.join(
+                    '%LOCALAPPDATA%', f"{APP}-{version}"
+                ),
+                "default_prefix_domain_user": os.path.join(
+                    '%LOCALAPPDATA%', f"{APP}-{version}"
+                ),
+                "default_prefix_all_users": os.path.join(
+                    '%ALLUSERSPROFILE%', f"{APP}-{version}"
+                ),
                 "check_path_length": False,
                 "installer_type": "exe",
             }
@@ -266,7 +290,9 @@ def _constructor(version=_version(), extra_specs=None):
             definitions["signing_certificate"] = signing_certificate
 
     if definitions.get("welcome_image") or definitions.get("header_image"):
-        _generate_background_images(definitions.get("installer_type", "all"), outpath="resources")
+        _generate_background_images(
+            definitions.get("installer_type", "all"), outpath="resources"
+        )
 
     clean_these_files.append("construct.yaml")
     clean_these_files.append(empty_file.name)
@@ -276,7 +302,9 @@ def _constructor(version=_version(), extra_specs=None):
     # (I think it contains an ending newline or something like that, copypaste artifact?)
     pfx_password = os.environ.get("CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD")
     if pfx_password:
-        os.environ["CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"] = pfx_password.strip()
+        os.environ[
+            "CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"
+        ] = pfx_password.strip()
 
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
@@ -307,13 +335,17 @@ def licenses():
         raise
 
     zipname = f"licenses.{OS}-{ARCH}.zip"
-    output_zip = zipfile.ZipFile(zipname, mode="w", compression=zipfile.ZIP_DEFLATED)
+    output_zip = zipfile.ZipFile(
+        zipname, mode="w", compression=zipfile.ZIP_DEFLATED
+    )
     output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
         package_name = package_id.split("::", 1)[1]
         for license_type, license_files in license_info.items():
             for i, license_file in enumerate(license_files, 1):
-                arcname = f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
+                arcname = (
+                    f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
+                )
                 output_zip.write(license_file, arcname=arcname)
     output_zip.close()
     return zipname
