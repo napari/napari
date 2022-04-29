@@ -90,7 +90,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
         for fn_pattern in reader.filename_patterns
     }
     return all_fn_patterns
-    # Then add tooltips to each reader
-    # Then add autocomplete to extension box
     # Then add instructions on how to use
     # Then check we're loading display name correctly
+    # Then check what happens with complex fn patterns
+    # Then add tests

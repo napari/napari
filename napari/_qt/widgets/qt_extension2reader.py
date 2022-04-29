@@ -73,7 +73,7 @@ class Extension2ReaderTable(QWidget):
             self._table.setRowCount(1)
             item = QTableWidgetItem(trans._('No extensions found.'))
             item.setFlags(Qt.NoItemFlags)
-            self._table.setItem(0, 0, item)
+            self._table.setItem(self._extension_col, 0, item)
 
     def _make_new_preference_row(self):
         """Make row for user to add a new extension assignment"""
@@ -97,10 +97,10 @@ class Extension2ReaderTable(QWidget):
 
         self._new_reader_dropdown = QComboBox()
         self._npe2_readers, self._npe1_readers = get_all_readers()
-        for plugin_name, display_name in sorted(
-            dict(self._npe2_readers, **self._npe1_readers).items()
+        for i, (plugin_name, display_name) in enumerate(
+            sorted(dict(self._npe2_readers, **self._npe1_readers).items())
         ):
-            self._new_reader_dropdown.addItem(display_name, plugin_name)
+            self._add_reader_choice(i, plugin_name, display_name)
 
         add_btn = QPushButton('Add')
         add_btn.setFixedWidth(70)
@@ -119,7 +119,23 @@ class Extension2ReaderTable(QWidget):
 
         return edit_row_widget
 
+    def _add_reader_choice(self, i, plugin_name, display_name):
+        """Add dropdown item for plugin_name with reader pattern tooltip"""
+        reader_patterns = get_filename_patterns_for_reader(plugin_name)
+        self._new_reader_dropdown.addItem(display_name, plugin_name)
+        if not reader_patterns:
+            tooltip_text = 'Accepts all'
+        else:
+            reader_patterns_formatted = ', '.join(
+                sorted(list(reader_patterns))
+            )
+            tooltip_text = f'Accepts: {reader_patterns_formatted}'
+        self._new_reader_dropdown.setItemData(
+            i, tooltip_text, role=Qt.ToolTipRole
+        )
+
     def _filter_compatible_readers(self, new_extension):
+        """Filter reader dropwdown items to those that accept `new_extension`"""
         self._new_reader_dropdown.clear()
         if len(new_extension) < 3:
             readers = dict(self._npe2_readers, **self._npe1_readers)
@@ -140,19 +156,29 @@ class Extension2ReaderTable(QWidget):
                 del readers[reader]
             readers.update(self._npe1_readers)
 
-        for plugin_name, display_name in sorted(readers.items()):
-            self._new_reader_dropdown.addItem(display_name, plugin_name)
+        for i, (plugin_name, display_name) in enumerate(
+            sorted(readers.items())
+        ):
+            self._add_reader_choice(i, plugin_name, display_name)
 
     def _save_new_preference(self, event):
         """Save current preference to settings and add new row"""
         extension = self._new_extension_edit.text()
         reader = self._new_reader_dropdown.currentData()
 
+        if extension in get_settings().plugins.extension2reader:
+            self._edit_existing_preference(extension, reader)
+        else:
+            self._add_new_row(extension, reader)
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             extension: reader,
         }
-        self._add_new_row(extension, reader)
+
+    def _edit_existing_preference(self, extension, reader):
+        """Edit existing extension preference"""
+        current_reader_label = self.findChild(QLabel, extension)
+        current_reader_label.setText(reader)
 
     def _add_new_row(self, extension, reader):
         """Add new reader preference to table"""
@@ -168,9 +194,11 @@ class Extension2ReaderTable(QWidget):
         plugin_widg.setLayout(QHBoxLayout())
         plugin_widg.layout().setContentsMargins(0, 0, 0, 0)
 
-        plugin_label = QLabel(reader)
+        if reader in self._npe2_readers:
+            reader = self._npe2_readers[reader]
+        plugin_label = QLabel(reader, objectName=extension)
         # need object name to easily work out which button was clicked
-        remove_btn = QPushButton('X', objectName=f'{extension}')
+        remove_btn = QPushButton('X', objectName=extension)
         remove_btn.setFixedWidth(30)
         remove_btn.setStyleSheet('margin: 4px;')
         remove_btn.setToolTip(
