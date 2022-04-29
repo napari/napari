@@ -162,7 +162,7 @@ class Extension2ReaderTable(QWidget):
             self._add_reader_choice(i, plugin_name, display_name)
 
     def _save_new_preference(self, event):
-        """Save current preference to settings and add new row"""
+        """Save current preference to settings and show in table"""
         extension = self._new_extension_edit.text()
         reader = self._new_reader_dropdown.currentData()
 
