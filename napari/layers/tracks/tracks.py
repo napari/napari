@@ -211,6 +211,16 @@ class Tracks(Layer):
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
+            permutation = list(self._data_to_world._permutation)
+            if permutation:
+                # Add axis 0 and offset remaining axes by one because the first
+                # dimension of data contains track IDs and is not part of the
+                # `_data_to_world` affine.
+                permutation = [
+                    0,
+                ] + [p + 1 for p in permutation]
+                maxs = maxs[permutation]
+                mins = mins[permutation]
             extrema = np.vstack([mins, maxs])
         return extrema[:, 1:]
 
@@ -332,7 +342,7 @@ class Tracks(Layer):
         if vertices is None:
             return
 
-        data = vertices[:, self._dims_displayed]
+        data = vertices[:, self._data_dims_displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
         if self._ndisplay == 2:
