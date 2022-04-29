@@ -681,11 +681,12 @@ class Points(Layer):
             extrema = np.full((2, self.ndim), np.nan)
         else:
             data = self.data
-            permutation = self._data_to_world._permutation
-            if permutation:
-                data = data[:, permutation]
             maxs = np.max(data, axis=0)
             mins = np.min(data, axis=0)
+            permutation = list(self._data_to_world._permutation)
+            if permutation:
+                maxs = maxs[permutation]
+                mins = mins[permutation]
             extrema = np.vstack([mins, maxs])
         return extrema
 
