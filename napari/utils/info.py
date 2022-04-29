@@ -167,10 +167,8 @@ def sys_info(as_html=False):
         plugin_name = manifest.name
         if plugin_name in ("napari", "builtins"):
             continue
-        if version := manifest.package_version:
-            version_string = f": {version}"
-        else:
-            version_string = ""
+        version = manifest.package_version
+        version_string = f": {version}" if version else ""
         plugin_strings[plugin_name] = f"  - {plugin_name}{version_string}"
 
     text += '<br><b>Plugins</b>:'
