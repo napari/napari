@@ -11,6 +11,9 @@ Some environment variables we use:
 CONSTRUCTOR_APP_NAME:
     in case you want to build a non-default distribution that is not
     named `napari`
+CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM:
+    The last component of the default installation path. Defaults to
+    {CONSTRUCTOR_APP_NAME}-app-{CONSTRUCTOR_INSTALLER_VERSION}
 CONSTRUCTOR_INSTALLER_VERSION:
     Version for the installer, separate from the app being installed.
     This has an effect on the default install locations!
@@ -49,10 +52,13 @@ from tempfile import NamedTemporaryFile
 
 from ruamel import yaml
 
-APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari-app")
+APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari")
 # bump this when something in the installer infrastructure changes
 # note that this will affect the default installation path across platforms!
 INSTALLER_VERSION = os.environ.get("CONSTRUCTOR_INSTALLER_VERSION", "0.1")
+INSTALLER_DEFAULT_PATH_STEM = os.environ.get(
+    "CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM", f"{APP}-app-{INSTALLER_VERSION}"
+)
 HERE = os.path.abspath(os.path.dirname(__file__))
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -201,7 +207,7 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["channels"].insert(0, "local")
     if LINUX:
         definitions["default_prefix"] = os.path.join(
-            "$HOME", ".local", f"{APP}-{INSTALLER_VERSION}"
+            "$HOME", ".local", INSTALLER_DEFAULT_PATH_STEM
         )
         definitions["license_file"] = os.path.join(
             HERE, "resources", "bundle_license.txt"
@@ -211,7 +217,7 @@ def _constructor(version=_version(), extra_specs=None):
     if MACOS:
         # These two options control the default install location:
         # ~/<default_location_pkg>/<pkg_name>
-        definitions["pkg_name"] = f"{APP}-{INSTALLER_VERSION}"
+        definitions["pkg_name"] = INSTALLER_DEFAULT_PATH_STEM
         definitions["default_location_pkg"] = "Library"
         definitions["installer_type"] = "pkg"
         definitions["welcome_image"] = os.path.join(
@@ -252,13 +258,13 @@ def _constructor(version=_version(), extra_specs=None):
                 ),
                 "register_python_default": False,
                 "default_prefix": os.path.join(
-                    '%LOCALAPPDATA%', f"{APP}-{INSTALLER_VERSION}"
+                    '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "default_prefix_domain_user": os.path.join(
-                    '%LOCALAPPDATA%', f"{APP}-{INSTALLER_VERSION}"
+                    '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "default_prefix_all_users": os.path.join(
-                    '%ALLUSERSPROFILE%', f"{APP}-{INSTALLER_VERSION}"
+                    '%ALLUSERSPROFILE%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "check_path_length": False,
                 "installer_type": "exe",
