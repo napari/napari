@@ -51,7 +51,7 @@ Related Work, below), this NAP defines Institutional and Funding Partners
   intention of the napari founders but it was never explicitly written down.)
 - impose the condition that no institution or employer may hold a majority of
   seats at the SC.
-- create of an Institutional and Funding Partner Advisory Council (IFPAC), made
+- create an Institutional and Funding Partner Advisory Council (IFPAC), made
   up of representatives from institutions providing either funding or in-kind
   support (defined in more detail in the Implementation section).
 - allow the IFPAC to elect one member of the napari SC, subject to the
