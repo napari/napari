@@ -388,8 +388,6 @@ class ShapeList:
             return index
 
         all_z_index = list()
-        all_face_color = list()
-        all_edge_color = list()
         all_vertices = list()
         all_index = list()
         all_mesh_vertices = list()
@@ -404,9 +402,21 @@ class ShapeList:
 
         if face_colors is None:
             face_colors = np.tile(np.array([1, 1, 1, 1]), (len(shapes), 1))
+        else:
+            face_colors = np.asarray(face_colors)
 
         if edge_colors is None:
             edge_colors = np.tile(np.array([0, 0, 0, 1]), (len(shapes), 1))
+        else:
+            edge_colors = np.asarray(edge_colors)
+
+        if not len(face_colors) == len(edge_colors) == len(shapes):
+            raise ValueError(
+                trans._(
+                    'shapes, face_colors, and edge_colors must be the same length',
+                    deferred=True,
+                )
+            )
 
         for shape, face_color, edge_color in zip(
             shapes, face_colors, edge_colors
@@ -423,12 +433,7 @@ class ShapeList:
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             all_z_index.append(shape.z_index)
-
-            all_face_color.append(face_color)
-            all_edge_color.append(edge_color)
-
             all_vertices.append(shape.data_displayed)
-
             index = [shape_index] * len(shape.data)
             all_index.append(index)
 
@@ -481,12 +486,8 @@ class ShapeList:
 
         # assemble properties
         self._z_index = np.append(self._z_index, np.array(all_z_index), axis=0)
-        self._face_color = np.vstack(
-            (self._face_color, np.vstack(all_face_color))
-        )
-        self._edge_color = np.vstack(
-            (self._edge_color, np.vstack(all_edge_color))
-        )
+        self._face_color = np.vstack((self._face_color, face_colors))
+        self._edge_color = np.vstack((self._edge_color, edge_colors))
         self._vertices = np.vstack((self._vertices, np.vstack(all_vertices)))
         self._index = np.append(self._index, np.concatenate(all_index), axis=0)
 
