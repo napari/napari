@@ -841,7 +841,7 @@ def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
     np.save(pth, np.random.random((10, 10)))
 
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'.npy': 'builtins'}
+        get_settings().plugins.extension2reader = {'*.npy': 'builtins'}
 
         tmp_reader(mock_npe2_pm, 'fake-reader', filename_patterns=['*.npy'])
         tmp_reader(
@@ -858,7 +858,7 @@ def test_open_or_get_error_cant_find_plugin(mock_npe2_pm, tmp_reader):
     viewer = ViewerModel()
 
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'.fake': 'fake-reader'}
+        get_settings().plugins.extension2reader = {'*.fake': 'fake-reader'}
 
         tmp_reader(mock_npe2_pm, 'other-fake-reader')
 
