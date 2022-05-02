@@ -15,6 +15,12 @@ CONSTRUCTOR_NAPARI_VERSION:
     version of napari you want to build the installer for. If not provided,
     it expects the repository to be installed in development mode so
     `$REPO_ROOT/napari/_version.py` is populated.
+CONSTRUCTOR_INSTALLER_VERSION:
+    Version for the installer, separate from the app being installed.
+    This has an effect on the default install locations!
+CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM:
+    The last component of the default installation path. Defaults to
+    {CONSTRUCTOR_APP_NAME}-app-{CONSTRUCTOR_INSTALLER_VERSION}
 CONSTRUCTOR_TARGET_PLATFORM:
     conda-style platform (as in `platform` in `conda info -a` output)
 CONSTRUCTOR_PYTHON_VERSION:
@@ -56,6 +62,12 @@ from tempfile import NamedTemporaryFile
 from ruamel import yaml
 
 APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari")
+# bump this when something in the installer infrastructure changes
+# note that this will affect the default installation path across platforms!
+INSTALLER_VERSION = os.environ.get("CONSTRUCTOR_INSTALLER_VERSION", "0.1")
+INSTALLER_DEFAULT_PATH_STEM = os.environ.get(
+    "CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM", f"{APP}-app-{INSTALLER_VERSION}"
+)
 HERE = os.path.abspath(os.path.dirname(__file__))
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -237,9 +249,7 @@ def _get_dependencies():
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
-    base_channels = _lines_from_cfg_block(
-        cfg["conda_installer"]["base_run_channels"]
-    )
+    base_channels = _lines_from_cfg_block(cfg["conda_installer"]["base_run_channels"])
     base_specs = _lines_from_cfg_block(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
 
@@ -255,13 +265,9 @@ def _get_dependencies():
     if ARCH == "arm64":
         # temporary workaround for missing packages
         napari_channels.append("andfoy")
-    napari_channels += _lines_from_cfg_block(
-        cfg["conda_installer"]["napari_run_channels"]
-    )
+    napari_channels += _lines_from_cfg_block(cfg["conda_installer"]["napari_run_channels"])
 
-    menu_specs = _lines_from_cfg_block(
-        cfg["conda_installer"]["napari_run_shortcuts"]
-    )
+    menu_specs = _lines_from_cfg_block(cfg["conda_installer"]["napari_run_shortcuts"])
 
     napari_pinnings = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_constrained"],
@@ -329,39 +335,29 @@ def _constructor():
     }
     if LINUX:
         definitions["default_prefix"] = os.path.join(
-            "$HOME", ".local", f"{APP}-{version}"
+            "$HOME", ".local", INSTALLER_DEFAULT_PATH_STEM
         )
-        definitions["license_file"] = os.path.join(
-            HERE, "resources", "bundle_license.txt"
-        )
+        definitions["license_file"] = os.path.join(HERE, "resources", "bundle_license.txt")
         definitions["installer_type"] = "sh"
 
     if MACOS:
-        # we change this bc the installer takes the name
-        # as the default install location basename
-        definitions["name"] = f"{APP}-{version}"
+        # These two options control the default install location:
+        # ~/<default_location_pkg>/<pkg_name>
+        definitions["pkg_name"] = INSTALLER_DEFAULT_PATH_STEM
         definitions["default_location_pkg"] = "Library"
         definitions["installer_type"] = "pkg"
-        definitions["welcome_image"] = os.path.join(
-            HERE, "resources", "napari_1227x600.png"
-        )
-        welcome_text_tmpl = (
-            Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl"
-        ).read_text()
+        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
+        welcome_text_tmpl = (Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl").read_text()
         welcome_file = Path(HERE) / "resources" / "osx_pkg_welcome.rtf"
         clean_these_files.append(welcome_file)
-        welcome_file.write_text(
-            welcome_text_tmpl.replace("__VERSION__", version)
-        )
+        welcome_file.write_text(welcome_text_tmpl.replace("__VERSION__", version))
         definitions["welcome_file"] = str(welcome_file)
         definitions["conclusion_text"] = ""
         definitions["readme_text"] = ""
         signing_identity = os.environ.get("CONSTRUCTOR_SIGNING_IDENTITY")
         if signing_identity:
             definitions["signing_identity_name"] = signing_identity
-        notarization_identity = os.environ.get(
-            "CONSTRUCTOR_NOTARIZATION_IDENTITY"
-        )
+        notarization_identity = os.environ.get("CONSTRUCTOR_NOTARIZATION_IDENTITY")
         if notarization_identity:
             definitions["notarization_identity_name"] = notarization_identity
 
@@ -369,24 +365,16 @@ def _constructor():
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                "welcome_image": os.path.join(
-                    HERE, "resources", "napari_164x314.png"
-                ),
-                "header_image": os.path.join(
-                    HERE, "resources", "napari_150x57.png"
-                ),
-                "icon_image": os.path.join(
-                    HERE, "napari", "resources", "icon.ico"
-                ),
+                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
+                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
+                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
                 "register_python_default": False,
-                "default_prefix": os.path.join(
-                    '%LOCALAPPDATA%', f"{APP}-{version}"
-                ),
+                "default_prefix": os.path.join('%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM),
                 "default_prefix_domain_user": os.path.join(
-                    '%LOCALAPPDATA%', f"{APP}-{version}"
+                    '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "default_prefix_all_users": os.path.join(
-                    '%ALLUSERSPROFILE%', f"{APP}-{version}"
+                    '%ALLUSERSPROFILE%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "check_path_length": False,
                 "installer_type": "exe",
@@ -397,9 +385,7 @@ def _constructor():
             definitions["signing_certificate"] = signing_certificate
 
     if definitions.get("welcome_image") or definitions.get("header_image"):
-        _generate_background_images(
-            definitions.get("installer_type", "all"), outpath="resources"
-        )
+        _generate_background_images(definitions.get("installer_type", "all"), outpath="resources")
 
     clean_these_files.append("construct.yaml")
     clean_these_files.append(empty_file.name)
@@ -408,9 +394,7 @@ def _constructor():
     # (I think it contains an ending newline or something like that, copypaste artifact?)
     pfx_password = os.environ.get("CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD")
     if pfx_password:
-        os.environ[
-            "CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"
-        ] = pfx_password.strip()
+        os.environ["CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"] = pfx_password.strip()
 
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
@@ -441,17 +425,13 @@ def licenses():
         raise
 
     zipname = f"licenses.{OS}-{ARCH}.zip"
-    output_zip = zipfile.ZipFile(
-        zipname, mode="w", compression=zipfile.ZIP_DEFLATED
-    )
+    output_zip = zipfile.ZipFile(zipname, mode="w", compression=zipfile.ZIP_DEFLATED)
     output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
         package_name = package_id.split("::", 1)[1]
         for license_type, license_files in license_info.items():
             for i, license_file in enumerate(license_files, 1):
-                arcname = (
-                    f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
-                )
+                arcname = f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
                 output_zip.write(license_file, arcname=arcname)
     output_zip.close()
     return zipname
@@ -476,6 +456,11 @@ def cli(argv=None):
         "--version",
         action="store_true",
         help="Print local napari version and exit.",
+    )
+    p.add_argument(
+        "--installer-version",
+        action="store_true",
+        help="Print installer version and exit.",
     )
     p.add_argument(
         "--arch",
@@ -515,6 +500,9 @@ if __name__ == "__main__":
     args = cli()
     if args.version:
         print(_get_version())
+        sys.exit()
+    if args.installer_version:
+        print(INSTALLER_VERSION)
         sys.exit()
     if args.arch:
         print(ARCH)

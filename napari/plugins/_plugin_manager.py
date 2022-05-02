@@ -440,7 +440,7 @@ class NapariPluginManager(PluginManager):
 
         dock_widgets = zip(repeat("dock"), self._dock_widgets.items())
         func_widgets = zip(repeat("func"), self._function_widgets.items())
-        yield from chain(dock_widgets, func_widgets)  # type: ignore [misc]
+        yield from chain(dock_widgets, func_widgets)
 
     def register_dock_widget(
         self,
