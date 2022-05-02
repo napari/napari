@@ -63,3 +63,99 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
         }
         assert widget._table.rowCount() == 1
         assert widget._table.item(0, 0).text() == '.abc'
+
+
+def test_all_readers_in_dropdown(extension2reader_widget, qtbot):
+    npe2_readers = {
+        'npe2-name': 'npe2 Display',
+        'other-reader': 'Other Reader',
+    }
+    npe1_readers = {'npe1-reader': 'npe1-reader'}
+
+    widget = extension2reader_widget(
+        npe2_readers=npe2_readers, npe1_readers=npe1_readers
+    )
+    all_reader_display_names = list(
+        dict(npe2_readers, **npe1_readers).values()
+    )
+    all_dropdown_items = [
+        widget._new_reader_dropdown.itemText(i)
+        for i in range(widget._new_reader_dropdown.count())
+    ]
+    assert sorted(all_reader_display_names) == sorted(all_dropdown_items)
+
+
+def test_filtering_readers(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(mock_npe2_pm, 'npy-reader', filename_patterns=['*.npy'])
+    tmp_reader(mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif'])
+
+    npe1_readers = {'npe1-reader': 'npe1-reader'}
+    widget = extension2reader_widget(npe1_readers=npe1_readers)
+
+    assert widget._new_reader_dropdown.count() == 3
+    widget._filter_compatible_readers('*.npy')
+    assert widget._new_reader_dropdown.count() == 2
+    all_dropdown_items = [
+        widget._new_reader_dropdown.itemText(i)
+        for i in range(widget._new_reader_dropdown.count())
+    ]
+    assert sorted(['npy-reader', 'npe1-reader']) == all_dropdown_items
+
+
+def test_adding_new_preference(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(mock_npe2_pm, 'npy-reader', filename_patterns=['*.npy'])
+    tif_reader = tmp_reader(
+        mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif']
+    )
+    tif_reader.manifest.display_name = "TIF Reader"
+
+    widget = extension2reader_widget(
+        npe1_readers={'npe1-reader': 'npe1-reader'}
+    )
+    widget._new_extension_edit.setText('*.tif')
+    # will be filtered and tif-reader will be last item
+    widget._new_reader_dropdown.setCurrentIndex(1)
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {}
+        widget._save_new_preference(True)
+        settings = get_settings().plugins.extension2reader
+        assert '*.tif' in settings
+        assert settings['*.tif'] == 'tif-reader'
+        assert (
+            widget._table.item(widget._table.rowCount() - 1, 0).text()
+            == '*.tif'
+        )
+        plugin_label = widget._table.cellWidget(
+            widget._table.rowCount() - 1, 1
+        ).findChild(QLabel)
+        assert plugin_label.text() == 'TIF Reader'
+
+
+def test_editing_preference(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif'])
+    tmp_reader(mock_npe2_pm, 'other-tif-reader', filename_patterns=['*.tif'])
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {'*.tif': 'tif-reader'}
+
+        widget = extension2reader_widget(npe1_readers={})
+        widget._new_extension_edit.setText('*.tif')
+        # will be filtered and other-tif-reader will be first item
+        widget._new_reader_dropdown.setCurrentIndex(0)
+        original_row_count = widget._table.rowCount()
+        widget._save_new_preference(True)
+        settings = get_settings().plugins.extension2reader
+        assert '*.tif' in settings
+        assert settings['*.tif'] == 'other-tif-reader'
+        assert widget._table.rowCount() == original_row_count
+        plugin_label = widget._table.cellWidget(
+            original_row_count - 1, 1
+        ).findChild(QLabel)
+        assert plugin_label.text() == 'other-tif-reader'

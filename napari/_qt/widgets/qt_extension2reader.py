@@ -33,9 +33,9 @@ class Extension2ReaderTable(QWidget):
         super().__init__(parent=parent)
 
         npe2, npe1 = get_all_readers()
-        if not npe2_readers:
+        if npe2_readers is None:
             npe2_readers = npe2
-        if not npe1_readers:
+        if npe1_readers is None:
             npe1_readers = npe1
 
         self._npe2_readers = npe2_readers
@@ -130,7 +130,7 @@ class Extension2ReaderTable(QWidget):
         """Add dropdown item for plugin_name with reader pattern tooltip"""
         reader_patterns = get_filename_patterns_for_reader(plugin_name)
         self._new_reader_dropdown.addItem(display_name, plugin_name)
-        if not reader_patterns:
+        if not reader_patterns or '*' in reader_patterns:
             tooltip_text = 'Accepts all'
         else:
             reader_patterns_formatted = ', '.join(
