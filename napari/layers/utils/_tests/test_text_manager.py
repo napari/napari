@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from napari.layers.utils._color_encoding import ColorArray
+from napari.layers.utils.color_encoding import ColorArray
 from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     FormatStringEncoding,

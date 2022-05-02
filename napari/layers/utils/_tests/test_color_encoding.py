@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils._color_encoding import (
+from napari.layers.utils.color_encoding import (
     ColorArray,
     ConstantColorEncoding,
     DirectColorEncoding,

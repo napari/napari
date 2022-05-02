@@ -12,14 +12,14 @@ from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
-from ._color_encoding import (
+from ._text_constants import Anchor
+from ._text_utils import get_text_anchors
+from .color_encoding import (
     ColorArray,
     ColorEncoding,
     ConstantColorEncoding,
     validate_color_encoding,
 )
-from ._text_constants import Anchor
-from ._text_utils import get_text_anchors
 from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
