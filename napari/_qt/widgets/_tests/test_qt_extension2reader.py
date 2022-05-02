@@ -64,6 +64,13 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
         assert widget._table.rowCount() == 1
         assert widget._table.item(0, 0).text() == '.abc'
 
+        # remove remaining extension
+        btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
+        qtbot.mouseClick(btn_to_click, Qt.LeftButton)
+        assert get_settings().plugins.extension2reader == {}
+        assert widget._table.rowCount() == 1
+        assert "No extensions found" in widget._table.item(0, 0).text()
+
 
 def test_all_readers_in_dropdown(extension2reader_widget, qtbot):
     npe2_readers = {
@@ -104,6 +111,29 @@ def test_filtering_readers(
     assert sorted(['npy-reader', 'npe1-reader']) == all_dropdown_items
 
 
+def test_filtering_readers_complex_pattern(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(mock_npe2_pm, 'npy-reader', filename_patterns=['*.npy'])
+    tmp_reader(
+        mock_npe2_pm,
+        'tif-reader',
+        filename_patterns=['my-specific-folder/*.tif'],
+    )
+
+    npe1_readers = {'npe1-reader': 'npe1-reader'}
+    widget = extension2reader_widget(npe1_readers=npe1_readers)
+
+    assert widget._new_reader_dropdown.count() == 3
+    widget._filter_compatible_readers('my-specific-folder/my-file.tif')
+    assert widget._new_reader_dropdown.count() == 2
+    all_dropdown_items = [
+        widget._new_reader_dropdown.itemText(i)
+        for i in range(widget._new_reader_dropdown.count())
+    ]
+    assert sorted(['tif-reader', 'npe1-reader']) == all_dropdown_items
+
+
 def test_adding_new_preference(
     extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
 ):
@@ -134,6 +164,30 @@ def test_adding_new_preference(
             widget._table.rowCount() - 1, 1
         ).findChild(QLabel)
         assert plugin_label.text() == 'TIF Reader'
+
+
+def test_adding_new_preference_no_asterisk(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(mock_npe2_pm, 'npy-reader', filename_patterns=['*.npy'])
+    tif_reader = tmp_reader(
+        mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif']
+    )
+    tif_reader.manifest.display_name = "TIF Reader"
+
+    widget = extension2reader_widget(
+        npe1_readers={'npe1-reader': 'npe1-reader'}
+    )
+    widget._new_extension_edit.setText('.tif')
+    # will be filtered and tif-reader will be last item
+    widget._new_reader_dropdown.setCurrentIndex(1)
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {}
+        widget._save_new_preference(True)
+        settings = get_settings().plugins.extension2reader
+        assert '*.tif' in settings
+        assert settings['*.tif'] == 'tif-reader'
 
 
 def test_editing_preference(

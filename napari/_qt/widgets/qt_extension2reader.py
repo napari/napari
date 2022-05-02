@@ -190,6 +190,10 @@ class Extension2ReaderTable(QWidget):
         if not extension or not reader:
             return
 
+        # if user types pattern that starts with a . it's probably a file extension so prepend the *
+        if extension.startswith('.'):
+            extension = f'*{extension}'
+
         if extension in get_settings().plugins.extension2reader:
             self._edit_existing_preference(extension, reader)
         else:
