@@ -1577,7 +1577,7 @@ class Shapes(Layer):
         """
 
         # short circuit if no text present
-        if len(self.text.values) == 0:
+        if self.text.values.shape == ():
             return self.text.compute_text_coords(
                 np.zeros((0, self._ndisplay)), self._ndisplay
             )
