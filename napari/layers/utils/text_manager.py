@@ -312,6 +312,7 @@ class TextManager(EventedModel):
         )
 
     def _view_face_color(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the face colors of the text elements at the given indices."""
         return _get_style_values(self.face_color, indices_view, value_ndim=1)
 
     @classmethod
