@@ -207,7 +207,7 @@ def get_readers(path: Optional[str] = None) -> Dict[str, str]:
     if not path:
         all_readers = [reader[1] for reader in pm._contrib._readers]
     else:
-        all_readers = pm.iter_compatible_readers([path])
+        all_readers = list(pm.iter_compatible_readers([path]))
 
     return {
         reader.plugin_name: pm.get_manifest(reader.command).display_name

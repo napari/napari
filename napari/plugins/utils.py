@@ -1,6 +1,8 @@
 import re
 from fnmatch import fnmatch
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
+
+from npe2.manifest.contributions import ReaderContribution
 
 from napari.settings import get_settings
 
@@ -52,7 +54,7 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     return readers
 
 
-def get_all_readers() -> Tuple[Dict[str, str]]:
+def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
     """
     Return a dict of all npe2 readers and one of all npe1 readers
 
@@ -99,7 +101,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
     set
         set of filename patterns accepted by all plugin's reader contributions
     """
-    reader_contributions = next(
+    reader_contributions: List[ReaderContribution] = next(
         iter(
             [
                 manifest.contributions.readers
@@ -109,9 +111,8 @@ def get_filename_patterns_for_reader(plugin_name: str):
         ),
         [],
     )
-    all_fn_patterns = {
-        fn_pattern
-        for reader in reader_contributions
-        for fn_pattern in reader.filename_patterns
-    }
+    all_fn_patterns = set()
+    for reader in reader_contributions:
+        all_fn_patterns = all_fn_patterns.union(set(reader.filename_patterns))
+
     return all_fn_patterns
