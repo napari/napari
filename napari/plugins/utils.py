@@ -1,5 +1,5 @@
-import os
 import re
+from fnmatch import fnmatch
 from typing import Dict, Tuple
 
 from napari.settings import get_settings
@@ -9,10 +9,12 @@ from . import _npe2, plugin_manager
 
 def get_preferred_reader(_path):
     """Return preferred reader for _path from settings, if one exists."""
-    _, extension = os.path.splitext(_path)
-    if extension:
-        reader_settings = get_settings().plugins.extension2reader
-        return reader_settings.get(extension)
+    reader_settings = get_settings().plugins.extension2reader
+    for pattern, reader in reader_settings.items():
+        # TODO: we return the first one we find - more work should be done here
+        # in case other patterns would match - do we return the most specific?
+        if fnmatch(_path, pattern):
+            return reader
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:

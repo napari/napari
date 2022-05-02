@@ -14,7 +14,17 @@ def test_get_preferred_reader_no_readers():
 def test_get_preferred_reader_for_extension():
     pth = 'my_file.tif'
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'.tif': 'fake-plugin'}
+        get_settings().plugins.extension2reader = {'*.tif': 'fake-plugin'}
+        reader = get_preferred_reader(pth)
+        assert reader == 'fake-plugin'
+
+
+def test_get_preferred_reader_complex_pattern():
+    pth = 'my-specific-folder/my_file.tif'
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {
+            'my-specific-folder/*.tif': 'fake-plugin'
+        }
         reader = get_preferred_reader(pth)
         assert reader == 'fake-plugin'
 

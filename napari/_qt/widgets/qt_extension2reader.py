@@ -1,5 +1,3 @@
-from fnmatch import fnmatch
-
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QComboBox,
@@ -17,6 +15,7 @@ from qtpy.QtWidgets import (
 from napari.plugins.utils import (
     get_all_readers,
     get_filename_patterns_for_reader,
+    get_potential_readers,
 )
 
 from ...settings import get_settings
@@ -150,14 +149,10 @@ class Extension2ReaderTable(QWidget):
         else:
             readers = self._npe2_readers.copy()
             to_delete = []
+
+            compatible_readers = get_potential_readers(new_extension)
             for plugin_name, display_name in readers.items():
-                reader_patterns = get_filename_patterns_for_reader(plugin_name)
-                if not any(
-                    [
-                        fnmatch(new_extension, pattern)
-                        for pattern in reader_patterns
-                    ]
-                ):
+                if plugin_name not in compatible_readers:
                     to_delete.append(plugin_name)
 
             for reader in to_delete:
