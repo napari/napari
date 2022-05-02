@@ -4,6 +4,7 @@ from enum import Enum, auto
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from tempfile import gettempdir
 
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import (
@@ -115,9 +116,9 @@ class Installer(QObject):
             and os.name == "nt"
             and not QProcessEnvironment.systemEnvironment().contains("TEMP")
         ):
-            temp = tempfile.gettempdir()
-            env.insert("TEMP", temp)
+            temp = gettempdir()
             env.insert("TMP", temp)
+            env.insert("TEMP", temp)
 
         process.setProcessEnvironment(env)
         self.set_output_widget(self._output_widget)
@@ -719,9 +720,7 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        installer_type = "pip"
-        if running_as_constructor_app():
-            installer_type = "mamba"  # if os.name != "nt" else "conda"
+        installer_type = "mamba" if running_as_constructor_app() else "pip"
 
         self.installer = Installer(installer=installer_type)
         self.setup_ui()
