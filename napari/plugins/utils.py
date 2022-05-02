@@ -1,6 +1,6 @@
 import re
 from fnmatch import fnmatch
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from npe2.manifest.contributions import ReaderContribution
 
@@ -101,7 +101,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
     set
         set of filename patterns accepted by all plugin's reader contributions
     """
-    reader_contributions: List[ReaderContribution] = next(
+    reader_contributions: List[Optional[ReaderContribution]] = next(
         iter(
             [
                 manifest.contributions.readers
@@ -111,7 +111,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
         ),
         [],
     )
-    all_fn_patterns = set()
+    all_fn_patterns: Set[str] = set()
     for reader in reader_contributions:
         all_fn_patterns = all_fn_patterns.union(set(reader.filename_patterns))
 
