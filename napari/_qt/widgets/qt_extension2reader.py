@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -47,7 +48,19 @@ class Extension2ReaderTable(QWidget):
         self._edit_row = self._make_new_preference_row()
         self._populate_table()
 
+        instructions = QLabel(
+            trans._(
+                'Start typing a filename pattern to save a reader preference for it e.g. "*.tif" to save preference for all TIFF files or "my-folder/*.tif" to save preference for all TIFF files in "my-folder".'
+                + '\n\nThe available readers will be filtered to only those that accept files matching the pattern you type. Hover over a reader choice to see what filename patterns it accepts.'
+                + '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
+            )
+        )
+        instructions.setWordWrap(True)
+        instructions.setOpenExternalLinks(True)
+
         layout = QVBoxLayout()
+        instructions.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Expanding)
+        layout.addWidget(instructions)
         layout.addWidget(self._edit_row)
         layout.addWidget(self._table)
         self.setLayout(layout)
@@ -78,10 +91,7 @@ class Extension2ReaderTable(QWidget):
                 self._add_new_row(extension, plugin_name)
         else:
             # Display that there are no extensions with reader associations
-            self._table.setRowCount(1)
-            item = QTableWidgetItem(trans._('No extensions found.'))
-            item.setFlags(Qt.NoItemFlags)
-            self._table.setItem(self._extension_col, 0, item)
+            self._display_no_preferences_found()
 
     def _make_new_preference_row(self):
         """Make row for user to add a new extension assignment"""
@@ -92,7 +102,7 @@ class Extension2ReaderTable(QWidget):
         self._new_extension_edit = QLineEdit()
         self._new_extension_edit.setFixedWidth(175)
         self._new_extension_edit.setPlaceholderText(
-            "Start typing file extension..."
+            "Start typing filename pattern..."
         )
         self._new_extension_edit.textChanged.connect(
             self._filter_compatible_readers
@@ -100,8 +110,10 @@ class Extension2ReaderTable(QWidget):
 
         add_reader_widg = QWidget()
         add_reader_widg.setLayout(QHBoxLayout())
+        add_reader_widg.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred
+        )
         add_reader_widg.layout().setContentsMargins(0, 0, 0, 0)
-        add_reader_widg.setFixedWidth(250)
 
         self._new_reader_dropdown = QComboBox()
         for i, (plugin_name, display_name) in enumerate(
@@ -125,6 +137,12 @@ class Extension2ReaderTable(QWidget):
         edit_row_widget.layout().addWidget(add_reader_widg, 0, 1)
 
         return edit_row_widget
+
+    def _display_no_preferences_found(self):
+        self._table.setRowCount(1)
+        item = QTableWidgetItem(trans._('No extensions found.'))
+        item.setFlags(Qt.NoItemFlags)
+        self._table.setItem(self._extension_col, 0, item)
 
     def _add_reader_choice(self, i, plugin_name, display_name):
         """Add dropdown item for plugin_name with reader pattern tooltip"""
@@ -169,6 +187,9 @@ class Extension2ReaderTable(QWidget):
         extension = self._new_extension_edit.text()
         reader = self._new_reader_dropdown.currentData()
 
+        if not extension or not reader:
+            return
+
         if extension in get_settings().plugins.extension2reader:
             self._edit_existing_preference(extension, reader)
         else:
@@ -188,6 +209,14 @@ class Extension2ReaderTable(QWidget):
     def _add_new_row(self, extension, reader):
         """Add new reader preference to table"""
         last_row = self._table.rowCount()
+
+        if (
+            last_row == 1
+            and 'No extensions found' in self._table.item(0, 0).text()
+        ):
+            self._table.removeRow(0)
+            last_row = 0
+
         self._table.insertRow(last_row)
         item = QTableWidgetItem(extension)
         item.setFlags(Qt.NoItemFlags)
@@ -232,7 +261,10 @@ class Extension2ReaderTable(QWidget):
             ).objectName()
             if row_widg_name == extension_to_remove:
                 self._table.removeRow(i)
-                return
+                break
+
+        if self._table.rowCount() == 0:
+            self._display_no_preferences_found()
 
     def value(self):
         """Return extension:reader mapping from settings.
