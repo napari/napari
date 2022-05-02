@@ -149,9 +149,7 @@ def test_quantitative_with_colormap_values(features):
     encoding = QuantitativeColorEncoding(
         feature='confidence', colormap=colormap
     )
-
     values = encoding(features)
-
     assert_colors_equal(values, [[c, 0, 0] for c in features['confidence']])
 
 
