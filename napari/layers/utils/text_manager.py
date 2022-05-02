@@ -298,7 +298,12 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return _get_style_values(self.string, indices_view)
+        values = _get_style_values(self.string, indices_view)
+        return (
+            np.broadcast_to(values, len(indices_view))
+            if values.ndim == 0
+            else values
+        )
 
     def _view_face_color(self, indices_view: np.ndarray) -> np.ndarray:
         return _get_style_values(self.face_color, indices_view, value_ndim=1)

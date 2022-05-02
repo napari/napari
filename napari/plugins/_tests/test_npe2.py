@@ -113,8 +113,8 @@ def test_write(mock_pm: PluginManager):
     writer.exec.return_value = ['']
     assert _npe2.write_layers('some_file.tif', [points], writer=writer) == ['']
     mock_pm.commands.get.assert_not_called()
-    expected_args = ('some_file.tif', *points.as_layer_data_tuple()[:2])
-    writer.exec.assert_called_once_with(args=expected_args)
+    writer.exec.assert_called_once()
+    assert writer.exec.call_args_list[0].kwargs['args'][0] == 'some_file.tif'
 
 
 def test_get_widget_contribution(mock_pm):
@@ -153,7 +153,7 @@ def test_file_extensions_string_for_layers(mock_pm):
 
 
 def test_get_readers(mock_pm):
-    assert _npe2.get_readers("some.fzzy") == {'My Plugin': PLUGIN_NAME}
+    assert _npe2.get_readers("some.fzzy") == {PLUGIN_NAME: 'My Plugin'}
 
 
 def test_iter_manifest(mock_pm):

@@ -19,7 +19,7 @@ StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 @runtime_checkable
 class StyleEncoding(Protocol[StyleValue, StyleArray]):
-    """Encodes style values, like colors and strings, from layer features.
+    """Encodes generic style values, like colors and strings, from layer features.
 
     The public API of any StyleEncoding is just __call__, such that it can
     be called to generate style values from layer features. That call should
@@ -102,14 +102,32 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 class _StyleEncodingModel(EventedModel):
     class Config:
-        # Match fields exactly so that dicts can be sensibly parsed.
+        # Forbid extra initialization parameters instead of ignoring
+        # them by default. This is useful when parsing style encodings
+        # from dicts, as different types of encodings may have the same
+        # field names.
+        # https://pydantic-docs.helpmanual.io/usage/model_config/#options
         extra = 'forbid'
+
+
+# The following classes provide generic implementations of common ways
+# to encode style values, like constant, manual, and derived encodings.
+# They inherit Python's built-in `Generic` type, so that an encoding with
+# a specific output type can inherit the generic type annotations from
+# this class along with the functionality it provides. For example,
+# `ConstantStringEncoding.__call__` returns an `Array[str, ()]` whereas
+# `ConstantColorEncoding.__call__` returns an `Array[float, (4,)]`.
+# For more information on `Generic`, see the official docs.
+# https://docs.python.org/3/library/typing.html#generics
 
 
 class _ConstantStyleEncoding(
     _StyleEncodingModel, Generic[StyleValue, StyleArray]
 ):
     """Encodes a constant style value.
+
+    This encoding is generic so that it can be used to implement style
+    encodings with different value types like Array[]
 
     Attributes
     ----------
@@ -259,7 +277,7 @@ def _get_style_values(
     indices: IndicesType,
     value_ndim: int = 0,
 ):
-    """Indexes cached style values or broadcasts them length of the given indices."""
+    """Returns a scalar style value or indexes non-scalar style values."""
     values = encoding._values
     return values if values.ndim == value_ndim else values[indices]
 

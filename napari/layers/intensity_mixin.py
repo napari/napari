@@ -55,11 +55,14 @@ class IntensityVisualizationMixin:
         """napari.utils.Colormap: colormap for luminance images."""
         return self._colormap
 
-    @colormap.setter
-    def colormap(self, colormap):
+    def _set_colormap(self, colormap):
         self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
+
+    @colormap.setter
+    def colormap(self, colormap):
+        self._set_colormap(colormap)
 
     @property
     def colormaps(self):

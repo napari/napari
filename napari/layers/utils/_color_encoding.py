@@ -145,7 +145,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     contrast_limits : Optional[Tuple[float, float]]
         The (min, max) feature values that should respectively map to the first and last
         colors in the colormap. If None, then this will attempt to calculate these values
-        from the feature values the first time this generate color values. If that attempt
+        from the feature values each time this generates color values. If that attempt
         fails, these are effectively (0, 1).
     fallback : ColorValue
         The safe constant fallback color to use if mapping the feature values to
@@ -162,10 +162,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
 
     def __call__(self, features: Any) -> ColorArray:
         values = features[self.feature]
-        if self.contrast_limits is None:
-            self.contrast_limits = _calculate_contrast_limits(values)
-        if self.contrast_limits is not None:
-            values = np.interp(values, self.contrast_limits, (0, 1))
+        contrast_limits = self.contrast_limits or _calculate_contrast_limits(
+            values
+        )
+        if contrast_limits is not None:
+            values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
     @validator('colormap', pre=True, always=True)
@@ -190,7 +191,7 @@ ColorEncodingArgument = Union[ColorEncoding, dict, str, ColorType, None]
 
 
 def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
-    """Validates and coerces a value to a StringEncoding.
+    """Validates and coerces a value to a ColorEncoding.
 
     Parameters
     ----------
