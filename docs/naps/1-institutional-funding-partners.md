@@ -7,7 +7,7 @@ Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
 Author: "Nicholas Sofroniew <mailto:sofroniewn@gmail.com>"
 Created: '2022-04-21'
 Status: Draft
-Type: Process
+Type: Accepted
 ```
 
 ## Abstract
@@ -96,9 +96,7 @@ direct engineering effort by institution employees.
 
 ## Implementation
 
-This section will be updated with a link to a pull request (PR) updating the
-governance documentation once that PR has been opened. An initial proposal for
-the additions to the governance is included below:
+An initial proposal for the additions to the governance is included below:
 
 > The napari steering council (SC) will be no less than three members and no
 > more than five members, with a strong preference for an odd number to ensure
@@ -160,6 +158,8 @@ the additions to the governance is included below:
 >   Representative.
 > - Ability to influence the project through the election of the Institutional
 >   and Funding Partner seat on the SC.
+
+The propsed implementation can be found in [PR 4458](https://github.com/napari/napari/pull/4458)
 
 ## Backward Compatibility
 
