@@ -1,6 +1,6 @@
 import re
 from fnmatch import fnmatch
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
@@ -102,7 +102,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
         set of filename patterns accepted by all plugin's reader contributions
     """
     all_fn_patterns: Set[str] = set()
-    current_plugin: PluginManifest | None = None
+    current_plugin: Union[PluginManifest, None] = None
     for manifest in _npe2.iter_manifests():
         if manifest.name == plugin_name:
             current_plugin = manifest
