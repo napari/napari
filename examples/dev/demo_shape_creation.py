@@ -50,7 +50,7 @@ if __name__ == "__main__":
         "--type",
         type=str,
         default="path",
-        choices=['path', 'polygon', 'rectangle'],
+        choices=['path', 'polygon', 'rectangle', 'ellipse'],
     )
     parser.add_argument(
         "-c",
@@ -71,6 +71,9 @@ if __name__ == "__main__":
 
     if args.type == 'rectangle':
         coords = coords[:, [4, 20]]
+    elif args.type == 'ellipse':
+        coords = coords[:, [0, 8, 16,22]]
+
 
     if args.concat:
         coords = coords.reshape((1, -1, 2))
@@ -93,11 +96,6 @@ if __name__ == "__main__":
         face_color_cycle=color_cycle,
         edge_color='class' if args.properties else [1,1,1,1],
         edge_color_cycle=color_cycle,
-    )
-
-    path = time_me(
-        "time to create single path",
-        lambda: napari.layers.shapes._shapes_models.Path(coords[0]),
     )
 
     layer = time_me(
