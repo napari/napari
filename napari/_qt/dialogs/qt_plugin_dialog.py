@@ -108,6 +108,17 @@ class Installer(QObject):
         env.insert(
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
+
+        # workaround https://github.com/napari/napari/issues/4247
+        if (
+            installer == "mamba"
+            and os.name == "nt"
+            and not QProcessEnvironment.systemEnvironment().contains("TEMP")
+        ):
+            temp = tempfile.gettempdir()
+            env.insert("TEMP", temp)
+            env.insert("TMP", temp)
+
         process.setProcessEnvironment(env)
         self.set_output_widget(self._output_widget)
         process.finished.connect(
@@ -710,7 +721,7 @@ class QtPluginDialog(QDialog):
 
         installer_type = "pip"
         if running_as_constructor_app():
-            installer_type = "mamba" if os.name != "nt" else "conda"
+            installer_type = "mamba"  # if os.name != "nt" else "conda"
 
         self.installer = Installer(installer=installer_type)
         self.setup_ui()
