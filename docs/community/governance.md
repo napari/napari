@@ -85,14 +85,14 @@ employed by the same entity. One seat on the steering council is reserved for
 a member elected by the [Institutional and Funding Partner Advisory Council](institutional-and-funding-partners),
 as detailed below. This member need not be an existing core developer.
 
-The SC membership, including the Institutional Partner seat, is revisited every January.
+The SC membership, including the Institutional and Funding Partner seat, is revisited every January.
 SC members who do not actively engage with the SC duties are expected to resign. New members for 
 vacant spots are added by nomination by a core developer. Nominees should have demonstrated
 long-term, continued commitment to the project and its [mission and values](mission-and-values). A
 nomination will result in discussion that cannot take more than a month and
 then admission to the SC by consensus. During that time deadlocked votes of the SC will
-be postponed until the new member has joined and another vote can be held. The Institutional Partner seat
-is elected by the Institutional Partner Advisory Council.
+be postponed until the new member has joined and another vote can be held. The Institutional and Funding Partner seat
+is elected by the Institutional and Funding Partner Advisory Council.
 
 The SC may be contacted at `napari-steering-council@googlegroups.com`.
 Or via the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) GitHub team. For a list of the current steering council see our [About Us](team) page.
@@ -148,7 +148,7 @@ Representative.
 - Ability to influence the project through the election of the Institutional
 and Funding Partner seat on the SC.
 
-For a full list of current Institutional Partners and their Representatives see our [About Us](team) page.
+For a full list of current Institutional and Funding Partners and their Representatives see our [About Us](team) page.
 
 ## Decision making process
 
