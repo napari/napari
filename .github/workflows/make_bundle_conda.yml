@@ -390,7 +390,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           bash napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -bfp "${{ runner.temp }}/napari-app-${{ env.installer_version }}"
-          . "${{ runner.temp }}/napari-${{ env.version }}/etc/profile.d/conda.sh"
+          . "${{ runner.temp }}/napari-app-${{ env.installer_version }}/etc/profile.d/conda.sh"
           conda activate "${{ runner.temp }}/napari-app-${{ env.installer_version }}/envs/napari-${{ env.version }}"
           conda config --show-sources
           conda config --show
