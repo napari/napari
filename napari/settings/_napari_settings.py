@@ -5,7 +5,7 @@ from typing import Any, Optional
 from pydantic import Field
 
 from ..utils._base import _DEFAULT_CONFIG_PATH
-from ..utils.misc import running_as_constructor_app
+from ..utils.misc import is_dev, running_as_constructor_app
 from ..utils.translations import trans
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
@@ -60,7 +60,7 @@ class NapariSettings(EventedConfigFileSettings):
         title=trans._("Experimental"),
         description=trans._("Experimental settings."),
     )
-    if running_as_constructor_app():
+    if running_as_constructor_app() or is_dev():
         updates: UpdateSettings = Field(
             default_factory=UpdateSettings,
             title=trans._("Updates"),

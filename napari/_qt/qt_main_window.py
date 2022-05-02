@@ -57,7 +57,6 @@ from .dialogs.qt_updates import (
     UpdateErrorDialog,
     UpdateOptionsDialog,
     UpdateStatusDialog,
-    UpdateTroubleshootDialog,
 )
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
@@ -98,7 +97,7 @@ class _QtMainWindow(QMainWindow):
         self._quit_app = False
         self._update_on_quit = False
         self._update_info = None
-        self._update_manager = get_update_manager()
+        self._update_manager = self._get_update_manager()
         self._update_worker = None
 
         self.setWindowIcon(QIcon(self._window_icon))
@@ -129,8 +128,11 @@ class _QtMainWindow(QMainWindow):
         self.setStatusBar(ViewerStatusBar(self))
 
         settings = get_settings()
-        if running_as_constructor_app():
-            if settings.updates.check_for_updates:
+        if running_as_constructor_app() or is_dev():
+            if (
+                settings.updates.check_for_updates
+                and settings.updates.update_testing != "none"
+            ):
                 self.check_updates(startup=True)
 
         # TODO:
@@ -215,7 +217,6 @@ class _QtMainWindow(QMainWindow):
 
         Symmetric to the 'set_window_settings' setter.
         """
-
         window_fullscreen = self.isFullScreen()
         if window_fullscreen:
             window_maximized = self._maximized_flag
@@ -442,24 +443,28 @@ class _QtMainWindow(QMainWindow):
             Dictionary with information on updates incluyding version,
             installer type and installed versions found.
         """
-        print(update_info)
         _settings = get_settings()
         startup = self._update_worker._startup
         self._update_info = update_info
         self._update_version = update_info["latest"]
-        # FIXME: To test failure
-        self._update_version = '0.4.16'
-        # FIXME: To test success
-        # self._update_version = '0.4.15'
-        # FIXME: To test update options dialog
-        update_info["update"] = True
+
+        # test the update procedure
+        if _settings.updates.update_testing.name == "update":
+            self._update_version = '0.4.15'
+            update_info["update"] = True
+        elif _settings.updates.update_testing.name == "up_to_date":
+            update_info["update"] = False
+        elif _settings.updates.update_testing.name == "error":
+            self._update_version = '1000.0.0'
+            update_info["update"] = True
+
         if self._update_version in _settings.updates.update_version_skip:
             dlg = UpdateStatusDialog(self)
             dlg.exec_()
             return
 
         if update_info["update"]:
-            if running_as_constructor_app():
+            if running_as_constructor_app() or is_dev():
                 if _settings.updates.update_automatically and startup:
                     # if automatic, do not prompt a dialog, but start the
                     # update process right away. Only do this for startup
@@ -476,29 +481,30 @@ class _QtMainWindow(QMainWindow):
                         self._update_napari()
                     elif dlg.is_update_on_quit():
                         self._update_on_quit = dlg.is_update_on_quit()
-                        self._update_manager = None
         else:
             if not startup:
                 dlg = UpdateStatusDialog(self)
                 dlg.exec_()
 
+    def _get_update_manager(self):
+        """Return the update manager."""
+        update_manager = get_update_manager(self)
+        update_manager.started.connect(lambda: self._show_activity_dock(True))
+        update_manager.finished.connect(
+            lambda: self._show_activity_dock(False)
+        )
+        update_manager.finished.connect(self._update_finished)
+        update_manager.errored.connect(self._update_errored)
+        return update_manager
+
     def _update_napari(self):
         """Launch napari update process and show the notification area."""
         _settings = get_settings()
         nightly = _settings.updates.check_nightly_builds
-        self._update_manager = get_update_manager(self)
-        self._update_manager.started.connect(
-            lambda: self._show_activity_dock(True)
-        )
-        self._update_manager.finished.connect(
-            lambda: self._show_activity_dock(False)
-        )
         self._update_manager.run_update(
             version=self._update_version,
             nightly=nightly,
         )
-        self._update_manager.finished.connect(self._update_finished)
-        self._update_manager.errored.connect(self._update_errored)
 
     def _update_errored(self, messages):
         """Run cleanup when the update process failed."""
@@ -508,7 +514,6 @@ class _QtMainWindow(QMainWindow):
 
     def _update_finished(self):
         """Run cleanup actions when the update process finishes."""
-        # FIXME: Needs to show a dialog in case of errors.
         self._update_on_quit = False
 
     def _show_activity_dock(self, value):
@@ -523,14 +528,14 @@ class _QtMainWindow(QMainWindow):
         startup: bool
             This check is running this check on startup. Default is ``False``.
         """
-        # FIXME: toggle for local testing
-        if is_dev():
+        _settings = get_settings()
+        # Testing update process in dev mode
+        if is_dev() and _settings.updates.update_testing == "none":
             return
 
         if not self._update_manager.is_finished() and not startup:
             self._show_activity_dock(True)
         else:
-            _settings = get_settings()
             stable = not _settings.updates.check_previews
             nightly = _settings.updates.check_nightly_builds
             self._update_worker = create_worker(
@@ -545,20 +550,10 @@ class _QtMainWindow(QMainWindow):
             self._update_worker.returned.connect(self._check_updates)
             self._update_worker.start()
 
-    def run_update_troubleshooter(self):
-        """Run the update troubleshooter."""
-        if self._troubleshoot_dialog:
-            self._troubleshoot_dialog.show()
-            self._troubleshoot_dialog.raise_()
-        else:
-            self._troubleshoot_dialog = UpdateTroubleshootDialog(self)
-            self._troubleshoot_dialog.started.connect(
-                lambda: self._show_activity_dock(True)
-            )
-            self._troubleshoot_dialog.finished.connect(
-                lambda: self._show_activity_dock(False)
-            )
-            self._troubleshoot_dialog.show()
+    def clean_package_cache(self):
+        """Clean the package cache."""
+        _update_manager = self._get_update_manager()
+        _update_manager.clean()
 
 
 class Window:

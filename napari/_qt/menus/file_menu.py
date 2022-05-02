@@ -6,7 +6,11 @@ from qtpy.QtWidgets import QAction
 
 from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
-from ...utils.misc import running_as_bundled_app, running_as_constructor_app
+from ...utils.misc import (
+    is_dev,
+    running_as_bundled_app,
+    running_as_constructor_app,
+)
 from ...utils.translations import trans
 from ..dialogs.preferences_dialog import PreferencesDialog
 from ..dialogs.screenshot_dialog import ScreenshotDialog
@@ -97,15 +101,15 @@ class FileMenu(NapariMenu):
             },
             {},
             {
-                'when': running_as_constructor_app(),
+                'when': running_as_constructor_app() or is_dev(),
                 'text': trans._('Check for updates...'),
                 'slot': window._qt_window.check_updates,
                 'menuRole': QAction.ApplicationSpecificRole,
             },
             {
-                'when': running_as_constructor_app(),
-                'text': trans._('Updates troubleshoot...'),
-                'slot': window._qt_window.run_update_troubleshooter,
+                'when': running_as_constructor_app() or is_dev(),
+                'text': trans._('Clean update cache'),
+                'slot': window._qt_window.clean_package_cache,
                 'menuRole': QAction.ApplicationSpecificRole,
             },
             {},

@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List
 
 from pydantic import Field
@@ -5,6 +6,13 @@ from pydantic import Field
 from ..utils.events.evented_model import EventedModel
 from ..utils.misc import is_dev
 from ..utils.translations import trans
+
+
+class UpdateTestingOptions(Enum):
+    none = "none"
+    update = "update"
+    up_to_date = "up_to_date"
+    error = "error"
 
 
 class UpdateSettings(EventedModel):
@@ -37,6 +45,14 @@ class UpdateSettings(EventedModel):
             "Skip napari versions.",
         ),
     )
+    # Used for testing when running napari from source
+    update_testing: UpdateTestingOptions = Field(
+        UpdateTestingOptions.none,
+        title=trans._("Select the update testing to run"),
+        description=trans._(
+            "Select the update testing to run.",
+        ),
+    )
 
     class NapariConfig:
         # Napari specific configuration
@@ -51,4 +67,5 @@ class UpdateSettings(EventedModel):
                 'update_version_skip',
                 'check_nightly_builds',
                 'check_previews',
+                'update_testing',
             ]

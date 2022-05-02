@@ -122,7 +122,6 @@ class UpdateManager(QObject):
         """
         text = self._process.readAllStandardOutput().data().decode()
         self._messages.append(text)
-        print(text)
 
         # Handle common known messages
         for i, (key, value) in enumerate(self._update_keys):
@@ -153,7 +152,6 @@ class UpdateManager(QObject):
                 pass
         else:
             if self._process._action == ManagerActions.update:
-                # FIXME: Show dialog
                 trans._("Version could not be updated!")
                 self.errored.emit(messages)
             elif self._process._action == ManagerActions.install:
@@ -240,9 +238,8 @@ class UpdateManager(QObject):
             "-p",
             str(env_path),
             f"napari={version}=*pyside*",
-            # FIXME: When napari menu is updated with the pins?
             # Also we require the conda fork
-            # f"napari-menu={version}",
+            f"napari-menu={version}",
             "--channel",
             "conda-forge",
             # FIXME: When napari menu is updated with the pins?
@@ -314,17 +311,6 @@ class UpdateManager(QObject):
         process.setArguments(args)
         process._action = ManagerActions.clean
         self._run_process(total=0, desc=trans._("clean"))
-
-    def clear(self):
-        """Clear previous broken installations."""
-        for path in self._envs_path().iterdir():
-            parts = path.name.split("-")
-            if (
-                path.is_dir()
-                and parts[0] == "napari"
-                and parts[-1] == "broken"
-            ):
-                print(f"removing {str(path)}")
 
     def is_finished(self) -> bool:
         """Return whether the process is finished."""
