@@ -50,7 +50,7 @@ if __name__ == "__main__":
         "--type",
         type=str,
         default="path",
-        choices=['path', 'polygon', 'rectangle', 'ellipse'],
+        choices=['path', 'path_concat', 'polygon', 'rectangle', 'ellipse'],
     )
     parser.add_argument(
         "-c",
@@ -73,18 +73,18 @@ if __name__ == "__main__":
         coords = coords[:, [4, 20]]
     elif args.type == 'ellipse':
         coords = coords[:, [0, 8, 16,22]]
-
-
-    if args.concat:
+    elif args.type == 'path_concat':
+        args.type = 'path'
         coords = coords.reshape((1, -1, 2))
+
 
     print(f'number of polygons: {len(coords)}')
     print(f'layer type: {args.type}')
     print(f'properties: {args.properties}')
 
     properties = {
-        'class': (['A', 'B', 'C', 'D'] * (args.n_polys // 4 + 1))[
-            : args.n_polys
+        'class': (['A', 'B', 'C', 'D'] * (len(coords) // 4 + 1))[
+            : len(coords)
         ],
     }
     color_cycle = ['blue', 'magenta', 'green']
