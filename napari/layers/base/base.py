@@ -793,6 +793,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'translate': list(self.translate),
             'rotate': [list(r) for r in self.rotate],
             'shear': list(self.shear),
+            'affine': self.affine.affine_matrix,
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
