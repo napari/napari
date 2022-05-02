@@ -18,6 +18,7 @@ from napari._tests.utils import (
     skip_on_win_ci,
 )
 from napari._vispy.utils.gl import fix_data_dtype
+from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
@@ -641,3 +642,18 @@ def test_surface_mixed_dim(make_napari_viewer):
     timeseries_values = np.vstack([values, values])
     timeseries_data = (verts, faces, timeseries_values)
     viewer.add_surface(timeseries_data)
+
+
+def test_insert_layer_ordering(make_napari_viewer):
+    """make sure layer ordering is correct in vispy when inserting layers"""
+    viewer = make_napari_viewer()
+    pl1 = Points()
+    pl2 = Points()
+
+    viewer.layers.append(pl1)
+    viewer.layers.insert(0, pl2)
+
+    pl1_vispy = viewer.window._qt_viewer.layer_to_visual[pl1].node
+    pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
+    assert pl1_vispy.order == 1
+    assert pl2_vispy.order == 0

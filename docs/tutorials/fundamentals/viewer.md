@@ -314,6 +314,15 @@ viewer.add_image(blobs, name='blobs', opacity=0.5, colormap='red')
 nbscreenshot(viewer, alt_text=" ")
 ```
 
+In order to get or to update the current position of the slider, use 
+
+```viewer.dims.current_step```
+
+that is in integer steps. 
+
+`viewer.dims.point` contains the position in world coordinates (ie including scale and translate transformations)
+
+
 ### Viewer buttons
 
 Underneath the layers list there is a row of buttons that includes the `Console`
