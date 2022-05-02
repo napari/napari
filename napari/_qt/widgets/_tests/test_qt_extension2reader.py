@@ -27,7 +27,10 @@ def test_extension2reader_defaults(
         widget = extension2reader_widget()
 
         assert widget._table.rowCount() == 1
-        assert widget._table.itemAt(0, 0).text() == 'No extensions found.'
+        assert (
+            widget._table.itemAt(0, 0).text()
+            == 'No filename preferences found.'
+        )
 
 
 def test_extension2reader_with_settings(
@@ -69,7 +72,9 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
         qtbot.mouseClick(btn_to_click, Qt.LeftButton)
         assert get_settings().plugins.extension2reader == {}
         assert widget._table.rowCount() == 1
-        assert "No extensions found" in widget._table.item(0, 0).text()
+        assert (
+            "No filename preferences found" in widget._table.item(0, 0).text()
+        )
 
 
 def test_all_readers_in_dropdown(extension2reader_widget, qtbot):
@@ -146,7 +151,7 @@ def test_adding_new_preference(
     widget = extension2reader_widget(
         npe1_readers={'npe1-reader': 'npe1-reader'}
     )
-    widget._new_extension_edit.setText('*.tif')
+    widget._fn_pattern_edit.setText('*.tif')
     # will be filtered and tif-reader will be last item
     widget._new_reader_dropdown.setCurrentIndex(1)
 
@@ -178,7 +183,7 @@ def test_adding_new_preference_no_asterisk(
     widget = extension2reader_widget(
         npe1_readers={'npe1-reader': 'npe1-reader'}
     )
-    widget._new_extension_edit.setText('.tif')
+    widget._fn_pattern_edit.setText('.tif')
     # will be filtered and tif-reader will be last item
     widget._new_reader_dropdown.setCurrentIndex(1)
 
@@ -200,7 +205,7 @@ def test_editing_preference(
         get_settings().plugins.extension2reader = {'*.tif': 'tif-reader'}
 
         widget = extension2reader_widget(npe1_readers={})
-        widget._new_extension_edit.setText('*.tif')
+        widget._fn_pattern_edit.setText('*.tif')
         # will be filtered and other-tif-reader will be first item
         widget._new_reader_dropdown.setCurrentIndex(0)
         original_row_count = widget._table.rowCount()

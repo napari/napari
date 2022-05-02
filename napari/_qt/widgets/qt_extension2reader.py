@@ -67,13 +67,13 @@ class Extension2ReaderTable(QWidget):
 
     def _set_up_table(self):
         """Add table columns and headers, define styling"""
-        self._extension_col = 0
+        self._fn_pattern_col = 0
         self._reader_col = 1
 
-        header_strs = [trans._('Extension'), trans._('Reader Plugin')]
+        header_strs = [trans._('Filename Pattern'), trans._('Reader Plugin')]
 
         self._table.setColumnCount(2)
-        self._table.setColumnWidth(self._extension_col, 175)
+        self._table.setColumnWidth(self._fn_pattern_col, 200)
         self._table.setColumnWidth(self._reader_col, 250)
         self._table.verticalHeader().setVisible(False)
         self._table.setMinimumHeight(120)
@@ -85,26 +85,26 @@ class Extension2ReaderTable(QWidget):
     def _populate_table(self):
         """Add row for each extension to reader mapping in settings"""
 
-        extension2reader = get_settings().plugins.extension2reader
-        if len(extension2reader) > 0:
-            for extension, plugin_name in extension2reader.items():
-                self._add_new_row(extension, plugin_name)
+        fnpattern2reader = get_settings().plugins.extension2reader
+        if len(fnpattern2reader) > 0:
+            for fn_pattern, plugin_name in fnpattern2reader.items():
+                self._add_new_row(fn_pattern, plugin_name)
         else:
-            # Display that there are no extensions with reader associations
+            # Display that there are no filename patterns with reader associations
             self._display_no_preferences_found()
 
     def _make_new_preference_row(self):
-        """Make row for user to add a new extension assignment"""
+        """Make row for user to add a new filename pattern assignment"""
         edit_row_widget = QWidget()
         edit_row_widget.setLayout(QGridLayout())
         edit_row_widget.layout().setContentsMargins(0, 0, 0, 0)
 
-        self._new_extension_edit = QLineEdit()
-        self._new_extension_edit.setFixedWidth(175)
-        self._new_extension_edit.setPlaceholderText(
+        self._fn_pattern_edit = QLineEdit()
+        self._fn_pattern_edit.setFixedWidth(175)
+        self._fn_pattern_edit.setPlaceholderText(
             "Start typing filename pattern..."
         )
-        self._new_extension_edit.textChanged.connect(
+        self._fn_pattern_edit.textChanged.connect(
             self._filter_compatible_readers
         )
 
@@ -123,14 +123,14 @@ class Extension2ReaderTable(QWidget):
 
         add_btn = QPushButton('Add')
         add_btn.setFixedWidth(70)
-        add_btn.setToolTip(trans._('Save reader preference for extension'))
+        add_btn.setToolTip(trans._('Save reader preference for pattern'))
         add_btn.clicked.connect(self._save_new_preference)
 
         add_reader_widg.layout().addWidget(self._new_reader_dropdown)
         add_reader_widg.layout().addWidget(add_btn)
 
         edit_row_widget.layout().addWidget(
-            self._new_extension_edit,
+            self._fn_pattern_edit,
             0,
             0,
         )
@@ -140,9 +140,9 @@ class Extension2ReaderTable(QWidget):
 
     def _display_no_preferences_found(self):
         self._table.setRowCount(1)
-        item = QTableWidgetItem(trans._('No extensions found.'))
+        item = QTableWidgetItem(trans._('No filename preferences found.'))
         item.setFlags(Qt.NoItemFlags)
-        self._table.setItem(self._extension_col, 0, item)
+        self._table.setItem(self._fn_pattern_col, 0, item)
 
     def _add_reader_choice(self, i, plugin_name, display_name):
         """Add dropdown item for plugin_name with reader pattern tooltip"""
@@ -159,23 +159,21 @@ class Extension2ReaderTable(QWidget):
             i, tooltip_text, role=Qt.ToolTipRole
         )
 
-    def _filter_compatible_readers(self, new_extension):
+    def _filter_compatible_readers(self, new_pattern):
         """Filter reader dropwdown items to those that accept `new_extension`"""
         self._new_reader_dropdown.clear()
-        if len(new_extension) < 3:
-            readers = dict(self._npe2_readers, **self._npe1_readers)
-        else:
-            readers = self._npe2_readers.copy()
-            to_delete = []
 
-            compatible_readers = get_potential_readers(new_extension)
-            for plugin_name, display_name in readers.items():
-                if plugin_name not in compatible_readers:
-                    to_delete.append(plugin_name)
+        readers = self._npe2_readers.copy()
+        to_delete = []
 
-            for reader in to_delete:
-                del readers[reader]
-            readers.update(self._npe1_readers)
+        compatible_readers = get_potential_readers(new_pattern)
+        for plugin_name, display_name in readers.items():
+            if plugin_name not in compatible_readers:
+                to_delete.append(plugin_name)
+
+        for reader in to_delete:
+            del readers[reader]
+        readers.update(self._npe1_readers)
 
         for i, (plugin_name, display_name) in enumerate(
             sorted(readers.items())
@@ -184,63 +182,64 @@ class Extension2ReaderTable(QWidget):
 
     def _save_new_preference(self, event):
         """Save current preference to settings and show in table"""
-        extension = self._new_extension_edit.text()
+        fn_pattern = self._fn_pattern_edit.text()
         reader = self._new_reader_dropdown.currentData()
 
-        if not extension or not reader:
+        if not fn_pattern or not reader:
             return
 
         # if user types pattern that starts with a . it's probably a file extension so prepend the *
-        if extension.startswith('.'):
-            extension = f'*{extension}'
+        if fn_pattern.startswith('.'):
+            fn_pattern = f'*{fn_pattern}'
 
-        if extension in get_settings().plugins.extension2reader:
-            self._edit_existing_preference(extension, reader)
+        if fn_pattern in get_settings().plugins.extension2reader:
+            self._edit_existing_preference(fn_pattern, reader)
         else:
-            self._add_new_row(extension, reader)
+            self._add_new_row(fn_pattern, reader)
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            extension: reader,
+            fn_pattern: reader,
         }
 
-    def _edit_existing_preference(self, extension, reader):
+    def _edit_existing_preference(self, fn_pattern, reader):
         """Edit existing extension preference"""
-        current_reader_label = self.findChild(QLabel, extension)
+        current_reader_label = self.findChild(QLabel, fn_pattern)
         if reader in self._npe2_readers:
             reader = self._npe2_readers[reader]
         current_reader_label.setText(reader)
 
-    def _add_new_row(self, extension, reader):
+    def _add_new_row(self, fn_pattern, reader):
         """Add new reader preference to table"""
         last_row = self._table.rowCount()
 
         if (
             last_row == 1
-            and 'No extensions found' in self._table.item(0, 0).text()
+            and 'No filename preferences found'
+            in self._table.item(0, 0).text()
         ):
             self._table.removeRow(0)
             last_row = 0
 
         self._table.insertRow(last_row)
-        item = QTableWidgetItem(extension)
+        item = QTableWidgetItem(fn_pattern)
         item.setFlags(Qt.NoItemFlags)
-        self._table.setItem(last_row, self._extension_col, item)
+        self._table.setItem(last_row, self._fn_pattern_col, item)
 
         plugin_widg = QWidget()
         # need object name to easily find row
-        plugin_widg.setObjectName(f'{extension}')
+        plugin_widg.setObjectName(f'{fn_pattern}')
         plugin_widg.setLayout(QHBoxLayout())
         plugin_widg.layout().setContentsMargins(0, 0, 0, 0)
 
         if reader in self._npe2_readers:
             reader = self._npe2_readers[reader]
-        plugin_label = QLabel(reader, objectName=extension)
+        plugin_label = QLabel(reader, objectName=fn_pattern)
         # need object name to easily work out which button was clicked
-        remove_btn = QPushButton('X', objectName=extension)
+        remove_btn = QPushButton('X', objectName=fn_pattern)
         remove_btn.setFixedWidth(30)
         remove_btn.setStyleSheet('margin: 4px;')
         remove_btn.setToolTip(
-            trans._('Remove this extension to reader association')
+            trans._('Remove this filename pattern to reader association')
         )
         remove_btn.clicked.connect(self.remove_existing_preference)
 
@@ -250,20 +249,18 @@ class Extension2ReaderTable(QWidget):
 
     def remove_existing_preference(self, event):
         """Delete extension to reader mapping setting and remove table row"""
-        extension_to_remove = self.sender().objectName()
+        pattern_to_remove = self.sender().objectName()
         current_settings = get_settings().plugins.extension2reader
         # need explicit assignment to new object here for persistence
         get_settings().plugins.extension2reader = {
-            k: v
-            for k, v in current_settings.items()
-            if k != extension_to_remove
+            k: v for k, v in current_settings.items() if k != pattern_to_remove
         }
 
         for i in range(self._table.rowCount()):
             row_widg_name = self._table.cellWidget(
                 i, self._reader_col
             ).objectName()
-            if row_widg_name == extension_to_remove:
+            if row_widg_name == pattern_to_remove:
                 self._table.removeRow(i)
                 break
 
