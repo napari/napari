@@ -53,7 +53,11 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
 
 
 def get_all_readers() -> Tuple[Dict[str, str]]:
-    """Return a dict of all npe2 readers and one of all npe1 readers"""
+    """
+    Return a dict of all npe2 readers and one of all npe1 readers
+
+    Can be removed once npe2 shim is activated.
+    """
 
     npe2_readers = _npe2.get_readers()
 
@@ -80,6 +84,21 @@ def normalized_name(name: str) -> str:
 
 
 def get_filename_patterns_for_reader(plugin_name: str):
+    """Return recognized filename patterns, if any, for a given plugin.
+
+    Where a plugin provides multiple readers it will return a set of
+    all recognized filename patterns.
+
+    Parameters
+    ----------
+    plugin_name : str
+        name of plugin to find filename patterns for
+
+    Returns
+    -------
+    set
+        set of filename patterns accepted by all plugin's reader contributions
+    """
     reader_contributions = next(
         iter(
             [
@@ -96,6 +115,3 @@ def get_filename_patterns_for_reader(plugin_name: str):
         for fn_pattern in reader.filename_patterns
     }
     return all_fn_patterns
-    # Then add instructions on how to use
-    # Then check what happens with complex fn patterns
-    # Then add tests
