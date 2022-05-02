@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
+from napari.utils.events.event import WarningEmitter
+
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
@@ -26,7 +28,7 @@ from .string_encoding import (
     StringEncodingArgument,
     validate_string_encoding,
 )
-from .style_encoding import StyleEncoding, _get_style_values
+from .style_encoding import _get_style_values
 
 
 class TextManager(EventedModel):
@@ -68,7 +70,7 @@ class TextManager(EventedModel):
     size : float
         Font size of the text, which must be positive. Default value is 12.
     face_color : ColorEncoding
-        Defines the color for each color element.
+        Defines the face color for each text element.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -117,14 +119,20 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = text
         if 'color' in kwargs:
-            # TODO: deprecate color parameter
+            _warn_about_deprecated_color_field()
             color = kwargs.pop('color')
             if 'face_color' not in kwargs:
                 kwargs['face_color'] = ConstantColorEncoding(constant=color)
         super().__init__(**kwargs)
         self.events.add(values=Event)
-        # TODO: maybe make this a WarningEmitter to deprecate this event.
-        self.events.add(color=Event)
+        self.events.add(
+            color=WarningEmitter(
+                trans._(
+                    'color is a deprecated event. Use face_color instead.'
+                ),
+                type='color',
+            )
+        )
         self.apply(features)
 
     @property
@@ -133,27 +141,25 @@ class TextManager(EventedModel):
 
     @property
     def color(self) -> np.ndarray:
-        # TODO: deprecate color getter.
         if isinstance(self.face_color, ConstantColorEncoding):
+            _warn_about_deprecated_color_field()
             return self.face_color.constant
         raise NotImplementedError(
-            'color is deprecated and only supported when face_color is a constant color encoding. Use face_color instead.'
+            trans._(
+                'color is deprecated and only is only defined when face_color is a constant color encoding. Use face_color instead.'
+            )
         )
 
     def __setattr__(self, key, value):
         if key == 'values':
             self.string = value
         elif key == 'color':
-            # TODO: deprecate color setter
+            _warn_about_deprecated_color_field()
             self.face_color = ConstantColorEncoding(constant=value)
         else:
             super().__setattr__(key, value)
         if key == 'face_color':
             self.events.color()
-
-    @property
-    def _encodings(self) -> tuple[StyleEncoding, ...]:
-        return self.string, self.face_color
 
     def refresh(self, features: Any) -> None:
         """Refresh all encoded values using new layer features.
@@ -430,6 +436,14 @@ def _warn_about_deprecated_n_text_parameter():
 def _warn_about_deprecated_values_parameter():
     warnings.warn(
         trans._('values is a deprecated parameter. Use string instead.'),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_color_field():
+    warnings.warn(
+        trans._('color is a deprecated field. Use face_color instead.'),
         DeprecationWarning,
         stacklevel=2,
     )
