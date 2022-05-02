@@ -418,17 +418,17 @@ class ShapeList:
                 )
             )
 
+        if not all(issubclass(type(shape), Shape) for shape in shapes):
+            raise ValueError(
+                trans._(
+                    'all shapes must be subclass of Shape',
+                    deferred=True,
+                )
+            )
+
         for shape, face_color, edge_color in zip(
             shapes, face_colors, edge_colors
         ):
-
-            if not issubclass(type(shape), Shape):
-                raise ValueError(
-                    trans._(
-                        'shape must be subclass of Shape',
-                        deferred=True,
-                    )
-                )
 
             shape_index = len(self.shapes)
             self.shapes.append(shape)
