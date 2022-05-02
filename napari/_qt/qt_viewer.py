@@ -247,9 +247,6 @@ class QtViewer(QSplitter):
         # because the console is loaded lazily in the @getter, this line just
         # gets (or creates) the console when the dock console is made visible.
         self.dockConsole.visibilityChanged.connect(self._ensure_connect)
-        self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
-        self.dockLayerList.setMaximumWidth(258)
-        self.dockLayerList.setMinimumWidth(258)
 
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
@@ -460,19 +457,6 @@ class QtViewer(QSplitter):
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
-    def _constrain_width(self, event):
-        """Allow the layer controls to be wider, only if floated.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if self.dockLayerControls.isFloating():
-            self.controls.setMaximumWidth(700)
-        else:
-            self.controls.setMaximumWidth(220)
-
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
         self._key_map_handler.keymap_providers = (
@@ -515,8 +499,8 @@ class QtViewer(QSplitter):
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(self.viewer.layers) - 1
         self.layer_to_visual[layer] = vispy_layer
+        self._reorder_layers()
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent.

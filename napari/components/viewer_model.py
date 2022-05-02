@@ -601,8 +601,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             expanded as channels.
         depiction : str
             Selects a preset volume depiction mode in vispy
-              * volume: images are rendered as 3D volumes.
-              * plane: images are rendered as 2D planes embedded in 3D.
+
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
         iso_threshold : float or list
             Threshold for isosurface. If a list then must be same length as the
             axis that is being expanded as channels.
