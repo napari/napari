@@ -1,8 +1,8 @@
 import re
 from fnmatch import fnmatch
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Set, Tuple
 
-from npe2.manifest.contributions import ReaderContribution
+from npe2 import PluginManifest
 
 from napari.settings import get_settings
 
@@ -101,18 +101,16 @@ def get_filename_patterns_for_reader(plugin_name: str):
     set
         set of filename patterns accepted by all plugin's reader contributions
     """
-    reader_contributions: List[Optional[ReaderContribution]] = next(
-        iter(
-            [
-                manifest.contributions.readers
-                for manifest in _npe2.iter_manifests()
-                if manifest.name == plugin_name
-            ]
-        ),
-        [],
-    )
     all_fn_patterns: Set[str] = set()
-    for reader in reader_contributions:
-        all_fn_patterns = all_fn_patterns.union(set(reader.filename_patterns))
+    current_plugin: PluginManifest | None = None
+    for manifest in _npe2.iter_manifests():
+        if manifest.name == plugin_name:
+            current_plugin = manifest
+    if current_plugin:
+        readers = manifest.contributions.readers or []
+        for reader in readers:
+            all_fn_patterns = all_fn_patterns.union(
+                set(reader.filename_patterns)
+            )
 
     return all_fn_patterns
