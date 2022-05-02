@@ -3,8 +3,8 @@ import sys
 from enum import Enum, auto
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
 from tempfile import gettempdir
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import (
