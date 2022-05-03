@@ -2257,10 +2257,10 @@ class Shapes(Layer):
         shapes, edge_colors, face_colors = tuple(zip(*sh_inp))
 
         # Add all shapes at once (faster than adding them one by one)
-        data_view.add_multiple(
-            shapes,
-            edge_colors=edge_colors,
-            face_colors=face_colors,
+        data_view.add(
+            shape=shapes,
+            edge_color=edge_colors,
+            face_color=face_colors,
             z_refresh=False,
         )
 

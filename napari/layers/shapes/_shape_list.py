@@ -1,3 +1,6 @@
+from collections.abc import Iterable
+from typing import Sequence, Union
+
 import numpy as np
 
 from ...utils.geometry import (
@@ -223,6 +226,69 @@ class ShapeList:
 
     def add(
         self,
+        shape: Union[Shape, Sequence[Shape]],
+        face_color=None,
+        edge_color=None,
+        shape_index=None,
+        z_refresh=True,
+    ):
+        """Adds a single Shape object (single add mode) or multiple Shapes (multiple shape mode, which is much faster)
+
+        If shape is a single instance of subclass Shape then single add mode will be used, otherwise multiple add mode
+
+        Parameters
+        ----------
+        shape : single Shape or iterable of Shape
+            Each shape must be a subclass of Shape, one of "{'Line', 'Rectangle',
+            'Ellipse', 'Path', 'Polygon'}"
+        face_colors : color (or iterable of colors of same length as shape)
+        edge_colors : color (or iterable of colors of same length as shape)
+        shape_index : None | int
+            If int then edits the shape date at current index. To be used in
+            conjunction with `remove` when renumber is `False`. If None, then
+            appends a new shape to end of shapes list
+            Must be None in multiple shape mode.
+        z_refresh : bool
+            If set to true, the mesh elements are reindexed with the new z order.
+            When shape_index is provided, z_refresh will be overwritten to false,
+            as the z indices will not change.
+            When adding a batch of shapes, set to false  and then call
+            ShapesList._update_z_order() once at the end.
+        """
+        # single shape mode
+        if issubclass(type(shape), Shape):
+            self._add_single_shape(
+                shape=shape,
+                face_color=face_color,
+                edge_color=edge_color,
+                shape_index=shape_index,
+                z_refresh=z_refresh,
+            )
+        # multiple shape mode
+        elif isinstance(shape, Iterable):
+            if shape_index is not None:
+                raise ValueError(
+                    trans._(
+                        'shape_index must be None when adding multiple shapes',
+                        deferred=True,
+                    )
+                )
+            self._add_multiple_shapes(
+                shapes=shape,
+                face_colors=face_color,
+                edge_colors=edge_color,
+                z_refresh=z_refresh,
+            )
+        else:
+            raise ValueError(
+                trans._(
+                    'Cannot add single nor multiple shape',
+                    deferred=True,
+                )
+            )
+
+    def _add_single_shape(
+        self,
         shape,
         face_color=None,
         edge_color=None,
@@ -352,7 +418,7 @@ class ShapeList:
             # Set z_order
             self._update_z_order()
 
-    def add_multiple(
+    def _add_multiple_shapes(
         self,
         shapes,
         face_colors=None,
