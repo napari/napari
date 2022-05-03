@@ -879,3 +879,13 @@ def test_open_or_get_error_preferred_fails(tmp_path):
             ReaderPluginError, match='Tried opening with napari, but failed.'
         ):
             viewer._open_or_raise_error([str(pth)])
+
+
+def test_add_3d_image_with_interpolation():
+    """See https://github.com/napari/napari/issues/3551"""
+    image = (np.random.random((5, 5, 5)) > 0.7).astype(int)
+    viewer = ViewerModel(ndisplay=3)
+
+    layer = viewer.add_image(image, interpolation='nearest')
+
+    assert layer.interpolation == 'nearest'
