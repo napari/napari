@@ -236,6 +236,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
+        _ndisplay=2,
     ):
         if name is None and data is not None:
             name = magic_name(data)
@@ -280,6 +281,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             multiscale=multiscale,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            _ndisplay=_ndisplay,
         )
 
         self.events.add(
