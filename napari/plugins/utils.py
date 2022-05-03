@@ -107,7 +107,7 @@ def get_filename_patterns_for_reader(plugin_name: str):
         if manifest.name == plugin_name:
             current_plugin = manifest
     if current_plugin:
-        readers = manifest.contributions.readers or []
+        readers = current_plugin.contributions.readers or []
         for reader in readers:
             all_fn_patterns = all_fn_patterns.union(
                 set(reader.filename_patterns)
