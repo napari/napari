@@ -48,6 +48,7 @@ def widget_demo(
 
 widget_demo.show()
 ```
+*Add caption here*
 
 For more information on the features and usage of `magicgui`, see the [magicgui
 documentation](https://napari.org/magicgui).  `magicgui` does not require
@@ -57,7 +58,7 @@ when using `magicgui` with napari-specific type annotations.
 
 ## magicgui and type annotations
 
-`magicgui` uses [type hints](https://www.python.org/dev/peps/pep-0484/) to infer
+`magicgui` uses [type hints](https://peps.python.org/pep-0484/) to infer
 the appropriate widget type for a given function parameter, and to indicate a
 context-dependent action for the object returned from the function (in the
 absence of a type hint, the type of the default value will be used).  Third
@@ -119,7 +120,6 @@ def my_widget(image: Image):
 viewer = napari.view_image(np.random.rand(64, 64), name="My Image")
 viewer.window.add_dock_widget(my_widget)
 ```
-
 *Note the widget at the bottom with "My Image" as the currently selected option*
 
 ```{code-cell} python
@@ -127,7 +127,7 @@ viewer.window.add_dock_widget(my_widget)
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Annotating as `Layer`
@@ -242,7 +242,7 @@ my_widget()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{note}
@@ -286,7 +286,7 @@ threshold()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Returning `napari.types.LayerDataTuple`
@@ -350,7 +350,7 @@ make_points()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Returning `List[napari.types.LayerDataTuple]`
@@ -405,7 +405,7 @@ make_points()
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ## Avoid imports with forward references
@@ -414,7 +414,7 @@ Sometimes, it is undesirable to import and/or depend on `napari` directly just
 to provide type annotations.  It is possible to avoid importing `napari`
 entirely by annotating with the string form of the napari type.  This is called
 a [Forward
-reference](https://www.python.org/dev/peps/pep-0484/#forward-references):
+reference](https://peps.python.org/pep-0484/#forward-references):
 
 ```python
 @magicgui

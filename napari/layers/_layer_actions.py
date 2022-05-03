@@ -67,15 +67,26 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=True),)
+    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
     layer = cast('Image', layer)
+    # get the meta data of the layer, but without transforms
     meta = {
-        **layer._get_base_state(),
-        'name': f'{layer} {mode}-proj',
-        'colormap': layer.colormap.name,
-        'rendering': layer.rendering,
+        key: layer._get_base_state()[key]
+        for key in layer._get_base_state()
+        if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
     }
+    meta.update(
+        {
+            'name': f'{layer} {mode}-proj',
+            'colormap': layer.colormap.name,
+            'rendering': layer.rendering,
+        }
+    )
     new = Layer.create(data, meta, layer._type_string)
+    # add transforms from original layer, but drop the axis of the projection
+    new._transforms = layer._transforms.set_slice(
+        [ax for ax in range(0, layer.ndim) if ax != axis]
+    )
     ll.append(new)
 
 
@@ -116,7 +127,7 @@ def _convert(ll: LayerList, type_: str):
             data = lay.to_labels()
         else:
             data = lay.data.astype(int) if type_ == 'labels' else lay.data
-        new_layer = Layer.create(data, {'name': lay.name}, type_)
+        new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
 

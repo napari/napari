@@ -1,18 +1,19 @@
 try:
     __import__('dotenv').load_dotenv()
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 import os
 from functools import partial
 from multiprocessing.pool import ThreadPool
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dask.threaded
 import numpy as np
 import pooch
 import pytest
 from IPython.core.history import HistoryManager
+from npe2 import DynamicPlugin, PluginManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -410,3 +411,34 @@ def _no_error_reports():
             yield
     except (ModuleNotFoundError, AttributeError):
         yield
+
+
+@pytest.fixture
+def tmp_reader():
+    """Return a temporary reader registered with the given plugin manager."""
+
+    def make_plugin(
+        pm,
+        name,
+        filename_patterns=['*.fake'],
+    ):
+        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
+
+        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
+        def read_func(pth):
+            ...
+
+        reader_plugin.register()
+        return reader_plugin
+
+    return make_plugin
+
+
+@pytest.fixture
+def mock_npe2_pm():
+    """Mock plugin manager with no registered plugins."""
+    mock_reg = MagicMock()
+    with patch.object(PluginManager, 'discover'):
+        _pm = PluginManager(reg=mock_reg)
+    with patch('npe2.PluginManager.instance', return_value=_pm):
+        yield _pm

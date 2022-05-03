@@ -62,8 +62,8 @@ def test_projections(mode, LayersClass):
     assert ll[-1].data.ndim == 3
     _project(ll, mode=mode)
     assert len(ll) == 2
-    # because we use keepdims = True
-    assert ll[-1].data.shape == (1, 8, 8)
+    # because keepdims = False
+    assert ll[-1].data.shape == (8, 8)
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,10 @@ def test_convert_dtype(mode, LayersClass):
 @pytest.mark.parametrize('LayersClass', [LayerList, LayerGroup])
 def test_convert_layer(input, type_, LayersClass):
     ll = LayersClass()
+    input.scale *= 1.5
+    original_scale = input.scale.copy()
     ll.append(input)
     assert ll[0]._type_string != type_
     _convert(ll, type_)
     assert ll[0]._type_string == type_
+    assert np.array_equal(ll[0].scale, original_scale)

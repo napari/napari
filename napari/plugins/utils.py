@@ -1,6 +1,18 @@
+import os
+import re
 from typing import Dict
 
+from napari.settings import get_settings
+
 from . import _npe2, plugin_manager
+
+
+def get_preferred_reader(_path):
+    """Return preferred reader for _path from settings, if one exists."""
+    _, extension = os.path.splitext(_path)
+    if extension:
+        reader_settings = get_settings().plugins.extension2reader
+        return reader_settings.get(extension)
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:
@@ -13,7 +25,7 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     Returns
     -------
     Dict[str, str]
-        dictionary of display_name to registered name
+        dictionary of registered name to display_name
     """
     readers = _npe2.get_readers(filename)
 
@@ -36,3 +48,11 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
         del readers['builtins']
 
     return readers
+
+
+def normalized_name(name: str) -> str:
+    """
+    Normalize a plugin name by replacing underscores and dots by dashes and
+    lower casing it.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()

@@ -1,5 +1,15 @@
 import base64
+import html
 from io import BytesIO
+from warnings import warn
+
+try:
+    from lxml.html import document_fromstring
+    from lxml.html.clean import Cleaner
+
+    lxml_unavailable = False
+except ModuleNotFoundError:
+    lxml_unavailable = True
 
 __all__ = ['nbscreenshot']
 
@@ -35,7 +45,13 @@ class NotebookScreenshot:
     ```
     """
 
-    def __init__(self, viewer, *, canvas_only=False):
+    def __init__(
+        self,
+        viewer,
+        *,
+        canvas_only=False,
+        alt_text=None,
+    ):
         """Initialize screenshot object.
 
         Parameters
@@ -46,10 +62,36 @@ class NotebookScreenshot:
             If False include the napari viewer frame in the screenshot,
             and if True then take screenshot of just the image display canvas.
             By default, False.
+        alt_text : str, optional
+            Image description alternative text, for screenreader accessibility.
+            Good alt-text describes the image and any text within the image
+            in no more than three short, complete sentences.
         """
         self.viewer = viewer
         self.canvas_only = canvas_only
         self.image = None
+        self.alt_text = self._clean_alt_text(alt_text)
+
+    def _clean_alt_text(self, alt_text):
+        """Clean user input to prevent script injection."""
+        if alt_text is not None:
+            if lxml_unavailable:
+                warn(
+                    'The lxml library is not installed, and is required to '
+                    'sanitize alt text for napari screenshots. Alt-text '
+                    'will be stripped altogether without lxml.'
+                )
+                return None
+            alt_text = html.unescape(
+                str(alt_text)
+            )  # cleaner won't recognize unescaped script tags
+            cleaner = Cleaner()
+            doc = document_fromstring(alt_text)
+            alt_text = cleaner.clean_html(doc).text_content()
+            # alt_text = html.escape(alt_text)
+            if alt_text == "":
+                alt_text = None
+        return alt_text
 
     def _repr_png_(self):
         """PNG representation of the viewer object for IPython.
@@ -75,8 +117,13 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        html = f'<img src="{url}"></img>'
-        return html
+        if self.alt_text is None:
+            html_output = f'<img src="{url}"></img>'
+        else:
+            html_output = (
+                f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
+            )
+        return html_output
 
 
 nbscreenshot = NotebookScreenshot

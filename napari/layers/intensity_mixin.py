@@ -43,10 +43,10 @@ class IntensityVisualizationMixin:
     def reset_contrast_limits_range(self):
         """Scale contrast limits range to data type.
 
-        Currently, this only does something if the data type is an unsigned
-        integer... otherwise it's unclear what the full range should be.
+        Currently, this only does something if the data type is an integer...
+        otherwise it's unclear what the full range should be.
         """
-        if np.issubdtype(self.dtype, np.unsignedinteger):
+        if np.issubdtype(self.dtype, np.integer):
             info = np.iinfo(self.dtype)
             self.contrast_limits_range = (info.min, info.max)
 
@@ -55,11 +55,14 @@ class IntensityVisualizationMixin:
         """napari.utils.Colormap: colormap for luminance images."""
         return self._colormap
 
-    @colormap.setter
-    def colormap(self, colormap):
+    def _set_colormap(self, colormap):
         self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
+
+    @colormap.setter
+    def colormap(self, colormap):
+        self._set_colormap(colormap)
 
     @property
     def colormaps(self):

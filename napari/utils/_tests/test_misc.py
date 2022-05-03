@@ -6,6 +6,8 @@ import pytest
 
 from napari.utils.misc import (
     StringEnum,
+    _is_array_type,
+    _quiet_array_equal,
     abspath_or_url,
     ensure_iterable,
     ensure_sequence_of_iterables,
@@ -185,10 +187,27 @@ def test_equality_operator():
     class MyNPArray(np.ndarray):
         pass
 
-    assert pick_equality_operator(np.ones((1, 1))) == np.array_equal
-    assert pick_equality_operator(MyNPArray([1, 1])) == np.array_equal
+    assert pick_equality_operator(np.ones((1, 1))) == _quiet_array_equal
+    assert pick_equality_operator(MyNPArray([1, 1])) == _quiet_array_equal
     assert pick_equality_operator(da.ones((1, 1))) == operator.is_
     assert pick_equality_operator(zarr.ones((1, 1))) == operator.is_
     assert (
-        pick_equality_operator(xr.DataArray(np.ones((1, 1)))) == np.array_equal
+        pick_equality_operator(xr.DataArray(np.ones((1, 1))))
+        == _quiet_array_equal
     )
+    eq = pick_equality_operator(np.asarray([]))
+    # make sure this doesn't warn
+    assert not eq(np.asarray([]), np.asarray([], '<U32'))
+
+
+def test_is_array_type_with_xarray():
+    import numpy as np
+    import xarray as xr
+
+    assert _is_array_type(xr.DataArray(), 'xarray.DataArray')
+    assert not _is_array_type(xr.DataArray(), 'xr.DataArray')
+    assert not _is_array_type(
+        xr.DataArray(), 'xarray.core.dataarray.DataArray'
+    )
+    assert not _is_array_type([], 'xarray.DataArray')
+    assert not _is_array_type(np.array([]), 'xarray.DataArray')

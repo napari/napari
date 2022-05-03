@@ -18,7 +18,6 @@ QtViewer {
 
 QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
-  max-width: 242px;
 }
 
 /* ------------- QMainWindow --------- */
@@ -26,20 +25,30 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
 as long as they are docked (though they use the
 style of QDockWidget when undocked) */
 
-
-QMainWindow::separator {
-    background: {{ foreground }};
-    width: 2px; /* when vertical */
-    height: 2px; /* when horizontal */
-}
-
-QMainWindow::separator:hover {
-    background: {{ highlight }};
-}
-
 QStatusBar { 
   background: {{ background }};
   color: {{ text }};
+}
+
+/* ------------- Window separator --------- */
+
+QMainWindow::separator {
+  width: 4px;
+  height: 4px;
+  border: none;
+  background: transparent;
+}
+
+QMainWindow::separator:hover {
+  background: {{ foreground }};
+}
+
+QMainWindow::separator:horizontal {
+  image: url(":/themes/{{ name }}/horizontal_separator.svg");
+}
+
+QMainWindow::separator:vertical {
+  image: url(":/themes/{{ name }}/vertical_separator.svg");
 }
 
 /* ------------- DockWidgets --------- */
@@ -130,7 +139,6 @@ QtDivider {
   border: 0px;
   margin: 0px 3px 0px 3px;
   min-width: 214px;
-  max-width: 214px;
   min-height: 1px;
   max-height: 1px;
 }
@@ -153,7 +161,6 @@ QtLayerWidget {
   min-height: 32px;
   max-height: 32px;
   min-width: 228px;
-  max-width: 228px;
 }
 
 QtLayerWidget[selected="true"] {
@@ -264,9 +271,7 @@ QtLayerControlsContainer {
     padding: 0px;
     margin: 10px;
     min-height: 295px;
-    max-height: 295px;
     min-width: 240px;
-    max-width: 240px;
     margin-left: 10px;
     margin-right: 8px;
     margin-bottom: 4px;
@@ -292,7 +297,7 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
-QtLayerControls > QLabel, QtLayerControls > QLabeledSlider > QAbstractSpinBox {
+QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   font-size: 11pt;
   color: {{ text }};
 }
@@ -307,6 +312,10 @@ AutoScaleButtons QPushButton {
   padding: 4;
 }
 
+PlaneNormalButtons QPushButton {
+    font-size: 9pt;
+    padding: 4;
+}
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -531,12 +540,17 @@ PluginListItem {
   border-radius: 3px;
 }
 
+PluginListItem#unavailable {
+  background: {{ lighten(foreground, 20) }};
+  padding: 0;
+  margin: 2px 4px;
+  border-radius: 3px;
+}
 
 PluginListItem QCheckBox::indicator:disabled {
   background-color: {{ opacity(foreground, 127) }};
   image: url(":/themes/{{ name }}/check_50.svg");
 }
-
 
 QPushButton#install_button {
   background-color: {{ current }}
@@ -548,6 +562,10 @@ QPushButton#install_button:hover {
 
 QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
+}
+
+QPushButton#install_button:disabled {
+  background-color: {{ lighten(current, 20) }}
 }
 
 QPushButton#remove_button {
@@ -647,6 +665,7 @@ QPushButton#close_button:disabled {
   margin-left: 1px;
   padding: 2px;
 }
+
 
 QtPluginDialog QSplitter{
   padding-right: 2;

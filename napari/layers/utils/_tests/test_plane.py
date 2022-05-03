@@ -32,7 +32,6 @@ def test_update_slicing_plane_from_dict():
     properties = {
         'position': (0, 0, 0),
         'normal': (1, 0, 0),
-        'enabled': True,
     }
     plane = SlicingPlane()
     plane.update(properties)

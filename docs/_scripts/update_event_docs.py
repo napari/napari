@@ -6,10 +6,10 @@ from types import ModuleType
 from typing import Dict, Iterator, List, Optional, Type
 
 import numpy as np
+from _table_maker import table_repr
 from numpydoc.docscrape import ClassDoc, Parameter
 
 import napari
-from docs._scripts._table_maker import table_repr
 from napari import layers
 from napari.components.layerlist import LayerList
 from napari.components.viewer_model import ViewerModel

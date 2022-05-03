@@ -6,7 +6,7 @@ import numpy as np
 from ..types import ExcInfo
 
 
-def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
+def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
     """Return a formatter callable that uses IPython VerboseTB if available.
 
     Imports IPython lazily if available to take advantage of ultratb.VerboseTB.
@@ -52,12 +52,12 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
             np.set_string_function(None)
             return tb_text
 
-    except ImportError:
+    except ModuleNotFoundError:
         import cgitb
         import traceback
 
         # cgitb does not support error chaining...
-        # see https://www.python.org/dev/peps/pep-3134/#enhanced-reporting
+        # see https://peps.python.org/pep-3134/#enhanced-reporting
         # this is a workaround
         def cgitb_chain(exc: Exception) -> Generator[str, None, None]:
             """Recurse through exception stack and chain cgitb_html calls."""
