@@ -387,16 +387,16 @@ class ShapeList:
             index[:, 0] = shape_index
             return index
 
-        all_z_index = list()
-        all_vertices = list()
-        all_index = list()
-        all_mesh_vertices = list()
-        all_mesh_vertices_centers = list()
-        all_mesh_vertices_offsets = list()
-        all_mesh_vertices_index = list()
-        all_mesh_triangles = list()
-        all_mesh_triangles_index = list()
-        all_mesh_triangles_colors = list()
+        all_z_index = []
+        all_vertices = []
+        all_index = []
+        all_mesh_vertices = []
+        all_mesh_vertices_centers = []
+        all_mesh_vertices_offsets = []
+        all_mesh_vertices_index = []
+        all_mesh_triangles = []
+        all_mesh_triangles_index = []
+        all_mesh_triangles_colors = []
 
         m_mesh_vertices_count = len(self._mesh.vertices)
 
