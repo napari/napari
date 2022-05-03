@@ -1,6 +1,7 @@
 from enum import Enum
 
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QTextCursor
 from qtpy.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -253,8 +254,6 @@ class UpdateErrorDialog(QDialog):
         self.setLayout(layout)
 
     def setErrorText(self, error):
-        """"""
+        """Set error text on dialog."""
         self._error.setText(error)
-        self._error.verticalScrollBar().setValue(
-            self._error.verticalScrollBar().maximum()
-        )
+        self._error.moveCursor(QTextCursor.End)

@@ -73,8 +73,6 @@ def running_as_constructor_app() -> bool:
     return (
         Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
     ).exists()
-    # FIXME: For local testing
-    # return True
 
 
 def running_in_conda_environment() -> bool:

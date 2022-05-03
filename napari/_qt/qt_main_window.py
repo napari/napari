@@ -97,8 +97,8 @@ class _QtMainWindow(QMainWindow):
         self._quit_app = False
         self._update_on_quit = False
         self._update_info = None
-        self._update_manager = self._get_update_manager()
         self._update_worker = None
+        self._update_manager = None
 
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -131,7 +131,7 @@ class _QtMainWindow(QMainWindow):
         if running_as_constructor_app() or is_dev():
             if (
                 settings.updates.check_for_updates
-                and settings.updates.update_testing != "none"
+                and settings.updates.update_testing.name != "none"
             ):
                 self.check_updates(startup=True)
 
@@ -380,6 +380,7 @@ class _QtMainWindow(QMainWindow):
             if reply == QMessageBox.Yes:
                 self._update_manager.stop()
                 self._update_on_quit = False
+                self._update_manager = None
             elif reply == QMessageBox.No:
                 event.ignore()
                 return
@@ -387,6 +388,7 @@ class _QtMainWindow(QMainWindow):
         if self._update_on_quit:
             self._update_napari()
             event.ignore()
+            self._update_manager = None
             return
 
         if self._ev and self._ev.isRunning():
@@ -486,17 +488,6 @@ class _QtMainWindow(QMainWindow):
                 dlg = UpdateStatusDialog(self)
                 dlg.exec_()
 
-    def _get_update_manager(self):
-        """Return the update manager."""
-        update_manager = get_update_manager(self)
-        update_manager.started.connect(lambda: self._show_activity_dock(True))
-        update_manager.finished.connect(
-            lambda: self._show_activity_dock(False)
-        )
-        update_manager.finished.connect(self._update_finished)
-        update_manager.errored.connect(self._update_errored)
-        return update_manager
-
     def _update_napari(self):
         """Launch napari update process and show the notification area."""
         _settings = get_settings()
@@ -520,6 +511,26 @@ class _QtMainWindow(QMainWindow):
         """Show/hide activity dock."""
         self.statusBar()._toggle_activity_dock(value)
 
+    def _get_update_manager(self):
+        """Return the update manager."""
+        if self._update_manager is None:
+            update_manager = get_update_manager(self)
+            try:
+                update_manager.started.connect(
+                    lambda: self._show_activity_dock(True)
+                )
+                update_manager.finished.connect(
+                    lambda: self._show_activity_dock(False)
+                )
+                update_manager.finished.connect(self._update_finished)
+                update_manager.errored.connect(self._update_errored)
+            except RuntimeError:
+                pass
+
+            self._update_manager = update_manager
+
+        return self._update_manager
+
     def check_updates(self, startup=False):
         """Check for napari available updates.
 
@@ -530,8 +541,10 @@ class _QtMainWindow(QMainWindow):
         """
         _settings = get_settings()
         # Testing update process in dev mode
-        if is_dev() and _settings.updates.update_testing == "none":
+        if is_dev() and _settings.updates.update_testing.name == "none":
             return
+
+        self._get_update_manager()
 
         if not self._update_manager.is_finished() and not startup:
             self._show_activity_dock(True)
@@ -552,8 +565,11 @@ class _QtMainWindow(QMainWindow):
 
     def clean_package_cache(self):
         """Clean the package cache."""
-        _update_manager = self._get_update_manager()
-        _update_manager.clean()
+        self._get_update_manager()
+        if self._update_manager.is_finished:
+            self._show_activity_dock(True)
+        else:
+            self._update_manager.clean()
 
 
 class Window:
