@@ -159,6 +159,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     assert cm.color_properties.current_value == 'paw'
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
@@ -805,6 +806,7 @@ def test_text_from_property_fstring(properties):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
@@ -2250,6 +2252,7 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     np.testing.assert_array_equal(values, ['', '', ''])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_param_and_setter_are_consistent():
     """See https://github.com/napari/napari/issues/1833"""
     data = np.random.rand(5, 3) * 100

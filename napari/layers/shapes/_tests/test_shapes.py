@@ -220,6 +220,7 @@ def test_setting_current_properties():
         np.testing.assert_equal(value, expected_current_properties[k])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
@@ -295,6 +296,7 @@ def test_text_from_property_fstring(properties):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
