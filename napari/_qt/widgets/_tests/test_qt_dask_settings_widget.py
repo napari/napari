@@ -30,7 +30,9 @@ def test_qt_dask_settings_widget_cache(dask_settings_widget):
     assert widget.cacheValue() == 5
 
 
-def test_qt_dask_settings_widget_value_invalid(qtbot, dask_settings_widget):
+def test_qt_dask_settings_widget_cache_value_invalid(
+    qtbot, dask_settings_widget
+):
     widget = dask_settings_widget()
     widget.setMaximum(500)
     widget._update_cache(510)
@@ -43,3 +45,70 @@ def test_qt_dask_settings_widget_value_invalid(qtbot, dask_settings_widget):
 
     with pytest.raises(ValueError):
         widget.setMaximum(-5)
+
+
+def test_qt_dask_settings_set_unit(dask_settings_widget):
+    widget = dask_settings_widget()
+    widget.set_unit('kb')
+
+    assert widget._unit_label.text() == '/10 kb'
+
+
+def test_qt_dask_settings_widget_signal(qtbot, dask_settings_widget):
+    widget = dask_settings_widget()
+
+    with qtbot.waitSignal(widget.valueChanged, timeout=500):
+        widget._update_cache(6)
+
+    with qtbot.waitSignal(widget.valueChanged, timeout=500):
+        widget._enabled_checkbox.setChecked(False)
+
+
+def test_qt_dask_settings_widget_description(dask_settings_widget):
+    description = "Some text"
+    widget = dask_settings_widget(description=description)
+    assert widget._description == description
+
+    widget = dask_settings_widget()
+    widget.setDescription(description)
+    assert widget._description == description
+
+
+def test_qt_dask_settings_widget_value(dask_settings_widget):
+    value = {'enabled': False, 'cache': 5}
+    widget = dask_settings_widget(value=value)
+    assert widget.value() == value
+
+    widget = dask_settings_widget()
+    widget.setValue(value)
+    assert widget.value() == value
+
+
+def test_qt_dask_settings_widget_minimum(dask_settings_widget):
+    minimum = 2
+    widget = dask_settings_widget(min_value=minimum)
+    assert widget.minimum() == minimum
+    assert widget.cacheValue() >= minimum
+
+    widget = dask_settings_widget()
+    widget.setMinimum(2)
+    assert widget.minimum() == 2
+    assert widget.cacheValue() == 2
+
+
+def test_qt_dask_settings_widget_maximum(dask_settings_widget):
+    maximum = 15
+    widget = dask_settings_widget(max_value=maximum)
+    assert widget.maximum() == maximum
+    assert widget.cacheValue() <= maximum
+
+    widget = dask_settings_widget()
+    widget.setMaximum(20)
+    assert widget.maximum() == 20
+
+
+def test_qt_dask_settings_widget_set_increment(dask_settings_widget):
+    increment = 2
+
+    widget = dask_settings_widget(inc=increment)
+    assert widget.increment() == increment

@@ -43,9 +43,20 @@ class QtDaskSettingsWidget(QWidget):
     ):
         super().__init__()
 
-        self._cache_value = cache
+        if value is not None:
+            cache = value['cache']
+            enabled = value['enabled']
+
         self._min_value = min_value
         self._max_value = max_value
+        if cache <= max_value:
+            if cache >= min_value:
+                self._cache_value = cache
+            else:
+                self._cache_value = min_value
+        else:
+            self._cache_value = max_value
+
         self._enabled = enabled
         self._description = description
         self._value = value
@@ -255,6 +266,16 @@ class QtDaskSettingsWidget(QWidget):
 
         self._increment = value
         self._cache.setSingleStep(value)
+
+    def increment(self):
+        """Return increment in dask cache value spinbox.
+
+        Returns
+        -------
+        int
+            Increment value of dask cache in mb.
+        """
+        return self._increment
 
     def setMaximum(self, value):
         """Set maximum dask cache value.
