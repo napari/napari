@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari._vispy.layers.shapes import VispyShapesLayer
 from napari.layers import Shapes
@@ -35,6 +36,7 @@ def test_change_text_updates_node_string():
     np.testing.assert_array_equal(text_node.text, properties['name'])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_change_text_color_updates_node_color():
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
@@ -45,6 +47,20 @@ def test_change_text_color_updates_node_color():
     np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
 
     layer.text.color = [0, 0, 1]
+
+    np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
+
+
+def test_change_text_face_color_updates_node_color():
+    shapes = np.random.rand(3, 4, 2)
+    features = {'class': np.array(['A', 'B', 'C'])}
+    text = {'string': 'class', 'face_color': {'constant': [1, 0, 0]}}
+    layer = Shapes(shapes, features=features, text=text)
+    vispy_layer = VispyShapesLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
+
+    layer.text.face_color = {'constant': [0, 0, 1]}
 
     np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
 
