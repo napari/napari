@@ -57,7 +57,7 @@ from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 from ..widgets.qt_tooltip import QtToolTipLabel
 
-InstallerTypes = Literal['pip', 'conda', 'mamba']
+InstallerTypes = Literal['pip', 'mamba']
 
 
 # TODO: add error icon and handle pip install errors
