@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from contextlib import contextmanager
 from typing import Sequence, Union
 
 import numpy as np
@@ -84,9 +85,28 @@ class ShapeList:
 
         self._edge_color = np.empty((0, 4))
         self._face_color = np.empty((0, 4))
+        self._batched_level = 0
 
-        for d in data:
-            self.add(d)
+        with self.batched_updates():
+            for d in data:
+                self.add(d)
+
+    @contextmanager
+    def batched_updates(self):
+        assert self._batched_level >= 0
+        self._batched_level += 1
+        # print('ENTER!', self._batched_level)
+        try:
+            yield
+        finally:
+            if self._batched_level == 1:
+                # print('EXIT AND CALL!', self._batched_level)
+                self._update_displayed()
+            # else:
+            # print('Just EXIT!', self._batched_level)
+            self._batched_level -= 1
+
+        assert self._batched_level >= 0
 
     @property
     def data(self):
@@ -167,8 +187,9 @@ class ShapeList:
 
         update_method = getattr(self, f'update_{attribute}_colors')
         indices = np.arange(len(colors))
-        update_method(indices, colors, update=False)
-        self._update_displayed()
+        with self.batched_updates():
+            update_method(indices, colors, update=False)
+            self._update_displayed()
 
     @property
     def edge_widths(self):
@@ -190,10 +211,23 @@ class ShapeList:
         slice_key = list(slice_key)
         if not np.all(self._slice_key == slice_key):
             self._slice_key = slice_key
-            self._update_displayed()
+            with self.batched_updates():
+                self._update_displayed()
 
     def _update_displayed(self):
-        """Update the displayed data based on the slice key."""
+        """Update the displayed data based on the slice key.
+
+        As this method can be expensive,it  must be called from withing the
+        self.batched_updates() context manger which is reentrant.
+        This will delay actually calling the method until the last context manager
+        is exited.
+        """
+        assert (
+            self._batched_level >= 1
+        ), "call _update_displayed from within self.batched_updates context manager"
+        if self._batched_level > 1:
+            return
+
         # The list slice key is repeated to check against both the min and
         # max values stored in the shapes slice key.
         slice_key = np.array([self.slice_key, self.slice_key])
@@ -590,6 +624,7 @@ class ShapeList:
         self._z_index = np.empty((0), dtype=int)
         self._z_order = np.empty((0), dtype=int)
         self._mesh.clear()
+        # with self.batched_updates():
         self._update_displayed()
 
     def remove(self, index, renumber=True):
@@ -658,6 +693,8 @@ class ShapeList:
             Bool to indicate whether to update mesh vertices corresponding to
             faces and to update the underlying shape vertices
         """
+        # TODO: this method make no sens is both edge and faces are False.
+        # maybe raise a warning.
         shape = self.shapes[index]
         if edge:
             indices = np.all(self._mesh.vertices_index == [index, 1], axis=1)
@@ -666,7 +703,6 @@ class ShapeList:
             )
             self._mesh.vertices_centers[indices] = shape._edge_vertices
             self._mesh.vertices_offsets[indices] = shape._edge_offsets
-            self._update_displayed()
 
         if face:
             indices = np.all(self._mesh.vertices_index == [index, 0], axis=1)
@@ -674,7 +710,9 @@ class ShapeList:
             self._mesh.vertices_centers[indices] = shape._face_vertices
             indices = self._index == index
             self._vertices[indices] = shape.data_displayed
-            self._update_displayed()
+        if edge or face:
+            with self.batched_updates():
+                self._update_displayed()
 
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
@@ -691,7 +729,8 @@ class ShapeList:
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
-        self._update_displayed()
+        with self.batched_updates():
+            self._update_displayed()
 
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
@@ -756,9 +795,10 @@ class ShapeList:
             thickness of lines and edges.
         """
         self.shapes[index].edge_width = edge_width
-        self._update_mesh_vertices(index, edge=True)
+        with self.batched_updates():
+            self._update_mesh_vertices(index, edge=True)
 
-    def update_edge_color(self, index, edge_color, update=True):
+    def update_edge_color(self, index, edge_color):
         """Updates the edge color of a single shape located at index.
 
         Parameters
@@ -776,7 +816,7 @@ class ShapeList:
         self._edge_color[index] = edge_color
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
         self._mesh.triangles_colors[indices] = self._edge_color[index]
-        if update:
+        with self.batched_updates():
             self._update_displayed()
 
     def update_edge_colors(self, indices, edge_colors, update=True):
@@ -792,7 +832,7 @@ class ShapeList:
         if update:
             self._update_displayed()
 
-    def update_face_color(self, index, face_color, update=True):
+    def update_face_color(self, index, face_color, update=None):
         """Updates the face color of a single shape located at index.
 
         Parameters
@@ -810,8 +850,8 @@ class ShapeList:
         self._face_color[index] = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         self._mesh.triangles_colors[indices] = self._face_color[index]
-        if update:
-            self._update_displayed()
+        if update is not None:
+            assert False, "please call within self.batched_updates"
 
     def update_face_colors(self, indices, face_colors, update=True):
         """same as update_face_color() but for multiple indices/facecolors at once"""
@@ -841,6 +881,7 @@ class ShapeList:
                 self.remove(index, renumber=False)
                 self.add(shape, shape_index=index)
         self._update_z_order()
+        self._update_displayed()
 
     def update_z_index(self, index, z_index):
         """Updates the z order of a single shape located at index.

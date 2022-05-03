@@ -830,8 +830,11 @@ class Shapes(Layer):
     def current_edge_color(self, edge_color):
         self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_edge_color(i, self._current_edge_color)
+            with self._data_view.batched_updates():
+                for i in self.selected_data:
+                    self._data_view.update_edge_color(
+                        i, self._current_edge_color
+                    )
             self.events.edge_color()
             self._update_thumbnail()
         self.events.current_edge_color()
@@ -846,8 +849,11 @@ class Shapes(Layer):
     def current_face_color(self, face_color):
         self._current_face_color = transform_color(face_color)
         if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_face_color(i, self._current_face_color)
+            with self._data_view.batched_updates():
+                for i in self.selected_data:
+                    self._data_view.update_face_color(
+                        i, self._current_face_color
+                    )
             self.events.face_color()
             self._update_thumbnail()
         self.events.current_face_color()
@@ -2296,7 +2302,8 @@ class Shapes(Layer):
 
         if not self._dims_order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims_order)
+            with self._data_view.batched_updates():
+                self._data_view.update_dims_order(self._dims_order)
             self._display_order_stored = copy(self._dims_order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
