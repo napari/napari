@@ -3,6 +3,7 @@ import sys
 from enum import Enum, auto
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
+from tempfile import gettempdir
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
@@ -56,7 +57,7 @@ from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 from ..widgets.qt_tooltip import QtToolTipLabel
 
-InstallerTypes = Literal['pip', 'conda', 'mamba']
+InstallerTypes = Literal['pip', 'mamba']
 
 
 # TODO: add error icon and handle pip install errors
@@ -108,6 +109,17 @@ class Installer(QObject):
         env.insert(
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
+
+        # workaround https://github.com/napari/napari/issues/4247
+        if (
+            installer == "mamba"
+            and os.name == "nt"
+            and not QProcessEnvironment.systemEnvironment().contains("TEMP")
+        ):
+            temp = gettempdir()
+            env.insert("TMP", temp)
+            env.insert("TEMP", temp)
+
         process.setProcessEnvironment(env)
         self.set_output_widget(self._output_widget)
         process.finished.connect(
@@ -708,9 +720,7 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        installer_type = "pip"
-        if running_as_constructor_app():
-            installer_type = "mamba" if os.name != "nt" else "conda"
+        installer_type = "mamba" if running_as_constructor_app() else "pip"
 
         self.installer = Installer(installer=installer_type)
         self.setup_ui()
