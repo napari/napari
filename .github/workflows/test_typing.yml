@@ -15,7 +15,7 @@ jobs:
           python-version: 3.9
       - name: Install napari
         run: |
-          pip install mypy==0.942 types-PyYAML types-setuptools
+          pip install mypy types-PyYAML types-setuptools
           pip install -e .[all]
 
       - name: Run mypy on typed modules
