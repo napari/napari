@@ -58,6 +58,7 @@ from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from textwrap import dedent
 
 from ruamel import yaml
 
@@ -249,7 +250,9 @@ def _get_dependencies():
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
-    base_channels = _lines_from_cfg_block(cfg["conda_installer"]["base_run_channels"])
+    base_channels = _lines_from_cfg_block(
+        cfg["conda_installer"]["base_run_channels"]
+    )
     base_specs = _lines_from_cfg_block(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
 
@@ -265,9 +268,13 @@ def _get_dependencies():
     if ARCH == "arm64":
         # temporary workaround for missing packages
         napari_channels.append("andfoy")
-    napari_channels += _lines_from_cfg_block(cfg["conda_installer"]["napari_run_channels"])
+    napari_channels += _lines_from_cfg_block(
+        cfg["conda_installer"]["napari_run_channels"]
+    )
 
-    menu_specs = _lines_from_cfg_block(cfg["conda_installer"]["napari_run_shortcuts"])
+    menu_specs = _lines_from_cfg_block(
+        cfg["conda_installer"]["napari_run_shortcuts"]
+    )
 
     napari_pinnings = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_constrained"],
@@ -287,6 +294,30 @@ def _get_dependencies():
         "run_constrained": napari_pinnings,
         "napari_recipe": napari_recipe_run,
     }
+
+
+def _get_condarc():
+    # we need defaults for tensorflow and others on windows only
+    defaults = "- defaults" if WINDOWS else ""
+    prompt = "[napari]({default_env}) "
+    contents = dedent(
+        f"""
+        channels:  #!final
+          - napari
+          - conda-forge
+          {defaults}
+        repodata_fns:  #!final
+          - repodata.json
+        auto_update_conda: false  #!final
+        channel_priority: strict  #!final
+        env_prompt: '{prompt}'  #! final
+        """
+    )
+    # the undocumented #!final comment is explained here
+    # https://www.anaconda.com/blog/conda-configuration-engine-power-users
+    with NamedTemporaryFile(delete=False, mode="w+") as f:
+        f.write(contents)
+    return f.name
 
 
 def _constructor():
@@ -310,6 +341,7 @@ def _constructor():
     dependencies = _get_dependencies()
 
     empty_file = NamedTemporaryFile(delete=False)
+    condarc = _get_condarc()
     definitions = {
         "name": APP,
         "company": "Napari",
@@ -331,13 +363,16 @@ def _constructor():
         "extra_files": {
             "resources/bundle_readme.md": "README.txt",
             empty_file.name: ".napari_is_bundled_constructor",
+            condarc: ".condarc",
         },
     }
     if LINUX:
         definitions["default_prefix"] = os.path.join(
             "$HOME", ".local", INSTALLER_DEFAULT_PATH_STEM
         )
-        definitions["license_file"] = os.path.join(HERE, "resources", "bundle_license.txt")
+        definitions["license_file"] = os.path.join(
+            HERE, "resources", "bundle_license.txt"
+        )
         definitions["installer_type"] = "sh"
 
     if MACOS:
@@ -346,18 +381,26 @@ def _constructor():
         definitions["pkg_name"] = INSTALLER_DEFAULT_PATH_STEM
         definitions["default_location_pkg"] = "Library"
         definitions["installer_type"] = "pkg"
-        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
-        welcome_text_tmpl = (Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl").read_text()
+        definitions["welcome_image"] = os.path.join(
+            HERE, "resources", "napari_1227x600.png"
+        )
+        welcome_text_tmpl = (
+            Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl"
+        ).read_text()
         welcome_file = Path(HERE) / "resources" / "osx_pkg_welcome.rtf"
         clean_these_files.append(welcome_file)
-        welcome_file.write_text(welcome_text_tmpl.replace("__VERSION__", version))
+        welcome_file.write_text(
+            welcome_text_tmpl.replace("__VERSION__", version)
+        )
         definitions["welcome_file"] = str(welcome_file)
         definitions["conclusion_text"] = ""
         definitions["readme_text"] = ""
         signing_identity = os.environ.get("CONSTRUCTOR_SIGNING_IDENTITY")
         if signing_identity:
             definitions["signing_identity_name"] = signing_identity
-        notarization_identity = os.environ.get("CONSTRUCTOR_NOTARIZATION_IDENTITY")
+        notarization_identity = os.environ.get(
+            "CONSTRUCTOR_NOTARIZATION_IDENTITY"
+        )
         if notarization_identity:
             definitions["notarization_identity_name"] = notarization_identity
 
@@ -365,11 +408,19 @@ def _constructor():
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
-                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
-                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
+                "welcome_image": os.path.join(
+                    HERE, "resources", "napari_164x314.png"
+                ),
+                "header_image": os.path.join(
+                    HERE, "resources", "napari_150x57.png"
+                ),
+                "icon_image": os.path.join(
+                    HERE, "napari", "resources", "icon.ico"
+                ),
                 "register_python_default": False,
-                "default_prefix": os.path.join('%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM),
+                "default_prefix": os.path.join(
+                    '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
+                ),
                 "default_prefix_domain_user": os.path.join(
                     '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
                 ),
@@ -385,16 +436,21 @@ def _constructor():
             definitions["signing_certificate"] = signing_certificate
 
     if definitions.get("welcome_image") or definitions.get("header_image"):
-        _generate_background_images(definitions.get("installer_type", "all"), outpath="resources")
+        _generate_background_images(
+            definitions.get("installer_type", "all"), outpath="resources"
+        )
 
     clean_these_files.append("construct.yaml")
     clean_these_files.append(empty_file.name)
+    clean_these_files.append(condarc)
 
     # TODO: temporarily patching password - remove block when the secret has been fixed
     # (I think it contains an ending newline or something like that, copypaste artifact?)
     pfx_password = os.environ.get("CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD")
     if pfx_password:
-        os.environ["CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"] = pfx_password.strip()
+        os.environ[
+            "CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"
+        ] = pfx_password.strip()
 
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
@@ -425,13 +481,17 @@ def licenses():
         raise
 
     zipname = f"licenses.{OS}-{ARCH}.zip"
-    output_zip = zipfile.ZipFile(zipname, mode="w", compression=zipfile.ZIP_DEFLATED)
+    output_zip = zipfile.ZipFile(
+        zipname, mode="w", compression=zipfile.ZIP_DEFLATED
+    )
     output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
         package_name = package_id.split("::", 1)[1]
         for license_type, license_files in license_info.items():
             for i, license_file in enumerate(license_files, 1):
-                arcname = f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
+                arcname = (
+                    f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
+                )
                 output_zip.write(license_file, arcname=arcname)
     output_zip.close()
     return zipname
