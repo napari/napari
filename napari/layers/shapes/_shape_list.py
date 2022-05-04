@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import Sequence, Union
 
 import numpy as np
 
@@ -225,7 +226,7 @@ class ShapeList:
 
     def add(
         self,
-        shape,
+        shape: Union[Shape, Sequence[Shape]],
         face_color=None,
         edge_color=None,
         shape_index=None,
