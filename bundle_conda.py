@@ -37,7 +37,7 @@ CONSTRUCTOR_SIGNING_IDENTITY:
     Apple ID Installer Certificate identity (common name) that should
     be use to productsign the resulting PKG (macOS only)
 CONSTRUCTOR_NOTARIZATION_IDENTITY:
-    Apple ID Developer Certificate identity (common name) that should
+    Apple ID Installer Certificate identity (common name) that should
     be use to codesign some binaries bundled in the pkg (macOS only)
 CONSTRUCTOR_SIGNING_CERTIFICATE:
     Path to PFX certificate to sign the EXE installer on Windows
@@ -150,6 +150,25 @@ def _generate_background_images(installer_type, outpath="resources"):
 
 
 def _patch_napari_recipe(recipe_path: str):
+    """
+    The source of truth for the conda packages of napari is the
+    conda-forge feedstock:
+        https://github.com/conda-forge/napari-feedstock
+
+    We are cloning this in the CI to reuse the conda-forge machinery,
+    but we need to adjust the meta.yaml file to our CI needs. For this,
+    we use souschef, which can handle meta.yaml roundtrips.
+
+    In this function we apply the following patches:
+
+    * Patch the version so it matches `napari --version`
+    * Change source from the last napari release to the local path of the
+      freshly cloned repository.
+    * Update the run requirements to match whatever `setup.cfg` says now.
+    * Add a new output, `napari-pinnings` with `run_constrained` entries
+      that control the plugin ecosystem compatibility. These constrains
+      are also defined in `setup.cfg`
+    """
     from souschef.jinja_expression import set_global_jinja_var
     from souschef.recipe import Recipe
 
@@ -193,6 +212,7 @@ def _patch_napari_recipe(recipe_path: str):
             "skip": True,
         },
         "number": "<{ build }}",
+        # we populate this list later
         "requirements": {"run_constrained": []},
         "about": {
             "home": "http://napari.org",
@@ -223,6 +243,27 @@ def _patch_napari_recipe(recipe_path: str):
 
 
 def _lines_from_cfg_block(block: str, comments=False):
+    """
+    Parse setup.cfg blocks like:
+
+    [category]
+        subcategory =
+            vispy >=0.9.6
+            wrapt >=1.11.1
+            # additional dependencies for convenience in conda-forge
+            fsspec
+            scikit-image >=0.18.1,!=0.19.0
+            pooch >=1.3.0
+            zarr
+            # variants
+            pyside2 >=5.13.2,!=5.15.0  # [qt_bindings == 'pyside2']
+            pyqt >=5.12.3,!=5.15.0  # [qt_bindings == 'pyqt']
+
+    This will parse the block string under `subcategory` and return a list
+    of strings. Comment-only lines are filtered out, but inline comments
+    are kept if `comments` is set to True. If this is the case, it returns
+    a list of 2-item lists (string + comment).
+    """
     lines = []
     for line in block.splitlines():
         line = line.strip()
@@ -243,6 +284,10 @@ def _lines_from_cfg_block(block: str, comments=False):
 
 
 def _get_dependencies():
+    """
+    Get all conda dependencies (and channels) groups defined in `setup.cfg`
+    as a dictionary of subcategories.
+    """
     # TODO: Temporary while pyside2 is not yet published for arm64
     napari_build_str = "*pyqt*" if ARCH == "arm64" else "*pyside*"
     napari_version_str = _get_version()
@@ -276,12 +321,12 @@ def _get_dependencies():
         cfg["conda_installer"]["napari_run_shortcuts"]
     )
 
-    napari_pinnings = _lines_from_cfg_block(
-        cfg["conda_installer"]["napari_run_constrained"],
-        comments=True,
-    )
     napari_recipe_run = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_recipe_run"],
+        comments=True,
+    )
+    napari_pinnings = _lines_from_cfg_block(
+        cfg["conda_installer"]["napari_recipe_run_constrained"],
         comments=True,
     )
 
@@ -297,6 +342,14 @@ def _get_dependencies():
 
 
 def _get_condarc():
+    """
+    Write our default condarc config to avoid
+    mixing some settings with other conda installations
+    in the system.
+
+    The undocumented #!final comment is explained here:
+        https://www.anaconda.com/blog/conda-configuration-engine-power-users
+    """
     # we need defaults for tensorflow and others on windows only
     defaults = "- defaults" if WINDOWS else ""
     prompt = "[napari]({default_env}) "
@@ -313,8 +366,6 @@ def _get_condarc():
         env_prompt: '{prompt}'  #! final
         """
     )
-    # the undocumented #!final comment is explained here
-    # https://www.anaconda.com/blog/conda-configuration-engine-power-users
     with NamedTemporaryFile(delete=False, mode="w+") as f:
         f.write(contents)
     return f.name
@@ -324,14 +375,6 @@ def _constructor():
     """
     Create a temporary `construct.yaml` input file and
     run `constructor`.
-
-    Parameters
-    ----------
-    version: str
-        Version of `napari` to be built. Defaults to the
-        one detected by `setuptools-scm` and written to
-        `napari/_version.py`. Run `pip install -e .` to
-        generate that file if it can't be found.
     """
     constructor = find_executable("constructor")
     if not constructor:

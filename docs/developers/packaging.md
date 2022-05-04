@@ -34,11 +34,10 @@ We also build nightly packages off `main` and publish them to the `napari/label/
 These are the same packages that are used in the `constructor` installers (see below), so their CI
 is specified in `.github/workflows/bundle_conda.py`.
 
-To do it in a `conda-forge` compatible way, we actually _clone_ `napari-feedstock` and patch the
-source instructions so the code is retrieved from the repository branch directly. The version is
-also patched to match the `setuptools-scm` string. After [rerendering][8] the feedstock, we run
-`conda-build` in the same way `conda-forge` would do and upload the resulting tarballs to our
-[Anaconda.org channel][17].
+To do it in a `conda-forge` compatible way, we actually _clone_ `napari-feedstock` and patch
+the `meta.yaml` file (see `_patch_recipe()` in `bundle_conda.py` for details). After
+[rerendering][8] the feedstock, we run `conda-build` in the same way `conda-forge` would do and
+upload the resulting tarballs to our [Anaconda.org channel][17].
 
 Additionally, the tarballs are also passed as artifacts to the next stage in the pipeline: building
 the `constructor` installers (more below).
@@ -95,18 +94,34 @@ channels:
   # - local  # only in certain situations, like nightly installers where we build napari locally
   - napari/label/bundle_tools  # temporary location of our forks of the constructor stack
   - conda-forge
-specs:
-  - napari
-  - napari-menu  # provides the shortcut configuration for napari
+specs:  # these are for the base environment; taken from setup.cfg:conda_installer.base_run
   - python 3.7  # pinned to the version of the running interpreter, configured in the CI
   - conda  # we add these to assist in the plugin installations
   - mamba  # we add these to assist in the plugin installations
   - pip    # we add these to assist in the plugin installations
+extra_envs: # we have added extra envs to help isolate versions
+  napari-0.4.15: # this the env that contains napari,
+      specs: # taken from setup.cfg:conda_installer.napari_run
+        - python 3.7  # pinned to a specific version in `bundle_conda.py`
+        - napari 0.4.15  # pinned to a specific version in `bundle_conda.py`
+        - napari-menu 0.4.15  # pinned to a specific version in `bundle_conda.py`
+        - conda
+        - mamba
+        - pip
+      channels: # taken from setup.cfg:conda_installer.napari_run_channels
+        - napari/label/nightly
+        - napari/label/bundle_tools
+        - conda-forge
 menu_packages:
   - napari-menu  # don't create shortcuts for anything else in the environment
+license_file: resources/bundle_license.txt  # generated for each release
+extra_files:
+    resources/bundle_readme.md: README.txt
+    empty_file: .napari_is_bundled_constructor  # a marker to detect the installation type
+    condarc: .condarc  # a config file we craft to avoid taking settings from other conda installs
 
 # linux-specific config
-default_prefix: $HOME/napari-0.4.12  # default installation path
+default_prefix: $HOME/.local/napari-app-0.1  # default installation path
 
 # macos-specific config
 name: napari-0.4.12  # override this because it's the only way to encode the version in the default
@@ -116,28 +131,35 @@ welcome_image: resources/napari_1227x600.png  # bg image with the napari logo on
 welcome_file: resources/osx_pkg_welcome.rtf  # rendered text in the first screen
 conclusion_text: ""  # set to an empty string to revert constructor customizations back to system's
 readme_text: ""  # set to an empty string to revert constructor customizations back to system's
-signing_identity_name: "Apple Developer ID: ..."  # Name of our installer signing certicate
+signing_identity_name: "Apple ID Installer Certificate: ..."  # Signing certificate
+notarization_identity_name: "Apple ID Installer Certificate: ..." # Notarization certificate
+
+# these two settings control the default path under ~/
+pkg_name: napari-app-0.1
+default_location_pkg: Library
+# internal identifier
+reverse_domain_identifier: org.napari
 
 # windows-specific config
 welcome_image: resources/napari_164x314.png  # logo image for the first screen
 header_image:  resources/napari_150x57.png  # logo image (top left) for the rest of the installer
 icon_image: napari/resources/icon.ico  # favicon for the taskbar and title bar
-default_prefix: '%USERPROFILE%/napari-0.4.12'  # default location for user installs
-default_prefix_domain_user: '%LOCALAPPDATA%/napari-0.4.12'  # default location for network installs
-default_prefix_all_users: '%ALLUSERSPROFILE%/napari-0.4.12'  # default location for admin installs
+default_prefix: '%USERPROFILE%/napari-app-0.1'  # default location for user installs
+default_prefix_domain_user: '%LOCALAPPDATA%/napari-app-0.1'  # default location for network installs
+default_prefix_all_users: '%ALLUSERSPROFILE%/napari-app-0.1'  # default location for admin installs
 signing_certificate: certificate.pfx  # path to signing certificate
 ```
 
 On the OS-agnostic keys, the main keys are:
 
+* `specs` and `extra_envs`: the conda packages that should be provided by the installer.
+  Constructor will perform a conda solve here to retrieve the needed dependencies.
 * `channels`: where the packages will be downloaded from. We mainly rely on conda-forge for this,
   where `napari` is published. However, we also have `napari/label/bundle_tools`, where we store
   our `constructor` stack forks (more on this later). In nightly installers, we locally build our
   own development packages for `conda` without resorting to `conda-forge`. To make use of those
   (which are eventually published to `napari/label/nightly`), we unpack the GitHub Actions artifact
   in a specific location that `constructor` recognizes as a _local_ channel once indexed.
-* `specs`: the conda packages that should be provided by the installer. Constructor will perform a
-  conda solve here to retrieve the needed dependencies.
 * `menu_packages`: restrict which packages can create shortcuts. We only want the shortcuts provided
   by `napari-menu`, and not any that could come from the (many) dependencies of napari.
 
@@ -146,14 +168,16 @@ a bit more.
 
 #### Default installation path
 
-This depends on each OS. Our general strategy is to put it under `napari-<version>` in the user
-directory. However, there are several constrains we need to take into account to make this happen:
+This depends on each OS. Our general strategy is to put it under `napari-app-<installer-version>`
+somewhere in the user directory. However, there are several constrains we need to take into
+account to make this happen:
 
 * On Windows, users can choose between an "Only me" and "All users" installation. This changes what
   we understand by "user directory". This is further complicated by the existence of "domain users",
   which are not guaranteed to have a user directory per se.
-* On macOS, the PKG installer does not offer a lot of flexibility for this configuration, so we
-  need to override the _name_ to include the version tag.
+* On macOS, the PKG installer does not offer a lot of flexibility for this configuration. We
+  use a combination of `default_location_pkg` and `pkg_name` so it ends up under
+  `~/Library/napari-app-<installer-version>`
 
 #### Branding
 
@@ -233,9 +257,9 @@ Very fun! So where do all these packages live?
 
 
 Most of the forks live in `jaimergp`'s account, under a non-default branch. They are published
-through the `jaimergp-forge` every time a commit to `master` is made. Versions are arbitrary here,
-but they are set to be greater than the latest official version, and the `build` number is
-incremented for every rebuild.
+through the `jaimergp/jaimergp-forge` every time a commit to `master` is made. Versions are
+arbitrary here, but they are set to be greater than the latest official version, and the
+`build` number is incremented for every rebuild.
 
 The only exception is `conda-standalone`. It doesn't have its own repository or fork because it's
 basically a repackaged `conda` with some patches. Those patches live in the feedstock only. The
