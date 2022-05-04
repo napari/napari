@@ -743,7 +743,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                             argument=k,
                         )
                     )
-            layer = Image(data, **kwargs, _ndisplay=self.dims.ndisplay)
+            layer = Image(data, **kwargs)
             self.layers.append(layer)
 
             return layer
@@ -752,7 +752,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = Image(image, **i_kwargs, _ndisplay=self.dims.ndisplay)
+                layer = Image(image, **i_kwargs)
                 self.layers.append(layer)
                 layer_list.append(layer)
 

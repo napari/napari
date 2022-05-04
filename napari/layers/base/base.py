@@ -220,7 +220,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
-        _ndisplay=2,
     ):
         super().__init__()
 
@@ -245,7 +244,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
-        self._ndisplay = _ndisplay
+        self._ndisplay = 2
         self._dims_order = list(range(ndim))
 
         # Create a transform chain consisting of four transforms:

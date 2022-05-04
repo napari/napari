@@ -236,7 +236,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
-        _ndisplay=2,
     ):
         if name is None and data is not None:
             name = magic_name(data)
@@ -281,7 +280,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             multiscale=multiscale,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
-            _ndisplay=_ndisplay,
         )
 
         self.events.add(
@@ -527,12 +525,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self._ndisplay == 3:
-            self._interpolation[self._ndisplay] = Interpolation3D(
-                interpolation
-            )
+        if interpolation == 'linear':
+            self._interpolation[2] = Interpolation.BILINEAR
         else:
-            self._interpolation[self._ndisplay] = Interpolation(interpolation)
+            self._interpolation[2] = Interpolation(interpolation)
+        if interpolation == 'bilinear':
+            self._interpolation[3] = Interpolation3D.LINEAR
+        elif interpolation in (item.value for item in Interpolation3D):
+            self._interpolation[3] = Interpolation3D(interpolation)
         self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
