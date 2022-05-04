@@ -880,7 +880,6 @@ class Window:
         # self.window_menu.addAction(action)
 
         # see #3663, to fix #3624 more generally
-        dock_widget.setFloating(True)
         dock_widget.setFloating(False)
 
     def _remove_dock_widget(self, event=None):
