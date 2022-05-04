@@ -16,6 +16,10 @@
 
 from pathlib import Path
 
+from importlib import import_module
+
+from jinja2.filters import FILTERS
+
 import qtgallery
 
 import napari
@@ -170,11 +174,6 @@ def setup(app):
 
     """
     app.registry.source_suffix.pop(".ipynb", None)
-
-
-from importlib import import_module
-
-from jinja2.filters import FILTERS
 
 
 def get_attributes(item, obj, modulename):
