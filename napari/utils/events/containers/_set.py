@@ -190,3 +190,7 @@ class EventedSet(MutableSet[_T]):
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         return list(self)
+
+    def __update__(self, other):
+        self.clear()
+        self.update(other)

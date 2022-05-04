@@ -54,6 +54,8 @@ class TypedMutableSequence(MutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
+        min_len: int = 0,
+        max_len: int = -1,
         lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = dict(),
     ):
         self._list: List[_T] = []
@@ -61,7 +63,10 @@ class TypedMutableSequence(MutableSequence[_T]):
             basetype if isinstance(basetype, Sequence) else (basetype,)
         )
         self._lookup = lookup.copy()
+        self._min_len = min_len
+        self._max_len = max_len
         self.extend(data)
+        self._length_check(len(self._list))
 
     def __len__(self) -> int:
         return len(self._list)
@@ -94,12 +99,21 @@ class TypedMutableSequence(MutableSequence[_T]):
                         deferred=True,
                     )
                 )
+            # check if the final length and types will be ok
+            self._length_check(
+                len(self._list) - len(self._list[key]) + len(value)
+            )
             self._list[key] = [self._type_check(v) for v in value]
         else:
             self._list[key] = self._type_check(value)
 
     def insert(self, index: int, value: _T):
+        self._length_check(len(self._list) + 1)
         self._list.insert(index, self._type_check(value))
+
+    def extend(self, values):
+        self._length_check(len(self._list) + len(values))
+        self._list.extend([self._type_check(v) for v in values])
 
     def __contains__(self, key):
         if type(key) in self._lookup:
@@ -167,6 +181,20 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         return e
 
+    def _length_check(self, length):
+        if (
+            self._max_len >= 0 and length > self._max_len
+        ) or length < self._min_len:
+            raise ValueError(
+                trans._(
+                    'Attempted to create TypedList of length {length}, but constraints are between {mn} and {mx}',
+                    deferred=True,
+                    length=length,
+                    mn=self._min_len,
+                    mx=self._max_len,
+                )
+            )
+
     def __newlike__(self, iterable: Iterable[_T]):
         new = self.__class__()
         # seperating this allows subclasses to omit these from their `__init__`
@@ -177,7 +205,12 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     def copy(self) -> 'TypedMutableSequence[_T]':
         """Return a shallow copy of the list."""
-        return self.__newlike__(self)
+        new = self.__newlike__(self)
+        # these should not live on `__newlike__` or indexing will break
+        # this seems like a horrible idea.
+        new._min_len = self._min_len
+        new._max_len = self._max_len
+        return new
 
     def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
         """Add other to self, return new object."""

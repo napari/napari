@@ -108,3 +108,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         for k, v in self._dict.items():
             if v is value or v == value:
                 return k
+
+    def __update__(self, other):
+        self.clear()
+        self.update(other)

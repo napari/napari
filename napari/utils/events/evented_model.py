@@ -198,13 +198,22 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         self._events.source = self
         # add event emitters for each field which is mutable
-        event_names = [
-            name
-            for name, field in self.__fields__.items()
-            if field.field_info.allow_mutation
-        ]
-        event_names.extend(self.__property_setters__)
-        self._events.add(**dict.fromkeys(event_names))
+        field_events = []
+        for name, field in self.__fields__.items():
+            value = getattr(self, name)
+            if hasattr(value, 'events'):
+                field_events.append(name)
+
+        self._events.add(
+            **dict.fromkeys(field_events + list(self.__property_setters__))
+        )
+
+        # hook up events from children
+        for name in field_events:
+            value = getattr(self, name)
+            if hasattr(value, 'events'):
+                # TODO: won't track source all the way in?
+                value.events.connect(getattr(self.events, name))
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
@@ -212,6 +221,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # if so, we use it instead.
         if name in self.__property_setters__:
             self.__property_setters__[name].fset(self, value)
+        elif name in self.__fields__ and self.__fields__[
+            name
+        ].field_info.extra.get('inplace_mutation', False):
+            getattr(self, name).__update__(value)
         else:
             super().__setattr__(name, value)
 
@@ -251,9 +264,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         for name, value in self._defaults.items():
             if isinstance(value, EventedModel):
                 getattr(self, name).reset()
-            elif (
-                self.__config__.allow_mutation
-                and self.__fields__[name].field_info.allow_mutation
+            elif self.__config__.allow_mutation and (
+                self.__fields__[name].field_info.allow_mutation
+                or self.__fields__[name].field_info.extra.get(
+                    'inplace_mutation', False
+                )
             ):
                 setattr(self, name, value)
 
@@ -295,6 +310,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         if block.count:
             self.events(Event(self))
+
+    def __update__(self, other):
+        self.update(other)
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
