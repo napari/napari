@@ -14,13 +14,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from importlib import import_module
 from pathlib import Path
 
-from importlib import import_module
-
-from jinja2.filters import FILTERS
-
 import qtgallery
+from jinja2.filters import FILTERS
 
 import napari
 
