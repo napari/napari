@@ -933,7 +933,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: List[Path | str],
+        paths: List[Union[Path, str]],
         kwargs: Dict[str, Any] = {},
         layer_type: Optional[str] = None,
         stack: bool = False,
