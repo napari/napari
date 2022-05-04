@@ -17,6 +17,7 @@
 from pathlib import Path
 
 import qtgallery
+
 import napari
 
 release = napari.__version__
@@ -171,8 +172,10 @@ def setup(app):
     app.registry.source_suffix.pop(".ipynb", None)
 
 
-from jinja2.filters import FILTERS
 from importlib import import_module
+
+from jinja2.filters import FILTERS
+
 
 def get_attributes(item, obj, modulename):
     """Filters attributes to be used in autosummary.
@@ -185,5 +188,6 @@ def get_attributes(item, obj, modulename):
         return f"~{obj}.{item}"
     else:
         return ""
+
 
 FILTERS["get_attributes"] = get_attributes
