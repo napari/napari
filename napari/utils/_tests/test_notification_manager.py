@@ -66,6 +66,7 @@ def test_notification_manager_no_gui(monkeypatch):
             'This is another information message'
         )
         assert len(notification_manager.records) == 2
+        assert len(store) == 2
         assert store[-1].type == 'info'
 
         # test that exceptions that go through sys.excepthook are catalogued
@@ -75,8 +76,12 @@ def test_notification_manager_no_gui(monkeypatch):
 
         # pytest intercepts the error, so we can manually call sys.excepthook
         assert sys.excepthook == notification_manager.receive_error
-        sys.excepthook(*sys.exc_info())
+        try:
+            raise ValueError("a")
+        except ValueError:
+            sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
+        assert len(store) == 3
         assert store[-1].type == 'error'
 
         # test that warnings that go through showwarning are catalogued
@@ -138,10 +143,13 @@ def test_notification_manager_no_gui_with_threading():
         exception_thread.start()
         time.sleep(0.02)
 
-        if PY38_OR_HIGHER:
-            threading.excepthook(sys.exc_info())
-        else:
-            sys.excepthook(*sys.exc_info())
+        try:
+            raise ValueError("a")
+        except ValueError:
+            if PY38_OR_HIGHER:
+                threading.excepthook(sys.exc_info())
+            else:
+                sys.excepthook(*sys.exc_info())
 
         assert len(notification_manager.records) == 1
         assert store[-1].type == 'error'
