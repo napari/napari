@@ -60,7 +60,6 @@ def clean_current(monkeypatch, qtbot):
     "raise_func,warn_func",
     [(_raise, _warn), (_threading_raise, _threading_warn)],
 )
-@pytest.mark.order(11)
 def test_notification_manager_via_gui(
     qtbot, raise_func, warn_func, clean_current
 ):
