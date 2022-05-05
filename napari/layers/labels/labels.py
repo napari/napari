@@ -296,6 +296,7 @@ class Labels(_ImageBase):
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
+            features=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
