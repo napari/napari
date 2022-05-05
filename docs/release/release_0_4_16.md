@@ -137,6 +137,8 @@ For more information, examples, and documentation, please visit our
 - add custom final condarc to bundle (#4447)
 - Add doc specific Makefile (#4452)
 - Set `TMP` on Windows+Mamba subprocesses if not set (#4462)
+- Update test_typing.yml (#4475)
+- Fix make-typestubs: use union for type hint instead of '|' (#4476)
 
 ## Other Pull Requests
 
