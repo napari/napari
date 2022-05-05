@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-import tensorstore as ts
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
@@ -130,5 +129,6 @@ def test_qt_image_controls_change_contrast(qtbot):
 
 def test_tensorstore_clim_popup():
     """Regression to test, makes sure it works with tensorstore dtype"""
+    ts = pytest.importorskip('tensorstore')
     layer = Image(ts.array(np.random.rand(20, 20)))
     QContrastLimitsPopup(layer)
