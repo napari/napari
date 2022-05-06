@@ -1400,6 +1400,21 @@ def test_get_status_with_custom_index():
     assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
 
 
+def test_labels_features_event():
+    event_emitted = False
+
+    def on_event():
+        nonlocal event_emitted
+        event_emitted = True
+
+    layer = Labels(np.zeros((4, 5), dtype=np.uint8))
+    layer.events.features.connect(on_event)
+
+    layer.features = {'some_feature': []}
+
+    assert event_emitted
+
+
 class TestLabels:
     @staticmethod
     def get_objects():
