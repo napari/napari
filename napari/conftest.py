@@ -496,4 +496,4 @@ def pytest_generate_tests(metafunc):
                 res.append((check, instance))
                 ids.append(f"{name}-{instance}")
 
-        metafunc.parametrize('event_checker,obj', res, ids=ids)
+        metafunc.parametrize('event_define_check,obj', res, ids=ids)
