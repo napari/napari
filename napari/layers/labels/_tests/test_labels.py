@@ -1398,3 +1398,15 @@ def test_get_status_with_custom_index():
     assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
     assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
     assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
+
+
+class TestLabels:
+    @staticmethod
+    def get_objects():
+        return [(Labels(np.zeros((10, 10), dtype=np.uint8)))]
+
+    def test_events_defined(self, event_define_check, obj):
+        event_define_check(
+            obj,
+            {"seed", "num_colors", "features", "show_selected_label", "color"},
+        )

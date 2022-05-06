@@ -441,3 +441,59 @@ def mock_npe2_pm():
         _pm = PluginManager(reg=mock_reg)
     with patch('npe2.PluginManager.instance', return_value=_pm):
         yield _pm
+
+
+def event_check():
+    """Return a function to check if events are defined by all properties."""
+
+    def _check(instance, skip):
+        klass = instance.__class__
+        for name, value in klass.__dict__.items():
+            if (
+                isinstance(value, property)
+                and name[0] != '_'
+                and name not in skip
+            ):
+                assert hasattr(
+                    instance.events, name
+                ), f"event {name} not defined"
+
+    return _check
+
+
+def _event_check(instance):
+    def _prepare_check(name, no_event_):
+        def check(instance, no_event=no_event_):
+            if name in no_event:
+                assert not hasattr(
+                    instance.events, name
+                ), f"event {name} defined"
+            else:
+                assert hasattr(
+                    instance.events, name
+                ), f"event {name} not defined"
+
+        return check
+
+    no_event_set = set()
+    if isinstance(instance, tuple):
+        no_event_set = instance[1]
+        instance = instance[0]
+
+    for name, value in instance.__class__.__dict__.items():
+        if isinstance(value, property) and name[0] != '_':
+            yield _prepare_check(name, no_event_set), instance, name
+
+
+def pytest_generate_tests(metafunc):
+    """Generate separate test for each test toc check if all events are defined."""
+    if 'event_define_check' in metafunc.fixturenames:
+        res = []
+        ids = []
+
+        for obj in metafunc.cls.get_objects():
+            for check, instance, name in _event_check(obj):
+                res.append((check, instance))
+                ids.append(f"{name}-{instance}")
+
+        metafunc.parametrize('event_checker,obj', res, ids=ids)
