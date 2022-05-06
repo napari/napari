@@ -14,8 +14,6 @@ from napari.utils.notifications import (
     show_warning,
 )
 
-PY38_OR_HIGHER = bool(getattr(threading, 'excepthook', None))
-
 
 # capsys fixture comes from pytest
 # https://docs.pytest.org/en/stable/logging.html#caplog-fixture
@@ -122,8 +120,7 @@ def test_notification_manager_no_gui_with_threading():
         with pytest.raises(PurposefulException):
             raise PurposefulException("this is an exception")
 
-    if PY38_OR_HIGHER:
-        previous_threading_exhook = threading.excepthook
+    previous_threading_exhook = threading.excepthook
 
     with notification_manager:
         notification_manager.records.clear()
@@ -132,12 +129,9 @@ def test_notification_manager_no_gui_with_threading():
         notification_manager.notification_ready.connect(store.append)
 
         # Test exception inside threads
-        if PY38_OR_HIGHER:
-            # `threading.excepthook` available only for Python >= 3.8
-            assert (
-                threading.excepthook
-                == notification_manager.receive_thread_error
-            )
+        assert (
+            threading.excepthook == notification_manager.receive_thread_error
+        )
 
         exception_thread = threading.Thread(target=_raise)
         exception_thread.start()
@@ -146,10 +140,7 @@ def test_notification_manager_no_gui_with_threading():
         try:
             raise ValueError("a")
         except ValueError:
-            if PY38_OR_HIGHER:
-                threading.excepthook(sys.exc_info())
-            else:
-                sys.excepthook(*sys.exc_info())
+            threading.excepthook(sys.exc_info())
 
         assert len(notification_manager.records) == 1
         assert store[-1].type == 'error'
@@ -170,7 +161,6 @@ def test_notification_manager_no_gui_with_threading():
             raise AssertionError("Thread notification not received in time")
 
     # make sure we've restored the threading except hook
-    if PY38_OR_HIGHER:
-        assert threading.excepthook == previous_threading_exhook
+    assert threading.excepthook == previous_threading_exhook
 
     assert all(isinstance(x, Notification) for x in store)
