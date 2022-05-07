@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from components.cursor_query import CursorQuery
 from vispy.color import get_color_names
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
@@ -2730,7 +2731,7 @@ class Shapes(Layer):
         end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Tuple[Union[float, int], None]:
-        """Get the layer data value along a ray
+        """Get the layer data index along a ray
 
         Parameters
         ----------
@@ -2743,18 +2744,18 @@ class Shapes(Layer):
 
         Returns
         -------
-        value
-            The data value along the supplied ray.
+        index
+            The data index along the supplied ray.
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
-        value, _ = self._get_index_and_intersection(
+        index, intersection = self._get_index_and_intersection(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-
-        return (value, None)
+        cursor_query = CursorQuery(index=index, intersection=intersection)
+        return cursor_query
 
     def _get_index_and_intersection(
         self,
