@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
+from ...components.cursor_query import CursorQuery
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
@@ -1535,8 +1536,8 @@ class Points(Layer):
 
         Returns
         -------
-        value : Union[int, None]
-            The data value along the supplied ray.
+        value : CursorQuery | None
+            The index and position of the first point along the ray if present.
         """
         if (start_point is None) or (end_point is None):
             # if the ray doesn't intersect the data volume, no points could have been intersected
@@ -1575,7 +1576,11 @@ class Points(Layer):
             selection = self._indices_view[closest_index]
         else:
             selection = None
-        return selection
+        cursor_query = CursorQuery(
+            index=selection,
+            value=self.data[selection] if selection else None,
+        )
+        return cursor_query
 
     def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
         """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
