@@ -995,7 +995,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value_2d(self, position):
+    def _get_value_2d(self, position) -> CursorQuery:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -1038,8 +1038,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        value : CursorQuery or None
-            Value of the data. If the layer is not visible return None.
+        value : CursorQuery
+            Object containing result of a query on layer data.
         """
         if not self.visible:
             self._value = None
@@ -1082,7 +1082,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[float, int]:
+    ) -> CursorQuery:
         """Get the layer data value along a ray
 
         Parameters
