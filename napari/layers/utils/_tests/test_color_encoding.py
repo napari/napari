@@ -177,15 +177,6 @@ def test_quantitative_with_missing_feature(features):
         encoding(features)
 
 
-def test_validate_from_string():
-    argument = 'class'
-    expected = DirectColorEncoding(feature=argument)
-
-    actual = validate_color_encoding(argument)
-
-    assert actual == expected
-
-
 def test_validate_from_sequence():
     argument = ['red', 'green', 'cyan']
     expected = ManualColorEncoding(array=argument)

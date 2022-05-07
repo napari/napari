@@ -229,8 +229,6 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
             ],
             value,
         )
-    if isinstance(value, str):
-        return DirectColorEncoding(feature=value, fallback=DEFAULT_COLOR)
     try:
         color_array = ColorArray.validate_type(value)
     except (ValueError, AttributeError, KeyError):

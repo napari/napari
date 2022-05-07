@@ -553,160 +553,156 @@ def test_view_text_with_constant_text():
     np.testing.assert_array_equal(actual, ['A', 'A'])
 
 
-def test_init_with_constant_face_color():
-    face_color = {'constant': 'red'}
+def test_init_with_constant_color():
+    color = {'constant': 'red'}
     features = pd.DataFrame(index=range(3))
 
-    text_manager = TextManager(face_color=face_color, features=features)
+    text_manager = TextManager(color=color, features=features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, 'red')
 
 
-def test_init_with_manual_face_color():
-    face_color = ['red', 'green', 'blue']
+def test_init_with_manual_color():
+    color = ['red', 'green', 'blue']
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
 
-    text_manager = TextManager(face_color=face_color, features=features)
+    text_manager = TextManager(color=color, features=features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['red', 'green', 'blue'])
 
 
-def test_init_with_derived_face_color():
+def test_init_with_derived_color():
     features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
 
-    text_manager = TextManager(face_color='colors', features=features)
+    text_manager = TextManager(color={'feature': 'colors'}, features=features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['red', 'green', 'blue'])
 
 
-def test_init_with_derived_face_color_missing_feature():
+def test_init_with_derived_color_missing_feature():
     features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
 
     with pytest.warns(RuntimeWarning):
         text_manager = TextManager(
-            face_color='not_a_feature', features=features
+            color={'feature': 'not_a_feature'}, features=features
         )
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['cyan'] * 3)
 
 
-def test_apply_with_constant_face_color():
-    face_color = {'constant': 'red'}
+def test_apply_with_constant_color():
+    color = {'constant': 'red'}
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
-    text_manager = TextManager(face_color=face_color, features=features)
+    text_manager = TextManager(color=color, features=features)
 
     features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
     text_manager.apply(features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, 'red')
 
 
-def test_apply_with_manual_face_color():
-    face_color = {
+def test_apply_with_manual_color():
+    color = {
         'array': ['red', 'green', 'blue'],
         'default': 'yellow',
     }
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
-    text_manager = TextManager(face_color=face_color, features=features)
+    text_manager = TextManager(color=color, features=features)
 
     features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
     text_manager.apply(features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['red', 'green', 'blue', 'yellow', 'yellow'])
 
 
-def test_apply_with_derived_face_color():
+def test_apply_with_derived_color():
     features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
-    text_manager = TextManager(face_color='colors', features=features)
+    text_manager = TextManager(color={'feature': 'colors'}, features=features)
 
     features = pd.DataFrame(
         {'colors': ['red', 'green', 'blue', 'yellow', 'cyan']}
     )
     text_manager.apply(features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['red', 'green', 'blue', 'yellow', 'cyan'])
 
 
-def test_refresh_with_constant_face_color():
+def test_refresh_with_constant_color():
     features = pd.DataFrame(index=range(3))
-    text_manager = TextManager(
-        face_color={'constant': 'red'}, features=features
-    )
+    text_manager = TextManager(color={'constant': 'red'}, features=features)
 
-    text_manager.face_color = {'constant': 'yellow'}
+    text_manager.color = {'constant': 'yellow'}
     text_manager.refresh(features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, 'yellow')
 
 
-def test_refresh_with_manual_face_color():
+def test_refresh_with_manual_color():
     features = pd.DataFrame(index=range(3))
     text_manager = TextManager(
-        face_color=['red', 'green', 'blue'], features=features
+        color=['red', 'green', 'blue'], features=features
     )
 
-    text_manager.face_color = ['green', 'cyan', 'yellow']
+    text_manager.color = ['green', 'cyan', 'yellow']
     text_manager.refresh(features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['green', 'cyan', 'yellow'])
 
 
-def test_refresh_with_derived_face_color():
+def test_refresh_with_derived_color():
     features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
-    text_manager = TextManager(face_color='colors', features=features)
+    text_manager = TextManager(color={'feature': 'colors'}, features=features)
 
     features = pd.DataFrame({'colors': ['green', 'yellow', 'magenta']})
     text_manager.refresh(features)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, ['green', 'yellow', 'magenta'])
 
 
-def test_copy_paste_with_constant_face_color():
+def test_copy_paste_with_constant_color():
     features = pd.DataFrame(index=range(3))
-    text_manager = TextManager(
-        face_color={'constant': 'blue'}, features=features
-    )
+    text_manager = TextManager(color={'constant': 'blue'}, features=features)
 
     copied = text_manager._copy([0, 2])
     text_manager._paste(**copied)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(actual, 'blue')
 
 
-def test_copy_paste_with_manual_face_color():
+def test_copy_paste_with_manual_color():
     features = pd.DataFrame(index=range(3))
     text_manager = TextManager(
-        face_color=['magenta', 'red', 'yellow'], features=features
+        color=['magenta', 'red', 'yellow'], features=features
     )
 
     copied = text_manager._copy([0, 2])
     text_manager._paste(**copied)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(
         actual, ['magenta', 'red', 'yellow', 'magenta', 'yellow']
     )
 
 
-def test_copy_paste_with_derived_face_color():
+def test_copy_paste_with_derived_color():
     features = pd.DataFrame({'colors': ['green', 'red', 'magenta']})
-    text_manager = TextManager(face_color='colors', features=features)
+    text_manager = TextManager(color={'feature': 'colors'}, features=features)
 
     copied = text_manager._copy([0, 2])
     text_manager._paste(**copied)
 
-    actual = text_manager.face_color._values
+    actual = text_manager.color._values
     _assert_colors_equal(
         actual, ['green', 'red', 'magenta', 'green', 'magenta']
     )
