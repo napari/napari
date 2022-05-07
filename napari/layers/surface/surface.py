@@ -5,9 +5,11 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.geometry import find_nearest_triangle_intersection
 from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.interactivity_utils import mouse_click_line_segment_to_ray
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
 from .normals import SurfaceNormals
@@ -455,7 +457,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[float, int], None]:
+    ) -> Tuple[Union[None, float, int], None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -474,3 +476,31 @@ class Surface(IntensityVisualizationMixin, Layer):
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
+        if len(dims_displayed) != 3:
+            # only applies to 3D
+            return None, None
+        if (start_point is None) or (end_point is None):
+            # return None if the ray doesn't intersect the data bounding box
+            return None, None
+
+        start_position, ray_direction = mouse_click_line_segment_to_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+
+        # get the mesh triangles
+        mesh_triangles = self.vertices[self.faces]
+
+        # get the triangles intersection
+        intersection_index, intersection = find_nearest_triangle_intersection(
+            ray_position=start_position,
+            ray_direction=ray_direction,
+            triangles=mesh_triangles,
+        )
+
+        # add the full nD coords to intersection
+        intersection_point = start_point.copy()
+        intersection_point[dims_displayed] = intersection
+
+        return intersection_index, intersection_point
