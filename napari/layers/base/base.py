@@ -1040,45 +1040,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         value : tuple, None
             Value of the data. If the layer is not visible return None.
         """
-        if self.visible:
-            if world:
-                ndim_world = len(position)
-
-                if dims_displayed is not None:
-                    # convert the dims_displayed to the layer dims.This accounts
-                    # for differences in the number of dimensions in the world
-                    # dims versus the layer and for transpose and rolls.
-                    dims_displayed = dims_displayed_world_to_layer(
-                        dims_displayed,
-                        ndim_world=ndim_world,
-                        ndim_layer=self.ndim,
-                    )
-                position = self.world_to_data(position)
-
-            if (dims_displayed is not None) and (view_direction is not None):
-                if len(dims_displayed) == 2 or self.ndim == 2:
-                    value = self._get_value(position=tuple(position))
-
-                elif len(dims_displayed) == 3:
-                    view_direction = self._world_to_data_ray(
-                        list(view_direction)
-                    )
-                    start_point, end_point = self.get_ray_intersections(
-                        position=position,
-                        view_direction=view_direction,
-                        dims_displayed=dims_displayed,
-                        world=False,
-                    )
-                    value = self._get_value_3d(
-                        start_point=start_point,
-                        end_point=end_point,
-                        dims_displayed=dims_displayed,
-                    )
-            else:
-                value = self._get_value(position)
-
-        else:
-            value = None
+        if not self.visible:
+            self._value = None
+            return None
+        if world:  # transform position and slice dims displayed
+            position = self.world_to_data(position)
+            if dims_displayed is not None:
+                # convert the dims_displayed to the layer dims.This accounts
+                # for differences in the number of dimensions in the world
+                # dims versus the layer and for transpose and rolls.
+                dims_displayed = dims_displayed_world_to_layer(
+                    dims_displayed,
+                    ndim_world=len(position),
+                    ndim_layer=self.ndim,
+                )
+        if dims_displayed is None and view_direction is None:
+            value = self._get_value(position)
+        elif len(dims_displayed) == 2 or self.ndim == 2:
+            value = self._get_value(position=tuple(position))
+        else:  # displaying 3 dimensions:
+            view_direction = self._world_to_data_ray(list(view_direction))
+            start_point, end_point = self.get_ray_intersections(
+                position=position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=False,
+            )
+            value = self._get_value_3d(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
         self._value = value
