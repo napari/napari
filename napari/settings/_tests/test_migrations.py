@@ -86,3 +86,19 @@ def test_030_to_040_migration():
     )
     assert 'napari-svg' not in settings.plugins.disabled_plugins
     assert 'napari' not in settings.plugins.disabled_plugins
+
+
+@pytest.mark.skipif(
+    bool(os.environ.get('MIN_REQ')), reason='not relevant for MIN_REQ'
+)
+def test_040_to_050_migration():
+    # Prior to 0.5.0 existing preferences may have reader extensions
+    # preferences saved without a leading *.
+    # fnmatch would fail on these so we coerce them to include a *
+    # e.g. '.csv' becomes '*.csv'
+    settings = NapariSettings(
+        schema_version='0.4.0',
+        plugins={'extension2reader': {'.tif': 'napari'}},
+    )
+    assert '.tif' not in settings.plugins.extension2reader
+    assert '*.tif' in settings.plugins.extension2reader
