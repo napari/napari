@@ -49,6 +49,7 @@ from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from textwrap import dedent
 
 from ruamel import yaml
 
@@ -131,6 +132,30 @@ def _generate_background_images(installer_type, outpath="resources"):
         clean_these_files.append(output)
 
 
+def _get_condarc():
+    # we need defaults for tensorflow and others on windows only
+    defaults = "- defaults" if WINDOWS else ""
+    prompt = "[napari]({default_env}) "
+    contents = dedent(
+        f"""
+        channels:  #!final
+          - napari
+          - conda-forge
+          {defaults}
+        repodata_fns:  #!final
+          - repodata.json
+        auto_update_conda: false  #!final
+        channel_priority: strict  #!final
+        env_prompt: '{prompt}'  #! final
+        """
+    )
+    # the undocumented #!final comment is explained here
+    # https://www.anaconda.com/blog/conda-configuration-engine-power-users
+    with NamedTemporaryFile(delete=False, mode="w+") as f:
+        f.write(contents)
+    return f.name
+
+
 def _constructor(version=_version(), extra_specs=None):
     """
     Create a temporary `construct.yaml` input file and
@@ -183,6 +208,7 @@ def _constructor(version=_version(), extra_specs=None):
         + ["napari/label/bundle_tools", "conda-forge"]
     )
     empty_file = NamedTemporaryFile(delete=False)
+    condarc = _get_condarc()
     definitions = {
         "name": APP,
         "company": "Napari",
@@ -201,6 +227,7 @@ def _constructor(version=_version(), extra_specs=None):
         "extra_files": {
             "resources/bundle_readme.md": "README.txt",
             empty_file.name: ".napari_is_bundled_constructor",
+            condarc: ".condarc",
         },
     }
     if _use_local():
@@ -281,6 +308,7 @@ def _constructor(version=_version(), extra_specs=None):
 
     clean_these_files.append("construct.yaml")
     clean_these_files.append(empty_file.name)
+    clean_these_files.append(condarc)
 
     # TODO: temporarily patching password - remove block when the secret has been fixed
     # (I think it contains an ending newline or something like that, copypaste artifact?)
