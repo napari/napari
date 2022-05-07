@@ -89,7 +89,7 @@ class _OctreeImageBase(_ImageBase):
 
     def _get_value_2d(self, position) -> CursorQuery:
         """Override Image._get_value(position)."""
-        return CursorQuery  # TODO_OCTREE: need to implement this.
+        return CursorQuery()  # TODO_OCTREE: need to implement this.
 
     @property
     def loaded(self) -> bool:
