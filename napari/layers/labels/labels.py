@@ -8,6 +8,7 @@ from scipy import ndimage as ndi
 
 from napari.utils.misc import _is_array_type
 
+from ...components.cursor_query import CursorQuery
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -994,7 +995,7 @@ class Labels(_ImageBase):
             col = self.colormap.map(val)[0]
         return col
 
-    def _get_value_ray(
+    def _get_label_ids_along_ray(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
@@ -1013,43 +1014,33 @@ class Labels(_ImageBase):
 
         Returns
         -------
-        value : Optional[int]
-            The first non-zero value encountered along the ray. If none
-            was encountered or the viewer is in 2D mode, None is returned.
+        intersection : int
+            The first non-zero value encountered along the ray if present,
+            else 0.
         """
-        if start_point is None or end_point is None:
-            return None
-        if len(dims_displayed) == 3:
-            # only use get_value_ray on 3D for now
-            # we use dims_displayed because the image slice
-            # has its dimensions  in th same order as the vispy
-            # Volume
-            start_point = start_point[dims_displayed]
-            end_point = end_point[dims_displayed]
-            sample_ray = end_point - start_point
-            length_sample_vector = np.linalg.norm(sample_ray)
-            n_points = int(2 * length_sample_vector)
-            sample_points = np.linspace(
-                start_point, end_point, n_points, endpoint=True
-            )
-            im_slice = self._slice.image.raw
-            clamped = clamp_point_to_bounding_box(
-                sample_points, self._display_bounding_box(dims_displayed)
-            ).astype(int)
-            values = im_slice[tuple(clamped.T)]
-            nonzero_indices = np.flatnonzero(values)
-            if len(nonzero_indices > 0):
-                # if a nonzer0 value was found, return the first one
-                return values[nonzero_indices[0]]
-
-        return None
+        # we use dims_displayed because the image slice has its dimensions in
+        # the same order as the vispy Volume.
+        start_point = start_point[dims_displayed]
+        end_point = end_point[dims_displayed]
+        sample_ray = end_point - start_point
+        length_sample_vector = np.linalg.norm(sample_ray)
+        n_points = int(2 * length_sample_vector)
+        sample_points = np.linspace(
+            start_point, end_point, n_points, endpoint=True
+        )
+        im_slice = self._slice.image.raw
+        clamped = clamp_point_to_bounding_box(
+            sample_points, self._display_bounding_box(dims_displayed)
+        ).astype(int)
+        label_ids = im_slice[tuple(clamped.T)]
+        return label_ids
 
     def _get_value_3d(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Optional[int]:
+    ) -> Union[CursorQuery, None]:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -1067,14 +1058,22 @@ class Labels(_ImageBase):
             The first non-zero value encountered along the ray. If a
             non-zero value is not encountered, returns 0 (the background value).
         """
-        return (
-            self._get_value_ray(
-                start_point=start_point,
-                end_point=end_point,
-                dims_displayed=dims_displayed,
-            )
-            or 0
+        if start_point is None or end_point is None:
+            return None
+        label_ids = self._get_label_ids_along_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
         )
+        nonzero_indices = np.flatnonzero(label_ids)
+        nonzero_found = len(nonzero_indices) > 0
+        first_label_index = nonzero_indices[0] if nonzero_found else None
+        first_label = label_ids[first_label_index] if nonzero_found else 0
+        cursor_query = CursorQuery(
+            intersection=first_label_index,
+            value=first_label,
+        )
+        return cursor_query
 
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)

@@ -1064,7 +1064,7 @@ def test_get_value_ray_3d():
     # set the dims to the slice with labels
     labels._slice_dims([1, 0, 0, 0], ndisplay=3)
 
-    value = labels._get_value_ray(
+    value = labels._get_label_ids_along_ray(
         start_point=np.array([1, 0, 5, 5]),
         end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1072,7 +1072,7 @@ def test_get_value_ray_3d():
     assert value == 1
 
     # check with a ray that only goes through background
-    value = labels._get_value_ray(
+    value = labels._get_label_ids_along_ray(
         start_point=np.array([1, 0, 15, 15]),
         end_point=np.array([1, 20, 15, 15]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1082,7 +1082,7 @@ def test_get_value_ray_3d():
     # set the dims to a slice without labels
     labels._slice_dims([0, 0, 0, 0], ndisplay=3)
 
-    value = labels._get_value_ray(
+    value = labels._get_label_ids_along_ray(
         start_point=np.array([0, 0, 5, 5]),
         end_point=np.array([0, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1110,7 +1110,7 @@ def test_get_value_ray_3d_rolled():
     labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
     labels.set_view_slice()
 
-    value = labels._get_value_ray(
+    value = labels._get_label_ids_along_ray(
         start_point=np.array([0, 5, 5, 1]),
         end_point=np.array([20, 5, 5, 1]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1138,7 +1138,7 @@ def test_get_value_ray_3d_transposed():
     labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
     labels.set_view_slice()
 
-    value = labels._get_value_ray(
+    value = labels._get_label_ids_along_ray(
         start_point=np.array([1, 0, 5, 5]),
         end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1165,7 +1165,7 @@ def test_get_value_ray_2d():
     # set the dims to the slice with labels, but 2D
     labels._slice_dims([1, 10, 0, 0], ndisplay=2)
 
-    value = labels._get_value_ray(
+    value = labels._get_label_ids_along_ray(
         start_point=np.empty([]),
         end_point=np.empty([]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1399,11 +1399,14 @@ def test_get_status_with_custom_index():
     assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
     assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
 
+
 def test_labels_features_event():
     event_emitted = False
+
     def on_event():
         nonlocal event_emitted
         event_emitted = True
+
     layer = Labels(np.zeros((4, 5), dtype=np.uint8))
     layer.events.features.connect(on_event)
 
