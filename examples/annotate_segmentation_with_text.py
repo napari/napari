@@ -109,7 +109,7 @@ bbox_rects = make_bbox([features[f'bbox-{i}'] for i in range(4)])
 text_parameters = {
     'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
-    'face_color': {'constant': 'green'},
+    'color': {'constant': 'green'},
     'anchor': 'upper_left',
     'translation': [-3, 0],
 }

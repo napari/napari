@@ -1598,10 +1598,10 @@ class Shapes(Layer):
         )
 
     @property
-    def _view_text_face_color(self) -> np.ndarray:
-        """Get the face colors of the text elements at the given indices."""
-        self.text.face_color._apply(self.features)
-        return self.text._view_face_color(self._indices_view)
+    def _view_text_color(self) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        self.text.color._apply(self.features)
+        return self.text._view_color(self._indices_view)
 
     @property
     def mode(self):

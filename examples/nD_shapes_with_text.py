@@ -17,7 +17,7 @@ n = 50
 shape = [[[n, 40, 40], [n, 40, 60], [n + 20, 60, 60], [n + 20, 60, 40]]]
 
 features = {'z_index': [n]}
-text = {'string': 'z_index', 'face_color': {'constant': 'green'}, 'anchor': 'upper_left'}
+text = {'string': 'z_index', 'color': {'constant': 'green'}, 'anchor': 'upper_left'}
 
 shapes_layer = viewer.add_shapes(
     shape,

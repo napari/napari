@@ -29,7 +29,7 @@ def update_text(
     # This also acts as a minor optimization.
     if _has_visible_text(layer):
         text_values = layer._view_text
-        face_colors = layer._view_text_face_color
+        face_colors = layer._view_text_color
         coords, anchor_x, anchor_y = layer._view_text_coords
     else:
         text_values = np.array([''])

@@ -144,7 +144,7 @@ class VispyPointsLayer(VispyBaseLayer):
             if event.type == 'blending':
                 self._on_blending_change(event)
                 return
-            if event.type in ('values', 'color'):
+            if event.type == 'values':
                 return
         self._update_text()
 
