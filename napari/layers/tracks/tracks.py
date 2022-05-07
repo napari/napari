@@ -1,13 +1,10 @@
-# from napari.layers.base.base import Layer
-# from napari.utils.events import Event
-# from napari.utils.colormaps import AVAILABLE_COLORMAPS
-
 from typing import Dict, List, Union
 from warnings import warn
 
 import numpy as np
 import pandas as pd
 
+from ...components.cursor_query import CursorQuery
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
@@ -256,7 +253,7 @@ class Tracks(Layer):
 
         return
 
-    def _get_value_2d(self, position) -> int:
+    def _get_value_2d(self, position) -> CursorQuery:
         """Value of the data at a position in data coordinates.
 
         Use a kd-tree to lookup the ID of the nearest tree.
@@ -271,7 +268,13 @@ class Tracks(Layer):
         value : int or None
             Index of track that is at the current coordinate if any.
         """
-        return self._manager.get_value(np.array(position))
+        index = self._manager.get_value(np.array(position))
+        cursor_query = CursorQuery(
+            index=index,
+            position=position,
+            value=self.data[index] if index is not None else None,
+        )
+        return cursor_query
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
