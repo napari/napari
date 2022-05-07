@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...components.cursor_query import CursorQuery
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -885,7 +886,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value_2d(self, position):
+    def _get_value_2d(self, position) -> CursorQuery:
         """Value of the data at a position in data coordinates.
 
         Parameters
