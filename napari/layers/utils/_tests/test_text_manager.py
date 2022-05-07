@@ -528,7 +528,7 @@ def test_serialization():
         {'class': ['A', 'B', 'C'], 'confidence': [0.5, 0.3, 1]}
     )
     original = TextManager(
-        features=features, string='class', face_color={'constant': 'red'}
+        features=features, string='class', color={'constant': 'red'}
     )
 
     serialized = original.dict()

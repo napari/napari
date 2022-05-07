@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from napari._vispy.layers.shapes import VispyShapesLayer
 from napari.layers import Shapes
@@ -36,7 +35,6 @@ def test_change_text_updates_node_string():
     np.testing.assert_array_equal(text_node.text, properties['name'])
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_change_text_color_updates_node_color():
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
