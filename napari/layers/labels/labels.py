@@ -1014,9 +1014,8 @@ class Labels(_ImageBase):
 
         Returns
         -------
-        intersection : int
-            The first non-zero value encountered along the ray if present,
-            else 0.
+        label_ids : int
+            The label ids sampled along the ray.
         """
         # we use dims_displayed because the image slice has its dimensions in
         # the same order as the vispy Volume.
