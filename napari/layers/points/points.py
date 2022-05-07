@@ -1493,8 +1493,8 @@ class Points(Layer):
 
         Returns
         -------
-        value : int or None
-            Index of point that is at the current coordinate if any.
+        value : CursorQuery
+            Information about the data at a given position.
         """
         # Display points if there are any in this slice
         view_data = self._view_data
@@ -1527,7 +1527,7 @@ class Points(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[int, None]:
+    ) -> CursorQuery:
         """Get the layer data value along a ray
 
         Parameters
@@ -1541,12 +1541,12 @@ class Points(Layer):
 
         Returns
         -------
-        value : CursorQuery | None
+        value : CursorQuery
             The index and position of the first point along the ray if present.
         """
         if (start_point is None) or (end_point is None):
             # if the ray doesn't intersect the data volume, no points could have been intersected
-            return None
+            return CursorQuery()
         plane_point, plane_normal = displayed_plane_from_nd_line_segment(
             start_point, end_point, dims_displayed
         )
