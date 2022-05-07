@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -16,6 +16,6 @@ class CursorQuery(BaseModel):
         ray-data intersection.
     """
 
-    index: int
-    value: Union[int, float]
-    intersection: Tuple[float, ...]
+    index: Optional[int]
+    value: Optional[Union[int, float]]
+    intersection: Optional[Tuple[float, ...]]
