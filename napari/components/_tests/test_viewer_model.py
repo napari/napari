@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 
@@ -582,6 +584,8 @@ def test_active_layer_status_update():
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
 
+    # wait 100 ms to avoid the cursor event throttling
+    time.sleep(0.1)
     viewer.cursor.position = [1, 1, 1, 1, 1]
     assert viewer.status == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
