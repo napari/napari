@@ -20,6 +20,7 @@ from typing import (
 
 import numpy as np
 from pydantic import Extra, Field, validator
+from superqt.utils import qthrottled
 
 from .. import layers
 from ..errors import (
@@ -179,6 +180,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
+        self.cursor.events.position.connect(
+            qthrottled(self._update_status_bar_from_cursor, timeout=50)
+        )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
@@ -388,6 +392,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for layer in self.layers:
                 layer.position = self.cursor.position
 
+    def _update_status_bar_from_cursor(self):
+        """Update the status bar based on the current cursor position.
+
+        This is generally used as a callback when cursor.position is updated.
+        """
         # Update status and help bar based on active layer
         active = self.layers.selection.active
         if active is not None:
