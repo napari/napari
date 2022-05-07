@@ -43,6 +43,7 @@ def do_migrations(model: NapariSettings):
                         msg += 'Settings rollback also failed. Please run `napari --reset`.'
                     warnings.warn(msg)
                     return
+    model._maybe_save()
 
 
 @contextmanager
