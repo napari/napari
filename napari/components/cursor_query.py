@@ -11,11 +11,12 @@ class CursorQuery(BaseModel):
     index: int
         Index of the first visible object under the cursor.
     value: int | float
-        Value of data at the ray-data intersection.
-    intersection: tuple of float
-        ray-data intersection.
+        Value of data sampled at a cursor position.
+    position: tuple of float
+        2D: position of cursor in data coordinates.
+        3D: position of relevant ray-data intersection in data coordinates.
     """
 
     index: Optional[int]
     value: Optional[Union[int, float]]
-    intersection: Optional[Tuple[float, ...]]
+    position: Optional[Tuple[float, ...]]

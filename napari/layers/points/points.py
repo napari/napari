@@ -1483,7 +1483,7 @@ class Points(Layer):
         else:
             return [], np.empty(0)
 
-    def _get_value_2d(self, position) -> Union[None, int]:
+    def _get_value_2d(self, position) -> CursorQuery:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -1498,24 +1498,29 @@ class Points(Layer):
         """
         # Display points if there are any in this slice
         view_data = self._view_data
-        selection = None
-        if len(view_data) > 0:
-            displayed_position = [position[i] for i in self._dims_displayed]
-            # Get the point sizes
-            # TODO: calculate distance in canvas space to account for canvas_size_limits.
-            # Without this implementation, point hover and selection (and anything depending
-            # on self.get_value()) won't be aware of the real extent of points, causing
-            # unexpected behaviour. See #3734 for details.
-            distances = abs(view_data - displayed_position)
-            in_slice_matches = np.all(
-                distances <= np.expand_dims(self._view_size, axis=1) / 2,
-                axis=1,
-            )
-            indices = np.where(in_slice_matches)[0]
-            if len(indices) > 0:
-                selection = self._indices_view[indices[-1]]
-
-        return selection
+        if len(view_data) == 0:
+            return CursorQuery()
+        displayed_position = [position[i] for i in self._dims_displayed]
+        # Get the point sizes
+        # TODO: calculate distance in canvas space to account for canvas_size_limits.
+        # Without this implementation, point hover and selection (and anything depending
+        # on self.get_value()) won't be aware of the real extent of points, causing
+        # unexpected behaviour. See #3734 for details.
+        distances = abs(view_data - displayed_position)
+        in_slice_matches = np.all(
+            distances <= np.expand_dims(self._view_size, axis=1) / 2,
+            axis=1,
+        )
+        indices = np.flatnonzero(in_slice_matches)
+        index = (
+            self._indices_view[indices[-1]] if len(indices) > 0 else None,
+        )
+        cursor_query = CursorQuery(
+            index=index,
+            value=self.data[index] if index is not None else None,
+            position=position,
+        )
+        return cursor_query
 
     def _get_value_3d(
         self,
