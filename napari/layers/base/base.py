@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
-from ...components.cursor_query import CursorQuery
+from ...components.cursor_query import DataQueryResponse
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -995,7 +995,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value_2d(self, position) -> CursorQuery:
+    def _get_value_2d(self, position) -> DataQueryResponse:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -1017,7 +1017,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world=False,
-    ) -> CursorQuery:
+    ) -> DataQueryResponse:
         """Information about data under the cursor.
 
         If the layer is not visible, return None.
@@ -1038,7 +1038,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        value : CursorQuery
+        value : DataQueryResponse
             Object containing result of a query on layer data.
         """
         if not self.visible:
@@ -1082,7 +1082,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> CursorQuery:
+    ) -> DataQueryResponse:
         """Get the layer data value along a ray
 
         Parameters

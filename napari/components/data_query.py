@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 from pydantic import BaseModel
 
 
-class CursorQuery(BaseModel):
+class DataQueryResponse(BaseModel):
     """The result of querying layer data under the cursor.
 
     Attributes
@@ -20,3 +20,9 @@ class CursorQuery(BaseModel):
     index: Optional[int]
     value: Optional[Union[int, float]]
     position: Optional[Tuple[float, ...]]
+
+
+class ShapesDataQueryResponse(DataQueryResponse):
+    """A DataQueryResponse with an additional field for vertex index."""
+
+    vertex_index: Optional[int]

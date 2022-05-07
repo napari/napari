@@ -8,7 +8,7 @@ from scipy import ndimage as ndi
 
 from napari.utils.misc import _is_array_type
 
-from ...components.cursor_query import CursorQuery
+from ...components.cursor_query import DataQueryResponse
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -1039,7 +1039,7 @@ class Labels(_ImageBase):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[CursorQuery, None]:
+    ) -> Union[DataQueryResponse, None]:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -1068,7 +1068,7 @@ class Labels(_ImageBase):
         nonzero_found = len(nonzero_indices) > 0
         first_label_index = nonzero_indices[0] if nonzero_found else None
         first_label = label_ids[first_label_index] if nonzero_found else 0
-        cursor_query = CursorQuery(
+        cursor_query = DataQueryResponse(
             intersection=first_label_index,
             value=first_label,
         )

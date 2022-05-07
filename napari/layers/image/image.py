@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...components.cursor_query import CursorQuery
+from ...components.cursor_query import DataQueryResponse
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -886,7 +886,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value_2d(self, position) -> CursorQuery:
+    def _get_value_2d(self, position) -> DataQueryResponse:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -896,7 +896,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         Returns
         -------
-        value : CursorQuery
+        value : DataQueryResponse
             Information about data under the cursor.
         """
         if self.multiscale:
@@ -925,7 +925,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = raw[tuple(coord)]
         else:
             value = None
-        cursor_query = CursorQuery(
+        cursor_query = DataQueryResponse(
             position=position,
             value=value,
         )

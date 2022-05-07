@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-from ...components.cursor_query import CursorQuery
+from ...components.cursor_query import DataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
@@ -1483,7 +1483,7 @@ class Points(Layer):
         else:
             return [], np.empty(0)
 
-    def _get_value_2d(self, position) -> CursorQuery:
+    def _get_value_2d(self, position) -> DataQueryResponse:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -1493,13 +1493,13 @@ class Points(Layer):
 
         Returns
         -------
-        value : CursorQuery
+        value : DataQueryResponse
             Information about the data at a given position.
         """
         # Display points if there are any in this slice
         view_data = self._view_data
         if len(view_data) == 0:
-            return CursorQuery()
+            return DataQueryResponse()
         displayed_position = [position[i] for i in self._dims_displayed]
         # Get the point sizes
         # TODO: calculate distance in canvas space to account for canvas_size_limits.
@@ -1515,7 +1515,7 @@ class Points(Layer):
         index = (
             self._indices_view[indices[-1]] if len(indices) > 0 else None,
         )
-        cursor_query = CursorQuery(
+        cursor_query = DataQueryResponse(
             index=index,
             value=self.data[index] if index is not None else None,
             position=position,
@@ -1527,7 +1527,7 @@ class Points(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> CursorQuery:
+    ) -> DataQueryResponse:
         """Get the layer data value along a ray
 
         Parameters
@@ -1541,12 +1541,12 @@ class Points(Layer):
 
         Returns
         -------
-        value : CursorQuery
+        value : DataQueryResponse
             The index and position of the first point along the ray if present.
         """
         if (start_point is None) or (end_point is None):
             # if the ray doesn't intersect the data volume, no points could have been intersected
-            return CursorQuery()
+            return DataQueryResponse()
         plane_point, plane_normal = displayed_plane_from_nd_line_segment(
             start_point, end_point, dims_displayed
         )
@@ -1581,7 +1581,7 @@ class Points(Layer):
             selection = self._indices_view[closest_index]
         else:
             selection = None
-        cursor_query = CursorQuery(
+        cursor_query = DataQueryResponse(
             index=selection,
             value=self.data[selection] if selection else None,
         )

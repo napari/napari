@@ -4,7 +4,7 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ...components.cursor_query import CursorQuery
+from ...components.cursor_query import DataQueryResponse
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
@@ -253,7 +253,7 @@ class Tracks(Layer):
 
         return
 
-    def _get_value_2d(self, position) -> CursorQuery:
+    def _get_value_2d(self, position) -> DataQueryResponse:
         """Value of the data at a position in data coordinates.
 
         Use a kd-tree to lookup the ID of the nearest tree.
@@ -269,7 +269,7 @@ class Tracks(Layer):
             Index of track that is at the current coordinate if any.
         """
         index = self._manager.get_value(np.array(position))
-        cursor_query = CursorQuery(
+        cursor_query = DataQueryResponse(
             index=index,
             position=position,
             value=self.data[index] if index is not None else None,

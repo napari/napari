@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...components.cursor_query import CursorQuery
+from ...components.cursor_query import DataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
@@ -776,7 +776,7 @@ class Vectors(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value_2d(self, position) -> CursorQuery:
+    def _get_value_2d(self, position) -> DataQueryResponse:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -789,4 +789,4 @@ class Vectors(Layer):
         value : None
             Value of the data at the coord.
         """
-        return CursorQuery()
+        return DataQueryResponse()
