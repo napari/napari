@@ -775,7 +775,7 @@ class Vectors(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self, position):
+    def _get_value_2d(self, position):
         """Value of the data at a position in data coordinates.
 
         Parameters

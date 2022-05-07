@@ -2655,7 +2655,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _get_value(self, position):
+    def _get_value_2d(self, position):
         """Value of the data at a position in data coordinates.
 
         Parameters

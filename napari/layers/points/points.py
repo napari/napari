@@ -1483,7 +1483,7 @@ class Points(Layer):
         else:
             return [], np.empty(0)
 
-    def _get_value(self, position) -> Union[None, int]:
+    def _get_value_2d(self, position) -> Union[None, int]:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters

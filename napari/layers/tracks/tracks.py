@@ -256,7 +256,7 @@ class Tracks(Layer):
 
         return
 
-    def _get_value(self, position) -> int:
+    def _get_value_2d(self, position) -> int:
         """Value of the data at a position in data coordinates.
 
         Use a kd-tree to lookup the ID of the nearest tree.

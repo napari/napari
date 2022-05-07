@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
+from ...components.cursor_query import CursorQuery
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -994,7 +995,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value(self, position):
+    def _get_value_2d(self, position):
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -1016,8 +1017,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world=False,
-    ):
-        """Value of the data at a position.
+    ) -> CursorQuery:
+        """Information about data under the cursor.
 
         If the layer is not visible, return None.
 
@@ -1037,7 +1038,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        value : tuple, None
+        value : CursorQuery or None
             Value of the data. If the layer is not visible return None.
         """
         if not self.visible:
@@ -1055,9 +1056,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     ndim_layer=self.ndim,
                 )
         if dims_displayed is None and view_direction is None:
-            value = self._get_value(position)
+            value = self._get_value_2d(position)
         elif len(dims_displayed) == 2 or self.ndim == 2:
-            value = self._get_value(position=tuple(position))
+            value = self._get_value_2d(position=tuple(position))
         else:  # displaying 3 dimensions:
             view_direction = self._world_to_data_ray(list(view_direction))
             start_point, end_point = self.get_ray_intersections(

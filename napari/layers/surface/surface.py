@@ -434,7 +434,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def _get_value(self, position):
+    def _get_value_2d(self, position):
         """Value of the data at a position in data coordinates.
 
         Parameters
