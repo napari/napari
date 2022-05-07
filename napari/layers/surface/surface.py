@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 
+from ...components.cursor_query import CursorQuery
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
@@ -434,7 +435,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def _get_value_2d(self, position):
+    def _get_value_2d(self, position) -> CursorQuery:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -447,4 +448,4 @@ class Surface(IntensityVisualizationMixin, Layer):
         value : None
             Value of the data at the coord.
         """
-        return None
+        return CursorQuery()
