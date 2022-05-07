@@ -153,16 +153,22 @@ def test_equality():
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager_1 = TextManager(
-        text=text, n_text=n_text, properties=properties, color='red'
+        text=text,
+        n_text=n_text,
+        properties=properties,
+        color={'constant': 'red'},
     )
     text_manager_2 = TextManager(
-        text=text, n_text=n_text, properties=properties, color='red'
+        text=text,
+        n_text=n_text,
+        properties=properties,
+        color={'constant': 'red'},
     )
 
     assert text_manager_1 == text_manager_2
     assert not (text_manager_1 != text_manager_2)
 
-    text_manager_2.color = 'blue'
+    text_manager_2.color = {'constant': 'blue'}
     assert text_manager_1 != text_manager_2
     assert not (text_manager_1 == text_manager_2)
 
@@ -177,7 +183,7 @@ def test_blending_modes():
         text=text,
         n_text=n_text,
         properties=properties,
-        color='red',
+        color={'constant': 'red'},
         blending='translucent',
     )
     assert text_manager.blending == 'translucent'
