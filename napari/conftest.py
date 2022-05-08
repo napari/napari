@@ -5,6 +5,7 @@ except ModuleNotFoundError:
 
 import os
 from functools import partial
+from itertools import chain
 from multiprocessing.pool import ThreadPool
 from unittest.mock import MagicMock, patch
 
@@ -441,3 +442,27 @@ def mock_npe2_pm():
         _pm = PluginManager(reg=mock_reg)
     with patch('npe2.PluginManager.instance', return_value=_pm):
         yield _pm
+
+
+def pytest_collection_modifyitems(session, config, items):
+    test_order_prefix = [
+        "napari/utils",
+        "napari/layers",
+        "napari/components",
+        "napari/settings",
+        "napari/plugins",
+        "napari/_vispy",
+        "napari/_qt",
+        "napari/qt",
+        "napari/_tests",
+    ]
+    test_order = [[] for _ in test_order_prefix]
+    test_order.append([])  # for not matching tests
+    for item in items:
+        for i, prefix in enumerate(test_order_prefix):
+            if prefix in str(item.fspath):
+                test_order[i].append(item)
+                break
+        else:
+            test_order[-1].append(item)
+    items[:] = list(chain(*test_order))
