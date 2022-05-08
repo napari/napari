@@ -52,6 +52,7 @@ class Extension2ReaderTable(QWidget):
             trans._(
                 'Start typing a filename pattern to save a reader preference for it e.g. "*.tif" to save preference for all TIFF files or "my-folder/*.tif" to save preference for all TIFF files in "my-folder".'
                 + '\n\nThe available readers will be filtered to only those that accept files matching the pattern you type. Hover over a reader choice to see what filename patterns it accepts.'
+                + '\n\nWe do not yet support preference saving for readers that accept directories, so these readers are not shown.'
                 + '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
             )
         )
