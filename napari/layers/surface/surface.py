@@ -12,6 +12,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.interactivity_utils import mouse_click_line_segment_to_ray
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
+from ._surface_utils import calculate_barycentric_coordinates
 from .normals import SurfaceNormals
 from .wireframe import SurfaceWireframe
 
@@ -499,8 +500,20 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
+        if (intersection_index is None) or (intersection is None):
+            return None, None
+
         # add the full nD coords to intersection
         intersection_point = start_point.copy()
         intersection_point[dims_displayed] = intersection
 
-        return intersection_index, intersection_point
+        # calculate the value from the intersection
+        triangle_vertex_indices = self.faces[intersection_index]
+        triangle_vertices = self.vertices[triangle_vertex_indices]
+        u, v, w = calculate_barycentric_coordinates(
+            intersection_point, triangle_vertices
+        )
+        vertex_values = self.vertex_values[triangle_vertex_indices]
+        intersection_value = (np.array([u, v, w]) * vertex_values).sum()
+
+        return intersection_value, intersection_index

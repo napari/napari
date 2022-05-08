@@ -804,7 +804,7 @@ def find_nearest_triangle_intersection(
 
     Returns
     -------
-    closest_triangle_index : int
+    closest_intersected_triangle_index : int
         The index of the intersected triangle.
     intersection : np.ndarray
         The coordinate of where the ray intersects the triangle.
@@ -831,6 +831,10 @@ def find_nearest_triangle_intersection(
     start_to_intersection = intersection_points - ray_position
     distances = np.linalg.norm(start_to_intersection, axis=1)
     closest_triangle_index = np.argmin(distances)
+    intersected_triangle_indices = np.argwhere(inside)
+    closest_intersected_triangle_index = intersected_triangle_indices[
+        closest_triangle_index
+    ][0]
     intersection = intersection_points[closest_triangle_index]
 
-    return closest_triangle_index, intersection
+    return closest_intersected_triangle_index, intersection
