@@ -513,8 +513,8 @@ def test_value():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    value = layer.get_value((0,) * 2)
-    assert value == data[0, 0]
+    response = layer.get_value((0,) * 2)
+    assert response.value == data[0, 0]
 
 
 @pytest.mark.parametrize(
@@ -526,18 +526,18 @@ def test_value():
     ],
 )
 def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return None in 3D"""
+    """Currently get_value should return an empty response in 3D"""
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
     layer._slice_dims([0, 0, 0], ndisplay=3)
-    value = layer.get_value(
+    response = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value is None
+    assert response.value is None
 
 
 def test_message():

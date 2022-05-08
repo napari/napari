@@ -18,7 +18,7 @@ class DataQueryResponse(BaseModel):
     """
 
     index: Optional[int]
-    value: Optional[Union[int, float]]
+    value: Optional[Union[float, int]]
     position: Optional[Tuple[float, ...]]
 
 
