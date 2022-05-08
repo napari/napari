@@ -1054,8 +1054,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     ndim_world=ndim_world,
                     ndim_layer=self.ndim,
                 )
+
         if dims_displayed is None and view_direction is None:
             response = self._get_value_2d(position)
+        elif view_direction is None and dims_displayed is not None:
+            # this is a guard against a state that only happens during layer
+            # setup in 3D
+            response = DataQueryResponse()
         elif len(dims_displayed) == 2 or self.ndim == 2:
             response = self._get_value_2d(position=tuple(position))
         else:  # displaying 3 dimensions:
