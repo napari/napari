@@ -1541,7 +1541,7 @@ class Points(Layer):
 
         Returns
         -------
-        value : DataQueryResponse
+        response : DataQueryResponse
             The index and position of the first point along the ray if present.
         """
         if (start_point is None) or (end_point is None):
