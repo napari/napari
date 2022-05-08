@@ -147,8 +147,13 @@ class Extension2ReaderTable(QWidget):
     def _add_reader_choice(self, i, plugin_name, display_name):
         """Add dropdown item for plugin_name with reader pattern tooltip"""
         reader_patterns = get_filename_patterns_for_reader(plugin_name)
+        # TODO: no reader_patterns means directory reader,
+        # we don't support preference association yet
+        if not reader_patterns:
+            return
+
         self._new_reader_dropdown.addItem(display_name, plugin_name)
-        if not reader_patterns or '*' in reader_patterns:
+        if '*' in reader_patterns:
             tooltip_text = 'Accepts all'
         else:
             reader_patterns_formatted = ', '.join(
