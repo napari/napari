@@ -17,7 +17,7 @@ text_feature = 'box_label'
 features = pd.DataFrame({
     text_feature: pd.Series([], dtype=pd.CategoricalDtype(box_annotations))
 })
-text_color = 'green'
+text_color = {'constant': 'green'}
 text_size = 20
 
 
