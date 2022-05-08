@@ -263,10 +263,10 @@ class QtViewer(QSplitter):
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(10, 22, 10, 2)
+        main_layout.setContentsMargins(0, 2, 0, 2)
         main_layout.addWidget(self._canvas_overlay)
         main_layout.addWidget(self.dims)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Vertical)
