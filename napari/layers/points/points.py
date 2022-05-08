@@ -1512,12 +1512,10 @@ class Points(Layer):
             axis=1,
         )
         indices = np.flatnonzero(in_slice_matches)
-        index = (
-            self._indices_view[indices[-1]] if len(indices) > 0 else None,
-        )
+        index = self._indices_view[indices[-1]] if len(indices) > 0 else None
         response = DataQueryResponse(
             index=index,
-            value=self.data[index] if index is not None else None,
+            value=tuple(self.data[index]) if index is not None else None,
             position=position,
         )
         return response
