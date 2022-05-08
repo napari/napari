@@ -272,7 +272,7 @@ class Tracks(Layer):
         response = DataQueryResponse(
             index=index,
             position=position,
-            value=self.data[index] if index is not None else None,
+            value=tuple(self.data[index]) if index is not None else None,
         )
         return response
 
