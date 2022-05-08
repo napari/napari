@@ -48,12 +48,12 @@ class LayerList(SelectableEventedList[Layer]):
         emitted when ``index`` is set from ``old_value`` to ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
-    selection.changed : (added: Set[_T], removed: Set[_T])
+    selection.events.changed : (added: Set[_T], removed: Set[_T])
         emitted when the set changes, includes item(s) that have been added
         and/or removed from the set.
-    selection.active : (value: _T)
+    selection.events.active : (value: _T)
         emitted when the current item has changed.
-    selection._current : (value: _T)
+    selection.events._current : (value: _T)
         emitted when the current item has changed. (Private event)
 
     """
