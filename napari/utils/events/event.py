@@ -370,13 +370,23 @@ class EventEmitter:
         self._source = None if s is None else weakref.ref(s)
 
     def _is_core_napari_callback(self, callback: Union[CallbackRef, Callback]):
+        """
+        Check if the callback is a core napari callback
+
+        Parameters
+        ----------
+        callback : Union[CallbackRef, Callback]
+            The callback to check. Callback could be function or
+            weak reference to object method coded using weakreference
+            to object and method name stored in tuple.
+        """
         try:
             if isinstance(callback, partial):
                 callback = callback.func
             if not isinstance(callback, tuple):
                 return callback.__module__.startswith('napari.')
-            obj = callback[0]()
-            if obj is None:
+            obj = callback[0]()  # get object behind weakref
+            if obj is None:  # object is dead
                 return False
             return obj.__module__.startswith('napari.')
 
