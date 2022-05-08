@@ -2653,7 +2653,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _get_value_2d(self, position):
+    def _get_value_2d(self, position) -> ShapesDataQueryResponse:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -2670,58 +2670,57 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._ndisplay == 3:
-            return (None, None)
-
-        if self._is_moving:
-            return self._moving_value
+        if self._ndisplay == 3 or self._is_moving:
+            return ShapesDataQueryResponse()
 
         coord = [position[i] for i in self._dims_displayed]
 
         # Check selected shapes
-        value = None
-        selected_index = list(self.selected_data)
-        if len(selected_index) > 0:
-            if self._mode == Mode.SELECT:
-                # Check if inside vertex of interaction box or rotation handle
-                box = self._selected_box[Box.WITH_HANDLE]
-                distances = abs(box - coord)
+        selected_shape_indices = list(self.selected_data)
+        if len(selected_shape_indices) == 0:
+            shape_index = self._data_view.inside(coord)
+            response = ShapesDataQueryResponse(
+                index=shape_index,
+                position=position,
+            )
+            return response
 
-                # Get the vertex sizes
-                sizes = self._vertex_size * self.scale_factor / 2
+        if self._mode == Mode.SELECT:
+            # Check if inside vertex of interaction box or rotation handle
+            box = self._selected_box[Box.WITH_HANDLE]
+            distances = abs(box - coord)
 
-                # Check if any matching vertices
-                matches = np.all(distances <= sizes, axis=1).nonzero()
-                if len(matches[0]) > 0:
-                    value = (selected_index[0], matches[0][-1])
-            elif self._mode in (
-                [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
-            ):
-                # Check if inside vertex of shape
-                inds = np.isin(self._data_view.displayed_index, selected_index)
-                vertices = self._data_view.displayed_vertices[inds]
-                distances = abs(vertices - coord)
+            # Get the vertex sizes
+            vertex_sizes = self._vertex_size * self.scale_factor / 2
 
-                # Get the vertex sizes
-                sizes = self._vertex_size * self.scale_factor / 2
+            # Check if any matching vertices
+            matches = np.all(distances <= vertex_sizes, axis=1).nonzero()
+            response = ShapesDataQueryResponse(
+                index=selected_shape_indices[0],
+            )
+            if len(matches[0]) > 0:
+                response.vertex_index = matches[0][-1]
+        else:  # [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
+            # Check if position is inside vertices of shape
+            inds = np.isin(
+                self._data_view.displayed_index, selected_shape_indices
+            )
+            vertices = self._data_view.displayed_vertices[inds]
+            distances = abs(vertices - coord)
+            vertex_sizes = self._vertex_size * self.scale_factor / 2
+            matches = np.all(distances <= vertex_sizes, axis=1).nonzero()[0]
 
-                # Check if any matching vertices
-                matches = np.all(distances <= sizes, axis=1).nonzero()[0]
-                if len(matches) > 0:
-                    index = inds.nonzero()[0][matches[-1]]
-                    shape = self._data_view.displayed_index[index]
-                    vals, idx = np.unique(
-                        self._data_view.displayed_index, return_index=True
-                    )
-                    shape_in_list = list(vals).index(shape)
-                    value = (shape, index - idx[shape_in_list])
-
-        if value is None:
-            # Check if mouse inside shape
-            shape = self._data_view.inside(coord)
-            value = (shape, None)
-
-        return value
+            response = ShapesDataQueryResponse()
+            if len(matches) > 0:
+                index = inds.nonzero()[0][matches[-1]]
+                shape_index = self._data_view.displayed_index[index]
+                response.index = shape_index
+                vals, idx = np.unique(
+                    self._data_view.displayed_index, return_index=True
+                )
+                shape_in_list = list(vals).index(shape_index)
+                response.vertex_index = index - idx[shape_in_list]
+        return response
 
     def _get_value_3d(
         self,
