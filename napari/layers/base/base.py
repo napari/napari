@@ -1057,12 +1057,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if dims_displayed is None and view_direction is None:
             response = self._get_value_2d(position)
+        elif len(dims_displayed) == 2 or self.ndim == 2:
+            response = self._get_value_2d(position=tuple(position))
         elif view_direction is None and dims_displayed is not None:
             # this is a guard against a state that only happens during layer
             # setup in 3D
             response = DataQueryResponse()
-        elif len(dims_displayed) == 2 or self.ndim == 2:
-            response = self._get_value_2d(position=tuple(position))
         else:  # displaying 3 dimensions:
             view_direction = self._world_to_data_ray(list(view_direction))
             start_point, end_point = self.get_ray_intersections(
