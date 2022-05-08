@@ -40,11 +40,11 @@ contributions:
     /napari/layer_context:
       - submenu: mysubmenu
       - command: {0}.hello_world
-    mysubmenu:
-      - command: {0}.hello_world
   submenus:
     - id: mysubmenu
       label: My SubMenu
+      contents:
+        - command: {0}.hello_world
   themes:
     - label: "SampleTheme"
       id: "sample_theme"
