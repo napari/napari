@@ -1,5 +1,6 @@
 import os
 from importlib.metadata import distribution
+from unittest.mock import patch
 
 import pytest
 
@@ -44,6 +45,18 @@ def test_migration_works(_test_migrator):
     settings = NapariSettings(schema_version='0.1.0')
     assert settings.schema_version == '0.2.0'
     assert settings.appearance.theme == 'light'
+
+
+def test_migration_saves(_test_migrator):
+    @_test_migrator('0.1.0', '0.2.0')
+    def _(model: NapariSettings):
+        ...
+
+    with patch.object(NapariSettings, 'save') as mock:
+        mock.assert_not_called()
+        settings = NapariSettings(config_path='junk', schema_version='0.1.0')
+        assert settings.schema_version == '0.2.0'
+        mock.assert_called()
 
 
 def test_failed_migration_leaves_version(_test_migrator):
