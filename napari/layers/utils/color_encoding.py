@@ -200,7 +200,7 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
         If this is already a ColorEncoding, it is returned as is.
         If this is a dict, then it should represent one of the built-in color encodings.
         If this a single non-string color, a ConstantColorEncoding is returned.
-        If this is a sequence of non-string colors, a ManualColorEncoding is returned.
+        If this is a sequence of colors, a ManualColorEncoding is returned.
 
     Returns
     -------
@@ -243,7 +243,7 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
         pass
     raise TypeError(
         trans._(
-            'value should be a ColorEncoding, a dict, a color, a sequence of colors, or None',
+            'value should be a ColorEncoding, a dict, a non-string color, a sequence of colors, or None',
             deferred=True,
         )
     )
