@@ -161,6 +161,11 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         ),
         _only_img,
     )
+    selected_images = ContextKey(
+        0,
+        trans._("Number of selected image layers."),
+        _n_selected_imgs,
+    )
     only_labels_selected = ContextKey(
         False,
         trans._(
@@ -168,12 +173,70 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         ),
         _only_labels,
     )
+    selected_labels = ContextKey(
+        0,
+        trans._("Number of selected labels layers."),
+        _n_selected_labels,
+    )
+    only_points_selected = ContextKey(
+        False,
+        trans._(
+            "True when there is at least one selected layer and all selected layers are points"
+        ),
+        _only_points,
+    )
+    selected_points = ContextKey(
+        0,
+        trans._("Number of selected points layers."),
+        _n_selected_points,
+    )
     only_shapes_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are shapes"
         ),
         _only_shapes,
+    )
+    selected_shapes = ContextKey(
+        0,
+        trans._("Number of selected shapes layers."),
+        _n_selected_shapes,
+    )
+    only_surface_selected = ContextKey(
+        False,
+        trans._(
+            "True when there is at least one selected layer and all selected layers are surfaces"
+        ),
+        _only_surface,
+    )
+    selected_surfaces = ContextKey(
+        0,
+        trans._("Number of selected surface layers."),
+        _n_selected_surfaces,
+    )
+    only_vectors_selected = ContextKey(
+        False,
+        trans._(
+            "True when there is at least one selected layer and all selected layers are vectors"
+        ),
+        _only_vectors,
+    )
+    selected_vectors = ContextKey(
+        0,
+        trans._("Number of selected vectors layers."),
+        _n_selected_vectors,
+    )
+    only_vectors_tracks = ContextKey(
+        False,
+        trans._(
+            "True when there is at least one selected layer and all selected layers are tracks"
+        ),
+        _only_tracks,
+    )
+    selected_tracks = ContextKey(
+        0,
+        trans._("Number of selected tracks layers."),
+        _n_selected_tracks,
     )
     active_layer_ndim = ContextKey['LayerSel', Optional[int]](
         None,
