@@ -6,9 +6,9 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from components.cursor_query import DataQueryResponse
 from vispy.color import get_color_names
 
+from ...components.data_query import ShapesDataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
@@ -61,7 +61,6 @@ from ._shapes_utils import (
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
-
 _REV_SHAPE_HELP = {
     trans._('hold <space> to pan/zoom'): {
         Mode.VERTEX_INSERT,
@@ -85,7 +84,6 @@ _REV_SHAPE_HELP = {
         Mode.PAN_ZOOM
     },
 }
-
 
 # This avoid duplicating the trans._ help messages above
 # as some modes have the same help.
@@ -2730,7 +2728,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> DataQueryResponse:
+    ) -> ShapesDataQueryResponse:
         """Get the information about layer data index along a ray.
 
         Parameters
@@ -2744,7 +2742,7 @@ class Shapes(Layer):
 
         Returns
         -------
-        cursor_query: DataQueryResponse
+        cursor_query: ShapesDataQueryResponse
             Information about the first label along a ray.
         """
         index, intersection = self._get_index_and_intersection(
@@ -2752,7 +2750,9 @@ class Shapes(Layer):
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        cursor_query = DataQueryResponse(index=index, position=intersection)
+        cursor_query = ShapesDataQueryResponse(
+            index=index, position=intersection
+        )
         return cursor_query
 
     def _get_index_and_intersection(

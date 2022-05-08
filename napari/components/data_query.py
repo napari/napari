@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class DataQueryResponse(BaseModel):
-    """The result of querying layer data under the cursor.
+    """The result of querying layer data.
 
     Attributes
     ----------
