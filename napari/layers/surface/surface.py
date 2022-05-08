@@ -9,7 +9,7 @@ from ...utils.geometry import find_nearest_triangle_intersection
 from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.interactivity_utils import mouse_click_line_segment_to_ray
+from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
 from ._surface_utils import calculate_barycentric_coordinates
@@ -484,7 +484,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             # return None if the ray doesn't intersect the data bounding box
             return None, None
 
-        start_position, ray_direction = mouse_click_line_segment_to_ray(
+        start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,

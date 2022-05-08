@@ -143,13 +143,14 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     )
 
 
-def mouse_click_line_segment_to_ray(
+def nd_line_segment_to_displayed_data_ray(
     start_point: np.ndarray,
     end_point: np.ndarray,
     dims_displayed: Union[List[int], np.ndarray],
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Convert the start and end point of the line segment of a mouse click ray
-    intersecting a data cube to a ray (i.e., start position and direction).
+    intersecting a data cube to a ray (i.e., start position and direction) in
+    displayed data coordinates
 
     Note: the ray starts 0.1 data units outside of the data volume.
 
@@ -166,15 +167,15 @@ def mouse_click_line_segment_to_ray(
     -------
     start_position : np.ndarray
         The start position of the ray in displayed data coordinates
-    ray_direction_normed : np.ndarray
+    ray_direction : np.ndarray
         The unit vector describing the ray direction.
     """
     # get the ray in the displayed data coordinates
     start_position = start_point[dims_displayed]
     end_position = end_point[dims_displayed]
     ray_direction = end_position - start_position
-    ray_direction_normed = ray_direction / np.linalg.norm(ray_direction)
+    ray_direction = ray_direction / np.linalg.norm(ray_direction)
     # step the start position back a little bit to be able to detect shapes
     # that contain the start_position
-    start_position = start_position - 0.1 * ray_direction_normed
-    return start_position, ray_direction_normed
+    start_position = start_position - 0.1 * ray_direction
+    return start_position, ray_direction

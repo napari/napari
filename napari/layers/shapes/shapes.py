@@ -26,7 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.interactivity_utils import mouse_click_line_segment_to_ray
+from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
 from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
@@ -2797,13 +2797,13 @@ class Shapes(Layer):
             return None, None
 
         # Get the normal vector of the click plane
-        start_position, ray_direction_normed = mouse_click_line_segment_to_ray(
+        start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
         value, intersection = self._data_view._inside_3d(
-            start_position, ray_direction_normed
+            start_position, ray_direction
         )
 
         # add the full nD coords to intersection
