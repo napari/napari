@@ -499,6 +499,7 @@ def pytest_generate_tests(metafunc):
 
         metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
+
 def pytest_collection_modifyitems(session, config, items):
     test_order_prefix = [
         "napari/utils",
