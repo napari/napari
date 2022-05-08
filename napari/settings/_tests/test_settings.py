@@ -20,7 +20,9 @@ def test_settings(tmp_path):
         class Config:
             env_prefix = 'testnapari_'
 
-    return TestSettings(tmp_path / 'test_settings.yml')
+    return TestSettings(
+        tmp_path / 'test_settings.yml', schema_version=CURRENT_SCHEMA_VERSION
+    )
 
 
 def test_settings_file(test_settings):
@@ -293,14 +295,16 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
 
 
 def test_get_settings(tmp_path):
-    s = settings.get_settings(tmp_path)
-    assert s.config_path == tmp_path
+    p = f'{tmp_path}.yaml'
+    s = settings.get_settings(p)
+    assert str(s.config_path) == str(p)
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
-    settings.get_settings(tmp_path)
+    p = f'{tmp_path}.yaml'
+    settings.get_settings(p)
     with pytest.raises(Exception) as e:
-        settings.get_settings(tmp_path)
+        settings.get_settings(p)
 
     assert 'The path can only be set once per session' in str(e)
 
