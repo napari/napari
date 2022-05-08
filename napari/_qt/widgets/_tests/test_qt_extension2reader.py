@@ -77,7 +77,12 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
         )
 
 
-def test_all_readers_in_dropdown(extension2reader_widget, qtbot):
+def test_all_readers_in_dropdown(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(mock_npe2_pm, 'npe2-name', filename_patterns=['*'])
+    tmp_reader(mock_npe2_pm, 'other-reader', filename_patterns=['*.tif'])
+
     npe2_readers = {
         'npe2-name': 'npe2 Display',
         'other-reader': 'Other Reader',
@@ -95,6 +100,26 @@ def test_all_readers_in_dropdown(extension2reader_widget, qtbot):
         for i in range(widget._new_reader_dropdown.count())
     ]
     assert sorted(all_reader_display_names) == sorted(all_dropdown_items)
+
+
+def test_directory_readers_not_in_dropdown(
+    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+):
+    tmp_reader(
+        mock_npe2_pm,
+        'dir-reader',
+        filename_patterns=[],
+        accepts_directories=True,
+    )
+
+    widget = extension2reader_widget(
+        npe2_readers={'dir-reader': 'Directory Reader'}, npe1_readers={}
+    )
+    all_dropdown_items = [
+        widget._new_reader_dropdown.itemText(i)
+        for i in range(widget._new_reader_dropdown.count())
+    ]
+    assert 'Directory Reader' not in all_dropdown_items
 
 
 def test_filtering_readers(

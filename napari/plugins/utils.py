@@ -112,5 +112,8 @@ def get_filename_patterns_for_reader(plugin_name: str):
             all_fn_patterns = all_fn_patterns.union(
                 set(reader.filename_patterns)
             )
+    # npe1 plugins
+    else:
+        all_fn_patterns = {'*'}
 
     return all_fn_patterns
