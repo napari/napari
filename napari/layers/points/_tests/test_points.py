@@ -160,7 +160,6 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     assert cm.color_properties.current_value == 'paw'
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}

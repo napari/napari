@@ -19,13 +19,13 @@ features = {
     'good_point': np.array([True, False, False]),
 }
 
-# define the color cycle for the points and text face_color
-face_color_cycle = ['blue', 'green']
+# define the color cycle for the points face and text colors
+color_cycle = ['blue', 'green']
 
 text = {
     'string': 'Confidence is {confidence:.2f}',
     'size': 20,
-    'color': {'feature': 'good_point', 'colormap': face_color_cycle},
+    'color': {'feature': 'good_point', 'colormap': color_cycle},
     'translation': np.array([-30, 0]),
 }
 
@@ -42,7 +42,7 @@ points_layer = viewer.add_points(
     edge_color='confidence',
     edge_colormap='gray',
     face_color='good_point',
-    face_color_cycle=face_color_cycle,
+    face_color_cycle=color_cycle,
 )
 
 # set the edge_color mode to colormap
