@@ -87,7 +87,7 @@ def test_all_readers_in_dropdown(
         'npe2-name': 'npe2 Display',
         'other-reader': 'Other Reader',
     }
-    npe1_readers = {'npe1-reader': 'npe1-reader'}
+    npe1_readers = {'builtins': 'builtins'}
 
     widget = extension2reader_widget(
         npe2_readers=npe2_readers, npe1_readers=npe1_readers
@@ -128,8 +128,7 @@ def test_filtering_readers(
     tmp_reader(mock_npe2_pm, 'npy-reader', filename_patterns=['*.npy'])
     tmp_reader(mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif'])
 
-    npe1_readers = {'npe1-reader': 'npe1-reader'}
-    widget = extension2reader_widget(npe1_readers=npe1_readers)
+    widget = extension2reader_widget(npe1_readers={'builtins': 'builtins'})
 
     assert widget._new_reader_dropdown.count() == 3
     widget._filter_compatible_readers('*.npy')
@@ -138,7 +137,7 @@ def test_filtering_readers(
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
     ]
-    assert sorted(['npy-reader', 'npe1-reader']) == all_dropdown_items
+    assert sorted(['npy-reader', 'builtins']) == all_dropdown_items
 
 
 def test_filtering_readers_complex_pattern(
@@ -151,17 +150,16 @@ def test_filtering_readers_complex_pattern(
         filename_patterns=['my-specific-folder/*.tif'],
     )
 
-    npe1_readers = {'npe1-reader': 'npe1-reader'}
-    widget = extension2reader_widget(npe1_readers=npe1_readers)
+    widget = extension2reader_widget(npe1_readers={})
 
-    assert widget._new_reader_dropdown.count() == 3
-    widget._filter_compatible_readers('my-specific-folder/my-file.tif')
     assert widget._new_reader_dropdown.count() == 2
+    widget._filter_compatible_readers('my-specific-folder/my-file.tif')
+    assert widget._new_reader_dropdown.count() == 1
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
     ]
-    assert sorted(['tif-reader', 'npe1-reader']) == all_dropdown_items
+    assert sorted(['tif-reader']) == all_dropdown_items
 
 
 def test_adding_new_preference(
@@ -173,12 +171,10 @@ def test_adding_new_preference(
     )
     tif_reader.manifest.display_name = "TIF Reader"
 
-    widget = extension2reader_widget(
-        npe1_readers={'npe1-reader': 'npe1-reader'}
-    )
+    widget = extension2reader_widget(npe1_readers={})
     widget._fn_pattern_edit.setText('*.tif')
-    # will be filtered and tif-reader will be last item
-    widget._new_reader_dropdown.setCurrentIndex(1)
+    # will be filtered and tif-reader will be only item
+    widget._new_reader_dropdown.setCurrentIndex(0)
 
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {}
@@ -205,12 +201,10 @@ def test_adding_new_preference_no_asterisk(
     )
     tif_reader.manifest.display_name = "TIF Reader"
 
-    widget = extension2reader_widget(
-        npe1_readers={'npe1-reader': 'npe1-reader'}
-    )
+    widget = extension2reader_widget(npe1_readers={})
     widget._fn_pattern_edit.setText('.tif')
-    # will be filtered and tif-reader will be last item
-    widget._new_reader_dropdown.setCurrentIndex(1)
+    # will be filtered and tif-reader will be only item
+    widget._new_reader_dropdown.setCurrentIndex(0)
 
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {}

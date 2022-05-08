@@ -114,6 +114,8 @@ def get_filename_patterns_for_reader(plugin_name: str):
             )
     # npe1 plugins
     else:
-        all_fn_patterns = {'*'}
+        _, npe1_readers = get_all_readers()
+        if plugin_name in npe1_readers:
+            all_fn_patterns = {'*'}
 
     return all_fn_patterns
