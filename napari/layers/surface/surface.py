@@ -491,7 +491,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         )
 
         # get the mesh triangles
-        mesh_triangles = self.vertices[self.faces]
+        mesh_triangles = self._data_view[self._view_faces]
 
         # get the triangles intersection
         intersection_index, intersection = find_nearest_triangle_intersection(
@@ -508,12 +508,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         intersection_point[dims_displayed] = intersection
 
         # calculate the value from the intersection
-        triangle_vertex_indices = self.faces[intersection_index]
-        triangle_vertices = self.vertices[triangle_vertex_indices]
+        triangle_vertex_indices = self._view_faces[intersection_index]
+        triangle_vertices = self._data_view[triangle_vertex_indices]
         u, v, w = calculate_barycentric_coordinates(
-            intersection_point, triangle_vertices
+            intersection, triangle_vertices
         )
-        vertex_values = self.vertex_values[triangle_vertex_indices]
+        vertex_values = self._view_vertex_values[triangle_vertex_indices]
         intersection_value = (np.array([u, v, w]) * vertex_values).sum()
 
         return intersection_value, intersection_index
