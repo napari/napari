@@ -202,12 +202,12 @@ def test_build_menu(mock_pm):
 
     assert submenu.label == 'My SubMenu'
     assert submenu.id == 'my-plugin.mysubmenu'
-    
-    command1, nested_submenu = submenu.contents
+
+    command1, nested_submenu = submenu.children
     assert command1 == command
-    
+
     assert nested_submenu.label == 'My Nested SubMenu'
     assert nested_submenu.id == 'my-plugin.mynestedsubmenu'
 
-    command2, = nested_submenu.contents
+    (command2,) = nested_submenu.children
     assert command2 == command
