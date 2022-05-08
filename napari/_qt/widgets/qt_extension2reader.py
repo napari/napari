@@ -50,9 +50,9 @@ class Extension2ReaderTable(QWidget):
 
         instructions = QLabel(
             trans._(
-                'Start typing a filename pattern to save a reader preference for it e.g. "*.tif" to save preference for all TIFF files or "my-folder/*.tif" to save preference for all TIFF files in "my-folder".'
-                + '\n\nThe available readers will be filtered to only those that accept files matching the pattern you type. Hover over a reader choice to see what filename patterns it accepts.'
-                + '\n\nWe do not yet support preference saving for readers that accept directories, so these readers are not shown.'
+                'Enter a filename pattern to associate with a reader e.g. "*.tif" for all TIFF files.'
+                + 'Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts.'
+                + '\n\nPreference saving for folder readers is not supported, so these readers are not shown.'
                 + '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
             )
         )
@@ -60,7 +60,9 @@ class Extension2ReaderTable(QWidget):
         instructions.setOpenExternalLinks(True)
 
         layout = QVBoxLayout()
-        instructions.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Expanding)
+        instructions.setSizePolicy(
+            QSizePolicy.Maximum, QSizePolicy.MinimumExpanding
+        )
         layout.addWidget(instructions)
         layout.addWidget(self._edit_row)
         layout.addWidget(self._table)
@@ -75,13 +77,14 @@ class Extension2ReaderTable(QWidget):
 
         self._table.setColumnCount(2)
         self._table.setColumnWidth(self._fn_pattern_col, 200)
-        self._table.setColumnWidth(self._reader_col, 250)
+        self._table.setColumnWidth(self._reader_col, 200)
         self._table.verticalHeader().setVisible(False)
         self._table.setMinimumHeight(120)
         self._table.horizontalHeader().setStyleSheet(
             'border-bottom: 2px solid white;'
         )
         self._table.setHorizontalHeaderLabels(header_strs)
+        self._table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def _populate_table(self):
         """Add row for each extension to reader mapping in settings"""
@@ -111,9 +114,6 @@ class Extension2ReaderTable(QWidget):
 
         add_reader_widg = QWidget()
         add_reader_widg.setLayout(QHBoxLayout())
-        add_reader_widg.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Preferred
-        )
         add_reader_widg.layout().setContentsMargins(0, 0, 0, 0)
 
         self._new_reader_dropdown = QComboBox()
