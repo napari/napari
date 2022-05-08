@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from ...components.cursor_query import DataQueryResponse
+from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans

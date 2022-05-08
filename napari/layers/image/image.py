@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...components.cursor_query import DataQueryResponse
+from ...components.data_query import DataQueryResponse
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS

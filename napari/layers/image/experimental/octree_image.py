@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
 
-from ....components.cursor_query import DataQueryResponse
+from ....components.data_query import DataQueryResponse
 from ....utils.events import Event
 from ....utils.translations import trans
 from ..image import _ImageBase

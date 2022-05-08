@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
-from ...components.cursor_query import DataQueryResponse
+from ...components.data_query import DataQueryResponse
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
