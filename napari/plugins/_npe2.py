@@ -126,7 +126,7 @@ def get_widget_contribution(
     return None
 
 
-def _build_menu(entries: Iterable[MenuEntry]) -> List[MenuItem]:
+def _build_menus(entries: Iterable[MenuEntry]) -> List[MenuItem]:
     """Build napari native menus from npe2 menu entries.
 
     Parameters
@@ -169,7 +169,7 @@ def build_submenu(submenu_key: str) -> Menu:
     pm = npe2.PluginManager.instance()
 
     entry = pm.get_submenu(submenu_key)
-    children = _build_menu(entry.contents)
+    children = _build_menus(entry.contents)
     return Menu(id=entry.id, label=entry.label, children=children)
 
 
@@ -206,7 +206,7 @@ def build_menu_item(menu_entry: MenuEntry) -> MenuItem:
         )
 
 
-def build_menu(menu_key: str) -> List[MenuItem]:
+def build_menus(menu_key: str) -> List[MenuItem]:
     """Build napari native menus from npe2 menu entries given the relevant menu key.
 
     Parameters
@@ -226,7 +226,7 @@ def build_menu(menu_key: str) -> List[MenuItem]:
     """
     pm = npe2.PluginManager.instance()
 
-    return _build_menu(pm.iter_menu(menu_key))
+    return _build_menus(pm.iter_menu(menu_key))
 
 
 def file_extensions_string_for_layers(

@@ -38,13 +38,18 @@ contributions:
       display_name: My Widget
   menus:
     /napari/layer_context:
-      - submenu: mysubmenu
-      - command: {0}.hello_world
-    mysubmenu:
+      - submenu: {0}.mysubmenu
       - command: {0}.hello_world
   submenus:
-    - id: mysubmenu
+    - id: {0}.mysubmenu
       label: My SubMenu
+      contents:
+        - command: {0}.hello_world
+        - submenu: {0}.mynestedsubmenu
+    - id: {0}.mynestedsubmenu
+      label: My Nested SubMenu
+      contents:
+        - command: {0}.hello_world
   themes:
     - label: "SampleTheme"
       id: "sample_theme"
@@ -137,13 +142,6 @@ def test_get_widget_contribution(mock_pm):
     mock_pm.commands.get.assert_not_called()
 
 
-def test_populate_qmenu(mock_pm):
-    menu = MagicMock()
-    _npe2.populate_qmenu(menu, '/napari/layer_context')
-    assert menu.addMenu.called_once_with('My SubMenu')
-    assert menu.addAction.called_once_with('Hello World')
-
-
 def test_file_extensions_string_for_layers(mock_pm):
     layers = [Image(np.random.rand(20, 20), name='ex_img')]
     label, writers = _npe2.file_extensions_string_for_layers(layers)
@@ -193,3 +191,23 @@ def test_sample_iterator(mock_pm):
 def test_widget_iterator(mock_pm):
     wdgs = list(_npe2.widget_iterator())
     assert wdgs == [('dock', ('my-plugin', ['My Widget']))]
+
+
+def test_build_menu(mock_pm):
+    menus = _npe2.build_menus('/napari/layer_context')
+    submenu, command = menus
+
+    assert command.label == 'Hello World'
+    assert command.action is not None
+
+    assert submenu.label == 'My SubMenu'
+    assert submenu.id == 'my-plugin.mysubmenu'
+    
+    command1, nested_submenu = submenu.contents
+    assert command1 == command
+    
+    assert nested_submenu.label == 'My Nested SubMenu'
+    assert nested_submenu.id == 'my-plugin.mynestedsubmenu'
+
+    command2, = nested_submenu.contents
+    assert command2 == command
