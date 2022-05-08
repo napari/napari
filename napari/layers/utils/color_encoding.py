@@ -199,9 +199,8 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
         The value to validate and coerce.
         If this is already a ColorEncoding, it is returned as is.
         If this is a dict, then it should represent one of the built-in color encodings.
-        If this a string, then a DirectColorEncoding is returned.
-        If this a single color, a ConstantColorEncoding is returned.
-        If this is a sequence of colors, a ManualColorEncoding is returned.
+        If this a single non-string color, a ConstantColorEncoding is returned.
+        If this is a sequence of non-string colors, a ManualColorEncoding is returned.
 
     Returns
     -------
@@ -230,17 +229,24 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
             value,
         )
     try:
-        color_array = ColorArray.validate_type(value)
-    except (ValueError, AttributeError, KeyError):
-        raise TypeError(
-            trans._(
-                'value should be a ColorEncoding, a dict, a string, a color, a sequence of colors, or None',
-                deferred=True,
+        # We are undecided on how we want to handle strings,
+        # so explicitly prevent them for now.
+        if not isinstance(value, str):
+            color_array = ColorArray.validate_type(value)
+            if color_array.shape[0] == 1:
+                return ConstantColorEncoding(constant=value)
+            return ManualColorEncoding(
+                array=color_array, default=DEFAULT_COLOR
             )
+    except (ValueError, AttributeError, KeyError):
+        # Fall through to type error below.
+        pass
+    raise TypeError(
+        trans._(
+            'value should be a ColorEncoding, a dict, a color, a sequence of colors, or None',
+            deferred=True,
         )
-    if color_array.shape[0] == 1:
-        return ConstantColorEncoding(constant=value)
-    return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
+    )
 
 
 def _calculate_contrast_limits(
