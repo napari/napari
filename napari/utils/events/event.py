@@ -369,9 +369,11 @@ class EventEmitter:
     def source(self, s):
         self._source = None if s is None else weakref.ref(s)
 
-    def _is_core_napari_callback(self, callback: Union[CallbackRef, Callback]):
+    def _is_core_callback(
+        self, callback: Union[CallbackRef, Callback], core: str
+    ):
         """
-        Check if the callback is a core napari callback
+        Check if the callback is a core callback
 
         Parameters
         ----------
@@ -379,16 +381,18 @@ class EventEmitter:
             The callback to check. Callback could be function or
             weak reference to object method coded using weakreference
             to object and method name stored in tuple.
+        core : str
+            Name of core module, for example 'napari'.
         """
         try:
             if isinstance(callback, partial):
                 callback = callback.func
             if not isinstance(callback, tuple):
-                return callback.__module__.startswith('napari.')
+                return callback.__module__.startswith(core + '.')
             obj = callback[0]()  # get object behind weakref
             if obj is None:  # object is dead
                 return False
-            return obj.__module__.startswith('napari.')
+            return obj.__module__.startswith(core + '.')
 
         except AttributeError:
             return False
@@ -500,12 +504,12 @@ class EventEmitter:
         core_callbacks_indexes = [
             i
             for i, c in enumerate(self._callbacks)
-            if self._is_core_napari_callback(c)
+            if self._is_core_callback(c, 'napari')
         ]
         core_callbacks_count = (
             max(core_callbacks_indexes) + 1 if core_callbacks_indexes else 0
         )
-        if self._is_core_napari_callback(callback):
+        if self._is_core_napari_callback(callback, 'napari'):
             callback_bounds = (0, core_callbacks_count)
         else:
             callback_bounds = (core_callbacks_count, len(callback_refs))
