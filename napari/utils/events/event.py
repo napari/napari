@@ -509,7 +509,7 @@ class EventEmitter:
         core_callbacks_count = (
             max(core_callbacks_indexes) + 1 if core_callbacks_indexes else 0
         )
-        if self._is_core_napari_callback(callback, 'napari'):
+        if self._is_core_callback(callback, 'napari'):
             callback_bounds = (0, core_callbacks_count)
         else:
             callback_bounds = (core_callbacks_count, len(callback_refs))
