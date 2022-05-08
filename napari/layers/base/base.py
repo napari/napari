@@ -1018,9 +1018,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         dims_displayed: Optional[List[int]] = None,
         world=False,
     ) -> DataQueryResponse:
-        """Information about data under the cursor.
-
-        If the layer is not visible, return None.
+        """Get information about layer data at a 2D position or along a 3D ray.
 
         Parameters
         ----------
@@ -1043,7 +1041,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         if not self.visible:
             self._value = None
-            return None
+            return DataQueryResponse()
         if world:  # transform position and slice dims displayed
             position = self.world_to_data(position)
             if dims_displayed is not None:
