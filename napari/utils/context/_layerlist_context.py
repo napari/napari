@@ -124,9 +124,9 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
     current value from layers.selection
     """
 
-    layers_selection_count = ContextKey(
+    num_selected_layers = ContextKey(
         0,
-        trans._("Number of layers currently selected"),
+        trans._("Number of currently selected layers."),
         _len,
     )
     all_layers_linked = ContextKey(
@@ -134,14 +134,14 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         trans._("True when all selected layers are linked."),
         _all_linked,
     )
-    unselected_linked_layers = ContextKey(
+    num_unselected_linked_layers = ContextKey(
         0,
-        trans._("Number of unselected layers linked to selected layer(s)"),
+        trans._("Number of unselected layers linked to selected layer(s)."),
         _n_unselected_links,
     )
     active_layer_is_rgb = ContextKey(
         False,
-        trans._("True when the active layer is RGB"),
+        trans._("True when the active layer is RGB."),
         _is_rgb,
     )
     active_layer_type = ContextKey['LayerSel', Optional[str]](
@@ -154,86 +154,86 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
     # TODO: try to reduce these `only_x_selected` to a single set of strings
     # or something... however, this would require that our context expressions
     # support Sets, tuples, lists, etc...  which they currently do not.
-    only_images_selected = ContextKey(
+    only_image_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are images"
         ),
         _only_img,
     )
-    selected_images = ContextKey(
+    num_selected_image_layers = ContextKey(
         0,
         trans._("Number of selected image layers."),
         _n_selected_imgs,
     )
-    only_labels_selected = ContextKey(
+    only_labels_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are labels"
         ),
         _only_labels,
     )
-    selected_labels = ContextKey(
+    num_selected_labels_layers = ContextKey(
         0,
         trans._("Number of selected labels layers."),
         _n_selected_labels,
     )
-    only_points_selected = ContextKey(
+    only_points_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are points"
         ),
         _only_points,
     )
-    selected_points = ContextKey(
+    num_selected_points_layers = ContextKey(
         0,
         trans._("Number of selected points layers."),
         _n_selected_points,
     )
-    only_shapes_selected = ContextKey(
+    only_shapes_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are shapes"
         ),
         _only_shapes,
     )
-    selected_shapes = ContextKey(
+    num_selected_shapes_layers = ContextKey(
         0,
         trans._("Number of selected shapes layers."),
         _n_selected_shapes,
     )
-    only_surface_selected = ContextKey(
+    only_surface_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are surfaces"
         ),
         _only_surface,
     )
-    selected_surfaces = ContextKey(
+    num_selected_surface_layers = ContextKey(
         0,
         trans._("Number of selected surface layers."),
         _n_selected_surfaces,
     )
-    only_vectors_selected = ContextKey(
+    only_vectors_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are vectors"
         ),
         _only_vectors,
     )
-    selected_vectors = ContextKey(
+    num_selected_vectors_layers = ContextKey(
         0,
         trans._("Number of selected vectors layers."),
         _n_selected_vectors,
     )
-    only_vectors_tracks = ContextKey(
+    only_tracks_layers_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are tracks"
         ),
         _only_tracks,
     )
-    selected_tracks = ContextKey(
+    num_selected_tracks_layers = ContextKey(
         0,
         trans._("Number of selected tracks layers."),
         _n_selected_tracks,
@@ -241,7 +241,7 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
     active_layer_ndim = ContextKey['LayerSel', Optional[int]](
         None,
         trans._(
-            "Number of dimensions in the active layer, or `None` if nothing is active"
+            "Number of dimensions in the active layer, or `None` if nothing is active."
         ),
         _active_ndim,
     )
@@ -257,6 +257,6 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
     )
     all_layers_same_shape = ContextKey(
         False,
-        trans._("True when all selected layers have the same shape"),
+        trans._("True when all selected layers have the same shape."),
         _same_shape,
     )

@@ -242,8 +242,9 @@ def _labeltypedict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_convert_dtype, mode=key),
-        'enable_when': LLCK.only_labels_selected
-        & (LLCK.active_layer_dtype != key),
+        'enable_when': (
+            LLCK.only_labels_layers_selected & (LLCK.active_layer_dtype != key)
+        ),
         'show_when': True,
     }
 
@@ -260,14 +261,15 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Convert to Labels'),
             'action': _convert_to_labels,
             'enable_when': (
-                LLCK.only_images_selected | LLCK.only_shapes_selected
+                LLCK.only_image_layers_selected
+                | LLCK.only_shapes_layers_selected
             ),
             'show_when': True,
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
             'action': _convert_to_image,
-            'enable_when': LLCK.only_labels_selected,
+            'enable_when': LLCK.only_labels_layers_selected,
             'show_when': True,
         },
         'napari:toggle_visibility': {
@@ -281,7 +283,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:group:convert_type': {
             'description': trans._('Convert datatype'),
-            'enable_when': LLCK.only_labels_selected,
+            'enable_when': LLCK.only_labels_layers_selected,
             'show_when': True,
             'action_group': {
                 'napari:to_int8': _labeltypedict('int8'),
@@ -330,8 +332,8 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Merge to Stack'),
             'action': _merge_stack,
             'enable_when': (
-                (LLCK.layers_selection_count > 1)
-                & LLCK.only_images_selected
+                (LLCK.num_selected_layers > 1)
+                & LLCK.only_image_layers_selected
                 & LLCK.all_layers_same_shape
             ),
             'show_when': True,
@@ -342,7 +344,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Link Layers'),
             'action': lambda ll: ll.link_layers(ll.selection),
             'enable_when': (
-                (LLCK.layers_selection_count > 1) & ~LLCK.all_layers_linked
+                (LLCK.num_selected_layers > 1) & ~LLCK.all_layers_linked
             ),
             'show_when': ~LLCK.all_layers_linked,
         },
@@ -355,7 +357,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:select_linked_layers': {
             'description': trans._('Select Linked Layers'),
             'action': _select_linked_layers,
-            'enable_when': LLCK.unselected_linked_layers,
+            'enable_when': LLCK.num_unselected_linked_layers,
             'show_when': True,
         },
     },
