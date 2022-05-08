@@ -2741,7 +2741,7 @@ class Shapes(Layer):
 
         Returns
         -------
-        cursor_query: ShapesDataQueryResponse
+        response: ShapesDataQueryResponse
             Information about the first label along a ray.
         """
         index, intersection = self._get_index_and_intersection(
@@ -2749,10 +2749,8 @@ class Shapes(Layer):
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        cursor_query = ShapesDataQueryResponse(
-            index=index, position=intersection
-        )
-        return cursor_query
+        response = ShapesDataQueryResponse(index=index, position=intersection)
+        return response
 
     def _get_index_and_intersection(
         self,

@@ -925,13 +925,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = raw[tuple(coord)]
         else:
             value = None
-        cursor_query = DataQueryResponse(
+        response = DataQueryResponse(
             position=position,
             value=value,
         )
         if self.multiscale:
-            cursor_query.index = self.data_level
-        return cursor_query
+            response.index = self.data_level
+        return response
 
     def _get_offset_data_position(self, position: List[float]) -> List[float]:
         """Adjust position for offset between viewer and data coordinates.

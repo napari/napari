@@ -1067,11 +1067,11 @@ class Labels(_ImageBase):
         nonzero_found = len(nonzero_indices) > 0
         first_label_index = nonzero_indices[0] if nonzero_found else None
         first_label = label_ids[first_label_index] if nonzero_found else 0
-        cursor_query = DataQueryResponse(
+        response = DataQueryResponse(
             intersection=first_label_index,
             value=first_label,
         )
-        return cursor_query
+        return response
 
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)

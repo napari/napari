@@ -4,7 +4,7 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ...components.cursor_query import DataQueryResponse
+from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
@@ -269,12 +269,12 @@ class Tracks(Layer):
             Index of track that is at the current coordinate if any.
         """
         index = self._manager.get_value(np.array(position))
-        cursor_query = DataQueryResponse(
+        response = DataQueryResponse(
             index=index,
             position=position,
             value=self.data[index] if index is not None else None,
         )
-        return cursor_query
+        return response
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

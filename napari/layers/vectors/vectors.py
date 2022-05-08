@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...components.cursor_query import DataQueryResponse
+from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
