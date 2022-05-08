@@ -1054,9 +1054,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     ndim_layer=self.ndim,
                 )
         if dims_displayed is None and view_direction is None:
-            value = self._get_value_2d(position)
+            response = self._get_value_2d(position)
         elif len(dims_displayed) == 2 or self.ndim == 2:
-            value = self._get_value_2d(position=tuple(position))
+            response = self._get_value_2d(position=tuple(position))
         else:  # displaying 3 dimensions:
             view_direction = self._world_to_data_ray(list(view_direction))
             start_point, end_point = self.get_ray_intersections(
@@ -1065,15 +1065,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 dims_displayed=dims_displayed,
                 world=False,
             )
-            value = self._get_value_3d(
+            response = self._get_value_3d(
                 start_point=start_point,
                 end_point=end_point,
                 dims_displayed=dims_displayed,
             )
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
-        self._value = value
-        return value
+        self._value = response.index
+        return response
 
     def _get_value_3d(
         self,
