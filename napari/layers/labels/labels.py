@@ -1038,7 +1038,7 @@ class Labels(_ImageBase):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[DataQueryResponse, None]:
+    ) -> DataQueryResponse:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -1057,7 +1057,7 @@ class Labels(_ImageBase):
             non-zero value is not encountered, returns 0 (the background value).
         """
         if start_point is None or end_point is None:
-            return None
+            return DataQueryResponse()
         label_ids = self._get_label_ids_along_ray(
             start_point=start_point,
             end_point=end_point,
