@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import functools
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
     Dict,
+    Iterable,
     Iterator,
     List,
     Optional,
@@ -15,16 +17,15 @@ from typing import (
 import npe2
 from npe2.io_utils import read_get_reader
 from npe2.manifest import PluginManifest
-from npe2.manifest.contributions import Submenu
+from npe2.manifest.contributions import MenuCommand, Submenu
 
+from ..components.menu import ActionMenuItem, Menu, MenuItem
 from ..utils.translations import trans
 
 if TYPE_CHECKING:
+    from npe2.manifest.contributions import MenuItem as MenuEntry
     from npe2.manifest.contributions import WriterContribution
-    from npe2.types import LayerData, SampleDataCreator, WidgetCreator
-    from qtpy.QtWidgets import QMenu
 
-    from ..layers import Layer
     from ..types import SampleDict
 
 
@@ -125,19 +126,107 @@ def get_widget_contribution(
     return None
 
 
-def populate_qmenu(menu: QMenu, menu_key: str):
-    """Populate `menu` from a `menu_key` offering in the manifest."""
-    # TODO: declare somewhere what menu_keys are valid.
+def _build_menu(entries: Iterable[MenuEntry]) -> List[MenuItem]:
+    """Build napari native menus from npe2 menu entries.
+
+    Parameters
+    ----------
+    entries : iterable of npe2.manifest.contributions.MenuItem
+        npe2 menu entries to build from.
+
+    Returns
+    -------
+    menu_item : list of napari.components.menu.MenuItem
+        Built napari native menu items.
+
+    Raises
+    ------
+    TypeError
+        If any menu entry is not a menu command or submenu.
+    """
+    return [build_menu_item(entry) for entry in entries]
+
+
+@functools.cache
+def build_submenu(submenu_key: str) -> Menu:
+    """Build a napari native menu from an npe2 submenu entry given its key.
+
+    Parameters
+    ----------
+    submenu_key : str
+        Submenu key to query the npe2 plugin manger for.
+
+    Returns
+    -------
+    menu_item : napari.components.menu.Menu
+        Built napari native menu.
+
+    Raises
+    ------
+    TypeError
+        If any submenu child is not a menu command or submenu.
+    """
     pm = npe2.PluginManager.instance()
-    for item in pm.iter_menu(menu_key):
-        if isinstance(item, Submenu):
-            subm_contrib = pm.get_submenu(item.submenu)
-            subm = menu.addMenu(subm_contrib.label)
-            populate_qmenu(subm, subm_contrib.id)
-        else:
-            cmd = pm.get_command(item.command)
-            action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *args: cmd.exec(args=args))  # type: ignore
+
+    entry = pm.get_submenu(submenu_key)
+    children = _build_menu(entry.contents)
+    return Menu(id=entry.id, label=entry.label, children=children)
+
+
+def build_menu_item(menu_entry: MenuEntry) -> MenuItem:
+    """Build a napari native menu item from an npe2 menu entry.
+
+    Parameters
+    ----------
+    menu_entry : npe2.manifest.contributions.MenuItem
+        npe2 menu entry to build from.
+
+    Returns
+    -------
+    menu_item : napari.components.menu.MenuItem
+        Built napari native menu item.
+
+    Raises
+    ------
+    TypeError
+        If the menu entry is not a menu command or submenu.
+    """
+    pm = npe2.PluginManager.instance()
+
+    if isinstance(menu_entry, MenuCommand):
+        command = pm.get_command(menu_entry.command)
+        return ActionMenuItem(
+            id=command.id, label=command.title, action=command.exec
+        )
+    elif isinstance(menu_entry, Submenu):
+        return build_submenu(menu_entry.submenu)
+    else:
+        raise TypeError(
+            f'Expected `MenuCommand` or `Submenu`, got `{type(menu_entry)}`'
+        )
+
+
+def build_menu(menu_key: str) -> List[MenuItem]:
+    """Build napari native menus from npe2 menu entries given the relevant menu key.
+
+    Parameters
+    ----------
+    menu_key : str
+        Menu key to query the npe2 plugin manager for.
+
+    Returns
+    -------
+    menu_item : list of napari.components.menu.MenuItem
+        Built napari native menu items.
+
+    Raises
+    ------
+    TypeError
+        If any menu entry is not a menu command or submenu.
+    """
+    pm = npe2.PluginManager.instance()
+
+    return _build_menu(pm.iter_menu(menu_key))
 
 
 def file_extensions_string_for_layers(
