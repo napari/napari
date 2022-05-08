@@ -39,12 +39,56 @@ def _only_img(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == "image" for x in s))
 
 
+def _n_selected_imgs(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "image")
+
+
 def _only_labels(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == "labels" for x in s))
 
 
+def _n_selected_labels(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "labels")
+
+
+def _only_points(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == "points" for x in s))
+
+
+def _n_selected_points(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "labels")
+
+
 def _only_shapes(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == "shapes" for x in s))
+
+
+def _n_selected_shapes(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "shapes")
+
+
+def _only_surface(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == "surface" for x in s))
+
+
+def _n_selected_surfaces(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "surface")
+
+
+def _only_vectors(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == "vectors" for x in s))
+
+
+def _n_selected_vectors(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "vectors")
+
+
+def _only_tracks(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == "tracks" for x in s))
+
+
+def _n_selected_tracks(s: LayerSel) -> int:
+    return sum(1 for x in s if x._type_string == "tracks")
 
 
 def _active_type(s: LayerSel) -> Optional[str]:
