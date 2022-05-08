@@ -25,7 +25,9 @@ from ..utils.translations import trans
 if TYPE_CHECKING:
     from npe2.manifest.contributions import MenuItem as MenuEntry
     from npe2.manifest.contributions import WriterContribution
+    from npe2.types import LayerData, SampleDataCreator, WidgetCreator
 
+    from ..layers import Layer
     from ..types import SampleDict
 
 
