@@ -1043,6 +1043,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._value = None
             return DataQueryResponse()
         if world:  # transform position and slice dims displayed
+            ndim_world = len(position)
             position = self.world_to_data(position)
             if dims_displayed is not None:
                 # convert the dims_displayed to the layer dims.This accounts
@@ -1050,7 +1051,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 # dims versus the layer and for transpose and rolls.
                 dims_displayed = dims_displayed_world_to_layer(
                     dims_displayed,
-                    ndim_world=len(position),
+                    ndim_world=ndim_world,
                     ndim_layer=self.ndim,
                 )
         if dims_displayed is None and view_direction is None:
