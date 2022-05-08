@@ -36,6 +36,22 @@ class _FakeHookimpl:
         self.plugin_name = name
 
 
+napari_menus = {
+    "/napari/layer_context": "Process Layer",
+    "/napari/layer_context/projections": "Make Projection",
+    "/napari/layer_context/convert_type": "Convert datatype",
+    "/napari/tools/acquisition": "Acquisition",
+    "/napari/tools/classification": "Classification",
+    "/napari/tools/measurement": "Measurement",
+    "/napari/tools/segmentation": "Segmentation",
+    "/napari/tools/transform": "Transform",
+    "/napari/tools/utilities": "Utilities",
+    "/napari/tools/visualization": "Visualization",
+}
+
+TOOLS_PATH_PREFIX = '/napari/tools/'
+
+
 def read(
     paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
@@ -231,6 +247,23 @@ def build_menus(menu_key: str) -> List[MenuItem]:
     return _build_menus(pm.iter_menu(menu_key))
 
 
+def build_tools_menu() -> Menu:
+    """Build the tools menu.
+
+    Returns
+    -------
+    tools_menu : napari.components.menu.Menu
+        Built tools menu.
+    """
+    submenus = []
+    for path, title in napari_menus.items():
+        if not path.startswith(TOOLS_PATH_PREFIX):
+            continue
+        submenus.append(Menu(label=title, id=path, children=build_menus(path)))
+
+    return Menu(label='Tools', id=TOOLS_PATH_PREFIX, children=submenus)
+
+
 def file_extensions_string_for_layers(
     layers: Sequence[Layer],
 ) -> Tuple[Optional[str], List[WriterContribution]]:
@@ -373,6 +406,9 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     to_disable.difference_update(enabled)
     to_disable.update(disabled)
     plugin_settings.disabled_plugins = to_disable
+
+    # tools_menu = build_tools_menu()
+    # populate qmenu wtih tools menu
 
     for v in Viewer._instances:
         v.window.plugins_menu._build()
