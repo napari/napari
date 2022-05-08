@@ -1098,7 +1098,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             The data value along the supplied ray.
 
         """
-        return None
+        return DataQueryResponse()
 
     def projected_distance_from_mouse_drag(
         self,
