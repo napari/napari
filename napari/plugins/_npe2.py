@@ -37,16 +37,16 @@ class _FakeHookimpl:
 
 
 napari_menus = {
-    "/napari/layer_context": "Process Layer",
-    "/napari/layer_context/projections": "Make Projection",
-    "/napari/layer_context/convert_type": "Convert datatype",
-    "/napari/tools/acquisition": "Acquisition",
-    "/napari/tools/classification": "Classification",
-    "/napari/tools/measurement": "Measurement",
-    "/napari/tools/segmentation": "Segmentation",
-    "/napari/tools/transform": "Transform",
-    "/napari/tools/utilities": "Utilities",
-    "/napari/tools/visualization": "Visualization",
+    ("/napari/layer_context", "Process Layer"),
+    ("/napari/layer_context/projections", "Make Projection"),
+    ("/napari/layer_context/convert_type", "Convert datatype"),
+    ("/napari/tools/acquisition", "Acquisition"),
+    ("/napari/tools/classification", "Classification"),
+    ("/napari/tools/measurement", "Measurement"),
+    ("/napari/tools/segmentation", "Segmentation"),
+    ("/napari/tools/transform", "Transform"),
+    ("/napari/tools/utilities", "Utilities"),
+    ("/napari/tools/visualization", "Visualization"),
 }
 
 TOOLS_PATH_PREFIX = '/napari/tools/'
@@ -256,10 +256,18 @@ def build_tools_menu() -> Menu:
         Built tools menu.
     """
     submenus = []
-    for path, title in napari_menus.items():
+    for path, title in napari_menus:
         if not path.startswith(TOOLS_PATH_PREFIX):
             continue
-        submenus.append(Menu(label=title, id=path, children=build_menus(path)))
+        children = build_menus(path)
+        submenus.append(
+            Menu(
+                label=title,
+                id=path.removeprefix(TOOLS_PATH_PREFIX),
+                children=children,
+                enabled=len(children) > 0,
+            )
+        )
 
     return Menu(label='Tools', id=TOOLS_PATH_PREFIX, children=submenus)
 
