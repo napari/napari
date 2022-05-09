@@ -102,10 +102,13 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         super().__init__(**values)
         self._config_path = _cfg
 
-    def _on_sub_event(self, event, field=None):
-        super()._on_sub_event(event, field)
+    def _maybe_save(self):
         if self._save_on_change and self.config_path:
             self.save()
+
+    def _on_sub_event(self, event, field=None):
+        super()._on_sub_event(event, field)
+        self._maybe_save()
 
     @property
     def config_path(self):

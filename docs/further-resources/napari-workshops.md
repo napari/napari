@@ -12,6 +12,9 @@ You can find more videos of talks, tutorials and demos on the
 
 * January to May 2022, [accelerator grantee plugin workshop](https://chanzuckerberg.github.io/napari-plugin-accel-workshops/)
 
+* April 2022, ABRF LMRG image analysis workshop
+  * [watch it here](https://www.youtube.com/watch?v=lkw5di8NgUA) 
+
 * March 2022, [Alt text workshop](https://hackmd.io/vDsWUBqQSxW_7TNxF-RKKA)
 
 * February 2022, Modern microscopy guest lecture at Berkerley

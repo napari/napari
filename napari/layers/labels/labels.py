@@ -296,6 +296,7 @@ class Labels(_ImageBase):
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
+            features=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -469,6 +470,7 @@ class Labels(_ImageBase):
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
         self.events.properties()
+        self.events.features()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
