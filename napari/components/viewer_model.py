@@ -807,9 +807,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
-        if hasattr(data.__self__, 'uri'):
-            data = data.__self__.uri
-        print(data)
 
         # then try with npe1
         if data is None:
@@ -817,6 +814,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 data = plugin_manager._sample_data[plugin][sample]['data']
             except KeyError:
                 available += list(plugin_manager.available_samples())
+        # npe2 uri sample data, extract the path so we can use viewer.open
+        elif hasattr(data.__self__, 'uri'):
+            data = data.__self__.uri
 
         if data is None:
             msg = trans._(
