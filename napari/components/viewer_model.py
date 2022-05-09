@@ -807,6 +807,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
+        if hasattr(data.__self__, 'uri'):
+            data = data.__self__.uri
+        print(data)
 
         # then try with npe1
         if data is None:
