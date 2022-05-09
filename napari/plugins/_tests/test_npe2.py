@@ -37,7 +37,7 @@ contributions:
     - command: {0}.some_widget
       display_name: My Widget
   menus:
-    /napari/layer_context:
+    /napari/tools/acquisition:
       - submenu: {0}.mysubmenu
       - command: {0}.hello_world
   submenus:
@@ -194,7 +194,7 @@ def test_widget_iterator(mock_pm):
 
 
 def test_build_menu(mock_pm):
-    menus = _npe2.build_menus('/napari/layer_context')
+    menus = _npe2.build_menus('/napari/tools/acquisition')
     submenu, command = menus
 
     assert command.label == 'Hello World'
@@ -211,3 +211,17 @@ def test_build_menu(mock_pm):
 
     (command2,) = nested_submenu.children
     assert command2 == command
+
+
+def test_build_tools_menu(mock_pm):
+    tools_menu = _npe2.build_tools_menu()
+
+    acq = tools_menu.get('acquisition')
+    assert acq.label == 'Acquisition'
+    assert acq.enabled is True
+    assert len(acq.children) == 2
+
+    util = tools_menu.get('utilities')
+    assert util.label == 'Utilities'
+    assert util.enabled is False
+    assert len(util.children) == 0

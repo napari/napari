@@ -41,3 +41,20 @@ class Menu(MenuItem):
         description='Children menu items of this menu.',
         allow_mutation=False,
     )
+
+    def get(self, id: str) -> Optional[MenuItem]:
+        """Get a child by its id.
+
+        Parameters
+        ----------
+        id : str
+            Id of the menu item to fetch.
+
+        Returns
+        -------
+        menu_item : MenuItem, optional
+            Fetched menu item, if found.
+        """
+        for child in self.children:
+            if child.id == id:
+                return child
