@@ -61,7 +61,7 @@ class Extension2ReaderTable(QWidget):
 
         layout = QVBoxLayout()
         instructions.setSizePolicy(
-            QSizePolicy.Maximum, QSizePolicy.MinimumExpanding
+            QSizePolicy.MinimumExpanding, QSizePolicy.Expanding
         )
         layout.addWidget(instructions)
         layout.addWidget(self._edit_row)
@@ -104,7 +104,6 @@ class Extension2ReaderTable(QWidget):
         edit_row_widget.layout().setContentsMargins(0, 0, 0, 0)
 
         self._fn_pattern_edit = QLineEdit()
-        self._fn_pattern_edit.setFixedWidth(175)
         self._fn_pattern_edit.setPlaceholderText(
             "Start typing filename pattern..."
         )
@@ -123,7 +122,6 @@ class Extension2ReaderTable(QWidget):
             self._add_reader_choice(i, plugin_name, display_name)
 
         add_btn = QPushButton('Add')
-        add_btn.setFixedWidth(70)
         add_btn.setToolTip(trans._('Save reader preference for pattern'))
         add_btn.clicked.connect(self._save_new_preference)
 
@@ -181,10 +179,13 @@ class Extension2ReaderTable(QWidget):
             del readers[reader]
         readers.update(self._npe1_readers)
 
-        for i, (plugin_name, display_name) in enumerate(
-            sorted(readers.items())
-        ):
-            self._add_reader_choice(i, plugin_name, display_name)
+        if not readers:
+            self._new_reader_dropdown.addItem("None available")
+        else:
+            for i, (plugin_name, display_name) in enumerate(
+                sorted(readers.items())
+            ):
+                self._add_reader_choice(i, plugin_name, display_name)
 
     def _save_new_preference(self, event):
         """Save current preference to settings and show in table"""
