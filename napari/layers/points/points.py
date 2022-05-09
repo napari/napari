@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
@@ -21,6 +20,7 @@ from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
+from ..base.base import DataQueryResponse
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType

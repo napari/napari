@@ -4,11 +4,11 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
+from ..base.base import DataQueryResponse
 from ._track_utils import TrackManager
 
 

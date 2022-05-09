@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from vispy.color import get_color_names
 
-from ...components.data_query import ShapesDataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
@@ -21,6 +20,7 @@ from ...utils.events.custom_types import Array
 from ...utils.misc import ensure_iterable
 from ...utils.translations import trans
 from ..base import Layer, no_op
+from ..base.base import ShapesDataQueryResponse
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     normalize_and_broadcast_colors,

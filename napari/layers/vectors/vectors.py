@@ -5,12 +5,12 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
+from ..base.base import DataQueryResponse
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType

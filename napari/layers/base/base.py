@@ -10,8 +10,8 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+from pydantic import BaseModel
 
-from ...components.data_query import DataQueryResponse
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -1779,3 +1779,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     layer_type=layer_type,
                 )
             ) from exc
+
+
+class DataQueryResponse(BaseModel):
+    """The result of querying layer data.
+
+    Attributes
+    ----------
+    index: int
+        Index of the first visible object under the cursor.
+    value: int | float
+        Value of data sampled at a cursor position.
+    position: tuple of float
+        2D: position of cursor in data coordinates.
+        3D: position of relevant ray-data intersection in data coordinates.
+    """
+
+    index: Optional[int]
+    value: Optional[Union[float, int, Tuple[float, ...]]]
+    position: Optional[Tuple[float, ...]]
+
+
+class ShapesDataQueryResponse(DataQueryResponse):
+    """A DataQueryResponse with an additional field for vertex index."""
+
+    vertex_index: Optional[int]

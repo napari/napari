@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
-from ...components.data_query import DataQueryResponse
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -22,6 +21,7 @@ from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
+from ..base.base import DataQueryResponse
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color

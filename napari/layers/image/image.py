@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, List, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...components.data_query import DataQueryResponse
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -19,6 +18,7 @@ from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
 from ..base import Layer, no_op
+from ..base.base import DataQueryResponse
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane

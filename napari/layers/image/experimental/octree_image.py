@@ -9,8 +9,8 @@ import logging
 from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
+from layers.base.base import DataQueryResponse
 
-from ....components.data_query import DataQueryResponse
 from ....utils.events import Event
 from ....utils.translations import trans
 from ..image import _ImageBase

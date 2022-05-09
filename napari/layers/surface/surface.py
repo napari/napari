@@ -2,11 +2,11 @@ import warnings
 
 import numpy as np
 
-from ...components.data_query import DataQueryResponse
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
+from ..base.base import DataQueryResponse
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
