@@ -1333,13 +1333,13 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a status update.
         """
-        value = self.get_value(
+        response = self.get_value(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
         )
-        msg = generate_layer_status(self.name, position, value)
+        msg = generate_layer_status(self.name, position, response)
 
         # if this labels layer has properties
         properties = self._get_properties(

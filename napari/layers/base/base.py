@@ -1624,13 +1624,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        value = self.get_value(
+        response = self.get_value(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
         )
-        return generate_layer_status(self.name, position, value)
+        return generate_layer_status(self.name, position, response)
 
     def _get_tooltip_text(
         self,

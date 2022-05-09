@@ -43,7 +43,7 @@ def status_format(value):
         return str(value)
 
 
-def generate_layer_status(name, position, value):
+def generate_layer_status(name, position, response) -> str:
     """Generate a status message based on the coordinates and value
 
     Parameters
@@ -52,7 +52,7 @@ def generate_layer_status(name, position, value):
         Name of the layer.
     position : tuple or list
         List of coordinates, say of the cursor.
-    value : Any
+    response : DataQueryResponse
         The value to be printed.
 
     Returns
@@ -64,13 +64,5 @@ def generate_layer_status(name, position, value):
 
     msg = f'{name} {full_coord}'
 
-    if value is not None:
-        if isinstance(value, tuple) and value != (None, None):
-            # it's a multiscale -> value = (data_level, value)
-            msg += f': {status_format(value[0])}'
-            if value[1] is not None:
-                msg += f', {status_format(value[1])}'
-        else:
-            # it's either a grayscale or rgb image (scalar or list)
-            msg += f': {status_format(value)}'
-    return msg
+    layer_msg = f': {status_format(response.index)}, {status_format(response.value)}, {status_format(response.position)}'
+    return msg + layer_msg
