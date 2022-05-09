@@ -4,6 +4,7 @@ from io import BytesIO
 from warnings import warn
 
 try:
+    from lxml.etree import ParserError
     from lxml.html import document_fromstring
     from lxml.html.clean import Cleaner
 
@@ -86,7 +87,13 @@ class NotebookScreenshot:
                 str(alt_text)
             )  # cleaner won't recognize unescaped script tags
             cleaner = Cleaner()
-            doc = document_fromstring(alt_text)
+            try:
+                doc = document_fromstring(alt_text)
+            except ParserError:
+                alt_text = ""
+                warn(
+                    'The provided alt text does not constitute valid html, so it was discarded.'
+                )
             alt_text = cleaner.clean_html(doc).text_content()
             # alt_text = html.escape(alt_text)
             if alt_text == "":
