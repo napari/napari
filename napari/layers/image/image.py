@@ -24,7 +24,6 @@ from ..utils.plane import SlicingPlane
 from ._image_constants import (
     ImageRendering,
     Interpolation,
-    Interpolation3D,
     Mode,
     VolumeDepiction,
 )
@@ -347,14 +346,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # triggered (self._update_dims(), below).
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
-        self._interpolation = {
-            2: Interpolation.NEAREST,
-            3: (
-                Interpolation3D.NEAREST
-                if self.__class__.__name__ == 'Labels'
-                else Interpolation3D.LINEAR
-            ),
-        }
+        self._interpolation = Interpolation.NEAREST
         self.interpolation = interpolation
         self.rendering = rendering
         self.depiction = depiction
@@ -511,7 +503,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -520,18 +512,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self._ndisplay])
+        return str(self._interpolation)
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self._ndisplay == 3:
-            self._interpolation[self._ndisplay] = Interpolation3D(
-                interpolation
-            )
-        else:
-            self._interpolation[self._ndisplay] = Interpolation(interpolation)
-        self.events.interpolation(value=self._interpolation[self._ndisplay])
+        self._interpolation = Interpolation(interpolation)
+        self.events.interpolation(value=self._interpolation)
 
     @property
     def depiction(self):

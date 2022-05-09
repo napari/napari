@@ -123,7 +123,7 @@ class TiledImageVisual(Image):
         TextureAtlas2D
             The newly created texture atlas.
         """
-        interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
+        interp = 'linear' if self._interpolation == 'linear' else 'nearest'
         return TextureAtlas2D(
             tile_shape,
             SHAPE_IN_TILES,

@@ -319,8 +319,8 @@ def test_interpolation():
     layer = Image(data, interpolation='bicubic')
     assert layer.interpolation == 'bicubic'
 
-    layer.interpolation = 'bilinear'
-    assert layer.interpolation == 'bilinear'
+    layer.interpolation = 'linear'
+    assert layer.interpolation == 'linear'
 
 
 def test_colormaps():

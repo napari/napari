@@ -756,7 +756,7 @@ SKIP_WORDS = {
     'napari/_vispy/experimental/tile_set.py': [],
     'napari/_vispy/experimental/tiled_image_visual.py': [
         'auto',
-        'bilinear',
+        'linear',
         'color_transform',
         'linear',
         'nearest',
