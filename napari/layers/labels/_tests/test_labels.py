@@ -1088,7 +1088,7 @@ def test_get_value_ray_3d():
         end_point=np.array([0, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert info.value is None
+    assert info.value == 0
 
 
 def test_get_value_ray_3d_rolled():
