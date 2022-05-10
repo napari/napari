@@ -1580,8 +1580,8 @@ class Points(Layer):
         else:
             selection = None
         info = LayerDataInfo(
-            index=selection,
-            value=self.data[selection] if selection else None,
+            index=int(selection) if selection else None,
+            position=tuple(self.data[selection]) if selection else None,
         )
         return info
 
