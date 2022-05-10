@@ -1065,7 +1065,7 @@ def test_get_value_ray_3d():
     # set the dims to the slice with labels
     labels._slice_dims([1, 0, 0, 0], ndisplay=3)
 
-    info = labels._get_label_ids_along_ray(
+    info = labels._get_value_3d(
         start_point=np.array([1, 0, 5, 5]),
         end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
@@ -1073,22 +1073,22 @@ def test_get_value_ray_3d():
     assert info.value == 1
 
     # check with a ray that only goes through background
-    value = labels._get_label_ids_along_ray(
+    info = labels._get_value_3d(
         start_point=np.array([1, 0, 15, 15]),
         end_point=np.array([1, 20, 15, 15]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert value is None
+    assert info.value == 0
 
     # set the dims to a slice without labels
     labels._slice_dims([0, 0, 0, 0], ndisplay=3)
 
-    value = labels._get_label_ids_along_ray(
+    info = labels._get_value_3d(
         start_point=np.array([0, 0, 5, 5]),
         end_point=np.array([0, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert value is None
+    assert info.value is None
 
 
 def test_get_value_ray_3d_rolled():
@@ -1111,12 +1111,14 @@ def test_get_value_ray_3d_rolled():
     labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
     labels.set_view_slice()
 
-    info = labels._get_label_ids_along_ray(
+    label_ids = labels._get_label_ids_along_ray(
         start_point=np.array([0, 5, 5, 1]),
         end_point=np.array([20, 5, 5, 1]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert info.value == 1
+    expected = np.ones(40)
+    expected[20:] = 0
+    np.testing.assert_array_equal(label_ids, expected)
 
 
 def test_get_value_ray_3d_transposed():
@@ -1139,7 +1141,7 @@ def test_get_value_ray_3d_transposed():
     labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
     labels.set_view_slice()
 
-    info = labels._get_label_ids_along_ray(
+    info = labels._get_value_3d(
         start_point=np.array([1, 0, 5, 5]),
         end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
