@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 
 
 class ToolsMenu(NapariMenu):
-    def __init__(self, window: Window):
-        self._win
+    def __init__(self, window: 'Window'):
+        self._win = window
         super().__init__('&Tools', window._qt_window)
         self._build()
 

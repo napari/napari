@@ -2,10 +2,11 @@ from typing import TYPE_CHECKING, Callable, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
 
+from ...components.menu import ActionMenuItem, CheckableMenuItem, Menu
+
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
-    from ...components.menu import ActionMenuItem, CheckableMenuItem, Menu
     from ...utils.events import EventEmitter
 
     try:
