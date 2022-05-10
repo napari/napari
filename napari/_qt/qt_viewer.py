@@ -420,9 +420,7 @@ class QtViewer(QSplitter):
     @property
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
-        print("get console")
         if self._console is None:
-            print("HERE")
             try:
                 from napari_console import QtConsole
 
