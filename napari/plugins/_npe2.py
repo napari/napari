@@ -19,6 +19,7 @@ from npe2.io_utils import read_get_reader
 from npe2.manifest import PluginManifest
 from npe2.manifest.contributions import MenuCommand, Submenu
 
+from ..utils._injection import inject_napari_dependencies
 from ..utils.menus import ActionMenuItem, Menu, MenuItem
 from ..utils.translations import trans
 
@@ -165,7 +166,7 @@ def _build_menus(entries: Iterable[MenuEntry]) -> List[MenuItem]:
     return [build_menu_item(entry) for entry in entries]
 
 
-@functools.cache
+@functools.lru_cache
 def build_submenu(submenu_key: str) -> Menu:
     """Build a napari native menu from an npe2 submenu entry given its key.
 
@@ -214,7 +215,9 @@ def build_menu_item(menu_entry: MenuEntry) -> MenuItem:
     if isinstance(menu_entry, MenuCommand):
         command = pm.get_command(menu_entry.command)
         return ActionMenuItem(
-            id=command.id, label=command.title, action=command.exec
+            id=command.id,
+            label=command.title,
+            action=inject_napari_dependencies(command.exec),
         )
     elif isinstance(menu_entry, Submenu):
         return build_submenu(menu_entry.submenu)
@@ -263,7 +266,7 @@ def build_tools_menu() -> Menu:
         submenus.append(
             Menu(
                 label=title,
-                id=path.removeprefix(TOOLS_PATH_PREFIX),
+                id=path[len(TOOLS_PATH_PREFIX) :],
                 children=children,
                 enabled=len(children) > 0,
             )
@@ -408,6 +411,8 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     """Callback when any npe2 plugins are enabled or disabled"""
     from .. import Viewer
     from ..settings import get_settings
+
+    build_submenu.cache_clear()
 
     plugin_settings = get_settings().plugins
     to_disable = set(plugin_settings.disabled_plugins)
