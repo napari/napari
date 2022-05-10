@@ -1149,33 +1149,6 @@ def test_get_value_ray_3d_transposed():
     assert info.value == 1
 
 
-def test_get_value_ray_2d():
-    """_get_value_ray currently only returns None in 2D
-    (i.e., it shouldn't be used for 2D).
-    """
-    # make a mock mouse event
-    mouse_event = MouseEvent(
-        pos=[25, 25],
-        position=[5, 5],
-        dims_point=[1, 10, 0, 0],
-        dims_displayed=[2, 3],
-        view_direction=[1, 0, 0],
-    )
-    data = np.zeros((5, 20, 20, 20), dtype=int)
-    data[1, 0:10, 0:10, 0:10] = 1
-    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
-
-    # set the dims to the slice with labels, but 2D
-    labels._slice_dims([1, 10, 0, 0], ndisplay=2)
-
-    value = labels._get_label_ids_along_ray(
-        start_point=np.empty([]),
-        end_point=np.empty([]),
-        dims_displayed=mouse_event.dims_displayed,
-    )
-    assert value is None
-
-
 def test_cursor_ray_3d():
     # make a mock mouse event
     mouse_event_1 = MouseEvent(
