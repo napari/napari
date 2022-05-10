@@ -198,11 +198,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         self._events.source = self
         # add event emitters for each field which is mutable
-        field_events = []
-        for name, field in self.__fields__.items():
-            value = getattr(self, name)
-            if hasattr(value, 'events'):
-                field_events.append(name)
+        field_events = [
+            name
+            for name, field in self.__fields__.items()
+            if field.field_info.allow_mutation
+            or field.field_info.extra.get('inplace_mutation', True)
+        ]
 
         self._events.add(
             **dict.fromkeys(field_events + list(self.__property_setters__))
@@ -223,8 +224,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self.__property_setters__[name].fset(self, value)
         elif name in self.__fields__ and self.__fields__[
             name
-        ].field_info.extra.get('inplace_mutation', False):
-            getattr(self, name).__update__(value)
+        ].field_info.extra.get('inplace_mutation', True):
+            try:
+                getattr(self, name).__update__(value)
+            except AttributeError:
+                super().__setattr__(name, value)
         else:
             super().__setattr__(name, value)
 
@@ -267,7 +271,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             elif self.__config__.allow_mutation and (
                 self.__fields__[name].field_info.allow_mutation
                 or self.__fields__[name].field_info.extra.get(
-                    'inplace_mutation', False
+                    'inplace_mutation', True
                 )
             ):
                 setattr(self, name, value)
