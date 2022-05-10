@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Callable, List, Union
 from qtpy.QtWidgets import QAction, QMenu
 
 from ...utils.menus import ActionMenuItem, CheckableMenuItem, Menu
+from ..utils import convert_keybinding_to_shortcut
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
@@ -130,7 +131,9 @@ def populate_menu_view(view: QMenu, model: Menu):
         else:
             # common attributes
             action: QAction = view.addAction(child.label)
-            action.setShortcut(child.keybinding)
+            action.setShortcut(
+                convert_keybinding_to_shortcut(child.keybinding)
+            )
             action.setStatusTip(child.description)
             action.setEnabled(child.enabled)
 
@@ -141,7 +144,16 @@ def populate_menu_view(view: QMenu, model: Menu):
                 # initialize check functionality
                 action.setCheckable(True)
                 action.setChecked(child.checked)
-                # TODO: add callbacks to this
+
+                # add callbacks
+                @action.triggered.connect
+                def onCheck(checked):
+                    child.checked = checked
+
+                @child.events.checked.connect
+                def on_checked():
+                    with child.events.checked.blocker():
+                        action.setChecked(child.checked)
 
 
 class NapariMenu(QMenu):

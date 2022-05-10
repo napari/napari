@@ -481,3 +481,19 @@ def qt_might_be_rich_text(text) -> bool:
         return _Qt.mightBeRichText(text)
     except Exception:
         return bool(RICH_TEXT_PATTERN.search(text))
+
+
+def convert_keybinding_to_shortcut(keybinding: str) -> str:
+    """Convert a napari keybinding to a Qt shortcut.
+
+    Parameters
+    ----------
+    keybinding : str
+        Key combination to convert.
+
+    Returns
+    -------
+    shortcut : str
+        Equivalent Qt shortcut.
+    """
+    return keybinding.replace('-', '+').replace('Control', 'Ctrl')
