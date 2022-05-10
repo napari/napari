@@ -1403,17 +1403,17 @@ class Labels(_ImageBase):
         if len(self._label_index) == 0 or self.features.shape[1] == 0:
             return []
 
-        value = self.get_value(
+        info = self.get_value(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
         )
         # if the cursor is not outside the image or on the background
-        if value is None:
+        if info.value is None:
             return []
 
-        label_value = value[1] if self.multiscale else value
+        label_value = info.value
         if label_value not in self._label_index:
             return [trans._('[No Properties]')]
 
