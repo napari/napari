@@ -19,7 +19,7 @@ from npe2.io_utils import read_get_reader
 from npe2.manifest import PluginManifest
 from npe2.manifest.contributions import MenuCommand, Submenu
 
-from ..components.menu import ActionMenuItem, Menu, MenuItem
+from ..utils.menus import ActionMenuItem, Menu, MenuItem
 from ..utils.translations import trans
 
 if TYPE_CHECKING:

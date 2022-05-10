@@ -2,7 +2,7 @@ from typing import Callable, List, Optional
 
 from pydantic import Field
 
-from ..utils.events import EventedModel
+from .events import EventedModel
 
 
 class MenuItem(EventedModel):
