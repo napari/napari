@@ -149,8 +149,8 @@ def test_value():
     data = np.random.random((10, 15, 20))
     layer = Image(data)
     layer._slice_dims(ndisplay=3)
-    value = layer.get_value((0,) * 3)
-    assert value == data[0, 0, 0]
+    info = layer.get_value((0,) * 3)
+    assert info.value == data[0, 0, 0]
 
 
 def test_message():
