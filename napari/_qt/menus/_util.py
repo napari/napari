@@ -5,6 +5,7 @@ from qtpy.QtWidgets import QAction, QMenu
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
+    from ...components.menu import ActionMenuItem, CheckableMenuItem, Menu
     from ...utils.events import EventEmitter
 
     try:
@@ -103,6 +104,43 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                     action.setChecked(e.value if hasattr(e, 'value') else e)
 
         action.setData(ax)
+
+
+def populate_menu_view(view: QMenu, model: Menu):
+    """Populate a menu view given its model.
+
+    Parameters
+    ----------
+    view : qtpy.QtWidgets.QMenu
+        Qt view to populate.
+    menu : napari.components.menu.Menu
+        Menu model to populate from.
+    """
+    for child in model.children:
+        if isinstance(model, Menu):
+            if child.enabled:
+                # in case of a submenu, recurse
+                submenu: QMenu = view.addMenu(child.label)
+                populate_menu_view(submenu, child)
+            else:
+                submenu_placeholder = view.addAction(child.label)
+                submenu_placeholder.setStatusTip(child.description)
+                submenu_placeholder.setEnabled(False)
+        else:
+            # common attributes
+            action: QAction = view.addAction(child.label)
+            action.setShortcut(child.keybinding)
+            action.setStatusTip(child.description)
+            action.setEnabled(child.enabled)
+
+            if isinstance(child, ActionMenuItem):
+                # add callback to menu item
+                action.triggered.connect(child.action)
+            elif isinstance(child, CheckableMenuItem):
+                # initialize check functionality
+                action.setCheckable(True)
+                action.setChecked(child.checked)
+                # TODO: add callbacks to this
 
 
 class NapariMenu(QMenu):

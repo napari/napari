@@ -415,9 +415,7 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     to_disable.update(disabled)
     plugin_settings.disabled_plugins = to_disable
 
-    # tools_menu = build_tools_menu()
-    # populate qmenu wtih tools menu
-
     for v in Viewer._instances:
+        v.window.tools_menu._build()
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
