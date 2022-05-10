@@ -28,6 +28,8 @@ class ScaleBar(EventedModel):
         then it has the color opposite of this color.
     font_size : float
         The font size (in points) of the text.
+    box : bool
+        If background box is visible or not.
     unit : Optional[str]
         Unit to be used by the scale bar. The value can be set
         to `None` to display no units.
@@ -38,4 +40,5 @@ class ScaleBar(EventedModel):
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
+    box: bool = False
     unit: Optional[str] = None
