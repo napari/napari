@@ -2,7 +2,7 @@
 import bisect
 
 import numpy as np
-from vispy.scene.visuals import Rectangle, Line, Text
+from vispy.scene.visuals import Line, Rectangle, Text
 from vispy.visuals.transforms import STTransform
 
 from ...components._viewer_constants import Position
@@ -50,8 +50,12 @@ class VispyScaleBarOverlay:
         self.text_node.text = f"{1}px"
 
         self.rect_node = Rectangle(
-            center=[0.5, 0.5], width=1.1, height=36,
-            color='#00000099', parent=self.line_node)
+            center=[0.5, 0.5],
+            width=1.1,
+            height=36,
+            color='#00000099',
+            parent=self.line_node,
+        )
         self.rect_node.order = order
         self.rect_node.transform = STTransform()
 
@@ -208,7 +212,9 @@ class VispyScaleBarOverlay:
 
     def _on_visible_change(self):
         """Change visibility of scale bar."""
-        self.rect_node.visible = self._viewer.scale_bar.visible and self._viewer.scale_bar.box
+        self.rect_node.visible = (
+            self._viewer.scale_bar.visible and self._viewer.scale_bar.box
+        )
         self.line_node.visible = self._viewer.scale_bar.visible
         self.text_node.visible = self._viewer.scale_bar.visible
 
