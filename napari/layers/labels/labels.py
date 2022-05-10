@@ -1067,11 +1067,11 @@ class Labels(_ImageBase):
         nonzero_found = len(nonzero_indices) > 0
         first_label_index = nonzero_indices[0] if nonzero_found else None
         first_label = label_ids[first_label_index] if nonzero_found else 0
-        response = LayerDataInfo(
+        info = LayerDataInfo(
             intersection=first_label_index,
             value=first_label,
         )
-        return response
+        return info
 
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)
@@ -1333,13 +1333,13 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a status update.
         """
-        response = self.get_value(
+        info = self.get_value(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
         )
-        msg = generate_layer_status(self.name, position, response)
+        msg = generate_layer_status(self.name, position, info)
 
         # if this labels layer has properties
         properties = self._get_properties(

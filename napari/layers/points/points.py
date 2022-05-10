@@ -1513,12 +1513,12 @@ class Points(Layer):
         )
         indices = np.flatnonzero(in_slice_matches)
         index = self._indices_view[indices[-1]] if len(indices) > 0 else None
-        response = LayerDataInfo(
+        info = LayerDataInfo(
             index=index,
             value=tuple(self.data[index]) if index is not None else None,
             position=position,
         )
-        return response
+        return info
 
     def _get_value_3d(
         self,
@@ -1539,7 +1539,7 @@ class Points(Layer):
 
         Returns
         -------
-        response : LayerDataInfo
+        info : LayerDataInfo
             The index and position of the first point along the ray if present.
         """
         if (start_point is None) or (end_point is None):
@@ -1579,11 +1579,11 @@ class Points(Layer):
             selection = self._indices_view[closest_index]
         else:
             selection = None
-        response = LayerDataInfo(
+        info = LayerDataInfo(
             index=selection,
             value=self.data[selection] if selection else None,
         )
-        return response
+        return info
 
     def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
         """An augmented, axis-aligned (self._ndisplay, 2) bounding box.

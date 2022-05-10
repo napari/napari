@@ -1056,13 +1056,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
 
         if dims_displayed is None and view_direction is None:
-            response = self._get_value_2d(position)
+            info = self._get_value_2d(position)
         elif len(dims_displayed) == 2 or self.ndim == 2:
-            response = self._get_value_2d(position=tuple(position))
+            info = self._get_value_2d(position=tuple(position))
         elif view_direction is None and dims_displayed is not None:
             # this is a guard against a state that only happens during layer
             # setup in 3D
-            response = LayerDataInfo()
+            info = LayerDataInfo()
         else:  # displaying 3 dimensions:
             view_direction = self._world_to_data_ray(list(view_direction))
             start_point, end_point = self.get_ray_intersections(
@@ -1071,15 +1071,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 dims_displayed=dims_displayed,
                 world=False,
             )
-            response = self._get_value_3d(
+            info = self._get_value_3d(
                 start_point=start_point,
                 end_point=end_point,
                 dims_displayed=dims_displayed,
             )
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
-        self._value = response.index
-        return response
+        self._value = info.index
+        return info
 
     def _get_value_3d(
         self,
@@ -1624,13 +1624,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        response = self.get_value(
+        info = self.get_value(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
         )
-        return generate_layer_status(self.name, position, response)
+        return generate_layer_status(self.name, position, info)
 
     def _get_tooltip_text(
         self,

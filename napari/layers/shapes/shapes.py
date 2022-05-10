@@ -19,7 +19,7 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.misc import ensure_iterable
 from ...utils.translations import trans
-from .._data_info import ShapesDataQueryResponse
+from .._data_info import ShapesDataInfo
 from ..base import Layer, no_op
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
@@ -2653,7 +2653,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _get_value_2d(self, position) -> ShapesDataQueryResponse:
+    def _get_value_2d(self, position) -> ShapesDataInfo:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -2671,7 +2671,7 @@ class Shapes(Layer):
             if no vertex is found.
         """
         if self._ndisplay == 3 or self._is_moving:
-            return ShapesDataQueryResponse()
+            return ShapesDataInfo()
 
         coord = [position[i] for i in self._dims_displayed]
 
@@ -2679,11 +2679,11 @@ class Shapes(Layer):
         selected_shape_indices = list(self.selected_data)
         if len(selected_shape_indices) == 0:
             shape_index = self._data_view.inside(coord)
-            response = ShapesDataQueryResponse(
+            info = ShapesDataInfo(
                 index=shape_index,
                 position=position,
             )
-            return response
+            return info
 
         if self._mode == Mode.SELECT:
             # Check if inside vertex of interaction box or rotation handle
@@ -2695,11 +2695,11 @@ class Shapes(Layer):
 
             # Check if any matching vertices
             matches = np.all(distances <= vertex_sizes, axis=1).nonzero()
-            response = ShapesDataQueryResponse(
+            info = ShapesDataInfo(
                 index=selected_shape_indices[0],
             )
             if len(matches[0]) > 0:
-                response.vertex_index = matches[0][-1]
+                info.vertex_index = matches[0][-1]
         else:  # [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             # Check if position is inside vertices of shape
             inds = np.isin(
@@ -2710,24 +2710,24 @@ class Shapes(Layer):
             vertex_sizes = self._vertex_size * self.scale_factor / 2
             matches = np.all(distances <= vertex_sizes, axis=1).nonzero()[0]
 
-            response = ShapesDataQueryResponse()
+            info = ShapesDataInfo()
             if len(matches) > 0:
                 index = inds.nonzero()[0][matches[-1]]
                 shape_index = self._data_view.displayed_index[index]
-                response.index = shape_index
+                info.index = shape_index
                 vals, idx = np.unique(
                     self._data_view.displayed_index, return_index=True
                 )
                 shape_in_list = list(vals).index(shape_index)
-                response.vertex_index = index - idx[shape_in_list]
-        return response
+                info.vertex_index = index - idx[shape_in_list]
+        return info
 
     def _get_value_3d(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> ShapesDataQueryResponse:
+    ) -> ShapesDataInfo:
         """Get the information about layer data index along a ray.
 
         Parameters
@@ -2741,7 +2741,7 @@ class Shapes(Layer):
 
         Returns
         -------
-        response: ShapesDataQueryResponse
+        info: ShapesDataInfo
             Information about the first label along a ray.
         """
         index, intersection = self._get_index_and_intersection(
@@ -2749,8 +2749,8 @@ class Shapes(Layer):
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        response = ShapesDataQueryResponse(index=index, position=intersection)
-        return response
+        info = ShapesDataInfo(index=index, position=intersection)
+        return info
 
     def _get_index_and_intersection(
         self,

@@ -73,13 +73,13 @@ def _check_subpixel_values(layer, val_dict):
                         view_direction = np.asarray([1.0, 0, 0])
                         dims_displayed = [0, 1, 2]
 
-                response = layer.get_value(
+                info = layer.get_value(
                     position=position,
                     view_direction=view_direction,
                     dims_displayed=dims_displayed,
                     world=False,
                 )
-                assert response.value == expected_value
+                assert info.value == expected_value
 
 
 @pytest.mark.parametrize('ImageClass', [Image, Labels])

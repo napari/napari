@@ -269,12 +269,12 @@ class Tracks(Layer):
             Index of track that is at the current coordinate if any.
         """
         index = self._manager.get_value(np.array(position))
-        response = LayerDataInfo(
+        info = LayerDataInfo(
             index=index,
             position=position,
             value=tuple(self.data[index]) if index is not None else None,
         )
-        return response
+        return info
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

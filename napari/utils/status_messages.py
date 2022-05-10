@@ -43,7 +43,7 @@ def status_format(value):
         return str(value)
 
 
-def generate_layer_status(name, position, response) -> str:
+def generate_layer_status(name, position, info) -> str:
     """Generate a status message based on the coordinates and value
 
     Parameters
@@ -51,8 +51,8 @@ def generate_layer_status(name, position, response) -> str:
     name : str
         Name of the layer.
     position : tuple or list
-        List of coordinates, say of the cursor.
-    response : LayerDataInfo
+        Position, say of the cursor, in world coordinates.
+    info : LayerDataInfo
         The value to be printed.
 
     Returns
@@ -64,5 +64,5 @@ def generate_layer_status(name, position, response) -> str:
 
     msg = f'{name} {full_coord}'
 
-    layer_msg = f': {status_format(response.index)}, {status_format(response.value)}, {status_format(response.position)}'
+    layer_msg = f': {status_format(info.index)}, {status_format(info.value)}, {status_format(info.position)}'
     return msg + layer_msg

@@ -22,7 +22,7 @@ class LayerDataInfo(BaseModel):
     position: Optional[Tuple[float, ...]]
 
 
-class ShapesDataQueryResponse(LayerDataInfo):
+class ShapesDataInfo(LayerDataInfo):
     """A LayerDataInfo with an additional field for vertex index."""
 
     vertex_index: Optional[int]

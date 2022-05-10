@@ -513,8 +513,8 @@ def test_value():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    response = layer.get_value((0,) * 2)
-    assert response.value == data[0, 0]
+    info = layer.get_value((0,) * 2)
+    assert info.value == data[0, 0]
 
 
 @pytest.mark.parametrize(
@@ -526,7 +526,7 @@ def test_value():
     ],
 )
 def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return an empty response in 3D"""
+    """Currently get_value should return an empty info in 3D"""
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
