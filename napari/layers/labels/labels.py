@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
+from napari.utils.misc import _is_array_type
+
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -113,6 +115,9 @@ class Labels(_ImageBase):
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
+    depiction : str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -126,7 +131,7 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    experimental_slicing_plane : dict or SlicingPlane
+    plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -201,7 +206,7 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    experimental_slicing_plane : SlicingPlane
+    plane : SlicingPlane
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
@@ -234,10 +239,11 @@ class Labels(_ImageBase):
         opacity=0.7,
         blending='translucent',
         rendering='iso_categorical',
+        depiction='volume',
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ):
         if name is None and data is not None:
@@ -262,6 +268,7 @@ class Labels(_ImageBase):
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering=rendering,
+            depiction=depiction,
             iso_threshold=0,
             name=name,
             metadata=metadata,
@@ -275,7 +282,7 @@ class Labels(_ImageBase):
             visible=visible,
             multiscale=multiscale,
             cache=cache,
-            experimental_slicing_plane=experimental_slicing_plane,
+            plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -289,6 +296,7 @@ class Labels(_ImageBase):
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
+            features=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -405,6 +413,11 @@ class Labels(_ImageBase):
         self.refresh()
         self.events.selected_label()
 
+    @_ImageBase.colormap.setter
+    def colormap(self, colormap):
+        super()._set_colormap(colormap)
+        self._selected_color = self.get_color(self.selected_label)
+
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
@@ -457,6 +470,7 @@ class Labels(_ImageBase):
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
         self.events.properties()
+        self.events.features()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -584,7 +598,8 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
-                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'depiction': self.depiction,
+                'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
@@ -633,11 +648,11 @@ class Labels(_ImageBase):
                 custom_colormap,
                 label_color_index,
             ) = color_dict_to_colormap(self.color)
-            self.colormap = custom_colormap
+            super()._set_colormap(custom_colormap)
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
-            self.colormap = self._random_colormap
+            super()._set_colormap(self._random_colormap)
 
         else:
             raise ValueError(trans._("Unsupported Color Mode"))
@@ -1190,9 +1205,12 @@ class Labels(_ImageBase):
                     j += 1
                 else:
                     match_indices.append(np.full(n_idx, d, dtype=np.intp))
-            match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
+
+        match_indices = _coerce_indices_for_vectorization(
+            self.data, match_indices
+        )
 
         self._save_history(
             (
@@ -1262,18 +1280,7 @@ class Labels(_ImageBase):
         else:
             slice_coord = slice_coord_temp
 
-        slice_coord = tuple(slice_coord)
-
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-
-            if isinstance(self.data, xr.DataArray):
-                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
-        except ImportError:
-            pass
+        slice_coord = _coerce_indices_for_vectorization(self.data, slice_coord)
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
@@ -1429,3 +1436,18 @@ if config.async_octree:
 
     class Labels(Labels, _OctreeImageBase):
         pass
+
+
+def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
+    if _is_array_type(array, 'xarray.DataArray'):
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
+
+            return tuple(xr.DataArray(i) for i in indices)
+        except ModuleNotFoundError:
+            pass
+    return tuple(indices)

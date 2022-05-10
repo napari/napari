@@ -1,43 +1,42 @@
-from typing import Tuple
+from typing import Union
 
 import numpy as np
 from vispy.scene.visuals import Text
 
+from napari.layers import Points, Shapes
+from napari.layers.utils.string_encoding import ConstantStringEncoding
+
 
 def update_text(
-    text_values: np.ndarray,
-    coords: np.ndarray,
-    anchor: Tuple[str, str],
-    rotation: float,
-    color: np.ndarray,
-    size: float,
-    ndisplay: int,
-    text_node: Text,
+    *,
+    node: Text,
+    layer: Union[Points, Shapes],
 ):
-    """Update the vispy text node with the current text and display parameters.
+    """Update the vispy text node with a layer's text parameters.
 
     Parameters
     ----------
-    text_values : np.ndarray
-        The array of text strings to display.
-    coords : np.ndarray
-        The coordinates for each text element.
-    anchor : Tuple[str, str]
-        The name of the vispy anchor positions provided as (anchor_x, anchor_y).
-        anchor_x should be one of: 'left', 'center', 'right'.
-        anchor_y should be one of: 'top', 'center', 'middle', 'baseline', 'bottom'.
-    rotation : float
-        The rotation (degrees) of the text element around its anchor.
-    color : np.ndarray
-        The color of the text in an RGBA array.
-    size : float
-        The size of the font in points.
-    ndisplay : int
-        The number of dimensions displayed in the viewer.
-    text_node : vispy.scene.visuals.Text
+    node : vispy.scene.visuals.Text
         The text node to be updated.
+    layer : Union[Points, Shapes]
+        A layer with text.
     """
 
+    ndisplay = layer._ndisplay
+
+    # Vispy always needs non-empty values and coordinates, so if a layer
+    # effectively has no visible text then return single dummy data.
+    # This also acts as a minor optimization.
+    if _has_visible_text(layer):
+        text_values = layer._view_text
+        coords, anchor_x, anchor_y = layer._view_text_coords
+    else:
+        text_values = np.array([''])
+        coords = np.zeros((1, ndisplay))
+        anchor_x = 'center'
+        anchor_y = 'center'
+
+    # Vispy wants (x, y) positions instead of (row, column) coordinates.
     if ndisplay == 2:
         positions = np.flip(coords, axis=1)
     elif ndisplay == 3:
@@ -51,9 +50,25 @@ def update_text(
         else:
             positions = raw_positions
 
-    text_node.text = text_values
-    text_node.pos = positions
-    text_node.anchors = anchor
-    text_node.rotation = rotation
-    text_node.color = color
-    text_node.font_size = size
+    node.text = text_values
+    node.pos = positions
+    node.anchors = (anchor_x, anchor_y)
+
+    text_manager = layer.text
+    node.rotation = text_manager.rotation
+    node.color = text_manager.color
+    node.font_size = text_manager.size
+
+
+def _has_visible_text(layer: Union[Points, Shapes]) -> bool:
+    text = layer.text
+    if not text.visible:
+        return False
+    if (
+        isinstance(text.string, ConstantStringEncoding)
+        and text.string.constant == ''
+    ):
+        return False
+    if len(layer._indices_view) == 0:
+        return False
+    return True

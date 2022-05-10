@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
 from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
 
 from ..utils.events import EmitterGroup, EventedModel
@@ -101,10 +102,13 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         super().__init__(**values)
         self._config_path = _cfg
 
-    def _on_sub_event(self, event, field=None):
-        super()._on_sub_event(event, field)
+    def _maybe_save(self):
         if self._save_on_change and self.config_path:
             self.save()
+
+    def _on_sub_event(self, event, field=None):
+        super()._on_sub_event(event, field)
+        self._maybe_save()
 
     @property
     def config_path(self):
@@ -138,7 +142,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             self._remove_env_settings(data)
         return data
 
-    def _save_dict(self, **dict_kwargs):
+    def _save_dict(self, **dict_kwargs: Any) -> DictStrAny:
         """The minimal dict representation that will be persisted to disk.
 
         By default, this will exclude settings values that match the default
@@ -239,9 +243,15 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             return (  # type: ignore [return-value]
                 init_settings,
                 cls._env_settings,
-                config_file_settings_source,
+                cls._config_file_settings_source,
                 file_secret_settings,
             )
+
+        @classmethod
+        def _config_file_settings_source(
+            cls, settings: EventedConfigFileSettings
+        ) -> Dict[str, Any]:
+            return config_file_settings_source(settings)
 
 
 # Utility functions
@@ -297,6 +307,19 @@ def nested_env_settings(
                         env_val = env_vars.get(f'{env_name}_{subf.name}')
                         if env_val is not None:
                             break
+
+                is_complex, all_json_fail = super_eset.field_is_complex(subf)
+                if env_val is not None and is_complex:
+                    try:
+                        env_val = settings.__config__.json_loads(env_val)
+                    except ValueError as e:
+                        if not all_json_fail:
+                            msg = f'error parsing JSON for "{env_name}"'
+                            raise SettingsError(msg) from e
+
+                    if isinstance(env_val, dict):
+                        explode = super_eset.explode_env_vars(field, env_vars)
+                        env_val = deep_update(env_val, explode)
 
                 # if we found an env var, store it and return it
                 if env_val is not None:

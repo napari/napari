@@ -19,6 +19,7 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
+from ..utils._injection import inject_napari_dependencies
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
 from .base.base import Layer
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from . import Image
 
 
+@inject_napari_dependencies
 def _duplicate_layer(ll: LayerList):
     from copy import deepcopy
 
@@ -40,6 +42,7 @@ def _duplicate_layer(ll: LayerList):
         ll.insert(ll.index(lay) + 1, new)
 
 
+@inject_napari_dependencies
 def _split_stack(ll: LayerList, axis: int = 0):
     layer = ll.selection.active
     if not layer:
@@ -53,6 +56,7 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.selection = set(images)  # type: ignore
 
 
+@inject_napari_dependencies
 def _project(ll: LayerList, axis: int = 0, mode='max'):
     layer = ll.selection.active
     if not layer:
@@ -67,18 +71,30 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=True),)
+    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
     layer = cast('Image', layer)
+    # get the meta data of the layer, but without transforms
     meta = {
-        **layer._get_base_state(),
-        'name': f'{layer} {mode}-proj',
-        'colormap': layer.colormap.name,
-        'rendering': layer.rendering,
+        key: layer._get_base_state()[key]
+        for key in layer._get_base_state()
+        if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
     }
+    meta.update(
+        {
+            'name': f'{layer} {mode}-proj',
+            'colormap': layer.colormap.name,
+            'rendering': layer.rendering,
+        }
+    )
     new = Layer.create(data, meta, layer._type_string)
+    # add transforms from original layer, but drop the axis of the projection
+    new._transforms = layer._transforms.set_slice(
+        [ax for ax in range(0, layer.ndim) if ax != axis]
+    )
     ll.append(new)
 
 
+@inject_napari_dependencies
 def _convert_dtype(ll: LayerList, mode='int64'):
     layer = ll.selection.active
     if not layer:
@@ -116,12 +132,24 @@ def _convert(ll: LayerList, type_: str):
             data = lay.to_labels()
         else:
             data = lay.data.astype(int) if type_ == 'labels' else lay.data
-        new_layer = Layer.create(data, {'name': lay.name}, type_)
+        new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
 
+@inject_napari_dependencies
+def _convert_to_labels(ll: LayerList):
+    return _convert(ll, 'labels')
+
+
+@inject_napari_dependencies
+def _convert_to_image(ll: LayerList):
+    return _convert(ll, 'image')
+
+
+@inject_napari_dependencies
 def _merge_stack(ll: LayerList, rgb=False):
-    selection = list(ll.selection)
+    # force selection to follow LayerList ordering
+    selection = [layer for layer in ll if layer in ll.selection]
     for layer in selection:
         ll.remove(layer)
     if rgb:
@@ -131,11 +159,13 @@ def _merge_stack(ll: LayerList, rgb=False):
     ll.append(new)
 
 
+@inject_napari_dependencies
 def _toggle_visibility(ll: LayerList):
     for lay in ll.selection:
         lay.visible = not lay.visible
 
 
+@inject_napari_dependencies
 def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
 
@@ -228,7 +258,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         },
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
-            'action': partial(_convert, type_='labels'),
+            'action': _convert_to_labels,
             'enable_when': (
                 LLCK.only_images_selected | LLCK.only_shapes_selected
             ),
@@ -236,7 +266,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
-            'action': partial(_convert, type_='image'),
+            'action': _convert_to_image,
             'enable_when': LLCK.only_labels_selected,
             'show_when': True,
         },

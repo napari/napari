@@ -300,7 +300,7 @@ DARK = Theme(
     warning='rgb(153, 18, 31)',
     current='rgb(0, 122, 204)',
     syntax_style='native',
-    console='rgb(0, 0, 0)',
+    console='rgb(18, 18, 18)',
     canvas='black',
 )
 LIGHT = Theme(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -26,6 +26,13 @@ from ._image_constants import (
     Interpolation,
     Interpolation3D,
     Mode,
+    VolumeDepiction,
+)
+from ._image_mouse_bindings import (
+    move_plane_along_normal as plane_drag_callback,
+)
+from ._image_mouse_bindings import (
+    set_plane_position as plane_double_click_callback,
 )
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -73,6 +80,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
+    depiction : str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     iso_threshold : float
         Threshold for isosurface.
     attenuation : float
@@ -119,7 +129,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    experimental_slicing_plane : dict or SlicingPlane
+    plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -175,13 +185,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
+    depiction : str
+        3D Depiction mode used by vispy. Must be one of our supported modes.
     iso_threshold : float
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
-    experimental_slicing_plane : SlicingPlane or dict
+    plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
-        {'position', 'normal', 'thickness', and 'enabled'}.
+        {'position', 'normal', 'thickness'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
@@ -221,7 +233,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        depiction='volume',
+        plane=None,
         experimental_clipping_planes=None,
     ):
         if name is None and data is not None:
@@ -273,6 +286,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             mode=Event,
             interpolation=Event,
             rendering=Event,
+            depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
         )
@@ -309,9 +323,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._experimental_slicing_plane = SlicingPlane(
-            thickness=1, enabled=False
-        )
+        self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
         self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
@@ -328,7 +340,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-        self.colormap = colormap
+        # using self.colormap = colormap uses the setter in *derived* classes,
+        # where the intention here is to use the base setter, so we use the
+        # _set_colormap method. This is important for Labels layers, because
+        # we don't want to use get_color before set_view_slice has been
+        # triggered (self._update_dims(), below).
+        self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation = {
             2: Interpolation.NEAREST,
@@ -340,9 +357,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
-        if experimental_slicing_plane is not None:
-            self.experimental_slicing_plane = experimental_slicing_plane
-            self.experimental_slicing_plane.update(experimental_slicing_plane)
+        self.depiction = depiction
+        if plane is not None:
+            self.plane = plane
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -517,12 +534,59 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
-    def experimental_slicing_plane(self):
-        return self._experimental_slicing_plane
+    def depiction(self):
+        """The current 3D depiction mode.
 
-    @experimental_slicing_plane.setter
-    def experimental_slicing_plane(self, value: Union[dict, SlicingPlane]):
-        self._experimental_slicing_plane.update(value)
+        Selects a preset depiction mode in vispy
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
+                plane position, normal, and thickness are attributes of
+                layer.plane which can be modified directly.
+        """
+        return str(self._depiction)
+
+    @depiction.setter
+    def depiction(self, depiction: Union[str, VolumeDepiction]):
+        """Set the current 3D depiction mode."""
+        self._depiction = VolumeDepiction(depiction)
+        self._update_plane_callbacks()
+        self.events.depiction()
+
+    def _reset_plane_parameters(self):
+        """Set plane attributes to something valid."""
+        self.plane.position = np.array(self.data.shape) / 2
+        self.plane.normal = (1, 0, 0)
+
+    def _update_plane_callbacks(self):
+        """Set plane callbacks depending on depiction mode."""
+        plane_drag_callback_connected = (
+            plane_drag_callback in self.mouse_drag_callbacks
+        )
+        double_click_callback_connected = (
+            plane_double_click_callback in self.mouse_double_click_callbacks
+        )
+        if self.depiction == VolumeDepiction.VOLUME:
+            if plane_drag_callback_connected:
+                self.mouse_drag_callbacks.remove(plane_drag_callback)
+            if double_click_callback_connected:
+                self.mouse_double_click_callbacks.remove(
+                    plane_double_click_callback
+                )
+        elif self.depiction == VolumeDepiction.PLANE:
+            if not plane_drag_callback_connected:
+                self.mouse_drag_callbacks.append(plane_drag_callback)
+            if not double_click_callback_connected:
+                self.mouse_double_click_callbacks.append(
+                    plane_double_click_callback
+                )
+
+    @property
+    def plane(self):
+        return self._plane
+
+    @plane.setter
+    def plane(self, value: Union[dict, SlicingPlane]):
+        self._plane.update(value)
 
     @property
     def loaded(self):
@@ -815,7 +879,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
-            downsampled = downsampled ** self.gamma
+            downsampled = downsampled**self.gamma
             color_array = self.colormap.map(downsampled.ravel())
             colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
@@ -849,8 +913,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self._dims_displayed], shape)):
-            value = raw[tuple(coord[self._dims_displayed])]
+        if self.ndim < len(coord):
+            # handle 3D views of 2D data by omitting extra coordinate
+            offset = len(coord) - len(shape)
+            coord = coord[[d + offset for d in self._dims_displayed]]
+        else:
+            coord = coord[self._dims_displayed]
+
+        if all(0 <= c < s for c, s in zip(coord, shape)):
+            value = raw[tuple(coord)]
         else:
             value = None
 
@@ -858,6 +929,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+        """Adjust position for offset between viewer and data coordinates.
+
+        VisPy considers the coordinate system origin to be the canvas corner,
+        while napari considers the origin to be the **center** of the corner
+        pixel. To get the correct value under the mouse cursor, we need to
+        shift the position by 0.5 pixels on each axis.
+        """
+        return [p + 0.5 for p in position]
 
     # For async we add an on_chunk_loaded() method.
     if config.async_loading:
@@ -930,7 +1011,8 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
-                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'depiction': self.depiction,
+                'plane': self.plane.dict(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,

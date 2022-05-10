@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 from typing import List
@@ -15,23 +14,11 @@ from napari.utils.misc import all_subclasses
 
 try:
     import qtpy  # noqa
-except ImportError:
+except ModuleNotFoundError:
     pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
 except RuntimeError:
     pytest.skip(
         'Cannot test magicgui without Qt bindings.', allow_module_level=True
-    )
-
-
-if (
-    os.getenv("CI")
-    and sys.platform.startswith("linux")
-    and sys.version_info[:2] == (3, 7)
-    and qtpy.API_NAME == 'PySide2'
-):
-    pytest.skip(
-        "magicgui tests and example tests causing segfault",
-        allow_module_level=True,
     )
 
 

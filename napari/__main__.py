@@ -12,8 +12,6 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-import napari.plugins._npe2 as _npe2
-
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
@@ -25,10 +23,9 @@ class InfoAction(argparse.Action):
         from .plugins import plugin_manager
 
         plugin_manager.discover_widgets()
-        errors = plugin_manager.get_errors()
-        if errors:
+        if errors := plugin_manager.get_errors():
             names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
+            print("\n!!  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
             print("\n".join(f"  - {n}" for n in names))
         sys.exit()
@@ -43,9 +40,8 @@ class PluginInfoAction(argparse.Action):
         plugin_manager.discover_widgets()
         print(plugin_manager)
 
-        errors = plugin_manager.get_errors()
-        if errors:
-            print("‼️  Some errors occurred:")
+        if errors := plugin_manager.get_errors():
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
@@ -95,7 +91,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     from napari.components.viewer_model import valid_add_kwargs
 
-    out: Dict[str, Any] = dict()
+    out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, arg in enumerate(unknown):
         if not arg.startswith("--"):
@@ -284,7 +280,7 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import plugin_manager
+            from .plugins import _npe2, plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
@@ -443,7 +439,7 @@ def main():
             warnings.warn(msg)
 
     # Prevent https://github.com/napari/napari/issues/3415
-    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+    if sys.platform == "darwin":
         import multiprocessing
 
         multiprocessing.set_start_method('fork')

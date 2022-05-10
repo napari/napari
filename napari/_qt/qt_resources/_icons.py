@@ -133,6 +133,41 @@ def _compile_qrc_pyqt6(qrc) -> bytes:
     # raise NotImplementedError('pyrcc discontinued on Pyqt6')
 
 
+def _find_pyside2_rcc() -> Iterable[Tuple[str, str]]:
+    """
+    Return possible search paths for (pyside2-)rcc.
+
+    Note pyside2-rcc needs to be checked before the
+    "pure" rcc so we don't take an older qt's rcc
+    by mistake (with no -g support).
+
+    The binaries can be found in PySide2's directory
+    under site-packages (pip installs), or under a
+    directory immediately under sys.prefix (conda installs).
+    This subdirectory is platform dependent: `bin/` on Unix,
+    `Scripts/` (sometimes `Library/bin/` too) on Windows.
+    """
+    import sys
+    from itertools import product
+
+    import PySide2
+
+    if os.name == 'nt':
+        executables = ('pyside2-rcc.exe', 'rcc.exe')
+        directories = (
+            Path(PySide2.__file__).parent,
+            Path(sys.prefix, 'Scripts'),
+            Path(sys.prefix, 'Library', 'bin'),
+        )
+    else:
+        executables = ('pyside2-rcc', 'rcc')
+        directories = (
+            Path(PySide2.__file__).parent,
+            Path(sys.executable).parent,
+        )
+    return product(directories, executables)
+
+
 def _compile_qrc_pyside2(qrc) -> bytes:
     """Compile qrc file using the PySide2 method.
 
@@ -141,29 +176,31 @@ def _compile_qrc_pyside2(qrc) -> bytes:
     """
     from subprocess import CalledProcessError, run
 
-    import PySide2
-
-    pyside_root = Path(PySide2.__file__).parent
-
-    if os.name == 'nt':
-        look_for = ('rcc.exe', 'pyside2-rcc.exe')
-    else:
-        look_for = ('rcc', 'pyside2-rcc')
-
-    for bin in look_for:
-        if (pyside_root / bin).exists():
-            cmd = [str(pyside_root / bin)]
-            if 'pyside2' not in bin:
+    for directory, executable in _find_pyside2_rcc():
+        path = Path(directory, executable)
+        if path.exists():
+            cmd = [str(path)]
+            if 'pyside2' not in executable:
                 # the newer pure rcc version requires this for python
                 cmd.extend(['-g', 'python'])
             break
     else:
-        raise RuntimeError(f"PySide2 rcc binary not found in {pyside_root}")
+        raise RuntimeError(
+            "PySide2 rcc binary not found in any of the expected paths: "
+            ", ".join(f"'{Path(*parts)}'" for parts in _find_pyside2_rcc())
+        )
 
     try:
-        return run(cmd + [qrc], check=True, capture_output=True).stdout
+        process = run(cmd + [qrc], capture_output=True)
+        process.check_returncode()
+        return process.stdout
     except CalledProcessError as e:
-        raise RuntimeError(f"Failed to build PySide2 resources {e}")
+        raise RuntimeError(
+            f"Failed to build PySide2 resources!"
+            f"  Exception: {e}\n"
+            f"  Stdout: {process.stdout.decode()}\n"
+            f"  Stderr: {process.stderr.decode()}"
+        )
 
 
 def compile_qrc(qrc) -> bytes:

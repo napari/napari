@@ -59,7 +59,9 @@ def test_changing_model_updates_view(qtbot, layer):
 
 
 @patch.object(QRangeSliderPopup, 'show')
-@pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
+@pytest.mark.parametrize(
+    'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
+)
 def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
     qtctrl = QtBaseImageControls(layer)
@@ -79,15 +81,16 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     rangebtn = qtctrl.clim_popup.findChild(
         QPushButton, "full_clim_range_button"
     )
-    # the data we created above was uint16 for Image, and float for Surface
+    # data in this test is uint16 or int32 for Image, and float for Surface.
     # Surface will not have a "full range button"
     if np.issubdtype(layer.dtype, np.integer):
+        info = np.iinfo(layer.dtype)
         rangebtn.click()
         qtbot.wait(20)
-        assert tuple(layer.contrast_limits_range) == (0, 2 ** 16 - 1)
+        assert tuple(layer.contrast_limits_range) == (info.min, info.max)
         min_ = qtctrl.contrastLimitsSlider.minimum()
         max_ = qtctrl.contrastLimitsSlider.maximum()
-        assert (min_, max_) == (0, 2 ** 16 - 1)
+        assert (min_, max_) == (info.min, info.max)
     else:
         assert rangebtn is None
 
@@ -98,7 +101,7 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
 
     ...across a broad range of orders of magnitude.
     """
-    layer = Image(np.random.rand(20, 20) * 10 ** mag)
+    layer = Image(np.random.rand(20, 20) * 10**mag)
     popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
 
@@ -113,7 +116,7 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
 
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
-    assert popup.slider.singleStep() == 10 ** -decimals
+    assert popup.slider.singleStep() == 10**-decimals
 
 
 def test_qt_image_controls_change_contrast(qtbot):
@@ -122,3 +125,10 @@ def test_qt_image_controls_change_contrast(qtbot):
     qtbot.addWidget(qtctrl)
     qtctrl.contrastLimitsSlider.setValue((0.1, 0.8))
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
+
+
+def test_tensorstore_clim_popup():
+    """Regression to test, makes sure it works with tensorstore dtype"""
+    ts = pytest.importorskip('tensorstore')
+    layer = Image(ts.array(np.random.rand(20, 20)))
+    QContrastLimitsPopup(layer)

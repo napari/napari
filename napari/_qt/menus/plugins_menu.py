@@ -78,10 +78,10 @@ class PluginsMenu(NapariMenu):
         for wdg_name in widgets:
             key = (plugin_name, wdg_name)
             if multiprovider:
-                action = QAction(wdg_name, parent=self)
+                action = QAction(wdg_name.replace("&", "&&"), parent=self)
             else:
                 full_name = menu_item_template.format(*key)
-                action = QAction(full_name, parent=self)
+                action = QAction(full_name.replace("&", "&&"), parent=self)
 
             def _add_toggle_widget(*, key=key, hook_type=hook_type):
                 full_name = menu_item_template.format(*key)
@@ -94,13 +94,9 @@ class PluginsMenu(NapariMenu):
                     return
 
                 if hook_type == 'dock':
-                    dock_widget, _w = self._win.add_plugin_dock_widget(*key)
+                    self._win.add_plugin_dock_widget(*key)
                 else:
-                    dock_widget = self._win._add_plugin_function_widget(*key)
-
-                # Fixes https://github.com/napari/napari/issues/3624
-                dock_widget.setFloating(True)
-                dock_widget.setFloating(False)
+                    self._win._add_plugin_function_widget(*key)
 
             action.setCheckable(True)
             # check that this wasn't added to the menu already

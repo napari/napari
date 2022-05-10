@@ -33,13 +33,13 @@ rect {{fill: {0}; opacity: {1};}}
 </style>"""
 
 
-@lru_cache()
+@lru_cache
 def get_raw_svg(path: str) -> str:
     """Get and cache SVG XML."""
     return Path(path).read_text()
 
 
-@lru_cache()
+@lru_cache
 def get_colorized_svg(
     path_or_xml: Union[str, Path], color: str = None, opacity=1
 ) -> str:

@@ -1,6 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
+from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -26,6 +27,35 @@ class LayerList(SelectableEventedList[Layer]):
     ----------
     data : iterable
         Iterable of napari.layer.Layer
+
+    Events
+    ------
+    inserting : (index: int)
+        emitted before an item is inserted at ``index``
+    inserted : (index: int, value: T)
+        emitted after ``value`` is inserted at ``index``
+    removing : (index: int)
+        emitted before an item is removed at ``index``
+    removed : (index: int, value: T)
+        emitted after ``value`` is removed at ``index``
+    moving : (index: int, new_index: int)
+        emitted before an item is moved from ``index`` to ``new_index``
+    moved : (index: int, new_index: int, value: T)
+        emitted after ``value`` is moved from ``index`` to ``new_index``
+    changed : (index: int, old_value: T, value: T)
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    changed <OVERLOAD> : (index: slice, old_value: List[_T], value: List[_T])
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    reordered : (value: self)
+        emitted when the list is reordered (eg. moved/reversed).
+    selection.events.changed : (added: Set[_T], removed: Set[_T])
+        emitted when the set changes, includes item(s) that have been added
+        and/or removed from the set.
+    selection.events.active : (value: _T)
+        emitted when the current item has changed.
+    selection.events._current : (value: _T)
+        emitted when the current item has changed. (Private event)
+
     """
 
     def __init__(self, data=()):
@@ -54,6 +84,19 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in event.removed:
             layer._on_selection(False)
 
+    def _process_delete_item(self, item: Layer):
+        item.events.set_data.disconnect(self._clean_cache)
+        self._clean_cache()
+
+    def _clean_cache(self):
+        cached_properties = (
+            'extent',
+            '_extent_world',
+            '_step_size',
+            '_ranges',
+        )
+        [self.__dict__.pop(p, None) for p in cached_properties]
+
     def __newlike__(self, data):
         return LayerList(data)
 
@@ -73,7 +116,7 @@ class LayerList(SelectableEventedList[Layer]):
             Coerced, unique name.
         """
         existing_layers = {x.name for x in self if x is not layer}
-        for i in range(len(self)):
+        for _ in range(len(self)):
             if name in existing_layers:
                 name = inc_name_count(name)
         return name
@@ -87,6 +130,8 @@ class LayerList(SelectableEventedList[Layer]):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        self._clean_cache()
+        new_layer.events.set_data.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def move_selected(self, index, insert):
@@ -119,7 +164,7 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in self.selection:
             layer.visible = not layer.visible
 
-    @property
+    @cached_property
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
@@ -188,7 +233,7 @@ class LayerList(SelectableEventedList[Layer]):
 
         return np.vstack([min_v, max_v])
 
-    @property
+    @cached_property
     def _step_size(self) -> np.ndarray:
         """Ideal step size between planes in world coordinates.
 
@@ -219,7 +264,7 @@ class LayerList(SelectableEventedList[Layer]):
             min_scales = self._step_size_from_scales(scales)
             return min_scales
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
         extent_list = [layer.extent for layer in self]
@@ -229,7 +274,7 @@ class LayerList(SelectableEventedList[Layer]):
             step=self._get_step_size(extent_list),
         )
 
-    @property
+    @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
         """Get ranges for Dims.range in world coordinates.
 

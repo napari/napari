@@ -1,4 +1,7 @@
 """
+Viewer FPS label
+================
+
 Display a 3D volume and the fps label.
 """
 import numpy as np
@@ -15,4 +18,5 @@ viewer.add_image(np.random.random((5, 5, 5)), colormap='red', opacity=0.8)
 viewer.text_overlay.visible = True
 viewer.window.qt_viewer.canvas.measure_fps(callback=update_fps)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

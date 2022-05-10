@@ -1,4 +1,7 @@
 """
+Swap dims
+=========
+
 Display a 4-D image and points layer and swap the displayed dimensions
 """
 
@@ -29,9 +32,10 @@ points = np.array(
     ]
 )
 viewer.add_points(
-    points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
+    points, size=[0, 6, 10, 10], face_color='blue', out_of_slice_display=True
 )
 
 viewer.dims.order = (0, 2, 1, 3)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
