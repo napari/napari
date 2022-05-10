@@ -44,11 +44,11 @@ QMainWindow::separator:hover {
 }
 
 QMainWindow::separator:horizontal {
-  image: url(":/themes/{{ name }}/horizontal_separator.svg");
+  image: url("theme_{{ name }}:/horizontal_separator.svg");
 }
 
 QMainWindow::separator:vertical {
-  image: url(":/themes/{{ name }}/vertical_separator.svg");
+  image: url("theme_{{ name }}:/vertical_separator.svg");
 }
 
 /* ------------- DockWidgets --------- */
@@ -549,7 +549,7 @@ PluginListItem#unavailable {
 
 PluginListItem QCheckBox::indicator:disabled {
   background-color: {{ opacity(foreground, 127) }};
-  image: url(":/themes/{{ name }}/check_50.svg");
+  image: url("theme_{{ name }}:/check_50.svg");
 }
 
 QPushButton#install_button {
