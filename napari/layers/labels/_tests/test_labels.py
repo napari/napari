@@ -347,7 +347,8 @@ def test_multiscale_properties():
     np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
-    current_label = layer.get_value((0, 0))[1]
+    info = layer.get_value((0, 0))
+    current_label = info.value
     layer_message = layer.get_status((0, 0))
     assert layer_message.endswith(f'Class {current_label - 1}')
 
@@ -768,8 +769,8 @@ def test_value():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    value = layer.get_value((0, 0))
-    assert value == data[0, 0]
+    info = layer.get_value((0, 0))
+    assert info.value == data[0, 0]
 
 
 @pytest.mark.parametrize(
@@ -786,13 +787,13 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     data[0:10, 0:10, 0:10] = 1
     layer = Labels(data)
     layer._slice_dims([0, 0, 0], ndisplay=3)
-    value = layer.get_value(
+    info = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value == 1
+    assert info.value == 1
 
 
 def test_message():
@@ -1064,12 +1065,12 @@ def test_get_value_ray_3d():
     # set the dims to the slice with labels
     labels._slice_dims([1, 0, 0, 0], ndisplay=3)
 
-    value = labels._get_label_ids_along_ray(
+    info = labels._get_label_ids_along_ray(
         start_point=np.array([1, 0, 5, 5]),
         end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert value == 1
+    assert info.value == 1
 
     # check with a ray that only goes through background
     value = labels._get_label_ids_along_ray(
@@ -1110,12 +1111,12 @@ def test_get_value_ray_3d_rolled():
     labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
     labels.set_view_slice()
 
-    value = labels._get_label_ids_along_ray(
+    info = labels._get_label_ids_along_ray(
         start_point=np.array([0, 5, 5, 1]),
         end_point=np.array([20, 5, 5, 1]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert value == 1
+    assert info.value == 1
 
 
 def test_get_value_ray_3d_transposed():
@@ -1138,12 +1139,12 @@ def test_get_value_ray_3d_transposed():
     labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
     labels.set_view_slice()
 
-    value = labels._get_label_ids_along_ray(
+    info = labels._get_label_ids_along_ray(
         start_point=np.array([1, 0, 5, 5]),
         end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
     )
-    assert value == 1
+    assert info.value == 1
 
 
 def test_get_value_ray_2d():
