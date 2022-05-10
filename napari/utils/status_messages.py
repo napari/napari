@@ -60,9 +60,17 @@ def generate_layer_status(name, position, info) -> str:
     msg : string
         String containing a message that can be used as a status update.
     """
-    full_coord = np.round(position).astype(int)
+    position_world = np.round(position).astype(int)
 
-    msg = f'{name} {full_coord}'
-
-    layer_msg = f': {status_format(info.index)}, {status_format(info.value)}, {status_format(info.position)}'
-    return msg + layer_msg
+    msg = f'{name} {position_world}'
+    add_layer_info = info.value is not None or info.index is not None
+    if add_layer_info:
+        msg += ': '
+    if info.index:
+        msg += f'{status_format(info.index)}, '
+    if info.value:
+        msg += f'{status_format(info.value)}, '
+    if info.position is not None and add_layer_info:
+        position_data = np.round(info.position).astype(int)
+        msg += f' {status_format(position_data)} '
+    return msg.rstrip(', ')
