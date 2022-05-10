@@ -9,10 +9,10 @@ import logging
 from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
-from layers.base.base import DataQueryResponse
 
 from ....utils.events import Event
 from ....utils.translations import trans
+from ..._data_info import LayerDataInfo
 from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
@@ -87,9 +87,9 @@ class _OctreeImageBase(_ImageBase):
         # this event after super().__init__(). Needs to be cleaned up.
         self._display.loaded_event = self.events.loaded
 
-    def _get_value_2d(self, position) -> DataQueryResponse:
+    def _get_value_2d(self, position) -> LayerDataInfo:
         """Override Image._get_value(position)."""
-        return DataQueryResponse()  # TODO_OCTREE: need to implement this.
+        return LayerDataInfo()  # TODO_OCTREE: need to implement this.
 
     @property
     def loaded(self) -> bool:

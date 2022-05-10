@@ -5,8 +5,8 @@ import numpy as np
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
+from .._data_info import LayerDataInfo
 from ..base import Layer
-from ..base.base import DataQueryResponse
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
@@ -435,7 +435,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def _get_value_2d(self, position) -> DataQueryResponse:
+    def _get_value_2d(self, position) -> LayerDataInfo:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -448,4 +448,4 @@ class Surface(IntensityVisualizationMixin, Layer):
         value : None
             Value of the data at the coord.
         """
-        return DataQueryResponse()
+        return LayerDataInfo()

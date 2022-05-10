@@ -9,8 +9,8 @@ from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
+from .._data_info import LayerDataInfo
 from ..base import Layer
-from ..base.base import DataQueryResponse
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
@@ -776,7 +776,7 @@ class Vectors(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value_2d(self, position) -> DataQueryResponse:
+    def _get_value_2d(self, position) -> LayerDataInfo:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -789,4 +789,4 @@ class Vectors(Layer):
         value : None
             Value of the data at the coord.
         """
-        return DataQueryResponse()
+        return LayerDataInfo()

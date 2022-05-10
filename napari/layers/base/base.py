@@ -10,7 +10,6 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
-from pydantic import BaseModel
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
@@ -26,6 +25,7 @@ from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
+from .._data_info import LayerDataInfo
 from .._source import current_source
 from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
@@ -995,7 +995,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value_2d(self, position) -> DataQueryResponse:
+    def _get_value_2d(self, position) -> LayerDataInfo:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -1017,7 +1017,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world=False,
-    ) -> DataQueryResponse:
+    ) -> LayerDataInfo:
         """Get information about layer data at a 2D position or along a 3D ray.
 
         Parameters
@@ -1036,12 +1036,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        value : DataQueryResponse
+        value : LayerDataInfo
             Object containing result of a query on layer data.
         """
         if not self.visible:
             self._value = None
-            return DataQueryResponse()
+            return LayerDataInfo()
         if world:  # transform position and slice dims displayed
             ndim_world = len(position)
             position = self.world_to_data(position)
@@ -1062,7 +1062,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         elif view_direction is None and dims_displayed is not None:
             # this is a guard against a state that only happens during layer
             # setup in 3D
-            response = DataQueryResponse()
+            response = LayerDataInfo()
         else:  # displaying 3 dimensions:
             view_direction = self._world_to_data_ray(list(view_direction))
             start_point, end_point = self.get_ray_intersections(
@@ -1086,7 +1086,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> DataQueryResponse:
+    ) -> LayerDataInfo:
         """Get the layer data value along a ray
 
         Parameters
@@ -1104,7 +1104,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             The data value along the supplied ray.
 
         """
-        return DataQueryResponse()
+        return LayerDataInfo()
 
     def projected_distance_from_mouse_drag(
         self,
@@ -1779,28 +1779,3 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     layer_type=layer_type,
                 )
             ) from exc
-
-
-class DataQueryResponse(BaseModel):
-    """The result of querying layer data.
-
-    Attributes
-    ----------
-    index: int
-        Index of the first visible object under the cursor.
-    value: int | float
-        Value of data sampled at a cursor position.
-    position: tuple of float
-        2D: position of cursor in data coordinates.
-        3D: position of relevant ray-data intersection in data coordinates.
-    """
-
-    index: Optional[int]
-    value: Optional[Union[float, int, Tuple[float, ...]]]
-    position: Optional[Tuple[float, ...]]
-
-
-class ShapesDataQueryResponse(DataQueryResponse):
-    """A DataQueryResponse with an additional field for vertex index."""
-
-    vertex_index: Optional[int]

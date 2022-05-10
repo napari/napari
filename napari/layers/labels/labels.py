@@ -20,8 +20,8 @@ from ...utils.misc import _is_array_type
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
+from .._data_info import LayerDataInfo
 from ..base import no_op
-from ..base.base import DataQueryResponse
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
@@ -1038,7 +1038,7 @@ class Labels(_ImageBase):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> DataQueryResponse:
+    ) -> LayerDataInfo:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -1057,7 +1057,7 @@ class Labels(_ImageBase):
             non-zero value is not encountered, returns 0 (the background value).
         """
         if start_point is None or end_point is None:
-            return DataQueryResponse()
+            return LayerDataInfo()
         label_ids = self._get_label_ids_along_ray(
             start_point=start_point,
             end_point=end_point,
@@ -1067,7 +1067,7 @@ class Labels(_ImageBase):
         nonzero_found = len(nonzero_indices) > 0
         first_label_index = nonzero_indices[0] if nonzero_found else None
         first_label = label_ids[first_label_index] if nonzero_found else 0
-        response = DataQueryResponse(
+        response = LayerDataInfo(
             intersection=first_label_index,
             value=first_label,
         )

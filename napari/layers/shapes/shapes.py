@@ -19,8 +19,8 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.misc import ensure_iterable
 from ...utils.translations import trans
+from .._data_info import ShapesDataQueryResponse
 from ..base import Layer, no_op
-from ..base.base import ShapesDataQueryResponse
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     normalize_and_broadcast_colors,

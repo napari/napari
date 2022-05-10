@@ -52,7 +52,7 @@ def generate_layer_status(name, position, response) -> str:
         Name of the layer.
     position : tuple or list
         List of coordinates, say of the cursor.
-    response : DataQueryResponse
+    response : LayerDataInfo
         The value to be printed.
 
     Returns

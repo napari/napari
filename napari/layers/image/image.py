@@ -15,10 +15,10 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.naming import magic_name
 from ...utils.translations import trans
+from .._data_info import LayerDataInfo
 from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
 from ..base import Layer, no_op
-from ..base.base import DataQueryResponse
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
@@ -886,7 +886,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value_2d(self, position) -> DataQueryResponse:
+    def _get_value_2d(self, position) -> LayerDataInfo:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -896,7 +896,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         Returns
         -------
-        value : DataQueryResponse
+        value : LayerDataInfo
             Information about data under the cursor.
         """
         if self.multiscale:
@@ -925,7 +925,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = raw[tuple(coord)]
         else:
             value = None
-        response = DataQueryResponse(
+        response = LayerDataInfo(
             position=position,
             value=value,
         )

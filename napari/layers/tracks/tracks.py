@@ -7,8 +7,8 @@ import pandas as pd
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
+from .._data_info import LayerDataInfo
 from ..base import Layer
-from ..base.base import DataQueryResponse
 from ._track_utils import TrackManager
 
 
@@ -253,7 +253,7 @@ class Tracks(Layer):
 
         return
 
-    def _get_value_2d(self, position) -> DataQueryResponse:
+    def _get_value_2d(self, position) -> LayerDataInfo:
         """Value of the data at a position in data coordinates.
 
         Use a kd-tree to lookup the ID of the nearest tree.
@@ -269,7 +269,7 @@ class Tracks(Layer):
             Index of track that is at the current coordinate if any.
         """
         index = self._manager.get_value(np.array(position))
-        response = DataQueryResponse(
+        response = LayerDataInfo(
             index=index,
             position=position,
             value=tuple(self.data[index]) if index is not None else None,
