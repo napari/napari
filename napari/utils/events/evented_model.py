@@ -277,7 +277,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 getattr(self, name).reset()
             elif (
                 self.__config__.allow_mutation
-                or self.__fields__[name].field_info.allow_mutation
+                and self.__fields__[name].field_info.allow_mutation
             ):
                 setattr(self, name, value)
 

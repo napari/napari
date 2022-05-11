@@ -101,6 +101,7 @@ class TypedMutableSequence(MutableSequence[_T]):
                     )
                 )
             # check if the final length and types will be ok
+            value = list(value)
             self._length_check(
                 len(self._list) - len(self._list[key]) + len(value)
             )
@@ -113,6 +114,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self._list.insert(index, self._type_check(value))
 
     def extend(self, values):
+        values = list(values)
         self._length_check(len(self._list) + len(values))
         with self._block_length_check():
             for v in values:

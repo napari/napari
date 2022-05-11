@@ -109,12 +109,6 @@ class _StyleEncodingModel(EventedModel):
         # https://pydantic-docs.helpmanual.io/usage/model_config/#options
         extra = 'forbid'
 
-    # TODO: inplace mutation breaks things, even when it should be fine,
-    # (i.e: when `other` is )for some reason... For now, this fixes it.
-    # an alternative is to disable allow_mutation for the problematic fields
-    # and/or for encondings in general.
-    __update__ = None
-
 
 # The following classes provide generic implementations of common ways
 # to encode style values, like constant, manual, and derived encodings.

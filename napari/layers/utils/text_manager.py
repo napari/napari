@@ -79,6 +79,12 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
+    class Config:
+        # override EventedModel which defaults to 2 (inplace mutation)
+        # note that if we wanted some fields to have inplace mutations and some not,
+        # we would still have to set this to 1 or the global setting would win
+        allow_mutation = 1
+
     string: StringEncoding = ConstantStringEncoding(constant='')
     visible: bool = True
     size: PositiveInt = 12

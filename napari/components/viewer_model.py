@@ -110,18 +110,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Contains axes, indices, dimensions and sliders.
     """
 
-    axes: Axes = Axes()
-    camera: Camera = Camera()
-    cursor: Cursor = Cursor()
-    dims: Dims = Dims()
-    grid: GridCanvas = GridCanvas()
-    layers: LayerList = LayerList()
-    scale_bar: ScaleBar = ScaleBar()
-    text_overlay: TextOverlay = TextOverlay()
-    overlays: Overlays = Overlays()
+    # default factory is still needed to ensure event sources are correct
+    # otherwise, id(viewer.field) != id(viewer.events.field.sources)
+    axes: Axes = Field(default_factory=Axes)
+    camera: Camera = Field(default_factory=Camera)
+    cursor: Cursor = Field(default_factory=Cursor)
+    dims: Dims = Field(default_factory=Dims)
+    grid: GridCanvas = Field(default_factory=GridCanvas)
+    layers: LayerList = Field(default_factory=LayerList)
+    scale_bar: ScaleBar = Field(default_factory=ScaleBar)
+    text_overlay: TextOverlay = Field(default_factory=TextOverlay)
+    overlays: Overlays = Field(default_factory=Overlays)
     help: str = ''
     status: str = 'Ready'
-    tooltip: Tooltip = Tooltip()
+    tooltip: Tooltip = Field(default_factory=Tooltip)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 

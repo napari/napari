@@ -765,8 +765,8 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 @pytest.mark.parametrize(
     'field', ['camera', 'cursor', 'dims', 'grid', 'layers', 'scale_bar']
 )
-def test_not_mutable_fields(field):
-    """Test appropriate fields are not mutable."""
+def test_inplace_mutable_fields(field):
+    """Test appropriate fields are mutable inplace."""
     viewer = ViewerModel()
 
     # Check attribute lives on the viewer
