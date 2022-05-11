@@ -112,4 +112,3 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def __update__(self, other):
         self.clear()
         self.update(other)
-        return self

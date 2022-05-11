@@ -355,4 +355,3 @@ class EventedList(TypedMutableSequence[_T]):
 
     def __update__(self, other):
         self[:] = other
-        return self
