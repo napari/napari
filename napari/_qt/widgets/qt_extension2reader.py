@@ -51,9 +51,15 @@ class Extension2ReaderTable(QWidget):
         instructions = QLabel(
             trans._(
                 'Enter a filename pattern to associate with a reader e.g. "*.tif" for all TIFF files.'
-                + 'Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts.'
-                + '\n\nPreference saving for folder readers is not supported, so these readers are not shown.'
-                + '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
+            )
+            + trans._(
+                'Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts.'
+            )
+            + trans._(
+                '\n\nPreference saving for folder readers is not supported, so these readers are not shown.'
+            )
+            + trans._(
+                '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
             )
         )
         instructions.setWordWrap(True)
