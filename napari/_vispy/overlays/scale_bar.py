@@ -80,7 +80,7 @@ class VispyScaleBarOverlay:
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
         self._viewer.scale_bar.events.font_size.connect(self._on_text_change)
         self._viewer.scale_bar.events.unit.connect(self._on_dimension_change)
-        self._viewer.scale_bar.events.box.connect(self._on_box_visible_change)
+        self._viewer.scale_bar.events.box.connect(self._on_visible_change)
 
         self._on_visible_change()
         self._on_data_change()
@@ -255,10 +255,6 @@ class VispyScaleBarOverlay:
     def _on_text_change(self):
         """Update text information"""
         self.text_node.font_size = self._viewer.scale_bar.font_size
-
-    def _on_box_visible_change(self):
-        """Update box"""
-        self.rect_node.visible = self._viewer.scale_bar.box
 
     def _on_position_change(self, _event=None):
         """Change position of scale bar."""
