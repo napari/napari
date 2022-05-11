@@ -557,20 +557,18 @@ class QPluginList(QListWidget):
         enabled=True,
         npe_version=1,
     ):
+        pkg_name = project_info.name
         # don't add duplicates
-        if (
-            self.findItems(project_info.name, Qt.MatchFixedString)
-            and not plugin_name
-        ):
+        if self.findItems(pkg_name, Qt.MatchFixedString) and not plugin_name:
             return
 
         # including summary here for sake of filtering below.
-        searchable_text = project_info.name + " " + project_info.summary
+        searchable_text = pkg_name + " " + project_info.summary
         item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(
-            package_name=project_info.name,
+            package_name=pkg_name,
             version=project_info.version,
             url=project_info.home_page,
             summary=project_info.summary,
@@ -596,8 +594,6 @@ class QPluginList(QListWidget):
             )
         else:
             widg.help_button.setVisible(False)
-
-        pkg_name = project_info.name
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, pkg_name, action_name)
         )
@@ -605,7 +601,7 @@ class QPluginList(QListWidget):
             lambda: self.handle_action(item, pkg_name, "install", update=True)
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.handle_action(item, project_info.name, "cancel")
+            lambda: self.handle_action(item, pkg_name, "cancel")
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
