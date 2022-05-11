@@ -910,9 +910,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths = [path] if isinstance(path, (Path, str)) else path
 
         if stack:
-            layers = self._open_or_raise_error(
-                paths, kwargs, layer_type, stack
-            )
+            if plugin:
+                layers = self._add_layers_with_plugins(
+                    paths,
+                    kwargs=kwargs,
+                    plugin=plugin,
+                    layer_type=layer_type,
+                    stack=stack,
+                )
+            else:
+                layers = self._open_or_raise_error(
+                    paths, kwargs, layer_type, stack
+                )
             return layers
 
         added: List[Layer] = []  # for layers that get added
