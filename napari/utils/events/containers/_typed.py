@@ -1,4 +1,5 @@
 import logging
+from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -65,8 +66,8 @@ class TypedMutableSequence(MutableSequence[_T]):
         self._lookup = lookup.copy()
         self._min_len = min_len
         self._max_len = max_len
+        self._length_check_blocked = False
         self.extend(data)
-        self._length_check(len(self._list))
 
     def __len__(self) -> int:
         return len(self._list)
@@ -113,7 +114,9 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     def extend(self, values):
         self._length_check(len(self._list) + len(values))
-        self._list.extend([self._type_check(v) for v in values])
+        with self._block_length_check():
+            for v in values:
+                self.append(v)
 
     def __contains__(self, key):
         if type(key) in self._lookup:
@@ -182,6 +185,8 @@ class TypedMutableSequence(MutableSequence[_T]):
         return e
 
     def _length_check(self, length):
+        if self._length_check_blocked:
+            return
         if (
             self._max_len >= 0 and length > self._max_len
         ) or length < self._min_len:
@@ -194,6 +199,12 @@ class TypedMutableSequence(MutableSequence[_T]):
                     mx=self._max_len,
                 )
             )
+
+    @contextmanager
+    def _block_length_check(self):
+        self._length_check_blocked = True
+        yield
+        self._length_check_blocked = False
 
     def __newlike__(self, iterable: Iterable[_T]):
         new = self.__class__()
