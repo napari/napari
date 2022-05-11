@@ -562,7 +562,7 @@ class QtViewer(QSplitter):
         filename, selected_filter = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default,
+            dir=hist[0],  # home dir by default,
             filter=ext_str,
             options=(
                 QFileDialog.DontUseNativeDialog
@@ -676,7 +676,7 @@ class QtViewer(QSplitter):
         filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select file(s)...'),
-            directory=hist[0],
+            dir=hist[0],
             options=(
                 QFileDialog.DontUseNativeDialog
                 if in_ipython()
@@ -698,7 +698,7 @@ class QtViewer(QSplitter):
         filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select files...'),
-            directory=hist[0],  # home dir by default
+            dir=hist[0],  # home dir by default
             options=(
                 QFileDialog.DontUseNativeDialog
                 if in_ipython()
@@ -719,7 +719,7 @@ class QtViewer(QSplitter):
         folder = dlg.getExistingDirectory(
             parent=self,
             caption=trans._('Select folder...'),
-            directory=hist[0],  # home dir by default
+            dir=hist[0],  # home dir by default
             options=(
                 QFileDialog.DontUseNativeDialog
                 if in_ipython()

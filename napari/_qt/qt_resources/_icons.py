@@ -205,7 +205,7 @@ def _compile_qrc_pyside2(qrc) -> bytes:
 
 def compile_qrc(qrc) -> bytes:
     """Compile a qrc file into a resources.py bytes"""
-    if qtpy.API_NAME == 'PyQt6':
+    if qtpy.API_NAME == 'PyQt6' or qtpy.API_NAME == 'PySide6':
         return _compile_qrc_pyqt6(qrc).replace(b'PyQt6', b'qtpy')
     elif qtpy.API_NAME == 'PyQt5':
         return _compile_qrc_pyqt5(qrc).replace(b'PyQt5', b'qtpy')

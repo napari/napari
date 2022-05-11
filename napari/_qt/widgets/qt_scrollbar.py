@@ -18,7 +18,7 @@ class ModifiedScrollBar(QScrollBar):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
         control = self.style().hitTestComplexControl(
-            QStyle.CC_ScrollBar, opt, event.pos(), self
+            QStyle.CC_ScrollBar, opt, event.position().toPoint(), self
         )
         if (
             control == QStyle.SC_ScrollBarAddPage
@@ -32,14 +32,14 @@ class ModifiedScrollBar(QScrollBar):
                 QStyle.CC_ScrollBar, opt, QStyle.SC_ScrollBarSlider, self
             )
             if self.orientation() == Qt.Horizontal:
-                pos = event.pos().x()
+                pos = event.position().toPoint().x()
                 sliderLength = sr.width()
                 sliderMin = gr.x()
                 sliderMax = gr.right() - sliderLength + 1
                 if self.layoutDirection() == Qt.RightToLeft:
                     opt.upsideDown = not opt.upsideDown
             else:
-                pos = event.pos().y()
+                pos = event.position().toPoint().y()
                 sliderLength = sr.height()
                 sliderMin = gr.y()
                 sliderMax = gr.bottom() - sliderLength + 1

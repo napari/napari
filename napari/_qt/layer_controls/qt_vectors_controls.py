@@ -52,10 +52,6 @@ class QtVectorsControls(QtLayerControls):
         self.layer.events.out_of_slice_display.connect(
             self._on_out_of_slice_display_change
         )
-        self.layer.events.edge_color_mode.connect(
-            self._on_edge_color_mode_change
-        )
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
 
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
@@ -76,6 +72,9 @@ class QtVectorsControls(QtLayerControls):
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
         self.edge_color_label = QLabel(trans._('edge color:'))
+        self.layer.events.edge_color_mode.connect(
+            self._on_edge_color_mode_change
+        )
         self._on_edge_color_change()
 
         # dropdown to select the edge color mode
@@ -86,6 +85,7 @@ class QtVectorsControls(QtLayerControls):
             self.change_edge_color_mode
         )
         self.color_mode_comboBox = colorModeComboBox
+        self.layer.events.edge_color.connect(self._on_edge_color_change)
         self._on_edge_color_mode_change()
 
         # line width in pixels

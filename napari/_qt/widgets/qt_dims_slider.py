@@ -464,7 +464,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
         # this is here to intercept Return/Enter keys when editing the FPS
@@ -539,7 +539,7 @@ class QtPlayButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QMouseEvent
             Event from the qt context.
         """
         # using this instead of self.customContextMenuRequested.connect and
