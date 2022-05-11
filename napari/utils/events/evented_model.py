@@ -192,6 +192,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
+        # this custom use of allow mutation behaves as normal (0 is false, 1 and 2 are true)
+        # but allows us to use 2 as a special value meaning "inplace_mutation"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -222,14 +224,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # if so, we use it instead.
         if name in self.__property_setters__:
             self.__property_setters__[name].fset(self, value)
-        elif name in self.__fields__ and self.__fields__[
-            name
-        ].field_info.extra.get('inplace_mutation', True):
-            try:
-                getattr(self, name).__update__(value)
-            except AttributeError:
-                super().__setattr__(name, value)
         else:
+            # do inplace_mutation if possible
+            if name in self.__fields__ and self.__fields__[
+                name
+            ].field_info.extra.get('inplace_mutation', True):
+                field_value = getattr(self, name)
+                try:
+                    value = field_value.__update__(value)
+                except AttributeError:
+                    # does not have __update__ method: do normal mutation
+                    pass
+
             super().__setattr__(name, value)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -316,7 +322,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self.events(Event(self))
 
     def __update__(self, other):
-        self.update(other)
+        """
+        Inplace mutation when possible, otherwise return other
+        """
+        if isinstance(other, (type(self), dict)):
+            self.update(other)
+            return self
+        else:
+            return other
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.

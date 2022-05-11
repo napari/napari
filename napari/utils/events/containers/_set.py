@@ -194,3 +194,4 @@ class EventedSet(MutableSet[_T]):
     def __update__(self, other):
         self.clear()
         self.update(other)
+        return self

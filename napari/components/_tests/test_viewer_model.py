@@ -771,16 +771,14 @@ def test_not_mutable_fields(field):
 
     # Check attribute lives on the viewer
     assert hasattr(viewer, field)
-    # Check attribute does not have an event emitter
-    assert not hasattr(viewer.events, field)
+    # Check attribute has an event emitter
+    assert hasattr(viewer.events, field)
 
-    # Check attribute is not settable
-    with pytest.raises(TypeError) as err:
-        setattr(viewer, field, 'test')
-
-    assert 'has allow_mutation set to False and cannot be assigned' in str(
-        err.value
-    )
+    # Check attribute is settable, inplace
+    old = getattr(viewer, field)
+    setattr(viewer, field, old.copy())
+    new = getattr(viewer, field)
+    assert new is old
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
