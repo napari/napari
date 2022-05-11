@@ -354,4 +354,4 @@ class EventedList(TypedMutableSequence[_T]):
         self.events.reordered(value=self)
 
     def __update__(self, other):
-        self[:] = other
+        self[:] = list(other)

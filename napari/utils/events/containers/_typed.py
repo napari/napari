@@ -31,7 +31,7 @@ class B(MutableSequence[int]):
 
 
 class TypedMutableSequence(MutableSequence[_T]):
-    """List mixin that enforces item type, and enables custom indexing.
+    """List mixin that enforces length and item type, and enables custom indexing.
 
     Parameters
     ----------
@@ -300,6 +300,14 @@ class TypedMutableSequence(MutableSequence[_T]):
     def _ipython_key_completions_(self):
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls._validate_list
+
+    @classmethod
+    def _validate_list(cls, lst):
+        return cls(lst)
 
 
 def _noop(x):
