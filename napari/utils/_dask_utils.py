@@ -60,7 +60,6 @@ def resize_dask_cache(
 
     if nbytes is None and mem_fraction is not None:
         nbytes = virtual_memory().total * mem_fraction
-
     avail = _DASK_CACHE.cache.available_bytes
 
     # if we don't have a cache already, create one.

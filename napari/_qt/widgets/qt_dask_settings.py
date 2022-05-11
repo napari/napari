@@ -1,7 +1,50 @@
-from qtpy.QtCore import Signal
+# import sys
+
+from magicgui import magicgui
+from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
 from napari.utils.translations import trans
+<<<<<<< HEAD
+=======
+
+# from napari.utils.events.custom_types import conint
+
+# from ...utils.translations import trans
+
+
+@magicgui(auto_call=True, layout='horizontal', cache={'min': 0, 'max': 20})
+def dask_settings(dask_enabled=True, cache=15.0) -> int:
+    return {'enabled': dask_enabled, 'cache': cache}
+
+
+class DaskSettings(QObject):
+
+    valueChanged = Signal(dict)
+
+    def __init__(self, description=None):
+        super().__init__()
+        self.widget = dask_settings
+        self._description = description
+
+        self.widget.changed.connect(
+            lambda _: self.valueChanged.emit(_.value())
+        )
+
+    def setDescription(self, value):
+        '''Set description of dask settings widget.
+
+        Parameters
+        ----------
+        value: str
+            Description for dask settings widget.
+        '''
+        self._description = value
+
+    def setToolTip(self, value):
+        self.widget.dask_enabled.tooltip = value
+        self.widget.cache.tooltip = value
+>>>>>>> f495a923 (change to magic gui widget)
 
 
 class QtDaskSettingsWidget(QWidget):

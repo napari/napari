@@ -5,7 +5,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
-from ...._qt.widgets.qt_dask_settings import QtDaskSettingsWidget
+from ...._qt.widgets.qt_dask_settings import QtDaskSettingsWidget, dask_settings, DaskSettings
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
@@ -601,29 +601,38 @@ class HighlightSizePreviewWidget(
         self.opacity.setOpacity(1)
 
 class DaskSettingsWidget(
-    SchemaWidgetMixin, QtDaskSettingsWidget
+    SchemaWidgetMixin, DaskSettings
 ):
     @state_property
-    def state(self) -> int:
-        return self.value()
+    def state(self) -> dict:
+        print('returning state')
+        return self.widget()
 
 
     @state.setter
     def state(self, state: dict):
-        self.setValue(state)
-        # return None
+        print(state)
+        self.widget.dask_enabled.value = state['enabled']
+        self.widget.cache.value = state['cache']
+        # self.setValue(state)
+
+    def test(self, e):
+        print('changing!', e.value())
+        self.on_changed.emit(self.state)
 
     def configure(self):
-        self.valueChanged.connect(self.on_changed.emit)
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
+        self.widget.changed.connect(self.test)
+        # self.opacity = QtWidgets.QGraphicsOpacityEffect(self.widget)
+        # self.widget.setGraphicsEffect(self.opacity)
+        # self.opacity.setOpacity(1)
 
         if 'max_cache' in self.schema:
-            self.setMaximum(self.schema['max_cache'])
+            print('settings max', self.schema['max_cache'])
+            self.widget.cache.max = self.schema['max_cache']
+            # self.setMaximum()
 
-        if "inc" in self.schema:
-            self.setIncrement(self.schema['inc'])
+        # if "inc" in self.schema:
+        #     self.setIncrement(self.schema['inc'])
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property
@@ -728,7 +737,12 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
             widget._name = name
             widget.on_changed.connect(partial(self.widget_on_changed, name))
             label = sub_schema.get("title", name)
-            layout.addRow(label, widget)
+            
+            if label == "Enable Dask":
+                layout.addRow(label, widget.widget.native)
+            else:
+                layout.addRow(label, widget)
+            
             widgets[name] = widget
 
         return widgets
