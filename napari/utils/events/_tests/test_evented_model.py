@@ -11,7 +11,7 @@ from dask.delayed import Delayed
 from pydantic import Field
 from typing_extensions import Protocol, runtime_checkable
 
-from napari.utils.events import EmitterGroup, EventedModel
+from napari.utils.events import EmitterGroup, EventedList, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 
@@ -490,3 +490,31 @@ def test_evented_model_with_property_setters_events():
     t.events.c.assert_called_with(value=[5, 20])
     t.events.b.assert_not_called()
     assert t.c == [5, 20]
+
+
+def test_nested_model():
+    class N(EventedModel):
+        x: int = 1
+
+    class M(EventedModel):
+        ls: EventedList = EventedList([1, 2, 3])
+        n: N = N()
+
+    m = M()
+    assert m.ls == [1, 2, 3]
+    assert m.n == N()
+    assert isinstance(m.ls, EventedList)
+    assert isinstance(m.n, N)
+
+    m = M(ls=[4, 5, 6], n=N(x=12))
+    assert m.ls == [4, 5, 6]
+    assert isinstance(m.ls, EventedList)
+    assert m.n == N(x=12)
+
+    # check inplace update
+    ls = m.ls
+    n = m.n
+    m.ls = [10, 11]
+    m.n = {'x': 3}
+    assert m.ls is ls
+    assert m.n is n
