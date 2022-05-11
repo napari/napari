@@ -653,10 +653,10 @@ class QPluginList(QListWidget):
             widget.set_busy(trans._("cancelling..."), update)
             method((pkg_name,))
 
-    @Slot(PackageMetadata)
+    @Slot(PackageMetadata, bool)
     def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
-        # if not is_available:
-        #     return
+        if not is_available:
+            return
 
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             current = item.version
