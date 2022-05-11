@@ -19,6 +19,7 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
+from ..utils._injection import inject_napari_dependencies
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
 from .base.base import Layer
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from . import Image
 
 
+@inject_napari_dependencies
 def _duplicate_layer(ll: LayerList):
     from copy import deepcopy
 
@@ -40,6 +42,7 @@ def _duplicate_layer(ll: LayerList):
         ll.insert(ll.index(lay) + 1, new)
 
 
+@inject_napari_dependencies
 def _split_stack(ll: LayerList, axis: int = 0):
     layer = ll.selection.active
     if not layer:
@@ -53,6 +56,7 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.selection = set(images)  # type: ignore
 
 
+@inject_napari_dependencies
 def _project(ll: LayerList, axis: int = 0, mode='max'):
     layer = ll.selection.active
     if not layer:
@@ -90,6 +94,7 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     ll.append(new)
 
 
+@inject_napari_dependencies
 def _convert_dtype(ll: LayerList, mode='int64'):
     layer = ll.selection.active
     if not layer:
@@ -131,6 +136,17 @@ def _convert(ll: LayerList, type_: str):
         ll.insert(idx, new_layer)
 
 
+@inject_napari_dependencies
+def _convert_to_labels(ll: LayerList):
+    return _convert(ll, 'labels')
+
+
+@inject_napari_dependencies
+def _convert_to_image(ll: LayerList):
+    return _convert(ll, 'image')
+
+
+@inject_napari_dependencies
 def _merge_stack(ll: LayerList, rgb=False):
     # force selection to follow LayerList ordering
     selection = [layer for layer in ll if layer in ll.selection]
@@ -143,11 +159,13 @@ def _merge_stack(ll: LayerList, rgb=False):
     ll.append(new)
 
 
+@inject_napari_dependencies
 def _toggle_visibility(ll: LayerList):
     for lay in ll.selection:
         lay.visible = not lay.visible
 
 
+@inject_napari_dependencies
 def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
 
@@ -240,7 +258,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         },
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
-            'action': partial(_convert, type_='labels'),
+            'action': _convert_to_labels,
             'enable_when': (
                 LLCK.only_images_selected | LLCK.only_shapes_selected
             ),
@@ -248,7 +266,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
-            'action': partial(_convert, type_='image'),
+            'action': _convert_to_image,
             'enable_when': LLCK.only_labels_selected,
             'show_when': True,
         },

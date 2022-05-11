@@ -28,7 +28,6 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
         dictionary of registered name to display_name
     """
     readers = _npe2.get_readers(filename)
-
     npe1_readers = {}
     for spec, hook_caller in plugin_manager.hooks.items():
         if spec == 'napari_get_reader':

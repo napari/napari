@@ -19,6 +19,7 @@ from typing import (
 )
 
 import numpy as np
+from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
@@ -179,6 +180,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
+        self.cursor.events.position.connect(
+            throttled(self._update_status_bar_from_cursor, timeout=50)
+        )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
@@ -388,6 +392,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for layer in self.layers:
                 layer.position = self.cursor.position
 
+    def _update_status_bar_from_cursor(self, event=None):
+        """Update the status bar based on the current cursor position.
+
+        This is generally used as a callback when cursor.position is updated.
+        """
         # Update status and help bar based on active layer
         active = self.layers.selection.active
         if active is not None:
@@ -805,6 +814,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 data = plugin_manager._sample_data[plugin][sample]['data']
             except KeyError:
                 available += list(plugin_manager.available_samples())
+        # npe2 uri sample data, extract the path so we can use viewer.open
+        elif hasattr(data.__self__, 'uri'):
+            data = data.__self__.uri
 
         if data is None:
             msg = trans._(
@@ -933,7 +945,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: List[Path | str],
+        paths: List[Union[Path, str]],
         kwargs: Dict[str, Any] = {},
         layer_type: Optional[str] = None,
         stack: bool = False,
