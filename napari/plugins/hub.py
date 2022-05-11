@@ -44,8 +44,6 @@ def hub_plugin_info(
     except error.HTTPError:
         return None, False
 
-    print("HELP", info)
-
     version = info["version"]
     norm_name = normalized_name(info["name"])
     is_available_in_conda_forge = True
