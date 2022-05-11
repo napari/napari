@@ -44,6 +44,8 @@ def hub_plugin_info(
     except error.HTTPError:
         return None, False
 
+    print("HELP", info)
+
     version = info["version"]
     norm_name = normalized_name(info["name"])
     is_available_in_conda_forge = True
@@ -56,9 +58,11 @@ def hub_plugin_info(
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
                 versions = anaconda_info.get("versions", [])
-                is_available_in_conda_forge = True
-                if version not in versions:
-                    version = versions[-1]
+                if versions:
+                    if version not in versions:
+                        version = versions[-1]
+
+                    is_available_in_conda_forge = True
         except error.HTTPError:
             pass
 
