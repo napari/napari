@@ -29,7 +29,7 @@ class VispyScaleBarOverlay:
             ]
         )
         self._default_color = np.array([1, 0, 1, 1])
-        self._default_box_color = np.array([0, 0, 0, .6])
+        self._default_box_color = np.array([0, 0, 0, 0.6])
         self._target_length = 150
         self._scale = 1
         self._quantity = None
@@ -55,7 +55,7 @@ class VispyScaleBarOverlay:
             width=1.1,
             height=36,
             color=self._default_box_color,
-            parent=self.line_node
+            parent=self.line_node,
         )
         self.rect_node.order = order
         self.rect_node.transform = STTransform()

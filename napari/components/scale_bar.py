@@ -51,5 +51,7 @@ class ScaleBar(EventedModel):
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     box: bool = False
-    box_color: Optional[Union[str, Array[float, (3,)], Array[float, (4,)]]] = None
+    box_color: Optional[
+        Union[str, Array[float, (3,)], Array[float, (4,)]]
+    ] = None
     unit: Optional[str] = None
