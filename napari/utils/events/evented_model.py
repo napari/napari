@@ -7,6 +7,7 @@ from typing import Any, Callable, ClassVar, Dict, Set, Union
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
+from ...utils.events.containers import View
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
 from .event import EmitterGroup, Event
@@ -94,22 +95,26 @@ class EventedMetaclass(main.ModelMetaclass):
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
                 EventedModel.__config__.json_encoders[f.type_] = encoder
-        # check for @_.setters defined on the class, so we can allow them
-        # in EventedModel.__setattr__
-        cls.__property_setters__ = {}
+        # check for properties defined on the class, so we can allow them
+        # in EventedModel.__setattr__ and eventually enable events for them
+        cls.__properties__ = {}
         for name, attr in namespace.items():
-            if isinstance(attr, property) and attr.fset is not None:
-                cls.__property_setters__[name] = attr
-        cls.__field_dependents__ = _get_field_dependents(cls)
+            if isinstance(attr, property):
+                cls.__properties__[name] = attr
+        comp_fields, dependencies = _get_computed_fields(cls)
+        cls.__computed_fields__ = comp_fields
+        cls.__field_dependencies__ = dependencies
         return cls
 
 
-def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
-    """Return mapping of field name -> dependent set of property names.
+def _get_computed_fields(cls: 'EventedModel') -> Dict[str, Set[str]]:
+    """Return list of computed fields and mapping of dependencies.
 
-    Dependencies may be declared in the Model Config to emit an event
-    for a computed property when a model field that it depends on changes
-    e.g.  (@property 'c' depends on model fields 'a' and 'b')
+    Computed fields may be declared in the Model Config in order to add and
+    hook up events for them, as well as wrapping the return value in Views
+    if the computed field has a property setter.
+
+    For example, if @property 'c' depends on model fields 'a' and 'b':
 
     Examples
     --------
@@ -126,33 +131,21 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
                 self.a, self.b = val
 
             class Config:
-                dependencies={'c': ['a', 'b']}
+                computed_fields = {'c': ['a', 'b']}
     """
-    if not cls.__property_setters__:
-        return {}
-
-    deps: Dict[str, Set[str]] = {}
-
-    _deps = getattr(cls.__config__, 'dependencies', None)
-    if _deps:
-        for prop, fields in _deps.items():
-            if prop not in cls.__property_setters__:
-                raise ValueError(
-                    'Fields with dependencies must be property.setters. '
-                    f'{prop!r} is not.'
-                )
-            for field in fields:
-                if field not in cls.__fields__:
-                    warnings.warn(f"Unrecognized field dependency: {field}")
-                deps.setdefault(field, set()).add(prop)
-    else:
-        # if dependencies haven't been explicitly defined, we can glean
-        # them from the property.fget code object:
-        for prop, setter in cls.__property_setters__.items():
-            for name in setter.fget.__code__.co_names:
-                if name in cls.__fields__:
-                    deps.setdefault(name, set()).add(prop)
-    return deps
+    dependency_map: Dict[str, Set[str]] = {}
+    computed_fields = getattr(cls.__config__, 'computed_fields', {})
+    for prop, fields in computed_fields.items():
+        if prop not in cls.__properties__:
+            raise ValueError(
+                'Fields with dependencies must be properties. '
+                f'{prop!r} is not.'
+            )
+        for field in fields:
+            if field not in cls.__fields__:
+                warnings.warn(f"Unrecognized field dependency: {field}")
+            dependency_map.setdefault(field, set()).add(prop)
+    return list(computed_fields), dependency_map
 
 
 class EventedModel(BaseModel, metaclass=EventedMetaclass):
@@ -166,10 +159,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
 
     # mapping of name -> property obj for methods that are property setters
-    __property_setters__: ClassVar[Dict[str, property]]
+    __properties__: ClassVar[Dict[str, property]]
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
-    __field_dependents__: ClassVar[Dict[str, Set[str]]]
+    __field_dependencies__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
@@ -209,7 +202,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         ]
 
         self._events.add(
-            **dict.fromkeys(field_events + list(self.__property_setters__))
+            **dict.fromkeys(field_events + list(self.__computed_fields__))
         )
 
         # hook up events from children
@@ -219,12 +212,26 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 # TODO: won't track source all the way in?
                 value.events.connect(getattr(self.events, name))
 
+    def __getattribute__(self, name):
+        attr = super().__getattribute__(name)
+        # avoid recursion
+        if name in ('__computed_fields__', '__properties__'):
+            return attr
+        if (
+            name in self.__computed_fields__
+            and self.__properties__[name].fset is not None
+        ):
+            return View(attr, attr=name, parent=self)
+        return attr
+
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
         # so we first check to see if this field has a property.setter.
         # if so, we use it instead.
-        if name in self.__property_setters__:
-            self.__property_setters__[name].fset(self, value)
+        if name in self.__properties__:
+            if self.__properties__[name].fset is None:
+                raise AttributeError(f"can't set attribute '{name}'")
+            self.__properties__[name].fset(self, value)
         elif name in self.__fields__ and (
             self.__config__.allow_mutation == 2
             or self.__fields__[name].field_info.allow_mutation == 2
@@ -258,7 +265,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             getattr(self.events, name)(value=after)  # emit event
 
             # emit events for any dependent computed property setters as well
-            for dep in self.__field_dependents__.get(name, {}):
+            for dep in self.__field_dependencies__.get(name, {}):
                 getattr(self.events, dep)(value=getattr(self, dep))
 
     # expose the private EmitterGroup publically

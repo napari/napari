@@ -9,6 +9,7 @@ from ._selectable_list import (
 from ._selection import Selectable, Selection
 from ._set import EventedSet
 from ._typed import TypedMutableSequence
+from ._view import View
 
 __all__ = [
     'EventedList',
@@ -21,4 +22,5 @@ __all__ = [
     'Selection',
     'TypedMutableSequence',
     'TypedMutableMapping',
+    'View',
 ]

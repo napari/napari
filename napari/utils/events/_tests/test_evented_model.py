@@ -438,6 +438,9 @@ class T(EventedModel):
     a: int = 1
     b: int = 1
 
+    class Config:
+        computed_fields = {'c': ['a', 'b'], 'd': ['a']}
+
     @property
     def c(self) -> List[int]:
         return [self.a, self.b]
@@ -446,13 +449,25 @@ class T(EventedModel):
     def c(self, val: Sequence[int]):
         self.a, self.b = val
 
+    @property
+    def d(self) -> int:
+        return self.a * 3
 
-def test_evented_model_with_property_setters():
+    @property
+    def e(self) -> int:
+        return self.b
+
+
+def test_evented_model_with_properties():
+    assert list(T.__properties__) == ['c', 'd', 'e']
+    assert T.__computed_fields__ == ['c', 'd']
+    assert T.__field_dependencies__ == {'a': {'c', 'd'}, 'b': {'c'}}
+
     t = T()
 
-    assert list(T.__property_setters__) == ['c']
-    # the metaclass should have figured out that both a and b affect c
-    assert T.__field_dependents__ == {'a': {'c'}, 'b': {'c'}}
+    assert 'c' in t.events
+    assert 'd' in t.events
+    assert 'e' not in t.events
 
     # all the fields and properties behave as expected
     assert t.c == [1, 1]
@@ -462,6 +477,13 @@ def test_evented_model_with_property_setters():
     assert t.c == [2, 3]
     assert t.a == 2
     assert t.b == 3
+    t.c[1] = 10
+    assert t.c == [2, 10]
+
+    with pytest.raises(AttributeError):
+        t.d = 12
+    with pytest.raises(AttributeError):
+        t.e = 12
 
 
 def test_evented_model_with_property_setters_events():
