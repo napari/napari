@@ -29,6 +29,7 @@ class VispyScaleBarOverlay:
             ]
         )
         self._default_color = np.array([1, 0, 1, 1])
+        self._default_box_color = np.array([0, 0, 0, .6])
         self._target_length = 150
         self._scale = 1
         self._quantity = None
@@ -51,7 +52,7 @@ class VispyScaleBarOverlay:
 
         self.rect_node = Rectangle(
             center=[0.5, 0.5], width=1.1, height=36,
-            color='#00000099', parent=self.line_node)
+            color=self._default_box_color, parent=self.line_node)
         self.rect_node.order = order
         self.rect_node.transform = STTransform()
 
@@ -67,6 +68,8 @@ class VispyScaleBarOverlay:
         self._viewer.scale_bar.events.visible.connect(self._on_visible_change)
         self._viewer.scale_bar.events.colored.connect(self._on_data_change)
         self._viewer.scale_bar.events.ticks.connect(self._on_data_change)
+        self._viewer.scale_bar.events.box_color.connect(self._on_data_change)
+        self._viewer.scale_bar.events.color.connect(self._on_data_change)
         self._viewer.scale_bar.events.position.connect(
             self._on_position_change
         )
@@ -185,18 +188,37 @@ class VispyScaleBarOverlay:
         self.text_node.text = f'{new_dim:~}'
 
     def _on_data_change(self):
-        """Change color and data of scale bar."""
-        if self._viewer.scale_bar.colored:
+        """Change color and data of scale bar and box."""
+
+        if self._viewer.scale_bar.color is None:
             color = self._default_color
         else:
-            # the reason for using the `as_hex` here is to avoid
-            # `UserWarning` which is emitted when RGB values are above 1
-            background_color = get_theme(
-                self._viewer.theme, False
-            ).canvas.as_hex()
-            background_color = transform_color(background_color)[0]
-            color = np.subtract(1, background_color)
-            color[-1] = background_color[-1]
+            color = self._viewer.scale_bar.color
+
+        if self._viewer.scale_bar.box_color is None:
+            box_color = self._default_box_color
+        else:
+            box_color = transform_color(self._viewer.scale_bar.box_color)
+
+        # transfor_color returns a 2d array !?
+        box_color = box_color.ravel()
+
+        if not self._viewer.scale_bar.colored:
+            if self._viewer.scale_bar.box:
+                # The box is visible - set the scale bar color to the negative of the
+                # box color.
+                color = 1 - box_color
+                color[-1] = 1
+            else:
+                # set scale color negative of theme background.
+                # the reason for using the `as_hex` here is to avoid
+                # `UserWarning` which is emitted when RGB values are above 1
+                background_color = get_theme(
+                    self._viewer.theme, False
+                ).canvas.as_hex()
+                background_color = transform_color(background_color)[0]
+                color = np.subtract(1, background_color)
+                color[-1] = background_color[-1]
 
         if self._viewer.scale_bar.ticks:
             data = self._data
@@ -205,6 +227,7 @@ class VispyScaleBarOverlay:
 
         self.line_node.set_data(data, color)
         self.text_node.color = color
+        self.rect_node.color = box_color
 
     def _on_visible_change(self):
         """Change visibility of scale bar."""

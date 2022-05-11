@@ -1,7 +1,8 @@
 """Scale bar model."""
-from typing import Optional
+from typing import Optional, Union
 
 from ..utils.events import EventedModel
+from ..utils.events.custom_types import Array
 from ._viewer_constants import Position
 
 
@@ -17,6 +18,10 @@ class ScaleBar(EventedModel):
         default color is magenta. If not colored than
         scale bar color is the opposite of the canvas
         background.
+    color : Optional[str | array-like]
+        Scalebar and text color. Can be any color name recognized by vispy or
+        hex value if starting with `#`. If array-like must be 1-dimensional
+        array with 3 or 4 elements.
     ticks : bool
         If scale bar has ticks at ends or not.
     position : str
@@ -30,6 +35,10 @@ class ScaleBar(EventedModel):
         The font size (in points) of the text.
     box : bool
         If background box is visible or not.
+    box_color : Optional[str | array-like]
+        Box color. Can be any color name recognized by vispy or
+        hex value if starting with `#`. If array-like must be 1-dimensional
+        array with 3 or 4 elements.
     unit : Optional[str]
         Unit to be used by the scale bar. The value can be set
         to `None` to display no units.
@@ -37,8 +46,10 @@ class ScaleBar(EventedModel):
 
     visible: bool = False
     colored: bool = False
+    color: Optional[Union[str, Array[float, (3,)], Array[float, (4,)]]] = None
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     box: bool = False
+    box_color: Optional[Union[str, Array[float, (3,)], Array[float, (4,)]]] = None
     unit: Optional[str] = None
