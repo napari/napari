@@ -5,8 +5,6 @@ from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
 from napari.utils.translations import trans
-<<<<<<< HEAD
-=======
 
 # from napari.utils.events.custom_types import conint
 
@@ -44,7 +42,6 @@ class DaskSettings(QObject):
     def setToolTip(self, value):
         self.widget.dask_enabled.tooltip = value
         self.widget.cache.tooltip = value
->>>>>>> f495a923 (change to magic gui widget)
 
 
 class QtDaskSettingsWidget(QWidget):

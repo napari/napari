@@ -5,7 +5,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
-from ...._qt.widgets.qt_dask_settings import QtDaskSettingsWidget, dask_settings, DaskSettings
+from ...._qt.widgets.magic_gui_dask_settings import DaskSettings
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
@@ -605,34 +605,23 @@ class DaskSettingsWidget(
 ):
     @state_property
     def state(self) -> dict:
-        print('returning state')
-        return self.widget()
+        return self._widget()
 
 
     @state.setter
     def state(self, state: dict):
-        print(state)
-        self.widget.dask_enabled.value = state['enabled']
-        self.widget.cache.value = state['cache']
-        # self.setValue(state)
-
-    def test(self, e):
-        print('changing!', e.value())
-        self.on_changed.emit(self.state)
+        self._widget.dask_enabled.value = state['enabled']
+        self._widget.cache.value = state['cache']
+        
 
     def configure(self):
-        self.widget.changed.connect(self.test)
+        self._widget.changed.connect(lambda: self.on_changed.emit(self.state))
         # self.opacity = QtWidgets.QGraphicsOpacityEffect(self.widget)
         # self.widget.setGraphicsEffect(self.opacity)
         # self.opacity.setOpacity(1)
 
         if 'max_cache' in self.schema:
-            print('settings max', self.schema['max_cache'])
-            self.widget.cache.max = self.schema['max_cache']
-            # self.setMaximum()
-
-        # if "inc" in self.schema:
-        #     self.setIncrement(self.schema['inc'])
+            self._widget.cache.max = self.schema['max_cache']
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property
@@ -737,11 +726,14 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
             widget._name = name
             widget.on_changed.connect(partial(self.widget_on_changed, name))
             label = sub_schema.get("title", name)
+
             
-            if label == "Enable Dask":
-                layout.addRow(label, widget.widget.native)
-            else:
+            if isinstance(widget, QtWidgets.QWidget):
                 layout.addRow(label, widget)
+            else: 
+                #this is probably a magic gui widget.
+                layout.addRow(label, widget._widget.native)
+
             
             widgets[name] = widget
 
