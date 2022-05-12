@@ -144,7 +144,7 @@ jobs:
         with:
           name: upload pytest timing reports as json
           path: |
-            ~/report-*.json
+            ./report-*.json
       # this steps display the cached folder size for debug and
       # remove the biggest contenders.
       - name: Display Cache size, and remove largest files from cache.
