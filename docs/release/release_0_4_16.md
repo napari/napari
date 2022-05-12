@@ -18,7 +18,7 @@ For more information, examples, and documentation, please visit our
 
 Prior to `npe2`, file opening with plugins worked through a cascade of function calls trying different readers until one worked, or all failed, in which case an error would be raised. Preferences for readers could be set by reordering hook implementations in the Call Order preference dialog.
 
-This behavior was slow, confusing, and often led to unexpected results. You can see more discussion on this in issue [#4000](https://github.com/napari/napari/issues/4000). `npe2` supports readers declaring a list of accepted filename patterns, and PR [#3799] added a dialog for users to select a plugin to read their file (if more than one was available), and save a preference for that file extension.
+This behavior was slow, confusing, and often led to unexpected results. You can see more discussion on this in issue [#4000](https://github.com/napari/napari/issues/4000). `npe2` supports readers declaring a list of accepted filename patterns, and PR [#3799](https://github.com/napari/napari/pull/3799) added a dialog for users to select a plugin to read their file (if more than one was available), and save a preference for that file extension.
 
 Before removing plugin call order, we want to ensure that file opening behavior is unified across the GUI and the command line, and that users have access to a smooth workflow for choosing plugins and saving preferences.
 
