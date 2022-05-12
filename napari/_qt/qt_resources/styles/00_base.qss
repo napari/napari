@@ -631,7 +631,7 @@ QWidget[emphasized="true"] QTabBar::tab:selected {
 /* ----------------- QLabel ------------------ */
 
 QLabel {
-  background-color: {{ background }};
+  background-color: none;
 }
 
 /* ----------------- QMenuBar ------------------ */

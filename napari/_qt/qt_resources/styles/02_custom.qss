@@ -36,11 +36,11 @@ QMainWindow::separator {
   width: 4px;
   height: 4px;
   border: none;
-  background: transparent;
+  background: {{ background }};
 }
 
 QMainWindow::separator:hover {
-  background: {{ foreground }};
+  background: {{ highlight }};
 }
 
 QMainWindow::separator:horizontal {
@@ -55,10 +55,12 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar {
   padding-top:3px;
+
+  background-color: {{ background }}
 }
 
 #QtCustomTitleBar:hover {
-  background-color: {{ darken(background, 10) }};
+  background-color: {{ foreground }};
 }
 
 #QtCustomTitleBarLine {
