@@ -159,7 +159,7 @@ An initial proposal for the additions to the governance is included below:
 > - Ability to influence the project through the election of the Institutional
 >   and Funding Partner seat on the SC.
 
-The propsed implementation can be found in [PR 4458](https://github.com/napari/napari/pull/4458)
+The proposed implementation can be found in [PR 4458](https://github.com/napari/napari/pull/4458)
 
 ## Backward Compatibility
 
@@ -210,7 +210,7 @@ Agreed, the SC can help promote this rationale.
 
 > Should we require/expect organizing rules of the IFP Advisory Council to happen somewhere in the open?
 
-NAP-1 does not proscribe the rules for the IFP Advisory Council, but does ask them to describe their
+NAP-1 does not prescribe the rules for the IFP Advisory Council, but does ask them to describe their
 processes openly.
 
 

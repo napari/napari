@@ -80,7 +80,7 @@ twitter account, the [napari website](http://napari.org), and other similar napa
 The SC will be no less than three members and no more than five members,
 with a strong preference for an odd number to ensure a simple majority vote
 outcome is always possible, and a preference for five members to ensure a
-diversity of voices. A deadlocked votes of the SC will be postponed until
+diversity of voices. All deadlocked votes of the SC will be postponed until
 there is an odd number of members and another vote can be held. A majority of the
 SC will not be employed by the same entity. One seat on the SC is reserved
 for a member elected by the [Institutional and Funding Partner Advisory Council](institutional-and-funding-partners),
