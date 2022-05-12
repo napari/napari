@@ -310,9 +310,7 @@ def _get_dependencies():
     napari_channels = []
     if _use_local():
         napari_channels.append("local")
-    if ARCH == "arm64":
-        # temporary workaround for missing packages
-        napari_channels.append("andfoy")
+
     napari_channels += _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_channels"]
     )
