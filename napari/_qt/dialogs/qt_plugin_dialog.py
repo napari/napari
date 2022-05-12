@@ -219,6 +219,7 @@ class Installer(QObject):
                 '-y',
                 '--prefix',
                 self._conda_env_path,
+                '--no-shortcuts',
             ]
             for channel in channels:
                 cmd.extend(["-c", channel])
@@ -274,6 +275,7 @@ class Installer(QObject):
                 '-y',
                 '--prefix',
                 self._conda_env_path,
+                '--no-shortcuts',
             ]
 
             for channel in channels:
