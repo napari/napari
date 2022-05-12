@@ -59,7 +59,7 @@ points_layer = viewer.add_points(points, size=30)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="3 points overlaid on an astronaut image")
 ```
 
 ```{code-cell} python
@@ -246,7 +246,7 @@ points_layer = viewer.add_points(
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="3 points overlaid on an astronaut image, where the edge color of the points has been changed to a color cycle")
 ```
 
 ```{code-cell} python
@@ -267,8 +267,8 @@ strings or a (M x 4) array of M RGBA colors).
 
 ### Setting edge or face color with a colormap
 
-Here we will set the face color of the markers with a color cycle on a property.
-To do the same for a face color, substitute `edge_color` for `face_color` in the
+Here we will set the face color of the markers with a colormap on a property.
+To do the same for an edge color, substitute `face` for `edge` in the
 example snippet below.
 
 ```{code-cell} python
@@ -289,7 +289,7 @@ points_layer = viewer.add_points(
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="3 points overlaid on an astronaut image, where the face color of the points has been changed to a colormap")
 ```
 
 ```{code-cell} python
