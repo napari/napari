@@ -70,7 +70,7 @@ labels_layer = viewer.add_labels(label_image, name='segmentation')
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="Segmentation of coins in an image, displayed using a labels layer")
 ```
 
 ```{code-cell} python
@@ -146,7 +146,7 @@ viewer.dims.ndisplay = 3
 # programmatically adjust the camera angle
 viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A 3D view of a labels layer on top of 3D blobs")
 ```
 
 Note though that when entering 3D rendering mode the colorpicker, paintbrush,
