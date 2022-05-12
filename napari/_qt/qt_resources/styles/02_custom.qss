@@ -25,7 +25,7 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
 as long as they are docked (though they use the
 style of QDockWidget when undocked) */
 
-QStatusBar { 
+QStatusBar {
   background: {{ background }};
   color: {{ text }};
 }
@@ -44,11 +44,11 @@ QMainWindow::separator:hover {
 }
 
 QMainWindow::separator:horizontal {
-  image: url(":/themes/{{ name }}/horizontal_separator.svg");
+  image: url("theme_{{ name }}:/horizontal_separator.svg");
 }
 
 QMainWindow::separator:vertical {
-  image: url(":/themes/{{ name }}/vertical_separator.svg");
+  image: url("theme_{{ name }}:/vertical_separator.svg");
 }
 
 /* ------------- DockWidgets --------- */
@@ -520,7 +520,7 @@ NapariQtNotification #severity_icon {
 
 #QtCustomTitleLabel {
   color: {{ primary }};
-  font-size: 11pt;  
+  font-size: 11pt;
 }
 
 #QtActivityButton:hover {
@@ -779,7 +779,7 @@ QtLayerList::indicator {
 
 QtLayerList::indicator:unchecked {
   image: url("theme_{{ name }}:/visibility_off_50.svg");
-  
+
 }
 
 QtLayerList::indicator:checked {
