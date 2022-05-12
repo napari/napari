@@ -600,26 +600,19 @@ class HighlightSizePreviewWidget(
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
-class DaskSettingsWidget(
-    SchemaWidgetMixin, DaskSettings
-):
+class DaskSettingsWidget(SchemaWidgetMixin, DaskSettings):
+
     @state_property
     def state(self) -> dict:
         return self._widget()
-
 
     @state.setter
     def state(self, state: dict):
         self._widget.dask_enabled.value = state['enabled']
         self._widget.cache.value = state['cache']
         
-
     def configure(self):
         self._widget.changed.connect(lambda: self.on_changed.emit(self.state))
-        # self.opacity = QtWidgets.QGraphicsOpacityEffect(self.widget)
-        # self.widget.setGraphicsEffect(self.opacity)
-        # self.opacity.setOpacity(1)
-
         if 'max_cache' in self.schema:
             self._widget.cache.max = self.schema['max_cache']
 
