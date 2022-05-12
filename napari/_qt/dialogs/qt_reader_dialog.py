@@ -244,5 +244,5 @@ def open_with_dialog_choices(
     if persist:
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            extension: plugin_name,
+            f'*{extension}': plugin_name,
         }
