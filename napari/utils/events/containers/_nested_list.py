@@ -201,12 +201,15 @@ class NestableEventedList(EventedList[_T]):
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
         # this check is more conservative, but will miss some "nestable" things
-        if isinstance(value, list):
-            value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
+            tmp = self[parent_i].copy()
+            tmp[index] = value
+            value = self._validate_with_parent(tmp)[index]
             self[parent_i].__setitem__(index, value)
             return
+        elif isinstance(value, list):
+            value = self.__class__(value)
         self._connect_child_emitters(value)
         super().__setitem__(key, value)
 

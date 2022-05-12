@@ -2,10 +2,10 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union
+from typing import Any, Callable, ClassVar, Dict, Optional, Set, Tuple, Union
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils
+from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
 
 from ...utils.events.containers import View
 from ...utils.misc import pick_equality_operator
@@ -157,6 +157,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
+    _parent: Optional[Tuple['EventedModel', str]] = PrivateAttr(None)
 
     # mapping of name -> property obj for methods that are property setters
     __properties__: ClassVar[Dict[str, property]]
@@ -192,6 +193,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._parent = None
 
         self._events.source = self
         # add event emitters for each field which is mutable
@@ -205,12 +207,35 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             **dict.fromkeys(field_events + list(self.__computed_fields__))
         )
 
-        # hook up events from children
+        # this acts as validate_all, but without messing up sources
+        values = self._pre_validate(self.dict())
+        self.update(
+            {
+                k: v
+                for k, v in values.items()
+                if self.__fields__[k].field_info.allow_mutation
+            }
+        )
+
+        # hook up events and parent validator for children
         for name in field_events:
-            value = getattr(self, name)
-            if hasattr(value, 'events'):
+            child = getattr(self, name)
+            if hasattr(child, 'events'):
                 # TODO: won't track source all the way in?
-                value.events.connect(getattr(self.events, name))
+                child.events.connect(getattr(self.events, name))
+                child._parent = (self, name)
+
+    def _pre_validate(self, values):
+        values, _, error = validate_model(self.__class__, values)
+        if error:
+            raise error
+        if self._parent is not None:
+            parent = self._parent[0]
+            field = self._parent[1]
+            pdict = parent.dict()
+            pdict[field] = self.dict()
+            values = parent._pre_validate(pdict)
+        return values
 
     def __getattribute__(self, name):
         attr = super().__getattribute__(name)
@@ -238,10 +263,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         ):
             # do inplace_mutation if possible
             field_value = getattr(self, name)
-            try:
-                field_value.__update__(value)
-            except AttributeError:
-                # does not have __update__ method: do normal mutation
+            if hasattr(field_value, '__update__'):
+                fields = self.dict()
+                fields.update({name: value})
+                valid = self._pre_validate(fields)
+                field_value.__update__(valid[name])
+            else:
                 super().__setattr__(name, value)
         else:
             super().__setattr__(name, value)
@@ -265,8 +292,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             getattr(self.events, name)(value=after)  # emit event
 
             # emit events for any dependent computed property setters as well
+            # catch deprecation warnings because we still need to fire those
             for dep in self.__field_dependencies__.get(name, {}):
-                getattr(self.events, dep)(value=getattr(self, dep))
+                with warnings.catch_warnings():
+                    warnings.simplefilter(
+                        'ignore', category=DeprecationWarning
+                    )
+                    dep_value = getattr(self, dep)
+                getattr(self.events, dep)(value=dep_value)
 
     # expose the private EmitterGroup publically
     @property

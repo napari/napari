@@ -98,6 +98,8 @@ class EventedList(TypedMutableSequence[_T]):
         else:
             # otherwise create a new one
             self.events = EmitterGroup(source=self, **_events)
+
+        self._parent = None
         super().__init__(data, basetype=basetype, lookup=lookup)
 
     # WAIT!! ... Read the module docstring before reimplement these methods
@@ -108,6 +110,10 @@ class EventedList(TypedMutableSequence[_T]):
     # def remove(self, value: T): ...
 
     def __setitem__(self, key, value):
+        tmp = self._list.copy()
+        tmp[key] = value
+        value = self._validate_with_parent(tmp)[key]
+
         old = self._list[key]
         if value is old:  # https://github.com/napari/napari/pull/2120
             return
@@ -165,6 +171,9 @@ class EventedList(TypedMutableSequence[_T]):
         )
 
     def __delitem__(self, key: Index):
+        tmp = self._list.copy()
+        del tmp[key]
+        self._validate_with_parent(tmp)[key]
         # delete from the end
         for parent, index in sorted(self._delitem_indices(key), reverse=True):
             parent.events.removing(index=index)
@@ -178,6 +187,9 @@ class EventedList(TypedMutableSequence[_T]):
 
     def insert(self, index: int, value: _T):
         """Insert ``value`` before index."""
+        tmp = self._list.copy()
+        tmp.insert(index, value)
+        value = self._validate_with_parent(tmp)[index]
         self.events.inserting(index=index)
         super().insert(index, value)
         self.events.inserted(index=index, value=value)
@@ -355,3 +367,15 @@ class EventedList(TypedMutableSequence[_T]):
 
     def __update__(self, other):
         self[:] = list(other)
+
+    def _validate_with_parent(self, value):
+        if self._parent is None:
+            return value
+        else:
+            parent = self._parent[0]
+            field = self._parent[1]
+            pdict = parent.dict()
+            new = value.copy()
+            pdict[field] = new
+            new = parent._pre_validate(pdict)
+            return new[field]
