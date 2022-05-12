@@ -141,10 +141,13 @@ class EventedList(TypedMutableSequence[_T]):
                 for i, v in zip(indices, value):
                     self.__setitem__(i, v)
             else:
-                del self[key]
-                start = key.start or 0
-                for i, v in enumerate(value):
-                    self.insert(start + i, v)
+                with self.events.blocker_all():
+                    old = self[key]
+                    del self[key]
+                    start = key.start or 0
+                    for i, v in enumerate(value):
+                        self.insert(start + i, v)
+                self.events.changed(index=key, old_value=old, value=value)
         else:
             super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)
@@ -378,4 +381,6 @@ class EventedList(TypedMutableSequence[_T]):
             new = value.copy()
             pdict[field] = new
             new = parent._pre_validate(pdict)
+            # TODO this actually fails if validation causes a field other than `field` to
+            # change; that change won't be upstreamed and we break...
             return new[field]

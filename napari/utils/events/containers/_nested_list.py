@@ -202,10 +202,14 @@ class NestableEventedList(EventedList[_T]):
         # (for instance, subclasses of NestableEventedList)
         # this check is more conservative, but will miss some "nestable" things
         if isinstance(key, tuple):
+            idxs = list(key)
+            tmp = self._list.copy()
+            tmp2 = tmp
+            while len(idxs) > 1:
+                tmp2 = tmp2[idxs.pop(0)]
+            tmp2[idxs.pop()] = value
+            value = self.__newlike__(self._validate_with_parent(tmp))[key]
             parent_i, index = split_nested_index(key)
-            tmp = self[parent_i].copy()
-            tmp[index] = value
-            value = self._validate_with_parent(tmp)[index]
             self[parent_i].__setitem__(index, value)
             return
         elif isinstance(value, list):

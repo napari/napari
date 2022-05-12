@@ -275,8 +275,8 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
     @cached_property
-    def _ranges(self) -> List[Tuple[float, float, float]]:
-        """Get ranges for Dims.range in world coordinates.
+    def _ranges(self) -> Tuple[List[Tuple[float, float]], List[float]]:
+        """Get ranges and step sizes for Dims.range in world coordinates.
 
         This shares some code in common with the `extent` property, but
         determines Dims.range settings for each dimension such that each
@@ -321,10 +321,8 @@ class LayerList(SelectableEventedList[Layer]):
             min_v, max_v = self._get_min_and_max(mins, maxs)
 
             # form range tuples, switching back to original dimension order
-            return [
-                (start, stop, step)
-                for start, stop, step in zip(min_v, max_v, min_steps)
-            ]
+            ranges = [(start, stop) for start, stop in zip(min_v, max_v)]
+            return ranges, min_steps
 
     @property
     def ndim(self) -> int:

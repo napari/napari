@@ -347,10 +347,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            ranges = self.layers._ranges
+            ranges, steps = self.layers._ranges
             ndim = len(ranges)
             self.dims.ndim = ndim
-            self.dims.set_range(range(ndim), ranges)
+            self.dims.range = ranges
+            self.dims.step = steps
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -479,8 +480,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
+            ranges = [
+                (*range, step) for range, step in zip(*ranges)
+            ]  # TODO: ugly AF
             midpoint = [self.rounded_division(*_range) for _range in ranges]
-            self.dims.set_point(range(len(ranges)), midpoint)
+            self.dims.point = midpoint
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.

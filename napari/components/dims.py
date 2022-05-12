@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from pydantic import validator
+from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
 from ..utils.events import EventedList, EventedModel, NestableEventedList
@@ -107,102 +107,77 @@ class Dims(EventedModel):
     def _listify(v):
         return list(v)
 
-    # normal validators
-    @validator('axis_labels')
-    def _enforce_ndim_labels(cls, value, values):
-        if 'ndim' not in values:
-            return None
+    @root_validator(skip_on_failure=True)
+    def _enforce_ndim(cls, values):
         ndim = values['ndim']
-        if len(value) < ndim:
+
+        # axis labels
+        labels = values['axis_labels']
+        if len(labels) < ndim:
             # Append new "default" labels to existing ones
-            if value == list(map(str, range(len(value)))):
-                value = list(map(str, range(ndim)))
+            if labels == list(map(str, range(len(labels)))):
+                labels = list(map(str, range(ndim)))
             else:
-                value = list(map(str, range(ndim - len(value)))) + value
-        elif len(value) > ndim:
-            value = value[-ndim:]
+                labels = list(map(str, range(ndim - len(labels)))) + labels
+        elif len(labels) > ndim:
+            labels = labels[-ndim:]
 
-        return EventedList(value)
+        # range
+        range_ = values['range']
+        range_ = ensure_ndim(range_, ndim, default=[0, 2])
 
-    @validator('range')
-    def _enforce_ndim_range(cls, value, values):
-        if 'ndim' not in values:
-            return None
-        return NestableEventedList(
-            ensure_ndim(value, values['ndim'], default=[0, 2])
-        )
-
-    @validator('span')
-    def _enforce_ndim_span(cls, value, values):
-        # previous failures unfortunately just pass through; returning none here ensures
-        # that the *real* error (previous validation) gets to the top.
-        if any(key not in values for key in ('ndim', 'range', 'axis_labels')):
-            return None
-        value = ensure_ndim(value, values['ndim'], default=[0, 0])
+        # span
+        span = values['span']
+        span = ensure_ndim(span, values['ndim'], default=[0, 0])
         # ensure span is limited to range
-        for (low, high), (min_val, max_val), axis in zip(
-            value, values['range'], values['axis_labels']
+        for i, ((low, high), (min_val, max_val)) in enumerate(
+            zip(span, range_)
         ):
-            if low < min_val or high > max_val:
-                raise ValueError(
-                    trans._(
-                        "Invalid span {span} for dimension '{axis}' with range {range}",
-                        deferred=True,
-                        span=(low, high),
-                        range=(min_val, max_val),
-                        axis=axis,
-                    )
-                )
-        return NestableEventedList(value)
+            low = np.clip(low, min_val, max_val)
+            high = np.clip(high, min_val, max_val)
+            span[i] = [low, high]
 
-    @validator('step')
-    def _enforce_ndim_step(cls, value, values):
-        # previous failures unfortunately just pass through; returning none here ensures
-        # that the *real* error (previous validation) gets to the top.
-        if any(key not in values for key in ('ndim', 'range', 'axis_labels')):
-            return None
-        value = ensure_ndim(value, values['ndim'], default=1)
+        # step
+        step = values['step']
+        step = ensure_ndim(step, ndim, default=1)
         # ensure step is not bigger than range
-        for step, (min_val, max_val), axis in zip(
-            value, values['range'], values['axis_labels']
+        for i, (stp, (min_val, max_val)) in enumerate(
+            zip(
+                step,
+                range_,
+            )
         ):
-            if step > max_val - min_val:
-                raise ValueError(
-                    trans._(
-                        "Invalid step {step} for dimension '{axis}' with range {range}",
-                        deferred=True,
-                        step=step,
-                        range=(min_val, max_val),
-                        axis=axis,
-                    )
-                )
-        return EventedList(value)
+            step[i] = np.clip(stp, 0, max_val - min_val)
 
-    @validator('order')
-    def _enforce_ndim_order(cls, value, values):
-        # previous failures unfortunately just pass through; returning none here ensures
-        # that the *real* error (previous validation) gets to the top.
-        if 'ndim' not in values:
-            return None
-        ndim = values['ndim']
-        if len(value) < ndim:
-            value = list(range(ndim - len(value))) + [
-                o + ndim - len(value) for o in value
+        order = values['order']
+        if len(order) < ndim:
+            order = list(range(ndim - len(order))) + [
+                o + ndim - len(order) for o in order
             ]
-        elif len(value) > ndim:
-            value = reorder_after_dim_reduction(value[-ndim:])
+        elif len(order) > ndim:
+            order = reorder_after_dim_reduction(order[-ndim:])
 
         # Check the order is a permutation of 0, ..., ndim - 1
-        if not set(value) == set(range(ndim)):
+        if not set(order) == set(range(ndim)):
             raise ValueError(
                 trans._(
                     "Invalid ordering {order} for {ndim} dimensions",
                     deferred=True,
-                    order=value,
+                    order=order,
                     ndim=ndim,
                 )
             )
-        return EventedList(value)
+
+        values.update(
+            {
+                'axis_labels': EventedList(labels),
+                'range': NestableEventedList(range_),
+                'span': NestableEventedList(span),
+                'step': EventedList(step),
+                'order': EventedList(order),
+            }
+        )
+        return values
 
     @property
     def _span_step(self) -> list[float]:

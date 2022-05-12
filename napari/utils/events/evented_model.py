@@ -234,7 +234,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             field = self._parent[1]
             pdict = parent.dict()
             pdict[field] = self.dict()
-            values = parent._pre_validate(pdict)
+            values = parent._pre_validate(pdict)[field].dict()
         return values
 
     def __getattribute__(self, name):
