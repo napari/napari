@@ -14,6 +14,35 @@ rendering), and the scientific Python stack (numpy, scipy).
 For more information, examples, and documentation, please visit our
 [website](https://napari.org).
 
+## File Opening Changes in 0.4.16
+
+Prior to `npe2`, file opening with plugins worked through a cascade of function calls trying different readers until one worked, or all failed, in which case an error would be raised. Preferences for readers could be set by reordering hook implementations in the Call Order preference dialog.
+
+This behavior was slow, confusing, and often led to unexpected results. You can see more discussion on this in issue [#4000](https://github.com/napari/napari/issues/4000). `npe2` supports readers declaring a list of accepted filename patterns, and PR [#3799](https://github.com/napari/napari/pull/3799) added a dialog for users to select a plugin to read their file (if more than one was available), and save a preference for that file extension.
+
+Before removing plugin call order, we want to ensure that file opening behavior is unified across the GUI and the command line, and that users have access to a smooth workflow for choosing plugins and saving preferences.
+
+After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#4111](https://github.com/napari/napari/discussions/4111), we decided that as a guiding principle, napari will not choose a reader when multiple are compatible with the given file path. This decision has led to the following changes:
+
+
+- Calling `viewer.open` *without* passing a plugin will result in an error if you have not saved a reader preference for that file pattern *and* multiple plugins can claim the file
+    - You can address this error by associating a preference for the file pattern, or calling `viewer.open(file_path, plugin=...)
+- A preferred reader failing to read your file will result in an error
+- When opening a file through a GUI pathway (drag & drop, File -> Open, Open Sample) you are provided with a dialog allowing you to choose among the various plugins that are compatible with your file
+    - This dialog also allows you to save a preference for files with extensions
+    - This dialog also pops up if a preferred reader fails to open your file
+- Preference saving for file reading is now supported for filename patterns accepted by `npe2` readers, rather than strictly file extensions
+    - Existing preferences for file extensions will be automatically updated e.g. `.tif` will become `*.tif`
+- Reader preferences for filename patterns can be saved in the GUI via the preference dialog
+
+
+We have thought carefully about these choices, but there are still some open questions to address, and features to implement. Some of these are captured across the issues listed below, and we'd love to hear any feedback you have about the new behavior!
+
+- How can we support selecting an individual reader within plugins that offer multiple [#4391](https://github.com/napari/napari/issues/4391)
+- If two plugins can read a file, and one is builtins, should we use the other plugin as it's likely more bespoke [#4389](https://github.com/napari/napari/issues/4389)
+- Provide a way to "force" the reader dialog to open regardless of saved preferences [#4388](https://github.com/napari/napari/issues/4388)
+- Add filename pattern support for folders [npe2 #155](https://github.com/napari/npe2/issues/155)
+
 ## Highlights
 
 - Added sphinx-gallery (#4288)
@@ -40,7 +69,6 @@ For more information, examples, and documentation, please visit our
 - refactor shape resizing logic and bugfix for #4262 (#4291)
 - Accept None for scale (#4295)
 - Rewrite ellipse discretization from scratch (#4330)
-- Update file opening behavior to ensure consistency across command line and GUI. (#4347)
 - Add ColorEncoding privately with tests (#4357)
 - Update TextManager benchmarks to use string/features (#4364)
 - add is_diagonal utility and Transform property (#4370)
@@ -112,6 +140,7 @@ For more information, examples, and documentation, please visit our
 - Update to the documentation: add viewer.dims.current_step tips (#4454)
 
 ## API Changes
+- Update file opening behavior to ensure consistency across command line and GUI. (#4347)
 
 
 ## UI Changes
@@ -120,7 +149,7 @@ For more information, examples, and documentation, please visit our
   (#4240) (Note: previously, this button was present but opened an empty/broken
   console, so this is strictly an improvement!)
 - Allow resizing left dock widgets (#4368)
-
+- Add filename pattern to reader associations to preference dialog (#4459)
 ## Deprecations
 
 

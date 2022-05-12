@@ -298,6 +298,15 @@ def test_from_layer():
     assert not text_manager.visible
 
 
+def test_from_layer_with_no_text():
+    features = pd.DataFrame({})
+    text_manager = TextManager._from_layer(
+        text=None,
+        features=features,
+    )
+    assert text_manager.string == ConstantStringEncoding(constant='')
+
+
 def test_update_from_layer():
     text = {
         'string': 'class',
@@ -373,13 +382,6 @@ def test_update_from_layer_with_warning_only_one_emitted():
         )
 
     assert len(record) == 1
-
-
-def test_init_with_no_string():
-    text_manager = TextManager(string=None)
-
-    assert text_manager.string == ConstantStringEncoding(constant='')
-    np.testing.assert_array_equal(text_manager.values, '')
 
 
 def test_init_with_constant_string():
