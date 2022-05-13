@@ -337,7 +337,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'enable_when': (
                 (LLCK.num_selected_layers > 1)
                 & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
-                & LLCK.all_layers_same_shape
+                & LLCK.all_selected_layers_same_shape
             ),
             'show_when': True,
         },

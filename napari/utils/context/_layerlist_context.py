@@ -206,7 +206,7 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         trans._("Dtype of the active layer, or `None` if nothing is active."),
         _active_dtype,
     )
-    all_layers_same_shape = ContextKey(
+    all_selected_layers_same_shape = ContextKey(
         False,
         trans._("True when all selected layers have the same shape."),
         _same_shape,
