@@ -13,10 +13,11 @@ CONSTRUCTOR_APP_NAME:
     named `napari`
 CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM:
     The last component of the default installation path. Defaults to
-    {CONSTRUCTOR_APP_NAME}-app-{CONSTRUCTOR_INSTALLER_VERSION}
+    {CONSTRUCTOR_APP_NAME}-{_version()}
 CONSTRUCTOR_INSTALLER_VERSION:
     Version for the installer, separate from the app being installed.
-    This has an effect on the default install locations!
+    This will have an effect on the default install locations in future
+    releases.
 CONSTRUCTOR_TARGET_PLATFORM:
     conda-style platform (as in `platform` in `conda info -a` output)
 CONSTRUCTOR_USE_LOCAL:
