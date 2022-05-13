@@ -13,6 +13,7 @@ def dask_settings(dask_enabled=True, cache=15.0) -> int:
 class DaskSettings(BaseMagicSetting):
     """Class for use in json schema widget builder for dask settings."""
 
-    def __init__(self):
-        self.MAGIC_GUI = dask_settings
-        super().__init__()
+    MAGIC_GUI = dask_settings
+    # def __init__(self):
+    #     self.MAGIC_GUI = dask_settings
+    #     super().__init__()
