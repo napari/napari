@@ -118,14 +118,7 @@ def _active_dtype(s: LayerSel) -> DTypeLike:
 
 
 def _same_type(s: LayerSel) -> bool:
-    s = list(s)
-    if len(s) == 0:
-        return False
-    for idx, layer in enumerate(s):
-        next_layer = s[idx + 1] if idx < (len(s) - 1) else None
-        if (type(layer) != type(next_layer)) and (next_layer is not None):
-            return False
-    return True
+    return len({x._type_string for x in s}) == 1
 
 
 class LayerListContextKeys(ContextNamespace['LayerSel']):
