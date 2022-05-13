@@ -101,6 +101,8 @@ class Dims(EventedModel):
     # pre validators (applied first, on the raw inputs)
     # always=True is needed for `pre` validators to fire on *assignement*
     # this is likely a pydantic bug.
+    # we also need these to make sure defaults are correctly initialized;
+    # otherwise, pydantic complains that they are not valid sequences
     @validator('range', 'span', pre=True, always=True)
     def _sort_values(cls, value, field):
         return [sorted(list(v)) for v in value]
