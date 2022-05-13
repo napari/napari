@@ -23,6 +23,7 @@ cover this in test_evented_list.py)
 """
 
 import logging
+from contextlib import contextmanager
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
 from ...translations import trans
@@ -100,6 +101,7 @@ class EventedList(TypedMutableSequence[_T]):
             self.events = EmitterGroup(source=self, **_events)
 
         self._parent = None
+        self._validate = True
         super().__init__(data, basetype=basetype, lookup=lookup)
 
     # WAIT!! ... Read the module docstring before reimplement these methods
@@ -369,12 +371,12 @@ class EventedList(TypedMutableSequence[_T]):
         self.events.reordered(value=self)
 
     def __update__(self, other):
-        self[:] = list(other)
+        # inplace updating only happens from parent after validation, so no need to validate here.
+        with self._no_validation():
+            self[:] = list(other)
 
     def _validate_with_parent(self, value):
-        if self._parent is None:
-            return value
-        else:
+        if self._parent is not None and self._validate:
             parent = self._parent[0]
             field = self._parent[1]
             pdict = parent.dict()
@@ -384,3 +386,11 @@ class EventedList(TypedMutableSequence[_T]):
             # TODO this actually fails if validation causes a field other than `field` to
             # change; that change won't be upstreamed and we break...
             return new[field]
+        else:
+            return value
+
+    @contextmanager
+    def _no_validation(self):
+        self._validate = False
+        yield
+        self._validate = True

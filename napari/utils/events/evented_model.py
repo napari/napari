@@ -158,6 +158,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
     _parent: Optional[Tuple['EventedModel', str]] = PrivateAttr(None)
+    _validate: bool = PrivateAttr(True)
 
     # mapping of name -> property obj for methods that are property setters
     __properties__: ClassVar[Dict[str, property]]
@@ -194,6 +195,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._parent = None
+        self._validate = True
 
         self._events.source = self
         # add event emitters for each field which is mutable
@@ -208,11 +210,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         )
 
         # this acts as validate_all, but without messing up sources
-        values = self._pre_validate(self.dict())
         self.update(
             {
                 k: v
-                for k, v in values.items()
+                for k, v in self.dict().items()
                 if self.__fields__[k].field_info.allow_mutation
             }
         )
@@ -226,6 +227,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 child._parent = (self, name)
 
     def _pre_validate(self, values):
+        if not self._validate:
+            return values
         values, _, error = validate_model(self.__class__, values)
         if error:
             raise error
@@ -236,6 +239,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             pdict[field] = self.dict()
             values = parent._pre_validate(pdict)[field].dict()
         return values
+
+    @contextmanager
+    def _no_validation(self):
+        self._validate = False
+        yield
+        self._validate = True
 
     def __getattribute__(self, name):
         attr = super().__getattribute__(name)
@@ -349,19 +358,38 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 )
             )
 
+        # immutable fields would be added by validation, so we need to complain if the exist now,
+        # and then remove them later!
+        for k in values:
+            if not self.__fields__[k].field_info.allow_mutation and values[
+                k
+            ] != getattr(self, k):
+                raise TypeError(
+                    f'"{k}" has allow_mutation set to False and cannot be assigned'
+                )
+        values = self._pre_validate(values)
+        values = {
+            k: v
+            for k, v in values.items()
+            if self.__fields__[k].field_info.allow_mutation
+        }
+
         with self.events.blocker() as block:
-            for key, value in values.items():
-                field = getattr(self, key)
-                if isinstance(field, EventedModel) and recurse:
-                    field.update(value, recurse=recurse)
-                else:
-                    setattr(self, key, value)
+            with self._no_validation():
+                for key, value in values.items():
+                    field = getattr(self, key)
+                    if hasattr(field, '__update__') and recurse:
+                        field.__update__(value)
+                    else:
+                        # validation is all good, so let's jump pydantic!
+                        self.__dict__[key] = value
 
         if block.count:
             self.events(Event(self))
 
     def __update__(self, other):
-        self.update(other)
+        with self._no_validation():
+            self.update(other)
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
