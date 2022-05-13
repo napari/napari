@@ -57,9 +57,6 @@ APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari")
 # bump this when something in the installer infrastructure changes
 # note that this will affect the default installation path across platforms!
 INSTALLER_VERSION = os.environ.get("CONSTRUCTOR_INSTALLER_VERSION", "0.1")
-INSTALLER_DEFAULT_PATH_STEM = os.environ.get(
-    "CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM", f"{APP}-app-{INSTALLER_VERSION}"
-)
 HERE = os.path.abspath(os.path.dirname(__file__))
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -86,6 +83,9 @@ def _version():
 
 
 OUTPUT_FILENAME = f"{APP}-{_version()}-{OS}-{ARCH}.{EXT}"
+INSTALLER_DEFAULT_PATH_STEM = os.environ.get(
+    "CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM", f"{APP}-{_version()}"
+)
 clean_these_files = []
 
 
