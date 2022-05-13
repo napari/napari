@@ -286,7 +286,8 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:group:convert_type': {
             'description': trans._('Convert datatype'),
-            'enable_when': LLCK.only_labels_layers_selected,
+            'enable_when': LLCK.num_selected_labels_layers
+            == LLCK.num_selected_layers,
             'show_when': True,
             'action_group': {
                 'napari:to_int8': _labeltypedict('int8'),

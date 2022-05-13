@@ -117,8 +117,9 @@ def _active_dtype(s: LayerSel) -> DTypeLike:
     return dtype
 
 
-def _same_dtype(s: LayerSel) -> bool:
-    for idx, layer in enumerate(list(s)):
+def _same_type(s: LayerSel) -> bool:
+    s = list(s)
+    for idx, layer in enumerate(s):
         next_layer = s[idx + 1] if idx < (len(s) - 1) else None
         if (type(layer) != type(next_layer)) and (next_layer is not None):
             return False
@@ -218,4 +219,9 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._("True when all selected layers have the same shape."),
         _same_shape,
+    )
+    all_selected_layers_same_type = ContextKey(
+        False,
+        trans._("True when all selected layers are of the same type."),
+        _same_type,
     )
