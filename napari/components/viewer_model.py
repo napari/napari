@@ -139,13 +139,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.__config__.extra = Extra.allow
         super().__init__(
             title=title,
-        )
-        self.dims.update(
-            {
+            dims={
                 'axis_labels': axis_labels,
                 'ndisplay': ndisplay,
                 'order': order,
-            }
+            },
         )
         self.__config__.extra = Extra.ignore
 
@@ -352,13 +350,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             ranges, steps = self.layers._ranges
             ndim = len(ranges)
-            self.dims.update(
-                {
-                    'ndim': ndim,
-                    'range': ranges,
-                    'step': steps,
-                }
-            )
+            self.dims.ndim = ndim
+            self.dims.range = ranges
+            self.dims.step = steps
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)

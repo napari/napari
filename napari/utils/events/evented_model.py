@@ -336,6 +336,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     ) -> None:
         """Update a model in place.
 
+        NOTE: this does NOT trigger individual events, but only a general model event
+
         Parameters
         ----------
         values : dict, napari.utils.events.EventedModel
