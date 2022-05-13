@@ -129,7 +129,7 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         trans._("Number of currently selected layers."),
         _len,
     )
-    all_layers_linked = ContextKey(
+    num_selected_layers_linked = ContextKey(
         False,
         trans._("True when all selected layers are linked."),
         _all_linked,

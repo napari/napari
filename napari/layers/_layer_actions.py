@@ -347,15 +347,16 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Link Layers'),
             'action': lambda ll: ll.link_layers(ll.selection),
             'enable_when': (
-                (LLCK.num_selected_layers > 1) & ~LLCK.all_layers_linked
+                (LLCK.num_selected_layers > 1)
+                & ~LLCK.num_selected_layers_linked
             ),
-            'show_when': ~LLCK.all_layers_linked,
+            'show_when': ~LLCK.num_selected_layers_linked,
         },
         'napari:unlink_selected_layers': {
             'description': trans._('Unlink Layers'),
             'action': lambda ll: ll.unlink_layers(ll.selection),
-            'enable_when': LLCK.all_layers_linked,
-            'show_when': LLCK.all_layers_linked,
+            'enable_when': LLCK.num_selected_layers_linked,
+            'show_when': LLCK.num_selected_layers_linked,
         },
         'napari:select_linked_layers': {
             'description': trans._('Select Linked Layers'),
