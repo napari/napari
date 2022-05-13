@@ -119,6 +119,8 @@ def _active_dtype(s: LayerSel) -> DTypeLike:
 
 def _same_type(s: LayerSel) -> bool:
     s = list(s)
+    if len(s) == 0:
+        return False
     for idx, layer in enumerate(s):
         next_layer = s[idx + 1] if idx < (len(s) - 1) else None
         if (type(layer) != type(next_layer)) and (next_layer is not None):
@@ -160,7 +162,7 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         ),
         _active_type,
     )
-    # TODO: try to reduce these `only_x_selected` to a single set of strings
+    # TODO: try to reduce these `num_selected_x_layers` to a single set of strings
     # or something... however, this would require that our context expressions
     # support Sets, tuples, lists, etc...  which they currently do not.
     num_selected_image_layers = ContextKey(
