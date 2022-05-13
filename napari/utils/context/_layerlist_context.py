@@ -154,84 +154,35 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
     # TODO: try to reduce these `only_x_selected` to a single set of strings
     # or something... however, this would require that our context expressions
     # support Sets, tuples, lists, etc...  which they currently do not.
-    only_image_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are images"
-        ),
-        _only_img,
-    )
     num_selected_image_layers = ContextKey(
         0,
         trans._("Number of selected image layers."),
         _n_selected_imgs,
-    )
-    only_labels_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are labels"
-        ),
-        _only_labels,
     )
     num_selected_labels_layers = ContextKey(
         0,
         trans._("Number of selected labels layers."),
         _n_selected_labels,
     )
-    only_points_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are points"
-        ),
-        _only_points,
-    )
     num_selected_points_layers = ContextKey(
         0,
         trans._("Number of selected points layers."),
         _n_selected_points,
-    )
-    only_shapes_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are shapes"
-        ),
-        _only_shapes,
     )
     num_selected_shapes_layers = ContextKey(
         0,
         trans._("Number of selected shapes layers."),
         _n_selected_shapes,
     )
-    only_surface_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are surfaces"
-        ),
-        _only_surface,
-    )
     num_selected_surface_layers = ContextKey(
         0,
         trans._("Number of selected surface layers."),
         _n_selected_surfaces,
     )
-    only_vectors_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are vectors"
-        ),
-        _only_vectors,
-    )
     num_selected_vectors_layers = ContextKey(
         0,
         trans._("Number of selected vectors layers."),
         _n_selected_vectors,
-    )
-    only_tracks_layers_selected = ContextKey(
-        False,
-        trans._(
-            "True when there is at least one selected layer and all selected layers are tracks"
-        ),
-        _only_tracks,
     )
     num_selected_tracks_layers = ContextKey(
         0,
