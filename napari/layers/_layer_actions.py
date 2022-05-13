@@ -262,17 +262,21 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Convert to Labels'),
             'action': _convert_to_labels,
             'enable_when': (
-                LLCK.num_selected_image_layers
-                == LLCK.num_selected_layers | LLCK.num_selected_shapes_layers
-                == LLCK.num_selected_layers
+                (
+                    (LLCK.num_selected_image_layers >= 1)
+                    | (LLCK.num_selected_shapes_layers >= 1)
+                )
+                & LLCK.all_selected_layers_same_type
             ),
             'show_when': True,
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
             'action': _convert_to_image,
-            'enable_when': LLCK.num_selected_labels_layers
-            == LLCK.num_selected_layers,
+            'enable_when': (
+                LLCK.num_selected_labels_layers
+                >= 1 & LLCK.all_selected_layers_same_type
+            ),
             'show_when': True,
         },
         'napari:toggle_visibility': {
@@ -286,8 +290,10 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:group:convert_type': {
             'description': trans._('Convert datatype'),
-            'enable_when': LLCK.num_selected_labels_layers
-            == LLCK.num_selected_layers,
+            'enable_when': (
+                LLCK.num_selected_labels_layers
+                >= 1 & LLCK.all_selected_layers_same_type
+            ),
             'show_when': True,
             'action_group': {
                 'napari:to_int8': _labeltypedict('int8'),
