@@ -99,20 +99,27 @@ class Dims(EventedModel):
         self.events.span.connect(self.events.current_step)
 
     # pre validators (applied first, on the raw inputs)
-    @validator('range', 'span', pre=True)
+    # always=True is needed for `pre` validators to fire on *assignement*
+    # this is likely a pydantic bug.
+    @validator('range', 'span', pre=True, always=True)
     def _sort_values(cls, value, field):
-        return [sorted(v) for v in value]
+        return [sorted(list(v)) for v in value]
 
-    @validator('step', 'order', 'axis_labels', pre=True)
+    @validator('step', 'order', 'axis_labels', pre=True, always=True)
     def _listify(v):
         return list(v)
 
     @root_validator(skip_on_failure=True)
     def _enforce_ndim(cls, values):
+        # NOTE: we need to sanitize inputs to avoid loops of validation (if input is
+        # EventedList, changing its content during validation will cause a mess)
+        # this is very important because we may trigger validations with partial states
+        # which will cause the model to revert to "usable" conditions
+        # TODO: find a way to disable this at EventedModel level
         ndim = values['ndim']
 
         # axis labels
-        labels = values['axis_labels']
+        labels = list(values['axis_labels'])
         if len(labels) < ndim:
             # Append new "default" labels to existing ones
             if labels == list(map(str, range(len(labels)))):
@@ -123,11 +130,11 @@ class Dims(EventedModel):
             labels = labels[-ndim:]
 
         # range
-        range_ = values['range']
+        range_ = [sorted(list(v)) for v in values['range']]
         range_ = ensure_ndim(range_, ndim, default=[0, 2])
 
         # span
-        span = values['span']
+        span = [sorted(list(v)) for v in values['span']]
         span = ensure_ndim(span, values['ndim'], default=[0, 0])
         # ensure span is limited to range
         for i, ((low, high), (min_val, max_val)) in enumerate(
@@ -138,7 +145,7 @@ class Dims(EventedModel):
             span[i] = [low, high]
 
         # step
-        step = values['step']
+        step = list(values['step'])
         step = ensure_ndim(step, ndim, default=1)
         # ensure step is not bigger than range
         for i, (stp, (min_val, max_val)) in enumerate(
@@ -149,7 +156,7 @@ class Dims(EventedModel):
         ):
             step[i] = np.clip(stp, 0, max_val - min_val)
 
-        order = values['order']
+        order = list(values['order'])
         if len(order) < ndim:
             order = list(range(ndim - len(order))) + [
                 o + ndim - len(order) for o in order

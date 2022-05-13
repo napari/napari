@@ -209,15 +209,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             **dict.fromkeys(field_events + list(self.__computed_fields__))
         )
 
-        # this acts as validate_all, but without messing up sources
-        self.update(
-            {
-                k: v
-                for k, v in self.dict().items()
-                if self.__fields__[k].field_info.allow_mutation
-            }
-        )
-
         # hook up events and parent validator for children
         for name in field_events:
             child = getattr(self, name)
@@ -225,6 +216,16 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 # TODO: won't track source all the way in?
                 child.events.connect(getattr(self.events, name))
                 child._parent = (self, name)
+
+        with self.events.blocker_all():
+            # this acts as validate_all, but without messing up sources
+            self.update(
+                {
+                    k: v
+                    for k, v in self.dict().items()
+                    if self.__fields__[k].field_info.allow_mutation
+                }
+            )
 
     def _pre_validate(self, values):
         if not self._validate:
@@ -288,27 +289,27 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._super_setattr_(name, value)
             return
 
-        # grab current value
-        before = getattr(self, name, object())
+        # grab current value for field and its dependent properties, if any
+        before = {}
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            for field in [name, *self.__field_dependencies__.get(name, {})]:
+                before[field] = getattr(self, field, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
 
         # if different we emit the event with new value
-        after = getattr(self, name)
-        are_equal = self.__eq_operators__.get(name, operator.eq)
-        if not are_equal(after, before):
-            getattr(self.events, name)(value=after)  # emit event
+        after = {}
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            for field in [name, *self.__field_dependencies__.get(name, {})]:
+                after[field] = getattr(self, field, object())
 
-            # emit events for any dependent computed property setters as well
-            # catch deprecation warnings because we still need to fire those
-            for dep in self.__field_dependencies__.get(name, {}):
-                with warnings.catch_warnings():
-                    warnings.simplefilter(
-                        'ignore', category=DeprecationWarning
-                    )
-                    dep_value = getattr(self, dep)
-                getattr(self.events, dep)(value=dep_value)
+        for field in before:
+            are_equal = self.__eq_operators__.get(field, operator.eq)
+            if not are_equal(after[field], before[field]):
+                getattr(self.events, name)(value=after[field])  # emit event
 
     # expose the private EmitterGroup publically
     @property

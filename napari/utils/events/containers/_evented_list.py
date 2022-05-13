@@ -178,7 +178,7 @@ class EventedList(TypedMutableSequence[_T]):
     def __delitem__(self, key: Index):
         tmp = self._list.copy()
         del tmp[key]
-        self._validate_with_parent(tmp)[key]
+        self._validate_with_parent(tmp)
         # delete from the end
         for parent, index in sorted(self._delitem_indices(key), reverse=True):
             parent.events.removing(index=index)
