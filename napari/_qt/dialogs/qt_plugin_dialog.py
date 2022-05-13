@@ -99,7 +99,10 @@ class Installer(QObject):
             process.setProgram(self._sys_executable_or_bundled_python())
             # patch process path
             combined_paths = os.pathsep.join(
-                [user_site_packages(), env.systemEnvironment().value("PYTHONPATH")]
+                [
+                    user_site_packages(),
+                    env.systemEnvironment().value("PYTHONPATH"),
+                ]
             )
             env.insert("PYTHONPATH", combined_paths)
         else:
@@ -107,6 +110,7 @@ class Installer(QObject):
 
         if installer == "mamba":
             from ..._version import version_tuple
+
             # To avoid napari version changing when installing a plugin, we
             # add a pin to the current napari version, that way we can
             # restrict any changes to the actual napari application.
@@ -121,7 +125,8 @@ class Installer(QObject):
             else:
                 system_pins = ""
             env.insert(
-                "CONDA_PINNED_PACKAGES", f"napari={napari_version}{system_pins}"
+                "CONDA_PINNED_PACKAGES",
+                f"napari={napari_version}{system_pins}",
             )
             if os.name == "nt":
                 # workaround https://github.com/napari/napari/issues/4247, 4484
