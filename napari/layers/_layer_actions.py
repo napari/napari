@@ -274,8 +274,8 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Convert to Image'),
             'action': _convert_to_image,
             'enable_when': (
-                LLCK.num_selected_labels_layers
-                >= 1 & LLCK.all_selected_layers_same_type
+                (LLCK.num_selected_labels_layers >= 1)
+                & LLCK.all_selected_layers_same_type
             ),
             'show_when': True,
         },
@@ -291,8 +291,8 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:group:convert_type': {
             'description': trans._('Convert datatype'),
             'enable_when': (
-                LLCK.num_selected_labels_layers
-                >= 1 & LLCK.all_selected_layers_same_type
+                (LLCK.num_selected_labels_layers >= 1)
+                & LLCK.all_selected_layers_same_type
             ),
             'show_when': True,
             'action_group': {
