@@ -29,7 +29,6 @@ from .utils._link_layers import get_linked_layers
 if TYPE_CHECKING:
     from ..components import LayerList
     from ..utils.context._expressions import Expr
-    from . import Image
 
 
 @inject_napari_dependencies
@@ -72,7 +71,7 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
-    layer = cast('Image', layer)
+    layer = cast('Image', layer)  # noqa: F821
     # get the meta data of the layer, but without transforms
     meta = {
         key: layer._get_base_state()[key]
@@ -208,6 +207,7 @@ class SubMenu(_MenuItem):
 
 MenuItem = Dict[str, Union[ContextAction, SubMenu]]
 
+
 # Each item in LAYER_ACTIONS will be added to the `QtActionContextMenu` created
 # in _qt.containers._layer_delegate.LayerDelegate (i.e. they are options in the
 # menu when you right-click on a layer in the layerlist.)
@@ -243,7 +243,8 @@ def _labeltypedict(key) -> ContextAction:
         'description': key,
         'action': partial(_convert_dtype, mode=key),
         'enable_when': (
-            LLCK.only_labels_layers_selected & (LLCK.active_layer_dtype != key)
+            (LLCK.num_selected_labels_layers == LLCK.num_selected_layers)
+            & (LLCK.active_layer_dtype != key)
         ),
         'show_when': True,
     }
@@ -261,15 +262,17 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Convert to Labels'),
             'action': _convert_to_labels,
             'enable_when': (
-                LLCK.only_image_layers_selected
-                | LLCK.only_shapes_layers_selected
+                LLCK.num_selected_image_layers
+                == LLCK.num_selected_layers | LLCK.num_selected_shapes_layers
+                == LLCK.num_selected_layers
             ),
             'show_when': True,
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
             'action': _convert_to_image,
-            'enable_when': LLCK.only_labels_layers_selected,
+            'enable_when': LLCK.num_selected_labels_layers
+            == LLCK.num_selected_layers,
             'show_when': True,
         },
         'napari:toggle_visibility': {
@@ -333,7 +336,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'action': _merge_stack,
             'enable_when': (
                 (LLCK.num_selected_layers > 1)
-                & LLCK.only_image_layers_selected
+                & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
                 & LLCK.all_layers_same_shape
             ),
             'show_when': True,
