@@ -613,8 +613,7 @@ class DaskSettingsWidget(SchemaWidgetMixin, DaskSettings):
         
     def configure(self):
         self._widget.changed.connect(lambda: self.on_changed.emit(self.state))
-        if 'max_cache' in self.schema:
-            self._widget.cache.max = self.schema['max_cache']
+        self._widget.cache.max = self.schema['additionalProperties']['anyOf'][1]['maximum']
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property
