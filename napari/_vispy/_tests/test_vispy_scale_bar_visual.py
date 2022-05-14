@@ -1,6 +1,6 @@
 """Test scale bar."""
-import pytest
 import numpy as np
+import pytest
 from pint import UndefinedUnitError
 
 from napari.components._viewer_constants import Position

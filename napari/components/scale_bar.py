@@ -1,5 +1,6 @@
 """Scale bar model."""
 from typing import Optional, Union
+
 from pydantic import validator
 
 from ..utils.colormaps.standardize_color import transform_color
