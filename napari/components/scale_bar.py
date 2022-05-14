@@ -1,6 +1,8 @@
 """Scale bar model."""
 from typing import Optional, Union
+from pydantic import validator
 
+from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import EventedModel
 from ..utils.events.custom_types import Array
 from ._viewer_constants import Position
@@ -46,12 +48,18 @@ class ScaleBar(EventedModel):
 
     visible: bool = False
     colored: bool = False
-    color: Optional[Union[str, Array[float, (3,)], Array[float, (4,)]]] = None
+    color: Optional[Array[float, (4,)]] = None
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     box: bool = False
-    box_color: Optional[
-        Union[str, Array[float, (3,)], Array[float, (4,)]]
-    ] = None
+    box_color: Optional[Array[float, (4,)]] = None
     unit: Optional[str] = None
+
+    @validator('color', pre=True)
+    def _coerce_color(cls, v):
+        return transform_color(v)[0]
+
+    @validator('box_color', pre=True)
+    def _coerce_box_color(cls, v):
+        return transform_color(v)[0]

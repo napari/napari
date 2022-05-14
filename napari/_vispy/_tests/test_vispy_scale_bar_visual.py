@@ -1,5 +1,6 @@
 """Test scale bar."""
 import pytest
+import numpy as np
 from pint import UndefinedUnitError
 
 from napari.components._viewer_constants import Position
@@ -89,6 +90,24 @@ def test_vispy_text_visual(make_napari_viewer):
     )
 
     # test color attributes
-    # TODO
+    viewer.scale_bar.colored = True
+    for (rgba, color) in [
+        ((0.0, 1.0, 1.0, 1.0), "#00ffff"),  # check hex color
+        ((1.0, 1.0, 0.0, 1.0), (1.0, 1.0, 0.0)),  # check 3 tuple
+        ((1.0, 0.5, 0.0, 0.5), (1.0, 0.5, 0.0, 0.5)),  # check 4 tuple
+        ((1.0, 1.0, 1.0, 1.0), "white"),  # check text color
+    ]:
+        viewer.scale_bar.color = color
+        np.testing.assert_equal(viewer.scale_bar.color, np.asarray(rgba))
+
+    viewer.scale_bar.box = True
+    for (rgba, color) in [
+        ((0.0, 1.0, 1.0, 1.0), "#00ffff"),  # check hex color
+        ((1.0, 1.0, 0.0, 1.0), (1.0, 1.0, 0.0)),  # check 3 tuple
+        ((1.0, 0.5, 0.0, 0.5), (1.0, 0.5, 0.0, 0.5)),  # check 4 tuple
+        ((1.0, 1.0, 1.0, 1.0), "white"),  # check text color
+    ]:
+        viewer.scale_bar.box_color = color
+        np.testing.assert_equal(viewer.scale_bar.box_color, np.asarray(rgba))
 
     del qt_widget
