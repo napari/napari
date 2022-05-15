@@ -1,27 +1,31 @@
 from functools import wraps
 from inspect import isgeneratorfunction, signature
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, Optional, Type, TypeVar
 
 from typing_extensions import get_type_hints
 
-if TYPE_CHECKING:
-    from ..layers import Layer
+from .. import components, layers, viewer
 
 T = TypeVar("T")
 
 
-def _get_active_layer() -> Optional['Layer']:
-    from ..viewer import current_viewer
+def _get_active_layer() -> Optional[layers.Layer]:
+    if cur_viewer := viewer.current_viewer():
+        return cur_viewer.layers.selection.active
+    return None
 
-    if viewer := current_viewer():
-        return viewer.layers.selection.active
+
+def _get_active_layer_list() -> Optional[components.LayerList]:
+    if cur_viewer := viewer.current_viewer():
+        return cur_viewer.layers
+    return None
 
 
-def _get_active_layer_list() -> Optional['Layer']:
-    from ..viewer import current_viewer
-
-    if viewer := current_viewer():
-        return viewer.layers
+_ACCESSORS: Dict[Type, Callable[[], Optional[object]]] = {
+    layers.Layer: _get_active_layer,
+    viewer.Viewer: viewer.current_viewer,
+    components.LayerList: _get_active_layer_list,
+}
 
 
 def get_accessor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
@@ -35,23 +39,15 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
     `inject_napari_dependencies`, allows us to inject current napari objects
     into functions based on type hints.
     """
-    from ..components import LayerList
-    from ..layers import Layer
-    from ..viewer import Viewer, current_viewer
-
     if isinstance(type_, type):
-        if issubclass(type_, Layer):
-            return _get_active_layer
-        if issubclass(type_, Viewer):
-            return current_viewer
-        if issubclass(type_, LayerList):
-            return _get_active_layer_list
+        for key, val in _ACCESSORS.items():
+            if issubclass(type, key):
+                return val  # type: ignore [return-type]
+    return None
 
 
 def napari_type_hints(obj: Any) -> Dict[str, Any]:
     import napari
-
-    from .. import components, layers, viewer
 
     return get_type_hints(
         obj,
@@ -59,7 +55,7 @@ def napari_type_hints(obj: Any) -> Dict[str, Any]:
             'napari': napari,
             **viewer.__dict__,
             **layers.__dict__,
-            'LayerList': components.LayerList,
+            **components.__dict__,
         },
     )
 
