@@ -8,5 +8,10 @@ def test_napari_injection():
         return ll
 
     some_layers = LayerList()
+
+    assert f() is None
+
     with set_accessor({LayerList: lambda: some_layers}):
         assert f() is some_layers
+
+    assert f() is None
