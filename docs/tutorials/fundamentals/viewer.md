@@ -367,7 +367,7 @@ view:
 viewer.dims.ndisplay = 3
 viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A rotated 3D view")
 ```
 
 
@@ -413,7 +413,7 @@ viewer.theme = 'light'
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A napari viewer changed to light theme")
 ```
 
 ```{code-cell} python

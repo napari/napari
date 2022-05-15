@@ -128,7 +128,8 @@ def test_open_with_dialog_choices_persist(make_napari_viewer, tmp_path):
             viewer.window._qt_viewer,
         )
         assert len(viewer.layers) == 1
-        assert get_settings().plugins.extension2reader['.npy'] == 'builtins'
+        # make sure extension was saved with *
+        assert get_settings().plugins.extension2reader['*.npy'] == 'builtins'
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):
