@@ -158,7 +158,11 @@ def inject_napari_dependencies(func: Callable) -> Callable:
     def _exec(*args, **kwargs):
         # when we call the function, we call the accessor functions to get
         # the current napari objects
-        _kwargs = {n: get_accessor(hint)() for n, hint in required.items()}
+        _kwargs = {}
+        for n, hint in required.items():
+            if accessor := get_accessor(hint):
+                _kwargs[n] = accessor()
+
         # but we use bind_partial to allow the caller to still provide
         # their own objects if desired.
         # (i.e. the injected deps are only used if needed)
