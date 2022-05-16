@@ -66,7 +66,7 @@ class set_accessor:
         a map of type -> accessor function, where each value is a function
         that is capable of retrieving an instance of the associated key/type.
     clobber : bool, optional
-        Whether to override any existing accessor function, by default True.
+        Whether to override any existing accessor function, by default False.
 
     Raises
     ------
@@ -76,11 +76,11 @@ class set_accessor:
     """
 
     def __init__(
-        self, mapping: Dict[Type[T], Callable[..., Optional[T]]], clobber=True
+        self, mapping: Dict[Type[T], Callable[..., Optional[T]]], clobber=False
     ):
         self._before = {}
-        for k, v in mapping.items():
-            if k in _ACCESSORS and clobber is False:
+        for k in mapping:
+            if k in _ACCESSORS and not clobber:
                 raise ValueError(
                     f"Class {k} already has an accessor and clobber is False"
                 )
@@ -99,6 +99,7 @@ class set_accessor:
 
 
 def napari_type_hints(obj: Any) -> Dict[str, Any]:
+    """variant of get_type_hints with napari namespace awareness."""
     import napari
 
     return get_type_hints(
