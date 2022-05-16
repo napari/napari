@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import traceback
 import warnings
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
 
@@ -1072,7 +1073,8 @@ class QtViewer(QSplitter):
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
-                filenames.append(url.toLocalFile())
+                # directories get a trailing "/", Path conversion removes it
+                filenames.append(str(Path(url.toLocalFile())))
             else:
                 filenames.append(url.toString())
 
