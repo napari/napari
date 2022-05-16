@@ -27,6 +27,7 @@ _ACCESSORS: Dict[Type, Callable[..., Optional[object]]] = {
     viewer.Viewer: current_viewer,
     components.LayerList: _get_active_layer_list,
 }
+_PROCESSORS = {}
 
 
 def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
@@ -48,6 +49,11 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
             if issubclass(type, key):
                 return val  # type: ignore [return-type]
     return None
+
+
+def get_processor(return_hint) -> Optional[Callable[..., Any]]:
+    if return_hint in _PROCESSORS:
+        ...
 
 
 class set_accessor:
@@ -151,7 +157,10 @@ def inject_napari_dependencies(func: Callable) -> Callable:
     hints = napari_type_hints(func)
     # get accessor functions for each required parameter
     required = {}
+    return_hint = None
     for name, hint in hints.items():
+        if name == 'return':
+            return_hint = hint
         if sig.parameters[name].default is sig.empty:
             required[name] = hint
 
@@ -168,7 +177,10 @@ def inject_napari_dependencies(func: Callable) -> Callable:
         # their own objects if desired.
         # (i.e. the injected deps are only used if needed)
         _kwargs.update(**sig.bind_partial(*args, **kwargs).arguments)
-        return func(**_kwargs)
+        result = func(**_kwargs)
+        if return_hint and (processor := get_processor(return_hint)):
+            processor(result)
+        return result
 
     out = _exec
 
