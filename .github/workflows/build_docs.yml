@@ -6,46 +6,21 @@ on:
       - main
   push:
     branches:
-      - docs
+      - main
   workflow_dispatch:
 
 jobs:
-  build-and-upload-artifact:
-    name: Build & Upload Artifact
+  build-napari-docs:
+    name: Build docs on napari/napari-docs
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code + LFS with cache
-        uses: nschloe/action-cached-lfs-checkout@v1
-        # See discussion at https://github.com/actions/checkout/issues/165
-        # This is a bundling of the pattern in this comment:
-        # https://github.com/actions/checkout/issues/165#issuecomment-657673315
-
-      - uses: actions/setup-python@v4
+      - name: Trigger workflow and wait
+        uses: convictional/trigger-workflow-and-wait@v1.6.1
         with:
-          python-version: 3.9
-
-      - uses: tlambert03/setup-qt-libs@v1
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[docs]"
-
-      - name: Build Docs
-        uses: GabrielBB/xvfb-action@v1
-        env:
-          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
-          GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
-        with:
-          run: make docs
-
-      # TODO: enable when the link check passes
-      # - name: LinkCheck
-      #  run: make linkcheck-files
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: docs
-          path: docs/_build
-
+          owner: melissawm
+          repo: napari-docs
+          github_token: ${{ secrets.DEPLOY_DOCS }}
+          github_user: melissawm
+          workflow_file_name: deploy_docs.yml
+          trigger_workflow: true
+          wait_workflow: true

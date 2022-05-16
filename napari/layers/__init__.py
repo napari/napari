@@ -1,4 +1,6 @@
-"""Layers are the viewable objects that can be added to a viewer.
+"""Hello, napari docs world!
+
+Layers are the viewable objects that can be added to a viewer.
 
 Custom layers must inherit from Layer and pass along the
 `visual node <https://vispy.org/api/vispy.scene.visuals.html>`_
