@@ -44,9 +44,6 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.events.removed.connect(
-            lambda e: self.selection.discard(e.value)
-        )  # FIXME remove lambda
         self.selection._pre_add_hook = self._preselect_hook
 
     def _preselect_hook(self, value):
@@ -66,6 +63,11 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         if self._activate_on_insert:
             # Make layer selected and unselect all others
             self.selection.active = value
+
+    def remove(self, value: _T) -> None:
+        """Remove, discarding from selection after removing."""
+        super().remove(value)
+        self.selection.discard(value)
 
     def select_all(self):
         """Select all items in the list."""
