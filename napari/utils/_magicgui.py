@@ -58,21 +58,16 @@ def add_layer_data_to_viewer(gui, result, return_type):
 
     """
     from ..layers._source import layer_source
+    from ..utils._injection import _add_layer_data_to_viewer
 
-    if result is None:
-        return
-
-    viewer = find_viewer_ancestor(gui)
-    if not viewer:
-        return
-
-    with layer_source(widget=gui):
-        try:
-            viewer.layers[gui.result_name].data = result
-        except KeyError:
-            layer_type = return_type.__name__.replace("Data", "").lower()
-            adder = getattr(viewer, f'add_{layer_type}')
-            adder(data=result, name=gui.result_name)
+    if result is not None and (viewer := find_viewer_ancestor(gui)):
+        with layer_source(widget=gui):
+            _add_layer_data_to_viewer(
+                result,
+                return_type=return_type,
+                viewer=viewer,
+                layer_name=gui.result_name,
+            )
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
@@ -107,47 +102,22 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-    if result is None:
-        return
-    viewer = find_viewer_ancestor(gui)
-    if not viewer:
-        return
-
     from ..layers._source import layer_source
-    from ..utils.misc import ensure_list_of_layer_data_tuple
+    from ..utils._injection import _add_layer_data_tuples_to_viewer
     from ..utils.translations import trans
 
-    result = result if isinstance(result, list) else [result]
-    try:
-        result = ensure_list_of_layer_data_tuple(result)
-    except TypeError:
-        raise TypeError(
-            trans._(
-                'magicgui function {gui} annotated with a return type of napari.types.LayerDataTuple did not return LayerData tuple(s)',
-                deferred=True,
-                gui=gui,
-            )
-        )
-
-    with layer_source(widget=gui):
-        for layer_datum in result:
-            # if the layer data has a meta dict with a 'name' key in it...
-            if (
-                len(layer_datum) > 1
-                and isinstance(layer_datum[1], dict)
-                and layer_datum[1].get("name")
-            ):
-                # then try to update the viewer layer with that name.
-                try:
-                    layer = viewer.layers[layer_datum[1].get('name')]
-                    layer.data = layer_datum[0]
-                    for k, v in layer_datum[1].items():
-                        setattr(layer, k, v)
-                    continue
-                except KeyError:  # layer not in the viewer
-                    pass
-            # otherwise create a new layer from the layer data
-            viewer._add_layer_from_data(*layer_datum)
+    if viewer := find_viewer_ancestor(gui):
+        try:
+            with layer_source(widget=gui):
+                _add_layer_data_tuples_to_viewer(result, viewer)
+        except TypeError as e:
+            raise TypeError(
+                trans._(
+                    'magicgui function {gui} annotated with a return type of napari.types.LayerDataTuple did not return LayerData tuple(s)',
+                    deferred=True,
+                    gui=gui,
+                )
+            ) from e
 
 
 _FUTURES: Set[Future] = set()
@@ -229,32 +199,16 @@ def add_future_data(gui, future, return_type, _from_tuple=True):
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
     """
-    from .._qt.utils import Sentry
+    from ..utils._injection import _add_future_data
 
-    # get the actual return type from the Future type annotation
-    _return_type = get_args(return_type)[0]
-
-    if _from_tuple:
-        # when the future is done, add layer data to viewer, dispatching
-        # to the appropriate method based on the Future data type.
-
-        def _on_future_ready():
-            add_layer_data_tuples_to_viewer(gui, future.result(), return_type)
-            _FUTURES.discard(future)
-
-    else:
-
-        def _on_future_ready():
-            add_layer_data_to_viewer(gui, future.result(), _return_type)
-            _FUTURES.discard(future)
-
-    # some future types (such as a dask Future) will call the callback in
-    # another thread, which wont always work here.  So we create a very small
-    # QObject that can signal back to the main thread to call `_on_done`.
-    sentry = Sentry()
-    sentry.alerted.connect(_on_future_ready)
-    future.add_done_callback(sentry.alert)
-    _FUTURES.add(future)
+    if viewer := find_viewer_ancestor(gui):
+        _add_future_data(
+            future,
+            return_type=get_args(return_type)[0],
+            _from_tuple=_from_tuple,
+            viewer=viewer,
+            source={'widget': gui},
+        )
 
 
 def find_viewer_ancestor(widget) -> Optional[Viewer]:

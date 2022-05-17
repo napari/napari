@@ -116,6 +116,15 @@ ShapesData = NewType("ShapesData", List[ArrayBase])
 SurfaceData = NewType("SurfaceData", Tuple[ArrayBase, ArrayBase, ArrayBase])
 TracksData = NewType("TracksData", ArrayBase)
 VectorsData = NewType("VectorsData", ArrayBase)
+_LayerData = Union[
+    ImageData,
+    LabelsData,
+    PointsData,
+    ShapesData,
+    SurfaceData,
+    TracksData,
+    VectorsData,
+]
 
 LayerDataTuple = NewType("LayerDataTuple", tuple)
 
@@ -154,7 +163,6 @@ def _register_types_with_magicgui():
 
     from magicgui import register_type
 
-    from . import layers
     from .utils import _magicgui as _mgui
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
@@ -166,8 +174,7 @@ def _register_types_with_magicgui():
             future_type = Future[_type]  # type: ignore
             register_type(future_type, return_callback=_mgui.add_future_data)
 
-    for layer_name in layers.NAMES:
-        data_type = globals().get(f'{layer_name.title()}Data')
+    for data_type in _LayerData.__args__:
         register_type(
             data_type,
             choices=_mgui.get_layers_data,
