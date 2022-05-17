@@ -1,20 +1,10 @@
 import contextlib
 import sys
 from concurrent.futures import Future
-from contextlib import nullcontext, suppress
+from contextlib import nullcontext
 from functools import partial, wraps
 from inspect import isgeneratorfunction, signature
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar
 
 from typing_extensions import get_type_hints
 
@@ -46,7 +36,6 @@ _ACCESSORS: Dict[Type, Callable[..., Optional[object]]] = {
     viewer.Viewer: viewer.current_viewer,
     components.LayerList: _get_active_layer_list,
 }
-_PROCESSORS = {}  # defaults are populated below
 
 
 def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
@@ -68,16 +57,6 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
             if issubclass(type_, key):
                 return val  # type: ignore [return-type]
     return None
-
-
-def _add_layer_data_tuple_to_viewer(
-    data: Union[types.LayerData, List[types.LayerData]]
-):
-    added = []
-    if viewer := _access_viewer():
-        for datum in data if isinstance(data, list) else [data]:
-            added.extend(viewer._add_layer_from_data(*datum))
-    return added
 
 
 def _add_layer_data_tuples_to_viewer(
@@ -204,9 +183,9 @@ def _add_future_data(
         else _add_layer_data_to_viewer
     )
 
-    def _on_future_ready(f):
+    def _on_future_ready(f: Future):
         adder(
-            future.result(),
+            f.result(),
             return_type=return_type,
             viewer=viewer,
             source=source,
@@ -217,17 +196,22 @@ def _add_future_data(
     # This still works (no-op) in a headless environment, but
     # we could be even more granular with it, with a function
     # that checks if we're actually in a QApp before wrapping.
-    with suppress(ImportError):
-        from superqt.utils import ensure_main_thread
+    # with suppress(ImportError):
+    #     from superqt.utils import ensure_main_thread
 
-        _on_future_ready = ensure_main_thread(_on_future_ready)
+    #     _on_future_ready = ensure_main_thread(_on_future_ready)
 
     future.add_done_callback(_on_future_ready)
     _FUTURES.add(future)
 
 
 # add default processors
-_PROCESSORS[layers.Layer] = _add_layer_to_viewer
+_PROCESSORS = {
+    layers.Layer: _add_layer_to_viewer,
+    types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
+}
+
+
 for t in types._LayerData.__args__:
     _PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
@@ -288,7 +272,7 @@ class set_processor:
         for k in mapping:
             if k in _PROCESSORS and not clobber:
                 raise ValueError(
-                    f"Class {k} already has an processor and clobber is False"
+                    f"Class {k} already has a processor and clobber is False"
                 )
             self._before[k] = _PROCESSORS.get(k, _NULL)
         _PROCESSORS.update(mapping)
@@ -367,7 +351,7 @@ def napari_type_hints(obj: Any) -> Dict[str, Any]:
     )
 
 
-def inject_napari_dependencies(func: Callable) -> Callable:
+def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     """Create callable that can access napari objects based on type hints.
 
     This is form of dependency injection.  If a function includes a parameter
@@ -397,7 +381,9 @@ def inject_napari_dependencies(func: Callable) -> Callable:
     Callable
         A function with napari dependencies injected
     """
-    if not func.__code__.co_argcount:
+    if not func.__code__.co_argcount and 'return' not in getattr(
+        func, '__annotations__', {}
+    ):
         return func
 
     sig = signature(func)
@@ -409,6 +395,7 @@ def inject_napari_dependencies(func: Callable) -> Callable:
     for name, hint in hints.items():
         if name == 'return':
             return_hint = hint
+            continue
         if sig.parameters[name].default is sig.empty:
             required[name] = hint
 
