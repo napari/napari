@@ -46,7 +46,7 @@ _ACCESSORS: Dict[Type, Callable[..., Optional[object]]] = {
     viewer.Viewer: viewer.current_viewer,
     components.LayerList: _get_active_layer_list,
 }
-_PROCESSORS = {}
+_PROCESSORS = {}  # defaults are populated below
 
 
 def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
@@ -65,7 +65,7 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
 
     if isinstance(type_, type):
         for key, val in _ACCESSORS.items():
-            if issubclass(type, key):
+            if issubclass(type_, key):
                 return val  # type: ignore [return-type]
     return None
 
@@ -81,9 +81,7 @@ def _add_layer_data_tuple_to_viewer(
 
 
 def _add_layer_data_tuples_to_viewer(
-    data: Any,
-    return_type=None,
-    viewer=None,
+    data: Any, return_type=None, viewer=None, source: Optional[dict] = None
 ):
     """_summary_
 
@@ -115,8 +113,9 @@ def _add_layer_data_tuples_to_viewer(
                     for k, v in datum[1].items():
                         setattr(layer, k, v)
                     continue
-            # otherwise create a new layer from the layer data
-            viewer._add_layer_from_data(*datum)
+            with layer_source(**source) if source else nullcontext():
+                # otherwise create a new layer from the layer data
+                viewer._add_layer_from_data(*datum)
 
 
 def _add_layer_data_to_viewer(
@@ -124,6 +123,7 @@ def _add_layer_data_to_viewer(
     return_type: Any,
     viewer: Optional[viewer.Viewer] = None,
     layer_name: Optional[str] = None,
+    source: Optional[dict] = None,
 ):
     """Show a result in the viewer.
 
@@ -151,7 +151,18 @@ def _add_layer_data_to_viewer(
                 viewer.layers[layer_name].data = data
                 return
         layer_type = return_type.__name__.replace("Data", "").lower()
-        getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
+        with layer_source(**source) if source else nullcontext():
+            getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
+
+
+def _add_layer_to_viewer(
+    layer: layers.Layer,
+    viewer: Optional[viewer.Viewer] = None,
+    source: Optional[dict] = None,
+):
+    if layer is not None and (viewer := viewer or _access_viewer()):
+        layer._source = layer.source.copy(update=source or {})
+        viewer.add_layer(layer)
 
 
 _FUTURES: Set[Future] = set()
@@ -194,25 +205,34 @@ def _add_future_data(
     )
 
     def _on_future_ready(f):
-        with layer_source(**source) if source else nullcontext():
-            adder(future.result(), return_type=return_type, viewer=viewer)
-            _FUTURES.discard(future)
+        adder(
+            future.result(),
+            return_type=return_type,
+            viewer=viewer,
+            source=source,
+        )
+        _FUTURES.discard(future)
 
+    # We need the callback to happen in the main thread...
+    # This still works (no-op) in a headless environment, but
+    # we could be even more granular with it, with a function
+    # that checks if we're actually in a QApp before wrapping.
     with suppress(ImportError):
         from superqt.utils import ensure_main_thread
 
         _on_future_ready = ensure_main_thread(_on_future_ready)
+
     future.add_done_callback(_on_future_ready)
     _FUTURES.add(future)
 
 
+# add default processors
+_PROCESSORS[layers.Layer] = _add_layer_to_viewer
 for t in types._LayerData.__args__:
     _PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
     if sys.version_info >= (3, 9):
-
-        future_t = Future[t]  # type: ignore
-        _PROCESSORS[future_t] = partial(
+        _PROCESSORS[Future[t]] = partial(
             _add_future_data, return_type=t, _from_tuple=False
         )
 
@@ -228,6 +248,11 @@ def get_processor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
     """
     if type_ in _PROCESSORS:
         return _PROCESSORS[type_]
+
+    if isinstance(type_, type):
+        for key, val in _PROCESSORS.items():
+            if isinstance(key, type) and issubclass(type_, key):
+                return val  # type: ignore [return-type]
 
 
 class set_processor:

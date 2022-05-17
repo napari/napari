@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import weakref
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from typing_extensions import get_args
 
@@ -57,17 +57,16 @@ def add_layer_data_to_viewer(gui, result, return_type):
     ...     return np.random.rand(256, 256)
 
     """
-    from ..layers._source import layer_source
     from ..utils._injection import _add_layer_data_to_viewer
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
-        with layer_source(widget=gui):
-            _add_layer_data_to_viewer(
-                result,
-                return_type=return_type,
-                viewer=viewer,
-                layer_name=gui.result_name,
-            )
+        _add_layer_data_to_viewer(
+            result,
+            return_type=return_type,
+            viewer=viewer,
+            layer_name=gui.result_name,
+            source={'widget': gui},
+        )
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
@@ -102,25 +101,12 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-    from ..layers._source import layer_source
     from ..utils._injection import _add_layer_data_tuples_to_viewer
-    from ..utils.translations import trans
 
     if viewer := find_viewer_ancestor(gui):
-        try:
-            with layer_source(widget=gui):
-                _add_layer_data_tuples_to_viewer(result, viewer)
-        except TypeError as e:
-            raise TypeError(
-                trans._(
-                    'magicgui function {gui} annotated with a return type of napari.types.LayerDataTuple did not return LayerData tuple(s)',
-                    deferred=True,
-                    gui=gui,
-                )
-            ) from e
-
-
-_FUTURES: Set[Future] = set()
+        _add_layer_data_tuples_to_viewer(
+            result, viewer=viewer, source={'widget': gui}
+        )
 
 
 def add_worker_data(
@@ -175,7 +161,7 @@ def add_worker_data(
     )
 
 
-def add_future_data(gui, future, return_type, _from_tuple=True):
+def add_future_data(gui, future: Future, return_type, _from_tuple=True):
     """Process a Future object from a magicgui widget.
 
     This function will be called when a magicgui-decorated function has a
@@ -368,12 +354,7 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
-    if result is None:
-        return
+    from ..utils._injection import _add_layer_to_viewer
 
-    viewer = find_viewer_ancestor(gui)
-    if not viewer:
-        return
-
-    result._source = result.source.copy(update={'widget': gui})
-    viewer.add_layer(result)
+    if result is not None and (viewer := find_viewer_ancestor(gui)):
+        _add_layer_to_viewer(result, viewer=viewer, source={'widget': gui})
