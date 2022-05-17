@@ -71,7 +71,7 @@ class set_accessor:
     Raises
     ------
     ValueError
-        if clobber is `True` and one of the keys in `mapping` is already
+        if clobber is `False` and one of the keys in `mapping` is already
         registered.
     """
 
