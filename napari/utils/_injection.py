@@ -45,7 +45,7 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
 
     if isinstance(type_, type):
         for key, val in _ACCESSORS.items():
-            if issubclass(type, key):
+            if issubclass(type_, key):
                 return val  # type: ignore [return-type]
     return None
 
