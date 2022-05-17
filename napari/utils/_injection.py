@@ -53,7 +53,7 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
 class set_accessor:
     """Set accessor(s) for given type(s).
 
-    "Acessors" are functions that can retrieve an instance of a given type.
+    "Accessors" are functions that can retrieve an instance of a given type.
     For instance, `napari.viewer.current_viewer` is a function that can
     retrieve an instance of `napari.Viewer`.
 
