@@ -1,7 +1,6 @@
-import contextlib
 import sys
 from concurrent.futures import Future
-from contextlib import nullcontext
+from contextlib import nullcontext, suppress
 from functools import partial, wraps
 from inspect import isgeneratorfunction, signature
 from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar
@@ -86,7 +85,7 @@ def _add_layer_data_tuples_to_viewer(
         for datum in ensure_list_of_layer_data_tuple(data):
             # then try to update a viewer layer with the same name.
             if len(datum) > 1 and (name := datum[1].get("name")):
-                with contextlib.suppress(KeyError):
+                with suppress(KeyError):
                     layer = viewer.layers[name]
                     layer.data = datum[0]
                     for k, v in datum[1].items():
@@ -126,7 +125,7 @@ def _add_layer_data_to_viewer(
     """
     if data is not None and (viewer := viewer or _access_viewer()):
         if layer_name:
-            with contextlib.suppress(KeyError):
+            with suppress(KeyError):
                 viewer.layers[layer_name].data = data
                 return
         layer_type = return_type.__name__.replace("Data", "").lower()
