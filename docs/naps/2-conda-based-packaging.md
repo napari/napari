@@ -37,8 +37,8 @@ however, presents a series of limitations for the napari ecosystem:
   requiring any validation or review. As a result, packages can be built using arbitrary
   toolchains or expecting different libraries in the system. `cibuildwheel` [^cibuildwheel]
   definitely helps users who want to do it in the right way, but again, there's no guarantee is
-  being used. This can result in ABI incompatibilities with the system (e.g. see issues
-  [^appimage-crash][^appimage-crash2]) and within the plugin ecosystem.
+  being used. This can result in ABI incompatibilities with the target system and within the plugin
+  ecosystem.
 * PyPI metadata is often not detailed enough. This is a byproduct of the previous point, which
   makes it difficult for the different clients (pip, poetry, etc) to guarantee that the
   resulting installation is self-consistent and all the packages involved are compatible with
@@ -47,12 +47,16 @@ however, presents a series of limitations for the napari ecosystem:
   it was not designed to do so. In scientific projects, researchers often combine packages from
   different languages to build their pipeline. If we want a thriving plugin ecosystem,
   restricting the packaging options to a language-specific repository can be limiting.
+* PyPI only provides Python _packages_. It does not distribute Python itself, leaving that to the
+  installer infrastructure. In the case of Briefcase, this is obtained via their own distribution
+  mechanisms [^briefcase-python]. One more moving piece that can result in incompatibilities with
+  the target system if not controlled properly (see issues [^appimage-crash][^appimage-crash2]).
 
 In contrast, `conda`-based packaging offers some benefits in those points:
 
-* `conda` is language agnostic. It can package things for Python and other languages. This allows
-  plugins to depend on compiled libraries with no Python counterparts or wrappers, or maybe even
-  different language interpreters.
+* `conda` is language agnostic. It can package things for Python and other languages, but also the
+  language runtimes/interpreters themselves! This allows plugins to depend on compiled
+  libraries with no Python counterparts or wrappers, or maybe even different language interpreters.
 * `conda` maintains its own package metadata separate from PyPI, allowing solvers to do their
   work better and more efficiently. It can also be patched after a package is released,
   allowing corrections to be made over time without building new artifacts.
@@ -541,6 +545,8 @@ CC0+BY [^cc0by].
 [^installability-notebook]: https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk
 
 [^glossary]: https://jaimergp.github.io/scientific-packaging-glossary/
+
+[^briefcase-python]: https://github.com/beeware?q=Python+support&type=all&language=&sort=
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
