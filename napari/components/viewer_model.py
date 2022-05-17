@@ -551,7 +551,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         shear=None,
         affine=None,
         opacity=1,
-        blending=None,
+        blending='translucent_no_depth',
         visible=True,
         multiscale=None,
         cache=True,
@@ -740,7 +740,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
-            kwargs['blending'] = kwargs['blending'] or 'translucent'
+            kwargs['blending'] = kwargs['blending'] or 'translucent_no_depth'
             # Helpful message if someone tries to add mulit-channel kwargs,
             # but forget the channel_axis arg
             for k, v in kwargs.items():
