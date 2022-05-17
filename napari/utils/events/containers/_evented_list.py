@@ -370,7 +370,7 @@ class EventedList(TypedMutableSequence[_T]):
         self._list.reverse()
         self.events.reordered(value=self)
 
-    def __update__(self, other):
+    def _update_inplace(self, other):
         # inplace updating only happens from parent after validation, so no need to validate here.
         with self._no_validation():
             self[:] = list(other)
@@ -394,3 +394,12 @@ class EventedList(TypedMutableSequence[_T]):
         self._validate = False
         yield
         self._validate = True
+
+    def _uneventful(self):
+        ret = list()
+        for el in self:
+            if isinstance(el, self.__class__):
+                ret.append(el._uneventful())
+            else:
+                ret.append(el)
+        return ret

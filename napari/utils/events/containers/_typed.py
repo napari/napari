@@ -1,5 +1,4 @@
 import logging
-from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -31,7 +30,7 @@ class B(MutableSequence[int]):
 
 
 class TypedMutableSequence(MutableSequence[_T]):
-    """List mixin that enforces length and item type, and enables custom indexing.
+    """List mixin that enforces item type, and enables custom indexing.
 
     Parameters
     ----------
@@ -167,12 +166,6 @@ class TypedMutableSequence(MutableSequence[_T]):
                 )
             )
         return e
-
-    @contextmanager
-    def _block_length_check(self):
-        self._length_check_blocked = True
-        yield
-        self._length_check_blocked = False
 
     def __newlike__(self, iterable: Iterable[_T]):
         new = self.__class__()

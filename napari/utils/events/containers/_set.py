@@ -191,6 +191,15 @@ class EventedSet(MutableSet[_T]):
         """Return an object that can be used by json.dumps."""
         return list(self)
 
-    def __update__(self, other):
+    def _update_inplace(self, other):
         self.clear()
         self.update(other)
+
+    def _uneventful(self):
+        ret = set()
+        for el in self:
+            if isinstance(el, self.__class__):
+                ret.add(el._uneventful())
+            else:
+                ret.add(el)
+        return ret

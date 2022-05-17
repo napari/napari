@@ -110,9 +110,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Contains axes, indices, dimensions and sliders.
     """
 
-    # default factory is still needed to ensure event sources are correct
-    # otherwise, id(viewer.field) != id(viewer.events.field.sources)
-    # not sure why this is different from dims :/
     axes: Axes = Field(default_factory=Axes)
     camera: Camera = Field(default_factory=Camera)
     cursor: Cursor = Field(default_factory=Cursor)

@@ -1,8 +1,8 @@
 import warnings
+from typing import Literal
 
 import numpy as np
-from pydantic import root_validator, validator
-from typing_extensions import Literal  # Added to typing in 3.8
+from pydantic import root_validator
 
 from ..utils.events import EventedList, EventedModel, NestableEventedList
 from ..utils.translations import trans
@@ -75,6 +75,8 @@ class Dims(EventedModel):
     step: EventedList[float] = [1, 1]
     order: EventedList[int] = [0, 1]
     last_used: int = 0
+    # private vars
+    _scroll_progress: int = 0
 
     class Config:
         computed_fields = {
@@ -90,34 +92,15 @@ class Dims(EventedModel):
             'displayed_order': ['order', 'ndisplay'],
         }
 
-    # private vars
-    _scroll_progress: int = 0
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # to be removed if/when deprecating current_step
         self.events.span.connect(self.events.current_step)
 
-    # pre validators (applied first, on the raw inputs)
-    # always=True is needed for `pre` validators to fire on *assignement*
-    # this is likely a pydantic bug.
-    # we also need these to make sure defaults are correctly initialized;
-    # otherwise, pydantic complains that they are not valid sequences
-    @validator('range', 'span', pre=True, always=True)
-    def _sort_values(cls, value, field):
-        return [sorted(list(v)) for v in value]
-
-    @validator('step', 'order', 'axis_labels', pre=True, always=True)
-    def _listify(v):
-        return list(v)
-
     @root_validator(skip_on_failure=True)
     def _enforce_ndim(cls, values):
-        # NOTE: we need to sanitize inputs to avoid loops of validation (if input is
-        # EventedList, changing its content during validation will cause a mess)
-        # this is very important because we may trigger validations with partial states
-        # which will cause the model to revert to "usable" conditions
-        # TODO: find a way to disable this at EventedModel level
+        # This validator should not be split, or setting attributes will only trigger
+        # invididual validators, potentially not updating the other fields accordingly
         ndim = values['ndim']
 
         # axis labels
@@ -338,6 +321,9 @@ class Dims(EventedModel):
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
+        # TODO: here and in other places, we could use `self.update` to reduce validations
+        # the downside is that (currently) `self.update` does not trigger events for the
+        # individual fields.
         self.range = [[0, 2]] * self.ndim
         self.span = [[0, 0]] * self.ndim
         self.step = [1] * self.ndim

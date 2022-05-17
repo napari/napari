@@ -5,9 +5,21 @@ from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Optional, Set, Tuple, Union
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
+from pydantic import (
+    BaseModel,
+    PrivateAttr,
+    main,
+    utils,
+    validate_model,
+    validator,
+)
 
-from ...utils.events.containers import View
+from ...utils.events.containers import (
+    EventedDict,
+    EventedList,
+    EventedSet,
+    View,
+)
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
 from .event import EmitterGroup, Event
@@ -182,8 +194,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
         # whether to validate field defaults (default: False)
-        # see https://github.com/napari/napari/pull/4138 before changing.
-        validate_all = False
+        validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
@@ -192,12 +203,23 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # but allows us to use 2 as a special value meaning "inplace mutation"
         allow_mutation = 2
 
+    @validator('*', pre=True, always=True)
+    def _no_evented_collections(v):
+        # we need to sanitize inputs to avoid loops of validation (if input is
+        # EventedList, changing its content during validation will cause a mess)
+        # this is very important because we may trigger validations with partial states
+        # which will cause the model to revert to "usable" conditions
+        if isinstance(v, (EventedList, EventedDict, EventedSet)):
+            return v._uneventful()
+        return v
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._parent = None
         self._validate = True
 
         self._events.source = self
+
         # add event emitters for each field which is mutable
         field_events = [
             name
@@ -213,19 +235,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         for name in field_events:
             child = getattr(self, name)
             if hasattr(child, 'events'):
-                # TODO: won't track source all the way in?
+                # while seemingly redundant, this next line is very important to maintain
+                # correct sources; see https://github.com/napari/napari/pull/4138
+                # we solve it by re-setting the source after initial validation, which allows
+                # us to use `validate_all = True`
+                child.events.source = child
+                # TODO: won't track sources all the way in?
                 child.events.connect(getattr(self.events, name))
                 child._parent = (self, name)
-
-        with self.events.blocker_all():
-            # this acts as validate_all, but without messing up sources
-            self.update(
-                {
-                    k: v
-                    for k, v in self.dict().items()
-                    if self.__fields__[k].field_info.allow_mutation
-                }
-            )
 
     def _pre_validate(self, values):
         if not self._validate:
@@ -273,11 +290,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         ):
             # do inplace_mutation if possible
             field_value = getattr(self, name)
-            if hasattr(field_value, '__update__'):
+            if hasattr(field_value, '_update_inplace'):
                 fields = self.dict()
                 fields.update({name: value})
                 valid = self._pre_validate(fields)
-                field_value.__update__(valid[name])
+                field_value._update_inplace(valid[name])
             else:
                 super().__setattr__(name, value)
         else:
@@ -381,16 +398,17 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             with self._no_validation():
                 for key, value in values.items():
                     field = getattr(self, key)
-                    if hasattr(field, '__update__') and recurse:
-                        field.__update__(value)
+                    if hasattr(field, '_update_inplace') and recurse:
+                        field._update_inplace(value)
                     else:
                         # validation is all good, so let's jump pydantic!
                         self.__dict__[key] = value
 
+        # TODO: shouldn't we still trigger events for all the fields?
         if block.count:
             self.events(Event(self))
 
-    def __update__(self, other):
+    def _update_inplace(self, other):
         with self._no_validation():
             self.update(other)
 
