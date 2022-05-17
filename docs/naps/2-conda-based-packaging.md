@@ -157,7 +157,6 @@ we risk supporting plugins which do not play nicely with the rest of the ecosyst
       necessary
 * [ ] Decide which packages need to be governed by the _napari pinnings_ metapackage
 
-
 ### Milestone 2: Building conda-based installers for napari
 
 Anaconda releases their Anaconda and Miniconda distributions with platform specific installers:
@@ -257,7 +256,7 @@ There are some technical limitations we need to work out as well, namely:
 The installers produced by `constructor` are designed to avoid existing installations.
 Updating a `conda` environment involves more actions than just overwriting some files. For example,
 some packages might feature uninstallation scripts that wouldn't be executed or cleaned up. For
-this reason, Anaconda users are commended to run `conda` itself to handle the update.
+this reason, Anaconda users are recommended to run `conda` itself to handle the update.
 
 Our preferred approach is to create a fresh environment for the new version of napari. This
 ensures that the previous actions in the environment (recorded in the history file, which has an
@@ -360,18 +359,19 @@ in the plugin development documentation should be added.
 Implementing the `constructor` workflow on napari was mainly done in a single, long-lived PR, that
 has seen a couple of minor updates in the recent releases:
 
-* Main PR: https://github.com/napari/napari/pull/3378, superseded by
-  https://github.com/napari/napari/pull/3555
+* Main PR: [#3378](https://github.com/napari/napari/pull/3378), superseded by
+  [#3555](https://github.com/napari/napari/pull/3555) (Prototype a conda-based bundle)
 * Other PRs:
-    * https://github.com/napari/napari/pull/3462
-    * https://github.com/napari/napari/pull/4185
-    * https://github.com/napari/napari/pull/4210
-    * https://github.com/napari/napari/pull/4221
-    * https://github.com/napari/napari/pull/4307
-    * https://github.com/napari/napari/pull/4309
-    * https://github.com/napari/napari/pull/4387
-    * https://github.com/napari/napari/pull/4444
-    * https://github.com/napari/napari/pull/4447
+    * [#3462](https://github.com/napari/napari/pull/3462) (Move icons to package source)
+    * [#4185](https://github.com/napari/napari/pull/4185) (Add licensing page)
+    * [#4210](https://github.com/napari/napari/pull/4210) (Fix EULA/licensing/signing issues)
+    * [#4221](https://github.com/napari/napari/pull/4221) (Adjust conditions that trigger signing)
+    * [#4307](https://github.com/napari/napari/pull/4307) (Test installers in CI)
+    * [#4309](https://github.com/napari/napari/pull/4309) (Use conda-forge/napari-feedstock)
+    * [#4387](https://github.com/napari/napari/pull/4387) (Fix unlink errors on cleanup)
+    * [#4444](https://github.com/napari/napari/pull/4444) (Add versioning to installer itself)
+    * [#4447](https://github.com/napari/napari/pull/4447) (Use custom `.condarc` file)
+    * [#4525](https://github.com/napari/napari/pull/4525) (Revert to napari-versioned default paths)
 
 
 Adding the missing pieces to `constructor` involves changes in four different projects:
@@ -393,11 +393,13 @@ A complete list of features can be found in the packaging documentation [^napari
 Support for conda/mamba handling of plugin installations was implemented in a base
 PR and then extended with different PRs:
 
-* Initial PR: https://github.com/napari/napari/pull/2943
-* Other PRs that improved and extended the funcionality:
-    * https://github.com/napari/napari/pull/4074
-    * https://github.com/napari/napari/pull/3369
-    * https://github.com/napari/napari/pull/3288
+* Initial PR: [#2943](https://github.com/napari/napari/pull/2943) (Add initial support to install
+  plugins with conda/mamba)
+* Other PRs that improved and extended the functionality:
+    * [#3288](https://github.com/napari/napari/pull/3288) (Fix plugin updates)
+    * [#3369](https://github.com/napari/napari/pull/3369) (Add cancel actions to plugin manager)
+    * [#4074](https://github.com/napari/napari/pull/4074) (Use napari hub to list plugins)
+    * [#4520](https://github.com/napari/napari/pull/4520) (Rework how subprocesses are launched)
 
 Adding the necessary functionality to the plugin dialog, including:
 
@@ -471,26 +473,22 @@ See "Related work".
 
 ## Discussion
 
-- https://github.com/napari/napari/issues/1001
-- https://github.com/napari/napari/pull/4404
+- [Issue #1001](https://github.com/napari/napari/issues/1001) (Plugin dependency management)
+- [PR #4404](https://github.com/napari/napari/pull/4404) (Switch to a more declarative configuration
+  for conda packaging)
 
 ## References and Footnotes
 
 * Napari on PyPI [^pypi-napari]
 * Napari on conda-forge [^napari-feedstock]
+* Installation analysis of all napari plugins [^installability-notebook]
+* Scientific packaging glossary [^glossary]
 
 ## Copyright
 
 This document is dedicated to the public domain with the Creative Commons CC0
 license [^cc0]. Attribution to this source is encouraged where appropriate, as per
 CC0+BY [^cc0by].
-
-## Glossary
-
-Feel free to consult the [scientific packaging glossary](https://jaimergp.github.io/scientific-packaging-glossary/)
-in case any of the concepts discussed here is not clear.
-
-## References
 
 <!-- Links -->
 
@@ -541,6 +539,8 @@ in case any of the concepts discussed here is not clear.
 [^in-app-update-pr]: https://github.com/napari/napari/pull/4422
 
 [^installability-notebook]: https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk
+
+[^glossary]: https://jaimergp.github.io/scientific-packaging-glossary/
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
