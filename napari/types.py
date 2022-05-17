@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
     import dask.array
@@ -174,7 +174,7 @@ def _register_types_with_magicgui():
             future_type = Future[_type]  # type: ignore
             register_type(future_type, return_callback=_mgui.add_future_data)
 
-    for data_type in _LayerData.__args__:
+    for data_type in get_args(_LayerData):
         register_type(
             data_type,
             choices=_mgui.get_layers_data,
