@@ -21,7 +21,7 @@ def _get_active_layer_list() -> Optional[components.LayerList]:
 
 # registry of Type -> "accessor function"
 # where each value is a function that is capable
-# of retrieving an instance of it's corresponding key type.
+# of retrieving an instance of its corresponding key type.
 _ACCESSORS: Dict[Type, Callable[..., Optional[object]]] = {
     layers.Layer: _get_active_layer,
     viewer.Viewer: current_viewer,
@@ -45,7 +45,7 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
 
     if isinstance(type_, type):
         for key, val in _ACCESSORS.items():
-            if issubclass(type, key):
+            if issubclass(type_, key):
                 return val  # type: ignore [return-type]
     return None
 
@@ -53,7 +53,7 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
 class set_accessor:
     """Set accessor(s) for given type(s).
 
-    "Acessors" are functions that can retrieve an instance of a given type.
+    "Accessors" are functions that can retrieve an instance of a given type.
     For instance, `napari.viewer.current_viewer` is a function that can
     retrieve an instance of `napari.Viewer`.
 
@@ -71,7 +71,7 @@ class set_accessor:
     Raises
     ------
     ValueError
-        if clobber is `True` and one of the keys in `mapping` is already
+        if clobber is `False` and one of the keys in `mapping` is already
         registered.
     """
 
