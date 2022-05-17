@@ -394,8 +394,8 @@ A complete list of features can be found in the packaging documentation [^napari
 
 ### Milestone 3: Adding support for conda packages in the plugin manager
 
-Support for conda/mamba handling of plugin installations was implemented in a base
-PR and then extended with different PRs:
+Support for conda/mamba handling of plugin installations was implemented in a base PR and then
+extended with different PRs:
 
 * Initial PR: [#2943](https://github.com/napari/napari/pull/2943) (Add initial support to install
   plugins with conda/mamba)
@@ -426,12 +426,12 @@ releases include:
 
 ### Milestone 4: Enabling in-app napari version updates
 
-Our first attempts [^in-app-update-pr] to implementing this consisted of a pop-up dialog that would
+Our first attempts [^in-app-update-pr] to implement this consisted of a pop-up dialog that would
 notify the user about the available updates. Accepting the dialog would trigger the creation of a
 new environment (e.g. `napari-0.4.16`) alongside the existing one (e.g. `napari-0.4.15`). While it
 could be argued that this is not an "update" per se, but a new installation, it fulfills the same
-goal: the new version is available. If the user wants to get rid of the old one, an option would
-have been offered to auto-clean on success, or after not using it for some configurable time.
+goal: the new version is available. If the user wants to get rid of the old one, an option can
+be offered to auto-clean on success, or after not using it for some configurable time.
 
 However, having several versions of napari coexisting might risk questions like "which napari
 version is the default one?", "which one will be in charge of updating napari?", "what if the
@@ -439,18 +439,21 @@ update logic changes over time?". There possible workarounds, but from the user 
 get confusing very fast.
 
 For that reason, we decided to slightly redesign our approach to in-app updates. We will still use
-several environments to keep things tidy and performant (see "Detailed description" for Milestone
-2 for more details), but the update checks will mimic something closer to a a server-client model:
+several environments to keep things tidy and performant (see "Detailed description" for Milestone 2
+for more details), but the update checks will mimic something closer to a local server-client model
+or, more accurately, a `napari-updater` process (name subject to change; other options include
+`napari-launcher` or  `napari-manager`) that can be queried by a running `napari` instance.
 
-* The server: We will create a separate standalone package to handle updates outside of the
+* `napari-updater`: We will create a separate standalone package to handle updates outside of the
   `napari` process. This will be designed in an application agnostic way while targeting the needs
   of the napari project. It will allow the user to handle updates but also manage the existing
   napari installations (investigate issues, remove old ones, clean expired caches, etc).
-* The client: each napari version will have a very basic notion about the "update server" and will
-  query for updates every time it starts, and also periodically while running. If one is found, it
-  the server will run the update on its own.
+* `napari` itself: Each napari version will have a very basic notion about `napari-updater` and
+  will query for updates every time it starts, and also periodically while running. If one is
+  found, the server will run the update on its own. In essence, all `napari` has to do is run
+  `napari-updater` on a separate, detached process every now and then.
 
-The governance of the "server" part will still fall under the `napari` organization (much like
+The governance of `napari-updater` part will still fall under the `napari` organization (much like
 `magicgui`) but it will be usable outside of the napari project, following the same philosophy we
 adopted for the constructor work.
 
