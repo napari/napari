@@ -114,6 +114,25 @@ making then non-installable together. In conda jargon, the set of conditional re
 pinnings and implemented as part of a metapackage (a package that doesn't distribute files, only
 provides metadata). From now on we will refer to them as _napari pinnings_.
 
+
+A prototype notebook assessing the "installability" of all plugins in the same environment
+is available [here](https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk)
+Results across Python versions show incompatibilities on Linux, possibly even more intricate on macOS
+and Windows. Excerpt for Python 3.9:
+
+```
+$ mamba create -n test-napari-installability --dry-run -q napari=0.4.15 python=3.9 affinder \
+  bbii-decon brainglobe-napari-io [...] nfinder platelet-unet-watershed smo waver workshop-demo
+Encountered problems while solving.
+Problem: nothing provides __linux needed by dask-cuda-21.10.0-pyhd8ed1ab_0
+Problem: package napari-subboxer-0.0.1-pyhd8ed1ab_0 requires napari 0.4.12, but none of the providers can be installed
+Problem: package napari-tomoslice-0.0.7-pyhd8ed1ab_0 requires napari 0.4.12, but none of the providers can be installed
+Problem: package napari-nikon-nd2-0.1.3-pyhd8ed1ab_0 requires python >=3.6,<=3.9, but none of the providers can be installed
+Problem: package napari-multitask-0.0.2-pyhd8ed1ab_0 requires python >=3.8, but none of the providers can be installed
+Problem: nothing provides __cuda needed by tensorflow-2.7.0-cuda102py310hcf4adbc_0
+Problem: package napari-console-0.0.4-pyhd8ed1ab_0 requires ipykernel >=5.2.0, but none of the providers can be installed
+```
+
 #### Potential Risks
 
 Lack of involvement of the community might mean that only one source of packaging is updated often,
@@ -520,6 +539,8 @@ in case any of the concepts discussed here is not clear.
 [^vscode-extensions-ui]: https://code.visualstudio.com/docs/editor/extension-marketplace
 
 [^in-app-update-pr]: https://github.com/napari/napari/pull/4422
+
+[^installability-notebook]: https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
