@@ -129,6 +129,9 @@ class LayerList(SelectableEventedList[Layer]):
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
+        if new_layer in self:
+            self.move(self.index(new_layer), index)
+            return
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
         new_layer.events.set_data.connect(self._clean_cache)
