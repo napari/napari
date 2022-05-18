@@ -108,9 +108,7 @@ class EventedList(TypedMutableSequence[_T]):
     # def remove(self, value: T): ...
 
     def __setitem__(self, key, value):
-        old = self._list[key]
-        if value is old:  # https://github.com/napari/napari/pull/2120
-            return
+        old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
@@ -119,6 +117,8 @@ class EventedList(TypedMutableSequence[_T]):
                         deferred=True,
                     )
                 )
+            if all(new_el is old_el for new_el, old_el in zip(value, old)):
+                return
 
             [self._type_check(v) for v in value]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
@@ -140,6 +140,8 @@ class EventedList(TypedMutableSequence[_T]):
                 for i, v in enumerate(value):
                     self.insert(start + i, v)
         else:
+            if value is old:
+                return
             super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)
 
