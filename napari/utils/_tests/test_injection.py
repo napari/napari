@@ -13,7 +13,7 @@ def test_napari_injection():
 
     assert f() is None
 
-    with set_accessor({LayerList: lambda: some_layers}):
+    with set_accessor({LayerList: lambda: some_layers}, clobber=True):
         assert f() is some_layers
 
     assert f() is None
