@@ -23,6 +23,7 @@ from ...utils.events.containers import (
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
 from .event import EmitterGroup, Event
+from .evented import EventedMutable
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
@@ -234,15 +235,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # hook up events and parent validator for children
         for name in field_events:
             child = getattr(self, name)
-            if hasattr(child, 'events'):
+            if isinstance(child, EventedMutable):
                 # while seemingly redundant, this next line is very important to maintain
                 # correct sources; see https://github.com/napari/napari/pull/4138
                 # we solve it by re-setting the source after initial validation, which allows
                 # us to use `validate_all = True`
                 child.events.source = child
+                child._parent = (self, name)
                 # TODO: won't track sources all the way in?
                 child.events.connect(getattr(self.events, name))
-                child._parent = (self, name)
 
     def _pre_validate(self, values):
         if not self._validate:
@@ -283,14 +284,22 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if name in self.__properties__:
             if self.__properties__[name].fset is None:
                 raise AttributeError(f"can't set attribute '{name}'")
-            self.__properties__[name].fset(self, value)
+            if name in self.__computed_fields__:
+                # block events during this or we could have many duplicates, especially
+                # if the setter sets several interconnected fields
+                # they will be fired later by __setattr__ as appropriate
+                with getattr(self.events, name).blocker():
+                    self.__properties__[name].fset(self, value)
+            else:
+                # good old normal property setter
+                self.__properties__[name].fset(self, value)
         elif name in self.__fields__ and (
             self.__config__.allow_mutation == 2
             or self.__fields__[name].field_info.allow_mutation == 2
         ):
             # do inplace_mutation if possible
             field_value = getattr(self, name)
-            if hasattr(field_value, '_update_inplace'):
+            if isinstance(field_value, EventedMutable):
                 fields = self.dict()
                 fields.update({name: value})
                 valid = self._pre_validate(fields)
@@ -326,7 +335,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         for field in before:
             are_equal = self.__eq_operators__.get(field, operator.eq)
             if not are_equal(after[field], before[field]):
-                getattr(self.events, name)(value=after[field])  # emit event
+                getattr(self.events, field)(value=after[field])  # emit event
 
     # expose the private EmitterGroup publically
     @property
@@ -398,11 +407,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             with self._no_validation():
                 for key, value in values.items():
                     field = getattr(self, key)
-                    if hasattr(field, '_update_inplace') and recurse:
+                    if field == value:
+                        continue
+                    if isinstance(field, EventedMutable) and recurse:
                         field._update_inplace(value)
                     else:
                         # validation is all good, so let's jump pydantic!
                         self.__dict__[key] = value
+                        getattr(self.events, key)(value=value)
 
         # TODO: shouldn't we still trigger events for all the fields?
         if block.count:
