@@ -48,7 +48,7 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
     ```sh
     napari my-path.tif --plugin napari_tifffile
     ```
-- A preferred reader failing to read your file will result in an error e.g. if you saved `napari_tifffile` as a preference for TIFFs but then uninstalled it
+- A preferred reader failing to read your file will result in an error e.g. if you saved `napari_tifffile` as a preference for TIFFs but then tried to open a broken file
 - When opening a file through a GUI pathway (drag & drop, File -> Open, Open Sample) you are provided with a dialog allowing you to choose among the various plugins that are compatible with your file
     - This dialog also allows you to save a preference for files and folders with extensions
     - This dialog also pops up if a preferred reader fails to open your file
