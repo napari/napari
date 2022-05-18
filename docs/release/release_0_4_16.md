@@ -30,8 +30,8 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
 
     ```python
     from napari.settings import get_settings
-    get_settings().plugins.extension2reader['*.tif'] = napari_tifffile
-    get_settings().plugins.extension2reader['*.zarr'] = napari_ome_zarr
+    get_settings().plugins.extension2reader['*.tif'] = 'napari_tifffile'
+    get_settings().plugins.extension2reader['*.zarr'] = 'napari-ome-zarr'
     ```
 
     - To specify a plugin in a Python script:
@@ -41,7 +41,7 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
 
     viewer = napari.Viewer()
     viewer.open('my-path.tif') # this will throw MultipleReaderError if napari_tifffile is installed as both it and builtins could open the file
-    viewer.open('my-path.tif', plugin=napari_tifffile) # this won't
+    viewer.open('my-path.tif', plugin='napari_tifffile') # this won't
     ```
 
     - To specify a plugin at the command line, use:
