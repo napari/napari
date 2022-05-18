@@ -119,7 +119,7 @@ pinnings and implemented as part of a metapackage (a package that doesn't distri
 provides metadata). From now on we will refer to them as _napari pinnings_.
 
 > There are precedents in other projects that support the usage of pinnings. For example,
-> Fiji/SciJava [^scijava-pinnings], conda-forge [^conda-forge-pinnings] Maxiconda [^maxiconda].
+> Fiji/SciJava [^scijava-pinnings], conda-forge [^conda-forge-pinnings], or Maxiconda [^maxiconda].
 
 A prototype notebook assessing the "installability" of all plugins in the same environment
 is available [here](https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk)
