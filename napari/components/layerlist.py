@@ -126,12 +126,47 @@ class LayerList(SelectableEventedList[Layer]):
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
 
+    def __setitem__(self, key, value):
+        # we have to repeat some logic even though it happens in the superclass
+        # because we need to ensure inplace changes such as reshuffling layers still work
+        # e.g: layers[2:5] = sorted(layers[2:5])
+        old = self._list[key]
+        if isinstance(key, slice):
+            if not isinstance(value, Iterable):
+                raise TypeError(
+                    trans._(
+                        'Can only assign an iterable to slice',
+                        deferred=True,
+                    )
+                )
+            # ensure uniqueness
+            if len(value) != len(set(value)):
+                raise ValueError(
+                    trans._("LayerList cannot contain duplicate layers.")
+                )
+            for v in value:
+                # here we use `not in` rather than checking element by element,
+                # because we allow reshuffling!
+                if v in self._list and v not in old:
+                    raise ValueError(
+                        f"Layer '{v}' is already present in layer list"
+                    )
+        elif isinstance(key, int):
+            if value in self._list and value is not old:
+                raise ValueError(
+                    f"Layer '{value}' is already present in layer list"
+                )
+            raise Exception
+
+        super().__setitem__(key, value)
+
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
+        if value in self._list:
+            raise ValueError(
+                f"Layer '{value}' is already present in layer list"
+            )
         new_layer = self._type_check(value)
-        if new_layer in self:
-            self.move(self.index(new_layer), index)
-            return
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
         new_layer.events.set_data.connect(self._clean_cache)

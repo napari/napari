@@ -904,12 +904,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A list of any layers that were added to the viewer.
         """
 
-        paths = [path] if isinstance(path, (Path, str)) else path
+        paths: List[str | Path] = (
+            [os.fspath(path)]
+            if isinstance(path, (Path, str))
+            else [os.fspath(p) for p in path]
+        )
 
         if stack:
-            layers = self._open_or_raise_error(
-                paths, kwargs, layer_type, stack
-            )
+            if plugin:
+                layers = self._add_layers_with_plugins(
+                    paths,
+                    kwargs=kwargs,
+                    plugin=plugin,
+                    layer_type=layer_type,
+                    stack=stack,
+                )
+            else:
+                layers = self._open_or_raise_error(
+                    paths, kwargs, layer_type, stack
+                )
             return layers
 
         added: List[Layer] = []  # for layers that get added
@@ -1113,6 +1126,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         assert stack is not None
         assert isinstance(paths, list)
         assert not isinstance(paths, str)
+        for p in paths:
+            assert isinstance(p, str)
 
         if stack:
             layer_data, hookimpl = read_data_with_plugins(

@@ -128,8 +128,9 @@ def test_clearing_layerlist():
     """Test clearing layer list."""
     layers = LayerList()
     layer = Image(np.random.random((10, 10)))
+    layer2 = Image(np.random.random((10, 10)))
     layers.append(layer)
-    layers.append(layer)
+    layers.append(layer2)
     assert len(layers) == 2
 
     layers.clear()

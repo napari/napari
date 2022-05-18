@@ -24,6 +24,7 @@ cover this in test_evented_list.py)
 
 import logging
 from contextlib import contextmanager
+from itertools import zip_longest
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
 from ...translations import trans
@@ -116,9 +117,7 @@ class EventedList(TypedMutableSequence[_T]):
         tmp[key] = value
         value = self._validate_with_parent(tmp)[key]
 
-        old = self._list[key]
-        if value is old:  # https://github.com/napari/napari/pull/2120
-            return
+        old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
@@ -127,6 +126,10 @@ class EventedList(TypedMutableSequence[_T]):
                         deferred=True,
                     )
                 )
+            if all(
+                new_el is old_el for new_el, old_el in zip_longest(value, old)
+            ):
+                return
 
             [self._type_check(v) for v in value]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
@@ -151,6 +154,8 @@ class EventedList(TypedMutableSequence[_T]):
                         self.insert(start + i, v)
                 self.events.changed(index=key, old_value=old, value=value)
         else:
+            if value is old:
+                return
             super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)
 
