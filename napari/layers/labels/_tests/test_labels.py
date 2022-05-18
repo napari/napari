@@ -581,7 +581,7 @@ def test_contour_large_new_labels():
     labels_layer = viewer.add_labels(labels)
     labels_layer.contour = 1
     # This used to fail with IndexError
-    viewer.dims.set_point(axis=0, value=4)
+    viewer.dims.point[0] = 4
 
 
 def test_selecting_label():

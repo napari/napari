@@ -311,7 +311,7 @@ def test_view_centering_with_points_add():
     viewer.add_image(image)
     assert tuple(viewer.dims.point) == (2, 5, 5)
 
-    viewer.dims.set_point(0, 0)
+    viewer.dims.point[0] = 0
     # viewer point shouldn't change after this
     assert tuple(viewer.dims.point) == (0, 5, 5)
 

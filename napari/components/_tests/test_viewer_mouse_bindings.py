@@ -53,9 +53,9 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
     data = np.random.random((10, 10, 10))
     viewer.add_image(data)
     viewer.dims.last_used = 2
-    viewer.dims.set_point(axis=0, value=5)
-    viewer.dims.set_point(axis=1, value=5)
-    viewer.dims.set_point(axis=2, value=5)
+    viewer.dims.point[0] = 5
+    viewer.dims.point[1] = 5
+    viewer.dims.point[2] = 5
 
     # Simulate tiny scroll
     event = ReadOnlyWrapper(

@@ -135,7 +135,7 @@ def test_slider_values(qtbot):
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the dims
-    view.dims.set_point(0, 2)
+    view.dims.point[0] = 2
     assert first_slider.value() == view.dims.point[0]
 
     # Check that values of the dimension slider matches the values of the
@@ -213,8 +213,8 @@ def test_order_when_changing_ndim(qtbot):
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the dims
-    view.dims.set_point(0, 2)
-    view.dims.set_point(1, 1)
+    view.dims.point[0] = 2
+    view.dims.point[1] = 1
     for i in range(view.dims.ndim - 2):
         slider = view.slider_widgets[i].slider
         assert slider.value() == view.dims.point[i]
@@ -306,7 +306,7 @@ def test_slice_labels(qtbot):
 
     # make sure setting the dims.point updates the slice label
     label_edit = view.slider_widgets[0].curslice_label
-    dims.set_point(0, 15)
+    dims.point[0] = 15
     assert int(label_edit.text()) == 15
 
     # make sure setting the current slice label updates the model
