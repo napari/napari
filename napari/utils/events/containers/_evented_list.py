@@ -113,10 +113,6 @@ class EventedList(TypedMutableSequence[_T]):
     # def remove(self, value: T): ...
 
     def __setitem__(self, key, value):
-        tmp = self._list.copy()
-        tmp[key] = value
-        value = self._validate_with_parent(tmp)[key]
-
         old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
@@ -131,7 +127,9 @@ class EventedList(TypedMutableSequence[_T]):
             ):
                 return
 
-            [self._type_check(v) for v in value]  # before we mutate the list
+            value = [
+                self._type_check(v) for v in value
+            ]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))
                 if not len(value) == len(indices):
@@ -143,19 +141,42 @@ class EventedList(TypedMutableSequence[_T]):
                             slice_size=len(indices),
                         )
                     )
+
+                # validate if necessary
+                tmp = self._list.copy()
+                for i, v in zip(indices, value):
+                    tmp[i] = v
+                value = self._validate_with_parent(tmp)[key]
+
                 for i, v in zip(indices, value):
                     self.__setitem__(i, v)
             else:
                 with self.events.blocker_all():
+                    start = key.start or 0
+
+                    # validate if necessary
+                    tmp = self._list.copy()
+                    del tmp[key]
+                    for i, v in enumerate(value):
+                        tmp.insert(start + i, v)
+                    value = self._validate_with_parent(tmp)[
+                        slice(start, start + len(value))
+                    ]
+
                     old = self[key]
                     del self[key]
-                    start = key.start or 0
                     for i, v in enumerate(value):
                         self.insert(start + i, v)
                 self.events.changed(index=key, old_value=old, value=value)
         else:
             if value is old:
                 return
+
+            # validate if necessary
+            tmp = self._list.copy()
+            tmp[key] = value
+            value = self._validate_with_parent(tmp)[key]
+
             super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)
 
@@ -181,11 +202,17 @@ class EventedList(TypedMutableSequence[_T]):
         )
 
     def __delitem__(self, key: Index):
-        tmp = self._list.copy()
-        del tmp[key]
-        self._validate_with_parent(tmp)
         # delete from the end
-        for parent, index in sorted(self._delitem_indices(key), reverse=True):
+        indices = sorted(self._delitem_indices(key), reverse=True)
+
+        # validate if necessary
+        tmp = self._list.copy()
+        for _, index in indices:
+            # TODO: does this validate correctly with nested lists?
+            tmp.pop(index)
+        self._validate_with_parent(tmp)
+
+        for parent, index in indices:
             parent.events.removing(index=index)
             self._disconnect_child_emitters(parent[index])
             item = parent._list.pop(index)
