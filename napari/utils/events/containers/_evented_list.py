@@ -23,6 +23,7 @@ cover this in test_evented_list.py)
 """
 
 import logging
+from itertools import zip_longest
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
 from ...translations import trans
@@ -117,7 +118,9 @@ class EventedList(TypedMutableSequence[_T]):
                         deferred=True,
                     )
                 )
-            if all(new_el is old_el for new_el, old_el in zip(value, old)):
+            if all(
+                new_el is old_el for new_el, old_el in zip_longest(value, old)
+            ):
                 return
 
             [self._type_check(v) for v in value]  # before we mutate the list
