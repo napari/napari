@@ -118,6 +118,9 @@ making then non-installable together. In conda jargon, the set of conditional re
 pinnings and implemented as part of a metapackage (a package that doesn't distribute files, only
 provides metadata). From now on we will refer to them as _napari pinnings_.
 
+> There are precedents in other projects that support the usage of pinnings. For example,
+> Fiji/SciJava [^scijava-pinnings], conda-forge [^conda-forge-pinnings] Maxiconda [^maxiconda].
+
 A prototype notebook assessing the "installability" of all plugins in the same environment
 is available [here](https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk)
 Results across Python versions show incompatibilities on Linux, possibly even more intricate on macOS
@@ -592,6 +595,12 @@ CC0+BY [^cc0by].
 [^pypi-parallelism-abi]: https://twitter.com/ralfgommers/status/1517410559972589569
 
 [^release-guide]: https://napari.org/developers/release.html
+
+[^scijava-pinnings]: https://github.com/scijava/pom-scijava/blob/ff35ca810a8717c4f461ef24df4986bf1914c673/pom.xml#L307
+
+[^maxiconda]: https://github.com/Semi-ATE/maxiconda-envs
+
+[^conda-forge-pinnings]: https://github.com/conda-forge/conda-forge-pinning-feedstock/blob/32f93dd/recipe/conda_build_config.yaml
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
