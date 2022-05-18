@@ -38,7 +38,7 @@ however, presents a series of limitations for the napari ecosystem:
   toolchains or expecting different libraries in the system. `cibuildwheel` [^cibuildwheel]
   definitely helps users who want to do it in the right way, but again, there's no guarantee is
   being used. This can result in ABI incompatibilities with the target system and within the plugin
-  ecosystem.
+  ecosystem, specially when some packages vendor specific libraries [^pypi-parallelism-abi].
 * PyPI metadata is often not detailed enough. This is a byproduct of the previous point, which
   makes it difficult for the different clients (pip, poetry, etc) to guarantee that the
   resulting installation is self-consistent and all the packages involved are compatible with
@@ -69,14 +69,14 @@ In contrast, `conda`-based packaging offers some benefits in those points:
   flexibility to manage a plugin ecosystem with potentially wildly different requirements, which
   would risk conflicts.
 
-This NAP proposes to add a `conda`-based distribution mechanism for napari, supported by three key
+This NAP proposes to add a `conda`-based distribution mechanism for napari, supported by five key
 milestones:
 
-1. `conda-forge` becomes an official distribution channel for napari and its plugins.
-2. `conda`-based installers are made available for each napari release.
-3. The plugin manager can use `conda` to install plugins.
-4. The resulting installation is able to update napari and the active plugins in a robust way.
-5. Briefcase-based installers are deprecated.
+1. Distributing napari and plugins on conda-forge
+2. Building conda-based installers for napari
+3. Adding support for conda packages in the plugin manager
+4. Enabling in-app napari version updates
+5. Deprecating Briefcase-based installers
 
 ## Detailed Description
 
@@ -89,7 +89,7 @@ merged some months later. As a result, napari is available on conda-forge since 
 [^napari-feedstock-creation]. The conda-forge bots auto-submit PRs to build the new versions
 once detected on PyPI. This means that releases on conda-forge can be slightly lag behind PyPI.
 To avoid accidental delays in the releases, conda-forge packaging needs to be considered part
-of the release checklist.
+of the release guide [^release-guide].
 
 Pre-release packages are additionally built in our CI by cloning the conda-forge feedstock and
 patching it to use the local source. The artifacts are uploaded to the `napari` channel at
@@ -117,7 +117,6 @@ situation where plugin developers are choosing wildly different `numpy` versions
 making then non-installable together. In conda jargon, the set of conditional restrains are called
 pinnings and implemented as part of a metapackage (a package that doesn't distribute files, only
 provides metadata). From now on we will refer to them as _napari pinnings_.
-
 
 A prototype notebook assessing the "installability" of all plugins in the same environment
 is available [here](https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk)
@@ -262,12 +261,24 @@ Updating a `conda` environment involves more actions than just overwriting some 
 some packages might feature uninstallation scripts that wouldn't be executed or cleaned up. For
 this reason, Anaconda users are recommended to run `conda` itself to handle the update.
 
-Our preferred approach is to create a fresh environment for the new version of napari. This
-ensures that the previous actions in the environment (recorded in the history file, which has an
-effect on how the solver works, whether we like it or not) do not play a role in the update. The
-idea is that the `conda` client in the `base` environment creates a new `napari-X.Y.Z` environment
-next to the one corresponding to the old version. This old one can be kept around or removed after
-the update or if it hasn't been used after a given amount of time.
+Our preferred approach is to create a fresh environment for the new version of napari. The reasons
+are multiple:
+
+* Performance and solving complexity: `conda` keeps track of the actions performed in the
+  environment in a `conda-meta/history` file. The contents of this file are parsed by the solver,
+  which prioritizes the packaged listed there in the solves. For example: if you started your
+  environment with `conda create -n something python=3.9 numpy=1.21`, `numpy` will be _soft-pinned_
+  during the lifetime of the environment. Soft-pinning means that the solver will try to respect
+  that specific version (1.21) in every solve, unless the user asks for a different version
+  explicitly (thus overriding the historic preference). For napari, this means that every plugin
+  installation will be recorded in the history file, accumulating over time. If we compound this
+  with `napari` updates, the problem gets larger with every new release.
+* Guarantee of success: updating an environment to the latest napari release might now work right
+  away, specially if the user has installed plugins that have conflicting packaging metadata. Even
+  if the installation succeeds, insufficient/incorrect metadata might result in the wrong packages
+  being installed, rendering the napari installation non-operational!
+* Using several versions side-by-side: the multiple environments setup fits nicely in contexts
+  where several napari versions (or even "flavors") are needed.
 
 Since we install plugins to the napari environments, we need to guarantee that the new version
 will be compatible with the installed plugins. To do so, we instruct `conda` to perform a _dry-run_
@@ -276,10 +287,10 @@ is not solvable, then we can offer the user two options:
 
 * Start a fresh environment only containing napari, with no extra plugins, keeping the old version
   in place.
-* Run a potentially time-consuming analysis on which package(s) are creating the installation
-  conflicts and suggest which plugins cannot be installed. This kind of analysis would entail a
-  series of dry runs, removing one plugin at a time, hoping that the environment gets solved
-  eventually.
+* (Experimental idea / suggestion) Run a potentially time-consuming analysis on which package(s)
+  are creating the installation conflicts and suggest which plugins cannot be installed. This kind
+  of analysis would entail a series of dry runs, removing one plugin at a time, hoping that the
+  environment gets solved eventually.
 
 It must be considered that better metadata at napari hub could substantially improve the
 installability analysis for the end-user. If we keep track of which napari versions the plugins are
@@ -413,16 +424,30 @@ Adding the necessary functionality to the plugin dialog, including:
 * Populating the listing with data obtained from the napari hub API [^napari-hub-api].
 * Updating the listing to filter and mark plugins based on their availability on conda-forge.
 
-Some UX/UI improvements that are not part of this milestone but could be implemented in future
-releases include:
+Some UX/UI improvements that are not part of this milestone but could be explored in future
+releases may include:
 
 * Making the plugin dialog a side panel / side dockwidget (similar to VS Code
   [^vscode-extensions-ui])
 * Allow for simultaneous install of plugins. Currently multiple plugins can be selected for
   install, uninstall and update, but each on of these actions, are queued and run sequentially.
-* Allow advanced users to install packages from PyPI or other local sources via drag-and-drop. This
-  presents many risks that could irreversibly disrupt the installation, though, so it needs to be
-  considered very carefully.
+* Enable installation of conda packages from custom channels and/or dropped tarballs. Technically,
+  this is already possible via environment variables or the shipped `.condarc` file, but some UI
+  would be desirable.
+* Allow advanced users to install packages from PyPI. This presents many risks that could
+  irreversibly disrupt the installation, though, so it needs to be studied very carefully. Some
+  ideas for consideration:
+    * `pip` should only install the package, with no dependencies. Dependencies should be provided
+      with `conda` whenever possible.
+    * Run some analysis on the package metadata to infer the potential for disruption (trickier than
+      it sounds, given the dynamic nature of PyPI metadata!).
+    * Devise some experimental hybrid conda/pip automations. See example workflow in
+      [this issue comment](https://github.com/napari/napari/issues/3223#issuecomment-972189348).
+
+> Note: This is uncharted territory at the borders of PyPI and conda ecosystems. They can be
+> considered global packaging problems in the Python community; problems we might not be able to
+> fully solve on our own as a project. All we can do for now is to provide "best-effort workarounds"
+> while making sure we don't break anything...
 
 ### Milestone 4: Enabling in-app napari version updates
 
@@ -476,7 +501,20 @@ the future, if it makes sense, we can talk about adding a UI on top.
 
 ## Alternatives
 
-See "Related work".
+> Please refer to the "Related work" section for details on other milestones.
+
+For Milestone 4 "Enabling in-app napari version updates", we considered other options before
+deciding to use the currently proposed one. Namely:
+
+* Each napari installation only contains a single conda environemnt and version. Users can update
+  by downloading the newer installer, possibly after having received a notification in a running
+  napari instance. This was discarded because it required too many user actions to succeed.
+* Each napari installation contains several environments, one per napari version. Each napari
+  version can prompt the creation of a new environment in the same base installation if a new
+  update is available. Discarded because the update logic could change across napari versions,
+  potentially causing issues over time; e.g. old versions are not up-to-date with the latest
+  packaging policies established by the napari community.
+
 
 ## Discussion
 
@@ -550,6 +588,10 @@ CC0+BY [^cc0by].
 [^glossary]: https://jaimergp.github.io/scientific-packaging-glossary/
 
 [^briefcase-python]: https://github.com/beeware?q=Python+support&type=all&language=&sort=
+
+[^pypi-parallelism-abi]: https://twitter.com/ralfgommers/status/1517410559972589569
+
+[^release-guide]: https://napari.org/developers/release.html
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
