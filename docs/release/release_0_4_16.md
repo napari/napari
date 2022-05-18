@@ -26,14 +26,15 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
 
 
 - Calling `viewer.open` *without* passing a plugin will result in an error if you have not saved a reader preference for that file pattern *and* multiple plugins can claim the file
-    - To save a preference for a file pattern at the command line:
+    - To save a preference for a file pattern in Python, use:
 
     ```python
     from napari.settings import get_settings
     get_settings().plugins.extension2reader['*.tif'] = napari_tifffile
     get_settings().plugins.extension2reader['*.zarr'] = napari_ome_zarr
     ```
-    - To pass a plugin in a Python script:
+
+    - To specify a plugin in a Python script:
 
     ```python
     import napari
@@ -43,7 +44,7 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
     viewer.open('my-path.tif', plugin=napari_tifffile) # this won't
     ```
 
-    - To pass a plugin at the command line
+    - To specify a plugin at the command line, use:
     
     ```sh
     napari my-path.tif --plugin napari_tifffile
