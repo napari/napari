@@ -26,7 +26,7 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
 
 
 - Calling `viewer.open` *without* passing a plugin will result in an error if you have not saved a reader preference for that file pattern *and* multiple plugins can claim the file
-    - To save a preference for a file pattern at the command line:
+    - To save a preference for a file pattern in Python, use:
 
     ```python
     from napari.settings import get_settings
