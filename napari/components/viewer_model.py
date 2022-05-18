@@ -1032,7 +1032,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if plugin and plugin not in readers:
             warnings.warn(
                 RuntimeWarning(
-                    f"Can't find {plugin} plugin associated with {path_message} files."
+                    trans._(
+                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        plugin=plugin,
+                        path_message=path_message,
+                    )
+                    + trans._(
+                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    )
+                    + trans._(
+                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
+                    )
                 )
             )
             plugin = None
