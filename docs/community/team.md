@@ -39,16 +39,17 @@ Over time, napari has grown to over 80 direct contributors. Talley Lambert, from
 
 Read more about napari’s [mission and values](https://napari.org/community/mission_and_values.html), how to get started as a [contributor](https://napari.org/developers/contributing.html) or join us in our [zulip chat](https://napari.zulipchat.com/login/) for a more synchronous conversation. You can also follow us on [twitter](https://twitter.com/napari_imaging).
 
-## Funding and support
+## Institutional and funding Partners
 
-The napari project and community have been generously supported by the [CZI Science Imaging Program.](https://chanzuckerberg.com/science/programs-resources/imaging/)
+- [Chan Zuckberg Initiative Foundation.](https://chanzuckerberg.com/science) Representative [Nicholas Sofroniew](https://github.com/sofroniewn).
 
-![](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)
+    - The napari project and community have been generously supported by the [CZI Science Imaging Program.](https://chanzuckerberg.com/science/programs-resources/imaging/)
+    - Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
+    - The CZI Imaging Tech Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.
+    - The CZI Imaging Tech Team has supported [Quansight Labs](https://www.quansight.com/labs) and independent contractors to improve and expand napari.
+    - The CZI Imaging Tech Team, through an effort led by Justin Kiggins, has created [napari-hub.org](https://www.napari-hub.org/), a site to make discovering and sharing napari plugins easier.
+    - CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin developer community.
 
-- Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
-- The CZI Imaging Technology Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.
-- The CZI Imaging Tech Team has supported [Quansight Labs](https://www.quansight.com/labs) and independent contractors to improve and expand napari.
-- The CZI Imaging Tech Team, through an effort led by Justin Kiggins, has created [napari-hub.org](https://www.napari-hub.org/), a site to make discovering and sharing napari plugins easier.
-- CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin developer community.
+The current representative of the Insitutional and Funding Partner Advisory Council on the napari steering council is Nicholas Sofroniew.
 
-If you or your organization are interested in also supporting the napari project, please email the napari steering council at `napari-steering-council@googlegroups.com`.
+If you or your organization are interested in also supporting the napari project and becoming an Institutional and Funding Partner, please email the napari steering council at `napari-steering-council@googlegroups.com`.
