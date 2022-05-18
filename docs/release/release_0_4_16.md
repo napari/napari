@@ -44,7 +44,7 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
     viewer.open('my-path.tif', plugin=napari_tifffile) # this won't
     ```
 
-    - To pass a plugin at the command line
+    - To specify a plugin at the command line, use:
     
     ```sh
     napari my-path.tif --plugin napari_tifffile
