@@ -33,7 +33,8 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
     get_settings().plugins.extension2reader['*.tif'] = napari_tifffile
     get_settings().plugins.extension2reader['*.zarr'] = napari_ome_zarr
     ```
-    - To pass a plugin in a Python script:
+
+    - To specify a plugin in a Python script:
 
     ```python
     import napari
