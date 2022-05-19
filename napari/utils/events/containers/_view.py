@@ -1,5 +1,7 @@
 from wrapt import ObjectProxy
 
+from ..evented import EventedMutable
+
 
 class View(ObjectProxy):
     """
@@ -10,6 +12,8 @@ class View(ObjectProxy):
     def __init__(self, wrapped, parent, key=None, attr=None):
         if isinstance(wrapped, View):
             wrapped = wrapped.__wrapped__
+        if isinstance(wrapped, EventedMutable):
+            wrapped = wrapped._uneventful()
         if not (key is None) ^ (attr is None):
             raise ValueError('exactly one of key or attr must be set')
         super().__init__(wrapped)

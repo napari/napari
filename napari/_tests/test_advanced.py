@@ -218,7 +218,7 @@ def test_changing_display_surface(make_napari_viewer):
     # Iterate over all values in first dimension
     len_slider = viewer.dims.range[0]
     for s in len_slider:
-        viewer.dims.set_point(0, s)
+        viewer.dims.point[0] = s
 
 
 def test_labels_undo_redo(make_napari_viewer):
