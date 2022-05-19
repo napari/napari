@@ -24,7 +24,6 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..errors import (
-    MissingAssociatedReaderError,
     MultipleReaderError,
     NoAvailableReaderError,
     ReaderPluginError,
@@ -1030,9 +1029,26 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         plugin = get_preferred_reader(_path)
+        if plugin and plugin not in readers:
+            warnings.warn(
+                RuntimeWarning(
+                    trans._(
+                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        plugin=plugin,
+                        path_message=path_message,
+                    )
+                    + trans._(
+                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    )
+                    + trans._(
+                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
+                    )
+                )
+            )
+            plugin = None
 
         # preferred plugin exists, or we just have one plugin available
-        if plugin in readers or (not plugin and len(readers) == 1):
+        if plugin or len(readers) == 1:
             plugin = plugin or next(iter(readers.keys()))
             try:
                 added = self._add_layers_with_plugins(
@@ -1053,19 +1069,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     plugin,
                     paths,
                 ) from e
-
-        # preferred plugin doesn't exist
-        elif plugin:
-            raise MissingAssociatedReaderError(
-                trans._(
-                    "Can't find {plugin} plugin associated with {extension} files.",
-                    plugin=plugin,
-                    extension=os.path.splitext(paths[0])[1],
-                    deferred=True,
-                ),
-                plugin,
-                paths,
-            )
         # multiple plugins
         else:
             raise MultipleReaderError(
