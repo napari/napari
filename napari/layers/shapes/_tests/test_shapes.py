@@ -2153,3 +2153,14 @@ def test_world_data_extent():
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_set_data_3d():
+    lines = [
+        np.array([[0, 0, 0], [500, 0, 0]]),
+        np.array([[0, 0, 0], [0, 300, 0]]),
+        np.array([[0, 0, 0], [0, 0, 200]]),
+    ]
+    shapes = Shapes(lines, shape_type='line')
+    shapes._ndisplay = 3
+    shapes.data = lines
