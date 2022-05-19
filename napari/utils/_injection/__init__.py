@@ -13,11 +13,11 @@ T = TypeVar("T")
 
 __all__ = [
     'get_accessor',
-    'set_accessor',
-    'set_processor',
     'get_processor',
     'inject_napari_dependencies',
     'napari_type_hints',
+    'set_accessor',
+    'set_processor',
 ]
 
 
