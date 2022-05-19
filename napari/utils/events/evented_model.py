@@ -205,13 +205,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         allow_mutation = 2
 
     @validator('*', pre=True, always=True)
-    def _no_evented_collections(v):
+    def _no_evented_collections(v, field):
         # we need to sanitize inputs to avoid loops of validation (if input is
         # EventedList, changing its content during validation will cause a mess)
         # this is very important because we may trigger validations with partial states
         # which will cause the model to revert to "usable" conditions
         if isinstance(v, (EventedList, EventedDict, EventedSet)):
-            return v._uneventful()
+            v = v._uneventful()
         return v
 
     def __init__(self, **kwargs):
@@ -419,6 +419,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # TODO: shouldn't we still trigger events for all the fields?
         if block.count:
             self.events(Event(self))
+
+    def dict(self, *args, **kwargs):
+        dct = super().dict(*args, **kwargs)
+        for v, k in dct.items():
+            if hasattr(k, '_uneventful'):
+                dct[v] = k._uneventful()
+        return dct
 
     def _update_inplace(self, other):
         with self._no_validation():

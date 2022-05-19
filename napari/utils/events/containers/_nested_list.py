@@ -203,7 +203,7 @@ class NestableEventedList(EventedList[_T]):
         # this check is more conservative, but will miss some "nestable" things
         if isinstance(key, tuple):
             idxs = list(key)
-            tmp = self._list.copy()
+            tmp = self._uneventful()
             tmp2 = tmp
             while len(idxs) > 1:
                 tmp2 = tmp2[idxs.pop(0)]

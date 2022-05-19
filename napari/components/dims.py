@@ -2,7 +2,7 @@ import warnings
 from typing import Literal
 
 import numpy as np
-from pydantic import root_validator
+from pydantic import root_validator, validator
 
 from ..utils.events import EventedList, EventedModel, NestableEventedList
 from ..utils.translations import trans
@@ -97,6 +97,10 @@ class Dims(EventedModel):
         # to be removed if/when deprecating current_step
         self.events.span.connect(self.events.current_step)
 
+    @validator('axis_labels', pre=True, always=True)
+    def _listify_string(v):
+        return list(v)
+
     @root_validator(skip_on_failure=True)
     def _enforce_ndim(cls, values):
         # This validator should not be split, or setting attributes will only trigger
@@ -115,12 +119,12 @@ class Dims(EventedModel):
             labels = labels[-ndim:]
 
         # range
-        range_ = [sorted(list(v)) for v in values['range']]
-        range_ = ensure_ndim(range_, ndim, default=[0, 2])
+        range_ = ensure_ndim(values['range'], ndim, default=[0, 2])
+        range_ = [sorted(v) for v in range_]
 
         # span
-        span = [sorted(list(v)) for v in values['span']]
-        span = ensure_ndim(span, values['ndim'], default=[0, 0])
+        span = ensure_ndim(values['span'], ndim, default=[0, 0])
+        span = [sorted(v) for v in span]
         # ensure span is limited to range
         for i, ((low, high), (min_val, max_val)) in enumerate(
             zip(span, range_)
@@ -130,8 +134,7 @@ class Dims(EventedModel):
             span[i] = [low, high]
 
         # step
-        step = list(values['step'])
-        step = ensure_ndim(step, ndim, default=1)
+        step = ensure_ndim(values['step'], ndim, default=1)
         # ensure step is not bigger than range
         for i, (stp, (min_val, max_val)) in enumerate(
             zip(
@@ -141,7 +144,7 @@ class Dims(EventedModel):
         ):
             step[i] = np.clip(stp, 0, max_val - min_val)
 
-        order = list(values['order'])
+        order = values['order']
         if len(order) < ndim:
             order = list(range(ndim - len(order))) + [
                 o + ndim - len(order) for o in order

@@ -143,7 +143,7 @@ class EventedList(TypedMutableSequence[_T]):
                     )
 
                 # validate if necessary
-                tmp = self._list.copy()
+                tmp = self._uneventful()
                 for i, v in zip(indices, value):
                     tmp[i] = v
                 value = self._validate_with_parent(tmp)[key]
@@ -155,25 +155,29 @@ class EventedList(TypedMutableSequence[_T]):
                     start = key.start or 0
 
                     # validate if necessary
-                    tmp = self._list.copy()
+                    tmp = self._uneventful()
                     del tmp[key]
                     for i, v in enumerate(value):
                         tmp.insert(start + i, v)
-                    value = self._validate_with_parent(tmp)[
-                        slice(start, start + len(value))
-                    ]
+                    valid = self._validate_with_parent(tmp)
+                    value = valid[slice(start, start + len(value))]
 
-                    old = self[key]
-                    del self[key]
-                    for i, v in enumerate(value):
-                        self.insert(start + i, v)
-                self.events.changed(index=key, old_value=old, value=value)
+                    with self._no_validation():
+                        old = self[key]
+                        del self[key]
+                        for i, v in enumerate(value):
+                            self.insert(start + i, v)
+                        self.events.changed(
+                            index=key, old_value=old, value=value
+                        )
         else:
             if value is old:
                 return
 
             # validate if necessary
-            tmp = self._list.copy()
+            tmp = self._uneventful()
+            if hasattr(value, '_uneventful'):
+                value = value._uneventful()
             tmp[key] = value
             value = self._validate_with_parent(tmp)[key]
 
@@ -206,11 +210,11 @@ class EventedList(TypedMutableSequence[_T]):
         indices = sorted(self._delitem_indices(key), reverse=True)
 
         # validate if necessary
-        tmp = self._list.copy()
-        for _, index in indices:
-            # TODO: does this validate correctly with nested lists?
-            tmp.pop(index)
-        self._validate_with_parent(tmp)
+        # tmp = self._uneventful()
+        # for _, index in indices:
+        # # TODO: does this validate correctly with nested lists? (lol NOPE)
+        # tmp.pop(index)
+        # self._validate_with_parent(tmp)
 
         for parent, index in indices:
             parent.events.removing(index=index)
@@ -224,7 +228,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def insert(self, index: int, value: _T):
         """Insert ``value`` before index."""
-        tmp = self._list.copy()
+        tmp = self._uneventful()
         tmp.insert(index, value)
         value = self._validate_with_parent(tmp)[index]
         self.events.inserting(index=index)
@@ -412,8 +416,7 @@ class EventedList(TypedMutableSequence[_T]):
             parent = self._parent[0]
             field = self._parent[1]
             pdict = parent.dict()
-            new = value.copy()
-            pdict[field] = new
+            pdict[field] = value
             new = parent._pre_validate(pdict)
             # TODO this actually fails if validation causes a field other than `field` to
             # change; that change won't be upstreamed and we break...
