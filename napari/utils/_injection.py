@@ -29,7 +29,7 @@ def _get_active_layer_list() -> Optional[components.LayerList]:
 
 # registry of Type -> "accessor function"
 # where each value is a function that is capable
-# of retrieving an instance of it's corresponding key type.
+# of retrieving an instance of its corresponding key type.
 _ACCESSORS: Dict[Type, Callable[..., Optional[object]]] = {
     layers.Layer: _get_active_layer,
     viewer.Viewer: viewer.current_viewer,
@@ -308,7 +308,7 @@ class set_accessor:
     Raises
     ------
     ValueError
-        if clobber is `True` and one of the keys in `mapping` is already
+        if clobber is `False` and one of the keys in `mapping` is already
         registered.
     """
 
