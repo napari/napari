@@ -10,10 +10,7 @@ from napari._tests.utils import (
 )
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
-from napari.errors.reader_errors import (
-    MissingAssociatedReaderError,
-    NoAvailableReaderError,
-)
+from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
 from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
@@ -855,19 +852,46 @@ def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
         assert added[0].source.reader_plugin == 'builtins'
 
 
-def test_open_or_get_error_cant_find_plugin(mock_npe2_pm, tmp_reader):
-    """Test correct error message is returned when prefered plugin is missing."""
+def test_open_or_get_error_cant_find_plugin(
+    tmp_path, mock_npe2_pm, tmp_reader
+):
+    """Test user is warned and only plugin used if preferred plugin missing."""
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+    np.save(pth, np.random.random((10, 10)))
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
+
+        with pytest.warns(
+            RuntimeWarning, match="Can't find fake-reader plugin"
+        ):
+            added = viewer._open_or_raise_error([str(pth)])
+        assert len(added) == 1
+        assert added[0].source.reader_plugin == 'builtins'
+
+
+def test_open_or_get_error_no_prefered_plugin_many_available(
+    mock_npe2_pm, tmp_reader
+):
+    """Test MultipleReaderError raised if preferred plugin missing."""
     viewer = ViewerModel()
 
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.fake': 'fake-reader'}
+        get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
-        tmp_reader(mock_npe2_pm, 'other-fake-reader')
+        tmp_reader(mock_npe2_pm, 'fake-reader', filename_patterns=['*.fake'])
+        tmp_reader(
+            mock_npe2_pm, 'other-fake-reader', filename_patterns=['*.fake']
+        )
 
-        with pytest.raises(
-            MissingAssociatedReaderError, match="Can't find fake-reader plugin"
+        with pytest.warns(
+            RuntimeWarning, match="Can't find not-a-plugin plugin"
         ):
-            viewer._open_or_raise_error(['my_file.fake'])
+            with pytest.raises(
+                MultipleReaderError, match='Multiple plugins found capable'
+            ):
+                viewer._open_or_raise_error(['my_file.fake'])
 
 
 def test_open_or_get_error_preferred_fails(tmp_path):

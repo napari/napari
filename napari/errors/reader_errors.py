@@ -74,36 +74,6 @@ class ReaderPluginError(ValueError):
         self.paths = paths
 
 
-class MissingAssociatedReaderError(RuntimeError):
-    """The reader plugin associated with paths' extension is not available.
-
-    Parameters
-    ----------
-    message: str
-        error description
-    reader_plugin : str
-        plugin that was tried
-    paths: List[str]
-        file paths for reading
-
-    Attributes
-    ----------
-    message: str
-        error description
-    reader_plugin : str
-        plugin that was tried
-    paths: List[str]
-        file paths for reading
-    """
-
-    def __init__(
-        self, message: str, reader_plugin: str, paths: List[str], *args: object
-    ) -> None:
-        super().__init__(message, *args)
-        self.reader_plugin = reader_plugin
-        self.paths = paths
-
-
 class NoAvailableReaderError(ValueError):
     """No reader plugins are available to open the chosen file
 

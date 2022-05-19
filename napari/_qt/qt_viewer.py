@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import traceback
 import warnings
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
 
@@ -10,8 +11,6 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
-
-from napari.errors.reader_errors import MissingAssociatedReaderError
 
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
@@ -746,7 +745,7 @@ class QtViewer(QSplitter):
         """
         try:
             self.viewer._open_or_raise_error(filenames, stack=stack)
-        except (ReaderPluginError, MissingAssociatedReaderError) as e:
+        except ReaderPluginError as e:
             handle_gui_reading(filenames, self, stack, e.reader_plugin, e)
         except MultipleReaderError:
             handle_gui_reading(filenames, self, stack)
@@ -1072,7 +1071,8 @@ class QtViewer(QSplitter):
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
-                filenames.append(url.toLocalFile())
+                # directories get a trailing "/", Path conversion removes it
+                filenames.append(str(Path(url.toLocalFile())))
             else:
                 filenames.append(url.toString())
 
