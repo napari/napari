@@ -5,6 +5,7 @@ except ModuleNotFoundError:
 
 import os
 from functools import partial
+from itertools import chain
 from multiprocessing.pool import ThreadPool
 from unittest.mock import MagicMock, patch
 
@@ -417,13 +418,14 @@ def tmp_reader():
     """Return a temporary reader registered with the given plugin manager."""
 
     def make_plugin(
-        pm,
-        name,
-        filename_patterns=['*.fake'],
+        pm, name, filename_patterns=['*.fake'], accepts_directories=False
     ):
         reader_plugin = DynamicPlugin(name, plugin_manager=pm)
 
-        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
+        @reader_plugin.contribute.reader(
+            filename_patterns=filename_patterns,
+            accepts_directories=accepts_directories,
+        )
         def read_func(pth):
             ...
 
@@ -441,3 +443,83 @@ def mock_npe2_pm():
         _pm = PluginManager(reg=mock_reg)
     with patch('npe2.PluginManager.instance', return_value=_pm):
         yield _pm
+
+
+def event_check():
+    """Return a function to check if events are defined by all properties."""
+
+    def _check(instance, skip):
+        klass = instance.__class__
+        for name, value in klass.__dict__.items():
+            if (
+                isinstance(value, property)
+                and name[0] != '_'
+                and name not in skip
+            ):
+                assert hasattr(
+                    instance.events, name
+                ), f"event {name} not defined"
+
+    return _check
+
+
+def _event_check(instance):
+    def _prepare_check(name, no_event_):
+        def check(instance, no_event=no_event_):
+            if name in no_event:
+                assert not hasattr(
+                    instance.events, name
+                ), f"event {name} defined"
+            else:
+                assert hasattr(
+                    instance.events, name
+                ), f"event {name} not defined"
+
+        return check
+
+    no_event_set = set()
+    if isinstance(instance, tuple):
+        no_event_set = instance[1]
+        instance = instance[0]
+
+    for name, value in instance.__class__.__dict__.items():
+        if isinstance(value, property) and name[0] != '_':
+            yield _prepare_check(name, no_event_set), instance, name
+
+
+def pytest_generate_tests(metafunc):
+    """Generate separate test for each test toc check if all events are defined."""
+    if 'event_define_check' in metafunc.fixturenames:
+        res = []
+        ids = []
+
+        for obj in metafunc.cls.get_objects():
+            for check, instance, name in _event_check(obj):
+                res.append((check, instance))
+                ids.append(f"{name}-{instance}")
+
+        metafunc.parametrize('event_define_check,obj', res, ids=ids)
+
+
+def pytest_collection_modifyitems(session, config, items):
+    test_order_prefix = [
+        "napari/utils",
+        "napari/layers",
+        "napari/components",
+        "napari/settings",
+        "napari/plugins",
+        "napari/_vispy",
+        "napari/_qt",
+        "napari/qt",
+        "napari/_tests",
+    ]
+    test_order = [[] for _ in test_order_prefix]
+    test_order.append([])  # for not matching tests
+    for item in items:
+        for i, prefix in enumerate(test_order_prefix):
+            if prefix in str(item.fspath):
+                test_order[i].append(item)
+                break
+        else:
+            test_order[-1].append(item)
+    items[:] = list(chain(*test_order))

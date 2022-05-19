@@ -11,6 +11,12 @@ Some environment variables we use:
 CONSTRUCTOR_APP_NAME:
     in case you want to build a non-default distribution that is not
     named `napari`
+CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM:
+    The last component of the default installation path. Defaults to
+    {CONSTRUCTOR_APP_NAME}-app-{CONSTRUCTOR_INSTALLER_VERSION}
+CONSTRUCTOR_INSTALLER_VERSION:
+    Version for the installer, separate from the app being installed.
+    This has an effect on the default install locations!
 CONSTRUCTOR_TARGET_PLATFORM:
     conda-style platform (as in `platform` in `conda info -a` output)
 CONSTRUCTOR_USE_LOCAL:
@@ -43,10 +49,17 @@ from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from textwrap import dedent
 
 from ruamel import yaml
 
 APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari")
+# bump this when something in the installer infrastructure changes
+# note that this will affect the default installation path across platforms!
+INSTALLER_VERSION = os.environ.get("CONSTRUCTOR_INSTALLER_VERSION", "0.1")
+INSTALLER_DEFAULT_PATH_STEM = os.environ.get(
+    "CONSTRUCTOR_INSTALLER_DEFAULT_PATH_STEM", f"{APP}-app-{INSTALLER_VERSION}"
+)
 HERE = os.path.abspath(os.path.dirname(__file__))
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -119,6 +132,30 @@ def _generate_background_images(installer_type, outpath="resources"):
         clean_these_files.append(output)
 
 
+def _get_condarc():
+    # we need defaults for tensorflow and others on windows only
+    defaults = "- defaults" if WINDOWS else ""
+    prompt = "[napari]({default_env}) "
+    contents = dedent(
+        f"""
+        channels:  #!final
+          - napari
+          - conda-forge
+          {defaults}
+        repodata_fns:  #!final
+          - repodata.json
+        auto_update_conda: false  #!final
+        channel_priority: strict  #!final
+        env_prompt: '{prompt}'  #! final
+        """
+    )
+    # the undocumented #!final comment is explained here
+    # https://www.anaconda.com/blog/conda-configuration-engine-power-users
+    with NamedTemporaryFile(delete=False, mode="w+") as f:
+        f.write(contents)
+    return f.name
+
+
 def _constructor(version=_version(), extra_specs=None):
     """
     Create a temporary `construct.yaml` input file and
@@ -171,6 +208,7 @@ def _constructor(version=_version(), extra_specs=None):
         + ["napari/label/bundle_tools", "conda-forge"]
     )
     empty_file = NamedTemporaryFile(delete=False)
+    condarc = _get_condarc()
     definitions = {
         "name": APP,
         "company": "Napari",
@@ -189,13 +227,14 @@ def _constructor(version=_version(), extra_specs=None):
         "extra_files": {
             "resources/bundle_readme.md": "README.txt",
             empty_file.name: ".napari_is_bundled_constructor",
+            condarc: ".condarc",
         },
     }
     if _use_local():
         definitions["channels"].insert(0, "local")
     if LINUX:
         definitions["default_prefix"] = os.path.join(
-            "$HOME", ".local", f"{APP}-{version}"
+            "$HOME", ".local", INSTALLER_DEFAULT_PATH_STEM
         )
         definitions["license_file"] = os.path.join(
             HERE, "resources", "bundle_license.txt"
@@ -203,9 +242,9 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["installer_type"] = "sh"
 
     if MACOS:
-        # we change this bc the installer takes the name
-        # as the default install location basename
-        definitions["name"] = f"{APP}-{version}"
+        # These two options control the default install location:
+        # ~/<default_location_pkg>/<pkg_name>
+        definitions["pkg_name"] = INSTALLER_DEFAULT_PATH_STEM
         definitions["default_location_pkg"] = "Library"
         definitions["installer_type"] = "pkg"
         definitions["welcome_image"] = os.path.join(
@@ -246,13 +285,13 @@ def _constructor(version=_version(), extra_specs=None):
                 ),
                 "register_python_default": False,
                 "default_prefix": os.path.join(
-                    '%LOCALAPPDATA%', f"{APP}-{version}"
+                    '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "default_prefix_domain_user": os.path.join(
-                    '%LOCALAPPDATA%', f"{APP}-{version}"
+                    '%LOCALAPPDATA%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "default_prefix_all_users": os.path.join(
-                    '%ALLUSERSPROFILE%', f"{APP}-{version}"
+                    '%ALLUSERSPROFILE%', INSTALLER_DEFAULT_PATH_STEM
                 ),
                 "check_path_length": False,
                 "installer_type": "exe",
@@ -269,6 +308,7 @@ def _constructor(version=_version(), extra_specs=None):
 
     clean_these_files.append("construct.yaml")
     clean_these_files.append(empty_file.name)
+    clean_these_files.append(condarc)
 
     # TODO: temporarily patching password - remove block when the secret has been fixed
     # (I think it contains an ending newline or something like that, copypaste artifact?)
@@ -344,6 +384,11 @@ def cli(argv=None):
         help="Print local napari version and exit.",
     )
     p.add_argument(
+        "--installer-version",
+        action="store_true",
+        help="Print installer version and exit.",
+    )
+    p.add_argument(
         "--arch",
         action="store_true",
         help="Print machine architecture tag and exit.",
@@ -381,6 +426,9 @@ if __name__ == "__main__":
     args = cli()
     if args.version:
         print(_version())
+        sys.exit()
+    if args.installer_version:
+        print(INSTALLER_VERSION)
         sys.exit()
     if args.arch:
         print(ARCH)

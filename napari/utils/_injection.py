@@ -13,8 +13,15 @@ T = TypeVar("T")
 def _get_active_layer() -> Optional['Layer']:
     from ..viewer import current_viewer
 
-    viewer = current_viewer()
-    return viewer.layers.selection.active if viewer else None
+    if viewer := current_viewer():
+        return viewer.layers.selection.active
+
+
+def _get_active_layer_list() -> Optional['Layer']:
+    from ..viewer import current_viewer
+
+    if viewer := current_viewer():
+        return viewer.layers
 
 
 def get_accessor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
@@ -28,22 +35,32 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
     `inject_napari_dependencies`, allows us to inject current napari objects
     into functions based on type hints.
     """
+    from ..components import LayerList
     from ..layers import Layer
     from ..viewer import Viewer, current_viewer
 
-    if isinstance(type_, type) and issubclass(type_, Layer):
-        return _get_active_layer
-    if isinstance(type_, type) and issubclass(type_, Viewer):
-        return current_viewer
+    if isinstance(type_, type):
+        if issubclass(type_, Layer):
+            return _get_active_layer
+        if issubclass(type_, Viewer):
+            return current_viewer
+        if issubclass(type_, LayerList):
+            return _get_active_layer_list
 
 
 def napari_type_hints(obj: Any) -> Dict[str, Any]:
     import napari
 
-    from .. import layers, viewer
+    from .. import components, layers, viewer
 
     return get_type_hints(
-        obj, {'napari': napari, **viewer.__dict__, **layers.__dict__}
+        obj,
+        {
+            'napari': napari,
+            **viewer.__dict__,
+            **layers.__dict__,
+            'LayerList': components.LayerList,
+        },
     )
 
 

@@ -8,6 +8,7 @@ from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 
+from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events.event_utils import connect_no_arg, connect_setattr
 from ...utils.translations import trans
@@ -246,7 +247,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         # the "full range" button doesn't do anything if it's not an
         # unsigned integer type (it's unclear what range should be set)
         # so we don't show create it at all.
-        if np.issubdtype(layer.dtype, np.integer):
+        if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
             range_btn = QPushButton("full range")
             range_btn.setObjectName("full_clim_range_button")
             range_btn.setToolTip(

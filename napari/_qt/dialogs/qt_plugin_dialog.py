@@ -3,6 +3,7 @@ import sys
 from enum import Enum, auto
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
+from tempfile import gettempdir
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
@@ -56,7 +57,7 @@ from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 from ..widgets.qt_tooltip import QtToolTipLabel
 
-InstallerTypes = Literal['pip', 'conda', 'mamba']
+InstallerTypes = Literal['pip', 'mamba']
 
 
 # TODO: add error icon and handle pip install errors
@@ -108,6 +109,17 @@ class Installer(QObject):
         env.insert(
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
+
+        # workaround https://github.com/napari/napari/issues/4247
+        if (
+            installer == "mamba"
+            and os.name == "nt"
+            and not QProcessEnvironment.systemEnvironment().contains("TEMP")
+        ):
+            temp = gettempdir()
+            env.insert("TMP", temp)
+            env.insert("TEMP", temp)
+
         process.setProcessEnvironment(env)
         self.set_output_widget(self._output_widget)
         process.finished.connect(
@@ -545,20 +557,18 @@ class QPluginList(QListWidget):
         enabled=True,
         npe_version=1,
     ):
+        pkg_name = project_info.name
         # don't add duplicates
-        if (
-            self.findItems(project_info.name, Qt.MatchFixedString)
-            and not plugin_name
-        ):
+        if self.findItems(pkg_name, Qt.MatchFixedString) and not plugin_name:
             return
 
         # including summary here for sake of filtering below.
-        searchable_text = project_info.name + " " + project_info.summary
+        searchable_text = pkg_name + " " + project_info.summary
         item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(
-            package_name=project_info.name,
+            package_name=pkg_name,
             version=project_info.version,
             url=project_info.home_page,
             summary=project_info.summary,
@@ -584,17 +594,14 @@ class QPluginList(QListWidget):
             )
         else:
             widg.help_button.setVisible(False)
-
         widg.action_button.clicked.connect(
-            lambda: self.handle_action(item, project_info.name, action_name)
+            lambda: self.handle_action(item, pkg_name, action_name)
         )
         widg.update_btn.clicked.connect(
-            lambda: self.handle_action(
-                item, project_info.name, "install", update=True
-            )
+            lambda: self.handle_action(item, pkg_name, "install", update=True)
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.handle_action(item, project_info.name, "cancel")
+            lambda: self.handle_action(item, pkg_name, "cancel")
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
@@ -623,6 +630,9 @@ class QPluginList(QListWidget):
 
         if action_name == "install":
             if update:
+                if hasattr(item, 'latest_version'):
+                    pkg_name += f"=={item.latest_version}"
+
                 widget.set_busy(trans._("updating..."), update)
                 widget.action_button.setDisabled(True)
             else:
@@ -643,8 +653,11 @@ class QPluginList(QListWidget):
             widget.set_busy(trans._("cancelling..."), update)
             method((pkg_name,))
 
-    @Slot(PackageMetadata)
-    def tag_outdated(self, project_info: PackageMetadata):
+    @Slot(PackageMetadata, bool)
+    def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
+        if not is_available:
+            return
+
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             current = item.version
             latest = project_info.version
@@ -655,6 +668,7 @@ class QPluginList(QListWidget):
                 continue
 
             item.outdated = True
+            item.latest_version = latest
             widg = self.itemWidget(item)
             widg.update_btn.setVisible(True)
             widg.update_btn.setText(
@@ -708,9 +722,7 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        installer_type = "pip"
-        if running_as_constructor_app():
-            installer_type = "mamba" if os.name != "nt" else "conda"
+        installer_type = "mamba" if running_as_constructor_app() else "pip"
 
         self.installer = Installer(installer=installer_type)
         self.setup_ui()
@@ -988,7 +1000,7 @@ class QtPluginDialog(QDialog):
     def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
         project_info, is_available = data
         if project_info.name in self.already_installed:
-            self.installed_list.tag_outdated(project_info)
+            self.installed_list.tag_outdated(project_info, is_available)
         else:
             self.available_list.addItem(project_info)
             if not is_available:
