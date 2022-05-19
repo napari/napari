@@ -22,6 +22,7 @@ from ..utils._proxies import PublicOnlyProxy
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+    from magicgui.widgets import FunctionGui
     from magicgui.widgets._bases import CategoricalWidget
 
     from .._qt.qthreading import FunctionWorker
@@ -29,7 +30,7 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 
-def add_layer_data_to_viewer(gui, result, return_type):
+def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: Type):
     """Show a magicgui result in the viewer.
 
     This function will be called when a magicgui-decorated function has a
@@ -57,7 +58,7 @@ def add_layer_data_to_viewer(gui, result, return_type):
     ...     return np.random.rand(256, 256)
 
     """
-    from ..utils._injection import _add_layer_data_to_viewer
+    from ..utils._injection._processors import _add_layer_data_to_viewer
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
         _add_layer_data_to_viewer(
@@ -101,7 +102,7 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-    from ..utils._injection import _add_layer_data_tuples_to_viewer
+    from ..utils._injection._processors import _add_layer_data_tuples_to_viewer
 
     if viewer := find_viewer_ancestor(gui):
         _add_layer_data_tuples_to_viewer(
@@ -185,7 +186,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
     """
-    from ..utils._injection import _add_future_data
+    from ..utils._injection._processors import _add_future_data
 
     if viewer := find_viewer_ancestor(gui):
         _add_future_data(
@@ -231,8 +232,7 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
 
 
 def proxy_viewer_ancestor(widget) -> Optional[PublicOnlyProxy[Viewer]]:
-    viewer = find_viewer_ancestor(widget)
-    if viewer:
+    if viewer := find_viewer_ancestor(widget):
         return PublicOnlyProxy(viewer)
     return None
 
@@ -261,10 +261,9 @@ def get_layers(gui: CategoricalWidget) -> List[Layer]:
     ...     return layer.data.mean()
 
     """
-    viewer = find_viewer_ancestor(gui.native)
-    if not viewer:
-        return []
-    return [x for x in viewer.layers if isinstance(x, gui.annotation)]
+    if viewer := find_viewer_ancestor(gui.native):
+        return [x for x in viewer.layers if isinstance(x, gui.annotation)]
+    return []
 
 
 def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
@@ -297,8 +296,7 @@ def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     """
     from .. import layers
 
-    viewer = find_viewer_ancestor(gui.native)
-    if not viewer:
+    if not (viewer := find_viewer_ancestor(gui.native)):
         return ()
 
     layer_type_name = gui.annotation.__name__.replace("Data", "").title()
@@ -354,7 +352,7 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
-    from ..utils._injection import _add_layer_to_viewer
+    from ..utils._injection._processors import _add_layer_to_viewer
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
         _add_layer_to_viewer(result, viewer=viewer, source={'widget': gui})

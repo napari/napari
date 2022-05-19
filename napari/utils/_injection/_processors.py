@@ -16,23 +16,6 @@ _NULL = object()
 def _add_layer_data_tuples_to_viewer(
     data: Any, return_type=None, viewer=None, source: Optional[dict] = None
 ):
-    """_summary_
-
-    Parameters
-    ----------
-    data : Any
-        _description_
-    viewer : _type_, optional
-        _description_, by default None
-    return_type : _type_, optional
-        _description_, by default None
-
-    Raises
-    ------
-    TypeError
-        If `data` is not a valid [list of] layer data tuple.
-
-    """
     if viewer is None:
         viewer = _access_viewer()
     if viewer and data is not None:
