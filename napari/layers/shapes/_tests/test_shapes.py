@@ -2156,6 +2156,7 @@ def test_world_data_extent():
 
 
 def test_set_data_3d():
+    """Test for reproduce https://github.com/napari/napari/issues/4527"""
     lines = [
         np.array([[0, 0, 0], [500, 0, 0]]),
         np.array([[0, 0, 0], [0, 300, 0]]),
