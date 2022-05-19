@@ -407,7 +407,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             with self._no_validation():
                 for key, value in values.items():
                     field = getattr(self, key)
-                    if field == value:
+                    are_equal = self.__eq_operators__.get(key, operator.eq)
+                    if are_equal(field, value):
                         continue
                     if isinstance(field, EventedMutable) and recurse:
                         field._update_inplace(value)
