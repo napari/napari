@@ -15,7 +15,7 @@
 
     // Install using default qt install
     "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all]"],
-    "uninstall_command": ["in-dir={env_dir} python -m pip remove {project}"],
+    "uninstall_command": ["in-dir={env_dir} python -m pip uninstall {project}"],
 
     // List of branches to benchmark
     "branches": ["main"],
