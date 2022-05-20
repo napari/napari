@@ -807,9 +807,7 @@ class _FeatureTable:
         if size < current_size:
             self.remove(range(size, current_size))
         elif size > current_size:
-            to_append = self._defaults.reindex(
-                index=range(size - current_size), method='pad'
-            )
+            to_append = self._defaults.iloc[np.zeros(size - current_size)]
             self.append(to_append)
 
     def append(self, to_append: pd.DataFrame) -> None:
