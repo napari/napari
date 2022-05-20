@@ -103,6 +103,7 @@ subtrees:
             - maxdepth: 1
               entries:
               - file: naps/0-nap-process
+              - file: naps/1-institutional-funding-partners
           - file: developers/documentation/index
             subtrees:
             - entries:
