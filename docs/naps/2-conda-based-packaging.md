@@ -524,6 +524,7 @@ deciding to use the currently proposed one. Namely:
 - [Issue #1001](https://github.com/napari/napari/issues/1001) (Plugin dependency management)
 - [PR #4404](https://github.com/napari/napari/pull/4404) (Switch to a more declarative configuration
   for conda packaging)
+- [PR #4519](https://github.com/napari/napari/pull/4519) (Initial draft of this NAP and discussion)
 
 ## References and Footnotes
 
