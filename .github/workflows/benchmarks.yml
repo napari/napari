@@ -55,7 +55,7 @@ jobs:
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
         run: |
-          set -x
+          set -euxo pipefail
           BASE_SHA=${{ github.event.pull_request.base.sha }}
 
           # ID this runner
