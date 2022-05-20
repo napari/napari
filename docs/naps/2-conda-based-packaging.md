@@ -33,12 +33,13 @@ Briefcase [^briefcase].
 Briefcase relies on PyPI packaging to assemble the installer. The PyPI packaging strategy,
 however, presents a series of limitations for the napari ecosystem:
 
-* No standardized building infrastructure. PyPI accepts submissions from any user without
-  requiring any validation or review. As a result, packages can be built using arbitrary
-  toolchains or expecting different libraries in the system. `cibuildwheel` [^cibuildwheel]
-  definitely helps users who want to do it in the right way, but again, there's no guarantee is
-  being used. This can result in ABI incompatibilities with the target system and within the plugin
-  ecosystem, specially when some packages vendor specific libraries [^pypi-parallelism-abi].
+* No standardized building infrastructure. PyPI accepts submissions from any user without requiring
+  any validation or review. As a result, packages can be built using arbitrary toolchains or
+  expecting different libraries in the system. `cibuildwheel` [^cibuildwheel] and related tools
+  [^audithwheel] [^delocate] [^delvewheel] can definitely help users who want to do it in the right
+  way, but again, there's no guarantee is being used. This can result in ABI incompatibilities with
+  the target system and within the plugin ecosystem, specially when some packages vendor specific
+  libraries [^pypi-parallelism-abi].
 * PyPI metadata is often not detailed enough. This is a byproduct of the previous point, which
   makes it difficult for the different clients (pip, poetry, etc) to guarantee that the
   resulting installation is self-consistent and all the packages involved are compatible with
@@ -602,6 +603,13 @@ CC0+BY [^cc0by].
 [^maxiconda]: https://github.com/Semi-ATE/maxiconda-envs
 
 [^conda-forge-pinnings]: https://github.com/conda-forge/conda-forge-pinning-feedstock/blob/32f93dd/recipe/conda_build_config.yaml
+
+[^audithwheel]: https://github.com/pypa/auditwheel
+
+[^delocate]: https://github.com/matthew-brett/delocate
+
+[^delvewheel]: https://github.com/adang1345/delvewheel
+
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
