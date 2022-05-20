@@ -9,7 +9,7 @@ from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
-from ._protocols import Evented
+from .containers import EventedDict, EventedList, EventedSet
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -210,7 +210,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         for name in field_events:
             child = getattr(self, name)
-            if isinstance(child, Evented):
+            if isinstance(
+                child, (EventedModel, EventedDict, EventedList, EventedSet)
+            ):
                 # while seemingly redundant, this next line is very important to maintain
                 # correct sources; see https://github.com/napari/napari/pull/4138
                 # we solve it by re-setting the source after initial validation, which allows
