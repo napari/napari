@@ -1,19 +1,22 @@
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
 
 from .event import EmitterGroup
+
+if TYPE_CHECKING:
+    from .evented_model import EventedModel
 
 
 @runtime_checkable
 class Evented(Protocol):
-    def events(self) -> EmitterGroup:
-        ...
+    events: EmitterGroup
 
 
-class EventedMutable(Evented):
-    _parent = tuple['EventedModel', str]
+@runtime_checkable
+class EventedMutable(Evented, Protocol):
+    _parent: Optional[tuple['EventedModel', str]]
 
     def _update_inplace(self) -> None:
         ...
 
-    def _uneventful(self) -> None:
+    def _uneventful(self) -> Any:
         ...

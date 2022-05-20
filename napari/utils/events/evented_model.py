@@ -418,14 +418,17 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def dict(self, *args, **kwargs):
         dct = super().dict(*args, **kwargs)
-        for v, k in dct.items():
-            if hasattr(k, '_uneventful'):
-                dct[v] = k._uneventful()
+        for k, v in dct.items():
+            if isinstance(v, EventedMutable):
+                dct[k] = v._uneventful()
         return dct
 
     def _update_inplace(self, other):
         with self._no_validation():
             self.update(other)
+
+    def _uneventful(self):
+        return self.dict()
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
