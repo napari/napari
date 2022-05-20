@@ -382,7 +382,7 @@ class Dims(EventedModel):
         self.order = order.tolist()
 
     def _transpose(self):
-        """Transpose displayed dimensions."""
+        """Transpose last two displayed dimensions."""
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order

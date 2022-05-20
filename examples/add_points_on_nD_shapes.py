@@ -65,7 +65,7 @@ for d in data:
     viewer.add_points(np.array(d))
 # set the viewer to 3D rendering mode with the first two rectangles in view
 viewer.dims.ndisplay = 3
-viewer.dims.set_point(axis=0, value=0)
+viewer.dims.point[0] = 0
 viewer.camera.angles = (70, 30, 150)
 viewer.camera.zoom = 2.5
 
