@@ -9,7 +9,7 @@ from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
-from ._evented import Evented
+from ._protocols import Evented
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
