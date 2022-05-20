@@ -3,11 +3,11 @@
 # NAP-1 — Institutional and Funding Partners
 
 ```{eval-rst}
-Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
-Author: "Nicholas Sofroniew <mailto:sofroniewn@gmail.com>"
-Created: '2022-04-21'
-Status: Draft
-Type: Accepted
+:Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
+:Author: "Nicholas Sofroniew <mailto:sofroniewn@gmail.com>"
+:Created: '2022-04-21'
+:Status: Draft
+:Type: Accepted
 ```
 
 ## Abstract
