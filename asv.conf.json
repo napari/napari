@@ -14,6 +14,7 @@
     "repo": ".",
 
     // Install using default qt install
+    "build-command": ["echo 'build not needed'"],  // skip build stage
     "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all]"],
     "uninstall_command": ["in-dir={env_dir} python -m pip uninstall {project}"],
 
