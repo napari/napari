@@ -261,6 +261,7 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     @classmethod
     def _validate_list(cls, lst):
+        # this fallback validator (is it called last?)
         return cls(lst)
 
 
