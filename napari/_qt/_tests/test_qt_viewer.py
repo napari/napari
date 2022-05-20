@@ -657,3 +657,18 @@ def test_insert_layer_ordering(make_napari_viewer):
     pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
+
+
+def test_set_axis_labels_after_clearing_3d_layer(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/3753"""
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((7, 6, 5)))
+    # Clearing the layerlist to be empty makes viewer.dims 2D.
+    viewer.layers.clear()
+
+    viewer.dims.axis_labels = ['y', 'x']
+
+    sliders = viewer.window._qt_viewer.dims.slider_widgets
+    assert len(sliders) == 2
+    assert sliders[0].axis_label.text() == 'y'
+    assert sliders[1].axis_label.text() == 'x'
