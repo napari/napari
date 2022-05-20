@@ -44,6 +44,8 @@ jobs:
         with:
           python-version: "3.9"
 
+      - uses: tlambert03/setup-qt-libs@v1
+
       - name: Setup asv
         run: |
           python -m pip install asv virtualenv
