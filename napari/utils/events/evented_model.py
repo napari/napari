@@ -14,16 +14,11 @@ from pydantic import (
     validator,
 )
 
-from ...utils.events.containers import (
-    EventedDict,
-    EventedList,
-    EventedSet,
-    View,
-)
+from ...utils.events.containers import View
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
+from ._protocols import EventedMutable
 from .event import EmitterGroup, Event
-from .evented import EventedMutable
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
@@ -210,7 +205,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # EventedList, changing its content during validation will cause a mess)
         # this is very important because we may trigger validations with partial states
         # which will cause the model to revert to "usable" conditions
-        if isinstance(v, (EventedList, EventedDict, EventedSet)):
+        if isinstance(v, EventedMutable):
             v = v._uneventful()
         return v
 
