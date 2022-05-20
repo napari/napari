@@ -24,12 +24,14 @@ jobs:
     # if: ${{ github.event.label.name == 'run-benchmark' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ubuntu-20.04
-    matrix:
-      include:
-        - benchmark-name: Qt
-          selection-regex: "^benchmark_qt_.*"
-        - benchmark-name: non-Qt
-          selection-regex: "^benchmark_(?!qt_).*"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - benchmark-name: Qt
+            selection-regex: "^benchmark_qt_.*"
+          - benchmark-name: non-Qt
+            selection-regex: "^benchmark_(?!qt_).*"
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
