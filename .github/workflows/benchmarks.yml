@@ -22,8 +22,14 @@ env:
 jobs:
   benchmark:
     # if: ${{ github.event.label.name == 'run-benchmark' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
-    name: ASV
+    name: ${{ benchmark-name }}
     runs-on: ubuntu-20.04
+    matrix:
+      include:
+        - benchmark-name: Qt
+          selection-regex: "^benchmark_qt_.*"
+        - benchmark-name: non-Qt
+          selection-regex: "^benchmark_(?!qt_).*"
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
@@ -36,29 +42,30 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Setup some dependencies
+      - name: Setup asv
         run: |
           python -m pip install asv virtualenv
 
-      - name: Run benchmarks
-        id: benchmark
+      - name: Run ${{ matrix.benchmark-name }} benchmarks
+        id: qt-benchmark
         env:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
         run: |
           set -x
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
 
           # ID this runner
           asv machine --yes
 
-          echo "Baseline:  ${{ github.event.pull_request.base.sha }} (${{ github.event.pull_request.base.label }})"
+          echo "Baseline:  ${BASE_SHA} (${{ github.event.pull_request.base.label }})"
           echo "Contender: ${GITHUB_SHA} (${{ github.event.pull_request.head.label }})"
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS ${{ github.event.pull_request.base.sha }} ${GITHUB_SHA} \
-              | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
-              | tee benchmarks.log
+          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
+          | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
+          | tee benchmarks.log
 
           # Report and export results for subsequent steps
           if grep "Traceback \|failed\|PERFORMANCE DECREASED" benchmarks.log > /dev/null ; then
@@ -72,5 +79,5 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: asv-benchmark-results-${{ github.sha }}-${{ runner.os }}
+          name: asv-benchmark-results-${{ github.sha }}-${{ matrix.benchmark-name }}
           path: .asv/results
