@@ -313,3 +313,27 @@ def test_slice_labels(qtbot):
     label_edit.setText(str(8))
     label_edit.editingFinished.emit()
     assert dims.point[0] == 8
+
+
+def test_is_playing_after_ndim_changes(qtbot):
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    view.play()
+    assert view.is_playing
+
+    dims.ndim = 2
+
+    assert not view.is_playing
+
+
+def test_is_playing_after_ndisplay_changes(qtbot):
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    view.play()
+    assert view.is_playing
+
+    dims.ndisplay = 3
+
+    assert not view.is_playing
