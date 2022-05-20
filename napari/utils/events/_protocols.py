@@ -7,15 +7,11 @@ if TYPE_CHECKING:
 
 
 @runtime_checkable
-class Evented(Protocol):
+class EventedMutable(Protocol):
     events: EmitterGroup
-
-
-@runtime_checkable
-class EventedMutable(Evented, Protocol):
     _parent: Optional[tuple['EventedModel', str]]
 
-    def _update_inplace(self) -> None:
+    def _update_inplace(self, other: Any) -> None:
         ...
 
     def _uneventful(self) -> Any:
