@@ -1,3 +1,6 @@
+import operator
+from copy import copy
+
 from wrapt import ObjectProxy
 
 from ..evented import EventedMutable
@@ -33,6 +36,26 @@ class View(ObjectProxy):
     def __getitem__(self, key):
         return View(self.__wrapped__[key], key=key, parent=self)
 
+    def __supersetter__(self, old):
+        """
+        Recursively update all the parents
+        """
+        if isinstance(self._self_parent, View):
+            target = self._self_parent.__wrapped__
+        else:
+            target = self._self_parent
+
+        if self._self_key is not None:
+            target[self._self_key] = self.__wrapped__
+        elif self._self_attr is not None:
+            setattr(target, self._self_attr, self.__wrapped__)
+        else:
+            raise Exception('???')
+
+        # keep going
+        if isinstance(self._self_parent, View):
+            self._self_parent.__supersetter__()
+
     def __setattr__(self, name, value):
         if name.startswith('_self_') or (
             name.startswith('__') and name.endswith('__')
@@ -63,31 +86,59 @@ class View(ObjectProxy):
             self.__supersetter__()
             raise
 
-    def __supersetter__(self):
-        """
-        Recursively update all the parents
-        """
-        if isinstance(self._self_parent, View):
-            target = self._self_parent.__wrapped__
-        else:
-            target = self._self_parent
+    def __iop__(self, op, other):
+        old = copy(self.__wrapped__)
+        op(self.__wrapped__, other)
+        try:
+            self.__supersetter__()
+        except Exception:
+            # something went wrong along the recursion; undo it
+            # TODO use psygnal pause events to avoid triggering if unnecessary?
+            self.__wrapped__ = old
+            self.__supersetter__()
+            raise
 
-        if self._self_key is not None:
-            target[self._self_key] = self.__wrapped__
-        elif self._self_attr is not None:
-            setattr(target, self._self_attr, self.__wrapped__)
-        else:
-            raise Exception('???')
+    def __iadd__(self, other):
+        return self.__iop__(operator.iadd, other)
 
-        # keep going
-        if isinstance(self._self_parent, View):
-            self._self_parent.__supersetter__()
+    def __isub__(self, other):
+        return self.__iop__(operator.isub, other)
+
+    def __imul__(self, other):
+        return self.__iop__(operator.imul, other)
+
+    def __imatmul__(self, other):
+        return self.__iop__(operator.imatmul, other)
+
+    def __itruediv__(self, other):
+        return self.__iop__(operator.itruediv, other)
+
+    def __ifloordiv__(self, other):
+        return self.__iop__(operator.ifloordiv, other)
+
+    def __imod__(self, other):
+        return self.__iop__(operator.imod, other)
+
+    def __ipow__(self, other):
+        return self.__iop__(operator.ipow, other)
+
+    def __ilshift__(self, other):
+        return self.__iop__(operator.ilshift, other)
+
+    def __irshift__(self, other):
+        return self.__iop__(operator.irshift, other)
+
+    def __iand__(self, other):
+        return self.__iop__(operator.iand, other)
+
+    def __ixor__(self, other):
+        return self.__iop__(operator.ixor, other)
+
+    def __ior__(self, other):
+        return self.__iop__(operator.ior, other)
 
     def __repr__(self):
         return f'View({repr(self.__wrapped__)})'
-
-    def __str__(self):
-        return repr(self)
 
     def __new__(cls, wrapped, *args, **kwargs):
         if callable(wrapped):
