@@ -42,6 +42,10 @@ jobs:
 
       - name: Run benchmarks
         id: benchmark
+        env:
+          # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
+          # they are probably just documentation PNGs not needed here anyway
+          GIT_LFS_SKIP_SMUDGE: 1
         run: |
           set -x
 
