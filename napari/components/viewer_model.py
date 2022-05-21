@@ -19,11 +19,11 @@ from typing import (
 )
 
 import numpy as np
+from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..errors import (
-    MissingAssociatedReaderError,
     MultipleReaderError,
     NoAvailableReaderError,
     ReaderPluginError,
@@ -179,6 +179,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
+        self.cursor.events.position.connect(
+            throttled(self._update_status_bar_from_cursor, timeout=50)
+        )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
@@ -388,6 +391,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for layer in self.layers:
                 layer.position = self.cursor.position
 
+    def _update_status_bar_from_cursor(self, event=None):
+        """Update the status bar based on the current cursor position.
+
+        This is generally used as a callback when cursor.position is updated.
+        """
         # Update status and help bar based on active layer
         active = self.layers.selection.active
         if active is not None:
@@ -542,7 +550,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         shear=None,
         affine=None,
         opacity=1,
-        blending=None,
+        blending='translucent_no_depth',
         visible=True,
         multiscale=None,
         cache=True,
@@ -731,7 +739,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
-            kwargs['blending'] = kwargs['blending'] or 'translucent'
+            kwargs['blending'] = kwargs['blending'] or 'translucent_no_depth'
             # Helpful message if someone tries to add mulit-channel kwargs,
             # but forget the channel_axis arg
             for k, v in kwargs.items():
@@ -805,6 +813,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 data = plugin_manager._sample_data[plugin][sample]['data']
             except KeyError:
                 available += list(plugin_manager.available_samples())
+        # npe2 uri sample data, extract the path so we can use viewer.open
+        elif hasattr(data.__self__, 'uri'):
+            data = data.__self__.uri
 
         if data is None:
             msg = trans._(
@@ -895,12 +906,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A list of any layers that were added to the viewer.
         """
 
-        paths = [path] if isinstance(path, (Path, str)) else path
+        paths: List[str | Path] = (
+            [os.fspath(path)]
+            if isinstance(path, (Path, str))
+            else [os.fspath(p) for p in path]
+        )
 
         if stack:
-            layers = self._open_or_raise_error(
-                paths, kwargs, layer_type, stack
-            )
+            if plugin:
+                layers = self._add_layers_with_plugins(
+                    paths,
+                    kwargs=kwargs,
+                    plugin=plugin,
+                    layer_type=layer_type,
+                    stack=stack,
+                )
+            else:
+                layers = self._open_or_raise_error(
+                    paths, kwargs, layer_type, stack
+                )
             return layers
 
         added: List[Layer] = []  # for layers that get added
@@ -933,7 +957,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _open_or_raise_error(
         self,
-        paths: List[Path | str],
+        paths: List[Union[Path, str]],
         kwargs: Dict[str, Any] = {},
         layer_type: Optional[str] = None,
         stack: bool = False,
@@ -1005,9 +1029,26 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         plugin = get_preferred_reader(_path)
+        if plugin and plugin not in readers:
+            warnings.warn(
+                RuntimeWarning(
+                    trans._(
+                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        plugin=plugin,
+                        path_message=path_message,
+                    )
+                    + trans._(
+                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    )
+                    + trans._(
+                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
+                    )
+                )
+            )
+            plugin = None
 
         # preferred plugin exists, or we just have one plugin available
-        if plugin in readers or (not plugin and len(readers) == 1):
+        if plugin or len(readers) == 1:
             plugin = plugin or next(iter(readers.keys()))
             try:
                 added = self._add_layers_with_plugins(
@@ -1028,19 +1069,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     plugin,
                     paths,
                 ) from e
-
-        # preferred plugin doesn't exist
-        elif plugin:
-            raise MissingAssociatedReaderError(
-                trans._(
-                    "Can't find {plugin} plugin associated with {extension} files.",
-                    plugin=plugin,
-                    extension=os.path.splitext(paths[0])[1],
-                    deferred=True,
-                ),
-                plugin,
-                paths,
-            )
         # multiple plugins
         else:
             raise MultipleReaderError(
@@ -1104,6 +1132,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         assert stack is not None
         assert isinstance(paths, list)
         assert not isinstance(paths, str)
+        for p in paths:
+            assert isinstance(p, str)
 
         if stack:
             layer_data, hookimpl = read_data_with_plugins(

@@ -35,7 +35,6 @@ General rendering flow:
 """
 from __future__ import annotations
 
-from functools import partial
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, QSize, Qt, QTimer
@@ -185,6 +184,5 @@ class LayerDelegate(QStyledItemDelegate):
         action = self._context_menu.exec_(pos)
         if action is not None and isinstance(action.data(), dict):
             # action.data will be a callable that accepts a layer_list instance
-            action = action.data().get('action')
-            if action:
-                QTimer.singleShot(0, partial(action, layer_list))
+            if action := action.data().get('action'):
+                QTimer.singleShot(0, action)

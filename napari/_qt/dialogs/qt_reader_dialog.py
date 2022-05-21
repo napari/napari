@@ -26,7 +26,6 @@ class QtReaderDialog(QDialog):
         self,
         pth: str = '',
         parent: QWidget = None,
-        extension: str = '',
         readers: Dict[str, str] = {},
         error_message: str = '',
     ):
@@ -34,7 +33,11 @@ class QtReaderDialog(QDialog):
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
-        self._extension = extension
+
+        if os.path.isdir(pth) and str(pth).endswith('/'):
+            pth = os.path.dirname(pth)
+        self._extension = os.path.splitext(pth)[1]
+
         self._reader_buttons = []
         self.setup_ui(error_message, readers)
 
@@ -62,11 +65,10 @@ class QtReaderDialog(QDialog):
         self.btn_box.accepted.connect(self.accept)
         self.btn_box.rejected.connect(self.reject)
 
-        # checkbox to remember the choice (doesn't pop up for folders)
-        extension = os.path.splitext(self._current_file)[1]
-        if extension:
+        # checkbox to remember the choice (doesn't pop up for folders with no extension)
+        if self._extension:
             self.persist_checkbox = QCheckBox(
-                f'Remember this choice for files with a {extension} extension'
+                f'Remember this choice for files with a {self._extension} extension'
             )
             self.persist_checkbox.toggle()
             layout.addWidget(self.persist_checkbox)
@@ -142,18 +144,22 @@ def handle_gui_reading(
     readers = prepare_remaining_readers(paths, plugin_name, error)
     error_message = str(error) if error else ''
 
-    _, extension = os.path.splitext(_path)
     readerDialog = QtReaderDialog(
         parent=qt_viewer,
         pth=_path,
-        extension=extension,
         error_message=error_message,
         readers=readers,
     )
     display_name, persist = readerDialog.get_user_choices()
     if display_name:
         open_with_dialog_choices(
-            display_name, persist, extension, readers, paths, stack, qt_viewer
+            display_name,
+            persist,
+            readerDialog._extension,
+            readers,
+            paths,
+            stack,
+            qt_viewer,
         )
 
 
@@ -244,5 +250,5 @@ def open_with_dialog_choices(
     if persist:
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            extension: plugin_name,
+            f'*{extension}': plugin_name,
         }

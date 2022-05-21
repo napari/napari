@@ -17,7 +17,7 @@ from ..utils.translations import trans
 Extent = namedtuple('Extent', 'data world step')
 
 if TYPE_CHECKING:
-    from npe2.manifest.io import WriterContribution
+    from npe2.manifest.contributions import WriterContribution
 
 
 class _LayerListMixin:
@@ -194,12 +194,12 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         emitted when ``index`` is set from ``old_value`` to ``value``
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
-    selection.changed : (added: Set[_T], removed: Set[_T])
+    selection.events.changed : (added: Set[_T], removed: Set[_T])
         emitted when the set changes, includes item(s) that have been added
         and/or removed from the set.
-    selection.active : (value: _T)
+    selection.events.active : (value: _T)
         emitted when the current item has changed.
-    selection._current : (value: _T)
+    selection.events._current : (value: _T)
         emitted when the current item has changed. (Private event)
     """
 
@@ -209,12 +209,12 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
-
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
             self._ctx_keys = LayerListContextKeys(self._ctx)
 
             self.selection.events.changed.connect(self._ctx_keys.update)
+
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
 

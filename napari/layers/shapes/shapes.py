@@ -1279,7 +1279,6 @@ class Shapes(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-
         self._refresh_color('face', update_color_mapping)
         self._refresh_color('edge', update_color_mapping)
 
@@ -1307,7 +1306,6 @@ class Shapes(Layer):
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 colors = self._map_color(attribute, update_color_mapping)
                 setattr(self._data_view, f'{attribute}_color', colors)
-
                 color_event = getattr(self.events, f'{attribute}_color')
                 color_event()
 
@@ -1577,6 +1575,13 @@ class Shapes(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+
+        # short circuit if no text present
+        if self.text.values.shape == ():
+            return self.text.compute_text_coords(
+                np.zeros((0, self._ndisplay)), self._ndisplay
+            )
+
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
             self._data_view.data[i] for i in self._indices_view
@@ -2230,19 +2235,35 @@ class Shapes(Layer):
 
     def _add_shapes_to_view(self, shape_inputs, data_view):
         """Build new shapes and add them to the _data_view"""
-        for d, st, ew, ec, fc, z in shape_inputs:
 
-            shape_cls = shape_classes[ShapeType(st)]
-            shape = shape_cls(
-                d,
-                edge_width=ew,
-                z_index=z,
-                dims_order=self._dims_order,
-                ndisplay=self._ndisplay,
+        shape_inputs = tuple(shape_inputs)
+
+        # build all shapes
+        sh_inp = tuple(
+            (
+                shape_classes[ShapeType(st)](
+                    d,
+                    edge_width=ew,
+                    z_index=z,
+                    dims_order=self._dims_order,
+                    ndisplay=self._ndisplay,
+                ),
+                ec,
+                fc,
             )
+            for d, st, ew, ec, fc, z in shape_inputs
+        )
 
-            # Add shape
-            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
+        shapes, edge_colors, face_colors = tuple(zip(*sh_inp))
+
+        # Add all shapes at once (faster than adding them one by one)
+        data_view.add(
+            shape=shapes,
+            edge_color=edge_colors,
+            face_color=face_colors,
+            z_refresh=False,
+        )
+
         data_view._update_z_order()
 
     @property
