@@ -16,7 +16,7 @@ from ..base import Layer
 from ..utils.layer_utils import combine_extents
 
 if TYPE_CHECKING:
-    from npe2.manifest.io import WriterContribution
+    from npe2.manifest.contributions import WriterContribution
 
 
 class LayerGroup(Group[Layer], Layer, _LayerListMixin):
@@ -203,8 +203,7 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         """
         state = [self._get_base_state()]
         if self is not None:
-            for layer in self:
-                state.append(layer._get_state())
+            state.extend(layer._get_state() for layer in self)
         return state
 
     def _get_value(self, position):
