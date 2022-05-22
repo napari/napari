@@ -114,23 +114,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Whether the layer visual is currently being displayed.
     blending : Blending
         Determines how RGB and alpha values get mixed.
-            Blending.OPAQUE
-                Allows for only the top layer to be visible and corresponds to
-                depth_test=True, cull_face=False, blend=False.
-            Blending.TRANSLUCENT
-                Allows for multiple layers to be blended with different opacity
-                and corresponds to depth_test=True, cull_face=False,
-                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            Blending.TRANSLUCENT_NO_DEPTH
-                Allows for multiple layers to be blended with different opacity,
-                but no depth testing is performed.
-                and corresponds to depth_test=False, cull_face=False,
-                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            Blending.ADDITIVE
-                Allows for multiple layers to be blended together with
-                different colors and opacity. Useful for creating overlays. It
-                corresponds to depth_test=False, cull_face=False, blend=True,
-                blend_func=('src_alpha', 'one').
+
+        * ``Blending.OPAQUE``
+          Allows for only the top layer to be visible and corresponds to
+          ``depth_test=True``, ``cull_face=False``, ``blend=False``.
+        * ``Blending.TRANSLUCENT``
+          Allows for multiple layers to be blended with different opacity and
+          corresponds to ``depth_test=True``, ``cull_face=False``,
+          ``blend=True``, ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+        * ``Blending.TRANSLUCENT_NO_DEPTH``
+          Allows for multiple layers to be blended with different opacity, but
+          no depth testing is performed. Corresponds to ``depth_test=False``,
+          ``cull_face=False``, ``blend=True``,
+          ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+        * ``Blending.ADDITIVE``
+          Allows for multiple layers to be blended together with different
+          colors and opacity. Useful for creating overlays. It corresponds to
+          ``depth_test=False``, ``cull_face=False``, ``blend=True``,
+          ``blend_func=('src_alpha', 'one')``.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -191,12 +192,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     Notes
     -----
     Must define the following:
-        * `_extent_data`: property
-        * `data` property (setter & getter)
+
+    * `_extent_data`: property
+    * `data` property (setter & getter)
 
     May define the following:
-        * `_set_view_slice()`: called to set currently viewed slice
-        * `_basename()`: base/default name of the layer
+
+    * `_set_view_slice()`: called to set currently viewed slice
+    * `_basename()`: base/default name of the layer
     """
 
     def __init__(
@@ -506,6 +509,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @scale.setter
     def scale(self, scale):
+        if scale is None:
+            scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
@@ -788,6 +793,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'translate': list(self.translate),
             'rotate': [list(r) for r in self.rotate],
             'shear': list(self.shear),
+            'affine': self.affine.affine_matrix,
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
@@ -1401,6 +1407,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
+
         start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
@@ -1409,6 +1416,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             bounding_box=bounding_box,
         )
         return start_point, end_point
+
+    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+        """Adjust position for offset between viewer and data coordinates."""
+        return position
 
     def _get_ray_intersections(
         self,
@@ -1461,6 +1472,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position, dims_displayed
             )
         else:
+
+            # adjust for any offset between viewer and data coordinates
+            position = self._get_offset_data_position(position)
+
             view_dir = np.asarray(view_direction)[dims_displayed]
             click_pos_data = np.asarray(position)[dims_displayed]
 
@@ -1468,7 +1483,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bounding_box, view_dir
         )
-
         if front_face_normal is None and back_face_normal is None:
             # click does not intersect the data bounding box
             return None, None

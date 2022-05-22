@@ -121,6 +121,10 @@ def toggle_selected_visibility(viewer: Viewer):
     viewer.layers.toggle_selected_visibility()
 
 
-@register_viewer_action(trans._("Show/Hide IPython console"))
+@register_viewer_action(
+    trans._(
+        "Show/Hide IPython console (only available when napari started as standalone application)"
+    )
+)
 def toggle_console_visibility(viewer: Viewer):
     viewer.window._qt_viewer.toggle_console_visibility()

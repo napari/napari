@@ -4,6 +4,7 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import (
@@ -161,7 +162,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'point_type', 'color': 'red'}
+    text_kwargs = {'string': 'point_type', 'color': 'red'}
     layer = Points(
         property_choices=default_properties,
         text=text_kwargs,
@@ -807,7 +808,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {point_type}',
+        'string': 'type: {point_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -824,7 +825,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -837,7 +838,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Points(data, properties=copy(properties), text=123)
 
 
@@ -2234,7 +2235,7 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
-def test_set_properties_with_missing_text_property_text_becomes_constant():
+def test_set_properties_with_missing_text_property_text_becomes_constant_empty_and_warns():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
@@ -2242,11 +2243,11 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+    with pytest.warns(RuntimeWarning):
+        points.properties = {'not_class': np.array(['D', 'E', 'F'])}
 
-    np.testing.assert_array_equal(
-        points.text.values, ['class', 'class', 'class']
-    )
+    values = points.text.values
+    np.testing.assert_array_equal(values, ['', '', ''])
 
 
 def test_text_param_and_setter_are_consistent():
@@ -2255,7 +2256,7 @@ def test_text_param_and_setter_are_consistent():
     properties = {
         'accepted': np.random.choice([True, False], (5,)),
     }
-    text = {'text': 'accepted', 'color': 'black'}
+    text = {'string': 'accepted', 'color': 'black'}
 
     points_init = Points(data, properties=properties, text=text)
 

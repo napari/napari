@@ -67,6 +67,10 @@ subtrees:
           - file: guides/contexts_expressions
           - file: guides/events_reference
       - file: further-resources/glossary
+      - file: gallery
+        subtrees:
+        - entries:
+          - glob: gallery/*
   - file: plugins/index
     subtrees:
     - entries:
@@ -94,6 +98,12 @@ subtrees:
         subtrees:
         - entries:
           - file: developers/contributing
+          - file: naps/index
+            subtrees:
+            - maxdepth: 1
+              entries:
+              - file: naps/0-nap-process
+              - file: naps/1-institutional-funding-partners
           - file: developers/documentation/index
             subtrees:
             - entries:
@@ -104,6 +114,7 @@ subtrees:
           - file: developers/testing
           - file: developers/profiling
           - file: developers/benchmarks
+          - file: developers/packaging
       - file: release/index
         subtrees:
         - entries:

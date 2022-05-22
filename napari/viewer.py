@@ -84,13 +84,27 @@ class Viewer(ViewerModel):
         else:
             self.window._qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, canvas_only=True, flash: bool = True):
+    def screenshot(
+        self,
+        path=None,
+        *,
+        size=None,
+        scale=None,
+        canvas_only=True,
+        flash: bool = True,
+    ):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        size : tuple (int, int)
+            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
         canvas_only : bool
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
@@ -107,7 +121,11 @@ class Viewer(ViewerModel):
             upper-left corner of the rendered region.
         """
         return self.window.screenshot(
-            path=path, flash=flash, canvas_only=canvas_only
+            path=path,
+            size=size,
+            scale=scale,
+            flash=flash,
+            canvas_only=canvas_only,
         )
 
     def show(self, *, block=False):

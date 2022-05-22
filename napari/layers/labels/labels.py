@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
+from napari.utils.misc import _is_array_type
+
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -294,6 +296,7 @@ class Labels(_ImageBase):
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
+            features=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -410,6 +413,11 @@ class Labels(_ImageBase):
         self.refresh()
         self.events.selected_label()
 
+    @_ImageBase.colormap.setter
+    def colormap(self, colormap):
+        super()._set_colormap(colormap)
+        self._selected_color = self.get_color(self.selected_label)
+
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
@@ -462,6 +470,7 @@ class Labels(_ImageBase):
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
         self.events.properties()
+        self.events.features()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -635,15 +644,14 @@ class Labels(_ImageBase):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (
-                custom_colormap,
-                label_color_index,
-            ) = color_dict_to_colormap(self.color)
-            self.colormap = custom_colormap
+            custom_colormap, label_color_index = color_dict_to_colormap(
+                self.color
+            )
+            super()._set_colormap(custom_colormap)
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
-            self.colormap = self._random_colormap
+            super()._set_colormap(self._random_colormap)
 
         else:
             raise ValueError(trans._("Unsupported Color Mode"))
@@ -1196,9 +1204,12 @@ class Labels(_ImageBase):
                     j += 1
                 else:
                     match_indices.append(np.full(n_idx, d, dtype=np.intp))
-            match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
+
+        match_indices = _coerce_indices_for_vectorization(
+            self.data, match_indices
+        )
 
         self._save_history(
             (
@@ -1268,18 +1279,7 @@ class Labels(_ImageBase):
         else:
             slice_coord = slice_coord_temp
 
-        slice_coord = tuple(slice_coord)
-
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-
-            if isinstance(self.data, xr.DataArray):
-                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
-        except ImportError:
-            pass
+        slice_coord = _coerce_indices_for_vectorization(self.data, slice_coord)
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
@@ -1435,3 +1435,18 @@ if config.async_octree:
 
     class Labels(Labels, _OctreeImageBase):
         pass
+
+
+def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
+    if _is_array_type(array, 'xarray.DataArray'):
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
+
+            return tuple(xr.DataArray(i) for i in indices)
+        except ModuleNotFoundError:
+            pass
+    return tuple(indices)

@@ -2,14 +2,14 @@
 
 ### multi-dimensional image viewer for python
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/napari/napari/main?urlpath=%2Fdesktop)
+[![napari on Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/napari/napari/main?urlpath=%2Fdesktop)
 [![image.sc forum](https://img.shields.io/badge/dynamic/json.svg?label=forum&url=https%3A%2F%2Fforum.image.sc%2Ftags%2Fnapari.json&query=%24.topic_list.tags.0.topic_count&colorB=brightgreen&suffix=%20topics&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAABPklEQVR42m3SyyqFURTA8Y2BER0TDyExZ+aSPIKUlPIITFzKeQWXwhBlQrmFgUzMMFLKZeguBu5y+//17dP3nc5vuPdee6299gohUYYaDGOyyACq4JmQVoFujOMR77hNfOAGM+hBOQqB9TjHD36xhAa04RCuuXeKOvwHVWIKL9jCK2bRiV284QgL8MwEjAneeo9VNOEaBhzALGtoRy02cIcWhE34jj5YxgW+E5Z4iTPkMYpPLCNY3hdOYEfNbKYdmNngZ1jyEzw7h7AIb3fRTQ95OAZ6yQpGYHMMtOTgouktYwxuXsHgWLLl+4x++Kx1FJrjLTagA77bTPvYgw1rRqY56e+w7GNYsqX6JfPwi7aR+Y5SA+BXtKIRfkfJAYgj14tpOF6+I46c4/cAM3UhM3JxyKsxiOIhH0IO6SH/A1Kb1WBeUjbkAAAAAElFTkSuQmCC)](https://forum.image.sc/tag/napari)
 [![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/main/LICENSE)
 [![Build Status](https://api.cirrus-ci.com/github/Napari/napari.svg)](https://cirrus-ci.com/napari/napari)
-[![codecov](https://codecov.io/gh/napari/napari/branch/main/graph/badge.svg)](https://codecov.io/gh/napari/napari)
-[![Python Version](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
-[![PyPI](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
+[![Code coverage](https://codecov.io/gh/napari/napari/branch/main/graph/badge.svg)](https://codecov.io/gh/napari/napari)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
+[![Python package index](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
+[![Python package index download statistics](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
 [![Development Status](https://img.shields.io/pypi/status/napari.svg)](https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 [![DOI](https://zenodo.org/badge/144513571.svg)](https://zenodo.org/badge/latestdoi/144513571)
@@ -47,7 +47,7 @@ import napari
 viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![image](resources/screenshot-add-image.png)
+![napari viewer showing an image of an astronaut.](resources/screenshot-add-image.png)
 
 To use napari from inside a script, use `napari.run()`:
 
@@ -90,7 +90,7 @@ Contributions are encouraged! Please read our [contributing guide](https://napar
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact the [@napari/steering-council and @napari/core-devs](https://napari.org/community/team.html#current-core-developers).
 
 ## citing napari
 
@@ -107,3 +107,7 @@ We're a community partner on the [image.sc forum](https://forum.image.sc/tags/na
 
 Bug reports should be made on our [github issues](https://github.com/napari/napari/issues/new?template=bug_report.md) using
 the bug report template. If you think something isn't working, don't hesitate to reach out - it is probably us and not you!
+
+## insitutional and funding partners
+
+![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)

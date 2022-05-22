@@ -9,7 +9,7 @@ from functools import lru_cache
 from typing import Dict, Generator, List, Optional, Tuple
 from urllib import error, parse, request
 
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata
 
 from .utils import normalized_name
 
@@ -23,7 +23,7 @@ setup_py_pypi_name = re.compile(
 )
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
     """Search for packages starting with ``prefix`` on pypi.
 
@@ -48,7 +48,7 @@ def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
     }
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def get_packages_by_classifier(classifier: str) -> List[str]:
     """Search for packages declaring ``classifier`` on PyPI
 
@@ -72,7 +72,7 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
     return packages
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def get_package_versions(name: str) -> List[str]:
     """Get available versions of a package on pypi
 
@@ -92,7 +92,7 @@ def get_package_versions(name: str) -> List[str]:
     return re.findall(f'>{name}-(.+).tar', html.decode())
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def ensure_published_at_pypi(
     name: str, min_dev_status=3
 ) -> Optional[PackageMetadata]:

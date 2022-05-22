@@ -8,7 +8,7 @@ from functools import lru_cache
 from typing import Generator, Optional, Tuple
 from urllib import error, request
 
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata
 
 from .utils import normalized_name
 
@@ -16,7 +16,7 @@ NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def hub_plugin_info(
     name: str,
     min_dev_status=3,
@@ -55,9 +55,12 @@ def hub_plugin_info(
         try:
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
-                if version in anaconda_info.get("versions", []):
-                    is_available_in_conda_forge = True
+                versions = anaconda_info.get("versions", [])
+                if versions:
+                    if version not in versions:
+                        version = versions[-1]
 
+                    is_available_in_conda_forge = True
         except error.HTTPError:
             pass
 
