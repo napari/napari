@@ -162,6 +162,9 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
+        if isinstance(self.node, VolumeNode):
+            self.node.mip_cutoff = self.node._texture.clim_normalized[0]
+            self.node.minip_cutoff = self.node._texture.clim_normalized[1]
 
     def _on_gamma_change(self):
         if len(self.node.shared_program.frag._set_items) > 0:
