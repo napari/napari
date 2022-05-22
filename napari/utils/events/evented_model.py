@@ -208,7 +208,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             **dict.fromkeys(field_events + list(self.__property_setters__))
         )
 
-        for name in field_events:
+        for name in self.__fields__:
             child = getattr(self, name)
             if isinstance(
                 child, (EventedModel, EventedDict, EventedList, EventedSet)
