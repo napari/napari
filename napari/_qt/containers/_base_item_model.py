@@ -19,6 +19,14 @@ ItemRole = Qt.UserRole
 SortRole = Qt.UserRole + 1
 ThumbnailRole = Qt.UserRole + 2
 
+_BASE_FLAGS = (
+    Qt.ItemFlag.ItemIsSelectable
+    | Qt.ItemFlag.ItemIsEditable
+    | Qt.ItemFlag.ItemIsUserCheckable
+    | Qt.ItemFlag.ItemIsDragEnabled
+    | Qt.ItemFlag.ItemIsEnabled
+)
+
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     """A QAbstractItemModel desigend to work with `SelectableEventedList`.
@@ -111,44 +119,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
         See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         """
-        if (
-            not index.isValid()
-            # or index.row() >= len(self._root)
-            or index.model() is not self
-        ):
+        if not index.isValid() or index.model() is not self:
             # we allow drops outside the items
-            return Qt.ItemIsDropEnabled
-
-        # TODO: h/t Grzegorz for this fix.  double check to see if we
-        # already have an existing method for this.
-        s_index = index.parent()
-        coord = (index.row(),)
-        while s_index.isValid():
-            coord = (s_index.row(),) + coord
-            s_index = s_index.parent()
-
-        layer_group = self._root
-        outside = False
-        for index_num in coord:
-            if index_num >= len(layer_group):
-                outside = True
-                break
-            layer_group = layer_group[index_num]
-
-        if outside:
-            # we allow drops outside the items
-            return Qt.ItemIsDropEnabled
-
-        base_flags = (
-            Qt.ItemIsSelectable
-            | Qt.ItemIsEditable
-            | Qt.ItemIsUserCheckable
-            | Qt.ItemIsDragEnabled
-            | Qt.ItemIsEnabled
-        )
+            return Qt.ItemFlag.ItemIsDropEnabled
         if isinstance(self.getItem(index), MutableSequence):
-            return base_flags | Qt.ItemIsDropEnabled
-        return base_flags | Qt.ItemNeverHasChildren
+            return _BASE_FLAGS | Qt.ItemFlag.ItemIsDropEnabled
+        return _BASE_FLAGS | Qt.ItemFlag.ItemNeverHasChildren
 
     def columnCount(self, parent: QModelIndex) -> int:
         """Return the number of columns for the children of the given `parent`.
