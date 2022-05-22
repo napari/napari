@@ -97,6 +97,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         the index of the drop location, and the selection indicates if
         multiple items are being dragged. If the moved layer is not selected
         select it.
+        
+        This method is deprecated. Please use layers.move_multiple
+        with layers.selection instead.
 
         Parameters
         ----------
