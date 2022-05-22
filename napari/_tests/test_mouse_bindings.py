@@ -66,6 +66,7 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
     mock_move.reset_mock()
 
     # Simulate press, drag, release
+    qtbot.wait(20)
     view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     view.canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
@@ -147,6 +148,7 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     view.canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
+    qtbot.wait(1)
     view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
