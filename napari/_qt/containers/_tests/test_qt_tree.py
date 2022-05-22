@@ -151,6 +151,7 @@ def test_node_tree_view(qtbot):
 
 
 def test_flags(tree_model):
+    """Some sanity checks on retrieving flags for nested items"""
     assert not tree_model.hasIndex(5, 0, tree_model.index(1))
     last = tree_model._root.pop()
     tree_model._root[1].append(last)
