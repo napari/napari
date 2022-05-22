@@ -128,7 +128,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     def _ensure_unique(self, values, allow=()):
         bad = set(self._list) - set(allow)
-        values = values if isinstance(values, Iterable) else (values,)
+        values = tuple(values) if isinstance(values, Iterable) else (values,)
         for v in values:
             if v in bad:
                 raise ValueError(
