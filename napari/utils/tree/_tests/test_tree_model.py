@@ -7,7 +7,7 @@ from napari.utils.tree import Group, Node
 
 @pytest.fixture
 def tree():
-    root = Group(
+    return Group(
         [
             Node(name="1"),
             Group(
@@ -25,7 +25,6 @@ def tree():
         ],
         name="root",
     )
-    return root
 
 
 def test_tree_str(tree):
@@ -47,9 +46,33 @@ def test_tree_str(tree):
     assert str(tree) == expected
 
 
-def test_node_indexing(tree):
+def test_node_indexing(tree: Group):
+    expected_indices = [
+        0,
+        1,
+        (1, 0),
+        (1, 1),
+        (1, 1, 0),
+        (1, 1, 1),
+        (1, 2),
+        (1, 3),
+        (1, 4),
+        2,
+        3,
+    ]
+    assert list(tree._iter_indices()) == expected_indices
+
+    for index in tree._iter_indices():
+        assert tree.index(tree[index]) == index
+
+        item = tree[index]
+        if item.parent:
+            assert item.parent.index(item) is not None
+
+
+def test_relative_node_indexing(tree):
     """Test that nodes know their index relative to parent and root."""
-    root: Group = tree
+    root: Group[Node] = tree
     assert root.is_group()
     assert not root[0].is_group()
 
@@ -57,10 +80,12 @@ def test_node_indexing(tree):
     assert root.index_in_parent() is None
     g1 = root[1]
     assert g1.name == 'g1'
-    assert g1.index_from_root() == (1,)
     assert g1.index_in_parent() == 1
+    assert g1.index_from_root() == (1,)
     g1_1 = g1[1]
     assert g1_1.name == 'g2'
+    assert g1_1.parent is g1
+    assert g1_1.parent.parent is root
     assert g1_1 is tree[1, 1]  # nested index variant
 
     assert g1_1.index_from_root() == (1, 1)
@@ -125,11 +150,9 @@ def test_contains(tree):
     assert g1_0 in g1
     assert g1_0 in tree
 
-    # If you need to know if an item is an immediate child, you can use index
-    assert tree.index(g1) == 1
-    with pytest.raises(ValueError) as e:
-        tree.index(g1_0)
-    assert "is not in list" in str(e)
+    # If you need to know if an item is an immediate child, you can use parent
+    assert g1.parent is tree
+    assert g1_0.parent is g1
 
     g2 = g1[1]
     assert g2.name == 'g2'
@@ -181,3 +204,33 @@ def test_nested_deletion(tree):
     assert node4 not in tree  # node4 is gone
     assert g2 == []
     assert g2 in tree  # the group itself remains in the tree
+
+
+def test_deep_index(tree: Group):
+    """Test deep indexing"""
+
+    node = tree[(1, 0)]
+    assert tree.index(node) == (1, 0)
+
+
+def test_remove_selected(tree: Group):
+    """Test remove_selected works, with nested"""
+    node = tree[(1, 0)]
+    tree.selection.active = node
+    tree.remove_selected()
+
+
+def test_nested_custom_lookup(tree: Group):
+    tree._lookup = {str: lambda x: x.name}
+
+    # first level
+    g1 = tree[1]
+    assert g1.name == 'g1'  # index with integer as usual
+    assert tree.index("g1") == 1
+    assert tree['g1'] == g1  # index with string also works
+
+    # second level
+    g1_2 = g1[2]
+    assert tree[1, 2].name == '5'
+    assert tree.index('5') == (1, 2)
+    assert tree['5'] == g1_2

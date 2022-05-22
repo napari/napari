@@ -148,7 +148,7 @@ def test_nested_custom_lookup():
     a = NestableEventedList(
         [c, c1, [c2, [c3]]],
         basetype=Custom,
-        lookup={str: lambda x: x.name},
+        lookup={str: lambda x: getattr(x, 'name', object())},
     )
     # first level
     assert a[1].name == 'c1'  # index with integer as usual
