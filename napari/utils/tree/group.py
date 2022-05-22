@@ -47,8 +47,6 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         )
 
     def __newlike__(self, iterable: Iterable):
-        from copy import copy
-
         # NOTE: TRICKY!
         # whenever we slice into a group with group[start:end],
         # the super().__newlike__() call is going to create a new object
@@ -60,9 +58,13 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         # into a group will actually reparent *all* items in that group
         # (even if the resulting slice goes unused...).
         #
-        # So, we call `copy()` here to avoid that reparenting.  Though this
-        # may have it's own negative consequences?
-        return super().__newlike__(copy(i) for i in iterable)
+        # So, we call new._list.extend here to avoid that reparenting.
+        # Though this may have its own negative consequences for typing/events?
+        new = type(self)()
+        new._basetypes = self._basetypes
+        new._lookup = self._lookup.copy()
+        new._list.extend(iterable)
+        return new
 
     def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
         return super().__getitem__(key)
