@@ -120,10 +120,10 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         if not index.isValid() or index.model() is not self:
             # we allow drops outside the items
-            return Qt.ItemIsDropEnabled
+            return Qt.ItemFlag.ItemIsDropEnabled
         if isinstance(self.getItem(index), MutableSequence):
-            return _BASE_FLAGS | Qt.ItemIsDropEnabled
-        return _BASE_FLAGS | Qt.ItemNeverHasChildren
+            return _BASE_FLAGS | Qt.ItemFlag.ItemIsDropEnabled
+        return _BASE_FLAGS | Qt.ItemFlag.ItemNeverHasChildren
 
     def columnCount(self, parent: QModelIndex) -> int:
         """Return the number of columns for the children of the given `parent`.
