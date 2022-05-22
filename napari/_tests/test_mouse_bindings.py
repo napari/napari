@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import numpy as np
 
 
-def test_viewer_mouse_bindings(make_napari_viewer):
+def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
     """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
     viewer = make_napari_viewer()
@@ -70,6 +70,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     view.canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
+    qtbot.wait(1)
     view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
@@ -77,7 +78,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
 
-def test_layer_mouse_bindings(make_napari_viewer):
+def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
@@ -141,6 +142,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
     mock_move.reset_mock()
 
     # Simulate press, drag, release
+    qtbot.wait(20)
     view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     view.canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
