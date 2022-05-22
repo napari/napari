@@ -164,7 +164,7 @@ def test_remove_selected(LayersClass):
     assert len(layers) == 0
 
 
-@pytest.mark.filterwarnings("ignore:move_selected is deprecated")
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_move_selected():
     """
     Test removing selected layers

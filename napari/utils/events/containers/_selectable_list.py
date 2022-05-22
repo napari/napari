@@ -98,6 +98,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         multiple items are being dragged. If the moved layer is not selected
         select it.
 
+        This method is deprecated. Please use layers.move_multiple
+        with layers.selection instead.
+
         Parameters
         ----------
         index : int
@@ -105,8 +108,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         insert : int
             Index that item(s) will be inserted at
         """
+        # this is just here for now to support the old layerlist API
         warnings.warn(
-            "move_selected is deprecated.  Please use layers.move_multiple "
+            "move_selected is deprecated. Please use layers.move_multiple "
             "with layers.selection instead.",
             FutureWarning,
             stacklevel=2,
