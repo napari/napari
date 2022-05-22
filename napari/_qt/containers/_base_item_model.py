@@ -19,11 +19,11 @@ ItemRole = Qt.UserRole
 SortRole = Qt.UserRole + 1
 
 _BASE_FLAGS = (
-    Qt.ItemIsSelectable
-    | Qt.ItemIsEditable
-    | Qt.ItemIsUserCheckable
-    | Qt.ItemIsDragEnabled
-    | Qt.ItemIsEnabled
+    Qt.ItemFlag.ItemIsSelectable
+    | Qt.ItemFlag.ItemIsEditable
+    | Qt.ItemFlag.ItemIsUserCheckable
+    | Qt.ItemFlag.ItemIsDragEnabled
+    | Qt.ItemFlag.ItemIsEnabled
 )
 
 
