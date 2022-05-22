@@ -93,6 +93,7 @@ class NotebookScreenshot:
                 alt_text = ""
                 warn(
                     'The provided alt text does not constitute valid html, so it was discarded.'
+		stacklevel=3,
                 )
             alt_text = cleaner.clean_html(doc).text_content()
             # alt_text = html.escape(alt_text)
