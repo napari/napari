@@ -317,8 +317,9 @@ class EventedList(TypedMutableSequence[_T]):
             else:
                 raise TypeError(
                     trans._(
-                        "Can only move integer or slice indices",
+                        "Can only move integer or slice indices, not {t}",
                         deferred=True,
+                        t=type(idx),
                     )
                 )
 
