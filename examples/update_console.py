@@ -1,4 +1,7 @@
 """
+Update console
+==============
+
 Display one shapes layer ontop of one image layer using the add_shapes and
 add_image APIs. When the window is closed it will print the coordinates of
 your shapes.
@@ -72,4 +75,5 @@ shapes_layer = viewer.add_shapes(
 # Send local variables to the console
 viewer.update_console(locals())
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

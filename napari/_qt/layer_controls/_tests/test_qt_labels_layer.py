@@ -2,6 +2,7 @@ import numpy as np
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari.layers import Labels
+from napari.utils.colormaps import colormap_utils
 
 np.random.seed(0)
 _LABELS = np.random.randint(5, size=(10, 15))
@@ -34,3 +35,31 @@ def test_rendering_combobox(qtbot):
     new_mode = 'iso_categorical'
     layer.rendering = new_mode
     assert combo.findText(new_mode) == combo.currentIndex()
+
+
+def test_changing_colormap_updates_colorbox(qtbot):
+    """Test that changing the colormap on a layer will update color swatch in the combo box"""
+    layer = Labels(_LABELS, color=_COLOR)
+    qtctrl = QtLabelsControls(layer)
+    qtbot.addWidget(qtctrl)
+    color_box = qtctrl.colorBox
+
+    layer.selected_label = 1
+
+    # For a paint event, which does not occur in a headless qtbot
+    color_box.paintEvent(None)
+
+    np.testing.assert_equal(
+        color_box.color,
+        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+    )
+
+    layer.colormap = colormap_utils.label_colormap(num_colors=5)
+
+    # For a paint event, which does not occur in a headless qtbot
+    color_box.paintEvent(None)
+
+    np.testing.assert_equal(
+        color_box.color,
+        np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
+    )

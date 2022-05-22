@@ -4,10 +4,11 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
-from napari.layers.utils._text_constants import Anchor, TextMode
+from napari.layers.utils._text_constants import Anchor
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -222,12 +223,11 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
     )
-    assert layer.text._mode == TextMode.PROPERTY
     assert layer.text.values.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
@@ -244,7 +244,6 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='shape_type: {shape_type:.2f}',
     )
-    assert layer.text._mode == TextMode.FORMATTED
     assert layer.text.values.size == 0
 
     # add a shape and check that the appropriate text value was added
@@ -299,7 +298,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {shape_type}',
+        'string': 'type: {shape_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -316,7 +315,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -329,7 +328,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Shapes(data, properties=copy(properties), text=123)
 
 
@@ -363,7 +362,7 @@ def test_nd_text():
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
     properties = {'shape_type': ['A', 'B']}
-    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 
@@ -2154,3 +2153,15 @@ def test_world_data_extent():
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_set_data_3d():
+    """Test for reproduce https://github.com/napari/napari/issues/4527"""
+    lines = [
+        np.array([[0, 0, 0], [500, 0, 0]]),
+        np.array([[0, 0, 0], [0, 300, 0]]),
+        np.array([[0, 0, 0], [0, 0, 200]]),
+    ]
+    shapes = Shapes(lines, shape_type='line')
+    shapes._ndisplay = 3
+    shapes.data = lines

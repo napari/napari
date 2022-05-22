@@ -120,8 +120,7 @@ def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
     }
     viewer = Viewer(**vkwargs)
-    if 'kwargs' in kwargs:
-        kwargs.update(kwargs.pop("kwargs"))
+    kwargs.update(kwargs.pop("kwargs", {}))
     method = getattr(viewer, add_method)
     method(*args, **kwargs)
     for arg_name, arg_val in dims_kwargs.items():

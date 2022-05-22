@@ -986,6 +986,22 @@ def test_fill_tensorstore():
         np.testing.assert_array_equal(modified_labels, np.asarray(data))
 
 
+def test_fill_with_xarray():
+    """See https://github.com/napari/napari/issues/2374"""
+    data = xr.DataArray(np.zeros((5, 4, 4), dtype=int))
+    layer = Labels(data)
+
+    layer.fill((0, 2, 2), 1)
+
+    np.testing.assert_array_equal(layer.data[0, :, :], np.ones((4, 4)))
+    np.testing.assert_array_equal(layer.data[1:, :, :], np.zeros((4, 4, 4)))
+    # In the associated issue, using xarray.DataArray caused memory allocation
+    # problems due to different read indexing rules, so check that the data
+    # saved for undo has the expected vectorized shape and values.
+    undo_data = layer._undo_history[0][0][1]
+    np.testing.assert_array_equal(undo_data, np.zeros((16,)))
+
+
 @pytest.mark.parametrize(
     'scale', list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
 )
@@ -1382,3 +1398,30 @@ def test_get_status_with_custom_index():
     assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
     assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
     assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
+
+
+def test_labels_features_event():
+    event_emitted = False
+
+    def on_event():
+        nonlocal event_emitted
+        event_emitted = True
+
+    layer = Labels(np.zeros((4, 5), dtype=np.uint8))
+    layer.events.features.connect(on_event)
+
+    layer.features = {'some_feature': []}
+
+    assert event_emitted
+
+
+class TestLabels:
+    @staticmethod
+    def get_objects():
+        return [(Labels(np.zeros((10, 10), dtype=np.uint8)))]
+
+    def test_events_defined(self, event_define_check, obj):
+        event_define_check(
+            obj,
+            {"seed", "num_colors", "show_selected_label", "color"},
+        )

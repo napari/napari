@@ -41,7 +41,7 @@ add points to it using `viewer.add_points`. The api of both methods is the same.
 In these examples we'll mainly use `add_points` to overlay points onto on an
 existing image.
 
-In this example of we will overlay some points on the image of an astronaut:
+In this example, we will overlay some points on the image of an astronaut:
 
 ```{code-cell} python
 import napari
@@ -59,7 +59,7 @@ points_layer = viewer.add_points(points, size=30)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="3 points overlaid on an astronaut image")
 ```
 
 ```{code-cell} python
@@ -122,7 +122,7 @@ buttons can toggle between each mode. The number of dimensions sliders will be 2
 or 3 less than the total number of dimensions of the layer. See for example
 these points overlaid on an image in both 2D and 3D:
 
-![image: smFISH with points overlaid](../../images/smFISH.gif)
+![image: smFISH with points overlaid](../../images/smFISH.webm)
 
 Note though that when entering 3D rendering mode the point add, delete, and
 select tools are all disabled. Those options are only supported when viewing a
@@ -246,7 +246,7 @@ points_layer = viewer.add_points(
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="3 points overlaid on an astronaut image, where the edge color of the points has been changed to a color cycle")
 ```
 
 ```{code-cell} python
@@ -267,8 +267,8 @@ strings or a (M x 4) array of M RGBA colors).
 
 ### Setting edge or face color with a colormap
 
-Here we will set the face color of the markers with a color cycle on a property.
-To do the same for a face color, substitute `edge_color` for `face_color` in the
+Here we will set the face color of the markers with a colormap on a property.
+To do the same for an edge color, substitute `face` for `edge` in the
 example snippet below.
 
 ```{code-cell} python
@@ -289,7 +289,7 @@ points_layer = viewer.add_points(
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="3 points overlaid on an astronaut image, where the face color of the points has been changed to a colormap")
 ```
 
 ```{code-cell} python
@@ -329,4 +329,4 @@ will be updated with the new slice values.
 Here you can see an example of adding, selecting, deleting points and change
 their properties:
 
-![image: editing points](../../images/editing_points.gif)
+![image: editing points](../../images/editing_points.webm)

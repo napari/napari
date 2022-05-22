@@ -14,6 +14,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from importlib import import_module
+from pathlib import Path
+
+import qtgallery
+from jinja2.filters import FILTERS
 
 import napari
 
@@ -54,10 +59,11 @@ extensions = [
     #    "sphinx_comments",
     "sphinx_panels",
     "sphinx.ext.viewcode",
+    "sphinx_gallery.gen_gallery",
 ]
 
 external_toc_path = "_toc.yml"
-external_toc_exclude_missing = True
+external_toc_exclude_missing = False
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -81,6 +87,10 @@ html_static_path = ['_static']
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ''
 html_title = 'napari'
+
+html_css_files = [
+    'custom.css',
+]
 
 intersphinx_mapping = {
     'python': ['https://docs.python.org/3', None],
@@ -124,3 +134,57 @@ exclude_patterns = [
     '.jupyter_cache',
     'jupyter_execute',
 ]
+
+napoleon_custom_sections = [('Events', 'params_style')]
+
+
+def reset_napari_theme(gallery_conf, fname):
+    from napari.settings import get_settings
+
+    settings = get_settings()
+    settings.appearance.theme = 'dark'
+    qtgallery.reset_qapp(gallery_conf, fname)
+
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',  # path to your example scripts
+    'gallery_dirs': 'gallery',  # path to where to save gallery generated output
+    'filename_pattern': '/*.py',
+    'ignore_pattern': 'README.rst|/*_.py',
+    'default_thumb_file': Path(__file__).parent.parent
+    / 'napari'
+    / 'resources'
+    / 'logo.png',
+    'plot_gallery': True,
+    'download_all_examples': False,
+    'min_reported_time': 10,
+    'only_warn_on_example_error': True,
+    'image_scrapers': (qtgallery.qtscraper,),
+    'reset_modules': (reset_napari_theme,),
+}
+
+
+def setup(app):
+    """Ignore .ipynb files.
+
+    Prevents sphinx from complaining about multiple files found for document
+    when generating the gallery.
+
+    """
+    app.registry.source_suffix.pop(".ipynb", None)
+
+
+def get_attributes(item, obj, modulename):
+    """Filters attributes to be used in autosummary.
+
+    Fixes import errors when documenting inherited attributes with autosummary.
+
+    """
+    module = import_module(modulename)
+    if hasattr(getattr(module, obj), item):
+        return f"~{obj}.{item}"
+    else:
+        return ""
+
+
+FILTERS["get_attributes"] = get_attributes

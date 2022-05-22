@@ -6,6 +6,7 @@ import pytest
 
 from napari.utils.misc import (
     StringEnum,
+    _is_array_type,
     _quiet_array_equal,
     abspath_or_url,
     ensure_iterable,
@@ -197,3 +198,16 @@ def test_equality_operator():
     eq = pick_equality_operator(np.asarray([]))
     # make sure this doesn't warn
     assert not eq(np.asarray([]), np.asarray([], '<U32'))
+
+
+def test_is_array_type_with_xarray():
+    import numpy as np
+    import xarray as xr
+
+    assert _is_array_type(xr.DataArray(), 'xarray.DataArray')
+    assert not _is_array_type(xr.DataArray(), 'xr.DataArray')
+    assert not _is_array_type(
+        xr.DataArray(), 'xarray.core.dataarray.DataArray'
+    )
+    assert not _is_array_type([], 'xarray.DataArray')
+    assert not _is_array_type(np.array([]), 'xarray.DataArray')
