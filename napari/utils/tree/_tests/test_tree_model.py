@@ -80,10 +80,12 @@ def test_relative_node_indexing(tree):
     assert root.index_in_parent() is None
     g1 = root[1]
     assert g1.name == 'g1'
-    assert g1.index_from_root() == (1,)
     assert g1.index_in_parent() == 1
+    assert g1.index_from_root() == (1,)
     g1_1 = g1[1]
     assert g1_1.name == 'g2'
+    assert g1_1.parent is g1
+    assert g1_1.parent.parent is root
     assert g1_1 is tree[1, 1]  # nested index variant
 
     assert g1_1.index_from_root() == (1, 1)

@@ -24,11 +24,6 @@ _T = TypeVar("_T")
 _L = TypeVar("_L")
 
 
-class B(MutableSequence[int]):
-    def __new__(self, data):
-        self._data = data
-
-
 class TypedMutableSequence(MutableSequence[_T]):
     """List mixin that enforces item type, and enables custom indexing.
 
@@ -248,7 +243,7 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     def _ipython_key_completions_(self):
         if str in self._lookup:
-            return (self._lookup[str](x) for x in self)
+            return (self._lookup[str](x) for x in self)  # type: ignore
 
 
 def _noop(x):
