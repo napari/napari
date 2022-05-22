@@ -36,9 +36,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          # TODO: Match upstream, not fork!
-          repository: jaimergp/napari-feedstock
-          ref: menuinst-cep
+          repository: conda-forge/napari-feedstock
           path: napari-feedstock
 
       - name: Create environment.yml
@@ -208,7 +206,10 @@ jobs:
         run: |
           VER=$(python bundle_conda.py --version)
           echo "version=${VER}" >> $GITHUB_ENV
-          echo "Version: ${VER}"
+          echo "Napari version: ${VER}"
+          INST_VER=$(python bundle_conda.py --installer-version)
+          echo "installer_version=${INST_VER}" >> $GITHUB_ENV
+          echo "Installer version: ${INST_VER}"
           ARCH_SUFFIX=$(python bundle_conda.py --arch)
           echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
           echo "Machine: ${ARCH_SUFFIX}"
@@ -384,6 +385,37 @@ jobs:
           asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
           asset_content_type: application/octet-stream
           max_releases: 1
+
+      - name: Test installation (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          bash napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -bfp "${{ runner.temp }}/napari-app-${{ env.installer_version }}"
+          . "${{ runner.temp }}/napari-app-${{ env.installer_version }}/etc/profile.d/conda.sh"
+          conda activate "${{ runner.temp }}/napari-app-${{ env.installer_version }}/envs/napari-${{ env.version }}"
+          conda config --show-sources
+          conda config --show
+          xvfb-run --auto-servernum napari --info
+
+      - name: Test installation (macOS)
+        if: runner.os == 'macOS' && matrix.target-platform == 'osx-64'
+        run: |
+          set -x
+          installer -pkg napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -target CurrentUserHomeDirectory -dumplog
+          . "/Users/runner/Library/napari-app-${{ env.installer_version }}/etc/profile.d/conda.sh"
+          conda activate "/Users/runner/Library/napari-app-${{ env.installer_version }}/envs/napari-${{ env.version }}"
+          conda config --show-sources
+          conda config --show
+          napari --info
+
+      - name: Test installation (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd /C call {0}
+        run: |
+          cmd.exe /c start /wait napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} /S /D=${{ runner.temp }}\napari-app-${{ env.installer_version }}
+          CALL ${{ runner.temp }}\napari-app-${{ env.installer_version }}\Scripts\activate ${{ runner.temp }}\napari-app-${{ env.installer_version }}\envs\napari-${{ env.version }}
+          CALL conda config --show-sources
+          CALL conda config --show
+          napari --info
 
       # Choose which one to keep; the one in `make_bundle` or this one.
       # - name: Update latest tag

@@ -17,7 +17,10 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins.exceptions import format_exceptions
+from ...settings import get_settings
+from ...utils.theme import get_theme
 from ...utils.translations import trans
+from ..code_syntax_highlight import Pylighter
 
 
 class QtPluginErrReporter(QDialog):
@@ -70,6 +73,10 @@ class QtPluginErrReporter(QDialog):
         self.setLayout(self.layout)
 
         self.text_area = QTextEdit()
+        theme = get_theme(get_settings().appearance.theme, as_dict=False)
+        self._highlight = Pylighter(
+            self.text_area.document(), "python", theme.syntax_style
+        )
         self.text_area.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.text_area.setMinimumWidth(360)
 
@@ -147,7 +154,7 @@ class QtPluginErrReporter(QDialog):
 
         if not plugin or (plugin == self.NULL_OPTION):
             self.plugin_meta.setText('')
-            self.text_area.setHtml('')
+            self.text_area.setText('')
             return
 
         if not self.plugin_manager.get_errors(plugin):
@@ -159,8 +166,8 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_combo.setCurrentText(plugin)
 
-        err_string = format_exceptions(plugin, as_html=True)
-        self.text_area.setHtml(err_string)
+        err_string = format_exceptions(plugin, as_html=False, color="NoColor")
+        self.text_area.setText(err_string)
         self.clipboard_button.show()
 
         # set metadata and outbound links/buttons

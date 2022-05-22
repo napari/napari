@@ -460,6 +460,15 @@ class Window:
 
         if show:
             self.show()
+            # Ensure the controls dock uses the minimum height
+            self._qt_window.resizeDocks(
+                [
+                    self._qt_viewer.dockLayerControls,
+                    self._qt_viewer.dockLayerList,
+                ],
+                [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
+                Qt.Vertical,
+            )
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -869,6 +878,9 @@ class Window:
 
             menu.addAction(action)
         # self.window_menu.addAction(action)
+
+        # see #3663, to fix #3624 more generally
+        dock_widget.setFloating(False)
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())

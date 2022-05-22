@@ -1,5 +1,5 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
+from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
@@ -82,32 +82,16 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-
-        self.grid_layout.addWidget(QLabel(trans._('color by:')), 0, 0)
-        self.grid_layout.addWidget(self.color_by_combobox, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 1, 0)
-        self.grid_layout.addWidget(self.colormap_combobox, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 2, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 3, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail width:')), 4, 0)
-        self.grid_layout.addWidget(self.tail_width_slider, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail length:')), 5, 0)
-        self.grid_layout.addWidget(self.tail_length_slider, 5, 1)
-        self.grid_layout.addWidget(QLabel(trans._('head length:')), 6, 0)
-        self.grid_layout.addWidget(self.head_length_slider, 6, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail:')), 7, 0)
-        self.grid_layout.addWidget(self.tail_checkbox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('show ID:')), 8, 0)
-        self.grid_layout.addWidget(self.id_checkbox, 8, 1)
-        self.grid_layout.addWidget(QLabel(trans._('graph:')), 9, 0)
-        self.grid_layout.addWidget(self.graph_checkbox, 9, 1)
-        self.grid_layout.setRowStretch(9, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self.layout().addRow(trans._('color by:'), self.color_by_combobox)
+        self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
+        self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
+        self.layout().addRow(trans._('head length:'), self.head_length_slider)
+        self.layout().addRow(trans._('tail:'), self.tail_checkbox)
+        self.layout().addRow(trans._('show ID:'), self.id_checkbox)
+        self.layout().addRow(trans._('graph:'), self.graph_checkbox)
 
         self._on_tail_length_change()
         self._on_tail_width_change()

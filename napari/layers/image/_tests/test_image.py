@@ -297,7 +297,7 @@ def test_blending():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.blending == 'translucent'
+    assert layer.blending == 'translucent_no_depth'
 
     layer.blending = 'additive'
     assert layer.blending == 'additive'

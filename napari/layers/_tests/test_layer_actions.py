@@ -60,8 +60,8 @@ def test_projections(mode):
     assert ll[-1].data.ndim == 3
     _project(ll, mode=mode)
     assert len(ll) == 2
-    # because we use keepdims = True
-    assert ll[-1].data.shape == (1, 8, 8)
+    # because keepdims = False
+    assert ll[-1].data.shape == (8, 8)
 
 
 @pytest.mark.parametrize(

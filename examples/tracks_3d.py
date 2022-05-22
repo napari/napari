@@ -1,3 +1,9 @@
+"""
+Tracks 3D
+=========
+
+"""
+
 import napari
 import numpy as np
 
@@ -67,4 +73,5 @@ viewer = napari.Viewer(ndisplay=3)
 viewer.add_points(vertices, size=1, name='points', opacity=0.3)
 viewer.add_tracks(tracks, features=features, name='tracks')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -229,7 +229,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent',
+        blending='translucent_no_depth',
         visible=True,
         multiscale=None,
         cache=True,
@@ -340,7 +340,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-        self.colormap = colormap
+        # using self.colormap = colormap uses the setter in *derived* classes,
+        # where the intention here is to use the base setter, so we use the
+        # _set_colormap method. This is important for Labels layers, because
+        # we don't want to use get_color before set_view_slice has been
+        # triggered (self._update_dims(), below).
+        self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation = {
             2: Interpolation.NEAREST,
@@ -908,8 +913,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self._dims_displayed], shape)):
-            value = raw[tuple(coord[self._dims_displayed])]
+        if self.ndim < len(coord):
+            # handle 3D views of 2D data by omitting extra coordinate
+            offset = len(coord) - len(shape)
+            coord = coord[[d + offset for d in self._dims_displayed]]
+        else:
+            coord = coord[self._dims_displayed]
+
+        if all(0 <= c < s for c, s in zip(coord, shape)):
+            value = raw[tuple(coord)]
         else:
             value = None
 
@@ -917,6 +929,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+        """Adjust position for offset between viewer and data coordinates.
+
+        VisPy considers the coordinate system origin to be the canvas corner,
+        while napari considers the origin to be the **center** of the corner
+        pixel. To get the correct value under the mouse cursor, we need to
+        shift the position by 0.5 pixels on each axis.
+        """
+        return [p + 0.5 for p in position]
 
     # For async we add an on_chunk_loaded() method.
     if config.async_loading:
