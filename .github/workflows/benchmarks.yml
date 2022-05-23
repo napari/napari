@@ -29,9 +29,12 @@ jobs:
       matrix:
         include:
           - benchmark-name: Qt
+            asv-command: continuous
             selection-regex: "^benchmark_qt_.*"
           - benchmark-name: non-Qt
+            asv-command: continuous
             selection-regex: "^benchmark_(?!qt_).*"
+
     steps:
       # We need the full repo to avoid this issue
       # https://github.com/actions/checkout/issues/23
@@ -46,14 +49,11 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
-      - name: Setup xvfb
-        run: sudo apt-get install -y xvfb
-
       - name: Setup asv
         run: python -m pip install asv virtualenv
 
       - name: Run ${{ matrix.benchmark-name }} benchmarks
-        id: qt-benchmark
+        uses: GabrielBB/xvfb-action@v1
         env:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
@@ -69,7 +69,7 @@ jobs:
           echo "Contender: ${GITHUB_SHA} (${{ github.event.pull_request.head.label }})"
 
           # Run benchmarks for current commit against base
-          xvfb-run -a asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
+          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
           | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
           | tee benchmarks.log
 
