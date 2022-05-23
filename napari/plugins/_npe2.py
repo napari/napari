@@ -292,3 +292,8 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     for v in Viewer._instances:
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
+
+
+def index_npe1_adapters():
+    """Tell npe2 to import and index any discovered npe1 plugins."""
+    npe2.PluginManager.instance().index_npe1_adapters()

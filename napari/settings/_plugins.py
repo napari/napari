@@ -25,6 +25,16 @@ class PluginAPI(str, Enum):
 
 
 class PluginsSettings(EventedModel):
+    use_npe2_adaptor: bool = Field(
+        False,
+        title=trans._("Use npe2 adaptor"),
+        description=trans._(
+            "Use npe2-adaptor for first generation plugins. When an npe1 "
+            "plugin is found, this option will import its contributions and "
+            "create/cache a 'shim' npe2 manifest that allows it to be treated "
+            "like an npe2 plugin (with delayed imports, etc...)",
+        ),
+    )
     plugin_api: PluginAPI = Field(
         PluginAPI.napari_hub,
         title=trans._("Plugin API"),
