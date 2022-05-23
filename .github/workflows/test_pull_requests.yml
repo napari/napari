@@ -190,4 +190,4 @@ jobs:
         with:
           # this does NOT run the benchmarks properly; it only
           # ensures they can run correctly
-          run: asv check -v -E existing
+          run: asv check -v -E existing --config ./napari-from-github/asv.conf.json
