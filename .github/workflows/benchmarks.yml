@@ -58,25 +58,26 @@ jobs:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
-        run: |
-          set -euxo pipefail
-          BASE_SHA=${{ github.event.pull_request.base.sha }}
+        with:
+          run: |
+            set -euxo pipefail
+            BASE_SHA=${{ github.event.pull_request.base.sha }}
 
-          # ID this runner
-          asv machine --yes
+            # ID this runner
+            asv machine --yes
 
-          echo "Baseline:  ${BASE_SHA} (${{ github.event.pull_request.base.label }})"
-          echo "Contender: ${GITHUB_SHA} (${{ github.event.pull_request.head.label }})"
+            echo "Baseline:  ${BASE_SHA} (${{ github.event.pull_request.base.label }})"
+            echo "Contender: ${GITHUB_SHA} (${{ github.event.pull_request.head.label }})"
 
-          # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
-          | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
-          | tee benchmarks.log
+            # Run benchmarks for current commit against base
+            asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
+            | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
+            | tee benchmarks.log
 
-          # Report and export results for subsequent steps
-          if grep "Traceback \|failed\|PERFORMANCE DECREASED" benchmarks.log > /dev/null ; then
-              exit 1
-          fi
+            # Report and export results for subsequent steps
+            if grep "Traceback \|failed\|PERFORMANCE DECREASED" benchmarks.log > /dev/null ; then
+                exit 1
+            fi
 
       - name: Add instructions to artifact
         if: always()
