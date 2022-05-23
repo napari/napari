@@ -161,7 +161,7 @@ jobs:
         uses: codecov/codecov-action@v1
 
   test_pip_install:
-    name: ubuntu-latest 3.9 pip install
+    name: ubuntu-latest 3.9 pip install / asv check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
