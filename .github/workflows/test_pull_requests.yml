@@ -184,3 +184,10 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
+
+      - name: Check benchmarks
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          # this does NOT run the benchmarks properly; it only
+          # ensures they can run correctly
+          run: asv check -v -E existing
