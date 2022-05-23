@@ -193,7 +193,7 @@ jobs:
           # this does NOT run the benchmarks properly
           # it only runs each function once to ensure the code is correct
           # but there's no statistical meaning to it
-          run: asv run -v -E existing --quick --config ./napari-from-github/asv.conf.json
+          run: asv machine --yes && asv run -v -E existing --quick --config ./napari-from-github/asv.conf.json
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1
