@@ -27,14 +27,39 @@ After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#41
 
 - Calling `viewer.open` *without* passing a plugin will result in an error if you have not saved a reader preference for that file pattern *and* multiple plugins can claim the file
     - You can address this error by associating a preference for the file pattern, or calling `viewer.open(file_path, plugin=...)
-- A preferred reader failing to read your file will result in an error
+    - To save a preference for a file pattern in Python, use:
+
+    ```python
+    from napari.settings import get_settings
+    get_settings().plugins.extension2reader['*.tif'] = 'napari_tifffile'
+    get_settings().plugins.extension2reader['*.zarr'] = 'napari-ome-zarr'
+    ```
+
+    - To specify a plugin in a Python script:
+
+    ```python
+    import napari
+
+    viewer = napari.Viewer()
+    viewer.open('my-path.tif') # this will throw MultipleReaderError if napari_tifffile is installed as both it and builtins could open the file
+    viewer.open('my-path.tif', plugin='napari_tifffile') # this won't
+    ```
+
+    - To specify a plugin at the command line, use:
+    
+    ```sh
+    napari my-path.tif --plugin napari_tifffile
+    ```
+- A preferred reader missing from current plugins will trigger a warning, but the preference will be otherwise ignored
+- A preferred reader failing to read your file will result in an error e.g. if you saved `napari_tifffile` as a preference for TIFFs but then tried to open a broken file
 - When opening a file through a GUI pathway (drag & drop, File -> Open, Open Sample) you are provided with a dialog allowing you to choose among the various plugins that are compatible with your file
-    - This dialog also allows you to save a preference for files with extensions
+    - This dialog also allows you to save a preference for files and folders with extensions
     - This dialog also pops up if a preferred reader fails to open your file
 - Preference saving for file reading is now supported for filename patterns accepted by `npe2` readers, rather than strictly file extensions
     - Existing preferences for file extensions will be automatically updated e.g. `.tif` will become `*.tif`
 - Reader preferences for filename patterns can be saved in the GUI via the preference dialog
-
+    - Reader preferences for folders are not yet supported in the GUI preference dialog - use the Python method above
+    - This will be addressed by the next release
 
 We have thought carefully about these choices, but there are still some open questions to address, and features to implement. Some of these are captured across the issues listed below, and we'd love to hear any feedback you have about the new behavior!
 
@@ -141,6 +166,7 @@ We have thought carefully about these choices, but there are still some open que
 
 ## API Changes
 - Update file opening behavior to ensure consistency across command line and GUI. (#4347)
+- Warn user when preferred plugin for a file is missing (#4545)
 
 
 ## UI Changes
@@ -150,6 +176,8 @@ We have thought carefully about these choices, but there are still some open que
   console, so this is strictly an improvement!)
 - Allow resizing left dock widgets (#4368)
 - Add filename pattern to reader associations to preference dialog (#4459)
+- Add preference saving from dialog for folders with extensions #4535
+
 ## Deprecations
 
 
