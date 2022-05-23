@@ -188,6 +188,6 @@ jobs:
       - name: Check benchmarks
         uses: GabrielBB/xvfb-action@v1
         with:
-          # this does NOT run the benchmarks properly; it only
-          # ensures they can run correctly
+          # this does NOT run the benchmarks at all
+          # it only checks the suite is structured correctly
           run: asv check -v -E existing --config ./napari-from-github/asv.conf.json
