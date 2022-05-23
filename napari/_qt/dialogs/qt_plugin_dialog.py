@@ -366,8 +366,7 @@ class PluginListItem(QFrame):
 
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
-        if npe_version != 1:
-            self._handle_npe2_plugin()
+        self._handle_npe2_plugin(npe_version)
 
         if installed:
             self.enabled_checkbox.show()
@@ -378,11 +377,17 @@ class PluginListItem(QFrame):
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
 
-    def _handle_npe2_plugin(self):
+    def _handle_npe2_plugin(self, npe_version):
+        if npe_version == 1:
+            return
+        opacity = 0.4 if npe_version == 'shim' else 1
+        lbl = 'npe1 (adapted)' if npe_version == 'shim' else 'npe2'
         npe2_icon = QLabel(self)
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
-        npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
-        self.row1.insertWidget(2, QLabel('npe2'))
+        npe2_icon.setPixmap(
+            icon.colored(color='#33F0FF', opacity=opacity).pixmap(20, 20)
+        )
+        self.row1.insertWidget(2, QLabel(lbl))
         self.row1.insertWidget(2, npe2_icon)
 
     def _get_dialog(self) -> QDialog:
@@ -809,7 +814,7 @@ class QtPluginDialog(QDialog):
                 continue
             enabled = not pm2.is_disabled(manifest.name)
             # if it's an Npe1 adaptor, call it v1
-            npev = 1 if 'npe1' in type(manifest).__name__.lower() else 2
+            npev = 'shim' if 'npe1' in type(manifest).__name__.lower() else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
         for (
