@@ -204,7 +204,7 @@ jobs:
       - name: Install this commit
         run: |
           pip install --upgrade pip
-          pip install ./napari-from-github[all,testing] asv
+          pip install ".[all,testing]" asv
 
       - name: Check asv config is correct
         run: asv check -v -E existing
