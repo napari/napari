@@ -89,36 +89,54 @@ class Installer(QObject):
         installer: InstallerTypes = "pip",
     ):
         process = QProcess()
-        if installer != "pip":
-            process.setProgram(installer)
-        else:
-            process.setProgram(self._sys_executable_or_bundled_python())
-
         process.setProcessChannelMode(QProcess.MergedChannels)
         process.readyReadStandardOutput.connect(
             lambda process=process: self._on_stdout_ready(process)
         )
+        env = QProcessEnvironment.systemEnvironment()
 
-        # setup process path
-        env = QProcessEnvironment()
-        combined_paths = os.pathsep.join(
-            [user_site_packages(), env.systemEnvironment().value("PYTHONPATH")]
-        )
-        env.insert("PYTHONPATH", combined_paths)
-        # use path of parent process
-        env.insert(
-            "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
-        )
+        if installer == "pip":
+            process.setProgram(self._sys_executable_or_bundled_python())
+            # patch process path
+            combined_paths = os.pathsep.join(
+                [
+                    user_site_packages(),
+                    env.systemEnvironment().value("PYTHONPATH"),
+                ]
+            )
+            env.insert("PYTHONPATH", combined_paths)
+        else:
+            process.setProgram(installer)
 
-        # workaround https://github.com/napari/napari/issues/4247
-        if (
-            installer == "mamba"
-            and os.name == "nt"
-            and not QProcessEnvironment.systemEnvironment().contains("TEMP")
-        ):
-            temp = gettempdir()
-            env.insert("TMP", temp)
-            env.insert("TEMP", temp)
+        if installer == "mamba":
+            from ..._version import version_tuple
+
+            # To avoid napari version changing when installing a plugin, we
+            # add a pin to the current napari version, that way we can
+            # restrict any changes to the actual napari application.
+            # Conda/mamba also pin python by default, so we effectively
+            # constrain python and napari versions from changing, when
+            # installing plugins inside the constructor bundled application.
+            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
+            napari_version = ".".join(str(v) for v in version_tuple[:3])
+            if env.contains("CONDA_PINNED_PACKAGES"):
+                # str delimiter is '&'
+                system_pins = f"&{env.value('CONDA_PINNED_PACKAGES')}"
+            else:
+                system_pins = ""
+            env.insert(
+                "CONDA_PINNED_PACKAGES",
+                f"napari={napari_version}{system_pins}",
+            )
+            if os.name == "nt":
+                # workaround https://github.com/napari/napari/issues/4247, 4484
+                if not env.contains("TEMP"):
+                    temp = gettempdir()
+                    env.insert("TMP", temp)
+                    env.insert("TEMP", temp)
+                if not env.contains("USERPROFILE"):
+                    env.insert("HOME", os.path.expanduser("~"))
+                    env.insert("USERPROFILE", os.path.expanduser("~"))
 
         process.setProcessEnvironment(env)
         self.set_output_widget(self._output_widget)
@@ -199,21 +217,8 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         installer = installer or self._installer_type
-        process_environment = QProcessEnvironment.systemEnvironment()
+        process = self._create_process(installer)
         if installer != "pip":
-            from ..._version import version_tuple
-
-            # To avoid napari version changing when installing a plugin, we
-            # add a pin to the current napari version, that way we can
-            # restrict any changes to the actual napari application.
-            # Conda/mamba also pin python by default, so we effectively
-            # constrain python and napari versions from changing, when
-            # installing plugins inside the constructor bundled application.
-            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
-            napari_version = ".".join(str(v) for v in version_tuple[:3])
-            process_environment.insert(
-                "CONDA_PINNED_PACKAGES", f"napari={napari_version}"
-            )
             cmd = [
                 'install',
                 '-y',
@@ -236,8 +241,6 @@ class Installer(QObject):
                 user_plugin_dir(),
             ]
 
-        process = self._create_process(installer)
-        process.setProcessEnvironment(process_environment)
         process.setArguments(cmd + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
