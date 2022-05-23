@@ -400,10 +400,12 @@ def main():
     import platform
 
     _MACOS_AT_LEAST_CATALINA = (
-        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 19
+        sys.platform == "darwin"
+        and int(platform.release().split('.')[0]) >= 19
     )
     _MACOS_AT_LEAST_BIG_SUR = (
-        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 20
+        sys.platform == "darwin"
+        and int(platform.release().split('.')[0]) >= 20
     )
 
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
