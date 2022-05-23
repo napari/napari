@@ -808,7 +808,9 @@ class QtPluginDialog(QDialog):
             if distname in self.already_installed or distname == 'napari':
                 continue
             enabled = not pm2.is_disabled(manifest.name)
-            _add_to_installed(distname, enabled, npe_version=2)
+            # if it's an Npe1 adaptor, call it v1
+            npev = 1 if 'npe1' in type(manifest).__name__.lower() else 2
+            _add_to_installed(distname, enabled, npe_version=npev)
 
         for (
             plugin_name,
