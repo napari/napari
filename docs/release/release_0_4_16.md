@@ -2,7 +2,7 @@
 
 ```{note}
 These are the preliminary release notes for 0.4.16 release candidates. The
-final release notes will be posted with the release on 2022-05-10.
+final release notes will be posted with the release on 2022-05-31.
 ```
 
 We're happy to announce the release of napari 0.4.16!
@@ -101,6 +101,11 @@ We have thought carefully about these choices, but there are still some open que
 - Split_channel makes base channel translucent, rest additive (#4394)
 - Vispy 0.10 (#4401)
 - Use syntax highlighter when printing stacktrace in GUI (#4414)
+- Accelerate adding large numbers of points (#4549)
+- use mip minip cutoff (#4556)
+- Warn user when preferred plugin for a file is missing (#4545)
+- Add preference saving from dialog for folders with extensions (#4535)
+- Add filename pattern to reader associations to preference dialog (#4459)
 
 ## Bug Fixes
 
@@ -123,6 +128,10 @@ We have thought carefully about these choices, but there are still some open que
 - napari --info: list npe2 plugins (#4445)
 - Bugfix/Add affine to base_dict via _get_base_state() (#4453)
 - Fix layer control pop-up issue (#4460)
+- fix Re-setting shapes data to initial data fails, but only in 3D (#4550)
+- Make sure we pass plugin through if opening file as stack (#4515)
+- Fix update of plugins and disable update button if not available on conda forge (for bundle) (#4512)
+- Connect napari events first to EventEmitter (#4480)
 
 ## Documentation
 
@@ -163,11 +172,12 @@ We have thought carefully about these choices, but there are still some open que
 - Fix events rendering in docs for components.LayerList (#4442)
 - Add NAP1: institutional and funding partners (#4446)
 - Update to the documentation: add viewer.dims.current_step tips (#4454)
+- Add information about new file opening behaviour (#4516)
 
 ## API Changes
+
 - Update file opening behavior to ensure consistency across command line and GUI. (#4347)
 - Warn user when preferred plugin for a file is missing (#4545)
-
 
 ## UI Changes
 
@@ -196,6 +206,8 @@ We have thought carefully about these choices, but there are still some open que
 - Set `TMP` on Windows+Mamba subprocesses if not set (#4462)
 - Update test_typing.yml (#4475)
 - Fix make-typestubs: use union for type hint instead of '|' (#4476)
+- [conda] rework how plugin install/remove subprocesses receive the parent environment (#4520)
+- [conda] revert default installation path (#4525)
 
 ## Other Pull Requests
 
@@ -222,7 +234,7 @@ We have thought carefully about these choices, but there are still some open que
 - Fix mypy error in CI (#4439)
 - Make npe2 writer test more lenient (#4457)
 
-## 32 authors added to this release (alphabetical)
+## 33 authors added to this release (alphabetical)
 
 - [aeisenbarth](https://github.com/napari/napari/commits?author=aeisenbarth) - @aeisenbarth
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
@@ -234,6 +246,7 @@ We have thought carefully about these choices, but there are still some open que
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
+- [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Isabela Presedo-Floyd](https://github.com/napari/napari/commits?author=isabela-pf) - @isabela-pf
@@ -256,7 +269,6 @@ We have thought carefully about these choices, but there are still some open que
 - [Tru Huynh](https://github.com/napari/napari/commits?author=truatpasteurdotfr) - @truatpasteurdotfr
 - [Yuki Mochizuki](https://github.com/napari/napari/commits?author=2dx) - @2dx
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
-
 
 ## 42 reviewers added to this release (alphabetical)
 
