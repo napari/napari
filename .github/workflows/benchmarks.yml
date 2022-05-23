@@ -3,7 +3,7 @@
 # https://github.com/scikit-image/scikit-image/blob/9bdd010a8/.github/workflows/benchmarks.yml#L1
 # Blog post with the rationale: https://labs.quansight.org/blog/2021/08/github-actions-benchmarks/
 
-name: Benchmark
+name: Benchmarks
 
 on:
   pull_request:
