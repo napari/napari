@@ -161,7 +161,7 @@ jobs:
         uses: codecov/codecov-action@v1
 
   test_pip_install:
-    name: ubuntu-latest 3.9 pip install / asv check
+    name: ubuntu-latest 3.9 pip install / asv checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -180,14 +180,22 @@ jobs:
           pip install --upgrade pip
           pip install ./napari-from-github[all,testing]
 
-      - name: Test
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          run: python -m pytest --pyargs napari --color=yes
-
-      - name: Check benchmarks
+      - name: Check benchmarks config
         uses: GabrielBB/xvfb-action@v1
         with:
           # this does NOT run the benchmarks at all
           # it only checks the suite is structured correctly
           run: asv check -v -E existing --config ./napari-from-github/asv.conf.json
+
+      - name: Quick run benchmarks
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          # this does NOT run the benchmarks properly
+          # it only runs each function once to ensure the code is correct
+          # but there's no statistical meaning to it
+          run: asv run -v -E existing --quick --config ./napari-from-github/asv.conf.json
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: python -m pytest --pyargs napari --color=yes
