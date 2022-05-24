@@ -98,7 +98,7 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        # self.stop()
+        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:

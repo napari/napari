@@ -320,6 +320,7 @@ def test_not_playing_after_ndim_changes(qtbot):
     view = QtDims(dims)
     qtbot.addWidget(view)
     view.play()
+    # TODO: wait until we actually start playing?
     assert view.is_playing
 
     dims.ndim = 2
@@ -332,6 +333,7 @@ def test_not_playing_after_ndisplay_changes(qtbot):
     view = QtDims(dims)
     qtbot.addWidget(view)
     view.play()
+    # TODO: wait until we actually start playing?
     assert view.is_playing
 
     dims.ndisplay = 3
