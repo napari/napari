@@ -71,7 +71,7 @@ jobs:
 
           # Run benchmarks for current commit against base
           asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
-          | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
+          | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee benchmarks.log
 
           # Report and export results for subsequent steps
