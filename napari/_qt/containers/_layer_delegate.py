@@ -92,6 +92,8 @@ class LayerDelegate(QStyledItemDelegate):
     def get_layer_icon(self, option, index):
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
+        if layer is None:
+            return
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
             expanded = option.widget.isExpanded(index)
             icon_name = 'folder-open' if expanded else 'folder'
