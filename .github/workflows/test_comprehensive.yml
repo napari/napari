@@ -143,3 +143,35 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
+
+  asv-checks:
+    name: asv checks
+    runs-on: macos-latest
+    steps:
+      # We need the full repo to avoid this issue
+      # https://github.com/actions/checkout/issues/23
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v3
+        name: Install Python
+        with:
+          python-version: "3.9"
+
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install ".[all,testing]" asv
+
+      - name: Register machine
+        run:  asv machine --yes
+
+      - name: Check asv config is correct
+        run: asv check -v -E existing
+
+      - name: Ensure benchmarking tests can run
+        # this does NOT run the benchmarks properly
+        # it only runs each function once to ensure the code is correct
+        # but there's no statistical meaning to it
+        run: asv dev
