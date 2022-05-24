@@ -418,13 +418,14 @@ def tmp_reader():
     """Return a temporary reader registered with the given plugin manager."""
 
     def make_plugin(
-        pm,
-        name,
-        filename_patterns=['*.fake'],
+        pm, name, filename_patterns=['*.fake'], accepts_directories=False
     ):
         reader_plugin = DynamicPlugin(name, plugin_manager=pm)
 
-        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
+        @reader_plugin.contribute.reader(
+            filename_patterns=filename_patterns,
+            accepts_directories=accepts_directories,
+        )
         def read_func(pth):
             ...
 

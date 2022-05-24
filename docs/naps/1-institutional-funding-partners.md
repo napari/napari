@@ -3,11 +3,11 @@
 # NAP-1 — Institutional and Funding Partners
 
 ```{eval-rst}
-Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
-Author: "Nicholas Sofroniew <mailto:sofroniewn@gmail.com>"
-Created: '2022-04-21'
-Status: Draft
-Type: Process
+:Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
+:Author: "Nicholas Sofroniew <mailto:sofroniewn@gmail.com>"
+:Created: '2022-04-21'
+:Status: Draft
+:Type: Accepted
 ```
 
 ## Abstract
@@ -96,9 +96,7 @@ direct engineering effort by institution employees.
 
 ## Implementation
 
-This section will be updated with a link to a pull request (PR) updating the
-governance documentation once that PR has been opened. An initial proposal for
-the additions to the governance is included below:
+An initial proposal for the additions to the governance is included below:
 
 > The napari steering council (SC) will be no less than three members and no
 > more than five members, with a strong preference for an odd number to ensure
@@ -161,6 +159,8 @@ the additions to the governance is included below:
 > - Ability to influence the project through the election of the Institutional
 >   and Funding Partner seat on the SC.
 
+The proposed implementation can be found in [PR 4458](https://github.com/napari/napari/pull/4458)
+
 ## Backward Compatibility
 
 The steering council will not be immediately changed by this NAP. Once the NAP
@@ -187,8 +187,32 @@ therefore make it more difficult to grow the project's support base.
 
 ## Discussion
 
-This section will be updated with discussion as the NAP is discussed in our
-usual channels.
+> Does this mean that a non-core developer who joins the SC will also automatically become a core dev?
+
+No, they are merely the IFP SC member.
+
+> Should this document include instructions on how to deal with (or identify) situations where
+> IFPs are not working with napari in good faith? How can the community raise concerns about
+> and IFP interaction.
+
+Community members can raise their concerns to the SC. Since IFP status is decided by the SC,
+it can also be revoked by the SC.
+
+> I think five is a great number for the SC and makes sense, but what about seven?
+> Is there a particular reason for the limit of the SC at five?
+
+It was thought to be a good limit with one IFP seat. The open forcefield project has seven members with
+two IFP like seats.
+
+> A potential side benefit of IFPs: this provides a reason for employers of existing napari contributors/core-devs to officially recognise work on napari as part of someones 'duties', potentially legitimising work on OSS more generally as 'useful work'
+
+Agreed, the SC can help promote this rationale.
+
+> Should we require/expect organizing rules of the IFP Advisory Council to happen somewhere in the open?
+
+NAP-1 does not prescribe the rules for the IFP Advisory Council, but does ask them to describe their
+processes openly.
+
 
 ## References and Footnotes
 

@@ -52,6 +52,16 @@ def test_reader_dir(tmpdir, reader_dialog):
     assert not hasattr(widg, 'persist_checkbox')
 
 
+def test_reader_dir_with_extension(tmpdir, reader_dialog):
+    dir = tmpdir.mkdir('my_dir.zarr')
+    widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
+    assert hasattr(widg, 'persist_checkbox')
+    assert (
+        widg.persist_checkbox.text()
+        == "Remember this choice for files with a .zarr extension"
+    )
+
+
 def test_get_plugin_choice(tmpdir, reader_dialog):
     file_pth = tmpdir.join('my_file.tif')
     widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
@@ -128,7 +138,8 @@ def test_open_with_dialog_choices_persist(make_napari_viewer, tmp_path):
             viewer.window._qt_viewer,
         )
         assert len(viewer.layers) == 1
-        assert get_settings().plugins.extension2reader['.npy'] == 'builtins'
+        # make sure extension was saved with *
+        assert get_settings().plugins.extension2reader['*.npy'] == 'builtins'
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):

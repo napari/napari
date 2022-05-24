@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 from urllib.error import HTTPError, URLError
 
-import imageio
 import numpy as np
 from dask import array as da
 from dask import delayed
@@ -19,6 +18,11 @@ from dask import delayed
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
+
+try:
+    import imageio.v2 as imageio
+except ImportError:
+    import imageio
 
 IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
 READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm'})
@@ -143,8 +147,6 @@ def imread(filename: str) -> np.ndarray:
         with file_or_url_context(filename) as filename:
             return tifffile.imread(filename)
     else:
-        import imageio
-
         return imageio.imread(filename)
 
 

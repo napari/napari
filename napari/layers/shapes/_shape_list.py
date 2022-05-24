@@ -53,7 +53,7 @@ class ShapeList:
     Notes
     -----
     _vertices : np.ndarray
-        Mx2 array of all displayed vertices from all shapes
+        MxN array of all displayed vertices from all shapes where N is equal to ndisplay
     _index : np.ndarray
         Length M array with the index (0, ..., N-1) of each shape that each
         vertex corresponds to

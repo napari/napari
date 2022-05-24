@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction
 
+from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+from napari.errors.reader_errors import MultipleReaderError
+
 from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
 from ...utils.misc import running_as_bundled_app
@@ -187,7 +190,15 @@ class FileMenu(NapariMenu):
                     action = QAction(full_name, parent=self)
 
                 def _add_sample(*args, plg=plugin_name, smp=samp_name):
-                    self._win._qt_viewer.viewer.open_sample(plg, smp)
+                    try:
+                        self._win._qt_viewer.viewer.open_sample(plg, smp)
+                    except MultipleReaderError as e:
+                        handle_gui_reading(
+                            e.paths,
+                            self._win._qt_viewer,
+                            plugin_name=plugin_name,
+                            stack=False,
+                        )
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)

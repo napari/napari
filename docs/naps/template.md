@@ -48,6 +48,9 @@ Any pull requests or development branches containing work on this NAP
 should be linked to from here. (A NAP does not need to be implemented in a
 single pull request if it makes sense to implement it in discrete phases).
 
+If a new NAP document is created, it should be added to the documentation Table
+of Contents as an item on `napari/docs/_toc.yml`.
+
 ## Backward Compatibility
 
 This section describes the ways in which the NAP affects backward
