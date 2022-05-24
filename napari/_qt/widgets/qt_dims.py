@@ -56,7 +56,6 @@ class QtDims(QWidget):
 
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
-
         self.dims.events.ndim.connect(self._update_nsliders)
         self.dims.events.current_step.connect(self._update_slider)
         self.dims.events.range.connect(self._update_range)
@@ -98,13 +97,8 @@ class QtDims(QWidget):
         self._resize_slice_labels()
 
     def _update_display(self):
-        """
-        Updates display for all sliders.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-        """
-        self.stop()
+        """Updates display for all sliders."""
+        # self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
@@ -123,12 +117,7 @@ class QtDims(QWidget):
         self._resize_slice_labels()
 
     def _update_nsliders(self):
-        """
-        Updates the number of sliders based on the number of dimensions.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-        """
+        """Updates the number of sliders based on the number of dimensions."""
         self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)

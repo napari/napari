@@ -315,7 +315,7 @@ def test_slice_labels(qtbot):
     assert dims.point[0] == 8
 
 
-def test_is_playing_after_ndim_changes(qtbot):
+def test_not_playing_after_ndim_changes(qtbot):
     dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
     view = QtDims(dims)
     qtbot.addWidget(view)
@@ -327,7 +327,7 @@ def test_is_playing_after_ndim_changes(qtbot):
     assert not view.is_playing
 
 
-def test_is_playing_after_ndisplay_changes(qtbot):
+def test_not_playing_after_ndisplay_changes(qtbot):
     dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
     view = QtDims(dims)
     qtbot.addWidget(view)
