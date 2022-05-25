@@ -13,7 +13,10 @@ def get_widget_state(schema, state=None):
 
 
 def get_schema_type(schema: dict) -> str:
-    return schema['type']
+    try:
+        return schema['type']
+    except KeyError:
+        return 'object'
 
 
 class WidgetBuilder:
@@ -76,6 +79,7 @@ class WidgetBuilder:
     def create_form(
         self, schema: dict, ui_schema: dict, state=None
     ) -> widgets.SchemaWidgetMixin:
+
         validator_cls = self.validator_cls
         if validator_cls is None:
             validator_cls = validator_for(schema)
@@ -109,13 +113,13 @@ class WidgetBuilder:
         description: str = "",
     ) -> widgets.SchemaWidgetMixin:
         schema_type = get_schema_type(schema)
-
         try:
             default_variant = self.widget_variant_modifiers[schema_type](
                 schema
             )
         except KeyError:
             default_variant = self.default_widget_variants[schema_type]
+
 
         if "enum" in schema:
             default_variant = "enum"

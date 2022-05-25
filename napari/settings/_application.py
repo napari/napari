@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from psutil import virtual_memory
 from pydantic import Field, confloat, validator
+from typing_extensions import TypedDict
 
 from napari.settings._constants import LoopMode
 from napari.settings._fields import Language
@@ -18,7 +19,13 @@ GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
 
 _DEFAULT_MEM_FRACTION = 0.25
-DaskCache = confloat(ge=0, le=virtual_memory().total * 0.5 / 1000000)
+MAX_CACHE = virtual_memory().total * 0.5 / 1000000
+cache = confloat(ge=0, le=MAX_CACHE)
+
+
+class DaskSettings(TypedDict, total=False):
+    enabled: bool
+    cache: cache
 
 
 class ApplicationSettings(EventedModel):
@@ -175,7 +182,7 @@ class ApplicationSettings(EventedModel):
     )
 
     # convert cache (and max cache) from bytes to mb for widget
-    dask: dict[str, Union[bool, DaskCache]] = Field(
+    dask: DaskSettings = Field(
         default={
             'enabled': True,
             'cache': virtual_memory().total * _DEFAULT_MEM_FRACTION / 1000000,
@@ -210,6 +217,7 @@ class ApplicationSettings(EventedModel):
             "open_history",
             "save_history",
             "ipy_interactive",
+            # "dask"
         ]
 
 

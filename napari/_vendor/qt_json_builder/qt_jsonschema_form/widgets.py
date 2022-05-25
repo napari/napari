@@ -5,7 +5,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
-from ...._qt.widgets.magic_gui_dask_settings import DaskSettings
+from ...._qt.widgets.magic_gui_dask_settings import MagicDaskSettingsWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
@@ -600,7 +600,7 @@ class HighlightSizePreviewWidget(
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
-class DaskSettingsWidget(SchemaWidgetMixin, DaskSettings):
+class DaskSettingsWidget(SchemaWidgetMixin, MagicDaskSettingsWidget):
 
     @state_property
     def state(self) -> dict:
@@ -613,7 +613,8 @@ class DaskSettingsWidget(SchemaWidgetMixin, DaskSettings):
         
     def configure(self):
         self._widget.changed.connect(lambda: self.on_changed.emit(self.state))
-        self._widget.cache.max = self.schema['additionalProperties']['anyOf'][1]['maximum']
+        self._widget.cache.max = self.schema['allOf'][0]['properties']['cache']['maximum']
+
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property
@@ -710,6 +711,16 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
                 description = sub_schema['description']
             else:
                 description = ""
+
+            if 'allOf' in sub_schema:
+                # replace reference in schema with the reference values.
+                # this will work for the values we have now, but may need
+                # a json reader that can parse the references in many cases 
+                # (see jsonref for example)
+                ref_name = sub_schema['allOf'][0]['$ref'].split('/')[2]
+                ref_values = schema['definitions'][ref_name]
+                sub_schema['allOf'][0] = ref_values
+                
 
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
