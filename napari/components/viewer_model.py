@@ -547,7 +547,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent_no_depth',
+        blending=None,
         visible=True,
         multiscale=None,
         cache=True,
