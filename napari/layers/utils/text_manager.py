@@ -12,12 +12,7 @@ from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
-from .color_encoding import (
-    ColorArray,
-    ColorEncoding,
-    ConstantColorEncoding,
-    validate_color_encoding,
-)
+from .color_encoding import ColorArray, ColorEncoding, ConstantColorEncoding
 from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
@@ -346,10 +341,6 @@ class TextManager(EventedModel):
         # Some of the encodings may have changed, so ensure they encode new
         # values if needed.
         self.apply(features)
-
-    @validator('color', pre=True, always=True)
-    def _check_color(cls, color):
-        return validate_color_encoding(color)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
