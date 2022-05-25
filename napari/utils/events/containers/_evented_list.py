@@ -230,7 +230,12 @@ class EventedList(TypedMutableSequence[_T]):
         """Insert ``value`` before index."""
         tmp = self._uneventful()
         tmp.insert(index, value)
-        value = self._validate_with_parent(tmp)[index]
+        # if index is negative, we need to shift by -1 to find the same value!
+        if index < 0:
+            post_index = index - 1
+        else:
+            post_index = index
+        value = self._validate_with_parent(tmp)[post_index]
         self.events.inserting(index=index)
         super().insert(index, value)
         self.events.inserted(index=index, value=value)
