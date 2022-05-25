@@ -1,4 +1,11 @@
-from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Optional,
+    Protocol,
+    Tuple,
+    runtime_checkable,
+)
 
 from .event import EmitterGroup
 
@@ -9,7 +16,7 @@ if TYPE_CHECKING:
 @runtime_checkable
 class EventedMutable(Protocol):
     events: EmitterGroup
-    _parent: Optional[tuple['EventedModel', str]]
+    _parent: Optional[Tuple['EventedModel', str]]
 
     def _update_inplace(self, other: Any) -> None:
         ...
