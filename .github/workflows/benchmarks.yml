@@ -8,7 +8,16 @@ name: Benchmarks
 on:
   pull_request:
     types: [labeled]
+  schedule:
+    - cron: "6 6 * * 0" # every sunday
   workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Baseline commit or git reference"
+        required: true
+      contender_ref:
+        description: "Contender commit or git reference"
+        required: true
 
 # This is the main configuration section that needs to be fine tuned to napari's needs
 # All the *_THREADS options is just to make the benchmarks more robust by not using parallelism
@@ -24,7 +33,7 @@ env:
 
 jobs:
   benchmark:
-    if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
@@ -57,6 +66,15 @@ jobs:
       - name: Setup asv
         run: python -m pip install asv virtualenv
 
+      - uses: octokit/request-action@v2.x
+        id: latest_release
+        with:
+          route: GET /repos/{owner}/{repo}/releases/latest
+          owner: napari
+          repo: napari
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run ${{ matrix.benchmark-name }} benchmarks
         env:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
@@ -64,16 +82,32 @@ jobs:
           GIT_LFS_SKIP_SMUDGE: 1
         run: |
           set -euxo pipefail
-          BASE_SHA=${{ github.event.pull_request.base.sha }}
 
           # ID this runner
           asv machine --yes
 
-          echo "Baseline:  ${BASE_SHA} (${{ github.event.pull_request.base.label }})"
-          echo "Contender: ${GITHUB_SHA} (${{ github.event.pull_request.head.label }})"
+          if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+            BASE_REF=${BASE_REF}
+            CONTENDER_REF=${GITHUB_SHA}
+            echo "Baseline:  ${BASE_REF} (${{ github.event.pull_request.base.label }})"
+            echo "Contender: ${CONTENDER_REF} (${{ github.event.pull_request.head.label }})"
+          elif [[ $GITHUB_EVENT_NAME == schedule ]]; then
+            BASE_REF="${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}"
+            CONTENDER_REF="${GITHUB_SHA}"
+            echo "Baseline:  ${BASE_REF} (${{ fromJSON(steps.latest_release.outputs.data).tag_name }})"
+            echo "Contender: ${CONTENDER_REF} (current main)"
+          elif [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+            BASE_REF="${{ github.event.inputs.base_ref }}""
+            CONTENDER_REF="${{ github.event.inputs.contender_ref }}"
+            echo "Baseline:  ${BASE_REF} (workflow input)"
+            echo "Contender: ${CONTENDER_REF} (workflow input)"
+          else
+            echo "Unsupported event!"
+            exit 1
+          fi
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_SHA} ${GITHUB_SHA} \
+          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee benchmarks.log
 
