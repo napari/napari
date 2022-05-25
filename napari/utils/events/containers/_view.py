@@ -36,7 +36,7 @@ class View(ObjectProxy):
     def __getitem__(self, key):
         return View(self.__wrapped__[key], key=key, parent=self)
 
-    def __supersetter__(self, old):
+    def __supersetter__(self):
         """
         Recursively update all the parents
         """
