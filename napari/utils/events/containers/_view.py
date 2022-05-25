@@ -3,7 +3,7 @@ from copy import copy
 
 from wrapt import ObjectProxy
 
-from ..evented import EventedMutable
+from .._protocols import EventedMutable
 
 
 class View(ObjectProxy):
