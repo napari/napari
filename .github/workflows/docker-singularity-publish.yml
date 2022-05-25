@@ -86,9 +86,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           file: "dockerfile"
 
-      - name: Check out code for the container build
-        uses: actions/checkout@v2
-
 # ----
 
   build2:
