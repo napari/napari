@@ -47,13 +47,13 @@ def test_change_text_updates_node_string():
 def test_change_text_color_updates_node_color():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    text = {'string': 'class', 'color': {'constant': [1, 0, 0]}}
+    text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Points(points, text=text, properties=properties)
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
 
-    layer.text.color = {'constant': [0, 0, 1]}
+    layer.text.color = [0, 0, 1]
 
     np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
 

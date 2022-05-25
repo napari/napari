@@ -61,7 +61,7 @@ class TextManager(EventedModel):
     size : float
         Font size of the text, which must be positive. Default value is 12.
     color : ColorEncoding
-        Defines the face color for each text element.
+        Defines the color for each text element.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
