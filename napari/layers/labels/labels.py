@@ -296,6 +296,7 @@ class Labels(_ImageBase):
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
+            features=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -412,6 +413,11 @@ class Labels(_ImageBase):
         self.refresh()
         self.events.selected_label()
 
+    @_ImageBase.colormap.setter
+    def colormap(self, colormap):
+        super()._set_colormap(colormap)
+        self._selected_color = self.get_color(self.selected_label)
+
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
@@ -464,6 +470,7 @@ class Labels(_ImageBase):
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
         self.events.properties()
+        self.events.features()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -637,15 +644,14 @@ class Labels(_ImageBase):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (
-                custom_colormap,
-                label_color_index,
-            ) = color_dict_to_colormap(self.color)
-            self.colormap = custom_colormap
+            custom_colormap, label_color_index = color_dict_to_colormap(
+                self.color
+            )
+            super()._set_colormap(custom_colormap)
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
-            self.colormap = self._random_colormap
+            super()._set_colormap(self._random_colormap)
 
         else:
             raise ValueError(trans._("Unsupported Color Mode"))

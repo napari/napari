@@ -141,10 +141,11 @@ class Points(Layer):
         Currently, this only applies to dask arrays.
     shading : str, Shading
         Render lighting and shading on points. Options are:
-            * 'none'
-                No shading is added to the points.
-            * 'spherical'
-                Shading and depth buffer are changed to give a 3D spherical look to the points
+
+        * 'none'
+          No shading is added to the points.
+        * 'spherical'
+          Shading and depth buffer are changed to give a 3D spherical look to the points
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -1206,7 +1207,12 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_face_color = face_color
 
-        size = list({self.size[i, self._dims_displayed].mean() for i in index})
+        # Calculate the mean size across the displayed dimensions for
+        # each point to be consistent with `_view_size`.
+        mean_size = np.mean(
+            self.size[np.ix_(index, self._dims_displayed)], axis=1
+        )
+        size = np.unique(mean_size)
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():

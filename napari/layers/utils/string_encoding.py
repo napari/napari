@@ -27,11 +27,63 @@ DEFAULT_STRING = np.array('', dtype='<U1')
 
 @runtime_checkable
 class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
-    """Encodes strings from layer features.
+    """Encodes strings from layer features."""
 
-    See :func:`validate_string_encoding` to understand what values can be used
-    to set a field of type ``StringEncoding``.
-    """
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(
+        cls, value: Union['StringEncoding', dict, str, Sequence[str]]
+    ) -> 'StringEncoding':
+        """Validates and coerces a value to a StringEncoding.
+
+        Parameters
+        ----------
+        value : StringEncodingArgument
+            The value to validate and coerce.
+            If this is already a StringEncoding, it is returned as is.
+            If this is a dict, then it should represent one of the built-in string encodings.
+            If this a valid format string, then a FormatStringEncoding is returned.
+            If this is any other string, a DirectStringEncoding is returned.
+            If this is a sequence of strings, a ManualStringEncoding is returned.
+
+        Returns
+        -------
+        StringEncoding
+
+        Raises
+        ------
+        TypeError
+            If the value is not a supported type.
+        ValidationError
+            If the value cannot be parsed into a StringEncoding.
+        """
+        if isinstance(value, StringEncoding):
+            return value
+        if isinstance(value, dict):
+            return parse_obj_as(
+                Union[
+                    ConstantStringEncoding,
+                    ManualStringEncoding,
+                    DirectStringEncoding,
+                    FormatStringEncoding,
+                ],
+                value,
+            )
+        if isinstance(value, str):
+            if _is_format_string(value):
+                return FormatStringEncoding(format=value)
+            return DirectStringEncoding(feature=value)
+        if isinstance(value, Sequence):
+            return ManualStringEncoding(array=value, default=DEFAULT_STRING)
+        raise TypeError(
+            trans._(
+                'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
+                deferred=True,
+            )
+        )
 
 
 class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
@@ -119,62 +171,6 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
             for i in range(len(features))
         ]
         return np.array(values, dtype=str)
-
-
-"""The types of arguments supported when setting a StringEncoding field."""
-StringEncodingArgument = Union[StringEncoding, dict, str, Sequence[str], None]
-
-
-def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
-    """Validates and coerces a value to a StringEncoding.
-
-    Parameters
-    ----------
-    value : StringEncodingArgument
-        The value to validate and coerce.
-        If this is already a StringEncoding, it is returned as is.
-        If this is a dict, then it should represent one of the built-in string encodings.
-        If this a valid format string, then a FormatStringEncoding is returned.
-        If this is any other string, a DirectStringEncoding is returned.
-        If this is a sequence of strings, a ManualStringEncoding is returned.
-
-    Returns
-    -------
-    StringEncoding
-
-    Raises
-    ------
-    TypeError
-        If the value is not a supported type.
-    ValidationError
-        If the value cannot be parsed into a StringEncoding.
-    """
-    if value is None:
-        return ConstantStringEncoding(constant=DEFAULT_STRING)
-    if isinstance(value, StringEncoding):
-        return value
-    if isinstance(value, dict):
-        return parse_obj_as(
-            Union[
-                ConstantStringEncoding,
-                ManualStringEncoding,
-                DirectStringEncoding,
-                FormatStringEncoding,
-            ],
-            value,
-        )
-    if isinstance(value, str):
-        if _is_format_string(value):
-            return FormatStringEncoding(format=value)
-        return DirectStringEncoding(feature=value)
-    if isinstance(value, Sequence):
-        return ManualStringEncoding(array=value, default=DEFAULT_STRING)
-    raise TypeError(
-        trans._(
-            'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
-            deferred=True,
-        )
-    )
 
 
 def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:

@@ -90,7 +90,7 @@ Contributions are encouraged! Please read our [contributing guide](https://napar
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact the [@napari/steering-council and @napari/core-devs](https://napari.org/community/team.html#current-core-developers).
 
 ## citing napari
 
@@ -107,3 +107,7 @@ We're a community partner on the [image.sc forum](https://forum.image.sc/tags/na
 
 Bug reports should be made on our [github issues](https://github.com/napari/napari/issues/new?template=bug_report.md) using
 the bug report template. If you think something isn't working, don't hesitate to reach out - it is probably us and not you!
+
+## insitutional and funding partners
+
+![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)

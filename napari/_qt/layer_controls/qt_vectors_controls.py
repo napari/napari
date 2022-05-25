@@ -108,27 +108,16 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('width:')), 1, 0)
-        self.grid_layout.addWidget(self.widthSpinBox, 1, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('length:')), 2, 0)
-        self.grid_layout.addWidget(self.lengthSpinBox, 2, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('edge color mode:')), 4, 0)
-        self.grid_layout.addWidget(self.color_mode_comboBox, 4, 1, 1, 2)
-        self.grid_layout.addWidget(self.edge_color_label, 5, 0)
-        self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)
-        self.grid_layout.addWidget(self.edge_prop_label, 6, 0)
-        self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 7, 0)
-        self.grid_layout.addWidget(self.outOfSliceCheckBox, 7, 1)
-        self.grid_layout.setRowStretch(8, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('width:'), self.widthSpinBox)
+        self.layout().addRow(trans._('length:'), self.lengthSpinBox)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(
+            trans._('edge color mode:'), self.color_mode_comboBox
+        )
+        self.layout().addRow(self.edge_color_label, self.edgeColorEdit)
+        self.layout().addRow(self.edge_prop_label, self.color_prop_box)
+        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
     def change_edge_color_property(self, property: str):
         """Change edge_color_property of vectors on the layer model.

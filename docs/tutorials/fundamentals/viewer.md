@@ -311,8 +311,17 @@ viewer.add_image(blobs, name='blobs', opacity=0.5, colormap='red')
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A 2d view of the moon on top of which is overlaid a 3d volume containing blobs through which you can navigate using the dimension slider.")
 ```
+
+In order to get or to update the current position of the slider, use 
+
+```viewer.dims.current_step```
+
+that is in integer steps. 
+
+`viewer.dims.point` contains the position in world coordinates (ie including scale and translate transformations)
+
 
 ### Viewer buttons
 
@@ -358,7 +367,7 @@ view:
 viewer.dims.ndisplay = 3
 viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A rotated 3D view")
 ```
 
 
@@ -404,7 +413,7 @@ viewer.theme = 'light'
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A napari viewer changed to light theme")
 ```
 
 ```{code-cell} python
