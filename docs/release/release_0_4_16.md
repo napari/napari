@@ -123,6 +123,7 @@ We have thought carefully about these choices, but there are still some open que
 - Warn user when preferred plugin for a file is missing (#4545)
 - Add preference saving from dialog for folders with extensions (#4535)
 - Add filename pattern to reader associations to preference dialog (#4459)
+- use imageio v2 api (#4537)
 
 ## Bug Fixes
 
@@ -149,6 +150,9 @@ We have thought carefully about these choices, but there are still some open que
 - Make sure we pass plugin through if opening file as stack (#4515)
 - Fix update of plugins and disable update button if not available on conda forge (for bundle) (#4512)
 - Connect napari events first to EventEmitter (#4480)
+- Fix AttributeError: 'LayerList' object has no attribute 'name' (#4276)
+- Fix _BaseEventedItemModel.flags (#4558)
+- Bug fix: blending multichannel images and 3D points (#4567)
 
 ## Documentation
 
