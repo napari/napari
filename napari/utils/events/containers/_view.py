@@ -88,7 +88,7 @@ class View(ObjectProxy):
 
     def __iop__(self, op, other):
         old = copy(self.__wrapped__)
-        op(self.__wrapped__, other)
+        new = op(self.__wrapped__, other)
         try:
             self.__supersetter__()
         except Exception:
@@ -97,6 +97,7 @@ class View(ObjectProxy):
             self.__wrapped__ = old
             self.__supersetter__()
             raise
+        return new
 
     def __iadd__(self, other):
         return self.__iop__(operator.iadd, other)

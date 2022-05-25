@@ -315,7 +315,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category=DeprecationWarning)
             for field in [name, *self.__field_dependencies__.get(name, {})]:
-                before[field] = getattr(self, field, object())
+                field_value = getattr(self, field, object())
+                if isinstance(field_value, EventedMutable):
+                    # without this, no events will ever fire because we would be
+                    # checking the value against itself after changes
+                    field_value = field_value._uneventful()
+                before[field] = field_value
 
         # set value using original setter
         self._super_setattr_(name, value)

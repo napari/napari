@@ -196,7 +196,7 @@ class QtDimSliderWidget(QWidget):
     def _update_label(self):
         """Update dimension slider label."""
         with self.dims.events.axis_labels.blocker():
-            self.dims.axis_label[self.axis] = self.axis_label.text()
+            self.dims.axis_labels[self.axis] = self.axis_label.text()
         self.axis_label_changed.emit(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):
@@ -639,7 +639,8 @@ class AnimationWorker(QObject):
         frame_range : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
-        self.dimsrange = (0, self.dims.nsteps[self.axis], 1)
+        self.dimsrange = (0, self.dims.nsteps[self.axis])
+        self.dimsspan = 1
 
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:
@@ -648,7 +649,7 @@ class AnimationWorker(QObject):
                 )
             if frame_range[0] < self.dimsrange[0]:
                 raise IndexError(trans._("frame_range[0] out of range"))
-            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
+            if frame_range[1] * self.dimsspan >= self.dimsrange[1]:
                 raise IndexError(trans._("frame_range[1] out of range"))
         self.frame_range = frame_range
 
@@ -656,9 +657,7 @@ class AnimationWorker(QObject):
             self.min_point, self.max_point = self.frame_range
         else:
             self.min_point = 0
-            self.max_point = int(
-                np.floor(self.dimsrange[1] - self.dimsrange[2])
-            )
+            self.max_point = int(np.floor(self.dimsrange[1] - self.dimsspan))
         self.max_point += 1  # range is inclusive
 
     @Slot(str)
@@ -689,13 +688,13 @@ class AnimationWorker(QObject):
         Takes dims scale into account and restricts the animation to the
         requested frame_range, if entered.
         """
-        self.current += self.step * self.dimsrange[2]
+        self.current += self.step * self.dimsspan
         if self.current < self.min_point:
             if (
                 self.loop_mode == LoopMode.BACK_AND_FORTH
             ):  # 'loop_back_and_forth'
                 self.step *= -1
-                self.current = self.min_point + self.step * self.dimsrange[2]
+                self.current = self.min_point + self.step * self.dimsspan
             elif self.loop_mode == LoopMode.LOOP:  # 'loop'
                 self.current = self.max_point + self.current - self.min_point
             else:  # loop_mode == 'once'
@@ -705,9 +704,7 @@ class AnimationWorker(QObject):
                 self.loop_mode == LoopMode.BACK_AND_FORTH
             ):  # 'loop_back_and_forth'
                 self.step *= -1
-                self.current = (
-                    self.max_point + 2 * self.step * self.dimsrange[2]
-                )
+                self.current = self.max_point + 2 * self.step * self.dimsspan
             elif self.loop_mode == LoopMode.LOOP:  # 'loop'
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
