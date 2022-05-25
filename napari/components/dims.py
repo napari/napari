@@ -1,5 +1,5 @@
 import warnings
-from typing import Literal
+from typing import List, Literal
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -175,7 +175,7 @@ class Dims(EventedModel):
         return values
 
     @property
-    def _span_step(self) -> list[float]:
+    def _span_step(self) -> List[float]:
         return [
             [
                 int(round((low - min_val) / step)),
@@ -199,7 +199,7 @@ class Dims(EventedModel):
         ]
 
     @property
-    def nsteps(self) -> list[float]:
+    def nsteps(self) -> List[float]:
         return [
             int((max_val - min_val) // step)
             for (min_val, max_val), step in zip(self.range, self.step)
@@ -213,7 +213,7 @@ class Dims(EventedModel):
         ]
 
     @property
-    def thickness(self) -> list[float]:
+    def thickness(self) -> List[float]:
         return [high - low for low, high in self.span]
 
     @thickness.setter
@@ -230,7 +230,7 @@ class Dims(EventedModel):
         self.span = span
 
     @property
-    def _thickness_step(self) -> list[float]:
+    def _thickness_step(self) -> List[float]:
         return [
             thickness / step
             for thickness, step in zip(self.thickness, self.step)
@@ -243,7 +243,7 @@ class Dims(EventedModel):
         ]
 
     @property
-    def point(self) -> list[float]:
+    def point(self) -> List[float]:
         return [(low + high) / 2 for low, high in self.span]
 
     @point.setter
@@ -275,7 +275,7 @@ class Dims(EventedModel):
         ]
 
     @property
-    def current_step(self) -> list[int]:
+    def current_step(self) -> List[int]:
         warnings.warn(
             trans._(
                 'Dims.current_step is deprecated. Use Dims._point_step instead.'
@@ -286,7 +286,7 @@ class Dims(EventedModel):
         return self._point_step
 
     @current_step.setter
-    def current_step(self, value: list[int]):
+    def current_step(self, value: List[int]):
         warnings.warn(
             trans._(
                 'Dims.current_step is deprecated. Use Dims._point_step instead.'
@@ -297,7 +297,7 @@ class Dims(EventedModel):
         self._point_step = value
 
     @property
-    def displayed(self) -> list[int]:
+    def displayed(self) -> List[int]:
         """list: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
@@ -306,7 +306,7 @@ class Dims(EventedModel):
         self.order[-self.ndisplay :] = value
 
     @property
-    def not_displayed(self) -> list[int]:
+    def not_displayed(self) -> List[int]:
         """list: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
@@ -315,7 +315,7 @@ class Dims(EventedModel):
         self.order[: -self.ndisplay] = value
 
     @property
-    def displayed_order(self) -> list[int]:
+    def displayed_order(self) -> List[int]:
         displayed = self.displayed
         # equivalent to: order = np.argsort(self.displayed)
         order = sorted(range(len(displayed)), key=lambda x: displayed[x])
