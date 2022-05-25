@@ -2328,3 +2328,21 @@ def test_shown():
     assert np.all(layer.shown[:-2] == True)  # noqa
     assert layer.shown[-2] == False  # noqa
     assert layer.shown[-1] == True  # noqa
+
+
+def test_selected_data_with_non_uniform_sizes():
+    data = np.zeros((3, 2))
+    size = [[1, 3], [1, 4], [1, 3]]
+    layer = Points(data, size=size)
+    # Current size is the default 10 because passed size is not a scalar.
+    assert layer.current_size == 10
+
+    # The first two points have different mean sizes, so the current size
+    # should not change.
+    layer.selected_data = (0, 1)
+    assert layer.current_size == 10
+
+    # The first and last point have the same mean size, so the current size
+    # should change to that mean.
+    layer.selected_data = (0, 2)
+    assert layer.current_size == 2

@@ -50,6 +50,71 @@ class ColorArray(np.ndarray):
 class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
     """Encodes colors from features."""
 
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(
+        cls, value: Union['ColorEncoding', dict, str, ColorType]
+    ) -> 'ColorEncoding':
+        """Validates and coerces a value to a ColorEncoding.
+
+        Parameters
+        ----------
+        value : ColorEncodingArgument
+            The value to validate and coerce.
+            If this is already a ColorEncoding, it is returned as is.
+            If this is a dict, then it should represent one of the built-in color encodings.
+            If this a string, then a DirectColorEncoding is returned.
+            If this a single color, a ConstantColorEncoding is returned.
+            If this is a sequence of colors, a ManualColorEncoding is returned.
+
+        Returns
+        -------
+        ColorEncoding
+
+        Raises
+        ------
+        TypeError
+            If the value is not a supported type.
+        ValidationError
+            If the value cannot be parsed into a ColorEncoding.
+        """
+
+        if isinstance(value, ColorEncoding):
+            return value
+        if isinstance(value, dict):
+            return parse_obj_as(
+                Union[
+                    ConstantColorEncoding,
+                    ManualColorEncoding,
+                    DirectColorEncoding,
+                    NominalColorEncoding,
+                    QuantitativeColorEncoding,
+                ],
+                value,
+            )
+        try:
+            # We are undecided on how we want to handle strings,
+            # so explicitly prevent them for now.
+            if not isinstance(value, str):
+                color_array = ColorArray.validate_type(value)
+                if color_array.shape[0] == 1:
+                    return ConstantColorEncoding(constant=value)
+                return ManualColorEncoding(
+                    array=color_array, default=DEFAULT_COLOR
+                )
+        except (ValueError, AttributeError, KeyError):
+            # Fall through to type error below.
+            pass
+        raise TypeError(
+            trans._(
+                'value should be a ColorEncoding, a dict, a non-string color, a sequence of colors, or None',
+                deferred=True,
+            )
+        )
+
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = ColorValue.validate_type('cyan')
@@ -184,69 +249,6 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
                 'contrast_limits must be a strictly increasing pair of values'
             )
         return contrast_limits
-
-
-"""The types of arguments supported when setting a ColorEncoding field."""
-ColorEncodingArgument = Union[ColorEncoding, dict, str, ColorType, None]
-
-
-def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
-    """Validates and coerces a value to a ColorEncoding.
-
-    Parameters
-    ----------
-    value : ColorEncodingArgument
-        The value to validate and coerce.
-        If this is already a ColorEncoding, it is returned as is.
-        If this is a dict, then it should represent one of the built-in color encodings.
-        If this a single non-string color, a ConstantColorEncoding is returned.
-        If this is a sequence of colors, a ManualColorEncoding is returned.
-
-    Returns
-    -------
-    ColorEncoding
-
-    Raises
-    ------
-    TypeError
-        If the value is not a supported type.
-    ValidationError
-        If the value cannot be parsed into a ColorEncoding.
-    """
-    if value is None:
-        return ConstantColorEncoding(constant=DEFAULT_COLOR)
-    if isinstance(value, ColorEncoding):
-        return value
-    if isinstance(value, dict):
-        return parse_obj_as(
-            Union[
-                ConstantColorEncoding,
-                ManualColorEncoding,
-                DirectColorEncoding,
-                NominalColorEncoding,
-                QuantitativeColorEncoding,
-            ],
-            value,
-        )
-    try:
-        # We are undecided on how we want to handle strings,
-        # so explicitly prevent them for now.
-        if not isinstance(value, str):
-            color_array = ColorArray.validate_type(value)
-            if color_array.shape[0] == 1:
-                return ConstantColorEncoding(constant=value)
-            return ManualColorEncoding(
-                array=color_array, default=DEFAULT_COLOR
-            )
-    except (ValueError, AttributeError, KeyError):
-        # Fall through to type error below.
-        pass
-    raise TypeError(
-        trans._(
-            'value should be a ColorEncoding, a dict, a non-string color, a sequence of colors, or None',
-            deferred=True,
-        )
-    )
 
 
 def _calculate_contrast_limits(

@@ -1207,7 +1207,12 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_face_color = face_color
 
-        size = list({self.size[i, self._dims_displayed].mean() for i in index})
+        # Calculate the mean size across the displayed dimensions for
+        # each point to be consistent with `_view_size`.
+        mean_size = np.mean(
+            self.size[np.ix_(index, self._dims_displayed)], axis=1
+        )
+        size = np.unique(mean_size)
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():

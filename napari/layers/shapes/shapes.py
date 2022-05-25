@@ -684,7 +684,7 @@ class Shapes(Layer):
                 )
             )
 
-        self._data_view = ShapeList()
+        self._data_view = ShapeList(ndisplay=self._ndisplay)
         self.add(
             data,
             shape_type=shape_type,

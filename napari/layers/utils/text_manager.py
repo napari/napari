@@ -23,8 +23,6 @@ from .string_encoding import (
     ConstantStringEncoding,
     StringArray,
     StringEncoding,
-    StringEncodingArgument,
-    validate_string_encoding,
 )
 from .style_encoding import _get_style_values
 
@@ -305,6 +303,8 @@ class TextManager(EventedModel):
             kwargs = text.dict()
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
+        elif text is None:
+            kwargs = {'string': ConstantStringEncoding(constant='')}
         else:
             kwargs = {'string': text}
         kwargs['features'] = features
@@ -346,10 +346,6 @@ class TextManager(EventedModel):
         # Some of the encodings may have changed, so ensure they encode new
         # values if needed.
         self.apply(features)
-
-    @validator('string', pre=True, always=True)
-    def _check_string(cls, string: StringEncodingArgument):
-        return validate_string_encoding(string)
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):

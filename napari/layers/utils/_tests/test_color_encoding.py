@@ -4,12 +4,12 @@ import pytest
 
 from napari.layers.utils.color_encoding import (
     ColorArray,
+    ColorEncoding,
     ConstantColorEncoding,
     DirectColorEncoding,
     ManualColorEncoding,
     NominalColorEncoding,
     QuantitativeColorEncoding,
-    validate_color_encoding,
 )
 
 
@@ -181,7 +181,7 @@ def test_validate_from_sequence():
     argument = ['red', 'green', 'cyan']
     expected = ManualColorEncoding(array=argument)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -191,7 +191,7 @@ def test_validate_from_constant_dict():
     argument = {'constant': constant}
     expected = ConstantColorEncoding(constant=constant)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -202,7 +202,7 @@ def test_validate_from_manual_dict():
     argument = {'array': array, 'default': default}
     expected = ManualColorEncoding(array=array, default=default)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -212,7 +212,7 @@ def test_validate_from_direct_dict():
     argument = {'feature': feature}
     expected = DirectColorEncoding(feature=feature)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -226,7 +226,7 @@ def test_validate_from_nominal_dict():
         colormap=colormap,
     )
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -246,7 +246,7 @@ def test_validate_from_quantitative_dict(features):
         contrast_limits=contrast_limits,
     )
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 

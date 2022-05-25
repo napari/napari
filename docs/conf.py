@@ -14,9 +14,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from importlib import import_module
 from pathlib import Path
 
 import qtgallery
+from jinja2.filters import FILTERS
 
 import napari
 
@@ -170,3 +172,19 @@ def setup(app):
 
     """
     app.registry.source_suffix.pop(".ipynb", None)
+
+
+def get_attributes(item, obj, modulename):
+    """Filters attributes to be used in autosummary.
+
+    Fixes import errors when documenting inherited attributes with autosummary.
+
+    """
+    module = import_module(modulename)
+    if hasattr(getattr(module, obj), item):
+        return f"~{obj}.{item}"
+    else:
+        return ""
+
+
+FILTERS["get_attributes"] = get_attributes
