@@ -15,7 +15,6 @@ class TextManagerSuite:
     params = [
         [2**i for i in range(4, 18, 2)],
         [
-            None,
             {'constant': 'test'},
             'string_property',
             'float_property',
