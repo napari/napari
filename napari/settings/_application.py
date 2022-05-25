@@ -25,7 +25,7 @@ cache = confloat(ge=0, le=MAX_CACHE)
 
 class DaskSettings(TypedDict, total=False):
     enabled: bool
-    cache: cache
+    cache: cache  # type: ignore [valid-type]
 
 
 class ApplicationSettings(EventedModel):
@@ -217,7 +217,6 @@ class ApplicationSettings(EventedModel):
             "open_history",
             "save_history",
             "ipy_interactive",
-            # "dask"
         ]
 
 
