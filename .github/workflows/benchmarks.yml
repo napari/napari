@@ -7,11 +7,11 @@ name: Benchmarks
 
 on:
   pull_request:
-    # types: [labeled]
+    types: [labeled]
   workflow_dispatch:
 
 # This is the main configuration section that needs to be fine tuned to napari's needs
-# All the _THREADS options is just to make the benchmarks more robust by not using parallelism
+# All the *_THREADS options is just to make the benchmarks more robust by not using parallelism
 env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
@@ -24,7 +24,7 @@ env:
 
 jobs:
   benchmark:
-    # if: ${{ github.event.label.name == 'run-benchmark' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.label.name == 'run-benchmarks' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     name: ${{ matrix.benchmark-name }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
