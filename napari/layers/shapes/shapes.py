@@ -2782,7 +2782,7 @@ class Shapes(Layer):
 
         Returns
         -------
-        value Union[None, int]
+        value Union[None, float, int]
             The data value along the supplied ray.
         intersection_point : Union[None, np.ndarray]
             (n,) array containing the point where the ray intersects the first shape
