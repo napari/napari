@@ -15,7 +15,7 @@ def calculate_barycentric_coordinates(
     point : np.ndarray
         The coordinates of the point for which to calculate the barycentric coordinate.
     triangle_vertices : np.ndarray
-        (3, D) array containing the triangle vertices
+        (3, D) array containing the triangle vertices.
 
     Returns
     -------
