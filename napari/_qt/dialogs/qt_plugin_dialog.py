@@ -690,8 +690,7 @@ class QPluginList(QListWidget):
             widget.show_warning(
                 trans._(
                     "This plugin is not available on conda-forge, so cannot be"
-                    " installed into this bundle. Ask the plugin developer to "
-                    "publish their plugin on conda-forge! Or if you use the .zip "
+                    " installed into this bundle. If you use the .zip "
                     "briefcase bundle from "
                     "https://github.com/napari/napari/releases/tag/v0.4.16, "
                     "you can install pip only plugins."
