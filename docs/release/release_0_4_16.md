@@ -20,41 +20,58 @@ Prior to `npe2`, file opening with plugins worked through a cascade of function 
 
 This behavior was slow, confusing, and often led to unexpected results. You can see more discussion on this in issue [#4000](https://github.com/napari/napari/issues/4000). `npe2` supports readers declaring a list of accepted filename patterns, and PR [#3799](https://github.com/napari/napari/pull/3799) added a dialog for users to select a plugin to read their file (if more than one was available), and save a preference for that file extension.
 
-Before removing plugin call order, we want to ensure that file opening behavior is unified across the GUI and the command line, and that users have access to a smooth workflow for choosing plugins and saving preferences.
+Before removing plugin call order, we want to make sure that file opening behavior across the GUI and command line is predictable, reproducible and explicit.
 
-After discussion in [#4102](https://github.com/napari/napari/pull/4102) and [#4111](https://github.com/napari/napari/discussions/4111), we decided that as a guiding principle, napari will not choose a reader when multiple are compatible with the given file path. This decision has led to the following changes:
+After discussion in [#4102](https://github.com/napari/napari/pull/4102), [#4111](https://github.com/napari/napari/discussions/4111) and [this zulip thread](https://napari.zulipchat.com/#narrow/stream/212875-general/topic/.60viewer.2Eopen.60.20.26.20multiple.20plugins), we decided that as a guiding principle, calling `viewer.open` should not infer a plugin choice for you, and any inference behavior should be opt in.
 
+This has led to the following API and GUI changes
 
-- Calling `viewer.open` *without* passing a plugin will result in an error if you have not saved a reader preference for that file pattern *and* multiple plugins can claim the file
-    - You can address this error by associating a preference for the file pattern, or calling `viewer.open(file_path, plugin=...)
-    - To save a preference for a file pattern in Python, use:
+-  `builtins` is now the default value for the `plugin` argument in `viewer.open`. This means 
+    - you should **always** explicitly pass a plugin to `viewer.open`, if you don't want to use `builtins` (and we encourage you to pass the argument anyway).
 
-    ```python
-    from napari.settings import get_settings
-    get_settings().plugins.extension2reader['*.tif'] = 'napari_tifffile'
-    get_settings().plugins.extension2reader['*.zarr'] = 'napari-ome-zarr'
-    ```
+        - To specify a plugin in a Python script:
 
-    - To specify a plugin in a Python script:
+            ```python
+            import napari
 
-    ```python
-    import napari
+            viewer = napari.Viewer()
+            viewer.open('my-path.tif') # this will throw MultipleReaderError if napari_tifffile is installed as both it and builtins could open the file
+            viewer.open('my-path.tif', plugin='napari_tifffile') # this won't
+            ```
 
-    viewer = napari.Viewer()
-    viewer.open('my-path.tif') # this will throw MultipleReaderError if napari_tifffile is installed as both it and builtins could open the file
-    viewer.open('my-path.tif', plugin='napari_tifffile') # this won't
-    ```
+    - `viewer.open` will **not** inspect your file extension preferences, and will not choose among available plugins
+    - if you wish to opt into the "gui-like" behavior where your preferences are respected and we infer a plugin if just one is compatible with your file path, you must explicitly use `plugin=None`
 
+        - To opt into plugin inference behavior:
+
+            ```python
+            import napari
+
+            viewer = napari.Viewer()
+            viewer.open('my-path.nd2', plugin=None)
+            ```
+        - If multiple plugins could read your file, you will see a `MultipleReaderError`
+        - A preferred reader missing from current plugins will trigger a warning, but the preference will be otherwise ignored
+        - A preferred reader failing to read your file will result in an error e.g. if you saved `napari_tifffile` as a preference for TIFFs but then tried to open a broken file
+
+        - To save a preference for a file pattern in Python, use:
+
+            ```python
+            from napari.settings import get_settings
+            get_settings().plugins.extension2reader['*.tif'] = 'napari_tifffile'
+            get_settings().plugins.extension2reader['*.zarr'] = 'napari-ome-zarr'
+            ```
+
+- When opening a file through a GUI pathway (drag & drop, File -> Open, Open Sample) with no preferences saved, you are provided with a dialog allowing you to choose among the various plugins that are compatible with your file
+    - This dialog also allows you to save a preference for files and folders with extensions
+    - This dialog also pops up if a preferred reader fails to open your file
+    - This dialog does not pop up if only one plugin can open your file
+- Running `napari path` in the shell will also provide the reader dialog. You can still pass through a plugin choice, or layer keyword arguments
     - To specify a plugin at the command line, use:
     
     ```sh
     napari my-path.tif --plugin napari_tifffile
     ```
-- A preferred reader missing from current plugins will trigger a warning, but the preference will be otherwise ignored
-- A preferred reader failing to read your file will result in an error e.g. if you saved `napari_tifffile` as a preference for TIFFs but then tried to open a broken file
-- When opening a file through a GUI pathway (drag & drop, File -> Open, Open Sample) you are provided with a dialog allowing you to choose among the various plugins that are compatible with your file
-    - This dialog also allows you to save a preference for files and folders with extensions
-    - This dialog also pops up if a preferred reader fails to open your file
 - Preference saving for file reading is now supported for filename patterns accepted by `npe2` readers, rather than strictly file extensions
     - Existing preferences for file extensions will be automatically updated e.g. `.tif` will become `*.tif`
 - Reader preferences for filename patterns can be saved in the GUI via the preference dialog
@@ -167,7 +184,7 @@ We have thought carefully about these choices, but there are still some open que
 ## API Changes
 - Update file opening behavior to ensure consistency across command line and GUI. (#4347)
 - Warn user when preferred plugin for a file is missing (#4545)
-
+- Make `builtins` default plugin for `viewer.open` (#4574)
 
 ## UI Changes
 
