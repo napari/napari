@@ -177,6 +177,7 @@ We have thought carefully about these choices, but there are still some open que
 - Allow resizing left dock widgets (#4368)
 - Add filename pattern to reader associations to preference dialog (#4459)
 - Add preference saving from dialog for folders with extensions #4535
+- Make sure npe2 and npe1 builtins are available in dialogs (#4575)
 
 ## Deprecations
 
