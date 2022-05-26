@@ -25,6 +25,10 @@ def test_calculate_barycentric_coordinates(
             [5, 3, 0],
         ]
     )
-    u, v, w = calculate_barycentric_coordinates(point, triangle_vertices)
-    np.testing.assert_allclose([u, v, w], expected_barycentric_coordinates)
-    np.testing.assert_allclose(u + v + w, 1)
+    barycentric_coordinates = calculate_barycentric_coordinates(
+        point, triangle_vertices
+    )
+    np.testing.assert_allclose(
+        barycentric_coordinates, expected_barycentric_coordinates
+    )
+    np.testing.assert_allclose(np.sum(barycentric_coordinates), 1)

@@ -500,7 +500,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             triangles=mesh_triangles,
         )
 
-        if (intersection_index is None) or (intersection is None):
+        if intersection_index is None:
             return None, None
 
         # add the full nD coords to intersection
@@ -510,10 +510,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         # calculate the value from the intersection
         triangle_vertex_indices = self._view_faces[intersection_index]
         triangle_vertices = self._data_view[triangle_vertex_indices]
-        u, v, w = calculate_barycentric_coordinates(
+        barycentric_coordinates = calculate_barycentric_coordinates(
             intersection, triangle_vertices
         )
         vertex_values = self._view_vertex_values[triangle_vertex_indices]
-        intersection_value = (np.array([u, v, w]) * vertex_values).sum()
+        intersection_value = (barycentric_coordinates * vertex_values).sum()
 
         return intersection_value, intersection_index

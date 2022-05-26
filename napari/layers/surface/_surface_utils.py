@@ -19,12 +19,10 @@ def calculate_barycentric_coordinates(
 
     Returns
     -------
-    u : float
-        The barycentric coordinate for the first triangle vertex.
-    v : float
-        The barycentric coordinate for the second triangle vertex.
-    w : float
-        The barycentric coordinate for the third triangle vertex
+    barycentric_coorinates : np.ndarray
+        The barycentric coordinate [u, v, w], where u, v, and w are the
+        barycentric coordinates for the first, second, third triangle
+        vertex, respectively.
     """
     vertex_a = triangle_vertices[0, :]
     vertex_b = triangle_vertices[1, :]
@@ -42,4 +40,4 @@ def calculate_barycentric_coordinates(
     v = (d11 * d20 - d01 * d21) / denominator
     w = (d00 * d21 - d01 * d20) / denominator
     u = 1 - v - w
-    return u, v, w
+    return np.array([u, v, w])
