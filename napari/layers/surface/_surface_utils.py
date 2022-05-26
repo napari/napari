@@ -5,7 +5,7 @@ import numpy as np
 
 def calculate_barycentric_coordinates(
     point: np.ndarray, triangle_vertices: np.ndarray
-) -> Tuple[float, float, float]:
+) -> np.ndarray:
     """Calculate the barycentric coordinates for a point in a triangle.
 
     http://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
