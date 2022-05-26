@@ -47,9 +47,11 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
                     ] = get_reader.plugin_name
     readers.update(npe1_readers)
 
-    # if npe2 is present, remove npe1 builtins
-    if 'napari' in readers and 'builtins' in readers:
-        del readers['builtins']
+    # if npe1 and npe2 builtins are present, disambiguate
+    if 'napari' in readers:
+        readers['napari'] = 'napari (npe2)'
+    if 'builtins' in readers:
+        readers['builtins'] = 'builtins (npe1)'
 
     return readers
 
@@ -70,9 +72,11 @@ def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
             for get_reader in potential_readers:
                 npe1_readers[get_reader.plugin_name] = get_reader.plugin_name
 
-    # if npe2 is present, remove npe1 builtins
-    if 'napari' in npe2_readers and 'builtins' in npe1_readers:
-        del npe1_readers['builtins']
+    # if npe1 and npe2 builtins are present, disambiguate
+    if 'napari' in npe2_readers:
+        npe2_readers['napari'] = 'napari (npe2)'
+    if 'builtins' in npe1_readers:
+        npe1_readers['builtins'] = 'builtins (npe1)'
 
     return npe2_readers, npe1_readers
 
