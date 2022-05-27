@@ -770,7 +770,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         plugin: str,
         sample: str,
-        reader_plugin: Optional[str] = None,
+        reader_plugin: Optional[str] = 'builtins',
         **kwargs,
     ) -> List[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
@@ -786,7 +786,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             name of the sample
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
-            is a string).  by default None.
+            is a string).  by default builtins.
         **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
