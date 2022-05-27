@@ -901,7 +901,7 @@ def test_open_or_get_error_preferred_fails(tmp_path):
     pth = tmp_path / 'my-file.npy'
 
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.npy': 'napari'}
+        get_settings().plugins.extension2reader = {'.npy': 'napari'}
 
         with pytest.raises(
             ReaderPluginError, match='Tried opening with napari, but failed.'
