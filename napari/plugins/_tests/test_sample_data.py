@@ -60,7 +60,7 @@ def test_sample_hook(napari_plugin_manager):
     viewer.open_sample('test_plugin', 'napari logo')
     assert viewer.layers[-1].source == Source(
         path=str(LOGO),
-        reader_plugin='builtins',
+        reader_plugin='napari',
         sample=('test_plugin', 'napari logo'),
     )
     assert len(viewer.layers) == 2
