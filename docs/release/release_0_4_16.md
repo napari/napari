@@ -124,6 +124,7 @@ We have thought carefully about these choices, but there are still some open que
 - Add preference saving from dialog for folders with extensions (#4535)
 - Add filename pattern to reader associations to preference dialog (#4459)
 - use imageio v2 api (#4537)
+- Update filename patterns for npe2 builtins to match imageio formats (#4580)
 
 ## Bug Fixes
 
