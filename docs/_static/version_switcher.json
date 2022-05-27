@@ -1,29 +1,12 @@
 [
 	{
-	  "version": "dev"
+		"name": "latest",
+		"version": "dev",
+		"url": "https://melissawm.github.io/napari.github.io/dev/"
 	},
 	{
-	  "version": "0.4.7"
-	},
-	{
-	  "version": "0.4.6"
-	},
-	{
-	  "version": "0.4.5"
-	},
-	{
-	  "version": "0.4.4"
-	},
-	{
-	  "version": "0.4.3"
-	},
-	{
-	  "version": "0.4.0"
-	},
-	{
-	  "version": "0.3.8"
-	},
-	{
-	  "version": "0.3.7"
-	},
+		"name": "stable",
+		"version": "0.4.15",
+		"url": "https://melissawm.github.io/napari.github.io/stable/"
+	}
 ]

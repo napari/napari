@@ -3,7 +3,7 @@ name: Build and Deploy Docs
 on:
   push:
     branches:
-      - main
+      - enable-versioned-api
     tags:
       - 'v*'
   workflow_dispatch:
@@ -47,8 +47,9 @@ jobs:
       - name: Deploy Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
-          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: napari/napari.github.io
+          personal_token: ${{ secrets.DEPLOY_GHPAGES }}
+          external_repository: melissawm/napari.github.io
           publish_dir: docs/_build
           publish_branch: gh-pages
+          destination_dir: dev
           cname: napari.org

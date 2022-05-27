@@ -71,13 +71,29 @@ external_toc_exclude_missing = False
 # a list of builtin themes.
 #
 html_theme = 'napari'
+
+# Define the json_url for our version switcher.
+#json_url = "https://napari.org/version_switcher.json"
+json_url = "https://melissawm.github.io/napari.github.io/version_switcher.json"
+
+if version == "dev":
+    version_match = "latest"
+else:
+    version_match = release
+
 html_theme_options = {
     "external_links": [
         {"name": "napari hub", "url": "https://napari-hub.org"}
     ],
     "github_url": "https://github.com/napari/napari",
     "navbar_start": ["navbar-project"],
-    "navbar_end": ["navbar-icon-links"],
+    "navbar_end": ["version-switcher", "navbar-icon-links"],
+    "switcher": {
+        #"json_url": "https://napari.org/version_switcher.json",
+        "json_url": "https://melissawm.github.io/napari.github.io/version_switcher.json",
+        "version_match": version_match,
+    },
+
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
