@@ -87,7 +87,10 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
             continue
         action: QAction = menu.addAction(ax['text'])
         if 'slot' in ax:
-            action.triggered[bool].connect(ax['slot'])
+            if ax.get("checkable"):
+                action.toggled.connect(ax['slot'])
+            else:
+                action.triggered.connect(ax['slot'])
         action.setShortcut(ax.get('shortcut', ''))
         action.setStatusTip(ax.get('statusTip', ''))
         if 'menuRole' in ax:

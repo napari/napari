@@ -16,7 +16,7 @@ def test_populate_menu_create(qtbot):
     assert menu.actions()[0].isCheckable() is False
     with qtbot.waitSignal(menu.actions()[0].triggered):
         menu.actions()[0].trigger()
-    mock.assert_called_once_with(False)
+    mock.assert_called_once()
 
 
 def test_populate_menu_create_checkable(qtbot):
