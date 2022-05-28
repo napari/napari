@@ -130,9 +130,9 @@ def handle_gui_reading(
 
     Parameters
     ----------
-    _paths : list[str]
+    paths : list[str]
         list of paths to open, as strings
-    viewer : QtViewer
+    qt_viewer : QtViewer
         QtViewer to associate dialog with
     stack : bool
         True if list of paths should be stacked, otherwise False
@@ -234,7 +234,7 @@ def open_with_dialog_choices(
         file extension for association of preferences
     readers : Dict[str, str]
         plugin-name: display-name dictionary of remaining readers
-    _paths : List[str]
+    paths : List[str]
         paths to open
     stack : bool
         True if files should be opened as a stack, otherwise False

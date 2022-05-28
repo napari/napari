@@ -241,8 +241,8 @@ class ShapeList:
         shape : single Shape or iterable of Shape
             Each shape must be a subclass of Shape, one of "{'Line', 'Rectangle',
             'Ellipse', 'Path', 'Polygon'}"
-        face_colors : color (or iterable of colors of same length as shape)
-        edge_colors : color (or iterable of colors of same length as shape)
+        face_color : color (or iterable of colors of same length as shape)
+        edge_color : color (or iterable of colors of same length as shape)
         shape_index : None | int
             If int then edits the shape date at current index. To be used in
             conjunction with `remove` when renumber is `False`. If None, then
