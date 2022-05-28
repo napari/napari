@@ -297,23 +297,24 @@ class QtViewer(QSplitter):
         self._bind_shortcuts()
 
         settings = get_settings()
+        self._update_dask_settings(settings.application.dask)
 
-        self._update_dask_settings()
+        settings.application.events.dask.connect(
+            lambda dask_event: self._update_dask_settings(dask_event.value)
+        )
 
         settings.application.events.dask.connect(self._update_dask_settings)
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-    def _update_dask_settings(self, event=None):
+    def _update_dask_settings(self, dask_setting: dict):
         """Update dask cache to match settings."""
 
-        if get_settings().application.dask['enabled']:
+        if dask_setting['enabled']:
             # If dask is enabled, then resize cache.
             # Value is in mb, need to convert to bytes.
-            resize_dask_cache(
-                get_settings().application.dask['cache'] * 1000000
-            )
+            resize_dask_cache(dask_setting['cache'] * 1e6)
         else:
             # Disable dask.
             resize_dask_cache(0)

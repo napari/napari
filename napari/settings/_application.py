@@ -19,7 +19,7 @@ GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
 
 _DEFAULT_MEM_FRACTION = 0.25
-MAX_CACHE = virtual_memory().total * 0.5 / 1000000
+MAX_CACHE = virtual_memory().total * 0.5 / 1e6
 cache = confloat(ge=0, le=MAX_CACHE)
 
 
@@ -185,7 +185,7 @@ class ApplicationSettings(EventedModel):
     dask: DaskSettings = Field(
         default={
             'enabled': True,
-            'cache': virtual_memory().total * _DEFAULT_MEM_FRACTION / 1000000,
+            'cache': virtual_memory().total * _DEFAULT_MEM_FRACTION / 1e6,
         },
         title=trans._("Enable Dask"),
         description=trans._("Enable/disable Dask caching."),
