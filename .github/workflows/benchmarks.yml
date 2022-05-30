@@ -97,7 +97,7 @@ jobs:
             echo "Baseline:  ${BASE_REF} (${{ fromJSON(steps.latest_release.outputs.data).tag_name }})"
             echo "Contender: ${CONTENDER_REF} (current main)"
           elif [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
-            BASE_REF="${{ github.event.inputs.base_ref }}""
+            BASE_REF="${{ github.event.inputs.base_ref }}"
             CONTENDER_REF="${{ github.event.inputs.contender_ref }}"
             echo "Baseline:  ${BASE_REF} (workflow input)"
             echo "Contender: ${CONTENDER_REF} (workflow input)"
