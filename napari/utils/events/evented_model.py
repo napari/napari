@@ -237,7 +237,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 if issubclass(typ, (EventedList, EventedDict, EventedSet)):
                     self.__dict__[name] = typ(self.__dict__[name])
                 elif issubclass(typ, EventedModel):
-                    print(name, field, self.__dict__[name])
                     self.__dict__[name] = typ(**self.__dict__[name])
 
         self._parent = None
