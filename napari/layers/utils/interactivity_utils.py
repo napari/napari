@@ -103,9 +103,9 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     Parameters
     ----------
-    layer: Image
+    layer : Image
         The layer on which the rendering plane is to be rotated
-    plane_normal: 3-tuple
+    plane_normal : 3-tuple
         The target plane normal in scene coordinates.
     """
     # avoid circular imports
