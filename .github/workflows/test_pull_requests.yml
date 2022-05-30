@@ -5,6 +5,8 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   manifest:
@@ -140,6 +142,11 @@ jobs:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: upload pytest timing reports as json
+          path: |
+            ./report-*.json
       # this steps display the cached folder size for debug and
       # remove the biggest contenders.
       - name: Display Cache size, and remove largest files from cache.
