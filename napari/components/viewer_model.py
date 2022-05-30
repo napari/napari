@@ -778,19 +778,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         To see all available samples registered by plugins, use
         :func:`napari.plugins.available_samples`
 
-                Parameters
-                ----------
-                plugin : str
-                    name of a plugin providing a sample
-                sample : str
-                    name of the sample
-                reader_plugin : str, optional
-                    reader plugin to pass to viewer.open (only used if the sample data
-                    is a string).  by default None.
-                **kwargs
-                    additional kwargs will be passed to the sample data loader provided
-                    by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
-                    not match the sample data loader.
+        Parameters
+        ----------
+        plugin : str
+            name of a plugin providing a sample
+        sample : str
+            name of the sample
+        reader_plugin : str, optional
+            reader plugin to pass to viewer.open (only used if the sample data
+            is a string).  by default None.
+        **kwargs
+            additional kwargs will be passed to the sample data loader provided
+            by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
+            not match the sample data loader.
 
         Returns
         -------
