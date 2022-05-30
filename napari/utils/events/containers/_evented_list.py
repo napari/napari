@@ -23,7 +23,6 @@ cover this in test_evented_list.py)
 """
 
 import logging
-from itertools import zip_longest
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
 from ...translations import trans
@@ -118,11 +117,11 @@ class EventedList(TypedMutableSequence[_T]):
                         deferred=True,
                     )
                 )
-            if all(
-                new_el is old_el for new_el, old_el in zip_longest(value, old)
-            ):
+            value = list(
+                value
+            )  # make sure we don't empty generators and reuse them
+            if value == old:
                 return
-
             [self._type_check(v) for v in value]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))

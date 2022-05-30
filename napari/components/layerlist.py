@@ -132,7 +132,11 @@ class LayerList(SelectableEventedList[Layer]):
         for v in values:
             if v in bad:
                 raise ValueError(
-                    f"Layer '{v}' is already present in layer list"
+                    trans._(
+                        "Layer '{v}' is already present in layer list",
+                        deferred=True,
+                        v=v,
+                    )
                 )
         return values
 
