@@ -95,15 +95,11 @@ class ShapeList:
     def batched_updates(self):
         assert self._batched_level >= 0
         self._batched_level += 1
-        # print('ENTER!', self._batched_level)
         try:
             yield
         finally:
             if self._batched_level == 1:
-                # print('EXIT AND CALL!', self._batched_level)
                 self._update_displayed()
-            # else:
-            # print('Just EXIT!', self._batched_level)
             self._batched_level -= 1
 
         assert self._batched_level >= 0
@@ -188,7 +184,7 @@ class ShapeList:
         update_method = getattr(self, f'update_{attribute}_colors')
         indices = np.arange(len(colors))
         with self.batched_updates():
-            update_method(indices, colors, update=False)
+            update_method(indices, colors)
             self._update_displayed()
 
     @property
@@ -819,7 +815,7 @@ class ShapeList:
         with self.batched_updates():
             self._update_displayed()
 
-    def update_edge_colors(self, indices, edge_colors, update=True):
+    def update_edge_colors(self, indices, edge_colors, update=None):
         """same as update_edge_color() but for multiple indices/edgecolors at once"""
         self._edge_color[indices] = edge_colors
         all_indices = np.bitwise_and(
@@ -829,8 +825,11 @@ class ShapeList:
         self._mesh.triangles_colors[all_indices] = self._edge_color[
             self._mesh.triangles_index[all_indices, 0]
         ]
-        if update:
-            self._update_displayed()
+        assert update is None, (
+            "The update keyword is deprecated, please call within the "
+            "`self.batched_updates()` context manager"
+        )
+        self._update_displayed()
 
     def update_face_color(self, index, face_color, update=None):
         """Updates the face color of a single shape located at index.
@@ -850,10 +849,13 @@ class ShapeList:
         self._face_color[index] = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         self._mesh.triangles_colors[indices] = self._face_color[index]
-        if update is not None:
-            assert False, "please call within self.batched_updates"
+        assert update is None, (
+            "The update keyword is deprecated, please call within the "
+            "`self.batched_updates()` context manager"
+        )
+        self._update_displayed()
 
-    def update_face_colors(self, indices, face_colors, update=True):
+    def update_face_colors(self, indices, face_colors, update=None):
         """same as update_face_color() but for multiple indices/facecolors at once"""
         self._face_color[indices] = face_colors
         all_indices = np.bitwise_and(
@@ -863,8 +865,11 @@ class ShapeList:
         self._mesh.triangles_colors[all_indices] = self._face_color[
             self._mesh.triangles_index[all_indices, 0]
         ]
-        if update:
-            self._update_displayed()
+        assert update is None, (
+            "The update keyword is deprecated, please call within the "
+            "`self.batched_updates()` context manager"
+        )
+        self._update_displayed()
 
     def update_dims_order(self, dims_order):
         """Updates dimensions order for all shapes.
