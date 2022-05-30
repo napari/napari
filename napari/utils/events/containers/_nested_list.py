@@ -208,7 +208,10 @@ class NestableEventedList(EventedList[_T]):
             while len(idxs) > 1:
                 tmp2 = tmp2[idxs.pop(0)]
             tmp2[idxs.pop()] = value
-            value = self.__newlike__(self._validate_with_parent(tmp))[key]
+            # index deep
+            value = self._validate_with_parent(tmp)
+            for idx in key:
+                value = value[idx]  # type: ignore
             parent_i, index = split_nested_index(key)
             self[parent_i].__setitem__(index, value)
             return

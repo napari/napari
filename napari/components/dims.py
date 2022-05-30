@@ -165,11 +165,11 @@ class Dims(EventedModel):
 
         values.update(
             {
-                'axis_labels': EventedList(labels),
-                'range': NestableEventedList(range_),
-                'span': NestableEventedList(span),
-                'step': EventedList(step),
-                'order': EventedList(order),
+                'axis_labels': labels,
+                'range': range_,
+                'span': span,
+                'step': step,
+                'order': order,
             }
         )
         return values

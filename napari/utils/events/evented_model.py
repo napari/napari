@@ -1,20 +1,28 @@
 import operator
 import sys
 import warnings
-from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Optional, Set, Tuple, Union
-
-import numpy as np
-from pydantic import (
-    BaseModel,
-    PrivateAttr,
-    main,
-    utils,
-    validate_model,
-    validator,
+from contextlib import ExitStack, contextmanager
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    get_origin,
 )
 
-from ...utils.events.containers import View
+import numpy as np
+from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
+
+from ...utils.events.containers import (
+    EventedDict,
+    EventedList,
+    EventedSet,
+    View,
+)
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
 from ._protocols import EventedMutable
@@ -199,18 +207,25 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # but allows us to use 2 as a special value meaning "inplace mutation"
         allow_mutation = 2
 
-    @validator('*', pre=True, always=True)
-    def _no_evented_collections(v, field):
-        # we need to sanitize inputs to avoid loops of validation (if input is
-        # EventedList, changing its content during validation will cause a mess)
-        # this is very important because we may trigger validations with partial states
-        # which will cause the model to revert to "usable" conditions
-        if isinstance(v, EventedMutable):
-            v = v._uneventful()
-        return v
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # workaround to make sure evented mutables are initialized correctly
+        # even if validator does not return evented objects (which it shouldn't, for performance)
+        # TODO: this is some ugly stuff, surely we can do better
+        for name, field in self.__fields__.items():
+            typ = get_origin(field.outer_type_)
+            if (
+                typ is not None
+                and isinstance(typ, type)
+                and not isinstance(self.__dict__[name], typ)
+            ):
+                if issubclass(typ, (EventedList, EventedDict, EventedSet)):
+                    self.__dict__[name] = typ(self.__dict__[name])
+                elif issubclass(typ, EventedModel):
+                    print(name, field, self.__dict__[name])
+                    self.__dict__[name] = typ(**self.__dict__[name])
+
         self._parent = None
         self._validate = True
 
@@ -243,9 +258,17 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _pre_validate(self, values):
         if not self._validate:
             return values
-        values, _, error = validate_model(self.__class__, values)
-        if error:
-            raise error
+        # block sub-validation and events during validation
+        with ExitStack() as stack:
+            for v in values.values():
+                if isinstance(v, EventedMutable):
+                    stack.enter_context(v._no_validation())
+                    stack.enter_context(v.events.blocker_all())
+
+            values, _, error = validate_model(self.__class__, values)
+            if error:
+                raise error
+
         if self._parent is not None:
             parent = self._parent[0]
             field = self._parent[1]

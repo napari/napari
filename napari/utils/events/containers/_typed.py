@@ -255,15 +255,6 @@ class TypedMutableSequence(MutableSequence[_T]):
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls._validate_list
-
-    @classmethod
-    def _validate_list(cls, lst):
-        # this fallback validator (is it called last?)
-        return cls(lst)
-
 
 def _noop(x):
     return x
