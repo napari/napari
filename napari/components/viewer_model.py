@@ -114,7 +114,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     cursor: Cursor = Field(default_factory=Cursor)
     dims: Dims = Field(default_factory=Dims)
     grid: GridCanvas = Field(default_factory=GridCanvas)
-    layers: LayerList = Field(default_factory=LayerList)
+    layers: LayerList[Layer] = []
     scale_bar: ScaleBar = Field(default_factory=ScaleBar)
     text_overlay: TextOverlay = Field(default_factory=TextOverlay)
     overlays: Overlays = Field(default_factory=Overlays)

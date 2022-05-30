@@ -15,7 +15,14 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
+from pydantic import (
+    BaseModel,
+    PrivateAttr,
+    main,
+    utils,
+    validate_model,
+    validator,
+)
 
 from ...utils.events.containers import (
     EventedDict,
@@ -206,6 +213,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # this custom use of allow mutation behaves as normal (0 is false, 1 and 2 are true)
         # but allows us to use 2 as a special value meaning "inplace mutation"
         allow_mutation = 2
+
+    @validator('*', pre=True, always=True)
+    def _no_evented_collections(v, field):
+        # pydantic fails in validating subclasses of generics
+        if isinstance(v, (EventedSet, EventedList, EventedDict)):
+            v = v._uneventful()
+        return v
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
