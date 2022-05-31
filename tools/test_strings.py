@@ -564,9 +564,11 @@ if __name__ == '__main__':
     pth = pathlib.Path(__file__).parent / 'string_list.json'
     data = json.loads(pth.read_text())
     for file, items in outdated_strings.items():
-        data['SKIP_WORDS'][file] = list(
-            sorted(set(data['SKIP_WORDS'][file]) - set(items))
-        )
+        for to_remove in set(items):
+            # we don't use set logic to keep the order the same as in the target
+            # files.
+            data['SKIP_WORDS'][file].remove(to_remove)
+    
 
     pth.write_text(json.dumps(data, indent=2, sort_keys=True))
 
