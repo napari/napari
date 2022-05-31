@@ -4,9 +4,19 @@ ignore:
 coverage:
   status:
     project:
-      default:
+      default: false
+      library:
         target: auto
+        paths: ['!.*/_tests/.*']
+        threshold: 1%
+      qt:
+        target: auto
+        paths: ['napari/_qt/.*']
+        threshold: 1%
+      tests:
+        target: auto
+        paths: ['.*/_tests/.*']
         threshold: 1%  # coverage can drop by up to 1% while still posting success
-    patch: off
+    patch: false
 comment:
   require_changes: true  # if true: only post the PR comment if coverage changes
