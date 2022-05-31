@@ -28,9 +28,9 @@ def hub_plugin_info(
     ----------
     name : str
         name of the package
-    min_dev_statur : int, optional
+    min_dev_status : int, optional
         Development status. Default is 3.
-    conda_forge: bool, optional
+    conda_forge : bool, optional
         Check if package is available in conda-forge. Default is True.
 
     Returns

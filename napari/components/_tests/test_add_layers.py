@@ -74,8 +74,9 @@ def test_viewer_open_no_plugin(tmp_path):
     fname = tmp_path / 'gibberish.gbrsh'
     fname.touch()
     with pytest.raises(ValueError) as e:
+        # will default to builtins
         viewer.open(fname)
-    assert 'No plugin found capable of reading' in str(e.value)
+    assert "Plugin 'builtins' does not support file(s)" in str(e.value)
 
 
 plugin_returns = [

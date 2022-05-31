@@ -8,7 +8,7 @@ from napari.utils.tree import Group, Node
 
 
 @pytest.fixture
-def tree_model():
+def tree_model(qapp):
     root = Group(
         [
             Node(name="1"),
@@ -60,7 +60,7 @@ def test_move_single_tree_item(tree_model):
 
 
 @pytest.mark.parametrize('sources, dest, expectation', NESTED_POS_INDICES)
-def test_nested_move_multiple(sources, dest, expectation):
+def test_nested_move_multiple(qapp, sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 
     This uses mimeData to simulate drag/drop operations.
@@ -81,7 +81,7 @@ def test_nested_move_multiple(sources, dest, expectation):
     _assert_models_synced(expected, qt_tree)
 
 
-def test_qt_tree_model_deletion():
+def test_qt_tree_model_deletion(qapp):
     """Test that we can delete items from a QTreeModel"""
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
     qt_tree = QtNodeTreeModel(root)
@@ -91,7 +91,7 @@ def test_qt_tree_model_deletion():
     _assert_models_synced(e, qt_tree)
 
 
-def test_qt_tree_model_insertion():
+def test_qt_tree_model_insertion(qapp):
     """Test that we can append and insert items to a QTreeModel."""
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
     qt_tree = QtNodeTreeModel(root)
@@ -105,7 +105,7 @@ def test_qt_tree_model_insertion():
     _assert_models_synced(e, qt_tree)
 
 
-def test_find_nodes():
+def test_find_nodes(qapp):
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
 
     qt_tree = QtNodeTreeModel(root)
@@ -148,3 +148,13 @@ def test_node_tree_view(qtbot):
     qsel.setCurrentIndex(QModelIndex(), qsel.Current)
     # check current in python
     assert root.selection._current is None
+
+
+def test_flags(tree_model):
+    """Some sanity checks on retrieving flags for nested items"""
+    assert not tree_model.hasIndex(5, 0, tree_model.index(1))
+    last = tree_model._root.pop()
+    tree_model._root[1].append(last)
+    assert tree_model.hasIndex(5, 0, tree_model.index(1))
+    idx = tree_model.index(5, 0, tree_model.index(1))
+    assert bool(tree_model.flags(idx) & Qt.ItemFlag.ItemIsEnabled)
