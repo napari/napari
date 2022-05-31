@@ -2,13 +2,15 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union
+from typing import Any, Callable, ClassVar, Dict, Set, Union, get_origin
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
+from ._protocols import EventedMutable
+from .containers import EventedDict, EventedList, EventedSet
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -181,6 +183,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # False, RuntimeError will be raised on model declaration
         arbitrary_types_allowed = True
         # whether to perform validation on assignment to attributes
+        # note that this should stay True for Field(allow_mutation) to work.
         validate_assignment = True
         # whether to treat any underscore non-class var attrs as private
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
@@ -192,19 +195,49 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
+        # this custom use of allow mutation behaves as normal (0 is false, 1 and 2 are true)
+        # but allows us to use 2 as a special value meaning "inplace mutation"
+        allow_mutation = 2
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # workaround to make sure evented mutables are initialized correctly
+        # even if validator does not return evented objects (which it shouldn't, for performance)
+        # TODO: this is some ugly stuff, surely we can do better
+        for name, field in self.__fields__.items():
+            typ = get_origin(field.outer_type_)
+            if (
+                typ is not None
+                and isinstance(typ, type)
+                and not isinstance(self.__dict__[name], typ)
+            ):
+                if issubclass(typ, (EventedList, EventedDict, EventedSet)):
+                    self.__dict__[name] = typ(self.__dict__[name])
+                elif issubclass(typ, EventedModel):
+                    self.__dict__[name] = typ(**self.__dict__[name])
+
         self._events.source = self
         # add event emitters for each field which is mutable
-        event_names = [
+        field_events = [
             name
             for name, field in self.__fields__.items()
             if field.field_info.allow_mutation
         ]
-        event_names.extend(self.__property_setters__)
-        self._events.add(**dict.fromkeys(event_names))
+
+        self._events.add(
+            **dict.fromkeys(field_events + list(self.__property_setters__))
+        )
+
+        for name in self.__fields__:
+            child = getattr(self, name)
+            if isinstance(child, (EventedMutable)):
+                # while seemingly redundant, this next line is very important to maintain
+                # correct sources; see https://github.com/napari/napari/pull/4138
+                # we solve it by re-setting the source after initial validation, which allows
+                # us to use `validate_all = True`
+                child.events.source = child
+                child.events.connect(getattr(self.events, name))
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
@@ -212,6 +245,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # if so, we use it instead.
         if name in self.__property_setters__:
             self.__property_setters__[name].fset(self, value)
+        elif name in self.__fields__ and (
+            self.__config__.allow_mutation == 2
+            or self.__fields__[name].field_info.allow_mutation == 2
+        ):
+            # do inplace_mutation if possible
+            field_value = getattr(self, name)
+            if isinstance(field_value, EventedMutable):
+                # WARNING: NO validation happens here! This means we MUST disallow
+                # inplace update where the type of the field can change (e.g: text and color managers)
+                field_value._update_inplace(value)
+            else:
+                super().__setattr__(name, value)
         else:
             super().__setattr__(name, value)
 
@@ -290,11 +335,19 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 field = getattr(self, key)
                 if isinstance(field, EventedModel) and recurse:
                     field.update(value, recurse=recurse)
+                elif isinstance(field, EventedMutable) and (
+                    self.__config__.allow_mutation == 2
+                    or self.__fields__[key].field_info.allow_mutation == 2
+                ):
+                    field._inplace_update(value)
                 else:
                     setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
+
+    def _update_inplace(self, other):
+        self.update(other)
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.

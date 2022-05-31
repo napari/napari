@@ -4,9 +4,10 @@ from typing import Mapping, Sequence, Type, Union
 from ..event import EmitterGroup, Event
 from ..types import SupportsEvents
 from ._dict import _K, _T, TypedMutableMapping
+from ._mutable_field import MutableFieldMixin
 
 
-class EventedDict(TypedMutableMapping[_K, _T]):
+class EventedDict(MutableFieldMixin, TypedMutableMapping[_K, _T]):
     """Mutable dictionary that emits events when altered.
 
     This class is designed to behave exactly like builting ``dict``, but
@@ -108,3 +109,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         for k, v in self._dict.items():
             if v is value or v == value:
                 return k
+
+    def _update_inplace(self, other):
+        self.clear()
+        self.update(other)

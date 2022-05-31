@@ -11,7 +11,7 @@ from dask.delayed import Delayed
 from pydantic import Field
 from typing_extensions import Protocol, runtime_checkable
 
-from napari.utils.events import EmitterGroup, EventedModel
+from napari.utils.events import EmitterGroup, EventedList, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 
@@ -250,6 +250,10 @@ def test_update_with_inner_model_union():
         y: int
         z: Union[Inner, AltInner]
 
+        class Config:
+            # disallow inplace update
+            allow_mutation = 1
+
     original = Outer(y=1, z=Inner(w='a'))
     updated = Outer(y=2, z=AltInner(x='b'))
 
@@ -288,6 +292,10 @@ def test_update_with_inner_model_protocol():
     class Outer(EventedModel):
         y: int
         z: InnerProtocol
+
+        class Config:
+            # disallow inplace update
+            allow_mutation = 1
 
     original = Outer(y=1, z=Inner(w='a'))
     updated = Outer(y=2, z=AltInner(x='b'))
@@ -490,3 +498,55 @@ def test_evented_model_with_property_setters_events():
     t.events.c.assert_called_with(value=[5, 20])
     t.events.b.assert_not_called()
     assert t.c == [5, 20]
+
+
+def test_nested_model():
+    class N(EventedModel):
+        x: int = 1
+
+    class M(EventedModel):
+        ls: EventedList = EventedList([1, 2, 3])
+        n: N = N()
+
+    m = M()
+    assert m.ls == [1, 2, 3]
+    assert m.n == N()
+    assert isinstance(m.ls, EventedList)
+    assert isinstance(m.n, N)
+
+    m = M(ls=[4, 5, 6], n=N(x=12))
+    assert m.ls == [4, 5, 6]
+    assert isinstance(m.ls, EventedList)
+    assert m.n == N(x=12)
+
+    # check inplace update
+    ls = m.ls
+    n = m.n
+    m.ls = [10, 11]
+    m.n = {'x': 3}
+    assert m.ls is ls
+    assert m.n is n
+
+
+def test_events_stay_working():
+    class SimpleCamera(EventedModel):
+        zoom: int
+
+    class SimpleViewer(EventedModel):
+        camera: SimpleCamera
+
+    simple_viewer = SimpleViewer(camera=SimpleCamera(zoom=2))
+    simple_viewer.events.camera = Mock(simple_viewer.events)
+
+    new_camera = SimpleCamera(zoom=3)
+
+    # update inplace should fire events
+    simple_viewer.camera = new_camera
+    simple_viewer.events.camera.assert_called_once()
+    simple_viewer.events.camera.assert_called_with(zoom=3)
+
+    # Update simple_viewer camera zoom with new value
+    simple_viewer.camera.zoom = 4
+    # Check that original callback still gets called with new zoom value
+    simple_viewer.events.camera.assert_called_once()
+    simple_viewer.events.camera.assert_called_with(zoom=4)

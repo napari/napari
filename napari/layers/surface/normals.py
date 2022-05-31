@@ -44,9 +44,5 @@ class SurfaceNormals(EventedModel):
     Represents both face and vertex normals for a surface mesh.
     """
 
-    face: Normals = Field(
-        Normals(mode=NormalMode.FACE, color='orange'), allow_mutation=False
-    )
-    vertex: Normals = Field(
-        Normals(mode=NormalMode.FACE, color='blue'), allow_mutation=False
-    )
+    face: Normals = Field(Normals(mode=NormalMode.FACE, color='orange'))
+    vertex: Normals = Field(Normals(mode=NormalMode.FACE, color='blue'))

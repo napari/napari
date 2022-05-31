@@ -28,12 +28,13 @@ from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 from ...translations import trans
 from ..event import EmitterGroup, Event
 from ..types import SupportsEvents
+from ._mutable_field import MutableFieldMixin
 from ._typed import _L, _T, Index, TypedMutableSequence
 
 logger = logging.getLogger(__name__)
 
 
-class EventedList(TypedMutableSequence[_T]):
+class EventedList(MutableFieldMixin, TypedMutableSequence[_T]):
     """Mutable Sequence that emits events when altered.
 
     This class is designed to behave exactly like the builtin ``list``, but
@@ -352,3 +353,6 @@ class EventedList(TypedMutableSequence[_T]):
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
+
+    def _update_inplace(self, other):
+        self[:] = list(other)
