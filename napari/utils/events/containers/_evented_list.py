@@ -21,20 +21,33 @@ interface, and call one of those 4 methods.  So if you override a method, you
 MUST make sure that all the appropriate events are emitted.  (Tests should
 cover this in test_evented_list.py)
 """
+from __future__ import annotations
 
 import logging
-from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from ...translations import trans
 from ..event import EmitterGroup, Event
 from ..types import SupportsEvents
-from ._mutable_field import MutableFieldMixin
 from ._typed import _L, _T, Index, TypedMutableSequence
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
-class EventedList(MutableFieldMixin, TypedMutableSequence[_T]):
+
+class EventedList(TypedMutableSequence[_T]):
     """Mutable Sequence that emits events when altered.
 
     This class is designed to behave exactly like the builtin ``list``, but
@@ -146,7 +159,7 @@ class EventedList(MutableFieldMixin, TypedMutableSequence[_T]):
 
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple['EventedList[_T]', int]]:
+    ) -> Iterable[Tuple[EventedList[_T], int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
@@ -356,3 +369,35 @@ class EventedList(MutableFieldMixin, TypedMutableSequence[_T]):
 
     def _update_inplace(self, other):
         self[:] = list(other)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, field: ModelField):
+        """Pydantic validator."""
+        from pydantic.utils import sequence_like
+
+        if not sequence_like(v):
+            raise TypeError(
+                trans._(
+                    'Value is not a valid sequence: {value}',
+                    deferred=True,
+                    value=v,
+                )
+            )
+        if not field.sub_fields:
+            return cls(v)
+
+        type_field = field.sub_fields[0]
+        errors = []
+        for i, v_ in enumerate(v):
+            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            if error:
+                errors.append(error)
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(v)

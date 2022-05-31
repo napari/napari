@@ -1,13 +1,18 @@
 """MutableMapping that emits events when altered."""
-from typing import Mapping, Sequence, Type, Union
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
+
+from ....utils.translations import trans
 from ..event import EmitterGroup, Event
 from ..types import SupportsEvents
 from ._dict import _K, _T, TypedMutableMapping
-from ._mutable_field import MutableFieldMixin
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
-class EventedDict(MutableFieldMixin, TypedMutableMapping[_K, _T]):
+class EventedDict(TypedMutableMapping[_K, _T]):
     """Mutable dictionary that emits events when altered.
 
     This class is designed to behave exactly like builting ``dict``, but
@@ -113,3 +118,33 @@ class EventedDict(MutableFieldMixin, TypedMutableMapping[_K, _T]):
     def _update_inplace(self, other):
         self.clear()
         self.update(other)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, field: ModelField):
+        """Pydantic validator."""
+        if not isinstance(dict):
+            raise TypeError(
+                trans._(
+                    'Value is not a valid dict: {value}',
+                    deferred=True,
+                    value=v,
+                )
+            )
+        if not field.sub_fields:
+            return cls(v)
+
+        type_field = field.sub_fields[0]
+        errors = []
+        for i, v_ in enumerate(v):
+            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            if error:
+                errors.append(error)
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(v)

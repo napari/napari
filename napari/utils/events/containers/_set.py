@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
 from ....utils.events import EmitterGroup
-from ._mutable_field import MutableFieldMixin
+from ....utils.translations import trans
 
 _T = TypeVar("_T")
 
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
-class EventedSet(MutableFieldMixin, MutableSet[_T]):
+
+class EventedSet(MutableSet[_T]):
     """An unordered collection of unique elements.
 
     Parameters
@@ -151,6 +154,38 @@ class EventedSet(MutableFieldMixin, MutableSet[_T]):
     def union(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return a set containing the union of sets"""
         return type(self)(self._set.union(others))
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, field: ModelField):
+        """Pydantic validator."""
+        from pydantic.utils import sequence_like
+
+        if not sequence_like(v):
+            raise TypeError(
+                trans._(
+                    'Value is not a valid sequence: {value}',
+                    deferred=True,
+                    value=v,
+                )
+            )
+        if not field.sub_fields:
+            return cls(v)
+
+        type_field = field.sub_fields[0]
+        errors = []
+        for i, v_ in enumerate(v):
+            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            if error:
+                errors.append(error)
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(v)
 
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
