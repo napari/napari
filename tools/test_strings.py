@@ -570,7 +570,6 @@ if __name__ == '__main__':
             # we don't use set logic to keep the order the same as in the target
             # files.
             data['SKIP_WORDS'][file].remove(to_remove)
-    
 
     pth.write_text(json.dumps(data, indent=2, sort_keys=True))
 
