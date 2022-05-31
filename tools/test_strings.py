@@ -471,13 +471,15 @@ def find_issues(
 
 # --- Fixture
 # ----------------------------------------------------------------------------
-def checks():
+def _checks():
     paths = find_files(NAPARI_MODULE, SKIP_FOLDERS, SKIP_FILES)
     issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
     return issues, outdated_strings, trans_errors
 
 
-_checks = pytest.fixture(scope="module")(checks)
+@pytest.fixture(scope="module")
+def checks():
+    return _checks()
 
 
 # --- Tests
@@ -557,7 +559,7 @@ def test_translation_errors(checks):
 
 if __name__ == '__main__':
 
-    issues, outdated_strings, trans_errors = checks()
+    issues, outdated_strings, trans_errors = _checks()
     import json
     import pathlib
 
