@@ -233,6 +233,7 @@ We have thought carefully about these choices, but there are still some open que
 - Fix make-typestubs: use union for type hint instead of '|' (#4476)
 - [conda] rework how plugin install/remove subprocesses receive the parent environment (#4520)
 - [conda] revert default installation path (#4525)
+- Pin vispy to <0.11 to prevent future breakages (#4594)
 
 ## Other Pull Requests
 
