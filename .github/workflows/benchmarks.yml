@@ -76,6 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run ${{ matrix.benchmark-name }} benchmarks
+        id: run_benchmark
         env:
           # asv will checkout commits, which might contain LFS artifacts; ignore those errors since
           # they are probably just documentation PNGs not needed here anyway
@@ -87,41 +88,58 @@ jobs:
           asv machine --yes
 
           if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+            EVENT_NAME="PR #${{ github.event.pull_request.number }}"
             BASE_REF=${{ github.event.pull_request.base.sha }}
             CONTENDER_REF=${GITHUB_SHA}
             echo "Baseline:  ${BASE_REF} (${{ github.event.pull_request.base.label }})"
             echo "Contender: ${CONTENDER_REF} (${{ github.event.pull_request.head.label }})"
           elif [[ $GITHUB_EVENT_NAME == schedule ]]; then
+            EVENT_NAME="cronjob"
             BASE_REF="${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}"
             CONTENDER_REF="${GITHUB_SHA}"
             echo "Baseline:  ${BASE_REF} (${{ fromJSON(steps.latest_release.outputs.data).tag_name }})"
             echo "Contender: ${CONTENDER_REF} (current main)"
           elif [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+            EVENT_NAME="manual trigger"
             BASE_REF="${{ github.event.inputs.base_ref }}"
             CONTENDER_REF="${{ github.event.inputs.contender_ref }}"
             echo "Baseline:  ${BASE_REF} (workflow input)"
             echo "Contender: ${CONTENDER_REF} (workflow input)"
-          else
-            echo "Unsupported event!"
-            exit 1
           fi
+
+          echo "EVENT_NAME=$EVENT_NAME" >> $GITHUB_ENV
+          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
+          echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
 
           # Run benchmarks for current commit against base
           asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
-          | tee benchmarks.log
+          | tee asv_continuous.log
 
           # Report and export results for subsequent steps
-          if grep "Traceback \|failed\|PERFORMANCE DECREASED" benchmarks.log > /dev/null ; then
+          if grep "Traceback \|failed\|PERFORMANCE DECREASED" asv_continuous.log > /dev/null ; then
               exit 1
           fi
 
-      - name: Add instructions to artifact
+      - name: Add more info to artifact
         if: always()
-        run: cp benchmarks.log .asv/results/
+        run: |
+          # Copy the full `asv continuous` log
+          cp asv_continuous.log .asv/results/
+
+          # Add the message that might be posted as a comment or issue
+          cat <<EOF > .asv/results/message.txt
+          The benchmark run requested by $EVENT_NAME ($CONTENDER_REF vs $BASE_REF) has
+          finished with status `${{ steps.run_benchmark.outcome }}`. See the
+          [CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details.
+          EOF
+
+          if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+            echo "${{ github.event.pull_request.number }}" > .asv/results/pr_number
+          fi
 
       - uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: asv-benchmark-results-${{ github.sha }}-${{ matrix.benchmark-name }}
+          name: asv-benchmark-results-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
           path: .asv/results
