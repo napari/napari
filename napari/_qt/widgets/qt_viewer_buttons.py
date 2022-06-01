@@ -62,11 +62,14 @@ class QtLayerButtons(QFrame):
             from magicgui import magicgui
 
             class BackingData(Enum):
-                NumPy = ('NumPy',)
-                Dask = ('Dask',)
+                NumPy = 'NumPy'
+                Zarr = 'Zarr'
 
-            @magicgui(call_button="Create")
+            name_options = {'tooltip': "If blank, a name will be generated"}
+
+            @magicgui(call_button="Create", name=name_options)
             def _new_image_widget(
+                name: str = "",
                 dimensions: List[int] = [512, 512],
                 data_type: BackingData = BackingData.NumPy,
                 fill_value: float = 0.0,
@@ -76,18 +79,18 @@ class QtLayerButtons(QFrame):
                     import numpy as np
 
                     data = np.full(tuple(dimensions), fill_value)
-                elif data_type is BackingData.Dask:
-                    import dask
+                elif data_type is BackingData.Zarr:
+                    # Zarr is not shipped by default, but we can support it sometimes
+                    import zarr
 
-                    data = dask.array.from_delayed(fill_value, dimensions)
-                self.viewer.add_image(data=data)
+                    data = zarr.full(dimensions, fill_value)
 
-            widget = self.viewer.window.add_dock_widget(
-                _new_image_widget,
-                name="Add new image",
-                area='left',
-            )
-            _new_image_widget.called.connect(widget.destroyOnClose)
+                if name == "":
+                    name = None
+                self.viewer.add_image(name=name, data=data)
+
+            _new_image_widget.show()
+            _new_image_widget.called.connect(_new_image_widget.close)
 
         self.newImageButton = QtViewerPushButton(
             'new_image',
