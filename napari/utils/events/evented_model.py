@@ -351,7 +351,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         validate method because it won't return an instance of Self (expensive for evented models)
         """
         # no need to use fancy json here, so we just use pydantic's dict method which is faster
-        values = super().dict()
+        # also use non-evented version of object or pydantic validation fails
+        values = {
+            k: (v._uneventful() if isinstance(v, EventedMutable) else v)
+            for k, v in super().dict().items()
+        }
         values.update(new_values)
         values, _, error = validate_model(self.__class__, values)
         if error:
