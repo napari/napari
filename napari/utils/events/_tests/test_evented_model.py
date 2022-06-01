@@ -550,3 +550,19 @@ def test_events_stay_working():
     # Check that original callback still gets called with new zoom value
     simple_viewer.events.camera.assert_called_once()
     simple_viewer.events.camera.assert_called_with(zoom=4)
+
+
+def test_events_are_fired_only_if_changed():
+    class A(EventedModel):
+        ls: EventedList = [1, 2]
+
+    a = A()
+
+    # TODO: this currently fires a million events because EventedList
+    # adds/removes values one by one!
+    a.events.b = Mock(a.events.b)
+
+    a.ls = [3, 4]
+
+    a.events.b.assert_called_once()
+    a.events.b.assert_called_with(ls=[3, 4])
