@@ -54,25 +54,30 @@ class QtLayerButtons(QFrame):
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
 
-        def _Add_new_image(
-            dimensions: List[int] = [512, 512], fill_value: float = 0.0
+        def _new_image_widget(
+            dimensions: List[int] = [512, 512],
+            fill_value: float = 0.0,
         ) -> None:
             import numpy as np
 
             data = np.full(tuple(dimensions), fill_value)
             self.viewer.add_image(data=data)
 
+        def _spawn_new_image_widget() -> None:
+            from magicgui import magicgui
+
+            widget = magicgui(function=_new_image_widget, call_button="Create")
+            widget.called.connect(widget.close)
+            widget = self.viewer.window.add_dock_widget(
+                widget,
+                name="Add new image",
+                area='left',
+            )
+
         self.newImageButton = QtViewerPushButton(
             'new_image',
             trans._('New image layer'),
-            lambda: self.viewer.window.add_function_widget(
-                function=_Add_new_image,
-                magic_kwargs={
-                    'auto_call': False,
-                    'call_button': "Create",
-                    'layout': 'vertical',
-                },
-            ),
+            _spawn_new_image_widget,
         )
         self.newPointsButton = QtViewerPushButton(
             'new_points',
