@@ -526,6 +526,9 @@ deciding to use the currently proposed one. Namely:
 - [PR #4404](https://github.com/napari/napari/pull/4404) (Switch to a more declarative configuration
   for conda packaging)
 - [PR #4519](https://github.com/napari/napari/pull/4519) (Initial draft of this NAP and discussion)
+- [PR #4602](https://github.com/napari/napari/pull/4602) (PR to discuss the approval this NAP)
+- [Zulip thread](https://napari.zulipchat.com/#narrow/stream/322105-naps/topic/Proposal.20to.20accept.20NAP-2)
+  to discuss the approval of this NAP
 
 ## References and Footnotes
 
