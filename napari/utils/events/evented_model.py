@@ -2,7 +2,7 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union, get_origin
+from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
@@ -10,7 +10,6 @@ from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
 from ._protocols import EventedMutable
-from .containers import EventedDict, EventedList, EventedSet
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -200,22 +199,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         allow_mutation = 2
 
     def __init__(self, **kwargs):
+        # note that due to pydantic failing validation of sequence-like objects that inherit from
+        # typing.Sequence, defaults must NOT be EventedList!
         super().__init__(**kwargs)
-
-        # workaround to make sure evented mutables are initialized correctly
-        # even if validator does not return evented objects (which it shouldn't, for performance)
-        # TODO: this is some ugly stuff, surely we can do better
-        for name, field in self.__fields__.items():
-            typ = get_origin(field.outer_type_)
-            if (
-                typ is not None
-                and isinstance(typ, type)
-                and not isinstance(self.__dict__[name], typ)
-            ):
-                if issubclass(typ, (EventedList, EventedDict, EventedSet)):
-                    self.__dict__[name] = typ(self.__dict__[name])
-                elif issubclass(typ, EventedModel):
-                    self.__dict__[name] = typ(**self.__dict__[name])
 
         self._events.source = self
         # add event emitters for each field which is mutable
@@ -245,18 +231,24 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # if so, we use it instead.
         if name in self.__property_setters__:
             self.__property_setters__[name].fset(self, value)
-        elif name in self.__fields__ and (
-            self.__config__.allow_mutation == 2
-            or self.__fields__[name].field_info.allow_mutation == 2
-        ):
-            # do inplace_mutation if possible
-            field_value = getattr(self, name)
-            if isinstance(field_value, EventedMutable):
-                # we need to validate manually because we're not using pydantic's setattr
-                self._validate({name: value})
-                field_value._update_inplace(value)
-            else:
-                super().__setattr__(name, value)
+        elif name in self.__fields__:
+            if isinstance(value, EventedMutable):
+                # pydantic fails with "not a valid sequence" if the value is not passing
+                # isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
+                # which our evented lists/dicts fail because... generics?
+                value = value._uneventful()
+            if (
+                self.__config__.allow_mutation == 2
+                or self.__fields__[name].field_info.allow_mutation == 2
+            ):
+                # do inplace_mutation if possible
+                field_value = getattr(self, name)
+                if isinstance(field_value, EventedMutable):
+                    # we need to validate manually because we're not using pydantic's setattr
+                    self._validate({name: value})
+                    field_value._update_inplace(value)
+                else:
+                    super().__setattr__(name, value)
         else:
             super().__setattr__(name, value)
 
@@ -349,6 +341,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def _update_inplace(self, other):
         self.update(other)
+
+    def _uneventful(self):
+        return self.dict()
 
     def _validate(self, new_values):
         """

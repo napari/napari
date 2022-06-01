@@ -9,3 +9,6 @@ class EventedMutable(Protocol):
 
     def _update_inplace(self, other: Any) -> None:
         ...
+
+    def _uneventful(self) -> Any:
+        ...

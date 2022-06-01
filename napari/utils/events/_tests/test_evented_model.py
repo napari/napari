@@ -505,7 +505,7 @@ def test_nested_model():
         x: int = 1
 
     class M(EventedModel):
-        ls: EventedList = EventedList([1, 2, 3])
+        ls: EventedList = [1, 2, 3]
         n: N = N()
 
     m = M()
