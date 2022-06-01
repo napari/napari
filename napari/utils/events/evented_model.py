@@ -231,12 +231,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # if so, we use it instead.
         if name in self.__property_setters__:
             self.__property_setters__[name].fset(self, value)
-        elif name in self.__fields__:
+            return
+
+        if name in self.__fields__:
             if isinstance(value, EventedMutable):
                 # pydantic fails with "not a valid sequence" if the value is not passing
                 # isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
                 # which our evented lists/dicts fail because... generics?
                 value = value._uneventful()
+
             if (
                 self.__config__.allow_mutation == 2
                 or self.__fields__[name].field_info.allow_mutation == 2
@@ -247,10 +250,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                     # we need to validate manually because we're not using pydantic's setattr
                     value = self._validate({name: value})[name]
                     field_value._update_inplace(value)
-                else:
-                    super().__setattr__(name, value)
-        else:
-            super().__setattr__(name, value)
+                    return
+
+        super().__setattr__(name, value)
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
