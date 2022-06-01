@@ -282,7 +282,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ]
         )
 
-        self._position = (0,) * ndim
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -657,7 +656,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._dims_order = list(
                 reorder_after_dim_reduction(self._dims_order[-ndim:])
             )
-            self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
@@ -665,7 +663,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._dims_order = list(range(ndim - old_ndim)) + [
                 o + ndim - old_ndim for o in self._dims_order
             ]
-            self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._ndim = ndim
         if 'extent' in self.__dict__:
