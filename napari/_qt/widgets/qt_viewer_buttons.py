@@ -1,6 +1,6 @@
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
@@ -53,6 +53,27 @@ class QtLayerButtons(QFrame):
 
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
+
+        def _Add_new_image(
+            dimensions: List[int] = [512, 512], fill_value: float = 0.0
+        ) -> None:
+            import numpy as np
+
+            data = np.full(tuple(dimensions), fill_value)
+            self.viewer.add_image(data=data)
+
+        self.newImageButton = QtViewerPushButton(
+            'new_image',
+            trans._('New image layer'),
+            lambda: self.viewer.window.add_function_widget(
+                function=_Add_new_image,
+                magic_kwargs={
+                    'auto_call': False,
+                    'call_button': "Create",
+                    'layout': 'vertical',
+                },
+            ),
+        )
         self.newPointsButton = QtViewerPushButton(
             'new_points',
             trans._('New points layer'),
@@ -78,6 +99,7 @@ class QtLayerButtons(QFrame):
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.newImageButton)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)

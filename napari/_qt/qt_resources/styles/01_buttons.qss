@@ -19,6 +19,10 @@ QtViewerPushButton{
    
 }
 
+QtViewerPushButton[mode="new_image"] {
+  image: url(":/themes/{{ name }}/new_image.svg");
+}
+
 QtViewerPushButton[mode="new_points"] {
   image: url(":/themes/{{ name }}/new_points.svg");
 }
