@@ -321,14 +321,14 @@ class TextManager(EventedModel):
         # before actually making the update. This does not need to be a
         # deep copy because update will only try to reassign fields and
         # should not mutate any existing fields in-place.
-        # Avoid recursion because some fields are also models that may
+        # Avoid recursion (thanks to allow_mutation=1) because some fields are also models that may
         # not share field names/types (e.g. string).
         current_manager = self.copy()
-        current_manager.update(new_manager, recurse=False)
+        current_manager.update(new_manager)
 
         # If we got here, then there were no errors, so update for real.
         # Connected callbacks may raise errors, but those are bugs.
-        self.update(new_manager, recurse=False)
+        self.update(new_manager)
 
         # Some of the encodings may have changed, so ensure they encode new
         # values if needed.

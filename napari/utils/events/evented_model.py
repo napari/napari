@@ -245,7 +245,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 field_value = getattr(self, name)
                 if isinstance(field_value, EventedMutable):
                     # we need to validate manually because we're not using pydantic's setattr
-                    self._validate({name: value})
+                    value = self._validate({name: value})[name]
                     field_value._update_inplace(value)
                 else:
                     super().__setattr__(name, value)
@@ -286,17 +286,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def reset(self):
         """Reset the state of the model to default values."""
         for name, value in self._defaults.items():
-            if isinstance(value, EventedModel):
-                getattr(self, name).reset()
-            elif (
-                self.__config__.allow_mutation
-                and self.__fields__[name].field_info.allow_mutation
-            ):
-                setattr(self, name, value)
+            setattr(self, name, value)
 
-    def update(
-        self, values: Union['EventedModel', dict], recurse: bool = True
-    ) -> None:
+    def update(self, values: Union['EventedModel', dict]) -> None:
         """Update a model in place.
 
         Parameters
@@ -305,11 +297,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Values to update the model with. If an EventedModel is passed it is
             first converted to a dictionary. The keys of this dictionary must
             be found as attributes on the current model.
-        recurse : bool
-            If True, recursively update fields that are EventedModels.
-            Otherwise, just update the immediate fields of this EventedModel,
-            which is useful when the declared field type (e.g. ``Union``) can have
-            different realized types with different fields.
         """
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -325,16 +312,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # TODO: no validation here?
         with self.events.blocker() as block:
             for key, value in values.items():
-                field = getattr(self, key)
-                if isinstance(field, EventedModel) and recurse:
-                    field.update(value, recurse=recurse)
-                elif isinstance(field, EventedMutable) and (
-                    self.__config__.allow_mutation == 2
-                    or self.__fields__[key].field_info.allow_mutation == 2
-                ):
-                    field._update_inplace(value)
-                else:
-                    setattr(self, key, value)
+                setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
@@ -350,11 +328,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         validate values against the current model. This differst from pydantic's public
         validate method because it won't return an instance of Self (expensive for evented models)
         """
-        # no need to use fancy json here, so we just use pydantic's dict method which is faster
-        # also use non-evented version of object or pydantic validation fails
+        # use non-evented version of object or pydantic validation fails
         values = {
             k: (v._uneventful() if isinstance(v, EventedMutable) else v)
-            for k, v in super().dict().items()
+            for k, v in self.dict().items()
         }
         values.update(new_values)
         values, _, error = validate_model(self.__class__, values)

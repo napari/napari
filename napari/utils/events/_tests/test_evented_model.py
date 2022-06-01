@@ -257,7 +257,7 @@ def test_update_with_inner_model_union():
     original = Outer(y=1, z=Inner(w='a'))
     updated = Outer(y=2, z=AltInner(x='b'))
 
-    original.update(updated, recurse=False)
+    original.update(updated)
 
     assert original == updated
 
@@ -300,7 +300,7 @@ def test_update_with_inner_model_protocol():
     original = Outer(y=1, z=Inner(w='a'))
     updated = Outer(y=2, z=AltInner(x='b'))
 
-    original.update(updated, recurse=False)
+    original.update(updated)
 
     assert original == updated
 
