@@ -126,7 +126,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     @classmethod
     def validate(cls, v, field: ModelField):
         """Pydantic validator."""
-        if not isinstance(dict):
+        if not isinstance(v, dict):
             raise TypeError(
                 trans._(
                     'Value is not a valid dict: {value}',
@@ -137,10 +137,11 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         if not field.sub_fields:
             return cls(v)
 
+        # TODO: why is there only one subfield? Shouldn't dict have TWO?
         type_field = field.sub_fields[0]
         errors = []
-        for i, v_ in enumerate(v):
-            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+        for i, (k, v_) in enumerate(v.items()):
+            _valid_value, error = type_field.validate(k, {}, loc=f'[{i}]')
             if error:
                 errors.append(error)
         if errors:

@@ -189,8 +189,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
         # whether to validate field defaults (default: False)
-        # see https://github.com/napari/napari/pull/4138 before changing.
-        validate_all = False
+        validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
