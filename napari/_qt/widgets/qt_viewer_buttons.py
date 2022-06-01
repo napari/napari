@@ -38,6 +38,8 @@ class QtLayerButtons(QFrame):
     ----------
     deleteButton : QtDeleteButton
         Button to delete selected layers.
+    newImageButton : QtViewerPushButton
+        Button to add new Image layer.
     newLabelsButton : QtViewerPushButton
         Button to add new Label layer.
     newPointsButton : QtViewerPushButton
@@ -54,25 +56,38 @@ class QtLayerButtons(QFrame):
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
 
-        def _new_image_widget(
-            dimensions: List[int] = [512, 512],
-            fill_value: float = 0.0,
-        ) -> None:
-            import numpy as np
-
-            data = np.full(tuple(dimensions), fill_value)
-            self.viewer.add_image(data=data)
-
         def _spawn_new_image_widget() -> None:
+            from enum import Enum
+
             from magicgui import magicgui
 
-            widget = magicgui(function=_new_image_widget, call_button="Create")
-            widget.called.connect(widget.close)
+            class BackingData(Enum):
+                NumPy = ('NumPy',)
+                Dask = ('Dask',)
+
+            @magicgui(call_button="Create")
+            def _new_image_widget(
+                dimensions: List[int] = [512, 512],
+                data_type: BackingData = BackingData.NumPy,
+                fill_value: float = 0.0,
+            ) -> None:
+
+                if data_type is BackingData.NumPy:
+                    import numpy as np
+
+                    data = np.full(tuple(dimensions), fill_value)
+                elif data_type is BackingData.Dask:
+                    import dask
+
+                    data = dask.array.from_delayed(fill_value, dimensions)
+                self.viewer.add_image(data=data)
+
             widget = self.viewer.window.add_dock_widget(
-                widget,
+                _new_image_widget,
                 name="Add new image",
                 area='left',
             )
+            _new_image_widget.called.connect(widget.destroyOnClose)
 
         self.newImageButton = QtViewerPushButton(
             'new_image',
