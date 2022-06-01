@@ -1,7 +1,9 @@
 import warnings
+from enum import Enum
 from functools import wraps
 from typing import TYPE_CHECKING, List
 
+from magicgui import magicgui
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -24,6 +26,64 @@ from .qt_tooltip import QtToolTipLabel
 
 if TYPE_CHECKING:
     from ...viewer import Viewer
+
+
+def _spawn_new_image_widget(viewer: 'Viewer') -> None:
+    """
+    Creates a dialog to add an image to viewer.
+
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    """
+
+    # Define an enum for array type selection
+    class BackingData(Enum):
+        NumPy = 'NumPy'
+        Zarr = 'Zarr'
+
+    # Define the magicgui widget for parameter harvesting
+    @magicgui(
+        call_button="Create",
+        name={'tooltip': "If blank, a name will be generated"},
+        dimensions={'tooltip': "The size of the new image"},
+        array_type={'tooltip': "The backing data array implementation"},
+        fill_value={'tooltip': "Starting value for all pixels"},
+    )
+    def _new_image_widget(
+        name: str = "",
+        dimensions: List[int] = [512, 512],
+        array_type: BackingData = BackingData.NumPy,
+        fill_value: float = 0.0,
+    ) -> None:
+
+        if array_type is BackingData.NumPy:
+            import numpy as np
+
+            data = np.full(tuple(dimensions), fill_value)
+
+        elif array_type is BackingData.Zarr:
+            # Zarr is not shipped by default, but we can try to support it
+            import zarr
+
+            data = zarr.full(dimensions, fill_value)
+
+        # give the data array to the viewer.
+        # Replace blank names with None so the Image class generates a name
+        viewer.add_image(
+            name=name if len(name) else None,
+            data=data,
+        )
+
+    # Once called (i.e. "Create"  is clicked), the widget will be destroyed
+    # This means one click of "New image layer" will produce exactly one image,
+    # Which is consistent with the other new layer buttons.
+    _new_image_widget.called.connect(_new_image_widget.close)
+
+    # Show the widget (as a modal dialog, outside of the napari window)
+    _new_image_widget.show()
 
 
 class QtLayerButtons(QFrame):
@@ -56,46 +116,10 @@ class QtLayerButtons(QFrame):
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
 
-        def _spawn_new_image_widget() -> None:
-            from enum import Enum
-
-            from magicgui import magicgui
-
-            class BackingData(Enum):
-                NumPy = 'NumPy'
-                Zarr = 'Zarr'
-
-            name_options = {'tooltip': "If blank, a name will be generated"}
-
-            @magicgui(call_button="Create", name=name_options)
-            def _new_image_widget(
-                name: str = "",
-                dimensions: List[int] = [512, 512],
-                data_type: BackingData = BackingData.NumPy,
-                fill_value: float = 0.0,
-            ) -> None:
-
-                if data_type is BackingData.NumPy:
-                    import numpy as np
-
-                    data = np.full(tuple(dimensions), fill_value)
-                elif data_type is BackingData.Zarr:
-                    # Zarr is not shipped by default, but we can support it sometimes
-                    import zarr
-
-                    data = zarr.full(dimensions, fill_value)
-
-                if name == "":
-                    name = None
-                self.viewer.add_image(name=name, data=data)
-
-            _new_image_widget.show()
-            _new_image_widget.called.connect(_new_image_widget.close)
-
         self.newImageButton = QtViewerPushButton(
             'new_image',
             trans._('New image layer'),
-            _spawn_new_image_widget,
+            lambda: _spawn_new_image_widget(self.viewer),
         )
         self.newPointsButton = QtViewerPushButton(
             'new_points',
@@ -105,7 +129,6 @@ class QtLayerButtons(QFrame):
                 scale=self.viewer.layers.extent.step,
             ),
         )
-
         self.newShapesButton = QtViewerPushButton(
             'new_shapes',
             trans._('New shapes layer'),
