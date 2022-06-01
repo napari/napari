@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set, Union, get_origin
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils
+from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
@@ -189,6 +189,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
         # whether to validate field defaults (default: False)
+        # see https://github.com/napari/napari/pull/4138 before changing.
         validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
@@ -251,8 +252,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # do inplace_mutation if possible
             field_value = getattr(self, name)
             if isinstance(field_value, EventedMutable):
-                # WARNING: NO validation happens here! This means we MUST disallow
-                # inplace update where the type of the field can change (e.g: text and color managers)
+                # we need to validate manually because we're not using pydantic's setattr
+                self._validate({name: value})
                 field_value._update_inplace(value)
             else:
                 super().__setattr__(name, value)
@@ -329,6 +330,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 )
             )
 
+        # TODO: no validation here?
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
@@ -338,7 +340,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                     self.__config__.allow_mutation == 2
                     or self.__fields__[key].field_info.allow_mutation == 2
                 ):
-                    field._inplace_update(value)
+                    field._update_inplace(value)
                 else:
                     setattr(self, key, value)
 
@@ -347,6 +349,19 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def _update_inplace(self, other):
         self.update(other)
+
+    def _validate(self, new_values):
+        """
+        validate values against the current model. This differst from pydantic's public
+        validate method because it won't return an instance of Self (expensive for evented models)
+        """
+        # no need to use fancy json here, so we just use pydantic's dict method which is faster
+        values = super().dict()
+        values.update(new_values)
+        values, _, error = validate_model(self.__class__, values)
+        if error:
+            raise error
+        return {k: values[k] for k in new_values}
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
