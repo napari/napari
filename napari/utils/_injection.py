@@ -1,30 +1,35 @@
 from functools import wraps
 from inspect import isgeneratorfunction, signature
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, Optional, Type, TypeVar
 
 from typing_extensions import get_type_hints
 
-if TYPE_CHECKING:
-    from ..layers import Layer
+from .. import components, layers, viewer
+from ..viewer import current_viewer
 
 T = TypeVar("T")
+_NULL = object()
 
 
-def _get_active_layer() -> Optional['Layer']:
-    from ..viewer import current_viewer
-
-    if viewer := current_viewer():
-        return viewer.layers.selection.active
+def _get_active_layer() -> Optional[layers.Layer]:
+    return v.layers.selection.active if (v := current_viewer()) else None
 
 
-def _get_active_layer_list() -> Optional['Layer']:
-    from ..viewer import current_viewer
-
-    if viewer := current_viewer():
-        return viewer.layers
+def _get_active_layer_list() -> Optional[components.LayerList]:
+    return v.layers if (v := current_viewer()) else None
 
 
-def get_accessor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
+# registry of Type -> "accessor function"
+# where each value is a function that is capable
+# of retrieving an instance of its corresponding key type.
+_ACCESSORS: Dict[Type, Callable[..., Optional[object]]] = {
+    layers.Layer: _get_active_layer,
+    viewer.Viewer: current_viewer,
+    components.LayerList: _get_active_layer_list,
+}
+
+
+def get_accessor(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
     """Return object accessor function given a type.
 
     An object accessor is a function that returns an instance of a
@@ -35,23 +40,67 @@ def get_accessor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
     `inject_napari_dependencies`, allows us to inject current napari objects
     into functions based on type hints.
     """
-    from ..components import LayerList
-    from ..layers import Layer
-    from ..viewer import Viewer, current_viewer
+    if type_ in _ACCESSORS:
+        return _ACCESSORS[type_]
 
     if isinstance(type_, type):
-        if issubclass(type_, Layer):
-            return _get_active_layer
-        if issubclass(type_, Viewer):
-            return current_viewer
-        if issubclass(type_, LayerList):
-            return _get_active_layer_list
+        for key, val in _ACCESSORS.items():
+            if issubclass(type_, key):
+                return val  # type: ignore [return-type]
+    return None
+
+
+class set_accessor:
+    """Set accessor(s) for given type(s).
+
+    "Accessors" are functions that can retrieve an instance of a given type.
+    For instance, `napari.viewer.current_viewer` is a function that can
+    retrieve an instance of `napari.Viewer`.
+
+    This is a class that behaves as a function or a context manager, that
+    allows one to set an accessor function for a given type.
+
+    Parameters
+    ----------
+    mapping : Dict[Type[T], Callable[..., Optional[T]]]
+        a map of type -> accessor function, where each value is a function
+        that is capable of retrieving an instance of the associated key/type.
+    clobber : bool, optional
+        Whether to override any existing accessor function, by default False.
+
+    Raises
+    ------
+    ValueError
+        if clobber is `False` and one of the keys in `mapping` is already
+        registered.
+    """
+
+    def __init__(
+        self, mapping: Dict[Type[T], Callable[..., Optional[T]]], clobber=False
+    ):
+        self._before = {}
+        for k in mapping:
+            if k in _ACCESSORS and not clobber:
+                raise ValueError(
+                    f"Class {k} already has an accessor and clobber is False"
+                )
+            self._before[k] = _ACCESSORS.get(k, _NULL)
+        _ACCESSORS.update(mapping)
+
+    def __enter__(self):
+        return None
+
+    def __exit__(self, *_):
+        for key, val in self._before.items():
+            if val is _NULL:
+                del _ACCESSORS[key]
+            else:
+                _ACCESSORS[key] = val
 
 
 def napari_type_hints(obj: Any) -> Dict[str, Any]:
+    """variant of get_type_hints with napari namespace awareness."""
     import napari
-
-    from .. import components, layers, viewer
 
     return get_type_hints(
         obj,
@@ -59,7 +108,7 @@ def napari_type_hints(obj: Any) -> Dict[str, Any]:
             'napari': napari,
             **viewer.__dict__,
             **layers.__dict__,
-            'LayerList': components.LayerList,
+            **components.__dict__,
         },
     )
 
@@ -101,18 +150,20 @@ def inject_napari_dependencies(func: Callable) -> Callable:
     # get type hints for the object, with forward refs of napari hints resolved
     hints = napari_type_hints(func)
     # get accessor functions for each required parameter
-    accessors = {}
+    required = {}
     for name, hint in hints.items():
         if sig.parameters[name].default is sig.empty:
-            accessor = get_accessor(hint)
-            if accessor:
-                accessors[name] = accessor
+            required[name] = hint
 
     @wraps(func)
     def _exec(*args, **kwargs):
         # when we call the function, we call the accessor functions to get
         # the current napari objects
-        _kwargs = {k: accessor() for k, accessor in accessors.items()}
+        _kwargs = {}
+        for n, hint in required.items():
+            if accessor := get_accessor(hint):
+                _kwargs[n] = accessor()
+
         # but we use bind_partial to allow the caller to still provide
         # their own objects if desired.
         # (i.e. the injected deps are only used if needed)
@@ -133,7 +184,7 @@ def inject_napari_dependencies(func: Callable) -> Callable:
     # update the signature
     p = [
         p.replace(default=None, annotation=Optional[hints[p.name]])
-        if p.name in accessors and p.default is p.empty
+        if p.name in required
         else p
         for p in sig.parameters.values()
     ]

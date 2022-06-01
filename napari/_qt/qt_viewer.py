@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import traceback
 import warnings
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
 
@@ -729,7 +730,14 @@ class QtViewer(QSplitter):
             self._qt_open([folder], stack=False)
             update_open_history(folder)
 
-    def _qt_open(self, filenames: List[str], stack: bool):
+    def _qt_open(
+        self,
+        filenames: List[str],
+        stack: bool,
+        plugin: str = None,
+        layer_type: str = None,
+        **kwargs,
+    ):
         """Open files, potentially popping reader dialog for plugin selection.
 
         Call ViewerModel._open_or_raise_error and catch errors that could
@@ -743,11 +751,25 @@ class QtViewer(QSplitter):
             whether to stack files or not
         """
         try:
-            self.viewer._open_or_raise_error(filenames, stack=stack)
+            self.viewer.open(
+                filenames,
+                stack=stack,
+                plugin=plugin,
+                layer_type=layer_type,
+                **kwargs,
+            )
         except ReaderPluginError as e:
-            handle_gui_reading(filenames, self, stack, e.reader_plugin, e)
+            handle_gui_reading(
+                filenames,
+                self,
+                stack,
+                e.reader_plugin,
+                e,
+                layer_type=layer_type,
+                **kwargs,
+            )
         except MultipleReaderError:
-            handle_gui_reading(filenames, self, stack)
+            handle_gui_reading(filenames, self, stack, **kwargs)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
@@ -1070,7 +1092,8 @@ class QtViewer(QSplitter):
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
-                filenames.append(url.toLocalFile())
+                # directories get a trailing "/", Path conversion removes it
+                filenames.append(str(Path(url.toLocalFile())))
             else:
                 filenames.append(url.toString())
 

@@ -1413,3 +1413,15 @@ def test_labels_features_event():
     layer.features = {'some_feature': []}
 
     assert event_emitted
+
+
+class TestLabels:
+    @staticmethod
+    def get_objects():
+        return [(Labels(np.zeros((10, 10), dtype=np.uint8)))]
+
+    def test_events_defined(self, event_define_check, obj):
+        event_define_check(
+            obj,
+            {"seed", "num_colors", "show_selected_label", "color"},
+        )

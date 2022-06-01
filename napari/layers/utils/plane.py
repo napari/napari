@@ -185,7 +185,7 @@ class ClippingPlaneList(SelectableEventedList):
         ----------
         center : ArrayLike
             (3,) array, coordinates of the center of the box
-        extents : ArrayLike
+        dimensions : ArrayLike
             (3,) array, dimensions of the box
 
         Returns

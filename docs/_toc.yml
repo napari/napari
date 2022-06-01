@@ -103,6 +103,8 @@ subtrees:
             - maxdepth: 1
               entries:
               - file: naps/0-nap-process
+              - file: naps/1-institutional-funding-partners
+              - file: naps/2-conda-based-packaging
           - file: developers/documentation/index
             subtrees:
             - entries:
@@ -117,6 +119,7 @@ subtrees:
       - file: release/index
         subtrees:
         - entries:
+          - file: release/release_0_4_16
           - file: release/release_0_4_15
           - file: release/release_0_4_14
           - file: release/release_0_4_13
