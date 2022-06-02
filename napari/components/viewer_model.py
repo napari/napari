@@ -331,6 +331,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer._slice_dims(
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
+        self._update_status_bar_from_cursor()
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
