@@ -379,19 +379,21 @@ class EventedList(TypedMutableSequence[_T]):
                 )
             )
 
-        if field.key_field:
-            validated = []
-            errors = []
-            for i, v in enumerate(value):
-                valid, error = field.key_field.validate(v, {}, loc=f'[{i}]')
-                validated.append(valid)
-                if error:
-                    errors.append(error)
-            if errors:
-                from pydantic import ValidationError
+        if not field.key_field:
+            return cls(value)
 
-                raise ValidationError(errors, cls)  # type: ignore
-            return cls(validated)
+        validated = []
+        errors = []
+        for i, v in enumerate(value):
+            valid, error = field.key_field.validate(v, {}, loc=f'[{i}]')
+            validated.append(valid)
+            if error:
+                errors.append(error)
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(validated)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._list)})"

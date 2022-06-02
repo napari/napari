@@ -118,18 +118,24 @@ class EventedMetaclass(main.ModelMetaclass):
             # hijacking the key_field (cannot make new ones because of __slots__)
             # which is otherwise unused
             if f.type_ is EventedList:
-                f.key_field = f._create_sub_type(
-                    get_args(annotations[n])[0], 'i_' + f.name
-                )
+                hint = get_args(annotations[n])
+                if hint:
+                    f.key_field = f._create_sub_type(
+                        get_args(annotations[n])[0], 'i_' + f.name
+                    )
             if f.type_ is EventedDict:
-                f.key_field = [
-                    f._create_sub_type(
-                        get_args(annotations[n])[0], 'k_' + f.name
-                    ),
-                    f._create_sub_type(
-                        get_args(annotations[n])[1], 'i_' + f.name
-                    ),
-                ]
+                hint = get_args(annotations[n])
+                if hint:
+                    if len(hint) != 2:
+                        raise TypeError('Dict annotation must be a 2-tuple')
+                    f.key_field = [
+                        f._create_sub_type(
+                            get_args(annotations[n])[0], 'k_' + f.name
+                        ),
+                        f._create_sub_type(
+                            get_args(annotations[n])[1], 'i_' + f.name
+                        ),
+                    ]
 
         # check for @_.setters defined on the class, so we can allow them
         # in EventedModel.__setattr__

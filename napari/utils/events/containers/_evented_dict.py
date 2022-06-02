@@ -126,26 +126,26 @@ class EventedDict(TypedMutableMapping[_K, _T]):
                 )
             )
 
-        if field.key_field:
-            validated = {}
-            errors = []
-            for i, (k, v) in enumerate(value.items()):
-                valid_key, error = field.key_field[0].validate(
-                    k, {}, loc=f'[{i}]'
-                )
-                if error:
-                    errors.append(error)
-                valid_item, error = field.key_field[1].validate(
-                    v, {}, loc=f'[{i}]'
-                )
-                if error:
-                    errors.append(error)
-                validated[valid_key] = valid_item
-            if errors:
-                from pydantic import ValidationError
+        if not field.key_field:
+            return cls(value)
 
-                raise ValidationError(errors, cls)  # type: ignore
-            return cls(validated)
+        validated = {}
+        errors = []
+        for i, (k, v) in enumerate(value.items()):
+            valid_key, error = field.key_field[0].validate(k, {}, loc=f'[{i}]')
+            if error:
+                errors.append(error)
+            valid_item, error = field.key_field[1].validate(
+                v, {}, loc=f'[{i}]'
+            )
+            if error:
+                errors.append(error)
+            validated[valid_key] = valid_item
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(validated)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._dict)})"
