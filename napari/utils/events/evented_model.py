@@ -2,13 +2,23 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Set,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
+from .containers import EventedDict, EventedList
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -78,6 +88,16 @@ class EventedMetaclass(main.ModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
+        # pydantic fails in a number of ways with annotated generics
+        # (subclasses of Sequence break, __get_validators__ are ignored, ...)
+        # in order to preserve type hints for pypy but prevent issues with
+        # pydantic, we replace parametrized generics with their origin
+        annotations = namespace.get('__annotations__', {}).copy()
+        for k, v in annotations.items():
+            origin = get_origin(v)
+            if origin in (EventedList, EventedDict):
+                namespace['__annotations__'][k] = origin
+
         with no_class_attributes():
             cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {}
@@ -94,6 +114,23 @@ class EventedMetaclass(main.ModelMetaclass):
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
                 EventedModel.__config__.json_encoders[f.type_] = encoder
+            # we now reinsert type hints for our own validations
+            # hijacking the key_field (cannot make new ones because of __slots__)
+            # which is otherwise unused
+            if f.type_ is EventedList:
+                f.key_field = f._create_sub_type(
+                    get_args(annotations[n])[0], 'i_' + f.name
+                )
+            if f.type_ is EventedDict:
+                f.key_field = [
+                    f._create_sub_type(
+                        get_args(annotations[n])[0], 'k_' + f.name
+                    ),
+                    f._create_sub_type(
+                        get_args(annotations[n])[1], 'i_' + f.name
+                    ),
+                ]
+
         # check for @_.setters defined on the class, so we can allow them
         # in EventedModel.__setattr__
         cls.__property_setters__ = {}

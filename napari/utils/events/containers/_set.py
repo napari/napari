@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import Any, Collection, Iterable, Iterator, MutableSet, TypeVar
 
 from ....utils.events import EmitterGroup
 from ....utils.translations import trans
 
 _T = TypeVar("_T")
-
-if TYPE_CHECKING:
-    from pydantic.fields import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -160,32 +157,33 @@ class EventedSet(MutableSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v, field: ModelField):
+    def validate(cls, value, field):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
-
-        if not sequence_like(v):
+        if not isinstance(value, Collection):
             raise TypeError(
                 trans._(
-                    'Value is not a valid sequence: {value}',
+                    'Value is not a valid collection: {value}',
                     deferred=True,
-                    value=v,
+                    value=value,
                 )
             )
         if not field.sub_fields:
-            return cls(v)
+            return cls(value)
 
+        # set does not validate field type in pydantic
         type_field = field.sub_fields[0]
+        validated = []
         errors = []
-        for i, v_ in enumerate(v):
-            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+        for i, v in enumerate(value):
+            valid, error = type_field.validate(v, {}, loc=f'[{i}]')
+            validated.append(valid)
             if error:
                 errors.append(error)
         if errors:
             from pydantic import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore
-        return cls(v)
+        return cls(validated)
 
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""

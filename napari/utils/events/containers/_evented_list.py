@@ -23,7 +23,17 @@ cover this in test_evented_list.py)
 """
 
 import logging
-from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
+from typing import (
+    Callable,
+    Collection,
+    Dict,
+    Iterable,
+    List,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from ...translations import trans
 from ..event import EmitterGroup, Event
@@ -352,3 +362,36 @@ class EventedList(TypedMutableSequence[_T]):
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value, field):
+        """Pydantic validator."""
+        if not isinstance(value, Collection):
+            raise TypeError(
+                trans._(
+                    'Value is not a valid collection: {value}',
+                    deferred=True,
+                    value=value,
+                )
+            )
+
+        if field.key_field:
+            validated = []
+            errors = []
+            for i, v in enumerate(value):
+                valid, error = field.key_field.validate(v, {}, loc=f'[{i}]')
+                validated.append(valid)
+                if error:
+                    errors.append(error)
+            if errors:
+                from pydantic import ValidationError
+
+                raise ValidationError(errors, cls)  # type: ignore
+            return cls(validated)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({repr(self._list)})"
