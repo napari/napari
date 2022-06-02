@@ -386,9 +386,8 @@ class EventedList(TypedMutableSequence[_T]):
     @classmethod
     def validate(cls, v, field: ModelField):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
 
-        if not sequence_like(v):
+        if not isinstance(v, Sequence):
             raise TypeError(
                 trans._(
                     'Value is not a valid sequence: {value}',

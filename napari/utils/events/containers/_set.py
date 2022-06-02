@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Iterable,
+    Iterator,
+    MutableSet,
+    TypeVar,
+)
 
 from ....utils.events import EmitterGroup
 from ....utils.translations import trans
@@ -162,12 +170,11 @@ class EventedSet(MutableSet[_T]):
     @classmethod
     def validate(cls, v, field: ModelField):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
 
-        if not sequence_like(v):
+        if not isinstance(v, Collection):
             raise TypeError(
                 trans._(
-                    'Value is not a valid sequence: {value}',
+                    'Value is not a valid collection: {value}',
                     deferred=True,
                     value=v,
                 )

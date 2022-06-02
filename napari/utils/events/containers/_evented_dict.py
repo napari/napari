@@ -1,7 +1,7 @@
 """MutableMapping that emits events when altered."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
+from typing import TYPE_CHECKING, Dict, Mapping, Sequence, Type, Union
 
 from ....utils.translations import trans
 from ..event import EmitterGroup, Event
@@ -135,7 +135,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     @classmethod
     def validate(cls, v, field: ModelField):
         """Pydantic validator."""
-        if not isinstance(v, dict):
+        if not isinstance(v, Dict):
             raise TypeError(
                 trans._(
                     'Value is not a valid dict: {value}',

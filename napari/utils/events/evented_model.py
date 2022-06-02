@@ -9,8 +9,8 @@ from pydantic import BaseModel, PrivateAttr, main, utils, validate_model
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
-from ._protocols import EventedMutable
 from .event import EmitterGroup, Event
+from .types import EventedMutable
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
