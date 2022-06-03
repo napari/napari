@@ -82,13 +82,11 @@ class NotebookScreenshot:
                     'will be stripped altogether without lxml.'
                 )
                 return None
-            alt_text = html.unescape(
-                str(alt_text)
-            )  # cleaner won't recognize unescaped script tags
+            # cleaner won't recognize unescaped script tags
+            alt_text = html.escape(str(alt_text))
             cleaner = Cleaner()
             doc = document_fromstring(alt_text)
             alt_text = cleaner.clean_html(doc).text_content()
-            # alt_text = html.escape(alt_text)
             if alt_text == "":
                 alt_text = None
         return alt_text
@@ -120,9 +118,7 @@ class NotebookScreenshot:
         if self.alt_text is None:
             html_output = f'<img src="{url}"></img>'
         else:
-            html_output = (
-                f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
-            )
+            html_output = f'<img src="{url}" alt="{self.alt_text}"></img>'
         return html_output
 
 

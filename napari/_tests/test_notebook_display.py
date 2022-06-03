@@ -17,7 +17,7 @@ from napari.utils import nbscreenshot
         ),  # noqa: W605
         ('<>?:"{}|_+', '&lt;&gt;?:&quot;{}|_+'),  # ASCII punctuation 2
         ("!@#$%^&*()`~", '!@#$%^&amp;*()`~'),  # ASCII punctuation 3
-        # # Emjoi
+        # # Emoji
         ("😍", "😍"),  # emoji 1
         ("👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️", "👨‍🦰 👨🏿‍🦰 👨‍🦱 👨🏿‍🦱 🦹🏿‍♂️"),  # emoji 2
         (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon  # noqa: W605
