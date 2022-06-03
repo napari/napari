@@ -11,7 +11,13 @@ from dask.delayed import Delayed
 from pydantic import Field
 from typing_extensions import Protocol, runtime_checkable
 
-from napari.utils.events import EmitterGroup, EventedModel
+from napari.utils.events import (
+    EmitterGroup,
+    EventedDict,
+    EventedList,
+    EventedModel,
+    EventedSet,
+)
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 
@@ -490,3 +496,44 @@ def test_evented_model_with_property_setters_events():
     t.events.c.assert_called_with(value=[5, 20])
     t.events.b.assert_not_called()
     assert t.c == [5, 20]
+
+
+def test_validate_evented_collections():
+    class M(EventedModel):
+        ls: EventedList
+        s: EventedSet
+        d: EventedDict
+
+    m = M(ls=[1, 2, 3], s={1, 2}, d={1: 2})
+
+    assert isinstance(m.ls, EventedList)
+    assert isinstance(m.s, EventedSet)
+    assert isinstance(m.d, EventedDict)
+
+    assert m.ls == [1, 2, 3]
+    assert all(isinstance(el, int) for el in m.ls)
+    assert m.s == {1, 2}
+    assert all(isinstance(el, int) for el in m.ls)
+    assert m.d == {1: 2}
+    assert all(isinstance(el, int) for el in m.d)
+
+
+def test_validate_parametrized_evented_collections():
+    class M(EventedModel):
+        ls: EventedList[float]
+        s: EventedSet[str]
+        d: EventedDict[float, str]
+
+    m = M(ls=[1, 2, 3], s={1, 2}, d={1: 2})
+
+    assert isinstance(m.ls, EventedList)
+    assert isinstance(m.s, EventedSet)
+    assert isinstance(m.d, EventedDict)
+
+    assert m.ls == [1.0, 2.0, 3.0]
+    assert all(isinstance(el, float) for el in m.ls)
+    assert m.s == {'1', '2'}
+    assert all(isinstance(el, str) for el in m.s)
+    assert m.d == {1.0: '2'}
+    assert all(isinstance(el, float) for el in m.d.keys())
+    assert all(isinstance(el, str) for el in m.d.values())
