@@ -9,7 +9,6 @@ from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
-from .containers import EventedDict, EventedList, EventedSet
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -208,16 +207,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             **dict.fromkeys(field_events + list(self.__property_setters__))
         )
 
-        for name in self.__fields__:
-            child = getattr(self, name)
-            if isinstance(
-                child, (EventedModel, EventedDict, EventedList, EventedSet)
-            ):
-                # while seemingly redundant, this next line is very important to maintain
-                # correct sources; see https://github.com/napari/napari/pull/4138
-                # we solve it by re-setting the source after initial validation, which allows
-                # us to use `validate_all = True`
-                child.events.source = child
+        # while seemingly redundant, this next line is very important to maintain
+        # correct sources; see https://github.com/napari/napari/pull/4138
+        # we solve it by re-setting the source after initial validation, which allows
+        # us to use `validate_all = True`
+        self._reset_event_source()
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
@@ -254,6 +248,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @property
     def events(self) -> EmitterGroup:
         return self._events
+
+    def _reset_event_source(self):
+        """
+        set the event sources of self and all the children to the correct values
+        """
+        # events are all messed up due to objects being probably
+        # recreated arbitrarily during validation
+        self.events.source = self
+        for name in self.__fields__:
+            child = getattr(self, name)
+            if isinstance(child, EventedModel):
+                # TODO: this isinstance check should be EventedMutables in the future
+                child._reset_event_source()
+            elif name in self.events.emitters:
+                getattr(self.events, name).source = self
 
     @property
     def _defaults(self):
