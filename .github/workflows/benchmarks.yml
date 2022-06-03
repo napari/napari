@@ -30,6 +30,7 @@ env:
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
   # -a timeout=300 -> override timeout attribute (defaults to 60s) to allow slow tests to run
+  # see https://asv.readthedocs.io/en/stable/commands.html#asv-continuous for more details!
 
 jobs:
   benchmark:
@@ -44,6 +45,9 @@ jobs:
             asv-command: continuous
             selection-regex: "^benchmark_qt_.*"
             runs-on: macos-latest
+            # Qt tests run on macOS to avoid using Xvfb business
+            # xvfb makes everything run, but some tests segfault :shrug:
+            # Fortunately, macOS graphics stack does not need xvfb!
           - benchmark-name: non-Qt
             asv-command: continuous
             selection-regex: "^benchmark_(?!qt_).*"
