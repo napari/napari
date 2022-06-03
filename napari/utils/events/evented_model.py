@@ -95,7 +95,9 @@ class EventedMetaclass(main.ModelMetaclass):
         annotations = namespace.get('__annotations__', {}).copy()
         for k, v in annotations.items():
             origin = get_origin(v)
-            if origin in (EventedList, EventedDict):
+            if isinstance(origin, type) and issubclass(
+                origin, (EventedList, EventedDict)
+            ):
                 namespace['__annotations__'][k] = origin
 
         with no_class_attributes():
