@@ -4,7 +4,7 @@
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
 
-__version__ = '0.5.2'
+__version__ = '0.6.0'
 
 import sys
 import platform

@@ -10,6 +10,8 @@ ThumbnailRole = Qt.UserRole + 2
 class QtLayerListModel(QtListModel[Layer]):
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
+        if not index.isValid():
+            return None
         layer = self.getItem(index)
         if role == Qt.DisplayRole:  # used for item text
             return layer.name
