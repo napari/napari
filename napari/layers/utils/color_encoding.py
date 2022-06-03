@@ -85,7 +85,6 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
         ValidationError
             If the value cannot be parsed into a ColorEncoding.
         """
-
         if isinstance(value, ColorEncoding):
             return value
         if isinstance(value, dict):
@@ -100,24 +99,17 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
                 value,
             )
         try:
-            # We are undecided on how we want to handle strings,
-            # so explicitly prevent them for now.
-            if not isinstance(value, str):
-                color_array = ColorArray.validate_type(value)
-                if color_array.shape[0] == 1:
-                    return ConstantColorEncoding(constant=value)
-                return ManualColorEncoding(
-                    array=color_array, default=DEFAULT_COLOR
-                )
+            color_array = ColorArray.validate_type(value)
         except (ValueError, AttributeError, KeyError):
-            # Fall through to type error below.
-            pass
-        raise TypeError(
-            trans._(
-                'value should be a ColorEncoding, a dict, a non-string color, a sequence of colors, or None',
-                deferred=True,
+            raise TypeError(
+                trans._(
+                    'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
+                    deferred=True,
+                )
             )
-        )
+        if color_array.shape[0] == 1:
+            return ConstantColorEncoding(constant=value)
+        return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
 
 
 class ConstantColorEncoding(_ConstantStyleEncoding[ColorValue, ColorArray]):

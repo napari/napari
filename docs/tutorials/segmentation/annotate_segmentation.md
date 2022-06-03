@@ -115,7 +115,7 @@ bbox_rects = make_bbox([properties[f'bbox-{i}'] for i in range(4)])
 text_parameters = {
     'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
-    'color': {'constant': 'green'},
+    'color': 'green',
     'anchor': 'upper_left',
     'translation': [-3, 0],
 }
@@ -349,7 +349,7 @@ Each bounding box can be annotated with text drawn from the layer `properties`. 
 text_parameters = {
     'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
-    'color': {'constant': 'green'},
+    'color': 'green',
     'anchor': 'upper_left',
     'translation': [-3, 0]
 }
@@ -364,7 +364,7 @@ label: 1
 circ: 0.83
 ```
 
-We set the text to green (`'color': {'constant': 'green'}`) with a font size of 12 (`'size': 12`). We specify that the text will be anchored in the upper left hand corner of the bounding box (`'anchor': 'upper_left'`). The valid anchors are: `'upper_right'`, `'upper_left'`, `'lower_right'`, `'lower_left'`, and `'center'`. We then offset the text from the anchor in order to make sure it does not overlap with the bounding box edge (`'translation': [-3, 0]`). The translation is relative to the anchor point. The first dimension is the vertical axis on the canvas (negative is "up") and the second dimension is along the horizontal axis of the canvas.
+We set the text to green (`'color': 'green'`) with a font size of 12 (`'size': 12`). We specify that the text will be anchored in the upper left hand corner of the bounding box (`'anchor': 'upper_left'`). The valid anchors are: `'upper_right'`, `'upper_left'`, `'lower_right'`, `'lower_left'`, and `'center'`. We then offset the text from the anchor in order to make sure it does not overlap with the bounding box edge (`'translation': [-3, 0]`). The translation is relative to the anchor point. The first dimension is the vertical axis on the canvas (negative is "up") and the second dimension is along the horizontal axis of the canvas.
 
 All together, the visualization code is:
 
@@ -379,7 +379,7 @@ properties = {
 text_kwargs = {
     'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
-    'color': {'constant': 'green'},
+    'color': 'green',
     'anchor': 'upper_left',
     'translation': [-3, 0]
 }

@@ -163,7 +163,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'string': 'point_type', 'color': {'constant': 'red'}}
+    text_kwargs = {'string': 'point_type', 'color': 'red'}
     layer = Points(
         property_choices=default_properties,
         text=text_kwargs,
@@ -2257,7 +2257,7 @@ def test_text_param_and_setter_are_consistent():
     properties = {
         'accepted': np.random.choice([True, False], (5,)),
     }
-    text = {'string': 'accepted', 'color': {'constant': 'black'}}
+    text = {'string': 'accepted', 'color': 'black'}
 
     points_init = Points(data, properties=properties, text=text)
 

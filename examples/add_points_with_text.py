@@ -27,7 +27,7 @@ face_color_cycle = ['blue', 'green']
 text = {
     'string': 'Confidence is {confidence:.2f}',
     'size': 20,
-    'color': {'constant': 'green'},
+    'color': 'green',
     'translation': np.array([-30, 0]),
 }
 

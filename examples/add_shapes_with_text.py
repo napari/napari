@@ -34,7 +34,7 @@ text = {
     'anchor': 'upper_left',
     'translation': [-5, 0],
     'size': 8,
-    'color': {'constant': 'green'},
+    'color': 'green',
 }
 
 # add polygons

@@ -224,7 +224,7 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'string': 'shape_type', 'color': {'constant': 'red'}}
+    text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
