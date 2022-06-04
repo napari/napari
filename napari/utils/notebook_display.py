@@ -118,7 +118,9 @@ class NotebookScreenshot:
         if self.alt_text is None:
             html_output = f'<img src="{url}"></img>'
         else:
-            html_output = f'<img src="{url}" alt="{self.alt_text}"></img>'
+            html_output = (
+                f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
+            )
         return html_output
 
 
