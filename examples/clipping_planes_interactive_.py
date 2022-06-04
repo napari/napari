@@ -44,7 +44,7 @@ points_layer = viewer.add_points(
 
 # SPHERE
 mesh = create_sphere(method='ico')
-sphere_vert = mesh.get_vertices * 20
+sphere_vert = mesh.get_vertices() * 20
 sphere_vert += 32
 surface_layer = viewer.add_surface(
     (sphere_vert, mesh.get_faces()),
