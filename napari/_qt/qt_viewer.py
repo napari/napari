@@ -261,8 +261,8 @@ class QtViewer(QSplitter):
         self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
         self._canvas_overlay.set_welcome_visible(show_welcome_screen)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
-        self._canvas_overlay.leave.connect(self._canvas_leave)
-        self._canvas_overlay.enter.connect(self._canvas_enter)
+        self._canvas_overlay.leave.connect(self._leave_canvas)
+        self._canvas_overlay.enter.connect(self._enter_canvas)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -331,12 +331,12 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
-    def _canvas_leave(self):
+    def _leave_canvas(self):
         """disable status on canvas leave"""
         self.viewer.status = ""
         self.viewer._mouse_over_canvas = False
 
-    def _canvas_enter(self):
+    def _enter_canvas(self):
         """enable status on canvas enter"""
         self.viewer.status = "Ready"
         self.viewer._mouse_over_canvas = True
