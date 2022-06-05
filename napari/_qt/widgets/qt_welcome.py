@@ -172,13 +172,16 @@ class QtWidgetOverlay(QStackedWidget):
         self.setCurrentIndex(int(visible))
 
     def resizeEvent(self, event):
+        """Emmit our own event when canvas was resized."""
         self.resized.emit()
         return super().resizeEvent(event)
 
     def enterEvent(self, event):
+        """Emmit our own event when mouse enter canvas."""
         self.enter.emit()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+        """Emmit our own event when mouse leave canvas."""
         self.leave.emit()
         super().leaveEvent(event)
