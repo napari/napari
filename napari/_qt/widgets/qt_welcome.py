@@ -182,6 +182,6 @@ class QtWidgetOverlay(QStackedWidget):
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        """Emmit our own event when mouse leave canvas."""
+        """Emit our own event when mouse leaves the canvas."""
         self.leave.emit()
         super().leaveEvent(event)
