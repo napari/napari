@@ -177,7 +177,7 @@ class QtWidgetOverlay(QStackedWidget):
         return super().resizeEvent(event)
 
     def enterEvent(self, event):
-        """Emmit our own event when mouse enter canvas."""
+        """Emit our own event when mouse enters the canvas."""
         self.enter.emit()
         super().enterEvent(event)
 
