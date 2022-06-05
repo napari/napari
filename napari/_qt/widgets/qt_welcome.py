@@ -172,7 +172,7 @@ class QtWidgetOverlay(QStackedWidget):
         self.setCurrentIndex(int(visible))
 
     def resizeEvent(self, event):
-        """Emmit our own event when canvas was resized."""
+        """Emit our own event when canvas was resized."""
         self.resized.emit()
         return super().resizeEvent(event)
 
