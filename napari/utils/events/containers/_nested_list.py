@@ -474,4 +474,4 @@ class NestableEventedList(EventedList[_T]):
                 return True
             except IndexError:
                 return False
-        return False
+        raise TypeError(f"Not supported index type {type(index)}")
