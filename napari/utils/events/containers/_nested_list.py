@@ -459,7 +459,7 @@ class NestableEventedList(EventedList[_T]):
 
         Depth first traversal of the tree
         """
-        for i, item in enumerate(self[:stop]):
+        for i, item in enumerate(self[start:stop]):
             yield root + (i,) if root else i
             if isinstance(item, NestableEventedList):
                 yield from item._iter_indices(root=root + (i,))
@@ -474,4 +474,4 @@ class NestableEventedList(EventedList[_T]):
                 return True
             except IndexError:
                 return False
-        return False
+        raise TypeError(f"Not supported index type {type(index)}")
