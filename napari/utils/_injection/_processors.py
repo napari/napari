@@ -51,7 +51,12 @@ def _add_layer_data_to_viewer(
     return_type : Any
         The return annotation that was used in the decorated function.
     viewer : Optional[Viewer]
-        an optional viewer to use.  otherwise use current viewer.
+        An optional viewer to use. Otherwise use current viewer.
+    layer_name : Optional[str]
+        An optional layer name to use. If a layer with this name exists, it will
+        be updated.
+    source : Optional[dict]
+        An optional layer source to use.
 
     Examples
     --------

@@ -76,21 +76,21 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     # get type hints for the object, with forward refs of napari hints resolved
     hints = napari_type_hints(func)
     # get accessor functions for each required parameter
-    required = {}
+    required_parameters = {}
     return_hint = None
     for name, hint in hints.items():
         if name == 'return':
             return_hint = hint
             continue
         if sig.parameters[name].default is sig.empty:
-            required[name] = hint
+            required_parameters[name] = hint
 
     @wraps(func)
     def _exec(*args, **kwargs):
         # when we call the function, we call the accessor functions to get
         # the current napari objects
         _kwargs = {}
-        for n, hint in required.items():
+        for n, hint in required_parameters.items():
             if accessor := get_accessor(hint):
                 _kwargs[n] = accessor()
 
@@ -117,7 +117,7 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     # update the signature
     p = [
         p.replace(default=None, annotation=Optional[hints[p.name]])
-        if p.name in required
+        if p.name in required_parameters
         else p
         for p in sig.parameters.values()
     ]
