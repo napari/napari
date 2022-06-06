@@ -9,6 +9,7 @@ from ._accessors import get_accessor, set_accessor
 from ._processors import get_processor, set_processor
 
 T = TypeVar("T")
+_NULL = object()
 
 
 __all__ = [

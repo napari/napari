@@ -24,7 +24,6 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..errors import (
-    MissingAssociatedReaderError,
     MultipleReaderError,
     NoAvailableReaderError,
     ReaderPluginError,
@@ -551,7 +550,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent_no_depth',
+        blending=None,
         visible=True,
         multiscale=None,
         cache=True,
@@ -788,7 +787,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        ``**kwargs``
+        **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
@@ -867,7 +866,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         path: PathOrPaths,
         *,
         stack: bool = False,
-        plugin: Optional[str] = None,
+        plugin: Optional[str] = 'builtins',
         layer_type: Optional[str] = None,
         **kwargs,
     ) -> List[Layer]:
@@ -888,16 +887,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
         plugin : str, optional
-            Name of a plugin to use.  If provided, will force ``path`` to be
-            read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an exception will be raised.
+            Name of a plugin to use, by default builtins.  If provided, will
+            force ``path`` to be read with the specified ``plugin``.
+            If None, ``plugin`` will be read from preferences or inferred if just
+            one reader is compatible.
+            If the requested plugin cannot read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        ``**kwargs``
+        **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 
@@ -907,12 +908,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A list of any layers that were added to the viewer.
         """
 
-        paths = [path] if isinstance(path, (Path, str)) else path
+        paths: List[str | Path] = (
+            [os.fspath(path)]
+            if isinstance(path, (Path, str))
+            else [os.fspath(p) for p in path]
+        )
 
         if stack:
-            layers = self._open_or_raise_error(
-                paths, kwargs, layer_type, stack
-            )
+            if plugin:
+                layers = self._add_layers_with_plugins(
+                    paths,
+                    kwargs=kwargs,
+                    plugin=plugin,
+                    layer_type=layer_type,
+                    stack=stack,
+                )
+            else:
+                layers = self._open_or_raise_error(
+                    paths, kwargs, layer_type, stack
+                )
             return layers
 
         added: List[Layer] = []  # for layers that get added
@@ -1017,9 +1031,26 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         plugin = get_preferred_reader(_path)
+        if plugin and plugin not in readers:
+            warnings.warn(
+                RuntimeWarning(
+                    trans._(
+                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        plugin=plugin,
+                        path_message=path_message,
+                    )
+                    + trans._(
+                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    )
+                    + trans._(
+                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
+                    )
+                )
+            )
+            plugin = None
 
         # preferred plugin exists, or we just have one plugin available
-        if plugin in readers or (not plugin and len(readers) == 1):
+        if plugin or len(readers) == 1:
             plugin = plugin or next(iter(readers.keys()))
             try:
                 added = self._add_layers_with_plugins(
@@ -1040,19 +1071,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     plugin,
                     paths,
                 ) from e
-
-        # preferred plugin doesn't exist
-        elif plugin:
-            raise MissingAssociatedReaderError(
-                trans._(
-                    "Can't find {plugin} plugin associated with {extension} files.",
-                    plugin=plugin,
-                    extension=os.path.splitext(paths[0])[1],
-                    deferred=True,
-                ),
-                plugin,
-                paths,
-            )
         # multiple plugins
         else:
             raise MultipleReaderError(
@@ -1116,6 +1134,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         assert stack is not None
         assert isinstance(paths, list)
         assert not isinstance(paths, str)
+        for p in paths:
+            assert isinstance(p, str)
 
         if stack:
             layer_data, hookimpl = read_data_with_plugins(
