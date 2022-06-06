@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 
@@ -490,7 +490,7 @@ def intersect_line_with_multiple_planes_3d(
 
 def intersect_line_with_triangles(
     line_point: np.ndarray, line_direction: np.ndarray, triangles: np.ndarray
-):
+) -> np.ndarray:
     """Find the intersection of a ray with a set of triangles.
 
     This function does not test whether the ray intersects the triangles, so you should
@@ -783,3 +783,58 @@ def distance_between_point_and_line_3d(
     )
     distance = np.linalg.norm(point - closest_point_on_line)
     return distance
+
+
+def find_nearest_triangle_intersection(
+    ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
+) -> Tuple[Optional[int], Optional[np.ndarray]]:
+    """Given an array of triangles, find the index and intersection location
+    of a ray and the nearest triangle.
+
+    This returns only the triangle closest to the the ray_position.
+
+    Parameters
+    ----------
+    ray_position : np.ndarray
+        The coordinate of the starting point of the ray.
+    ray_direction : np.ndarray
+        A unit vector describing the direction of the ray.
+    triangles : np.ndarray
+        (N, 3, 3) array containing the vertices of the triangles.
+
+    Returns
+    -------
+    closest_intersected_triangle_index : int
+        The index of the intersected triangle.
+    intersection : np.ndarray
+        The coordinate of where the ray intersects the triangle.
+    """
+    inside = line_in_triangles_3d(
+        line_point=ray_position,
+        line_direction=ray_direction,
+        triangles=triangles,
+    )
+
+    n_intersected_triangles = np.sum(inside)
+    if n_intersected_triangles == 0:
+        return None, None
+
+    # find the intersection points for the
+    intersected_triangles = triangles[inside]
+    intersection_points = intersect_line_with_triangles(
+        line_point=ray_position,
+        line_direction=ray_direction,
+        triangles=intersected_triangles,
+    )
+
+    # find the intersection closest to the start point of the ray and return
+    start_to_intersection = intersection_points - ray_position
+    distances = np.linalg.norm(start_to_intersection, axis=1)
+    closest_triangle_index = np.argmin(distances)
+    intersected_triangle_indices = np.argwhere(inside)
+    closest_intersected_triangle_index = intersected_triangle_indices[
+        closest_triangle_index
+    ][0]
+    intersection = intersection_points[closest_triangle_index]
+
+    return closest_intersected_triangle_index, intersection
