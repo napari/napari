@@ -101,27 +101,13 @@ class LabelVisual(ImageVisual):
         super().__init__(*args, **kwargs)
 
     def _build_color_transform(self):
-        if self._data.ndim == 2 or self._data.shape[2] == 1:
-            fun = FunctionChain(
-                None,
-                [
-                    Function(self._func_templates['red_to_luminance']),
-                    Function(self.cmap.glsl_map),
-                ],
-            )
-        else:
-            # RGB/A image data (no colormap)
-            raise Exception("TODO: RGB/A lookups")
-            fclim = Function(self._func_templates['clim'])
-            fgamma = Function(self._func_templates['gamma'])
-            fun = FunctionChain(
-                None,
-                [
-                    Function(self._func_templates['null_color_transform']),
-                    fclim,
-                    fgamma,
-                ],
-            )
+        fun = FunctionChain(
+            None,
+            [
+                Function(self._func_templates['red_to_luminance']),
+                Function(self.cmap.glsl_map),
+            ],
+        )
         return fun
 
 
