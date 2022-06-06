@@ -19,6 +19,8 @@
 <!-- Please describe the tests that you ran to verify your changes. -->
 - [ ] example: the test suite for my feature covers cases x, y, and z
 - [ ] example: all tests pass with my change
+- [ ] example: I check if my changes works with both PySide and PyQt backends
+      as there are small differences between the two Qt bindings.  
 
 ## Final checklist:
 - [ ] My PR is the minimum possible work for the desired functionality

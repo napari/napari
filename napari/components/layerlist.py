@@ -134,31 +134,6 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer.events.set_data.connect(self._clean_cache)
         super().insert(index, new_layer)
 
-    def move_selected(self, index, insert):
-        """Reorder list by moving the item at index and inserting it
-        at the insert index. If additional items are selected these will
-        get inserted at the insert index too. This allows for rearranging
-        the list based on dragging and dropping a selection of items, where
-        index is the index of the primary item being dragged, and insert is
-        the index of the drop location, and the selection indicates if
-        multiple items are being dragged. If the moved layer is not selected
-        select it.
-
-        Parameters
-        ----------
-        index : int
-            Index of primary item to be moved
-        insert : int
-            Index that item(s) will be inserted at
-        """
-        if self[index] not in self.selection:
-            self.selection.select_only(self[index])
-            moving = [index]
-        else:
-            moving = [i for i, x in enumerate(self) if x in self.selection]
-        offset = insert >= index
-        self.move_multiple(moving, insert + offset)
-
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
         for layer in self.selection:

@@ -739,7 +739,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
-            kwargs['blending'] = kwargs['blending'] or 'translucent'
+            kwargs['blending'] = kwargs['blending'] or 'translucent_no_depth'
             # Helpful message if someone tries to add mulit-channel kwargs,
             # but forget the channel_axis arg
             for k, v in kwargs.items():
@@ -787,7 +787,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        ``**kwargs``
+        **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
@@ -866,7 +866,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         path: PathOrPaths,
         *,
         stack: bool = False,
-        plugin: Optional[str] = None,
+        plugin: Optional[str] = 'builtins',
         layer_type: Optional[str] = None,
         **kwargs,
     ) -> List[Layer]:
@@ -887,16 +887,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
         plugin : str, optional
-            Name of a plugin to use.  If provided, will force ``path`` to be
-            read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an exception will be raised.
+            Name of a plugin to use, by default builtins.  If provided, will
+            force ``path`` to be read with the specified ``plugin``.
+            If None, ``plugin`` will be read from preferences or inferred if just
+            one reader is compatible.
+            If the requested plugin cannot read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        ``**kwargs``
+        **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 
