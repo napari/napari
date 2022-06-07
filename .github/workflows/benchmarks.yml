@@ -25,11 +25,11 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
-  ASV_OPTIONS: "--split --show-stderr --factor 1.5 -a timeout=300"
+  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300"
   # --split -> split final reports in tables
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
-  # -a timeout=300 -> override timeout attribute (defaults to 60s) to allow slow tests to run
+  # --attribute timeout=300 -> override timeout attribute (default=60s) to allow slow tests to run
   # see https://asv.readthedocs.io/en/stable/commands.html#asv-continuous for more details!
 
 jobs:
