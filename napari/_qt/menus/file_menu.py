@@ -85,7 +85,7 @@ class FileMenu(NapariMenu):
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
                 'slot': window._qt_viewer.clipboard,
-                'shortcut': 'Alt+Shift+S',
+                'shortcut': 'Alt+C',
                 'statusTip': trans._(
                     'Copy screenshot of current display to the clipboard'
                 ),
@@ -93,7 +93,7 @@ class FileMenu(NapariMenu):
             {
                 'text': trans._('Copy Screenshot with Viewer to Clipboard'),
                 'slot': window.clipboard,
-                'shortcut': 'Alt+Shift+S',
+                'shortcut': 'Alt+Shift+C',
                 'statusTip': trans._(
                     'Copy screenshot of current display with the viewer to the clipboard'
                 ),
