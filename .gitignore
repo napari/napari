@@ -160,4 +160,5 @@ docs/jupyter_execute/
 docs/.jupyter_cache/
 docs/gallery/
 
+# pytest reports in json format https://github.com/napari/napari/pull/4518
 report*.json
