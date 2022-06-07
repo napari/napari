@@ -583,8 +583,8 @@ def test_init_with_derived_color():
     assert_colors_equal(actual, ['red', 'green', 'blue'])
 
 
-def test_init_with_derived_color_missing_feature():
-    color = {'feature': 'not_a_feature'}
+def test_init_with_derived_color_missing_feature_then_use_fallback():
+    color = {'feature': 'not_a_feature', 'fallback': 'cyan'}
     features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
 
     with pytest.warns(RuntimeWarning):
@@ -606,7 +606,7 @@ def test_apply_with_constant_color():
     assert_colors_equal(actual, 'red')
 
 
-def test_apply_with_manual_color():
+def test_apply_with_manual_color_then_use_default():
     color = {
         'array': ['red', 'green', 'blue'],
         'default': 'yellow',
