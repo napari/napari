@@ -29,9 +29,9 @@ def test_qt_labeled_progress_bar_event_handle(qtbot):
     assert progress.qt_progress_bar.maximum() != 10
     progress._set_total(Namespace(value=10))
     assert progress.qt_progress_bar.maximum() == 10
-    assert progress.qt_progress_bar.value() == -1
+    assert progress._get_value() == -1
     progress._set_value(Namespace(value=5))
-    assert progress.qt_progress_bar.value() == 5
+    assert progress._get_value() == 5
     assert progress.description_label.text() == ""
     progress._set_description(Namespace(value="text"))
     assert progress.description_label.text() == "text: "
