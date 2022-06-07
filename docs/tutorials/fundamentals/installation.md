@@ -112,7 +112,7 @@ You can then upgrade to a new version of napari using
 conda update napari
 ```
 
-If you want install napari with PySide2 backend you need to install it using
+If you want to install napari with PySide2 as the backend you need to install it using
 
 ```sh
 conda install -c conda-forge napari PySide2
