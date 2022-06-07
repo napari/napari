@@ -398,6 +398,7 @@ def test_feature_table_resize_smaller():
 
 def test_feature_table_resize_larger():
     feature_table = _make_feature_table()
+    expected_dtypes = feature_table.values.dtypes
 
     feature_table.resize(6)
 
@@ -411,6 +412,7 @@ def test_feature_table_resize_larger():
         features['confidence'],
         [0.2, 0.5, 1, 0.8, 0.8, 0.8],
     )
+    np.testing.assert_array_equal(features.dtypes, expected_dtypes)
 
 
 def test_feature_table_append():

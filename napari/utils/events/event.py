@@ -1077,13 +1077,19 @@ class EmitterGroup(EventEmitter):
         yield from self._emitters
 
     def block_all(self):
-        """Block all emitters in this group."""
+        """
+        Block all emitters in this group by increase counter of semaphores for each event emitter
+        """
         self.block()
         for em in self._emitters.values():
             em.block()
 
     def unblock_all(self):
-        """Unblock all emitters in this group."""
+        """
+        Unblock all emitters in this group, by decrease counter of semaphores for each event emitter.
+        if block is called twice and unblock is called once, then events will be still blocked
+        https://en.wikipedia.org/wiki/Semaphore_(programming)
+        """
         self.unblock()
         for em in self._emitters.values():
             em.unblock()
