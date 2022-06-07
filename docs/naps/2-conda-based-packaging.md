@@ -20,7 +20,7 @@ native to their operating system of choice. This is usually achieved through gra
 installers with a step-by-step interface.
 
 This NAP discusses how we will use and adapt tools borrowed from the `conda` packaging
-ecosystem to build platform-specific installers and implement update strategies for napari and
+world to build platform-specific installers and implement update strategies for napari and
 its plugin ecosystem.
 
 ## Motivation and Scope
@@ -152,17 +152,9 @@ redistribution, inadequate dependencies metadata (too strict or too vague). The 
 at napari can help here, but this will not scale if the plugin ecosystem keeps growing.
 
 As a result, some plugins might end up being available on PyPI but not on conda-forge. This further
-reinforces the idea that conda-forge packaging is a second-class citizen for the plugin
-ecosystem. We would recommend making packaging guidelines part of the documentation for plugin
-developers, but also part of the _requirements_ to be accepted on Napari hub listings. Otherwise,
-we risk supporting plugins which do not play nicely with the rest of the ecosystem.
-
-#### Tasks
-
-* [ ] Add conda-forge packaging to the release check list
-* [ ] Add packaging requirements to the plugin development documentation, aided by tooling if
-      necessary
-* [ ] Decide which packages need to be governed by the _napari pinnings_ metapackage
+reinforces the idea that conda-forge packaging is a second-class citizen for the plugin ecosystem.
+We would recommend including some packaging guidelines as part of the documentation for plugin
+developers to alleviate these issues.
 
 ### Milestone 2: Building conda-based installers for napari
 
@@ -222,7 +214,7 @@ can be built thanks to the nightlies available on the napari channel.
 
 ### Milestone 3: Adding support for conda packages in the plugin manager
 
-napari has its own plugin manager, which so far relied on `pip` to install packages available on
+napari has its own plugin manager, which so far has relied on `pip` to install packages available on
 PyPI. To make it compatible with conda packaging, three key changes are needed:
 
 1.  The list of packages on conda-forge does not necessarily match the one coming from PyPI. Right
@@ -231,28 +223,29 @@ PyPI. To make it compatible with conda packaging, three key changes are needed:
     limitations (e.g. availability of dependencies). As a result, the plugin manager needs to source
     the list of plugins from a repository-agnostic source: the napari hub API. It must be noted that
     napari hub currently uses PyPI as the ground truth for the list of published plugins and the
-    available versions. This might need to change in the future if the scenario described in this
-    bullet point becomes a reality.
-2.  Once the napari hub API is feeding the list, the plugin manager should only list those available
-    on conda-forge, marking the packages only published on PyPI as unavailable for now. In the
-    future, we might explore how to deal with PyPI packages within conda in a safe way, but this is
-    an open packaging question that is extremely difficult to tackle robustly, way beyond the scope
-    of this document.
+    available versions.
+2.  Once the napari hub API is feeding the list, the plugin manager will also list those available
+    on conda-forge. Packages that are only available on PyPI can also be installed as long as:
+      * The dependencies of the PyPI package are on conda-forge
+      * The PyPI package is pure Python (no compiled libraries)
+    In the future, we might explore how to deal with PyPI packages within conda in a safer way, but
+    this is an open packaging question that is extremely difficult to tackle robustly.
 3.  Instrument the plugin manager backend so it can use `conda` or `mamba` to run the plugin
     installation, update or removal.
-4.  Control the dependency landscape of the plugin ecosystem using the `napari-pinnings` metapackage
-    mentioned in Milestone 1.
+4.  Add some control to the dependency landscape of the plugin ecosystem using the
+    `napari-pinnings` metapackage mentioned in Milestone 1.
 
 There are some technical limitations we need to work out as well, namely:
 
-* Some updates might fail because some files are in use already. For example, a plugin requires
-  a more recent build of numpy (still allowed in our pinnings), but numpy has been imported already,
-  so Windows has blocked the library files. An off-process update will be needed on Windows for the
-  installation to succeed. On Unix systems this might not be a problem, but the update will still be
-  incomplete without a napari restart (because numpy was already imported). This can be solved by
-  watching the imported modules and the files involved in the conda transaction. On Windows, we can
-  write a one-off activation script that will run before `napari` starts the next time. On Unix
-  systems, a notification saying "Restart needed for full effect" might be enough.
+* Some plugin updates might fail because some files are in use already. For example, a plugin
+  requires a more recent build of numpy (still allowed in our pinnings), but numpy has been
+  imported already, so Windows has blocked the library files. An off-process update will be needed
+  on Windows for the installation to succeed. On Unix systems this might not be a problem, but the
+  update will still be incomplete without a napari restart (because numpy was already imported).
+  This can be solved by watching the imported modules and the files involved in the conda
+  transaction. On Windows, we can write a one-off activation script that will run before `napari`
+  starts the next time. On Unix systems, a notification saying "Restart needed for full effect"
+  might be enough.
 * The plugin manager was designed to install one package at a time with `pip`. We have extended it
   to use `conda` or `mamba`, but it still works on a package-by-package basis. It would be preferred
   to offer the possibility of installing several packages together for more efficient solves, but
@@ -302,14 +295,7 @@ compatible with (either by running some kind of CI ourselves or making this anal
 submission procedure), we could simply query the API to anticipate which packages are installable
 before running the update.
 
-#### Tasks
-
-- [ ] Detect availability of new napari versions
-- [ ] Create new environment with only napari
-- [ ] Migrate plugins over to the new environment
-- [ ] Implement "co-installability" analysis
-
-#### Risks
+#### Potential risks
 
 Co-installability of plugins is ultimately a matter of metadata and good practices. The risks here
 are similar to the concerns shared in Milestone 1.
@@ -358,7 +344,6 @@ existing installations (more details below), this repository could initially hos
 prototype, which would be designed in a napari-agnostic way for easy reusability in other
 projects facing our `constructor` improvements already [^mne-constructor].
 
-
 ### Milestone 1: Distributing napari and plugins on conda-forge
 
 This work can be divided in two different tasks: adjusting the conda-forge feedstock for napari,
@@ -370,8 +355,14 @@ and then migrating all the plugins over to conda-forge.
 
 At the time of writing, the plugin migration to conda-forge can be considered 90% done, but a long
 tail of non-trivial packages need to be worked on. This is caused by vendored binaries,
-non-compliant licensing schemes or bad packaging practices. Looking forward, a set of guidelines
-in the plugin development documentation should be added.
+non-compliant licensing schemes or bad packaging practices.
+
+#### Tasks
+
+* [ ] Add documentation about conda-forge in the release guide
+* [ ] Add documentation about conda-forge in the plugin developer guide
+* [ ] Ensure the cookiecutter template has some notion of conda packaging
+* [ ] Decide which packages need to be governed by the _napari pinnings_ metapackage
 
 ### Milestone 2: Building conda-based installers for napari
 
@@ -407,6 +398,15 @@ The full list of PRs is available on
 [this issue comment](https://github.com/napari/napari/issues/4248#issuecomment-1066574137).
 A complete list of features can be found in the packaging documentation [^napari-packaging-docs].
 
+#### Tasks
+
+* [ ] Create `napari/packaging` and migrate the conda bundle CI there, along with the relevant
+      metadata
+* [ ] Add detailed documentation about how the installers are structured and how they work
+      internally
+* [ ] Add PyPI-conda consistency checks to ensure the metadata at `napari/napari` and
+      `napari/packaging` match
+
 ### Milestone 3: Adding support for conda packages in the plugin manager
 
 Support for conda/mamba handling of plugin installations was implemented in a base PR and then
@@ -420,38 +420,22 @@ extended with different PRs:
     * [#4074](https://github.com/napari/napari/pull/4074) (Use napari hub to list plugins)
     * [#4520](https://github.com/napari/napari/pull/4520) (Rework how subprocesses are launched)
 
-Adding the necessary functionality to the plugin dialog, including:
+Some more work is needed to offer full support to the plugin ecosystem, as detailed below.
+#### Tasks
 
-* Adapting the current `Installer` class to support not only `pip` but also `conda/mamba` in a
-  single code base.
-* Adding support for `install`, `uninstall`, and `update` commands.
-* Populating the listing with data obtained from the napari hub API [^napari-hub-api].
-* Updating the listing to filter and mark plugins based on their availability on conda-forge.
+* [X] Make the `Installer` class  [^napari-installer-classs] conda/mamba-aware
+* [X] Populate the plugin listing with data obtained from the napari hub API [^napari-hub-api]
+* [ ] Detect which plugins can be installed directly from conda-forge and which ones need a
+      combination of `conda` channels and PyPI sources
+* [ ] Add support for custom conda channels and local sources in the UI
+* [ ] Allow for simultaneous install of plugins. Currently multiple plugins can be selected for
+      install, uninstall and update, but each on of these actions, are queued and run sequentially.
 
-Some UX/UI improvements that are not part of this milestone but could be explored in future
-releases may include:
-
-* Making the plugin dialog a side panel / side dockwidget (similar to VS Code
-  [^vscode-extensions-ui])
-* Allow for simultaneous install of plugins. Currently multiple plugins can be selected for
-  install, uninstall and update, but each on of these actions, are queued and run sequentially.
-* Enable installation of conda packages from custom channels and/or dropped tarballs. Technically,
-  this is already possible via environment variables or the shipped `.condarc` file, but some UI
-  would be desirable.
-* Allow advanced users to install packages from PyPI. This presents many risks that could
-  irreversibly disrupt the installation, though, so it needs to be studied very carefully. Some
-  ideas for consideration:
-    * `pip` should only install the package, with no dependencies. Dependencies should be provided
-      with `conda` whenever possible.
-    * Run some analysis on the package metadata to infer the potential for disruption (trickier than
-      it sounds, given the dynamic nature of PyPI metadata!).
-    * Devise some experimental hybrid conda/pip automations. See example workflow in
-      [this issue comment](https://github.com/napari/napari/issues/3223#issuecomment-972189348).
-
-> Note: This is uncharted territory at the borders of PyPI and conda ecosystems. They can be
-> considered global packaging problems in the Python community; problems we might not be able to
-> fully solve on our own as a project. All we can do for now is to provide "best-effort workarounds"
-> while making sure we don't break anything...
+> Note: Using both `conda` and `pip` presents certain risks that could irreversibly disrupt the
+> installation, so it needs to be studied very carefully. At the beginning we will only let `pip`
+> install pure Python packages, with no dependencies or compiled libraries. Dependencies should be
+> provided from `conda-forge` whenever possible. Previous experiments on this kind of automations
+> might be useful here [^conda-pip-issue-comment] [^pamba].
 
 ### Milestone 4: Enabling in-app napari version updates
 
@@ -486,6 +470,18 @@ The governance of `napari-updater` part will still fall under the `napari` organ
 `magicgui`) but it will be usable outside of the napari project, following the same philosophy we
 adopted for the constructor work.
 
+#### Tasks
+
+* [ ] Start a simple CLI tool to prototype the role of `napari-updater`, initially under the
+      `napari/packaging` repo. This will contain the new version detection code as well as the
+      logic to install the new napari environment. Note that we will need to provide a way to
+      distribute a "frozen" napari environment, identical to the one being bundled in the
+      installers, to ensure that every user gets the same napari installation regardless the
+      mechanism used (fresh install from downloaded executable, or updated via `napari-updater`).
+* [ ] Refactor the prototype into its own separate project and evolve its feature set to satisfy
+      the community feedback (this might include adding a UI, environment management tools,
+      installation diagnostics, plugin "co-installability" analysis, etc).
+
 ### Milestone 5: Deprecating Briefcase-based installers
 
 See the corresponding section in "Detailed description".
@@ -518,7 +514,6 @@ deciding to use the currently proposed one. Namely:
   update is available. Discarded because the update logic could change across napari versions,
   potentially causing issues over time; e.g. old versions are not up-to-date with the latest
   packaging policies established by the napari community.
-
 
 ## Discussion
 
@@ -613,6 +608,11 @@ CC0+BY [^cc0by].
 
 [^delvewheel]: https://github.com/adang1345/delvewheel
 
+[^conda-pip-issue-comment]: https://github.com/napari/napari/issues/3223#issuecomment-972189348
+
+[^pamba]: https://gist.github.com/tlambert03/cdc63d68f4fd1bce20f8f3e769217759
+
+[^napari-installer-class]: https://github.com/napari/napari/blob/5c10022337601f350ad64ce56eddf6664306e40e/napari/_qt/dialogs/qt_plugin_dialog.py#L64
 
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication,
     <https://creativecommons.org/publicdomain/zero/1.0/>
