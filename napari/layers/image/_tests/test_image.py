@@ -199,11 +199,11 @@ def test_non_rgb_image():
     assert layer._data_view.shape == shape[-2:]
 
 
-def test_error_non_rgb_image():
+@pytest.mark.parametrize("shape", [(10, 15, 6), (10, 10)])
+def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
-    # size > 4 then data cannot actually be rgb
-    shape = (10, 15, 6)
+    # size > 4 or len(shape) < 3 then data cannot actually be rgb
     np.random.seed(0)
     data = np.random.random(shape)
     with pytest.raises(ValueError):
