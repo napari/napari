@@ -203,7 +203,7 @@ def test_non_rgb_image():
 def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
-    # size > 4 or len(shape) < 3 then data cannot actually be rgb
+    # size > 4 or ndim not >= 3 then data cannot actually be rgb
     np.random.seed(0)
     data = np.random.random(shape)
     with pytest.raises(ValueError):

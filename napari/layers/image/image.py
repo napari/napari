@@ -260,7 +260,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if rgb and not rgb_guess:
             raise ValueError(
                 trans._(
-                    "'rgb' was set to True but last dim of data was not 3 or 4."
+                    "'rgb' was set to True but data does not have suitable dimensions."
                 )
             )
         elif rgb is None:
