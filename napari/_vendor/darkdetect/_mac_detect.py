@@ -6,6 +6,7 @@
 
 import ctypes
 import ctypes.util
+import typing
 
 try:
     # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
@@ -68,3 +69,6 @@ def isDark():
 
 def isLight():
     return theme() == 'Light'
+
+def listener(callback: typing.Callable[[str], None]) -> None:
+    raise NotImplementedError()

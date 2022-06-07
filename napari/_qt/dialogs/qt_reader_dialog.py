@@ -117,6 +117,7 @@ def handle_gui_reading(
     stack: bool,
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
+    **kwargs,
 ):
     """Present reader dialog to choose reader and open paths based on result.
 
@@ -129,9 +130,9 @@ def handle_gui_reading(
 
     Parameters
     ----------
-    _paths : list[str]
+    paths : list[str]
         list of paths to open, as strings
-    viewer : QtViewer
+    qt_viewer : QtViewer
         QtViewer to associate dialog with
     stack : bool
         True if list of paths should be stacked, otherwise False
@@ -160,6 +161,7 @@ def handle_gui_reading(
             paths,
             stack,
             qt_viewer,
+            **kwargs,
         )
 
 
@@ -218,6 +220,7 @@ def open_with_dialog_choices(
     paths: List[str],
     stack: bool,
     qt_viewer,
+    **kwargs,
 ):
     """Open paths with chosen plugin from reader dialog, persisting if chosen.
 
@@ -231,7 +234,7 @@ def open_with_dialog_choices(
         file extension for association of preferences
     readers : Dict[str, str]
         plugin-name: display-name dictionary of remaining readers
-    _paths : List[str]
+    paths : List[str]
         paths to open
     stack : bool
         True if files should be opened as a stack, otherwise False
@@ -243,9 +246,7 @@ def open_with_dialog_choices(
         p_name for p_name, d_name in readers.items() if d_name == display_name
     ][0]
     # may throw error, but we let it this time
-    qt_viewer.viewer._add_layers_with_plugins(
-        paths, stack=stack, plugin=plugin_name
-    )
+    qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
     if persist:
         get_settings().plugins.extension2reader = {

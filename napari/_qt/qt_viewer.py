@@ -730,7 +730,14 @@ class QtViewer(QSplitter):
             self._qt_open([folder], stack=False)
             update_open_history(folder)
 
-    def _qt_open(self, filenames: List[str], stack: bool):
+    def _qt_open(
+        self,
+        filenames: List[str],
+        stack: bool,
+        plugin: str = None,
+        layer_type: str = None,
+        **kwargs,
+    ):
         """Open files, potentially popping reader dialog for plugin selection.
 
         Call ViewerModel._open_or_raise_error and catch errors that could
@@ -744,11 +751,25 @@ class QtViewer(QSplitter):
             whether to stack files or not
         """
         try:
-            self.viewer._open_or_raise_error(filenames, stack=stack)
+            self.viewer.open(
+                filenames,
+                stack=stack,
+                plugin=plugin,
+                layer_type=layer_type,
+                **kwargs,
+            )
         except ReaderPluginError as e:
-            handle_gui_reading(filenames, self, stack, e.reader_plugin, e)
+            handle_gui_reading(
+                filenames,
+                self,
+                stack,
+                e.reader_plugin,
+                e,
+                layer_type=layer_type,
+                **kwargs,
+            )
         except MultipleReaderError:
-            handle_gui_reading(filenames, self, stack)
+            handle_gui_reading(filenames, self, stack, **kwargs)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""

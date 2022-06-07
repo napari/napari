@@ -157,4 +157,4 @@ def test_flags(tree_model):
     tree_model._root[1].append(last)
     assert tree_model.hasIndex(5, 0, tree_model.index(1))
     idx = tree_model.index(5, 0, tree_model.index(1))
-    assert bool(tree_model.flags(idx) & Qt.ItemIsEnabled)
+    assert bool(tree_model.flags(idx) & Qt.ItemFlag.ItemIsEnabled)

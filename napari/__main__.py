@@ -225,7 +225,7 @@ def parse_sys_argv():
 
 
 def _run():
-    from napari import run, view_path
+    from napari import Viewer, run
     from napari.settings import get_settings
 
     """Main program."""
@@ -301,13 +301,14 @@ def _run():
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
 
-        # viewer is unused but _must_  be kept around.
+        # viewer _must_  be kept around.
         # it will be referenced by the global window only
         # once napari has finished starting
         # but in the meantime if the garbage collector runs;
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
-        viewer = view_path(  # noqa: F841
+        viewer = Viewer()
+        viewer._window._qt_viewer._qt_open(
             args.paths,
             stack=args.stack,
             plugin=args.plugin,
@@ -400,10 +401,12 @@ def main():
     import platform
 
     _MACOS_AT_LEAST_CATALINA = (
-        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 19
+        sys.platform == "darwin"
+        and int(platform.release().split('.')[0]) >= 19
     )
     _MACOS_AT_LEAST_BIG_SUR = (
-        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 20
+        sys.platform == "darwin"
+        and int(platform.release().split('.')[0]) >= 20
     )
 
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ

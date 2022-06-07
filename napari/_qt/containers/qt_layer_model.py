@@ -9,6 +9,8 @@ from .qt_list_model import QtListModel
 class QtLayerListModel(QtListModel[Layer]):
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
+        if not index.isValid():
+            return None
         layer = self.getItem(index)
         if role == ItemRole:  # custom role: return the layer
             return layer
