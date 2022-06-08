@@ -135,8 +135,8 @@ class FileMenu(NapariMenu):
     def _close_app(self):
         message = QMessageBox(
             QMessageBox.Icon.Warning,
-            "Close confirm",
-            "Confirm to close application (could confirm with 'Ctrl+Q')",
+            "Close application?",
+            "Confirm to close application (or press 'Ctrl+Q')",
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self._win._qt_window,
         )
@@ -148,8 +148,8 @@ class FileMenu(NapariMenu):
     def _close_window(self):
         message = QMessageBox(
             QMessageBox.Icon.Warning,
-            "Close confirm",
-            "Confirm to close window (could confirm with 'Ctrl+W')",
+            "Close window",
+            "Confirm to close window (or press 'Ctrl+W')",
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self._win._qt_window,
         )
