@@ -15,16 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v3
+      - uses: actions/setup-python@v3
         with:
-          python-version: 3.8
-      - name: Install dependencies
+          python-version: "3.x"
+      - name: Check Manifest
         run: |
           pip install --upgrade pip
           pip install check-manifest
-      - name: Check Manifest
-        run: check-manifest
+          check-manifest
 
   localization_syntax:
     # make sure all necessary files will be bundled in the release
@@ -32,13 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v3
+      - uses: actions/setup-python@v3
         with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
+          python-version: "3.x"
       - name: Check localization formatting
         run: |
           pip install --upgrade pip semgrep
@@ -131,6 +125,7 @@ jobs:
         with:
           path: /tmp/.tox/
           key: ${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ hashFiles('setup.cfg') }}-${{ hashFiles('tox.ini') }}-${{ steps.date.outputs.date }}
+
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
@@ -153,6 +148,7 @@ jobs:
           name: upload pytest timing reports as json
           path: |
             ./report-*.json
+
       # this steps display the cached folder size for debug and
       # remove the biggest contenders.
       - name: Display Cache size, and remove largest files from cache.
@@ -169,6 +165,7 @@ jobs:
           echo "List of biggest folder after clearing"
           du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
           du -hs /tmp/.tox/*
+
       - name: Coverage
         uses: codecov/codecov-action@v3
 
