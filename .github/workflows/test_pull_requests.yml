@@ -54,18 +54,18 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: ["3.8", "3.9", "3.10"]
-        backend: [pyqt, pyside]
+        backend: [pyqt5, pyside2]
         include:
           # Windows py38
-          - python: 3.9
+          - python: "3.9"
             platform: windows-latest
-            backend: pyside
+            backend: pyside2
           - python: "3.10"
             platform: windows-latest
-            backend: pyqt
+            backend: pyqt5
           - python: "3.9"
             platform: macos-latest
-            backend: pyqt
+            backend: pyqt5
           # # minimum specified requirements
           # - python: 3.8
           #   platform: ubuntu-18.04
@@ -106,69 +106,29 @@ jobs:
       # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
+          python -m pip install -U pip
           python tools/minreq.py
+          python -m pip install -e .[test,${{ matrix.backend }}]
         env:
           # tools/minreq.py sets all deps to their minumim stated versions
           # it is a no-op if MIN_REQ is not set
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
-      # The two following steps try to cache and speedup tox env creation on linux.
-      # in the first one we produce the date as value we can refer to,
-      # in order to change cache key every ~24h.
-      # in the second we restore cache from previous run.
-      # a step later on cull the files in the directory we cache to avoid
-      # going over the GitHub 5G limit.
-      - name: Get current date to flush cache every day
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: Cache tox Virtualenv
-        uses: actions/cache@v2
-        if: runner.os == 'Linux'
-        env:
-          cache-name: cache-tox-${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ steps.date.outputs.date }}
-        with:
-          path: /tmp/.tox/
-          key: ${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ hashFiles('setup.cfg') }}-${{ hashFiles('tox.ini') }}-${{ steps.date.outputs.date }}
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
       # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
-      - name: Test with tox
+      - name: Test
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: python -m tox
+          run: python -m pytest --color=yes --cov-report=xml --cov=napari --ignore tools
         env:
-          PLATFORM: ${{ matrix.platform }}
-          BACKEND: ${{ matrix.backend }}
-          TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
-      - uses: actions/upload-artifact@v3
-        with:
-          name: upload pytest timing reports as json
-          path: |
-            ./report-*.json
-      # this steps display the cached folder size for debug and
-      # remove the biggest contenders.
-      - name: Display Cache size, and remove largest files from cache.
-        if: runner.os == 'Linux'
-        run: |
-          echo "Biggest files in site-packages"
-          du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
-          echo "Biggest files in tox cache"
-          du -hs /tmp/.tox/*
-          echo "Cleaning a few of the biggest cache"
-          rm -rf /tmp/.tox/*py*/lib/py*/site-packages/semgrep
-          rm -rf /tmp/.tox/*py*/lib/py*/site-packages/torch
-          find /tmp/.tox/*py*/lib/* -name '*.pyc' -delete
-          echo "List of biggest folder after clearing"
-          du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
-          du -hs /tmp/.tox/*
+
       - name: Coverage
         uses: codecov/codecov-action@v3
 
