@@ -2,11 +2,11 @@
 	{
 		"name": "latest",
 		"version": "dev",
-		"url": "https://melissawm.github.io/napari.github.io/dev/"
+		"url": "https://napari.org/dev/"
 	},
 	{
 		"name": "stable",
 		"version": "0.4.15",
-		"url": "https://melissawm.github.io/napari.github.io/stable/"
+		"url": "https://napari.org/stable/"
 	}
 ]
