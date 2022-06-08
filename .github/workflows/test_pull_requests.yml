@@ -59,7 +59,7 @@ jobs:
             backend: pyside2
           - python: 3.9
             platform: macos-latest
-            backend: pyqt5
+            backend: pyside2
           # minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
