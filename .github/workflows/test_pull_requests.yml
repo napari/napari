@@ -48,18 +48,18 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: ["3.8", "3.9", "3.10"]
-        backend: [pyqt, pyside]
+        backend: [pyqt5, pyside2]
         include:
           # Windows py38
           - python: 3.8
             platform: windows-latest
-            backend: pyqt
+            backend: pyqt5
           - python: 3.8
             platform: windows-latest
-            backend: pyside
+            backend: pyside2
           - python: 3.9
             platform: macos-latest
-            backend: pyqt
+            backend: pyqt5
           # minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
@@ -67,7 +67,7 @@ jobs:
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-pyqt-py38-linux
+            toxenv: async-pyqt5-py38-linux
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
