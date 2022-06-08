@@ -86,7 +86,7 @@ def test_lazy_console(make_napari_viewer):
     assert v.window._qt_viewer._console is None
 
 
-@pytest.skipif(
+@pytest.mark.skipif(
     platform.system() == "Darwin", reason="Cannot control menu bar on MacOS"
 )
 def test_menubar_shortcut(make_napari_viewer):
