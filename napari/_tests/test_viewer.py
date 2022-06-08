@@ -55,6 +55,7 @@ def test_non_existing_bindings():
 def test_viewer_methods(make_napari_viewer, func):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
+
     if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
         pytest.skip("Fullscreen cannot be tested in CI")
     if func.__name__ == 'play':
@@ -122,7 +123,7 @@ def test_add_layer_magic_name(
 ):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
-    viewer = make_napari_viewer()  # noqa
+    viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
         "add_layer_by_type(viewer, layer_class, a_unique_name)",
         "somefile.py",
@@ -134,6 +135,7 @@ def test_add_layer_magic_name(
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
+
     np.random.seed(0)
     # Add image
     data = np.random.random((10, 15))
@@ -167,7 +169,7 @@ def test_screenshot(make_napari_viewer):
 @skip_on_win_ci
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=False)
     viewer.window._qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
     size = viewer.window._qt_viewer.size()
@@ -293,8 +295,7 @@ def test_custom_layer(make_napari_viewer):
         """'Empty' extension of napari Labels layer."""
 
     # Make a viewer and add the custom layer
-    viewer = make_napari_viewer()
-    viewer.show()
+    viewer = make_napari_viewer(show=True)
     viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
 
 
@@ -335,7 +336,6 @@ def test_emitting_data_doesnt_change_cursor_position(
 @skip_on_win_ci
 def test_empty_shapes_dims(make_napari_viewer):
     """make sure an empty shapes layer can render in 3D"""
-    viewer = make_napari_viewer()
-    viewer.show()
+    viewer = make_napari_viewer(show=True)
     viewer.add_shapes(None)
     viewer.dims.ndisplay = 3
