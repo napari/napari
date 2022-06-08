@@ -63,6 +63,7 @@ jobs:
           # minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
+            backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
