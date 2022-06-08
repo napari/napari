@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import time
 from typing import List
@@ -25,11 +26,9 @@ except RuntimeError:
 # only test the first of each layer type
 test_data = []
 for cls in all_subclasses(Layer):
-    try:
+    with contextlib.suppress(StopIteration):
         test_data.append(next(x for x in layer_test_data if x[0] is cls))
-    except StopIteration:
-        # OctTree Image doesn't have layer_test_data
-        pass
+test_data.sort(key=lambda x: x[0].__name__)
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
@@ -246,7 +245,7 @@ MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']
 MGUI_EXPORTS += [f'napari.types.{nm.title()}Data' for nm in layers.NAMES]
 
 
-@pytest.mark.parametrize('name', MGUI_EXPORTS)
+@pytest.mark.parametrize('name', sorted(MGUI_EXPORTS))
 def test_mgui_forward_refs(tmp_path, name):
     """Test magicgui forward ref annotations
 
