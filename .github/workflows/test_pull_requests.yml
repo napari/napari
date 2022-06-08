@@ -54,7 +54,7 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: ["3.8", "3.9", "3.10"]
-        backend: [pyqt5, pyside2]
+        backend: [pyqt, pyside]
         include:
           # Windows py38
           - python: 3.9
