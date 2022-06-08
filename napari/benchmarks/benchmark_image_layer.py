@@ -2,6 +2,8 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+import os
+
 import numpy as np
 
 from napari.layers import Image
@@ -57,6 +59,9 @@ class Image3DSuite:
     params = [2**i for i in range(4, 11)]
 
     def setup(self, n):
+        if "CI" in os.environ and n > 512:
+            raise NotImplementedError("Skip on CI (not enough memory)")
+
         np.random.seed(0)
         self.data = np.random.random((n, n, n))
         self.new_data = np.random.random((n, n, n))
