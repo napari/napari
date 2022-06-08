@@ -18,12 +18,13 @@ from napari.utils.action_manager import action_manager
 
 def _get_all_keybinding_methods(type_):
     obj_methods = set(super(type_, type_).class_keymap.values())
-    obj_methods.update(type_.class_keymap.values())
-
-    # need to get methods in action_manager
-    am_methods = action_manager._get_layer_actions(type_)
-    for name, action in am_methods.items():
-        obj_methods.add(action.command)
+    obj_methods.update({v.__name__ for v in type_.class_keymap.values()})
+    obj_methods.update(
+        {
+            a.command.__name__
+            for a in action_manager._get_layer_actions(type_).values()
+        }
+    )
     return obj_methods
 
 
@@ -39,7 +40,9 @@ def viewer(qapp):
     try:
         yield v
     finally:
-        with patch.object(v.window._qt_window, '_save_current_window_settings'):
+        with patch.object(
+            v.window._qt_window, '_save_current_window_settings'
+        ):
             v.close()
 
 
@@ -49,6 +52,7 @@ def test_len_methods_viewer(viewer):
     """
     viewer_methods = _get_all_keybinding_methods(Viewer)
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
+
 
 @skip_on_win_ci
 def test_changing_theme(viewer):
@@ -72,6 +76,7 @@ def test_changing_theme(viewer):
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
+
 
 @pytest.mark.xfail
 def test_non_existing_bindings():
@@ -115,6 +120,16 @@ def test_viewer(viewer):
     assert viewer.dims.ndisplay == 2
 
 
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_add_layer(viewer, layer_class, data, ndim):
+    viewer.layers.clear()
+    layer = add_layer_by_type(viewer, layer_class, data, visible=True)
+    check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
+
+    for func in layer.class_keymap.values():
+        func(layer)
+
+
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Image': 8,
     'Vectors': 0,
@@ -126,31 +141,19 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
 }
 
 
-# We unroll the layer data, with the all the methods of the layer that we are
-# going to test, so that if one method fails we know which one, as well as
-# remove potential issues that would be triggered by calling methods after each
-# other.
-
-
-
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(
-    viewer, layer_class, data, ndim
-):  
-    viewer.layers.clear()
-    layer = add_layer_by_type(viewer, layer_class, data, visible=True)
-    check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
-
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
+@pytest.mark.parametrize(
+    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_METHODS.items()
+)
+def test_expected_number_of_layer_methods(cls, expectation):
+    """
+    Make sure we do find all the methods attached to a layer via keybindings
+    """
+    layer_methods = _get_all_keybinding_methods(getattr(layers, cls))
+    assert len(layer_methods) == expectation
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
-def test_add_layer_magic_name(
-    viewer, layer_class, a_unique_name, ndim
-):
+def test_add_layer_magic_name(viewer, layer_class, a_unique_name, ndim):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
     viewer.layers.clear()
@@ -193,9 +196,6 @@ def test_screenshot(viewer):
     # Take screenshot with the viewer included
     screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
-
-
-
 
 
 # TODO: revisit the need for sync_only here.
@@ -324,6 +324,7 @@ def test_emitting_data_doesnt_change_cursor_position(
     layer.events.data(value=layer.data)
 
     assert viewer.cursor.position == new_position
+
 
 @skip_local_popups
 def test_custom_layer(viewer):
