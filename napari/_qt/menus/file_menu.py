@@ -148,7 +148,7 @@ class FileMenu(NapariMenu):
     def _close_window(self):
         message = QMessageBox(
             QMessageBox.Icon.Warning,
-            "Close window",
+            "Close window?",
             "Confirm to close window (or press 'Ctrl+W')",
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self._win._qt_window,
