@@ -151,6 +151,8 @@ class QtWidgetOverlay(QStackedWidget):
 
     sig_dropped = Signal("QEvent")
     resized = Signal()
+    leave = Signal()
+    enter = Signal()
 
     def __init__(self, parent, widget):
         super().__init__(parent)
@@ -170,5 +172,16 @@ class QtWidgetOverlay(QStackedWidget):
         self.setCurrentIndex(int(visible))
 
     def resizeEvent(self, event):
+        """Emit our own event when canvas was resized."""
         self.resized.emit()
         return super().resizeEvent(event)
+
+    def enterEvent(self, event):
+        """Emit our own event when mouse enters the canvas."""
+        self.enter.emit()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        """Emit our own event when mouse leaves the canvas."""
+        self.leave.emit()
+        super().leaveEvent(event)
