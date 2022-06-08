@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Collection, Iterable, Iterator, MutableSet, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
 from ....utils.events import EmitterGroup
 from ....utils.translations import trans
 
 _T = TypeVar("_T")
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -157,12 +160,12 @@ class EventedSet(MutableSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value, field):
+    def validate(cls, value: Iterable, field: ModelField):
         """Pydantic validator."""
-        if not isinstance(value, Collection):
+        if not isinstance(value, Iterable):
             raise TypeError(
                 trans._(
-                    'Value is not a valid collection: {value}',
+                    'Value is not a valid iterable: {value}',
                     deferred=True,
                     value=value,
                 )

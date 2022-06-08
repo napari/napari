@@ -24,8 +24,8 @@ cover this in test_evented_list.py)
 
 import logging
 from typing import (
+    TYPE_CHECKING,
     Callable,
-    Collection,
     Dict,
     Iterable,
     List,
@@ -41,6 +41,9 @@ from ..types import SupportsEvents
 from ._typed import _L, _T, Index, TypedMutableSequence
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
 class EventedList(TypedMutableSequence[_T]):
@@ -368,12 +371,12 @@ class EventedList(TypedMutableSequence[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value, field):
+    def validate(cls, value: Iterable, field: 'ModelField'):
         """Pydantic validator."""
-        if not isinstance(value, Collection):
+        if not isinstance(value, Iterable):
             raise TypeError(
                 trans._(
-                    'Value is not a valid collection: {value}',
+                    'Value is not a valid iterable: {value}',
                     deferred=True,
                     value=value,
                 )
