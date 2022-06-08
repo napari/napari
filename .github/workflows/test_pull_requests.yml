@@ -75,6 +75,11 @@ jobs:
           #   toxenv: headless-py38-linux
 
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+
       - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
