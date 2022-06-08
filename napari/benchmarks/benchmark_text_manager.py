@@ -15,7 +15,6 @@ class TextManagerSuite:
     params = [
         [2**i for i in range(4, 18, 2)],
         [
-            None,
             {'constant': 'test'},
             'string_property',
             'float_property',
@@ -51,3 +50,16 @@ class TextManagerSuite:
 
     def time_remove_as_batch(self, n, string):
         self.manager.remove(self.indices_to_remove)
+
+    # `time_remove_as_batch` can only run once per instance;
+    # otherwise it fails because the indices were already removed:
+    #
+    #   IndexError: index 32768 is out of bounds for axis 0 with size 32768
+    #
+    # Why? ASV will run the same function after setup several times in two
+    # occasions: warmup and timing itself. We disable warmup and only
+    # allow one execution per state with these method-specific options:
+    time_remove_as_batch.number = 1
+    time_remove_as_batch.warmup_time = 0
+    # See https://asv.readthedocs.io/en/stable/benchmarks.html#timing-benchmarks
+    # for more details
