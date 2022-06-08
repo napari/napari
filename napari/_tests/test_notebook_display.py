@@ -1,8 +1,10 @@
+import html
+from unittest.mock import Mock
+
 import numpy as np
 import pytest
 
 from napari.utils import nbscreenshot
-from napari.utils.notebook_display import _clean_alt_text
 
 
 def test_nbscreenshot(make_napari_viewer):
@@ -13,12 +15,11 @@ def test_nbscreenshot(make_napari_viewer):
     data = np.random.random((10, 15))
     viewer.add_image(data)
 
-    rich_display_object = nbscreenshot(viewer, alt_text="!@#$%^&*()`~")
+    rich_display_object = nbscreenshot(viewer)
     assert hasattr(rich_display_object, '_repr_png_')
     # Trigger method that would run in jupyter notebook cell automatically
     rich_display_object._repr_png_()
     assert rich_display_object.image is not None
-    assert 'alt="!@#$%^&amp;*()`~"' in rich_display_object._repr_html_()
 
 
 @pytest.mark.parametrize(
@@ -29,7 +30,7 @@ def test_nbscreenshot(make_napari_viewer):
         # Naughty strings https://github.com/minimaxir/big-list-of-naughty-strings
         # ASCII punctuation
         (r",./;'[]\-=", ',./;&#x27;[]\\-='),  # noqa: W605
-        ('<>?:"{}|_+', '&lt;&gt;?:&quot;{}|_+'),  # ASCII punctuation 2
+        ('>?:"{}|_+', '&gt;?:&quot;{}|_+'),  # ASCII punctuation 2
         ("!@#$%^&*()`~", '!@#$%^&amp;*()`~'),  # ASCII punctuation 3
         # # Emjoi
         ("😍", "😍"),  # emoji 1
@@ -43,8 +44,11 @@ def test_nbscreenshot(make_napari_viewer):
         ("<script>alert(0)</script>", None),  # script injection 1
         ("&lt;script&gt;alert(&#39;1&#39;);&lt;/script&gt;", None),
         ("<svg><script>123<1>alert(3)</script>", None),
-        ("<sc<script>ript>alert(13)</sc</script>ript>", None),
     ],
 )
 def test_safe_alt_text(alt_text_input, expected_alt_text):
-    assert _clean_alt_text(alt_text_input) == expected_alt_text
+    display_obj = nbscreenshot(Mock(), alt_text=alt_text_input)
+    if not expected_alt_text:
+        assert not display_obj.alt_text
+    else:
+        assert html.escape(display_obj.alt_text) == expected_alt_text

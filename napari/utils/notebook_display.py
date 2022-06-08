@@ -1,7 +1,6 @@
 import base64
 import html
 from io import BytesIO
-from typing import Optional
 from warnings import warn
 
 try:
@@ -71,7 +70,23 @@ class NotebookScreenshot:
         self.viewer = viewer
         self.canvas_only = canvas_only
         self.image = None
-        self.alt_text = _clean_alt_text(alt_text)
+        self.alt_text = self._clean_alt_text(alt_text)
+
+    def _clean_alt_text(self, alt_text):
+        """Clean user input to prevent script injection."""
+        if alt_text is not None:
+            if lxml_unavailable:
+                warn(
+                    'The lxml library is not installed, and is required to '
+                    'sanitize alt text for napari screenshots. Alt-text '
+                    'will be stripped altogether without lxml.'
+                )
+                return None
+            # cleaner won't recognize unescaped script tags
+            alt_text = html.unescape(str(alt_text))
+            doc = document_fromstring(alt_text)
+            alt_text = Cleaner().clean_html(doc).text_content()
+        return alt_text or None
 
     def _repr_png_(self):
         """PNG representation of the viewer object for IPython.
@@ -97,27 +112,8 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        _alt = html.escape(self.alt_text) if self.alt_text else ''
+        _alt = html.escape(self.alt_text) if self.alt_text is not None else ''
         return f'<img src="{url}" alt="{_alt}"></img>'
-
-
-def _clean_alt_text(alt_text: Optional[str]) -> Optional[str]:
-    """Clean user input to prevent script injection."""
-    if alt_text is not None:
-        if lxml_unavailable:
-            warn(
-                'The lxml library is not installed, and is required to '
-                'sanitize alt text for napari screenshots. Alt-text '
-                'will be stripped altogether without lxml.'
-            )
-            return None
-        # cleaner won't recognize unescaped script tags
-        alt_text = html.unescape(str(alt_text))  
-        doc = document_fromstring(alt_text)
-        alt_text = Cleaner().clean_html(doc).text_content()
-        if alt_text == "":
-            alt_text = None
-    return alt_text
 
 
 nbscreenshot = NotebookScreenshot
