@@ -303,6 +303,7 @@ def test_emitting_data_doesnt_change_points_value(viewer):
     viewer.layers.selection.active = layer
 
     assert layer._value is None
+    viewer._mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
     assert layer._value == 1
 
