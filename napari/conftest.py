@@ -512,14 +512,14 @@ def pytest_collection_modifyitems(session, config, items):
         "napari/_qt",
         "napari/qt",
         "napari/_tests",
+        "napari/_tests/test_examples.py",
     ]
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
-                test_order[i].append(item)
-                break
-        else:
-            test_order[-1].append(item)
+                index = i
+        test_order[index].append(item)
     items[:] = list(chain(*test_order))
