@@ -14,9 +14,9 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -31,9 +31,9 @@ jobs:
     name: Check l18n syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -54,35 +54,31 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
           # Windows py38
-          - python: 3.8
-            platform: windows-latest
-            backend: pyqt
-          - python: 3.8
-            platform: windows-latest
-            backend: pyside
           - python: 3.9
-            platform: macos-11
-            backend: pyqt # (only testing pyqt on mac in the interest of speed)
-          # minimum specified requirements
-          - python: 3.8
-            platform: ubuntu-18.04
-            MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: async-pyqt-py38-linux
-          # test without any Qt backends
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: headless-py38-linux
+            platform: windows-latest
+          - python: 3.10
+            platform: macos-latest
+          # # minimum specified requirements
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   MIN_REQ: 1
+          # # test with --async_only
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: async-pyqt-py38-linux
+          # # test without any Qt backends
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: headless-py38-linux
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
 
@@ -165,18 +161,18 @@ jobs:
           du -hs /tmp/.tox/*
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
 
