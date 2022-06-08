@@ -27,5 +27,6 @@ coverage:
         threshold: 1%  # coverage can drop by up to 1% while still posting success
     patch:
       threshold: 1%
+      target: 0%
 comment:
   require_changes: true  # if true: only post the PR comment if coverage changes
