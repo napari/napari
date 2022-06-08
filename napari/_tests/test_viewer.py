@@ -41,31 +41,6 @@ def test_len_methods_viewer(make_napari_viewer):
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
 
 
-@skip_on_win_ci
-def test_changing_theme(make_napari_viewer):
-    """Test changing the theme updates the full window."""
-    viewer = make_napari_viewer()
-    viewer.window._qt_viewer.set_welcome_visible(False)
-    viewer.add_points(data=None)
-    size = viewer.window._qt_viewer.size()
-    viewer.window._qt_viewer.setFixedSize(size)
-
-    assert viewer.theme == 'dark'
-    screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
-
-    viewer.theme = 'light'
-    assert viewer.theme == 'light'
-    screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
-
-    equal = (screenshot_dark == screenshot_light).min(-1)
-
-    # more than 99.5% of the pixels have changed
-    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
-
-    with pytest.raises(ValueError):
-        viewer.theme = 'nonexistent_theme'
-
-
 @pytest.mark.xfail
 def test_non_existing_bindings():
     """
@@ -189,6 +164,31 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
+@skip_on_win_ci
+def test_changing_theme(make_napari_viewer):
+    """Test changing the theme updates the full window."""
+    viewer = make_napari_viewer()
+    viewer.window._qt_viewer.set_welcome_visible(False)
+    viewer.add_points(data=None)
+    size = viewer.window._qt_viewer.size()
+    viewer.window._qt_viewer.setFixedSize(size)
+
+    assert viewer.theme == 'dark'
+    screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
+
+    viewer.theme = 'light'
+    assert viewer.theme == 'light'
+    screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
+
+    equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # more than 99.5% of the pixels have changed
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
+
+    with pytest.raises(ValueError):
+        viewer.theme = 'nonexistent_theme'
+
+
 # TODO: revisit the need for sync_only here.
 # An async failure was observed here on CI, but was not reproduced locally
 @pytest.mark.sync_only
@@ -285,6 +285,19 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
+@skip_local_popups
+def test_custom_layer(make_napari_viewer):
+    """Make sure that custom layers subclasses can be added to the viewer."""
+
+    class NewLabels(layers.Labels):
+        """'Empty' extension of napari Labels layer."""
+
+    # Make a viewer and add the custom layer
+    viewer = make_napari_viewer()
+    viewer.show()
+    viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
+
+
 def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     """Test emitting data with no change doesn't change the layer _value."""
     viewer = make_napari_viewer()
@@ -316,19 +329,6 @@ def test_emitting_data_doesnt_change_cursor_position(
     layer.events.data(value=layer.data)
 
     assert viewer.cursor.position == new_position
-
-
-@skip_local_popups
-def test_custom_layer(make_napari_viewer):
-    """Make sure that custom layers subclasses can be added to the viewer."""
-
-    class NewLabels(layers.Labels):
-        """'Empty' extension of napari Labels layer."""
-
-    # Make a viewer and add the custom layer
-    viewer = make_napari_viewer()
-    viewer.show()
-    viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
 
 
 @skip_local_popups

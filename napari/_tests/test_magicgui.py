@@ -26,9 +26,10 @@ except RuntimeError:
 # only test the first of each layer type
 test_data = []
 for cls in all_subclasses(Layer):
+    # OctTree Image doesn't have layer_test_data
     with contextlib.suppress(StopIteration):
         test_data.append(next(x for x in layer_test_data if x[0] is cls))
-test_data.sort(key=lambda x: x[0].__name__)
+test_data.sort(key=lambda x: x[0].__name__)  # required for xdist to work
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
