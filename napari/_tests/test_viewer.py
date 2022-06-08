@@ -31,15 +31,47 @@ viewer_methods = _get_all_keybinding_methods(Viewer)
 EXPECTED_NUMBER_OF_VIEWER_METHODS = 13
 
 
-def test_len_methods_viewer(make_napari_viewer):
+@pytest.fixture(scope='module')
+def viewer(qapp):
+    from unittest.mock import patch
+
+    v = Viewer(show=False)
+    try:
+        yield v
+    finally:
+        with patch.object(v.window._qt_window, '_save_current_window_settings'):
+            v.close()
+
+
+def test_len_methods_viewer(viewer):
     """
     Make sure we do find all the methods attached to a viewer via keybindings
     """
-
-    viewer = make_napari_viewer()  # noqa: F841
     viewer_methods = _get_all_keybinding_methods(Viewer)
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
 
+@skip_on_win_ci
+def test_changing_theme(viewer):
+    """Test changing the theme updates the full window."""
+    viewer.window._qt_viewer.set_welcome_visible(False)
+    viewer.add_points(data=None)
+    size = viewer.window._qt_viewer.size()
+    viewer.window._qt_viewer.setFixedSize(size)
+
+    assert viewer.theme == 'dark'
+    screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
+
+    viewer.theme = 'light'
+    assert viewer.theme == 'light'
+    screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
+
+    equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # more than 99.5% of the pixels have changed
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
+
+    with pytest.raises(ValueError):
+        viewer.theme = 'nonexistent_theme'
 
 @pytest.mark.xfail
 def test_non_existing_bindings():
@@ -52,10 +84,8 @@ def test_non_existing_bindings():
 
 
 @pytest.mark.parametrize('func', viewer_methods)
-def test_viewer_methods(make_napari_viewer, func):
+def test_viewer_methods(viewer, func):
     """Test instantiating viewer."""
-    viewer = make_napari_viewer()
-
     if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
         pytest.skip("Fullscreen cannot be tested in CI")
     if func.__name__ == 'play':
@@ -63,9 +93,9 @@ def test_viewer_methods(make_napari_viewer, func):
     func(viewer)
 
 
-def test_viewer(make_napari_viewer):
+def test_viewer(viewer):
     """Test instantiating viewer."""
-    viewer = make_napari_viewer()
+    viewer.layers.clear()
     view = viewer.window._qt_viewer
 
     assert viewer.title == 'napari'
@@ -102,38 +132,28 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
 # other.
 
 
-unrolled_layer_data = []
-for layer_class, data, ndim in layer_test_data:
-    methods = _get_all_keybinding_methods(layer_class)
-    for func in methods:
-        unrolled_layer_data.append(
-            (layer_class, data, ndim, func, len(methods))
-        )
 
-
-@pytest.mark.parametrize(
-    'layer_class, data, ndim, func, Nmeth', unrolled_layer_data
-)
-@pytest.mark.parametrize('visible', [True, False])
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(
-    make_napari_viewer, layer_class, data, ndim, func, Nmeth, visible
-):
-    viewer = make_napari_viewer()
-    layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
+    viewer, layer_class, data, ndim
+):  
+    viewer.layers.clear()
+    layer = add_layer_by_type(viewer, layer_class, data, visible=True)
     check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
 
-    func(layer)
+    for func in layer.class_keymap.values():
+        func(layer)
 
-    assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
+    # assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
 def test_add_layer_magic_name(
-    make_napari_viewer, layer_class, a_unique_name, ndim
+    viewer, layer_class, a_unique_name, ndim
 ):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
-    viewer = make_napari_viewer()  # noqa: F841
+    viewer.layers.clear()
     layer = eval_with_filename(
         "add_layer_by_type(viewer, layer_class, a_unique_name)",
         "somefile.py",
@@ -142,9 +162,8 @@ def test_add_layer_magic_name(
 
 
 @skip_on_win_ci
-def test_screenshot(make_napari_viewer):
+def test_screenshot(viewer):
     """Test taking a screenshot."""
-    viewer = make_napari_viewer()
 
     np.random.seed(0)
     # Add image
@@ -176,39 +195,16 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-@skip_on_win_ci
-def test_changing_theme(make_napari_viewer):
-    """Test changing the theme updates the full window."""
-    viewer = make_napari_viewer(show=False)
-    viewer.window._qt_viewer.set_welcome_visible(False)
-    viewer.add_points(data=None)
-    size = viewer.window._qt_viewer.size()
-    viewer.window._qt_viewer.setFixedSize(size)
 
-    assert viewer.theme == 'dark'
-    screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
-
-    viewer.theme = 'light'
-    assert viewer.theme == 'light'
-    screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
-
-    equal = (screenshot_dark == screenshot_light).min(-1)
-
-    # more than 99.5% of the pixels have changed
-    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
-
-    with pytest.raises(ValueError):
-        viewer.theme = 'nonexistent_theme'
 
 
 # TODO: revisit the need for sync_only here.
 # An async failure was observed here on CI, but was not reproduced locally
 @pytest.mark.sync_only
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
+def test_roll_transpose_update(viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
-
-    viewer = make_napari_viewer()
+    viewer.layers.clear()
 
     np.random.seed(0)
 
@@ -237,9 +233,9 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
-def test_toggling_axes(make_napari_viewer):
+def test_toggling_axes(viewer):
     """Test toggling axes."""
-    viewer = make_napari_viewer()
+    viewer.layers.clear()
 
     # Check axes are not visible
     assert not viewer.axes.visible
@@ -257,9 +253,9 @@ def test_toggling_axes(make_napari_viewer):
     assert not viewer.axes.visible
 
 
-def test_toggling_scale_bar(make_napari_viewer):
+def test_toggling_scale_bar(viewer):
     """Test toggling scale bar."""
-    viewer = make_napari_viewer()
+    viewer.layers.clear()
 
     # Check scale bar is not visible
     assert not viewer.scale_bar.visible
@@ -277,8 +273,8 @@ def test_toggling_scale_bar(make_napari_viewer):
     assert not viewer.scale_bar.visible
 
 
-def test_removing_points_data(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_removing_points_data(viewer):
+    viewer.layers.clear()
     points = np.random.random((4, 2)) * 4
 
     pts_layer = viewer.add_points(points)
@@ -287,8 +283,8 @@ def test_removing_points_data(make_napari_viewer):
     assert len(pts_layer.data) == 0
 
 
-def test_deleting_points(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_deleting_points(viewer):
+    viewer.layers.clear()
     points = np.random.random((4, 2)) * 4
 
     pts_layer = viewer.add_points(points)
@@ -298,21 +294,9 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
-@skip_local_popups
-def test_custom_layer(make_napari_viewer):
-    """Make sure that custom layers subclasses can be added to the viewer."""
-
-    class NewLabels(layers.Labels):
-        """'Empty' extension of napari Labels layer."""
-
-    # Make a viewer and add the custom layer
-    viewer = make_napari_viewer(show=True)
-    viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
-
-
-def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
+def test_emitting_data_doesnt_change_points_value(viewer):
     """Test emitting data with no change doesn't change the layer _value."""
-    viewer = make_napari_viewer()
+    viewer.layers.clear()
 
     data = np.array([[0, 0], [10, 10], [20, 20]])
     layer = viewer.add_points(data, size=2)
@@ -328,10 +312,10 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_emitting_data_doesnt_change_cursor_position(
-    make_napari_viewer, layer_class, data, ndim
+    viewer, layer_class, data, ndim
 ):
     """Test emitting data event from layer doesn't change cursor position"""
-    viewer = make_napari_viewer()
+    viewer.layers.clear()
     layer = layer_class(data)
     viewer.add_layer(layer)
 
@@ -341,11 +325,22 @@ def test_emitting_data_doesnt_change_cursor_position(
 
     assert viewer.cursor.position == new_position
 
+@skip_local_popups
+def test_custom_layer(viewer):
+    """Make sure that custom layers subclasses can be added to the viewer."""
+
+    class NewLabels(layers.Labels):
+        """'Empty' extension of napari Labels layer."""
+
+    # Make a viewer and add the custom layer
+    viewer.show()
+    viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
+
 
 @skip_local_popups
 @skip_on_win_ci
-def test_empty_shapes_dims(make_napari_viewer):
+def test_empty_shapes_dims(viewer):
     """make sure an empty shapes layer can render in 3D"""
-    viewer = make_napari_viewer(show=True)
+    viewer.show()
     viewer.add_shapes(None)
     viewer.dims.ndisplay = 3

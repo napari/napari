@@ -2,6 +2,23 @@ import numpy as np
 import pytest
 
 from napari.utils import nbscreenshot
+from napari.utils.notebook_display import _clean_alt_text
+
+
+def test_nbscreenshot(make_napari_viewer):
+    """Test taking a screenshot."""
+    viewer = make_napari_viewer()
+
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    rich_display_object = nbscreenshot(viewer, alt_text="!@#$%^&*()`~")
+    assert hasattr(rich_display_object, '_repr_png_')
+    # Trigger method that would run in jupyter notebook cell automatically
+    rich_display_object._repr_png_()
+    assert rich_display_object.image is not None
+    assert 'alt="!@#$%^&amp;*()`~"' in rich_display_object._repr_html_()
 
 
 @pytest.mark.parametrize(
@@ -11,10 +28,7 @@ from napari.utils import nbscreenshot
         ("Good alt text", "Good alt text"),
         # Naughty strings https://github.com/minimaxir/big-list-of-naughty-strings
         # ASCII punctuation
-        (
-            r",./;'[]\-=",
-            ',./;&#x27;[]\\-=',
-        ),  # noqa: W605
+        (r",./;'[]\-=", ',./;&#x27;[]\\-='),  # noqa: W605
         ('<>?:"{}|_+', '&lt;&gt;?:&quot;{}|_+'),  # ASCII punctuation 2
         ("!@#$%^&*()`~", '!@#$%^&amp;*()`~'),  # ASCII punctuation 3
         # # Emjoi
@@ -32,24 +46,5 @@ from napari.utils import nbscreenshot
         ("<sc<script>ript>alert(13)</sc</script>ript>", None),
     ],
 )
-def test_nbscreenshot(make_napari_viewer, alt_text_input, expected_alt_text):
-    """Test taking a screenshot."""
-    viewer = make_napari_viewer()
-
-    np.random.seed(0)
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-
-    rich_display_object = nbscreenshot(viewer, alt_text=alt_text_input)
-    assert hasattr(rich_display_object, '_repr_png_')
-    # Trigger method that would run in jupyter notebook cell automatically
-    rich_display_object._repr_png_()
-    assert rich_display_object.image is not None
-
-    html_output = rich_display_object._repr_html_()
-
-    if expected_alt_text is None:
-        assert 'alt_text=' not in html_output
-    else:
-        expected_output = 'alt="' + str(expected_alt_text) + '"'
-        assert expected_output in html_output
+def test_safe_alt_text(alt_text_input, expected_alt_text):
+    assert _clean_alt_text(alt_text_input) == expected_alt_text
