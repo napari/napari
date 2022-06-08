@@ -1,7 +1,9 @@
+import html
 from unittest.mock import Mock
+
 import numpy as np
 import pytest
-import html
+
 from napari.utils import nbscreenshot
 
 
@@ -18,7 +20,6 @@ def test_nbscreenshot(make_napari_viewer):
     # Trigger method that would run in jupyter notebook cell automatically
     rich_display_object._repr_png_()
     assert rich_display_object.image is not None
-
 
 
 @pytest.mark.parametrize(
