@@ -12,7 +12,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   manifest:
     name: Check Manifest
     runs-on: ubuntu-latest
@@ -54,7 +53,7 @@ jobs:
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
-          - python: '3.10'
+          - python: "3.10"
             platform: ubuntu-latest
             toxenv: py310-linux-pyside
 
@@ -114,7 +113,7 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: '[test-bot] Comprehensive tests failing'
+          TITLE: "[test-bot] Comprehensive tests failing"
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
@@ -143,3 +142,39 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
+
+  asv-checks:
+    name: asv checks
+    runs-on:
+      macos-latest
+      # We use a macOS runner to avoid having to deal with Xvfb
+      # derived problems on Ubuntu. Xvfb allows us to run the Qt
+      # benchmarks, but causes segfaults in some cases! :shrug:
+    steps:
+      # We need the full repo to avoid this issue
+      # https://github.com/actions/checkout/issues/23
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v3
+        name: Install Python
+        with:
+          python-version: "3.9"
+
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install ".[all,testing]" asv
+
+      - name: Register machine
+        run: asv machine --yes
+
+      - name: Check asv config is correct
+        run: asv check -v -E existing
+
+      - name: Ensure benchmarking tests can run
+        # this does NOT run the benchmarks properly
+        # it only runs each function once to ensure the code is correct
+        # but there's no statistical meaning to it
+        run: asv dev
