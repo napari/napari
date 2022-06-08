@@ -59,7 +59,7 @@ jobs:
           # Windows py38
           - python: 3.9
             platform: windows-latest
-          - python: 3.10
+          - python: "3.10"
             platform: macos-latest
           # # minimum specified requirements
           # - python: 3.8
