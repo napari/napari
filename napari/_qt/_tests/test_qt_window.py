@@ -81,3 +81,13 @@ def test_lazy_console(make_napari_viewer):
     assert v.window._qt_viewer._console is None
     v.update_console({"test": "test"})
     assert v.window._qt_viewer._console is None
+
+
+def test_menubar_shortcut(make_napari_viewer):
+    v = make_napari_viewer()
+    v.show()
+    assert v.window.main_menu.isVisible()
+    assert not v.window._main_menu_shortcut.isEnabled()
+    v.window._toggle_menubar_visible()
+    assert not v.window.main_menu.isVisible()
+    assert v.window._main_menu_shortcut.isEnabled()
