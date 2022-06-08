@@ -1,4 +1,7 @@
+import platform
 from unittest.mock import patch
+
+import pytest
 
 from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari.utils.theme import (
@@ -83,6 +86,9 @@ def test_lazy_console(make_napari_viewer):
     assert v.window._qt_viewer._console is None
 
 
+@pytest.skipif(
+    platform.system() == "Darwin", reason="Cannot control menu bar on MacOS"
+)
 def test_menubar_shortcut(make_napari_viewer):
     v = make_napari_viewer()
     v.show()
