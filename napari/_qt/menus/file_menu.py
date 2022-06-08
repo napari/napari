@@ -137,7 +137,7 @@ class FileMenu(NapariMenu):
             QMessageBox.Icon.Warning,
             trans._("Close application?"),
             trans._(
-                "Confirm to close application (or press 'Ctrl+Q'). This will close all Qt Windows in this process"
+                "Do you want to close the application? ('Ctrl+Q' to confirm). This will close all Qt Windows in this process"
             ),
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self._win._qt_window,
