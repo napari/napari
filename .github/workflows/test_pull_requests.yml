@@ -108,7 +108,7 @@ jobs:
         run: |
           python -m pip install -U pip
           python tools/minreq.py
-          python -m pip install -e .[test,${{ matrix.backend }}]
+          python -m pip install -e .[testing,${{ matrix.backend }}]
         env:
           # tools/minreq.py sets all deps to their minumim stated versions
           # it is a no-op if MIN_REQ is not set
