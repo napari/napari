@@ -40,7 +40,7 @@ jobs:
           # test big sur on 3.9.0
           - python: 3.9
             platform: macos-11
-            toxenv: py39-macos-pyqt
+            backend: pyqt
           # test with minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
@@ -48,7 +48,7 @@ jobs:
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-py38-linux-pyqt
+            backend: pyqt
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
@@ -75,19 +75,23 @@ jobs:
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
+      # tox and tox-gh-actions will take care of the "actual" installation
+      # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
           python tools/minreq.py  # no-op if MIN_REQ is not set
         env:
+          # tools/minreq.py sets all deps to their minumim stated versions
+          # it is a no-op if MIN_REQ is not set
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
-      # The one exception is if the "toxenv" environment variable has been set,
-      # in which case we are declaring one specific tox environment to run.
+      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
+      # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
@@ -95,13 +99,13 @@ jobs:
           run: python -m tox
         env:
           PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
           TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
         uses: codecov/codecov-action@v1
 
       - name: Report Failures
