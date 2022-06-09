@@ -583,6 +583,7 @@ def test_active_layer_status_update():
 
     # wait 1 s to avoid the cursor event throttling
     time.sleep(1)
+    viewer._mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
     assert viewer.status == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
@@ -901,7 +902,7 @@ def test_open_or_get_error_preferred_fails(tmp_path):
     pth = tmp_path / 'my-file.npy'
 
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'.npy': 'napari'}
+        get_settings().plugins.extension2reader = {'*.npy': 'napari'}
 
         with pytest.raises(
             ReaderPluginError, match='Tried opening with napari, but failed.'

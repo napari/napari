@@ -257,6 +257,14 @@ def test_nested_indexing():
     for index in indices:
         assert ne_list[index] == int("".join(map(str, index)))
 
+    assert ne_list.has_index(1)
+    assert ne_list.has_index((1,))
+    assert ne_list.has_index((1, 2))
+    assert ne_list.has_index((1, 1, 2))
+    assert not ne_list.has_index((1, 1, 3))
+    assert not ne_list.has_index((1, 1, 2, 3, 4))
+    assert not ne_list.has_index(100)
+
 
 # indices in NEST that are themselves lists
 @pytest.mark.parametrize(
@@ -306,8 +314,9 @@ def test_nested_events(meth, group_index):
 
     method_name, args, expected_events = meth
     method = getattr(ne_list[group_index], method_name)
-    if method_name == 'index' and group_index != (1, 1):
-        # the expected value only occurs in index (1, 1)
+    if method_name == 'index' and group_index == (1, 1, 1):
+        # the expected value of '110' (in the pytest parameters)
+        # is not present in any child of ne_list[1, 1, 1]
         with pytest.raises(ValueError):
             method(*args)
     else:

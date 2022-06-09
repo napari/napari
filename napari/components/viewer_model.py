@@ -134,6 +134,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
     _ctx: Context
+    # To check if mouse is over canvas to avoid race conditions between
+    # different events systems
+    _mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
@@ -328,6 +331,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer._slice_dims(
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
+        position = list(self.cursor.position)
+        for ind in self.dims.order[: -self.dims.ndisplay]:
+            position[ind] = self.dims.point[ind]
+        self.cursor.position = position
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
@@ -397,6 +404,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         This is generally used as a callback when cursor.position is updated.
         """
         # Update status and help bar based on active layer
+        if not self._mouse_over_canvas:
+            return
         active = self.layers.selection.active
         if active is not None:
             self.status = active.get_status(
@@ -550,7 +559,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent_no_depth',
+        blending=None,
         visible=True,
         multiscale=None,
         cache=True,
@@ -787,7 +796,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        ``**kwargs``
+        **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
@@ -866,7 +875,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         path: PathOrPaths,
         *,
         stack: bool = False,
-        plugin: Optional[str] = None,
+        plugin: Optional[str] = 'builtins',
         layer_type: Optional[str] = None,
         **kwargs,
     ) -> List[Layer]:
@@ -887,16 +896,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
         plugin : str, optional
-            Name of a plugin to use.  If provided, will force ``path`` to be
-            read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an exception will be raised.
+            Name of a plugin to use, by default builtins.  If provided, will
+            force ``path`` to be read with the specified ``plugin``.
+            If None, ``plugin`` will be read from preferences or inferred if just
+            one reader is compatible.
+            If the requested plugin cannot read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        ``**kwargs``
+        **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 

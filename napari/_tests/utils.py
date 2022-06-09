@@ -31,6 +31,12 @@ skip_local_popups = pytest.mark.skipif(
     ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
 
+"""
+The default timeout duration in seconds when waiting on tasks running in non-main threads.
+The value was chosen to be consistent with `QtBot.waitSignal` and `QtBot.waitUntil`.
+"""
+DEFAULT_TIMEOUT_SECS: float = 5
+
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
@@ -140,7 +146,8 @@ def are_objects_equal(object1, object2):
         items = [(object1, object2)]
 
     # equal_nan does not exist in array_equal in old numpy
-    if tuple(int(v) for v in np.__version__.split('.')) < (1, 19):
+    npy_major_version = tuple(int(v) for v in np.__version__.split('.')[:2])
+    if npy_major_version < (1, 19):
         fixed = [(np.nan_to_num(a1), np.nan_to_num(a2)) for a1, a2 in items]
         return np.all([np.all(a1 == a2) for a1, a2 in fixed])
 

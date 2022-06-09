@@ -229,7 +229,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shear=None,
         affine=None,
         opacity=1,
-        blending='translucent_no_depth',
+        blending='translucent',
         visible=True,
         multiscale=None,
         cache=True,
@@ -256,8 +256,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             data = MultiScaleData(data)
 
         # Determine if rgb
-        if rgb is None:
-            rgb = guess_rgb(data.shape)
+        rgb_guess = guess_rgb(data.shape)
+        if rgb and not rgb_guess:
+            raise ValueError(
+                trans._(
+                    "'rgb' was set to True but data does not have suitable dimensions."
+                )
+            )
+        elif rgb is None:
+            rgb = rgb_guess
 
         # Determine dimensionality of the data
         ndim = len(data.shape)
