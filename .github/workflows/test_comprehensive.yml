@@ -40,7 +40,7 @@ jobs:
           # test big sur on 3.9.0
           - python: 3.9
             platform: macos-11
-            backend: pyqt
+            toxenv: py39-macos-pyqt2
           # test with minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
@@ -48,7 +48,7 @@ jobs:
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            backend: pyqt
+            async-py38-linux-pyqt2
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
