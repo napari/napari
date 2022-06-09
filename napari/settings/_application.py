@@ -155,6 +155,13 @@ class ApplicationSettings(EventedModel):
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
     )
+    confirm_close_window: bool = Field(
+        default=True,
+        title=trans._("Window close confirmation"),
+        description=trans._(
+            "Ask for confirmation before close window with Ctrl+W"
+        ),
+    )
 
     @validator('window_state')
     def _validate_qbtye(cls, v):

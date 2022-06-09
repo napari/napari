@@ -148,6 +148,9 @@ class FileMenu(NapariMenu):
             self._win._qt_window.close(quit_app=True)
 
     def _close_window(self):
+        if not get_settings().application.confirm_close_window:
+            self._win._qt_window.close(quit_app=False)
+            return
         message = QMessageBox(
             QMessageBox.Icon.Question,
             trans._("Close window?"),
@@ -158,7 +161,7 @@ class FileMenu(NapariMenu):
         close_btn = message.button(QMessageBox.StandardButton.Ok)
         close_btn.setShortcut(QKeySequence('Ctrl+W'))
         if message.exec_() == QMessageBox.StandardButton.Ok:
-            self._win._qt_window.close()
+            self._win._qt_window.close(quit_app=False)
 
     def _layer_count(self, event=None):
         return len(self._win._qt_viewer.viewer.layers)
