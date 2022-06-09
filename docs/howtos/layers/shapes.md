@@ -366,10 +366,10 @@ Individual shapes can each have different edge and face colors. You can
 initially set these colors by providing a list of colors to the `edge_color` or
 `face_color` keyword arguments respectively, or you can edit them from the GUI.
 The colors of each of the shapes are available as lists under the
-`layer.edge_colors` and `layer.face_colors` properties. These properties are
-different from the `layer.edge_color` and `layer.face_color` properties that
-will determine the color of the next shape to be added or any currently selected
-shapes.
+`layer.edge_color` and `layer.face_color` properties. These properties are
+different from the `layer.current_edge_color` and `layer.current_face_color`
+properties that will determine the color of the next shape to be added or any 
+currently selected shapes.
 
 To change the shape color properties from the GUI you must first select the
 shape whose properties you want to change, otherwise you will just be
@@ -380,10 +380,10 @@ initializing the property for the next shape you add.
 Individual shapes can each have different edge widths. You can initially set the
 edge widths by providing a list of values to the `edge_width` keyword arguments
 respectively, or you can edit them from the GUI. The widths of each of the
-shapes are available as a list under the `layer.edge_widths` property. Similar
+shapes are available as a list under the `layer.edge_width` property. Similar
 to the edge and face colors, these property is different from the
-`layer.edge_width` property that will determine the edge width of the next shape
-to be added or any currently selected shapes.
+`layer.current_edge_width` property that will determine the edge width of the
+next shape to be added or any currently selected shapes.
 
 To change the edge with property from the GUI you must first select the shape
 whose properties you want to change, otherwise you will just be initializing the
