@@ -137,7 +137,10 @@ class FileMenu(NapariMenu):
             QMessageBox.Icon.Warning,
             trans._("Close application?"),
             trans._(
-                "Do you want to close the application? ('Ctrl+Q' to confirm). This will close all Qt Windows in this process"
+                "Do you want to close the application? ('{shortcut}' to confirm). This will close all Qt Windows in this process",
+                shortcut=QKeySequence('Ctrl+Q').toString(
+                    QKeySequence.NativeText
+                ),
             ),
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self._win._qt_window,
@@ -154,7 +157,12 @@ class FileMenu(NapariMenu):
         message = QMessageBox(
             QMessageBox.Icon.Question,
             trans._("Close window?"),
-            trans._("Confirm to close window (or press 'Ctrl+W')"),
+            trans._(
+                "Confirm to close window (or press '{shortcut}')",
+                shortcut=QKeySequence('Ctrl+W').toString(
+                    QKeySequence.NativeText
+                ),
+            ),
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self._win._qt_window,
         )
