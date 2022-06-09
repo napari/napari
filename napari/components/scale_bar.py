@@ -20,7 +20,7 @@ class ScaleBar(EventedModel):
         If scale bar are colored or not. If colored then
         default color is magenta. If not colored than
         scale bar color is the opposite of the canvas
-        background.
+        background or the background box.
     color : Optional[str | array-like]
         Scalebar and text color. Can be any color name recognized by vispy or
         hex value if starting with `#`. If array-like must be 1-dimensional
@@ -39,7 +39,7 @@ class ScaleBar(EventedModel):
     box : bool
         If background box is visible or not.
     box_color : Optional[str | array-like]
-        Box color. Can be any color name recognized by vispy or
+        Background box color. Can be any color name recognized by vispy or
         hex value if starting with `#`. If array-like must be 1-dimensional
         array with 3 or 4 elements.
     unit : Optional[str]
