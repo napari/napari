@@ -125,6 +125,20 @@ jobs:
               exit 1
           fi
 
+      - name: Report Failures
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLATFORM: ${{ matrix.runs-on }}
+          PYTHON: "3.9"
+          BACKEND: ${{ matrix.benchmark-name }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: "[test-bot] Benchmark tests failing"
+        with:
+          filename: .github/TEST_FAIL_TEMPLATE.md
+          update_existing: true
+
       - name: Add more info to artifact
         if: always()
         run: |
