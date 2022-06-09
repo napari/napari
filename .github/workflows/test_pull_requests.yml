@@ -212,4 +212,4 @@ jobs:
       - name: Test
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox -e py39-linux-pyside-examples
+          run: tox -e py39-linux-pyside2-examples
