@@ -77,6 +77,8 @@ def draw(layer, event):
     undo_item = layer._undo_history[-1]
     if len(undo_item) == 1 and len(undo_item[0][0][0]) == 0:
         layer._undo_history.pop()
+    else:
+        layer.events.paint(value=undo_item)
 
 
 def pick(layer, event):
