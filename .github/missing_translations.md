@@ -1,5 +1,5 @@
 ---
-title: [Automatic issue] Missing `_.trans()`.
+title: "[Automatic issue] Missing `_.trans()`."
 labels: "good first issue"
 ---
 
