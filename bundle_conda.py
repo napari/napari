@@ -62,10 +62,13 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
-if os.environ.get("CONSTRUCTOR_TARGET_PLATFORM") == "osx-arm64":
+TARGET_PLATFORM = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
+if TARGET_PLATFORM == "osx-arm64":
     ARCH = "arm64"
+    ARM64 = True
 else:
     ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
+    ARM64 = False
 if WINDOWS:
     EXT, OS = 'exe', 'Windows'
 elif LINUX:
@@ -157,6 +160,19 @@ def _get_condarc():
     return f.name
 
 
+def _get_qt_api_activation_script():
+    chosen_backend = "pyqt5" if ARM64 else "pyside2"
+    if WINDOWS:
+        contents = f'set "QT_API={chosen_backend}"'
+        ext = "bat"
+    else:
+        contents = f'export QT_API="{chosen_backend}"'
+        ext = "sh"
+    with NamedTemporaryFile(delete=False, mode="w+") as f:
+        f.write(contents)
+    return f.name, ext
+
+
 def _constructor(version=_version(), extra_specs=None):
     """
     Create a temporary `construct.yaml` input file and
@@ -181,9 +197,6 @@ def _constructor(version=_version(), extra_specs=None):
     if extra_specs is None:
         extra_specs = []
 
-    # TODO: Temporary while pyside2 is not yet published for arm64
-    target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
-    ARM64 = target_platform == "osx-arm64"
     if ARM64:
         napari = f"napari={version}=*pyqt*"
     else:
@@ -210,6 +223,13 @@ def _constructor(version=_version(), extra_specs=None):
     )
     empty_file = NamedTemporaryFile(delete=False)
     condarc = _get_condarc()
+    qt_api, qt_api_ext = _get_qt_api_activation_script()
+    napari_env_config = {"specs": napari_specs}
+    if "*pyqt*" in napari:
+        napari_env_config["exclude"] = ["pyside2"]
+    elif "*pyside*" in napari:
+        napari_env_config["exclude"] = ["pyqt"]
+
     definitions = {
         "name": APP,
         "company": "Napari",
@@ -221,7 +241,7 @@ def _constructor(version=_version(), extra_specs=None):
         "initialize_by_default": False,
         "license_file": os.path.join(HERE, "resources", "bundle_license.rtf"),
         "specs": base_specs,
-        "extra_envs": {f"napari-{version}": {"specs": napari_specs}},
+        "extra_envs": {f"napari-{version}": napari_env_config},
         "menu_packages": [
             "napari-menu",
         ],
@@ -229,6 +249,8 @@ def _constructor(version=_version(), extra_specs=None):
             "resources/bundle_readme.md": "README.txt",
             empty_file.name: ".napari_is_bundled_constructor",
             condarc: ".condarc",
+            # Maybe this should be a package...?
+            qt_api: f"envs/napari-{version}/etc/conda/activate.d/napari_qt_api.{qt_api_ext}",
         },
     }
     if _use_local():
@@ -324,8 +346,8 @@ def _constructor(version=_version(), extra_specs=None):
 
     args = [constructor, "-v", "--debug", "."]
     conda_exe = os.environ.get("CONSTRUCTOR_CONDA_EXE")
-    if target_platform and conda_exe:
-        args += ["--platform", target_platform, "--conda-exe", conda_exe]
+    if TARGET_PLATFORM and conda_exe:
+        args += ["--platform", TARGET_PLATFORM, "--conda-exe", conda_exe]
     env = os.environ.copy()
     env["CONDA_CHANNEL_PRIORITY"] = "strict"
 
