@@ -3,8 +3,11 @@ from unittest import mock
 from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 
+
 from napari._qt.menus import file_menu
 from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+
 
 
 def test_sample_data_triggers_reader_dialog(
@@ -106,3 +109,14 @@ def test_close_app_ok(make_napari_viewer):
             v.window.file_menu._close_app()
             message_mock.assert_called_once()
             close_mock.assert_called_once_with(quit_app=True)
+      
+def test_show_shortcuts_actions(make_napari_viewer):
+    viewer = make_napari_viewer()
+    assert viewer.window.file_menu._pref_dialog is None
+    action_manager.trigger("napari:show_shortcuts")
+    assert viewer.window.file_menu._pref_dialog is not None
+    assert (
+        viewer.window.file_menu._pref_dialog._list.currentItem().text()
+        == "Shortcuts"
+    )
+    viewer.window.file_menu._pref_dialog.close()

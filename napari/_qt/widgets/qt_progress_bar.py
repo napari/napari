@@ -74,9 +74,6 @@ class QtLabeledProgressBar(QWidget):
     def _set_total(self, event):
         self.setRange(0, event.value)
 
-    def _close(self, event):
-        super().close()
-
 
 class QtProgressBarGroup(QWidget):
     """One or more QtLabeledProgressBars with a QFrame line separator at the bottom"""
