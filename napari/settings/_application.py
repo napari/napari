@@ -7,6 +7,7 @@ from pydantic import Field, validator
 from ..utils._base import _DEFAULT_LOCALE
 from ..utils.events.custom_types import conint
 from ..utils.events.evented_model import EventedModel
+from ..utils.interactions import Shortcut
 from ..utils.notifications import NotificationSeverity
 from ..utils.translations import trans
 from ._constants import LoopMode
@@ -159,7 +160,8 @@ class ApplicationSettings(EventedModel):
         default=True,
         title=trans._("Window close confirmation"),
         description=trans._(
-            "Ask for confirmation before close window with Ctrl+W"
+            "Ask for confirmation before close window with {shortcut}",
+            shortcut=Shortcut("Control-W").platform,
         ),
     )
 
