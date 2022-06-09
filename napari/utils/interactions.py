@@ -236,7 +236,7 @@ KEY_SYMBOLS = {
 }
 
 
-joinchar = '-'
+joinchar = '+'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
         {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
