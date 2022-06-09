@@ -37,6 +37,7 @@ if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
 
+@pytest.mark.examples
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)

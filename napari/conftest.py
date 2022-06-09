@@ -65,6 +65,12 @@ def pytest_addoption(parser):
         default=False,
         help="run only asynchronous tests",
     )
+    parser.addoption(
+        "--skip_examples",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
+    )
 
 
 @pytest.fixture(
@@ -321,6 +327,15 @@ def skip_async_only(request):
     async_only = request.node.get_closest_marker('async_only')
     if not _is_async_mode() and async_only:
         pytest.skip("not running with --async_only")
+
+
+@pytest.fixture(autouse=True)
+def skip_examples(request):
+    """Skip examples test if ."""
+    if request.node.get_closest_marker(
+        'examples'
+    ) and request.config.getoption("--skip_examples"):
+        pytest.skip("running with --skip_examples")
 
 
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
