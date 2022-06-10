@@ -939,6 +939,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     stack=stack,
                 )
             else:
+                breakpoint()
                 layers = self._open_or_raise_error(
                     paths, kwargs, layer_type, stack
                 )

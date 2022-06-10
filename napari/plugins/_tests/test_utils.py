@@ -78,7 +78,7 @@ def test_get_potential_readers_plugin_name_disp_name(mock_npe2_pm, tmp_reader):
 
 def test_get_all_readers_gives_napari():
     npe2_readers, npe1_readers = get_all_readers()
-    assert len(npe2_readers) == 0
+    assert len(npe1_readers) == 0
     assert len(npe2_readers) == 1
     assert 'napari' in npe2_readers
 

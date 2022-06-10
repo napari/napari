@@ -88,6 +88,15 @@ def read_data_with_plugins(
     npe1_path = paths if stack else paths[0]
     hookimpl = None
     if plugin:
+        if plugin == 'napari':
+            # napari is npe2 only
+            message = trans._(
+                'No plugin found capable of reading {repr_path!r}.',
+                deferred=True,
+                repr_path=npe1_path,
+            )
+            raise ValueError(message)
+
         if plugin not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
