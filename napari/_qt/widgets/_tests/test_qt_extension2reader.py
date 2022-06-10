@@ -6,6 +6,8 @@ from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from napari._tests.utils import restore_settings_on_exit
 from napari.settings import get_settings
 
+BUILTINS = 'napari'
+
 
 @pytest.fixture
 def extension2reader_widget(qtbot):
@@ -117,13 +119,16 @@ def test_directory_readers_not_in_dropdown(
     assert 'Directory Reader' not in all_dropdown_items
 
 
+@pytest.mark.xfail(
+    reason="This is predicated on napari only having npe1 readers"
+)
 def test_filtering_readers(
     extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
 ):
     tmp_reader(mock_npe2_pm, 'npy-reader', filename_patterns=['*.npy'])
     tmp_reader(mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif'])
 
-    widget = extension2reader_widget(npe1_readers={'builtins': 'builtins'})
+    widget = extension2reader_widget(npe1_readers={BUILTINS: BUILTINS})
 
     assert widget._new_reader_dropdown.count() == 3
     widget._filter_compatible_readers('*.npy')
@@ -132,7 +137,7 @@ def test_filtering_readers(
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
     ]
-    assert sorted(['npy-reader', 'builtins']) == all_dropdown_items
+    assert sorted(['npy-reader', BUILTINS]) == all_dropdown_items
 
 
 def test_filtering_readers_complex_pattern(
