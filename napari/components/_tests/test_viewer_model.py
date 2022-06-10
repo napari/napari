@@ -838,6 +838,7 @@ def test_open_or_get_error_builtins(tmp_path):
     assert layer.source.reader_plugin == BUILTINS
 
 
+@pytest.mark.skip  # FIXME: this test relies on builtins being npe1 only
 def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
     """Test plugin preference is respected."""
     viewer = ViewerModel()
@@ -857,6 +858,7 @@ def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
         assert added[0].source.reader_plugin == BUILTINS
 
 
+@pytest.mark.skip  # FIXME: this test relies on builtins being npe1 only
 def test_open_or_get_error_cant_find_plugin(
     tmp_path, mock_npe2_pm, tmp_reader
 ):
