@@ -52,7 +52,7 @@ class VispyScaleBarOverlay:
             center=[0.5, 0.5],
             width=1.1,
             height=36,
-            color=self._viewer.scale_bar.color,
+            color=self._viewer.scale_bar.box_color,
             parent=self.line_node,
         )
         self.rect_node.order = order
