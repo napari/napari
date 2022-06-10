@@ -46,7 +46,7 @@ def test_get_potential_readers_gives_napari(mock_npe2_pm, tmp_reader):
     tmp_reader(mock_npe2_pm, 'napari', ['*.tif'])
     readers = get_potential_readers(pth)
     assert 'napari' in readers
-    assert readers['napari'] == 'napari (npe2)'
+    assert 'builtins' not in readers
 
 
 def test_get_potential_readers_finds_readers(mock_npe2_pm, tmp_reader):
@@ -78,9 +78,9 @@ def test_get_potential_readers_plugin_name_disp_name(mock_npe2_pm, tmp_reader):
 
 def test_get_all_readers_gives_napari():
     npe2_readers, npe1_readers = get_all_readers()
+    assert len(npe2_readers) == 0
     assert len(npe2_readers) == 1
     assert 'napari' in npe2_readers
-    assert npe2_readers['napari'] == 'napari (npe2)'
 
 
 def test_get_all_readers(mock_npe2_pm, tmp_reader):
