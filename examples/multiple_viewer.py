@@ -5,7 +5,18 @@ from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
 
 
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QSplitter
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QSplitter, QPushButton, QDoubleSpinBox
+
+class ExampleWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.btn = QPushButton("Perform action")
+        self.spin = QDoubleSpinBox()
+        layout = QVBoxLayout()
+        layout.addWidget(self.spin)
+        layout.addWidget(self.btn)
+        layout.addStretch(1)
+        self.setLayout(layout)
 
 class MultipleViewerWidget(QSplitter):
     def __init__(self, viewer: napari.Viewer):
@@ -16,6 +27,10 @@ class MultipleViewerWidget(QSplitter):
         self.qt_viewer1 = QtViewer(self.viewer_model1)
         self.qt_viewer2 = QtViewer(self.viewer_model2)
         self.tab_widget = QTabWidget()
+        w1 = ExampleWidget()
+        w2 = ExampleWidget()
+        self.tab_widget.addTab(w1, "Sample 1")
+        self.tab_widget.addTab(w2, "Sample 2")
         viewer_layout = QVBoxLayout()
         viewer_layout.addWidget(self.qt_viewer1)
         viewer_layout.addWidget(self.qt_viewer2)
