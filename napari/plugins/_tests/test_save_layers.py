@@ -82,8 +82,6 @@ def test_save_layer_multiple_named_plugin(tmpdir, layer_data_and_types):
 # the layer_data_and_types fixture is defined in napari/conftest.py
 def test_save_layer_multiple_no_named_plugin(tmpdir, layer_data_and_types):
     """Test saving multiple layers without naming a plugin."""
-    # make writer builtin plugins get called first
-
     layers, _, _, filenames = layer_data_and_types
 
     path = os.path.join(tmpdir, 'layers_folder')
