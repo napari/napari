@@ -24,11 +24,6 @@ _T = TypeVar("_T")
 _L = TypeVar("_L")
 
 
-class B(MutableSequence[int]):
-    def __new__(self, data):
-        self._data = data
-
-
 class TypedMutableSequence(MutableSequence[_T]):
     """List mixin that enforces item type, and enables custom indexing.
 
@@ -224,13 +219,8 @@ class TypedMutableSequence(MutableSequence[_T]):
             stop += len(self)
 
         convert = self._lookup.get(type(value), _noop)
-        special_lookup = type(value) in self._lookup
-        # A "special lookup" means that they type of the value being searched
-        # is in the `self._lookups` dict.  The most common internal use of this
-        # pattern is `layers['name']`.  So we do a "deep" traversal in that
-        # case, which will let the nestable variant search throughout.
-        # we may or may not want that behavior?
-        for i in self._iter_indices(start, stop, deep=special_lookup):
+
+        for i in self._iter_indices(start, stop):
             v = convert(self[i])
             if v is value or v == value:
                 return i
@@ -243,7 +233,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None, deep=False):
+    def _iter_indices(self, start=0, stop=None):
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets
@@ -253,7 +243,7 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     def _ipython_key_completions_(self):
         if str in self._lookup:
-            return (self._lookup[str](x) for x in self)
+            return (self._lookup[str](x) for x in self)  # type: ignore
 
 
 def _noop(x):
