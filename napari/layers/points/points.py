@@ -8,11 +8,7 @@ import pandas as pd
 from scipy.stats import gmean
 
 from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.colormaps.standardize_color import (
-    get_color_namelist,
-    hex_to_name,
-    rgb_to_hex,
-)
+from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import project_points_onto_plane, rotate_points
@@ -362,8 +358,6 @@ class Points(Layer):
             features=Event,
             feature_defaults=Event,
         )
-
-        self._colors = get_color_namelist()
 
         # Save the point coordinates
         self._data = np.asarray(data)
