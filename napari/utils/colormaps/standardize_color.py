@@ -24,7 +24,7 @@ import warnings
 from typing import Any, Callable, Dict, Sequence
 
 import numpy as np
-from vispy.color import ColorArray, get_color_dict
+from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
 from ..translations import trans
@@ -406,6 +406,17 @@ def _create_hex_to_name_dict():
 
 
 hex_to_name = _create_hex_to_name_dict()
+
+
+def get_color_namelist():
+    """Gets all the color names supported by napari.
+
+    Returns
+    -------
+    list[str]
+        All the color names supported by napari.
+    """
+    return get_color_names()
 
 
 def _check_color_dim(val):
