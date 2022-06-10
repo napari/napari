@@ -822,7 +822,7 @@ def test_open_or_get_error_no_plugin(mock_npe2_pm):
         viewer._open_or_raise_error(['my_file.fake'])
 
 
-def test_open_or_get_error_builtins(mock_npe2_pm, tmp_path):
+def test_open_or_get_error_builtins(tmp_path):
     """Test builtins is available to read npy files."""
     viewer = ViewerModel()
 
