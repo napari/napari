@@ -287,7 +287,7 @@ def write_layer_data_with_plugins(
     path: str,
     layer_data: List[FullLayerData],
     *,
-    plugin_name: Optional[str] = 'builtins',
+    plugin_name: Optional[str] = 'napari',
 ) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
@@ -325,7 +325,10 @@ def write_layer_data_with_plugins(
     """
     from tempfile import TemporaryDirectory
 
-    from . import plugin_manager
+    import npe2
+
+    if plugin_name == 'builtins':
+        plugin_name = 'napari'
 
     # remember whether it was there to begin with
     already_existed = os.path.exists(path)
@@ -340,19 +343,23 @@ def write_layer_data_with_plugins(
         with TemporaryDirectory(dir=path) as tmp:
             # Loop through data for each layer
             for layer_data_tuple in layer_data:
-                data, meta, layer_type = layer_data_tuple
-                # Get hook caller according to layer type
-                hook_caller = getattr(
-                    plugin_manager.hook, f'napari_write_{layer_type}'
-                )
+                _, meta, type_ = layer_data_tuple
+
                 # Create full path using name of layer
                 full_path = abspath_or_url(os.path.join(tmp, meta['name']))
+                if type_ == 'image':
+                    # workaround for https://github.com/napari/npe2/issues/129
+                    full_path += '.tif'
+
                 # Write out data using first plugin found for this hook spec
                 # or named plugin if provided
-                outpath = hook_caller(
-                    _plugin=plugin_name, path=full_path, data=data, meta=meta
+                out = npe2.write(
+                    path=full_path,
+                    layer_data=[layer_data_tuple],
+                    plugin_name=plugin_name,
                 )
-                written.append(outpath)
+
+                written.extend(out)
             for fname in os.listdir(tmp):
                 shutil.move(os.path.join(tmp, fname), path)
     except Exception as exc:

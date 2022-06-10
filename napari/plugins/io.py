@@ -60,6 +60,9 @@ def read_data_with_plugins(
     PluginCallError
         If ``plugin`` is specified but raises an Exception while reading.
     """
+    if plugin == 'builtins':
+        plugin = 'napari'
+
     assert isinstance(paths, list)
     if not stack:
         assert len(paths) == 1

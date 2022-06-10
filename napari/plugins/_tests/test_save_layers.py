@@ -38,10 +38,6 @@ def test_save_layer_no_results(tmpdir):
 def test_save_layer_single_no_named_plugin(tmpdir, layer_data_and_types):
     """Test saving a single layer without naming plugin."""
     # make writer builtin plugins get called first
-    from napari.plugins import plugin_manager
-
-    plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-    plugin_manager.hooks.napari_write_points.bring_to_front(['builtins'])
 
     layers, _, _, filenames = layer_data_and_types
 
@@ -87,9 +83,6 @@ def test_save_layer_multiple_named_plugin(tmpdir, layer_data_and_types):
 def test_save_layer_multiple_no_named_plugin(tmpdir, layer_data_and_types):
     """Test saving multiple layers without naming a plugin."""
     # make writer builtin plugins get called first
-    from napari.plugins import plugin_manager
-
-    plugin_manager.hooks.napari_get_writer.bring_to_front(['builtins'])
 
     layers, _, _, filenames = layer_data_and_types
 
