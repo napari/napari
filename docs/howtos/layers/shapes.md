@@ -407,14 +407,12 @@ will be updated with the new slice values.
 
 ## Shapes layer opacity
 
-The {ref}`opacity value <layer_opacity>` applies individually to each shape in
-the layer, and so you must have shapes selected for it to have an effect. You
-can initialize the shape opacities using the `opacity` keyword argument which
-accepts either a list of opacities or a single opacity value that will be
-applied globally. You can then access the opacity of every shape using the
-`layer.opacities` property. Note that this property is different from the
-`layer.opacity` property that determines the opacity of the next shape to be
-added.
+The {ref}`opacity value <layer_opacity>` applies to all shapes. You can 
+initialize the shape opacities using the `opacity` keyword argument which
+accepts a single opacity value that will be applied globally. You can then
+access the opacity using the `layer.opacity` property. In order to adjust the
+opacity of individual shapes you need to adjust the alpha value in the
+`layer.edge_color` and `layer.face_color` properties.
 
 ## Putting it all together
 
