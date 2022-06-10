@@ -917,6 +917,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A list of any layers that were added to the viewer.
         """
         if plugin == 'builtins':
+            warnings.warn(
+                'The "builtins" plugin name is deprecated and will not work in a '
+                'future version. Please use "napari" instead.',
+            )
             plugin = 'napari'
 
         paths: List[str | Path] = (

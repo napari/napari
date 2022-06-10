@@ -61,6 +61,10 @@ def read_data_with_plugins(
         If ``plugin`` is specified but raises an Exception while reading.
     """
     if plugin == 'builtins':
+        warnings.warn(
+            'The "builtins" plugin name is deprecated and will not work in a future '
+            'version. Please use "napari" instead.',
+        )
         plugin = 'napari'
 
     assert isinstance(paths, list)
