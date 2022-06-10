@@ -405,9 +405,6 @@ def _create_hex_to_name_dict():
     return hex_to_name
 
 
-hex_to_name = _create_hex_to_name_dict()
-
-
 def get_color_namelist():
     """Gets all the color names supported by napari.
 
@@ -417,6 +414,9 @@ def get_color_namelist():
         All the color names supported by napari.
     """
     return get_color_names()
+
+
+hex_to_name = _create_hex_to_name_dict()
 
 
 def _check_color_dim(val):
