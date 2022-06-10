@@ -355,7 +355,7 @@ def write_layer_data_with_plugins(
                 # or named plugin if provided
                 out = npe2.write(
                     path=full_path,
-                    layer_data=[layer_data_tuple],
+                    layer_data=[layer_data_tuple],  # type: ignore
                     plugin_name=plugin_name,
                 )
 
