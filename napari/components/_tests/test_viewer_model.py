@@ -16,6 +16,8 @@ from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
 
+BUILTINS = 'napari'
+
 
 def test_viewer_model():
     """Test instantiating viewer model."""
@@ -833,7 +835,7 @@ def test_open_or_get_error_builtins(mock_npe2_pm, tmp_path):
     layer = added[0]
     assert isinstance(layer, Image)
     np.testing.assert_allclose(layer.data, data)
-    assert layer.source.reader_plugin == 'builtins'
+    assert layer.source.reader_plugin == BUILTINS
 
 
 def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
@@ -843,7 +845,7 @@ def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
     np.save(pth, np.random.random((10, 10)))
 
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.npy': 'builtins'}
+        get_settings().plugins.extension2reader = {'*.npy': BUILTINS}
 
         tmp_reader(mock_npe2_pm, 'fake-reader', filename_patterns=['*.npy'])
         tmp_reader(
@@ -852,7 +854,7 @@ def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
 
         added = viewer._open_or_raise_error([str(pth)])
         assert len(added) == 1
-        assert added[0].source.reader_plugin == 'builtins'
+        assert added[0].source.reader_plugin == BUILTINS
 
 
 def test_open_or_get_error_cant_find_plugin(
@@ -871,7 +873,7 @@ def test_open_or_get_error_cant_find_plugin(
         ):
             added = viewer._open_or_raise_error([str(pth)])
         assert len(added) == 1
-        assert added[0].source.reader_plugin == 'builtins'
+        assert added[0].source.reader_plugin == BUILTINS
 
 
 def test_open_or_get_error_no_prefered_plugin_many_available(
