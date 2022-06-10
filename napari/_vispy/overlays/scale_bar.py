@@ -28,8 +28,6 @@ class VispyScaleBarOverlay:
                 [1, 5, -1],
             ]
         )
-        self._default_color = np.array([1, 0, 1, 1])
-        self._default_box_color = np.array([0, 0, 0, 0.6])
         self._target_length = 150
         self._scale = 1
         self._quantity = None
@@ -54,7 +52,7 @@ class VispyScaleBarOverlay:
             center=[0.5, 0.5],
             width=1.1,
             height=36,
-            color=self._default_box_color,
+            color=self._viewer.scale_bar.color,
             parent=self.line_node,
         )
         self.rect_node.order = order
@@ -193,17 +191,11 @@ class VispyScaleBarOverlay:
 
     def _on_data_change(self):
         """Change color and data of scale bar and box."""
+        color = self._viewer.scale_bar.color
+        box_color = self._viewer.scale_bar.box_color
 
-        scale_bar = self._viewer.scale_bar
-
-        if (color := scale_bar.color) is None:
-            color = self._default_color
-
-        if (box_color := scale_bar.box_color) is None:
-            box_color = self._default_box_color
-
-        if not scale_bar.colored:
-            if scale_bar.box:
+        if not self._viewer.scale_bar.colored:
+            if self._viewer.scale_bar.box:
                 # The box is visible - set the scale bar color to the negative of the
                 # box color.
                 color = 1 - box_color
@@ -219,7 +211,7 @@ class VispyScaleBarOverlay:
                 color = np.subtract(1, background_color)
                 color[-1] = background_color[-1]
 
-        if scale_bar.ticks:
+        if self._viewer.scale_bar.ticks:
             data = self._data
         else:
             data = self._data[:2]

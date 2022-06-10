@@ -49,18 +49,18 @@ class ScaleBar(EventedModel):
 
     visible: bool = False
     colored: bool = False
-    color: Optional[Array[float, (4,)]] = None
+    color: Array[float, (4,)] = [1, 0, 1, 1]
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     box: bool = False
-    box_color: Optional[Array[float, (4,)]] = None
+    box_color: Array[float, (4,)] = [0, 0, 0, 0.6]
     unit: Optional[str] = None
 
-    @validator('color', pre=True)
+    @validator('color', pre=True, always=True)
     def _coerce_color(cls, v):
         return transform_color(v)[0]
 
-    @validator('box_color', pre=True)
+    @validator('box_color', pre=True, always=True)
     def _coerce_box_color(cls, v):
         return transform_color(v)[0]
