@@ -78,10 +78,8 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model2.layers.move(event.index, event.new_index)\
 
     def _scale_sync(self, event):
-        if event.source in
         self.viewer_model1.layers[event.source.name].scale = event.source.scale
         self.viewer_model2.layers[event.source.name].scale = event.source.scale
-
 
 
 
