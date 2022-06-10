@@ -78,7 +78,7 @@ def test_extension2reader_removal(extension2reader_widget, qtbot):
 
 
 def test_all_readers_in_dropdown(
-    extension2reader_widget, qtbot, tmp_reader, mock_npe2_pm
+    extension2reader_widget, tmp_reader, mock_npe2_pm
 ):
     tmp_reader(mock_npe2_pm, 'npe2-name', filename_patterns=['*'])
     tmp_reader(mock_npe2_pm, 'other-reader', filename_patterns=['*.tif'])
@@ -87,14 +87,9 @@ def test_all_readers_in_dropdown(
         'npe2-name': 'npe2 Display',
         'other-reader': 'Other Reader',
     }
-    npe1_readers = {'builtins': 'builtins'}
 
-    widget = extension2reader_widget(
-        npe2_readers=npe2_readers, npe1_readers=npe1_readers
-    )
-    all_reader_display_names = list(
-        dict(npe2_readers, **npe1_readers).values()
-    )
+    widget = extension2reader_widget(npe2_readers=npe2_readers)
+    all_reader_display_names = list(dict(npe2_readers).values())
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
