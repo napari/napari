@@ -402,7 +402,6 @@ def _create_hex_to_name_dict():
     """
     colordict = get_color_dict()
     hex_to_name = {f"{v.lower()}ff": k for k, v in colordict.items()}
-    hex_to_name["#00000000"] = "transparent"
     return hex_to_name
 
 
