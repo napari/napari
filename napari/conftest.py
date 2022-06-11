@@ -1,3 +1,26 @@
+"""
+
+Notes for using the plugin-related fixtures here:
+
+1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+   manager instance with a discovery-defficient plugin manager.  No plugins should be
+   discovered in tests without explicit registration.
+2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
+   added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
+   global mock npe2 plugin manager)
+3. wherever *additional* plugins or contributions need to be added, use the `tmp_plugin`
+   fixture, and add additional contributions _within_ the test (not in the fixture):
+    ```python
+    def test_something(tmp_plugin):
+        @tmp_plugin.contribute.reader(filname_patterns=["*.ext"])
+        def f(path): ...
+
+        # the plugin name can be accessed at:
+        tmp_plugin.manifest.name
+    ```
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn()` to create another one.
+
+"""
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
