@@ -19,9 +19,9 @@ class ModifiedScrollBar(QScrollBar):
         self.initStyleOption(opt)
 
         point = (
-            event.pos()
-            if hasattr(event, "pos")
-            else event.position().toPoint()
+            event.position().toPoint()
+            if hasattr(event, "position")
+            else event.pos()
         )
 
         control = self.style().hitTestComplexControl(
