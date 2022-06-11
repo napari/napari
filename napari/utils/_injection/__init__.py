@@ -39,16 +39,21 @@ def napari_type_hints(obj: Any) -> Dict[str, Any]:
 
 
 def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
-    """Create callable that can access napari objects based on type hints.
+    """Decorator returns func that can access/process napari objects based on type hints.
 
-    This is form of dependency injection.  If a function includes a parameter
-    that has a recognized napari type (e.g. `Viewer`, or `Layer`), then this
-    function will return a new version of the input function that can be called
-    *without* that particular parameter.
+    This is form of dependency injection, and result processing.  It does 2 things:
+
+    1. If `func` includes a parameter that has a type with a registered provider
+    (e.g. `Viewer`, or `Layer`), then this decorator will return a new version of
+    the input function that can be called *without* that particular parameter.
+
+    2. If `func` has a return type with a registered processor (e.g. `ImageData`),
+    then this decorator will return a new version of the input function that, when
+    called, will have the result automatically processed by the current processor
+    for that type (e.g. in the case of `ImageData`, it will be added to the viewer.)
 
     Examples
     --------
-
     >>> def f(viewer: Viewer): ...
     >>> inspect.signature(f)
     <Signature (x: 'Viewer')>
@@ -56,7 +61,6 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     >>> inspect.signature(f2)
     <Signature (x: typing.Optional[napari.Viewer] = None)>
     # if f2 is called without x, the current_viewer will be provided for x
-
 
     Parameters
     ----------
