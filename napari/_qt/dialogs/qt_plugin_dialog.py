@@ -566,8 +566,8 @@ class QPluginList(QListWidget):
             return
 
         # including summary here for sake of filtering below.
-        searchable_text = pkg_name + " " + project_info.summary
-        item = QListWidgetItem(searchable_text, parent=self)
+        searchable_text = f"{pkg_name} {project_info.summary}"
+        item = QListWidgetItem(searchable_text, self)
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(

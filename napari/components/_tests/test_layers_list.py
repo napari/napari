@@ -128,8 +128,9 @@ def test_clearing_layerlist():
     """Test clearing layer list."""
     layers = LayerList()
     layer = Image(np.random.random((10, 10)))
+    layer2 = Image(np.random.random((10, 10)))
     layers.append(layer)
-    layers.append(layer)
+    layers.append(layer2)
     assert len(layers) == 2
 
     layers.clear()
@@ -529,3 +530,36 @@ def test_name_uniqueness():
     layers.append(Image(np.random.random((10, 15)), name="Image"))
     layers.append(Image(np.random.random((10, 15)), name="Image"))
     assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
+
+
+def test_readd_layers():
+    layers = LayerList()
+    imgs = []
+    for i in range(5):
+        img = Image(np.random.rand(10, 10, 10))
+        layers.append(img)
+        imgs.append(img)
+
+    assert layers == imgs
+
+    with pytest.raises(ValueError):
+        layers.append(imgs[1])
+    assert layers == imgs
+
+    layers[1] = layers[1]
+    assert layers == imgs
+
+    with pytest.raises(ValueError):
+        layers[1] = layers[2]
+    assert layers == imgs
+
+    layers[:3] = layers[:3]
+    assert layers == imgs
+
+    # invert a section
+    layers[:3] = layers[2::-1]
+    assert set(layers) == set(imgs)
+
+    with pytest.raises(ValueError):
+        layers[:3] = layers[:]
+    assert set(layers) == set(imgs)
