@@ -31,6 +31,12 @@ skip_local_popups = pytest.mark.skipif(
     ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
 
+"""
+The default timeout duration in seconds when waiting on tasks running in non-main threads.
+The value was chosen to be consistent with `QtBot.waitSignal` and `QtBot.waitUntil`.
+"""
+DEFAULT_TIMEOUT_SECS: float = 5
+
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)

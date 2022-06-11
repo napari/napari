@@ -35,7 +35,7 @@ interact with the app. It is the best way to install napari and make full use of
 all its features.
 
 It requires:
-- [Python 3.7 or higher](https://www.python.org/downloads/)
+- [Python 3.8 or higher](https://www.python.org/downloads/)
 - the ability to install python packages via [pip](https://pypi.org/project/pip/) OR [conda-forge](https://conda-forge.org/docs/user/introduction.html)
 
 You may also want:
@@ -111,6 +111,13 @@ You can then upgrade to a new version of napari using
 ```sh
 conda update napari
 ```
+
+If you want to install napari with PySide2 as the backend you need to install it using
+
+```sh
+conda install -c conda-forge "napari=*=*pyside2"
+```  
+
 ````
 
 
