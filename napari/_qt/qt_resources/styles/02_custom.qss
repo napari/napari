@@ -36,7 +36,7 @@ QMainWindow::separator {
   width: 4px;
   height: 4px;
   border: none;
-  background: transparent;
+  background-color: {{ background }};
 }
 
 QMainWindow::separator:hover {
@@ -55,6 +55,7 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar {
   padding-top:3px;
+  background-color: {{ background }};
 }
 
 #QtCustomTitleBar:hover {
