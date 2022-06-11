@@ -22,7 +22,7 @@ def add_delay(array, delay_ms: NormalNoise):
 
     Parameters
     ----------
-    noise : NormalNoise
+    delay_ms : NormalNoise
         The amount of the random delay in milliseconds.
     """
 

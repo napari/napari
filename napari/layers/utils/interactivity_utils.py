@@ -103,9 +103,9 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     Parameters
     ----------
-    layer: Image
+    layer : Image
         The layer on which the rendering plane is to be rotated
-    plane_normal: 3-tuple
+    plane_normal : 3-tuple
         The target plane normal in scene coordinates.
     """
     # avoid circular imports
@@ -141,3 +141,41 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     layer.plane.normal = layer._world_to_displayed_data_ray(
         plane_normal, dims_displayed=layer._dims_displayed
     )
+
+
+def nd_line_segment_to_displayed_data_ray(
+    start_point: np.ndarray,
+    end_point: np.ndarray,
+    dims_displayed: Union[List[int], np.ndarray],
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Convert the start and end point of the line segment of a mouse click ray
+    intersecting a data cube to a ray (i.e., start position and direction) in
+    displayed data coordinates
+
+    Note: the ray starts 0.1 data units outside of the data volume.
+
+    Parameters
+    ----------
+    start_point : np.ndarray
+        The start position of the ray used to interrogate the data.
+    end_point : np.ndarray
+        The end position of the ray used to interrogate the data.
+    dims_displayed : List[int]
+        The indices of the dimensions currently displayed in the Viewer.
+
+    Returns
+    -------
+    start_position : np.ndarray
+        The start position of the ray in displayed data coordinates
+    ray_direction : np.ndarray
+        The unit vector describing the ray direction.
+    """
+    # get the ray in the displayed data coordinates
+    start_position = start_point[dims_displayed]
+    end_position = end_point[dims_displayed]
+    ray_direction = end_position - start_position
+    ray_direction = ray_direction / np.linalg.norm(ray_direction)
+    # step the start position back a little bit to be able to detect shapes
+    # that contain the start_position
+    start_position = start_position - 0.1 * ray_direction
+    return start_position, ray_direction

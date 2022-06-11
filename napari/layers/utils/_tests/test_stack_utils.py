@@ -227,7 +227,9 @@ def test_split_channels_missing_keywords():
     for chan, layer in enumerate(result_list):
         assert layer[0].shape == (128, 128)
         assert (
-            layer[1]['blending'] == 'translucent' if chan == 0 else 'additive'
+            layer[1]['blending'] == 'translucent_no_depth'
+            if chan == 0
+            else 'additive'
         )
 
 
