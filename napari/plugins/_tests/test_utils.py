@@ -11,35 +11,30 @@ from napari.settings import get_settings
 
 
 def test_get_preferred_reader_no_readers():
-    pth = 'my_file.tif'
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {}
-        reader = get_preferred_reader(pth)
+        reader = get_preferred_reader('my_file.tif')
         assert reader is None
 
 
 def test_get_preferred_reader_for_extension():
-    pth = 'my_file.tif'
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {'*.tif': 'fake-plugin'}
-        reader = get_preferred_reader(pth)
+        reader = get_preferred_reader('my_file.tif')
         assert reader == 'fake-plugin'
 
 
 def test_get_preferred_reader_complex_pattern():
-    pth = 'my-specific-folder/my_file.tif'
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {
             'my-specific-folder/*.tif': 'fake-plugin'
         }
-        reader = get_preferred_reader(pth)
+        reader = get_preferred_reader('my-specific-folder/my_file.tif')
         assert reader == 'fake-plugin'
 
 
 def test_get_preferred_reader_no_extension():
-    pth = 'my_file'
-    reader = get_preferred_reader(pth)
-    assert reader is None
+    assert get_preferred_reader('my_file') is None
 
 
 def test_get_potential_readers_gives_napari(
@@ -55,27 +50,22 @@ def test_get_potential_readers_gives_napari(
 
 
 def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
-    pth = 'my_file.tif'
+    tmp2 = tmp_plugin.spawn()  # type: ignore
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
     def read_tif(path):
         ...
 
-    tmp2 = tmp_plugin.spawn()  # type: ignore
-
     @tmp2.contribute.reader(filename_patterns=['*.*'])
     def read_all(path):
         ...
 
-    readers = get_potential_readers(pth)
+    readers = get_potential_readers('my_file.tif')
     assert len(readers) == 2
 
 
 def test_get_potential_readers_none_available():
-    pth = 'my_file.fake'
-
-    readers = get_potential_readers(pth)
-    assert len(readers) == 0
+    assert not get_potential_readers('my_file.fake')
 
 
 def test_get_potential_readers_plugin_name_disp_name(
@@ -99,11 +89,11 @@ def test_get_all_readers_gives_napari(builtins):
 
 
 def test_get_all_readers(tmp_plugin: DynamicPlugin):
+    tmp2 = tmp_plugin.spawn()  # type: ignore
+
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def read_tif(path):
         ...
-
-    tmp2 = tmp_plugin.spawn()  # type: ignore
 
     @tmp2.contribute.reader(filename_patterns=['.fake2'])
     def read_all(path):
