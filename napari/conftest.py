@@ -3,6 +3,7 @@ try:
 except ModuleNotFoundError:
     pass
 
+import itertools
 import os
 from functools import partial
 from itertools import chain
@@ -414,28 +415,6 @@ def _no_error_reports():
         yield
 
 
-@pytest.fixture
-def tmp_reader():
-    """Return a temporary reader registered with the given plugin manager."""
-
-    def make_plugin(
-        pm, name, filename_patterns=['*.fake'], accepts_directories=False
-    ):
-        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
-
-        @reader_plugin.contribute.reader(
-            filename_patterns=filename_patterns,
-            accepts_directories=accepts_directories,
-        )
-        def read_func(pth):
-            ...
-
-        reader_plugin.register()
-        return reader_plugin
-
-    return make_plugin
-
-
 @pytest.fixture(autouse=True)
 def mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
@@ -456,7 +435,18 @@ def builtins(mock_npe2_pm: PluginManager):
 
 @pytest.fixture
 def tmp_plugin(mock_npe2_pm: PluginManager):
-    plugin = DynamicPlugin('tmp_plugin', plugin_manager=mock_npe2_pm)
+
+    count = itertools.count(2)
+
+    class _DynamicPlugin(DynamicPlugin):
+        def spawn(self, name=None):
+            """Create another tmp_plugin"""
+            name = name or f'tmp_plugin{next(count)}'
+            new = _DynamicPlugin(name, plugin_manager=mock_npe2_pm)
+            new.register()
+            return new
+
+    plugin = _DynamicPlugin('tmp_plugin', plugin_manager=mock_npe2_pm)
     plugin.register()
     return plugin
 

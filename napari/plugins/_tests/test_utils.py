@@ -42,40 +42,53 @@ def test_get_preferred_reader_no_extension():
     assert reader is None
 
 
-def test_get_potential_readers_gives_napari(mock_npe2_pm, tmp_reader):
-    pth = 'my_file.tif'
+def test_get_potential_readers_gives_napari(
+    builtins, tmp_plugin: DynamicPlugin
+):
+    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
+    def read_tif(path):
+        ...
 
-    tmp_reader(mock_npe2_pm, 'napari', ['*.tif'])
-    readers = get_potential_readers(pth)
+    readers = get_potential_readers('my_file.tif')
     assert 'napari' in readers
     assert 'builtins' not in readers
 
 
-def test_get_potential_readers_finds_readers(mock_npe2_pm, tmp_reader):
+def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
     pth = 'my_file.tif'
 
-    tmp_reader(mock_npe2_pm, 'tif-reader', ['*.tif'])
-    tmp_reader(mock_npe2_pm, 'all-reader', ['*.*'])
+    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
+    def read_tif(path):
+        ...
+
+    tmp2 = tmp_plugin.spawn()  # type: ignore
+
+    @tmp2.contribute.reader(filename_patterns=['*.*'])
+    def read_all(path):
+        ...
 
     readers = get_potential_readers(pth)
     assert len(readers) == 2
 
 
-def test_get_potential_readers_none_available(mock_npe2_pm):
+def test_get_potential_readers_none_available():
     pth = 'my_file.fake'
 
     readers = get_potential_readers(pth)
     assert len(readers) == 0
 
 
-def test_get_potential_readers_plugin_name_disp_name(mock_npe2_pm, tmp_reader):
-    pth = 'my_file.fake'
+def test_get_potential_readers_plugin_name_disp_name(
+    tmp_plugin: DynamicPlugin,
+):
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def read_tif(path):
+        ...
 
-    fake_reader = tmp_reader(mock_npe2_pm, 'fake-reader')
-    fake_reader.manifest.display_name = 'Fake Reader'
-    readers = get_potential_readers(pth)
-
-    assert readers['fake-reader'] == 'Fake Reader'
+    readers = get_potential_readers('my_file.fake')
+    assert (
+        readers[tmp_plugin.manifest.name] == tmp_plugin.manifest.display_name
+    )
 
 
 def test_get_all_readers_gives_napari(builtins):
@@ -85,9 +98,17 @@ def test_get_all_readers_gives_napari(builtins):
     assert 'napari' in npe2_readers
 
 
-def test_get_all_readers(mock_npe2_pm, tmp_reader):
-    tmp_reader(mock_npe2_pm, 'reader-1')
-    tmp_reader(mock_npe2_pm, 'reader-2')
+def test_get_all_readers(tmp_plugin: DynamicPlugin):
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def read_tif(path):
+        ...
+
+    tmp2 = tmp_plugin.spawn()  # type: ignore
+
+    @tmp2.contribute.reader(filename_patterns=['.fake2'])
+    def read_all(path):
+        ...
+
     npe2_readers, npe1_readers = get_all_readers()
     assert len(npe2_readers) == 2
     assert len(npe1_readers) == 0
