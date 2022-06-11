@@ -1,6 +1,4 @@
 import sys
-import threading
-import time
 from concurrent.futures import Future
 from unittest.mock import Mock
 
@@ -117,13 +115,7 @@ def test_future_processor():
     @inject_napari_dependencies
     def add_data() -> Future[ImageData]:
         future = Future()
-
-        def _slow_data():
-            time.sleep(0.1)
-            future.set_result(np.zeros(4, 4))
-
-        thr = threading.Thread(target=_slow_data)
-        thr.start()
+        future.set_result(np.zeros((4, 4)))
         return future
 
     v = ViewerModel()
@@ -138,7 +130,6 @@ def test_future_processor():
     with set_accessor({Viewer: lambda: v}, clobber=True):
         future = add_data()
         assert future.result().shape == (4, 4)
-        time.sleep(0.05)
 
     # now it's added
     assert len(v.layers) == 1 and isinstance(v.layers[0], Image)
