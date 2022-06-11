@@ -1,14 +1,21 @@
 import typing
 from copy import deepcopy
-from functools import partial
+
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
+    QPushButton,
+    QSplitter,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 import napari
 from napari.components.layerlist import Extent
 from napari.components.viewer_model import ViewerModel
-from napari.qt import QtViewer
 from napari.layers import Vectors
-
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QSplitter, QPushButton, QDoubleSpinBox, QCheckBox
+from napari.qt import QtViewer
 
 if typing.TYPE_CHECKING:
     from napari.layers import Layer
@@ -21,14 +28,17 @@ def copy_layer(layer: "Layer"):
         emitter.disconnect()
     return res_layer
 
+
 def get_property_names(layer: "Layer"):
     klass = layer.__class__
     res = []
     for event_name in layer.events.emitters:
         if event_name == "thumbnail":
             continue
-        if isinstance(getattr(klass, event_name, None), property) \
-                and getattr(klass, event_name).fset is not None:
+        if (
+            isinstance(getattr(klass, event_name, None), property)
+            and getattr(klass, event_name).fset is not None
+        ):
             res.append(event_name)
     return res
 
@@ -43,7 +53,12 @@ class own_partial:
         return self.func(*(self.args + args), **{**self.kwargs, **kwargs})
 
     def __deepcopy__(self, memodict={}):
-        return own_partial(self.func, *deepcopy(self.args, memodict), **deepcopy(self.kwargs, memodict))
+        return own_partial(
+            self.func,
+            *deepcopy(self.args, memodict),
+            **deepcopy(self.kwargs, memodict),
+        )
+
 
 class CrossWidget(QCheckBox):
     def __init__(self, viewer: napari.Viewer):
@@ -73,7 +88,11 @@ class CrossWidget(QCheckBox):
         if self.layer not in self.viewer.layers:
             return
         # self.viewer.layers.remove(self.layer)
-        extent_list = [layer.extent for layer in self.viewer.layers if layer is not self.layer]
+        extent_list = [
+            layer.extent
+            for layer in self.viewer.layers
+            if layer is not self.layer
+        ]
         extent = Extent(
             data=None,
             world=self.viewer.layers._get_extent_world(extent_list),
@@ -155,12 +174,8 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model2.dims.order = order
 
     def _layer_added(self, event):
-        self.viewer_model1.layers.insert(
-            event.index, copy_layer(event.value)
-        )
-        self.viewer_model2.layers.insert(
-            event.index, copy_layer(event.value)
-        )
+        self.viewer_model1.layers.insert(event.index, copy_layer(event.value))
+        self.viewer_model2.layers.insert(event.index, copy_layer(event.value))
         for name in get_property_names(event.value):
             getattr(event.value.events, name).connect(
                 own_partial(self._property_sync, name)
@@ -185,18 +200,17 @@ class MultipleViewerWidget(QSplitter):
         setattr(
             self.viewer_model1.layers[event.source.name],
             name,
-            getattr(event.source, name)
+            getattr(event.source, name),
         )
         setattr(
             self.viewer_model2.layers[event.source.name],
             name,
-            getattr(event.source, name)
+            getattr(event.source, name),
         )
 
     def _scale_sync(self, event):
         self.viewer_model1.layers[event.source.name].scale = event.source.scale
         self.viewer_model2.layers[event.source.name].scale = event.source.scale
-
 
 
 view = napari.Viewer()
@@ -207,4 +221,3 @@ view.window.add_dock_widget(dock_widget, name="Sample")
 view.window.add_dock_widget(cross, name="Cross", area="left")
 
 napari.run()
-
