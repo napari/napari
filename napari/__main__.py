@@ -414,7 +414,7 @@ def main():
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
-    # quick fix for Big Sur py3.9
+    # quick fix for Big Sur py3.9 and qt 5
     if _MACOS_AT_LEAST_BIG_SUR and '6' not in API_NAME:
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
