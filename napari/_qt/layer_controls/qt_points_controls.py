@@ -83,20 +83,18 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
-        sld = QSlider(Qt.Horizontal)
-        sld.setToolTip(
+        self.sizeSlider = QSlider(Qt.Horizontal)
+        self.sizeSlider.setToolTip(
             trans._(
                 "Change the size of currently selected points and any added afterwards."
             )
         )
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setMinimum(1)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        value = self.layer.current_size
-        sld.setValue(int(value))
-        sld.valueChanged.connect(self.changeSize)
-        self.sizeSlider = sld
+        self.sizeSlider.setFocusPolicy(Qt.NoFocus)
+        self.sizeSlider.setMinimum(1)
+        self.sizeSlider.setMaximum(100)
+        self.sizeSlider.setSingleStep(1)
+        self.sizeSlider.setValue(int(self.layer.current_size))
+        self.sizeSlider.valueChanged.connect(self.changeSize)
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
@@ -109,24 +107,22 @@ class QtPointsControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-        symbol_comboBox = QComboBox()
+        self.symbolComboBox = QComboBox()
         current_index = 0
         for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
             data = data.value
-            symbol_comboBox.addItem(text, data)
+            self.symbolComboBox.addItem(text, data)
 
             if data == self.layer.symbol:
                 current_index = index
 
-        symbol_comboBox.setCurrentIndex(current_index)
-        symbol_comboBox.currentTextChanged.connect(self.changeSymbol)
-        self.symbolComboBox = symbol_comboBox
+        self.symbolComboBox.setCurrentIndex(current_index)
+        self.symbolComboBox.currentTextChanged.connect(self.changeSymbol)
 
-        out_of_slice_cb = QCheckBox()
-        out_of_slice_cb.setToolTip(trans._('Out of slice display'))
-        out_of_slice_cb.setChecked(self.layer.out_of_slice_display)
-        out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
-        self.outOfSliceCheckBox = out_of_slice_cb
+        self.outOfSliceCheckBox = QCheckBox()
+        self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
+        self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
+        self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
 
         self.select_button = QtModeRadioButton(
             layer,
@@ -157,11 +153,10 @@ class QtPointsControls(QtLayerControls):
             'napari:delete_selected_points', self.delete_button
         )
 
-        text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip(trans._('toggle text visibility'))
-        text_disp_cb.setChecked(self.layer.text.visible)
-        text_disp_cb.stateChanged.connect(self.change_text_visibility)
-        self.textDispCheckBox = text_disp_cb
+        self.textDispCheckBox = QCheckBox()
+        self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
+        self.textDispCheckBox.setChecked(self.layer.text.visible)
+        self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -245,7 +240,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating whether to render out of slice.
         """
-        self.layer.out_of_slice_display = state == Qt.Checked
+        self.layer.out_of_slice_display = bool(state)
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
@@ -255,7 +250,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        self.layer.text.visible = state == Qt.Checked
+        self.layer.text.visible = bool(state)
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""
