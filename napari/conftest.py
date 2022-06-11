@@ -429,15 +429,12 @@ def builtins(_mock_npe2_pm: PluginManager):
     plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
     mf = PluginManifest.from_file(Path(__file__).parent / 'builtins.yaml')
     plugin.manifest = mf
-    plugin.register()
-    return plugin
+    with plugin:
+        yield plugin
 
 
 @pytest.fixture
 def tmp_plugin(_mock_npe2_pm: PluginManager):
-
-    count = itertools.count(2)
-
     class _DynamicPlugin(DynamicPlugin):
         def spawn(self, name=None):
             """Create another tmp_plugin"""
@@ -446,9 +443,12 @@ def tmp_plugin(_mock_npe2_pm: PluginManager):
             new.register()
             return new
 
-    plugin = _DynamicPlugin('tmp_plugin', plugin_manager=_mock_npe2_pm)
-    plugin.register()
-    return plugin
+    # guarantee that the name is unique, even if tmp_plugin has already been used
+    count = itertools.count(0)
+    while (name := f'tmp_plugin{next(count)}') in _mock_npe2_pm._manifests:
+        continue
+    with _DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
+        yield plugin
 
 
 def _event_check(instance):
