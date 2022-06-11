@@ -76,6 +76,9 @@ jobs:
           - python: 3.9
             platform: ubuntu-latest
             backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs

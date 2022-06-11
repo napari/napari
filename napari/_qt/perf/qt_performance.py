@@ -95,6 +95,8 @@ class QtPerformance(QWidget):
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()
+        # We log slow events to this window.
+        self.log = TextLog()
 
         # For our "uptime" timer.
         self.start_time = time.time()
@@ -128,8 +130,6 @@ class QtPerformance(QWidget):
         )
         layout.addLayout(combo_layout)
 
-        # We log slow events to this window.
-        self.log = TextLog()
         layout.addWidget(self.log)
 
         # Uptime label. To indicate if the widget is getting updated.
