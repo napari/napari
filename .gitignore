@@ -156,3 +156,5 @@ docs/.jupyter_cache/
 docs/gallery/
 
 napari/resources/icons/_themes/
+# pytest reports in json format https://github.com/napari/napari/pull/4518
+report*.json

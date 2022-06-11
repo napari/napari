@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 # install python resources
 RUN apt-get update && apt-get install -qqy build-essential python3.8 python3-pip

@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import time
 from typing import List
@@ -25,11 +26,10 @@ except RuntimeError:
 # only test the first of each layer type
 test_data = []
 for cls in all_subclasses(Layer):
-    try:
+    # OctTree Image doesn't have layer_test_data
+    with contextlib.suppress(StopIteration):
         test_data.append(next(x for x in layer_test_data if x[0] is cls))
-    except StopIteration:
-        # OctTree Image doesn't have layer_test_data
-        pass
+test_data.sort(key=lambda x: x[0].__name__)  # required for xdist to work
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
@@ -244,33 +244,39 @@ def test_magicgui_get_viewer(make_napari_viewer):
 
 MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']
 MGUI_EXPORTS += [f'napari.types.{nm.title()}Data' for nm in layers.NAMES]
+NAMES = ('Image', 'Labels', 'Layer', 'Points', 'Shapes', 'Surface')
 
 
-@pytest.mark.parametrize('name', MGUI_EXPORTS)
-def test_mgui_forward_refs(tmp_path, name):
+@pytest.mark.parametrize('name', sorted(MGUI_EXPORTS))
+def test_mgui_forward_refs(name, monkeypatch):
     """Test magicgui forward ref annotations
 
-    In a 'fresh' process, make sure that calling
+    make sure that calling
     `magicgui.type_map.pick_widget_type` with the string version of a napari
     object triggers the appropriate imports to resolve the class in time.
     """
-    import subprocess
-    import textwrap
+    import magicgui.type_map
 
-    script = """
-    import magicgui
-    assert magicgui.type_map._TYPE_DEFS == {{}}
-    name = {0!r}
+    # clearing out the loaded modules that call magicgui.register_type,
+    # to make sure that when the forward ref is evaluated, those modules get imported
+    # again.
+    monkeypatch.setattr(magicgui.type_map, '_TYPE_DEFS', {})
+    monkeypatch.delitem(sys.modules, 'napari')
+    monkeypatch.delitem(sys.modules, 'napari.viewer')
+    monkeypatch.delitem(sys.modules, 'napari.types')
+    # need to clear all of these submodules too, otherise the layers are oddly not
+    # subclasses of napari.layers.Layer, and napari.layers.NAMES
+    # oddly ends up as an empty set
+    for m in list(sys.modules):
+        if m.startswith('napari.layers') and 'utils' not in m:
+            monkeypatch.delitem(sys.modules, m)
+
+    assert magicgui.type_map._TYPE_DEFS == {}
     wdg, options = magicgui.type_map.pick_widget_type(annotation=name)
     if name == 'napari.Viewer':
         assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
     else:
         assert wdg == magicgui.widgets.Combobox
-    """
-
-    script_path = tmp_path / 'script.py'
-    script_path.write_text(textwrap.dedent(script.format(name)))
-    subprocess.run([sys.executable, str(script_path)], check=True)
 
 
 def test_layers_populate_immediately(make_napari_viewer):
