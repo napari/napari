@@ -100,11 +100,12 @@ class CrossWidget(QCheckBox):
         )
         point = self.viewer.dims.current_step
         vec = []
+        print(extent)
         for i, (lower, upper) in enumerate(extent.world.T):
             point1 = list(point)
-            point1[i] = lower + extent.step[i] / 2
+            point1[i] = (lower + extent.step[i] / 2) / extent.step[i]
             point2 = [0 for _ in point]
-            point2[i] = upper - lower
+            point2[i] = (upper - lower) / extent.step[i]
             vec.append((point1, point2))
         if any(self.layer.scale != extent.step):
             self.layer.scale = extent.step
