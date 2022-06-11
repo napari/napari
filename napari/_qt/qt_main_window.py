@@ -89,9 +89,6 @@ class _QtMainWindow(QMainWindow):
         center.layout().addWidget(self._qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
-        from qtpy.QtGui import QPalette
-
-        self.palette().setColor(QPalette.ColorRole.Window, Qt.red)
 
         self.setWindowTitle(self._qt_viewer.viewer.title)
 

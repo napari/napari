@@ -8,6 +8,12 @@ from typing import Union
 from pydantic import validator
 from pydantic.color import Color
 
+from .._vendor import darkdetect
+from ..resources._icons import build_theme_svgs
+from ..utils.translations import trans
+from .events import EventedModel
+from .events.containers._evented_dict import EventedDict
+
 try:
     from qtpy import QT_VERSION
 
@@ -15,11 +21,6 @@ try:
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
 except Exception:
     use_gradients = False
-
-from .._vendor import darkdetect
-from ..utils.translations import trans
-from .events import EventedModel
-from .events.containers._evented_dict import EventedDict
 
 
 class Theme(EventedModel):
@@ -247,11 +248,7 @@ def register_theme(name, theme):
     assert isinstance(theme, Theme)
     _themes[name] = theme
 
-    from qtpy.QtCore import QDir
-
-    from ..resources._icons import build_theme_svgs
-
-    QDir.addSearchPath(f'theme_{name}', build_theme_svgs(name))
+    build_theme_svgs(name)
 
 
 def unregister_theme(name):

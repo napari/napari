@@ -152,10 +152,14 @@ def write_colorized_svgs(
         (dest / Path(alias).name).write_text(svg)
 
 
+def _theme_path(theme_name: str) -> Path:
+    return ICON_PATH / '_themes' / theme_name
+
+
 def build_theme_svgs(theme_name: str) -> str:
-    out = ICON_PATH / '_themes' / theme_name
+    out = _theme_path(theme_name)
     write_colorized_svgs(
-        ICON_PATH / '_themes' / theme_name,
+        out,
         svg_paths=ICONS.values(),
         colors=[(theme_name, 'icon')],
         opacities=(0.5, 1),

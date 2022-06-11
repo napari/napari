@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy import PYQT5
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from ..resources._icons import _theme_path
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
@@ -19,6 +20,7 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
+from ..utils.theme import _themes
 from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
@@ -188,6 +190,17 @@ def get_app(
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
+
+        # Setup search paths for currently installed themes.
+        for name in _themes:
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        # When a new theme is added, at it to the search path.
+        @_themes.events.changed.connect
+        @_themes.events.added.connect
+        def _(event):
+            name = event.key
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
     _app_ref = app  # prevent garbage collection
 
