@@ -4,11 +4,7 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
-from napari._tests.utils import (
-    good_layer_data,
-    layer_test_data,
-    restore_settings_on_exit,
-)
+from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
@@ -855,14 +851,11 @@ def test_open_or_get_error_prefered_plugin(
     def _(path):
         ...
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {
-            '*.npy': builtins.manifest.name
-        }
+    get_settings().plugins.extension2reader = {'*.npy': builtins.manifest.name}
 
-        added = viewer._open_or_raise_error([str(pth)])
-        assert len(added) == 1
-        assert added[0].source.reader_plugin == builtins.manifest.name
+    added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.manifest.name
 
 
 def test_open_or_get_error_cant_find_plugin(tmp_path, builtins: DynamicPlugin):
@@ -871,15 +864,12 @@ def test_open_or_get_error_cant_find_plugin(tmp_path, builtins: DynamicPlugin):
     pth = tmp_path / 'my-file.npy'
     np.save(pth, np.random.random((10, 10)))
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
+    get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
 
-        with pytest.warns(
-            RuntimeWarning, match="Can't find fake-reader plugin"
-        ):
-            added = viewer._open_or_raise_error([str(pth)])
-        assert len(added) == 1
-        assert added[0].source.reader_plugin == builtins.manifest.name
+    with pytest.warns(RuntimeWarning, match="Can't find fake-reader plugin"):
+        added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.manifest.name
 
 
 def test_open_or_get_error_no_prefered_plugin_many_available(
@@ -897,28 +887,22 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
     def _(path):
         ...
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
+    get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
-        with pytest.warns(
-            RuntimeWarning, match="Can't find not-a-plugin plugin"
+    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
+        with pytest.raises(
+            MultipleReaderError, match='Multiple plugins found capable'
         ):
-            with pytest.raises(
-                MultipleReaderError, match='Multiple plugins found capable'
-            ):
-                viewer._open_or_raise_error(['my_file.fake'])
+            viewer._open_or_raise_error(['my_file.fake'])
 
 
 def test_open_or_get_error_preferred_fails(builtins, tmp_path):
     viewer = ViewerModel()
     pth = tmp_path / 'my-file.npy'
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {
-            '*.npy': builtins.manifest.name
-        }
+    get_settings().plugins.extension2reader = {'*.npy': builtins.manifest.name}
 
-        with pytest.raises(
-            ReaderPluginError, match='Tried opening with napari, but failed.'
-        ):
-            viewer._open_or_raise_error([str(pth)])
+    with pytest.raises(
+        ReaderPluginError, match='Tried opening with napari, but failed.'
+    ):
+        viewer._open_or_raise_error([str(pth)])

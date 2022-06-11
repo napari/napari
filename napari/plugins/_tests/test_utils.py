@@ -1,6 +1,5 @@
 from npe2 import DynamicPlugin
 
-from napari._tests.utils import restore_settings_on_exit
 from napari.plugins.utils import (
     get_all_readers,
     get_filename_patterns_for_reader,
@@ -11,26 +10,23 @@ from napari.settings import get_settings
 
 
 def test_get_preferred_reader_no_readers():
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {}
-        reader = get_preferred_reader('my_file.tif')
-        assert reader is None
+    get_settings().plugins.extension2reader = {}
+    reader = get_preferred_reader('my_file.tif')
+    assert reader is None
 
 
 def test_get_preferred_reader_for_extension():
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.tif': 'fake-plugin'}
-        reader = get_preferred_reader('my_file.tif')
-        assert reader == 'fake-plugin'
+    get_settings().plugins.extension2reader = {'*.tif': 'fake-plugin'}
+    reader = get_preferred_reader('my_file.tif')
+    assert reader == 'fake-plugin'
 
 
 def test_get_preferred_reader_complex_pattern():
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {
-            'my-specific-folder/*.tif': 'fake-plugin'
-        }
-        reader = get_preferred_reader('my-specific-folder/my_file.tif')
-        assert reader == 'fake-plugin'
+    get_settings().plugins.extension2reader = {
+        'my-specific-folder/*.tif': 'fake-plugin'
+    }
+    reader = get_preferred_reader('my-specific-folder/my_file.tif')
+    assert reader == 'fake-plugin'
 
 
 def test_get_preferred_reader_no_extension():

@@ -1,7 +1,6 @@
 import os
 import sys
 from collections import abc
-from contextlib import contextmanager
 from typing import Any, Dict
 
 import numpy as np
@@ -18,7 +17,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.settings import get_settings
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -268,11 +266,3 @@ def assert_layer_state_equal(
             pd.testing.assert_frame_equal(actual_value, expected_value)
         else:
             np.testing.assert_equal(actual_value, expected_value)
-
-
-@contextmanager
-def restore_settings_on_exit():
-    """Context manager restores settings on exit"""
-    original_settings = get_settings().plugins.extension2reader
-    yield
-    get_settings().plugins.extension2reader = original_settings

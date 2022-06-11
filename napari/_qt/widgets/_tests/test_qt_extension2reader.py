@@ -4,7 +4,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QPushButton
 
 from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
-from napari._tests.utils import restore_settings_on_exit
 from napari.settings import get_settings
 
 
@@ -45,59 +44,51 @@ def npy_reader(tmp_plugin: DynamicPlugin):
 def test_extension2reader_defaults(
     extension2reader_widget,
 ):
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {}
-        widget = extension2reader_widget()
+    get_settings().plugins.extension2reader = {}
+    widget = extension2reader_widget()
 
-        assert widget._table.rowCount() == 1
-        assert (
-            widget._table.itemAt(0, 0).text()
-            == 'No filename preferences found.'
-        )
+    assert widget._table.rowCount() == 1
+    assert (
+        widget._table.itemAt(0, 0).text() == 'No filename preferences found.'
+    )
 
 
 def test_extension2reader_with_settings(
     extension2reader_widget,
 ):
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'.test': 'test-plugin'}
-        widget = extension2reader_widget()
+    get_settings().plugins.extension2reader = {'.test': 'test-plugin'}
+    widget = extension2reader_widget()
 
-        assert widget._table.rowCount() == 1
-        assert widget._table.item(0, 0).text() == '.test'
-        assert (
-            widget._table.cellWidget(0, 1).findChild(QLabel).text()
-            == 'test-plugin'
-        )
+    assert widget._table.rowCount() == 1
+    assert widget._table.item(0, 0).text() == '.test'
+    assert (
+        widget._table.cellWidget(0, 1).findChild(QLabel).text()
+        == 'test-plugin'
+    )
 
 
 def test_extension2reader_removal(extension2reader_widget, qtbot):
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {
-            '.test': 'test-plugin',
-            '.abc': 'abc-plugin',
-        }
-        widget = extension2reader_widget()
+    get_settings().plugins.extension2reader = {
+        '.test': 'test-plugin',
+        '.abc': 'abc-plugin',
+    }
+    widget = extension2reader_widget()
 
-        assert widget._table.rowCount() == 2
+    assert widget._table.rowCount() == 2
 
-        btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
-        qtbot.mouseClick(btn_to_click, Qt.LeftButton)
+    btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
+    qtbot.mouseClick(btn_to_click, Qt.LeftButton)
 
-        assert get_settings().plugins.extension2reader == {
-            '.abc': 'abc-plugin'
-        }
-        assert widget._table.rowCount() == 1
-        assert widget._table.item(0, 0).text() == '.abc'
+    assert get_settings().plugins.extension2reader == {'.abc': 'abc-plugin'}
+    assert widget._table.rowCount() == 1
+    assert widget._table.item(0, 0).text() == '.abc'
 
-        # remove remaining extension
-        btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
-        qtbot.mouseClick(btn_to_click, Qt.LeftButton)
-        assert not get_settings().plugins.extension2reader
-        assert widget._table.rowCount() == 1
-        assert (
-            "No filename preferences found" in widget._table.item(0, 0).text()
-        )
+    # remove remaining extension
+    btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
+    qtbot.mouseClick(btn_to_click, Qt.LeftButton)
+    assert not get_settings().plugins.extension2reader
+    assert widget._table.rowCount() == 1
+    assert "No filename preferences found" in widget._table.item(0, 0).text()
 
 
 def test_all_readers_in_dropdown(
@@ -197,20 +188,18 @@ def test_adding_new_preference(
     # will be filtered and tif-reader will be only item
     widget._new_reader_dropdown.setCurrentIndex(0)
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {}
-        widget._save_new_preference(True)
-        settings = get_settings().plugins.extension2reader
-        assert '*.tif' in settings
-        assert settings['*.tif'] == tif_reader.manifest.name
-        assert (
-            widget._table.item(widget._table.rowCount() - 1, 0).text()
-            == '*.tif'
-        )
-        plugin_label = widget._table.cellWidget(
-            widget._table.rowCount() - 1, 1
-        ).findChild(QLabel)
-        assert plugin_label.text() == tif_reader.manifest.display_name
+    get_settings().plugins.extension2reader = {}
+    widget._save_new_preference(True)
+    settings = get_settings().plugins.extension2reader
+    assert '*.tif' in settings
+    assert settings['*.tif'] == tif_reader.manifest.name
+    assert (
+        widget._table.item(widget._table.rowCount() - 1, 0).text() == '*.tif'
+    )
+    plugin_label = widget._table.cellWidget(
+        widget._table.rowCount() - 1, 1
+    ).findChild(QLabel)
+    assert plugin_label.text() == tif_reader.manifest.display_name
 
 
 def test_adding_new_preference_no_asterisk(
@@ -222,12 +211,11 @@ def test_adding_new_preference_no_asterisk(
     # will be filtered and tif-reader will be only item
     widget._new_reader_dropdown.setCurrentIndex(0)
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {}
-        widget._save_new_preference(True)
-        settings = get_settings().plugins.extension2reader
-        assert '*.tif' in settings
-        assert settings['*.tif'] == tif_reader.manifest.name
+    get_settings().plugins.extension2reader = {}
+    widget._save_new_preference(True)
+    settings = get_settings().plugins.extension2reader
+    assert '*.tif' in settings
+    assert settings['*.tif'] == tif_reader.manifest.name
 
 
 def test_editing_preference(extension2reader_widget, tif_reader):
@@ -237,22 +225,21 @@ def test_editing_preference(extension2reader_widget, tif_reader):
     def ff(path):
         ...
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {
-            '*.tif': tif_reader.manifest.name
-        }
+    get_settings().plugins.extension2reader = {
+        '*.tif': tif_reader.manifest.name
+    }
 
-        widget = extension2reader_widget()
-        widget._fn_pattern_edit.setText('*.tif')
-        # set to tiff2
-        widget._new_reader_dropdown.setCurrentText(tiff2.manifest.display_name)
-        original_row_count = widget._table.rowCount()
-        widget._save_new_preference(True)
-        settings = get_settings().plugins.extension2reader
-        assert '*.tif' in settings
-        assert settings['*.tif'] == tiff2.manifest.name
-        assert widget._table.rowCount() == original_row_count
-        plugin_label = widget._table.cellWidget(
-            original_row_count - 1, 1
-        ).findChild(QLabel)
-        assert plugin_label.text() == tiff2.manifest.name
+    widget = extension2reader_widget()
+    widget._fn_pattern_edit.setText('*.tif')
+    # set to tiff2
+    widget._new_reader_dropdown.setCurrentText(tiff2.manifest.display_name)
+    original_row_count = widget._table.rowCount()
+    widget._save_new_preference(True)
+    settings = get_settings().plugins.extension2reader
+    assert '*.tif' in settings
+    assert settings['*.tif'] == tiff2.manifest.name
+    assert widget._table.rowCount() == original_row_count
+    plugin_label = widget._table.cellWidget(
+        original_row_count - 1, 1
+    ).findChild(QLabel)
+    assert plugin_label.text() == tiff2.manifest.name
