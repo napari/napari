@@ -348,12 +348,12 @@ def _register():
     from .. import layers, types
     from ..types import LayerDataTuple
     from ..utils import _magicgui as _mgui
-    from ..utils._injection import set_processor
+    from ..utils._injection import set_processors
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
         t = FunctionWorker[_type]
         magicgui.register_type(t, return_callback=_mgui.add_worker_data)
-        set_processor({t: _add_worker_data_from_tuple})
+        set_processors({t: _add_worker_data_from_tuple})
     for layer_name in layers.NAMES:
         _type = getattr(types, f'{layer_name.title()}Data')
         t = FunctionWorker[_type]
@@ -361,7 +361,7 @@ def _register():
             t,
             return_callback=partial(_mgui.add_worker_data, _from_tuple=False),
         )
-        set_processor({t: _add_worker_data})
+        set_processors({t: _add_worker_data})
 
 
 _register()

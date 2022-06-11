@@ -2,22 +2,70 @@ import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    get_origin,
+)
+
+from typing_extensions import get_args, get_type_hints
 
 from ... import layers, types, viewer
 from ...layers._source import layer_source
 from ...utils.misc import ensure_list_of_layer_data_tuple
-from ._accessors import _access_viewer
+from ._providers import _provide_viewer
 
 T = TypeVar("T")
+C = TypeVar("C", bound=Callable)
 _NULL = object()
 
+# add default processors
+_PROCESSORS: Dict[Any, Callable[[Any], Any]] = {}
 
+
+def processor(func: C) -> C:
+    """Decorator that declares `func` as a processor of its first parameter type.
+
+    Examples
+    --------
+    >>> @processor
+    >>> def processes_image(image: napari.layers.Image):
+    ...     ... # do something with the image
+    """
+    hints = get_type_hints(func)
+    hints.pop("return", None)
+    if not hints:
+        raise TypeError(
+            f"{func} has no argument type hints. Cannot be a processor."
+        )
+    hint0 = list(hints.values())[0]
+
+    if hint0 is not None:
+        if get_origin(hint0) == Union:
+            for arg in get_args(hint0):
+                if arg is not None:
+                    _PROCESSORS[arg] = func
+        else:
+            _PROCESSORS[hint0] = func
+    return func
+
+
+@processor
 def _add_layer_data_tuples_to_viewer(
-    data: Any, return_type=None, viewer=None, source: Optional[dict] = None
+    data: Union[types.LayerDataTuple, List[types.LayerDataTuple]],
+    return_type=None,
+    viewer=None,
+    source: Optional[dict] = None,
 ):
     if viewer is None:
-        viewer = _access_viewer()
+        viewer = _provide_viewer()
     if viewer and data is not None:
         data = data if isinstance(data, list) else [data]
         for datum in ensure_list_of_layer_data_tuple(data):
@@ -66,7 +114,7 @@ def _add_layer_data_to_viewer(
     ...     return np.random.rand(256, 256)
 
     """
-    if data is not None and (viewer := viewer or _access_viewer()):
+    if data is not None and (viewer := viewer or _provide_viewer()):
         if layer_name:
             with suppress(KeyError):
                 viewer.layers[layer_name].data = data
@@ -76,16 +124,18 @@ def _add_layer_data_to_viewer(
             getattr(viewer, f'add_{layer_type}')(data=data, name=layer_name)
 
 
+@processor
 def _add_layer_to_viewer(
     layer: layers.Layer,
     viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
 ):
-    if layer is not None and (viewer := viewer or _access_viewer()):
+    if layer is not None and (viewer := viewer or _provide_viewer()):
         layer._source = layer.source.copy(update=source or {})
         viewer.add_layer(layer)
 
 
+# here to prevent garbace collection of the future object while processing.
 _FUTURES: Set[Future] = set()
 
 
@@ -147,22 +197,6 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-# add default processors
-_PROCESSORS: Dict[Any, Callable[[Any], Any]] = {
-    layers.Layer: _add_layer_to_viewer,
-    types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
-}
-
-
-for t in types._LayerData.__args__:
-    _PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
-
-    if sys.version_info >= (3, 9):
-        _PROCESSORS[Future[t]] = partial(
-            _add_future_data, return_type=t, _from_tuple=False
-        )
-
-
 def get_processor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
     """Return processor function for a given type.
 
@@ -181,7 +215,7 @@ def get_processor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
                 return val  # type: ignore [return-type]
 
 
-class set_processor:
+class set_processors:
     """Set processor(s) for given type(s).
 
     "Processors" are functions that can "do something" with an instance of the
@@ -228,3 +262,17 @@ class set_processor:
                 del _PROCESSORS[key]
             else:
                 _PROCESSORS[key] = val
+
+
+# Add future and LayerData processors for each layer type.
+def _init_module():
+    for t in types._LayerData.__args__:
+        _PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
+
+        if sys.version_info >= (3, 9):
+            _PROCESSORS[Future[t]] = partial(
+                _add_future_data, return_type=t, _from_tuple=False
+            )
+
+
+_init_module()

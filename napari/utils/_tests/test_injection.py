@@ -10,8 +10,8 @@ from napari.layers import Image, Labels, Layer, Points
 from napari.types import ImageData, LayerDataTuple
 from napari.utils._injection import (
     inject_napari_dependencies,
-    set_accessor,
-    set_processor,
+    set_processors,
+    set_providers,
 )
 from napari.viewer import Viewer, ViewerModel
 
@@ -34,7 +34,7 @@ def test_napari_injection():
         LayerList: lambda: viewer.layers,
     }
 
-    with set_accessor(lookup, clobber=True):
+    with set_providers(lookup, clobber=True):
         assert f() == (viewer, points, viewer.layers)
 
     assert f() == (None, None, None)
@@ -49,7 +49,7 @@ def test_napari_injection_missing():
         f()
     assert 'missing 1 required positional argument' in str(e.value)
     assert f(4) == 4
-    with set_accessor({int: lambda: 1}):
+    with set_providers({int: lambda: 1}):
         assert f() == 1
 
 
@@ -74,7 +74,7 @@ def test_processors():
     v = ViewerModel()
     assert not v.layers
 
-    with set_accessor({Viewer: lambda: v}, clobber=True):
+    with set_providers({Viewer: lambda: v}, clobber=True):
         f1()
         assert len(v.layers) == 1 and v.layers[0].name == 'my points'
         f2()
@@ -89,8 +89,8 @@ def test_processors():
 
     # trying to set an existing accessor without clobber is an error
     with pytest.raises(ValueError) as e:
-        set_accessor({Viewer: lambda: None})
-    assert 'already has an accessor and clobber is False' in str(e.value)
+        set_providers({Viewer: lambda: None})
+    assert 'already has a provider and clobber is False' in str(e.value)
 
 
 def test_set_processor():
@@ -99,11 +99,11 @@ def test_set_processor():
         return x
 
     with pytest.raises(ValueError) as e:
-        set_processor({ImageData: lambda: None})
+        set_processors({ImageData: lambda: None})
     assert 'already has a processor and clobber is False' in str(e.value)
 
     mock = Mock()
-    with set_processor({int: mock}):
+    with set_processors({int: mock}):
         assert f2(3) == 3
     mock.assert_called_once_with(3)
 
@@ -127,7 +127,7 @@ def test_future_processor():
     assert not v.layers
 
     # setting the accessor to our local viewer
-    with set_accessor({Viewer: lambda: v}, clobber=True):
+    with set_providers({Viewer: lambda: v}, clobber=True):
         future = add_data()
         assert future.result().shape == (4, 4)
 
@@ -145,5 +145,5 @@ def test_injection_with_generator():
     v.add_points()
 
     # setting the accessor to our local viewer
-    with set_accessor({Viewer: lambda: v}, clobber=True):
+    with set_providers({Viewer: lambda: v}, clobber=True):
         assert tuple(f()) == (v.layers[0], v)

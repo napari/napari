@@ -5,20 +5,21 @@ from typing import Any, Callable, Dict, Optional, TypeVar
 from typing_extensions import get_type_hints
 
 from ... import components, layers, viewer
-from ._accessors import get_accessor, set_accessor
-from ._processors import get_processor, set_processor
+from ._processors import get_processor, set_processors
+from ._providers import get_provider, provider, set_providers
 
 T = TypeVar("T")
 _NULL = object()
 
 
 __all__ = [
-    'get_accessor',
+    'provider',
+    'get_provider',
     'get_processor',
     'inject_napari_dependencies',
     'napari_type_hints',
-    'set_accessor',
-    'set_processor',
+    'set_providers',
+    'set_processors',
 ]
 
 
@@ -75,7 +76,7 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     sig = signature(func)
     # get type hints for the object, with forward refs of napari hints resolved
     hints = napari_type_hints(func)
-    # get accessor functions for each required parameter
+    # get provider functions for each required parameter
     required_parameters = {}
     return_hint = None
     for name, hint in hints.items():
@@ -87,12 +88,12 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
 
     @wraps(func)
     def _exec(*args, **kwargs):
-        # when we call the function, we call the accessor functions to get
+        # when we call the function, we call the provider functions to get
         # the current napari objects
         _kwargs = {}
         for n, hint in required_parameters.items():
-            if accessor := get_accessor(hint):
-                _kwargs[n] = accessor()
+            if provider := get_provider(hint):
+                _kwargs[n] = provider()
 
         # but we use bind_partial to allow the caller to still provide
         # their own objects if desired.
