@@ -100,11 +100,12 @@ class NapariPluginManager(PluginManager):
 
     def _initialize(self):
         with self.discovery_blocked():
-            self.register(_builtins, name='builtins')
-            if importlib.util.find_spec("skimage") is not None:
-                from . import _skimage_data
+            if 'builtins' not in self._skip_packages:
+                self.register(_builtins, name='builtins')
+                if importlib.util.find_spec("skimage") is not None:
+                    from . import _skimage_data
 
-                self.register(_skimage_data, name='scikit-image')
+                    self.register(_skimage_data, name='scikit-image')
 
             from ..settings import get_settings
 
