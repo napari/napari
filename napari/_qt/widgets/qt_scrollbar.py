@@ -17,13 +17,17 @@ class ModifiedScrollBar(QScrollBar):
     def _move_to_mouse_position(self, event):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
-        control = self.style().hitTestComplexControl(
-            QStyle.CC_ScrollBar, opt, event.position().toPoint(), self
+
+        point = (
+            event.pos()
+            if hasattr(event, "pos")
+            else event.position().toPoint()
         )
-        if (
-            control == QStyle.SC_ScrollBarAddPage
-            or control == QStyle.SC_ScrollBarSubPage
-        ):
+
+        control = self.style().hitTestComplexControl(
+            QStyle.CC_ScrollBar, opt, point, self
+        )
+        if control in (QStyle.SC_ScrollBarAddPage, QStyle.SC_ScrollBarSubPage):
             # scroll here
             gr = self.style().subControlRect(
                 QStyle.CC_ScrollBar, opt, QStyle.SC_ScrollBarGroove, self
@@ -32,14 +36,14 @@ class ModifiedScrollBar(QScrollBar):
                 QStyle.CC_ScrollBar, opt, QStyle.SC_ScrollBarSlider, self
             )
             if self.orientation() == Qt.Horizontal:
-                pos = event.position().toPoint().x()
+                pos = point.x()
                 sliderLength = sr.width()
                 sliderMin = gr.x()
                 sliderMax = gr.right() - sliderLength + 1
                 if self.layoutDirection() == Qt.RightToLeft:
                     opt.upsideDown = not opt.upsideDown
             else:
-                pos = event.position().toPoint().y()
+                pos = point.y()
                 sliderLength = sr.height()
                 sliderMin = gr.y()
                 sliderMax = gr.bottom() - sliderLength + 1

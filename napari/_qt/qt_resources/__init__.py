@@ -2,10 +2,9 @@ import warnings
 from pathlib import Path
 from typing import List, Optional
 
-from ._icons import compile_qt_svgs
 from ._svg import QColoredSVGIcon
 
-__all__ = ['get_stylesheet', 'QColoredSVGIcon', 'compile_qt_svgs']
+__all__ = ['get_stylesheet', 'QColoredSVGIcon']
 
 STYLE_PATH = (Path(__file__).parent / 'styles').resolve()
 STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
