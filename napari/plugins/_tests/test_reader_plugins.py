@@ -80,7 +80,7 @@ def test_builtin_reader_plugin_csv(tmpdir):
     assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_stacks():
+def test_builtin_reader_plugin_stacks(builtins):
     """Test the builtin reader plugin reads multiple files as a stack."""
     data = np.random.rand(5, 20, 20)
     tmps = []
@@ -102,7 +102,7 @@ def test_builtin_reader_plugin_stacks():
         os.unlink(tmp.name)
 
 
-def test_builtin_reader_plugin_url():
+def test_builtin_reader_plugin_url(builtins):
     layer_data, _ = io.read_data_with_plugins(
         ['https://samples.fiji.sc/FakeTracks.tif']
     )

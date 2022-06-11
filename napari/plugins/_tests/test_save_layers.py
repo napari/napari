@@ -8,7 +8,9 @@ BUILTINS = 'napari'
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-def test_save_layer_single_named_plugin(tmpdir, layer_data_and_types):
+def test_save_layer_single_named_plugin(
+    builtins, tmpdir, layer_data_and_types
+):
     """Test saving a single layer with a named plugin."""
     layers, _, _, filenames = layer_data_and_types
 
@@ -35,7 +37,9 @@ def test_save_layer_no_results(tmpdir):
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-def test_save_layer_single_no_named_plugin(tmpdir, layer_data_and_types):
+def test_save_layer_single_no_named_plugin(
+    builtins, tmpdir, layer_data_and_types
+):
     """Test saving a single layer without naming plugin."""
     # make writer builtin plugins get called first
 

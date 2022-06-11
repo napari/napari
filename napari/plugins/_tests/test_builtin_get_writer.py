@@ -1,24 +1,16 @@
 import os
 
-from napari.plugins import _builtins
+from napari.plugins._builtins import write_layer_data_with_plugins
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
-def test_get_writer_succeeds(
-    napari_plugin_manager, tmpdir, layer_data_and_types
-):
+def test_get_writer_succeeds(builtins, tmpdir, layer_data_and_types):
     """Test writing layers data."""
-
-    _, layer_data, layer_types, filenames = layer_data_and_types
+    _, layer_data, _, filenames = layer_data_and_types
     path = os.path.join(tmpdir, 'layers_folder')
 
-    writer = napari_plugin_manager.hook.napari_get_writer(
-        path=path, layer_types=layer_types
-    )
-
     # Write data
-    assert writer == _builtins.write_layer_data_with_plugins
-    assert writer(path, layer_data, plugin_name=None)
+    assert write_layer_data_with_plugins(path, layer_data, plugin_name=None)
 
     # Check folder and files exist
     assert os.path.isdir(path)

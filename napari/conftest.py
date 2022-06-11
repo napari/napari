@@ -7,14 +7,15 @@ import os
 from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
 import pooch
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import DynamicPlugin, PluginManager
+from npe2 import DynamicPlugin, PluginManager, PluginManifest
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -435,32 +436,29 @@ def tmp_reader():
     return make_plugin
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
-    mock_reg = MagicMock()
     with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager(reg=mock_reg)
+        _pm = PluginManager()
     with patch('npe2.PluginManager.instance', return_value=_pm):
         yield _pm
 
 
-def event_check():
-    """Return a function to check if events are defined by all properties."""
+@pytest.fixture
+def builtins(mock_npe2_pm: PluginManager):
+    plugin = DynamicPlugin('napari', plugin_manager=mock_npe2_pm)
+    mf = PluginManifest.from_file(Path(__file__).parent / 'builtins.yaml')
+    plugin.manifest = mf
+    plugin.register()
+    return plugin
 
-    def _check(instance, skip):
-        klass = instance.__class__
-        for name, value in klass.__dict__.items():
-            if (
-                isinstance(value, property)
-                and name[0] != '_'
-                and name not in skip
-            ):
-                assert hasattr(
-                    instance.events, name
-                ), f"event {name} not defined"
 
-    return _check
+@pytest.fixture
+def tmp_plugin(mock_npe2_pm: PluginManager):
+    plugin = DynamicPlugin('tmp_plugin', plugin_manager=mock_npe2_pm)
+    plugin.register()
+    return plugin
 
 
 def _event_check(instance):
