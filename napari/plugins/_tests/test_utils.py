@@ -1,3 +1,5 @@
+from npe2 import DynamicPlugin
+
 from napari._tests.utils import restore_settings_on_exit
 from napari.plugins.utils import (
     get_all_readers,
@@ -76,7 +78,7 @@ def test_get_potential_readers_plugin_name_disp_name(mock_npe2_pm, tmp_reader):
     assert readers['fake-reader'] == 'Fake Reader'
 
 
-def test_get_all_readers_gives_napari():
+def test_get_all_readers_gives_napari(builtins):
     npe2_readers, npe1_readers = get_all_readers()
     assert len(npe1_readers) == 0
     assert len(npe2_readers) == 1
@@ -95,14 +97,16 @@ def test_get_filename_patterns_fake_plugin():
     assert len(get_filename_patterns_for_reader('gibberish')) == 0
 
 
-def test_get_filename_patterns(mock_npe2_pm, tmp_reader):
-    fake_reader = tmp_reader(mock_npe2_pm, 'fake-reader', ['*.tif'])
-
-    @fake_reader.contribute.reader(filename_patterns=['*.csv'])
-    def read_func(pth):
+def test_get_filename_patterns(tmp_plugin: DynamicPlugin):
+    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
+    def read_tif(path):
         ...
 
-    patterns = get_filename_patterns_for_reader('fake-reader')
+    @tmp_plugin.contribute.reader(filename_patterns=['*.csv'])
+    def read_csv(pth):
+        ...
+
+    patterns = get_filename_patterns_for_reader(tmp_plugin.manifest.name)
     assert len(patterns) == 2
     assert '*.tif' in patterns
     assert '*.csv' in patterns
