@@ -153,9 +153,13 @@ class LayerDelegate(QStyledItemDelegate):
             event.type() == event.MouseButtonRelease
             and event.button() == Qt.RightButton
         ):
-            self.show_context_menu(
-                index, model, event.globalPos(), option.widget
+            pnt = (
+                event.globalPosition().toPoint()
+                if hasattr(event, "globalPosition")
+                else event.globalPos()
             )
+
+            self.show_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty

@@ -138,14 +138,17 @@ class _QtMainWindow(QMainWindow):
         window = cls.current()
         return window._qt_viewer.viewer if window else None
 
-    def event(self, e):
+    def event(self, e) -> bool:
         if (
             e.type() == QEvent.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
-            QToolTip.showText(
-                e.globalPos(), self._qt_viewer.viewer.tooltip.text, self
+            pnt = (
+                e.globalPosition().toPoint()
+                if hasattr(e, "globalPosition")
+                else e.globalPos()
             )
+            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
         if e.type() == QEvent.Close:
             # when we close the MainWindow, remove it from the instances list
             try:
