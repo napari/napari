@@ -416,7 +416,7 @@ def _no_error_reports():
 
 
 @pytest.fixture(autouse=True)
-def mock_npe2_pm():
+def _mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
     with patch.object(PluginManager, 'discover'):
         _pm = PluginManager()
@@ -425,8 +425,8 @@ def mock_npe2_pm():
 
 
 @pytest.fixture
-def builtins(mock_npe2_pm: PluginManager):
-    plugin = DynamicPlugin('napari', plugin_manager=mock_npe2_pm)
+def builtins(_mock_npe2_pm: PluginManager):
+    plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
     mf = PluginManifest.from_file(Path(__file__).parent / 'builtins.yaml')
     plugin.manifest = mf
     plugin.register()
@@ -434,7 +434,7 @@ def builtins(mock_npe2_pm: PluginManager):
 
 
 @pytest.fixture
-def tmp_plugin(mock_npe2_pm: PluginManager):
+def tmp_plugin(_mock_npe2_pm: PluginManager):
 
     count = itertools.count(2)
 
@@ -442,11 +442,11 @@ def tmp_plugin(mock_npe2_pm: PluginManager):
         def spawn(self, name=None):
             """Create another tmp_plugin"""
             name = name or f'tmp_plugin{next(count)}'
-            new = _DynamicPlugin(name, plugin_manager=mock_npe2_pm)
+            new = _DynamicPlugin(name, plugin_manager=_mock_npe2_pm)
             new.register()
             return new
 
-    plugin = _DynamicPlugin('tmp_plugin', plugin_manager=mock_npe2_pm)
+    plugin = _DynamicPlugin('tmp_plugin', plugin_manager=_mock_npe2_pm)
     plugin.register()
     return plugin
 

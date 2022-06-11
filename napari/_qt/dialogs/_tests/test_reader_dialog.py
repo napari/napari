@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QLabel, QRadioButton
 
 from napari._qt.dialogs.qt_reader_dialog import (
@@ -10,8 +11,6 @@ from napari._qt.dialogs.qt_reader_dialog import (
 from napari._tests.utils import restore_settings_on_exit
 from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
-
-BUILTINS = 'napari'
 
 
 @pytest.fixture
@@ -85,17 +84,16 @@ def test_get_persist_choice(tmpdir, reader_dialog):
     assert not widg._get_persist_choice()
 
 
-def test_prepare_dialog_options_no_readers(mock_npe2_pm):
-    pth = 'my-file.fake'
+def test_prepare_dialog_options_no_readers():
 
     with pytest.raises(ReaderPluginError) as e:
         prepare_remaining_readers(
-            [pth], 'fake-reader', RuntimeError('Reading failed')
+            ['my-file.fake'], 'fake-reader', RuntimeError('Reading failed')
         )
     assert 'Tried to read my-file.fake with plugin fake-reader' in str(e.value)
 
 
-def test_prepare_dialog_options_multiple_plugins():
+def test_prepare_dialog_options_multiple_plugins(builtins):
     pth = 'my-file.tif'
 
     readers = prepare_remaining_readers(
@@ -103,68 +101,68 @@ def test_prepare_dialog_options_multiple_plugins():
         None,
         RuntimeError(f'Multiple plugins found capable of reading {pth}'),
     )
-    assert BUILTINS in readers
+    assert builtins.manifest.name in readers
 
 
-def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
-    pth = 'my-file.fake'
+def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
+    tmp2 = tmp_plugin.spawn()  # type: ignore
 
-    tmp_reader(mock_npe2_pm, 'fake-reader')
-    tmp_reader(mock_npe2_pm, 'other-fake-reader')
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
     readers = prepare_remaining_readers(
-        [pth], 'fake-reader', RuntimeError('Reader failed')
+        ['my-file.fake'],
+        tmp_plugin.manifest.name,
+        RuntimeError('Reader failed'),
     )
-    assert 'other-fake-reader' in readers
-    assert 'fake-reader' not in readers
+    assert tmp2.manifest.name in readers
+    assert tmp_plugin.manifest.name not in readers
 
 
-def test_open_with_dialog_choices_persist(make_napari_viewer, tmp_path):
+def test_open_with_dialog_choices_persist(
+    builtins, make_napari_viewer, tmp_path
+):
     pth = tmp_path / 'my-file.npy'
     np.save(pth, np.random.random((10, 10)))
-    display_name = BUILTINS
-    persist = True
-    extension = '.npy'
-    readers = {BUILTINS: BUILTINS}
-    paths = [str(pth)]
-    stack = False
 
     with restore_settings_on_exit():
         viewer = make_napari_viewer()
         open_with_dialog_choices(
-            display_name,
-            persist,
-            extension,
-            readers,
-            paths,
-            stack,
-            viewer.window._qt_viewer,
+            display_name=builtins.manifest.display_name,
+            persist=True,
+            extension='.npy',
+            readers={builtins.manifest.name: builtins.manifest.display_name},
+            paths=[str(pth)],
+            stack=False,
+            qt_viewer=viewer.window._qt_viewer,
         )
         assert len(viewer.layers) == 1
         # make sure extension was saved with *
-        assert get_settings().plugins.extension2reader['*.npy'] == BUILTINS
+        assert (
+            get_settings().plugins.extension2reader['*.npy']
+            == builtins.manifest.name
+        )
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):
-    pth = 'my-file.fake'
-    display_name = 'Fake Plugin'
-    persist = True
-    extension = '.fake'
-    readers = {'fake-plugin': 'Fake Plugin'}
-    paths = [str(pth)]
-    stack = False
+    viewer = make_napari_viewer()
 
     with restore_settings_on_exit():
-        viewer = make_napari_viewer()
         get_settings().plugins.extension2reader = {}
         with pytest.raises(ValueError):
             open_with_dialog_choices(
-                display_name,
-                persist,
-                extension,
-                readers,
-                paths,
-                stack,
-                viewer.window._qt_viewer,
+                display_name='Fake Plugin',
+                persist=True,
+                extension='.fake',
+                readers={'fake-plugin': 'Fake Plugin'},
+                paths=['my-file.fake'],
+                stack=False,
+                qt_viewer=viewer.window._qt_viewer,
             )
         # settings weren't saved because reading failed
-        get_settings().plugins.extension2reader == {}
+        assert not get_settings().plugins.extension2reader
