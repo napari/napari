@@ -90,7 +90,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.depiction, Qt.MatchFixedString
         )
         self.depictionComboBox.setCurrentIndex(index)
-        self.depictionComboBox.activated[str].connect(self.changeDepiction)
+        self.depictionComboBox.currentTextChanged.connect(self.changeDepiction)
         self.depictionLabel = QLabel(trans._('depiction:'))
 
         # plane controls
