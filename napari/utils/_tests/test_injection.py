@@ -120,7 +120,7 @@ def test_future_processor():
 
         def _slow_data():
             time.sleep(0.1)
-            future.set_result(np.random.rand(4, 4))
+            future.set_result(np.zeros(4, 4))
 
         thr = threading.Thread(target=_slow_data)
         thr.start()
