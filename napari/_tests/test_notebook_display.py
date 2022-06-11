@@ -30,7 +30,9 @@ def test_nbscreenshot(make_napari_viewer):
         # Naughty strings https://github.com/minimaxir/big-list-of-naughty-strings
         # ASCII punctuation
         (r",./;'[]\-=", ',./;&#x27;[]\\-='),  # noqa: W605
-        ('>?:"{}|_+', '&gt;?:&quot;{}|_+'),  # ASCII punctuation 2
+        # ASCII punctuation 2, skipping < because that is interpreted as the start
+        # of an HTML element.
+        ('>?:"{}|_+', '&gt;?:&quot;{}|_+'),
         ("!@#$%^&*()`~", '!@#$%^&amp;*()`~'),  # ASCII punctuation 3
         # # Emojis
         ("😍", "😍"),  # emoji 1
