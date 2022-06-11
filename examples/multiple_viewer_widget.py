@@ -1,11 +1,34 @@
+import typing
 from copy import deepcopy
+from functools import partial
 
 import napari
 from napari.components.viewer_model import ViewerModel
 from napari.qt import QtViewer
 
-
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QSplitter, QPushButton, QDoubleSpinBox
+
+if typing.TYPE_CHECKING:
+    from napari.layers import Layer
+
+
+def copy_layer(layer: "Layer"):
+    res_layer = deepcopy(layer)
+    res_layer.events.disconnect()
+    for emitter in res_layer.events.emitters.values():
+        emitter.disconnect()
+    return res_layer
+
+def get_property_names(layer: "Layer"):
+    klass = layer.__class__
+    res = []
+    for event_name in layer.events.emitters:
+        if event_name == "thumbnail":
+            continue
+        if isinstance(getattr(klass, event_name, None), property) and getattr(klass, event_name).fset is not None:
+            res.append(event_name)
+    return res
+
 
 class ExampleWidget(QWidget):
     def __init__(self):
@@ -67,20 +90,17 @@ class MultipleViewerWidget(QSplitter):
         order[-3:] = order[-2], order[-1], order[-3]
         self.viewer_model2.dims.order = order
 
-    @staticmethod
-    def _clean_copy(layer):
-        copy_layer = deepcopy(layer)
-        copy_layer.events.scale.disconnect()
-        return copy_layer
-
     def _layer_added(self, event):
         self.viewer_model1.layers.insert(
-            event.index, self._clean_copy(event.value)
+            event.index, copy_layer(event.value)
         )
         self.viewer_model2.layers.insert(
-            event.index, self._clean_copy(event.value)
+            event.index, copy_layer(event.value)
         )
-        event.value.events.scale.connect(self._scale_sync)
+        for name in get_property_names(event.value):
+            getattr(event.value.events, name).connect(partial(self._property_sync, name))
+
+        print(get_property_names(event.value))
         self._order_update()
 
     def _layer_removed(self, event):
@@ -90,7 +110,20 @@ class MultipleViewerWidget(QSplitter):
     def _layer_moved(self, event):
         print(event.index, event.new_index)
         self.viewer_model1.layers.move(event.index, event.new_index)
-        self.viewer_model2.layers.move(event.index, event.new_index)\
+        self.viewer_model2.layers.move(event.index, event.new_index)
+
+    def _property_sync(self, name, event):
+        print("sync", name)
+        setattr(
+            self.viewer_model1.layers[event.source.name],
+            name,
+            getattr(event.source, name)
+        )
+        setattr(
+            self.viewer_model2.layers[event.source.name],
+            name,
+            getattr(event.source, name)
+        )
 
     def _scale_sync(self, event):
         self.viewer_model1.layers[event.source.name].scale = event.source.scale
