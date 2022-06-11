@@ -171,8 +171,8 @@ Each point can have a different size. You can pass a list or 1-dimensional array
 of points through the size keyword argument to initialize the layer with points
 of different sizes. These sizes are then accessible through the `size`
 property. If you pass a single size then all points will get initialized with
-that size. Points can be pseduo-visualized as n-dimensionsal if the
-`n-dimensional` property is set to `True` or the `n-dimensional` checkbox is
+that size. Points can be pseudo-visualized as n-dimensional if the
+`out_of_slice_display` property is set to `True` or the `out of slice` checkbox is
 checked. In this setting when viewing different slices of the layer points will
 appear in the neighbouring slices to the ones in which they are located with a
 size scaled by the distance from their center to that slice. This feature can be
