@@ -11,6 +11,8 @@ from napari._tests.utils import restore_settings_on_exit
 from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
+BUILTINS = 'napari'
+
 
 @pytest.fixture
 def reader_dialog(qtbot):
@@ -93,7 +95,7 @@ def test_prepare_dialog_options_no_readers(mock_npe2_pm):
     assert 'Tried to read my-file.fake with plugin fake-reader' in str(e.value)
 
 
-def test_prepare_dialog_options_multiple_plugins(mock_npe2_pm):
+def test_prepare_dialog_options_multiple_plugins():
     pth = 'my-file.tif'
 
     readers = prepare_remaining_readers(
@@ -101,7 +103,7 @@ def test_prepare_dialog_options_multiple_plugins(mock_npe2_pm):
         None,
         RuntimeError(f'Multiple plugins found capable of reading {pth}'),
     )
-    assert 'builtins' in readers
+    assert BUILTINS in readers
 
 
 def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
@@ -119,10 +121,10 @@ def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
 def test_open_with_dialog_choices_persist(make_napari_viewer, tmp_path):
     pth = tmp_path / 'my-file.npy'
     np.save(pth, np.random.random((10, 10)))
-    display_name = 'builtins'
+    display_name = BUILTINS
     persist = True
     extension = '.npy'
-    readers = {'builtins': 'builtins'}
+    readers = {BUILTINS: BUILTINS}
     paths = [str(pth)]
     stack = False
 
@@ -139,7 +141,7 @@ def test_open_with_dialog_choices_persist(make_napari_viewer, tmp_path):
         )
         assert len(viewer.layers) == 1
         # make sure extension was saved with *
-        assert get_settings().plugins.extension2reader['*.npy'] == 'builtins'
+        assert get_settings().plugins.extension2reader['*.npy'] == BUILTINS
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):

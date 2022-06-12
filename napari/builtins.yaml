@@ -1,4 +1,4 @@
-display_name: napari
+display_name: napari builtins
 name: napari
 
 contributions:
@@ -124,88 +124,75 @@ contributions:
   readers:
     - command: napari.get_reader
       accepts_directories: true
-      filename_patterns: ["*.csv", "*.npy"]
+      filename_patterns:
+        [
+          "*.3fr", "*.arw", "*.avi", "*.bay", "*.bmp", "*.bmq", "*.bsdf",
+          "*.bufr", "*.bw", "*.cap", "*.cine", "*.cr2", "*.crw", "*.cs1",
+          "*.csv", "*.ct", "*.cur", "*.cut", "*.dc2", "*.dcm", "*.dcr", "*.dcx",
+          "*.dds", "*.dicom", "*.dng", "*.drf", "*.dsc", "*.ecw", "*.emf",
+          "*.eps", "*.erf", "*.exr", "*.fff", "*.fit", "*.fits", "*.flc",
+          "*.fli", "*.fpx", "*.ftc", "*.fts", "*.ftu", "*.fz", "*.g3", "*.gbr",
+          "*.gdcm", "*.gif", "*.gipl", "*.grib", "*.h5", "*.hdf", "*.hdf5",
+          "*.hdp", "*.hdr", "*.ia", "*.icns", "*.ico", "*.iff", "*.iim",
+          "*.iiq", "*.im", "*.img.gz", "*.img", "*.ipl", "*.j2c", "*.j2k",
+          "*.jfif", "*.jif", "*.jng", "*.jp2", "*.jpc", "*.jpe", "*.jpeg",
+          "*.jpf", "*.jpg", "*.jpx", "*.jxr", "*.k25", "*.kc2", "*.kdc",
+          "*.koa", "*.lbm", "*.lfp", "*.lfr", "*.lsm", "*.mdc", "*.mef",
+          "*.mgh", "*.mha", "*.mhd", "*.mic", "*.mkv", "*.mnc", "*.mnc2",
+          "*.mos", "*.mov", "*.mp4", "*.mpeg", "*.mpg", "*.mpo", "*.mri",
+          "*.mrw", "*.msp", "*.nef", "*.nhdr", "*.nia", "*.nii.gz", "*.nii",
+          "*.npy", "*.npz", "*.nrrd", "*.nrw", "*.orf", "*.pbm", "*.pcd",
+          "*.pct", "*.pcx", "*.pef", "*.pfm", "*.pgm", "*.pic", "*.pict",
+          "*.png", "*.ppm", "*.ps", "*.psd", "*.ptx", "*.pxn", "*.pxr", "*.qtk",
+          "*.raf", "*.ras", "*.raw", "*.rdc", "*.rgb", "*.rgba", "*.rw2",
+          "*.rwl", "*.rwz", "*.sgi", "*.spe", "*.sr2", "*.srf", "*.srw",
+          "*.sti", "*.stk", "*.swf", "*.targa", "*.tga", "*.tif", "*.tiff",
+          "*.vtk", "*.wap", "*.wbm", "*.wbmp", "*.wdp", "*.webm", "*.webp",
+          "*.wmf", "*.wmv", "*.xbm", "*.xpm", "*.zarr",
+        ]
 
   writers:
     - command: napari.write_image
+      display_name: lossless
+      layer_types: ["image"]
       filename_extensions:
         [
-          ".tif",
-          ".tiff",
-          ".png",
-          ".bmp",
-          ".bsdf",
-          ".bw",
-          ".eps",
-          ".gif",
-          ".icns",
-          ".ico",
-          ".im",
-          ".lsm",
-          ".npz",
-          ".pbm",
-          ".pcx",
-          ".pgm",
-          ".ppm",
-          ".ps",
-          ".rgb",
-          ".rgba",
-          ".sgi",
-          ".stk",
-          ".tga",
+          ".tif", ".tiff", ".png", ".bmp", ".bsdf", ".bw", ".eps", ".gif",
+          ".icns", ".ico", ".im", ".lsm", ".npz", ".pbm", ".pcx", ".pgm",
+          ".ppm", ".ps", ".rgb", ".rgba", ".sgi", ".stk", ".tga",
         ]
-      layer_types: ["image"]
-      display_name: lossless
 
     - command: napari.write_image
+      display_name: lossy
+      layer_types: ["image"]
       filename_extensions:
         [
-          ".jpg",
-          ".jpeg",
-          ".j2c",
-          ".j2k",
-          ".jfif",
-          ".jp2",
-          ".jpc",
-          ".jpe",
-          ".jpf",
-          ".jpx",
-          ".mpo",
+          ".jpg", ".jpeg", ".j2c", ".j2k", ".jfif", ".jp2", ".jpc", ".jpe",
+          ".jpf", ".jpx", ".mpo",
         ]
-      layer_types: ["image"]
-      display_name: lossy
 
     - command: napari.write_labels
+      display_name: labels
+      layer_types: ["labels"]
       filename_extensions:
         [
-          ".tif",
-          ".tiff",
-          ".bsdf",
-          ".im",
-          ".lsm",
-          ".npz",
-          ".pbm",
-          ".pcx",
-          ".pgm",
-          ".ppm",
-          ".stk",
+          ".tif", ".tiff", ".bsdf", ".im", ".lsm", ".npz", ".pbm", ".pcx",
+          ".pgm", ".ppm", ".stk",
         ]
-      layer_types: ["labels"]
-      display_name: labels
 
     - command: napari.write_points
-      filename_extensions: [".csv"]
-      layer_types: ["points"]
       display_name: points
+      layer_types: ["points"]
+      filename_extensions: [".csv"]
 
     - command: napari.write_shapes
-      filename_extensions: [".csv"]
-      layer_types: ["shapes"]
       display_name: shapes
+      layer_types: ["shapes"]
+      filename_extensions: [".csv"]
 
     - command: napari.write_directory
-      layer_types: ["image*", "labels*", "points*", "shapes*"]
       display_name: Save to Folder
+      layer_types: ["image*", "labels*", "points*", "shapes*"]
 
   sample_data:
     - display_name: Astronaut (RGB)
