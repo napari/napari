@@ -37,6 +37,11 @@ def _duplicate_layer(ll: LayerList):
 
     for lay in list(ll.selection):
         new = deepcopy(lay)
+        # new.events.disconnect()
+        new.events.source = new
+        for emitter in new.events.emitters.values():
+            # emitter.disconnect()
+            emitter.source = new
         new.name += ' copy'
         ll.insert(ll.index(lay) + 1, new)
 

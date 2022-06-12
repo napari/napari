@@ -1295,11 +1295,11 @@ class Points(Layer):
 
     @mode.setter
     def mode(self, mode):
+        old_mode = self._mode
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
         assert mode is not None, mode
-        old_mode = self._mode
 
         if mode == Mode.ADD:
             self.selected_data = set()
@@ -1794,6 +1794,7 @@ class Points(Layer):
         ----------
         coord : sequence of indices to add point at
         """
+        print("add", coord)
         self.data = np.append(self.data, np.atleast_2d(coord), axis=0)
 
     def remove_selected(self):
