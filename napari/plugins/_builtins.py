@@ -6,7 +6,6 @@ import shutil
 from typing import Any, List, Optional, Sequence, Union
 
 import numpy as np
-from napari_plugin_engine import napari_hook_implementation
 
 from ..types import (
     FullLayerData,
@@ -46,7 +45,6 @@ def npy_to_layer_data(path: Union[str, Sequence[str]]) -> List[LayerData]:
     return [(np.load(p),) for p in path]
 
 
-@napari_hook_implementation(trylast=True)
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
@@ -78,7 +76,6 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     return None
 
 
-@napari_hook_implementation(trylast=True)
 def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback image writer at the end of the plugin chain.
 
@@ -111,7 +108,6 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     return None
 
 
-@napari_hook_implementation(trylast=True)
 def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback labels writer at the end of the plugin chain.
 
@@ -136,7 +132,6 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
     return napari_write_image(path, np.asarray(data, dtype=dtype), meta)
 
 
-@napari_hook_implementation(trylast=True)
 def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback points writer at the end of the plugin chain.
 
@@ -186,7 +181,6 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     return path
 
 
-@napari_hook_implementation(trylast=True)
 def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback points writer at the end of the plugin chain.
 
@@ -254,7 +248,6 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     return path
 
 
-@napari_hook_implementation(trylast=True)
 def napari_get_writer(
     path: str, layer_types: List[str]
 ) -> Optional[WriterFunction]:
