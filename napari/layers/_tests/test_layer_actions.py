@@ -4,13 +4,14 @@ import numpy as np
 import pytest
 
 from napari.components.layerlist import LayerList
-from napari.layers import Image, Labels, Shapes
+from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
     _LAYER_ACTIONS,
     ContextAction,
     SubMenu,
     _convert,
     _convert_dtype,
+    _duplicate_layer,
     _project,
 )
 from napari.utils.context._expressions import Expr
@@ -48,6 +49,18 @@ def test_layer_actions():
             expr = action.get('show_when', None)
             if isinstance(expr, Expr):
                 assert_expression_variables(expr, names)
+
+
+def test_duplicate_layers():
+    layer_list = LayerList()
+    layer_list.append(Points(name="test"))
+    layer_list.selection.active = layer_list[0]
+    assert len(layer_list) == 1
+    _duplicate_layer(layer_list)
+    assert len(layer_list) == 2
+    assert layer_list[0].name == "test"
+    assert layer_list[1].name == "test copy"
+    assert layer_list[1].events.source is layer_list[1]
 
 
 @pytest.mark.parametrize(
