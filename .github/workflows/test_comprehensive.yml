@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
 
@@ -135,7 +135,7 @@ jobs:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -150,3 +150,22 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
+
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples

@@ -134,6 +134,9 @@ def test_directory_readers_not_in_dropdown(
     assert tmp_plugin.manifest.display_name not in all_dropdown_items
 
 
+@pytest.mark.xfail(
+    reason="This is predicated on napari only having npe1 readers"
+)
 def test_filtering_readers(
     extension2reader_widget, builtins, tif_reader, npy_reader
 ):
