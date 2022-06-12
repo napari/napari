@@ -71,7 +71,7 @@ class CrossWidget(QCheckBox):
         self.viewer = viewer
         self.setChecked(False)
         self.stateChanged.connect(self._update_cross_visibility)
-        self.layer = None # Vectors(name=".cross", ndim=self.viewer.dims.ndim)
+        self.layer = None  # Vectors(name=".cross", ndim=self.viewer.dims.ndim)
         self.viewer.dims.events.order.connect(self.update_cross)
         self.viewer.dims.events.ndim.connect(self._update_ndim)
         self.viewer.dims.events.current_step.connect(self.update_cross)
@@ -80,7 +80,7 @@ class CrossWidget(QCheckBox):
         if self.layer in self.viewer.layers:
             self.viewer.layers.remove(self.layer)
         self.layer = Vectors(name=".cross", ndim=event.value)
-        self.layer.edge_width=1.5
+        self.layer.edge_width = 1.5
         self.update_cross()
 
     def _update_cross_visibility(self, state):
@@ -157,7 +157,9 @@ class MultipleViewerWidget(QSplitter):
         self.viewer.layers.events.inserted.connect(self._layer_added)
         self.viewer.layers.events.removed.connect(self._layer_removed)
         self.viewer.layers.events.moved.connect(self._layer_moved)
-        self.viewer.layers.selection.events.active.connect(self._layer_selection_changed)
+        self.viewer.layers.selection.events.active.connect(
+            self._layer_selection_changed
+        )
         self.viewer.dims.events.current_step.connect(self._point_update)
         self.viewer_model1.dims.events.current_step.connect(self._point_update)
         self.viewer_model2.dims.events.current_step.connect(self._point_update)
@@ -171,10 +173,12 @@ class MultipleViewerWidget(QSplitter):
             self.viewer_model2.layers.selection.active = None
             return
 
-        self.viewer_model1.layers.selection.active = self.viewer_model1.layers[event.value.name]
+        self.viewer_model1.layers.selection.active = self.viewer_model1.layers[
+            event.value.name
+        ]
         self.viewer_model2.layers.selection.active = self.viewer_model2.layers[
-            event.value.name]
-
+            event.value.name
+        ]
 
     def _point_update(self, event):
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
@@ -196,8 +200,12 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model2.dims.order = order
 
     def _layer_added(self, event):
-        self.viewer_model1.layers.insert(event.index, copy_layer(event.value, "model1"))
-        self.viewer_model2.layers.insert(event.index, copy_layer(event.value, "model2"))
+        self.viewer_model1.layers.insert(
+            event.index, copy_layer(event.value, "model1")
+        )
+        self.viewer_model2.layers.insert(
+            event.index, copy_layer(event.value, "model2")
+        )
         for name in get_property_names(event.value):
             getattr(event.value.events, name).connect(
                 own_partial(self._property_sync, name)
@@ -205,12 +213,12 @@ class MultipleViewerWidget(QSplitter):
 
         if isinstance(event.value, Labels):
             event.value.events.set_data.connect(self._set_data_refresh)
-            self.viewer_model1.layers[event.value.name].events.set_data.connect(
-                self._set_data_refresh
-            )
-            self.viewer_model2.layers[event.value.name].events.set_data.connect(
-                self._set_data_refresh
-            )
+            self.viewer_model1.layers[
+                event.value.name
+            ].events.set_data.connect(self._set_data_refresh)
+            self.viewer_model2.layers[
+                event.value.name
+            ].events.set_data.connect(self._set_data_refresh)
         self.viewer_model1.layers[event.value.name].events.data.connect(
             self._sync_data
         )
@@ -279,7 +287,6 @@ class MultipleViewerWidget(QSplitter):
             )
         finally:
             self._block = False
-
 
 
 view = napari.Viewer()
