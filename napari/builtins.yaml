@@ -157,9 +157,9 @@ contributions:
       layer_types: ["image"]
       filename_extensions:
         [
-          ".bmp", ".bsdf", ".bw", ".eps", ".gif", ".icns", ".ico", ".im",
-          ".lsm", ".npz", ".pbm", ".pcx", ".pgm", ".png", ".ppm", ".ps", ".rgb",
-          ".rgba", ".sgi", ".stk", ".tga", ".tif", ".tiff",
+          ".tif", ".tiff", ".png", ".bmp", ".bsdf", ".bw", ".eps", ".gif",
+          ".icns", ".ico", ".im", ".lsm", ".npz", ".pbm", ".pcx", ".pgm",
+          ".ppm", ".ps", ".rgb", ".rgba", ".sgi", ".stk", ".tga",
         ]
 
     - command: napari.write_image
@@ -167,8 +167,8 @@ contributions:
       layer_types: ["image"]
       filename_extensions:
         [
-          ".j2c", ".j2k", ".jfif", ".jp2", ".jpc", ".jpe", ".jpeg", ".jpf",
-          ".jpg", ".jpx", ".mpo",
+          ".jpg", ".jpeg", ".j2c", ".j2k", ".jfif", ".jp2", ".jpc", ".jpe",
+          ".jpf", ".jpx", ".mpo",
         ]
 
     - command: napari.write_labels
@@ -176,8 +176,8 @@ contributions:
       layer_types: ["labels"]
       filename_extensions:
         [
-          ".bsdf", ".im", ".lsm", ".npz", ".pbm", ".pcx", ".pgm", ".ppm",
-          ".stk", ".tif", ".tiff",
+          ".tif", ".tiff", ".bsdf", ".im", ".lsm", ".npz", ".pbm", ".pcx",
+          ".pgm", ".ppm", ".stk",
         ]
 
     - command: napari.write_points
