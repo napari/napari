@@ -42,7 +42,7 @@ def _duplicate_layer(ll: LayerList):
         for emitter in new.events.emitters.values():
             # emitter.disconnect()
             emitter.source = new
-        new.name += ' copy'
+        new.name += trans._(' copy')
         ll.insert(ll.index(lay) + 1, new)
 
 
