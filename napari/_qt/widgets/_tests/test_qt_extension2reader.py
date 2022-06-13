@@ -1,11 +1,11 @@
 import pytest
-from npe2 import DynamicPlugin
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QPushButton
 
 from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from napari._tests.utils import restore_settings_on_exit
 from napari.settings import get_settings
+from npe2 import DynamicPlugin
 
 
 @pytest.fixture
@@ -141,9 +141,6 @@ def test_directory_readers_not_in_dropdown(
     assert tmp_plugin.display_name not in all_dropdown_items
 
 
-@pytest.mark.xfail(
-    reason="This is predicated on napari only having npe1 readers"
-)
 def test_filtering_readers(
     extension2reader_widget, builtins, tif_reader, npy_reader
 ):
