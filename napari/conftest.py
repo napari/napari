@@ -18,8 +18,15 @@ Notes for using the plugin-related fixtures here:
         # the plugin name can be accessed at:
         tmp_plugin.name
     ```
-4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create another one.
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create
+   another one.
+   ```python
+   new_plugin = tmp_plugin.spawn(register=True)
 
+   @new_plugin.contribute.reader(filename_patterns=["*.tiff"])
+   def get_reader(path):
+       ...
+   ```
 """
 try:
     __import__('dotenv').load_dotenv()
