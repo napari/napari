@@ -9,7 +9,7 @@ from napari.utils.theme import (
 )
 
 
-def test_current_viewer(make_napari_viewer, qapp):
+def test_current_viewer(make_napari_viewer):
     """Test that we can retrieve the "current" viewer window easily.
 
     ... where "current" means it was the last viewer the user interacted with.

@@ -181,13 +181,11 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
 
 
 @pytest.mark.sync_only
-def test_notifications_error_with_threading(make_napari_viewer):
+def test_notifications_error_with_threading():
     """Test notifications of `threading` threads, using a dask example."""
-    random_image = da.random.random((50, 50))
     with notification_manager:
-        viewer = make_napari_viewer()
-        viewer.add_image(random_image)
-        result = da.divide(random_image, da.zeros((50, 50)))
-        viewer.add_image(result)
+        random_image = da.random.random((10, 10))
+        result = da.divide(random_image, da.zeros((10, 10)))
+        result.compute()
         assert len(notification_manager.records) >= 1
         notification_manager.records = []
