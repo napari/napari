@@ -1,4 +1,3 @@
-from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
@@ -123,13 +122,6 @@ class FileMenu(NapariMenu):
         populate_menu(self, ACTIONS)
 
         self._pref_dialog = None
-
-        from ...plugins import plugin_manager
-
-        plugin_manager.discover_sample_data()
-        plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
-        plugin_manager.events.registered.connect(self._rebuild_samples_menu)
-        plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
         self._rebuild_samples_menu()
         self.update()
 
@@ -168,13 +160,11 @@ class FileMenu(NapariMenu):
         self._pref_dialog = None
 
     def _rebuild_samples_menu(self):
-        from ...plugins import _npe2, menu_item_template, plugin_manager
+        from ...plugins import _npe2, menu_item_template
 
         self.open_sample_menu.clear()
 
-        for plugin_name, samples in chain(
-            _npe2.sample_iterator(), plugin_manager._sample_data.items()
-        ):
+        for plugin_name, samples in _npe2.sample_iterator():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = self.open_sample_menu.addMenu(plugin_name)

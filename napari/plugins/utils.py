@@ -6,7 +6,7 @@ from npe2 import PluginManifest
 
 from napari.settings import get_settings
 
-from . import _npe2, plugin_manager
+from . import _npe2
 
 
 def get_preferred_reader(_path):
@@ -31,14 +31,7 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     Dict[str, str]
         dictionary of registered name to display_name
     """
-    readers = {}
-    hook_caller = plugin_manager.hook.napari_get_reader
-    for impl in hook_caller.get_hookimpls():
-        reader = hook_caller._call_plugin(impl.plugin_name, path=filename)
-        if callable(reader):
-            readers[impl.plugin_name] = impl.plugin_name
-    readers.update(_npe2.get_readers(filename))
-    return readers
+    return _npe2.get_readers(filename)
 
 
 def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
@@ -50,14 +43,7 @@ def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
 
     npe2_readers = _npe2.get_readers()
 
-    npe1_readers = {}
-    for spec, hook_caller in plugin_manager.hooks.items():
-        if spec == 'napari_get_reader':
-            potential_readers = hook_caller.get_hookimpls()
-            for get_reader in potential_readers:
-                npe1_readers[get_reader.plugin_name] = get_reader.plugin_name
-
-    return npe2_readers, npe1_readers
+    return npe2_readers, {}
 
 
 def normalized_name(name: str) -> str:

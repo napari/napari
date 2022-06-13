@@ -1,3 +1,4 @@
+import contextlib
 import os
 import sys
 from enum import Enum, auto
@@ -6,7 +7,8 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
-from npe2 import PackageMetadata, PluginManager
+from npe2 import PackageMetadata
+from npe2 import plugin_manager as pm
 from qtpy.QtCore import (
     QEvent,
     QObject,
@@ -40,7 +42,6 @@ from typing_extensions import Literal
 
 import napari.resources
 
-from ...plugins import plugin_manager
 from ...plugins.hub import iter_hub_plugin_info
 from ...plugins.pypi import iter_napari_plugin_info
 from ...plugins.utils import normalized_name
@@ -188,10 +189,6 @@ class Installer(QObject):
             self._processes[pkg_list] = process
 
         if not self._processes:
-            from ...plugins import plugin_manager
-
-            plugin_manager.discover()
-            plugin_manager.prune()
             self.finished.emit(self._exit_code)
 
     def install(
@@ -292,7 +289,7 @@ class Installer(QObject):
         process.start()
 
         for pkg in pkg_list:
-            plugin_manager.unregister(pkg)
+            pm.unregister(pkg)
 
         return process
 
@@ -306,11 +303,9 @@ class Installer(QObject):
 
             self._processes = {}
         else:
-            try:
+            with contextlib.suppress(KeyError):
                 process = self._processes.pop(tuple(pkg_list))
                 process.terminate()
-            except KeyError:
-                pass
 
     @staticmethod
     def _is_installed_with_conda():
@@ -518,16 +513,9 @@ class PluginListItem(QFrame):
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
-        enabled = bool(state)
-        plugin_name = self.plugin_name.text()
-        pm2 = PluginManager.instance()
-        if plugin_name in pm2:
-            pm2.enable(plugin_name) if state else pm2.disable(plugin_name)
+        if (plugin_name := self.plugin_name.text()) in pm.instance():
+            pm.enable(plugin_name) if state else pm.disable(plugin_name)
             return
-
-        for npe1_name, _, distname in plugin_manager.iter_available():
-            if distname and (distname == plugin_name):
-                plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
         """Show warning icon and tooltip."""
@@ -768,13 +756,6 @@ class QtPluginDialog(QDialog):
         self.installed_list.clear()
         self.available_list.clear()
 
-        # fetch installed
-        from npe2 import PluginManager
-
-        from ...plugins import plugin_manager
-
-        plugin_manager.discover()  # since they might not be loaded yet
-
         self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
@@ -807,29 +788,14 @@ class QtPluginDialog(QDialog):
                 npe_version=npe_version,
             )
 
-        pm2 = PluginManager.instance()
-        for manifest in pm2.iter_manifests():
+        for manifest in pm.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in self.already_installed or distname == 'napari':
                 continue
-            enabled = not pm2.is_disabled(manifest.name)
+            enabled = not pm.is_disabled(manifest.name)
             # if it's an Npe1 adaptor, call it v1
             npev = 'shim' if 'npe1' in type(manifest).__name__.lower() else 2
             _add_to_installed(distname, enabled, npe_version=npev)
-
-        for (
-            plugin_name,
-            _mod_name,
-            distname,
-        ) in plugin_manager.iter_available():
-            # not showing these in the plugin dialog
-            if plugin_name in ('napari_plugin_engine',):
-                continue
-            if distname in self.already_installed:
-                continue
-            _add_to_installed(
-                distname, not plugin_manager.is_blocked(plugin_name)
-            )
 
         self.installed_label.setText(
             trans._(

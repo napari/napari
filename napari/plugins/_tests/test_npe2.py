@@ -192,4 +192,4 @@ def test_sample_iterator(mock_pm):
 
 def test_widget_iterator(mock_pm):
     wdgs = list(_npe2.widget_iterator())
-    assert wdgs == [('dock', ('my-plugin', ['My Widget']))]
+    assert wdgs == [('my-plugin', ['My Widget'])]

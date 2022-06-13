@@ -26,7 +26,7 @@ class PluginAPI(str, Enum):
 
 class PluginsSettings(EventedModel):
     use_npe2_adaptor: bool = Field(
-        False,
+        True,
         title=trans._("Use npe2 adaptor"),
         description=trans._(
             "Use npe2-adaptor for first generation plugins. When an npe1 "

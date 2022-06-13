@@ -106,7 +106,9 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
-) -> Optional[Tuple[WidgetCreator, str]]:
+) -> Tuple[WidgetCreator, str]:
+    if plugin_name not in npe2.PluginManager.instance()._manifests:
+        raise ValueError(f'No such plugin: {plugin_name}')
     widgets_seen = set()
     for contrib in npe2.PluginManager.instance().iter_widgets():
         if contrib.plugin_name == plugin_name:
@@ -122,7 +124,9 @@ def get_widget_contribution(
             deferred=True,
         )
         raise KeyError(msg)
-    return None
+    raise ValueError(
+        f"plugin {plugin_name!r} has no widget named {widget_name!r}"
+    )
 
 
 def populate_qmenu(menu: QMenu, menu_key: str):
@@ -226,12 +230,12 @@ def iter_manifests(
         yield from pm._manifests.values()
 
 
-def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
+def widget_iterator() -> Iterator[Tuple[str, Sequence[str]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
-    return (('dock', x) for x in wdgs.items())
+    yield from wdgs.items()
 
 
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
