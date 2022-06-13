@@ -18,8 +18,8 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.layers.utils.color_encoding import ColorArray
 from napari.settings import get_settings
+from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
