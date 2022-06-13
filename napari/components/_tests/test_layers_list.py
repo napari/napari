@@ -1,12 +1,11 @@
 import os
 
+import npe2
 import numpy as np
 import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
-
-BUILTINS = 'napari'
 
 
 def test_empty_layers_list():
@@ -26,9 +25,6 @@ def test_initialize_from_list():
 
 
 def test_adding_layer():
-    """
-    Test adding a Layer
-    """
     layers = LayerList()
     layer = Image(np.random.random((10, 10)))
     layers.append(layer)
@@ -41,9 +37,6 @@ def test_adding_layer():
 
 
 def test_removing_layer():
-    """
-    Test removing a Layer
-    """
     layers = LayerList()
     layer = Image(np.random.random((10, 10)))
     layers.append(layer)
@@ -332,7 +325,7 @@ def test_toggle_visibility():
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
 @pytest.mark.filterwarnings('ignore:distutils Version classes are deprecated')
-def test_layers_save(tmpdir, layer_data_and_types):
+def test_layers_save(builtins, tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
@@ -343,7 +336,7 @@ def test_layers_save(tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    layers.save(path, plugin=BUILTINS)
+    layers.save(path, plugin=builtins.name)
 
     # Check folder now exists
     assert os.path.isdir(path)
@@ -358,7 +351,7 @@ def test_layers_save(tmpdir, layer_data_and_types):
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-def test_layers_save_none_selected(tmpdir, layer_data_and_types):
+def test_layers_save_none_selected(builtins, tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
@@ -371,7 +364,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
 
     # Write data (will get a warning that nothing is selected)
     with pytest.warns(UserWarning):
-        layers.save(path, selected=True, plugin=BUILTINS)
+        layers.save(path, selected=True, plugin=builtins.name)
 
     # Check folder still does not exist
     assert not os.path.isdir(path)
@@ -385,7 +378,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-def test_layers_save_selected(tmpdir, layer_data_and_types):
+def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
@@ -398,7 +391,7 @@ def test_layers_save_selected(tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    layers.save(path, selected=True, plugin=BUILTINS)
+    layers.save(path, selected=True, plugin=builtins.name)
 
     # Check folder exists
     assert os.path.isdir(path)
@@ -418,6 +411,9 @@ def test_layers_save_selected(tmpdir, layer_data_and_types):
 @pytest.mark.filterwarnings('ignore:`np.int` is a deprecated alias for')
 def test_layers_save_svg(tmpdir, layers, napari_svg_name):
     """Test saving all layer data to an svg."""
+    pm = npe2.PluginManager.instance()
+    pm.register(npe2.PluginManifest.from_distribution('napari-svg'))
+
     path = os.path.join(tmpdir, 'layers_file.svg')
 
     # Check file does not exist
