@@ -29,7 +29,7 @@ def test_cli_shows_plugins(monkeypatch, capsys, tmp_plugin):
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
         __main__._run()
-    assert tmp_plugin.manifest.name in str(capsys.readouterr())
+    assert tmp_plugin.name in str(capsys.readouterr())
 
 
 def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):

@@ -16,7 +16,7 @@ Notes for using the plugin-related fixtures here:
         def f(path): ...
 
         # the plugin name can be accessed at:
-        tmp_plugin.manifest.name
+        tmp_plugin.name
     ```
 4. If you need a _second_ mock plugin, use `tmp_plugin.spawn()` to create another one.
 
@@ -473,19 +473,11 @@ def builtins(_mock_npe2_pm: PluginManager):
 
 @pytest.fixture
 def tmp_plugin(_mock_npe2_pm: PluginManager):
-    class _DynamicPlugin(DynamicPlugin):
-        def spawn(self, name=None):
-            """Create another tmp_plugin"""
-            name = name or f'tmp_plugin{next(count)}'
-            new = _DynamicPlugin(name, plugin_manager=_mock_npe2_pm)
-            new.register()
-            return new
-
     # guarantee that the name is unique, even if tmp_plugin has already been used
     count = itertools.count(0)
     while (name := f'tmp_plugin{next(count)}') in _mock_npe2_pm._manifests:
         continue
-    with _DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
+    with DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
         yield plugin
 
 

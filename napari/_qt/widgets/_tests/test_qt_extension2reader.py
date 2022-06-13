@@ -108,7 +108,7 @@ def test_all_readers_in_dropdown(
         ...
 
     npe2_readers = {
-        tmp_plugin.manifest.name: tmp_plugin.manifest.display_name,
+        tmp_plugin.name: tmp_plugin.display_name,
         tif_reader.manifest.name: tif_reader.manifest.display_name,
     }
 
@@ -131,16 +131,14 @@ def test_directory_readers_not_in_dropdown(
         ...
 
     widget = extension2reader_widget(
-        npe2_readers={
-            tmp_plugin.manifest.name: tmp_plugin.manifest.display_name
-        },
+        npe2_readers={tmp_plugin.name: tmp_plugin.display_name},
         npe1_readers={},
     )
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
     ]
-    assert tmp_plugin.manifest.display_name not in all_dropdown_items
+    assert tmp_plugin.display_name not in all_dropdown_items
 
 
 @pytest.mark.xfail(
@@ -150,9 +148,7 @@ def test_filtering_readers(
     extension2reader_widget, builtins, tif_reader, npy_reader
 ):
     widget = extension2reader_widget(
-        npe1_readers={
-            builtins.manifest.display_name: builtins.manifest.display_name
-        }
+        npe1_readers={builtins.display_name: builtins.display_name}
     )
 
     assert widget._new_reader_dropdown.count() == 3
@@ -163,9 +159,7 @@ def test_filtering_readers(
         for i in range(widget._new_reader_dropdown.count())
     ]
     assert (
-        sorted(
-            [npy_reader.manifest.display_name, builtins.manifest.display_name]
-        )
+        sorted([npy_reader.manifest.display_name, builtins.display_name])
         == all_dropdown_items
     )
 

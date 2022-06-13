@@ -336,7 +336,7 @@ def test_layers_save(builtins, tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    layers.save(path, plugin=builtins.manifest.name)
+    layers.save(path, plugin=builtins.name)
 
     # Check folder now exists
     assert os.path.isdir(path)
@@ -364,7 +364,7 @@ def test_layers_save_none_selected(builtins, tmpdir, layer_data_and_types):
 
     # Write data (will get a warning that nothing is selected)
     with pytest.warns(UserWarning):
-        layers.save(path, selected=True, plugin=builtins.manifest.name)
+        layers.save(path, selected=True, plugin=builtins.name)
 
     # Check folder still does not exist
     assert not os.path.isdir(path)
@@ -391,7 +391,7 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    layers.save(path, selected=True, plugin=builtins.manifest.name)
+    layers.save(path, selected=True, plugin=builtins.name)
 
     # Check folder exists
     assert os.path.isdir(path)

@@ -13,7 +13,7 @@ from napari.viewer import ViewerModel
 def test_sample_hook(builtins, tmp_plugin: DynamicPlugin):
 
     viewer = ViewerModel()
-    NAME = tmp_plugin.manifest.name
+    NAME = tmp_plugin.name
     KEY = 'random data'
     with pytest.raises(KeyError, match=f"Plugin {NAME!r} does not provide"):
         viewer.open_sample(NAME, KEY)
