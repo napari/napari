@@ -93,8 +93,6 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
-    _max_length = 300
-    _max_width = 20
 
     def __init__(
         self,
@@ -173,6 +171,10 @@ class Tracks(Layer):
 
         # use this to update shaders when the displayed dims change
         self._current_displayed_dims = None
+
+        # track display default limits
+        self._max_length = 300
+        self._max_width = 20
 
         # track display properties
         self.tail_width = tail_width
