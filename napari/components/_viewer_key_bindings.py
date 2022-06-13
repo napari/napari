@@ -22,7 +22,7 @@ def register_viewer_action(description):
 
     def _inner(func):
         action_manager.register_action(
-            name='napari:' + func.__name__,
+            name=f'napari:{func.__name__}',
             command=func,
             description=description,
             keymapprovider=ViewerModel,
