@@ -121,6 +121,24 @@ class CrossWidget(QCheckBox):
         self.viewer.dims.events.order.connect(self.update_cross)
         self.viewer.dims.events.ndim.connect(self._update_ndim)
         self.viewer.dims.events.current_step.connect(self.update_cross)
+        self._extent = None
+
+        self._update_extent()
+        self.viewer.dims.events.connect(self._update_extent)
+
+    @qthrottled
+    def _update_extent(self):
+        extent_list = [
+            layer.extent
+            for layer in self.viewer.layers
+            if layer is not self.layer
+        ]
+        self._extent = Extent(
+            data=None,
+            world=self.viewer.layers._get_extent_world(extent_list),
+            step=self.viewer.layers._get_step_size(extent_list),
+        )
+        self.update_cross()
 
     def _update_ndim(self, event):
         if self.layer in self.viewer.layers:
@@ -136,31 +154,21 @@ class CrossWidget(QCheckBox):
             self.viewer.layers.remove(self.layer)
         self.update_cross()
 
-    @qthrottled
     def update_cross(self):
         if self.layer not in self.viewer.layers:
             return
         # self.viewer.layers.remove(self.layer)
-        extent_list = [
-            layer.extent
-            for layer in self.viewer.layers
-            if layer is not self.layer
-        ]
-        extent = Extent(
-            data=None,
-            world=self.viewer.layers._get_extent_world(extent_list),
-            step=self.viewer.layers._get_step_size(extent_list),
-        )
+
         point = self.viewer.dims.current_step
         vec = []
-        for i, (lower, upper) in enumerate(extent.world.T):
+        for i, (lower, upper) in enumerate(self._extent.world.T):
             point1 = list(point)
-            point1[i] = (lower + extent.step[i] / 2) / extent.step[i]
+            point1[i] = (lower + self._extent.step[i] / 2) / self._extent.step[i]
             point2 = [0 for _ in point]
-            point2[i] = (upper - lower) / extent.step[i]
+            point2[i] = (upper - lower) / self._extent.step[i]
             vec.append((point1, point2))
-        if np.any(self.layer.scale != extent.step):
-            self.layer.scale = extent.step
+        if np.any(self.layer.scale != self._extent.step):
+            self.layer.scale = self._extent.step
         self.layer.data = vec
         # self.viewer.layers.append(self.layer)
 
@@ -277,12 +285,13 @@ class MultipleViewerWidget(QSplitter):
             self.viewer_model2.layers[
                 event.value.name
             ].events.set_data.connect(self._set_data_refresh)
-        self.viewer_model1.layers[event.value.name].events.data.connect(
-            self._sync_data
-        )
-        self.viewer_model2.layers[event.value.name].events.data.connect(
-            self._sync_data
-        )
+        if event.value.name != ".cross":
+            self.viewer_model1.layers[event.value.name].events.data.connect(
+                self._sync_data
+            )
+            self.viewer_model2.layers[event.value.name].events.data.connect(
+                self._sync_data
+            )
 
         event.value.events.name.connect(self._sync_name)
 
