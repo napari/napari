@@ -17,6 +17,7 @@ from napari.components.layerlist import Extent
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Vectors, Image, Labels, Layer
 from napari.qt import QtViewer
+from napari.utils.action_manager import action_manager
 from superqt.utils import qthrottled
 
 
@@ -50,7 +51,24 @@ def get_property_names(layer: Layer):
     return res
 
 
+def center_cross_on_mouse(viewer: napari.Viewer):
+    viewer.dims.current_step = viewer.cursor.position
+
+
+action_manager.register_action(
+    name='napari:move_point',
+    command=center_cross_on_mouse,
+    description='Move dims point to mouse position',
+    keymapprovider=ViewerModel,
+)
+
+action_manager.bind_shortcut('napari:move_point', 'C')
+
 class own_partial:
+    """
+    Workaround for deepcopy do not copy partial functions
+    (Qt widgets are not serializable)
+    """
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -230,7 +248,6 @@ class MultipleViewerWidget(QSplitter):
 
         event.value.events.name.connect(self._sync_name)
 
-        print(get_property_names(event.value))
         self._order_update()
 
     def _sync_name(self, event):
