@@ -1,6 +1,11 @@
-import typing
+"""
+This is example how to have more than one viewer in the same napari instance.
+Additional viewers state will be synchronized with the main viewer and do not
+"""
+
 from copy import deepcopy
 
+import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -52,7 +57,18 @@ def get_property_names(layer: Layer):
 
 
 def center_cross_on_mouse(viewer: napari.Viewer):
-    viewer.dims.current_step = viewer.cursor.position
+    """move the cross to the mouse position"""
+
+    print(viewer.title, viewer.cursor.position)
+    #FIXME times to time wrong viewer is selected
+
+    viewer.dims.current_step = tuple(np.round(
+        [
+            max(min_, min(p, max_))/step
+            for p, (min_, max_, step) in
+            zip(viewer.cursor.position, viewer.dims.range)
+        ]
+    ).astype(int))
 
 
 action_manager.register_action(
@@ -86,6 +102,10 @@ class own_partial:
 
 
 class CrossWidget(QCheckBox):
+    """
+    Widget to control the cross layer. because of the performance reason
+    the cross update is throttled
+    """
     def __init__(self, viewer: napari.Viewer):
         super().__init__("Add cross layer")
         self.viewer = viewer
@@ -133,13 +153,17 @@ class CrossWidget(QCheckBox):
             point2 = [0 for _ in point]
             point2[i] = (upper - lower) / extent.step[i]
             vec.append((point1, point2))
-        if any(self.layer.scale != extent.step):
+        if np.any(self.layer.scale != extent.step):
             self.layer.scale = extent.step
         self.layer.data = vec
         # self.viewer.layers.append(self.layer)
 
 
 class ExampleWidget(QWidget):
+    """
+    Dummy widget to show option to put some additional widgets right to
+    additional viewers.
+    """
     def __init__(self):
         super().__init__()
         self.btn = QPushButton("Perform action")
@@ -152,6 +176,7 @@ class ExampleWidget(QWidget):
 
 
 class MultipleViewerWidget(QSplitter):
+    """The Main widget of the example."""
     def __init__(self, viewer: napari.Viewer):
         super().__init__()
         self.viewer = viewer
@@ -186,6 +211,9 @@ class MultipleViewerWidget(QSplitter):
         self.viewer.dims.events.order.connect(self._order_update)
 
     def _layer_selection_changed(self, event):
+        """
+        update of current active layer
+        """
         if self._block:
             return
 
@@ -221,6 +249,7 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model2.dims.order = order
 
     def _layer_added(self, event):
+        """add layer to additional viewers and connect all required events"""
         self.viewer_model1.layers.insert(
             event.index, copy_layer(event.value, "model1")
         )
@@ -252,11 +281,13 @@ class MultipleViewerWidget(QSplitter):
         self._order_update()
 
     def _sync_name(self, event):
+        """sync name of layers"""
         index = self.viewer.layers.index(event.source)
         self.viewer_model1.layers[index].name = event.source.name
         self.viewer_model2.layers[index].name = event.source.name
 
     def _sync_data(self, event):
+        """sync data modification from additional viewers"""
         if self._block:
             return
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
@@ -270,6 +301,9 @@ class MultipleViewerWidget(QSplitter):
                 self._block = False
 
     def _set_data_refresh(self, event):
+        """
+        synchronize data refresh between layers
+        """
         if self._block:
             return
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
@@ -283,14 +317,17 @@ class MultipleViewerWidget(QSplitter):
                 self._block = False
 
     def _layer_removed(self, event):
+        """remove layer in all viewers"""
         self.viewer_model1.layers.pop(event.index)
         self.viewer_model2.layers.pop(event.index)
 
     def _layer_moved(self, event):
+        """update order of layers"""
         self.viewer_model1.layers.move(event.index, event.new_index)
         self.viewer_model2.layers.move(event.index, event.new_index)
 
     def _property_sync(self, name, event):
+        """Sync layers properties (except the name)"""
         if event.source not in self.viewer.layers:
             return
         try:
