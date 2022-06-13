@@ -8,7 +8,7 @@ from napari._qt.qt_event_loop import _ipython_has_eventloop, run, set_app_id
 
 
 @pytest.mark.skipif(os.name != "Windows", reason="Windows specific")
-def test_windows_grouping_overwrite(make_napari_viewer):
+def test_windows_grouping_overwrite(qapp):
     import ctypes
 
     def get_app_id():
