@@ -801,7 +801,7 @@ def test_viewer_object_event_sources():
 def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     """Assert error is returned when multiple plugins are available to read."""
     viewer = ViewerModel()
-    tmp2 = tmp_plugin.spawn()
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def _(path):
@@ -885,7 +885,7 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
 ):
     """Test MultipleReaderError raised if preferred plugin missing."""
     viewer = ViewerModel()
-    tmp2 = tmp_plugin.spawn()
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def _(path):

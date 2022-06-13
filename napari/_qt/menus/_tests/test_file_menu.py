@@ -11,7 +11,7 @@ def test_sample_data_triggers_reader_dialog(
 ):
     """Sample data pops reader dialog if multiple compatible readers"""
     # make two tmp readers that take tif files
-    tmp2 = tmp_plugin.spawn()
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
     def _(path):

@@ -105,7 +105,7 @@ def test_prepare_dialog_options_multiple_plugins(builtins):
 
 
 def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn()
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def _(path):

@@ -50,7 +50,7 @@ def test_get_potential_readers_gives_napari(
 
 
 def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn()
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
     def read_tif(path):
@@ -87,7 +87,7 @@ def test_get_all_readers_gives_napari(builtins):
 
 
 def test_get_all_readers(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn()
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def read_tif(path):

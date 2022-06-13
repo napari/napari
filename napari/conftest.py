@@ -18,7 +18,7 @@ Notes for using the plugin-related fixtures here:
         # the plugin name can be accessed at:
         tmp_plugin.name
     ```
-4. If you need a _second_ mock plugin, use `tmp_plugin.spawn()` to create another one.
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create another one.
 
 """
 try:
