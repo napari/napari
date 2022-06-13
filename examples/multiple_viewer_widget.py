@@ -331,8 +331,13 @@ class MultipleViewerWidget(QSplitter):
 
     def _layer_moved(self, event):
         """update order of layers"""
-        self.viewer_model1.layers.move(event.index, event.new_index)
-        self.viewer_model2.layers.move(event.index, event.new_index)
+        dest_index = (
+            event.new_index
+            if event.new_index < event.index
+            else event.new_index + 1
+        )
+        self.viewer_model1.layers.move(event.index, dest_index)
+        self.viewer_model2.layers.move(event.index, dest_index)
 
     def _property_sync(self, name, event):
         """Sync layers properties (except the name)"""
