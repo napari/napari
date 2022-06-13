@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
 
 import napari
@@ -43,48 +42,6 @@ dwidget_args = {
     'bad_tuple1': (Widg1, 1),
     'bad_double_tuple': ((Widg1, {}), (Widg2, {})),
 }
-
-
-# napari_plugin_manager from _testsupport.py
-# monkeypatch, request, recwarn fixtures are from pytest
-@pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
-def test_dock_widget_registration(
-    arg, napari_plugin_manager, request, recwarn
-):
-    """Test that dock widgets get validated and registerd correctly."""
-
-    class Plugin:
-        @napari_hook_implementation
-        def napari_experimental_provide_dock_widget():
-            return arg
-
-    napari_plugin_manager.register(Plugin, name='Plugin')
-    napari_plugin_manager.discover_widgets()
-    widgets = napari_plugin_manager._dock_widgets
-
-    if '[bad_' in request.node.name:
-        assert len(recwarn) == 1
-        assert not widgets
-    else:
-        assert len(recwarn) == 0
-        assert widgets['Plugin']['Widg1'][0] == Widg1
-        if 'tuple_list' in request.node.name:
-            assert widgets['Plugin']['Widg2'][0] == Widg2
-
-
-@pytest.fixture
-def test_plugin_widgets(monkeypatch, napari_plugin_manager):
-    """A smattering of example registered dock widgets and function widgets."""
-    tnpm = napari_plugin_manager
-    dock_widgets = {
-        "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
-        "TestP2": {"Widg3": (Widg3, {})},
-    }
-    monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
-
-    function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
-    yield
 
 
 def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):

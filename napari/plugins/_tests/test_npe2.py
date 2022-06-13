@@ -133,7 +133,8 @@ def test_get_widget_contribution(mock_pm):
 
     # calling with a non-existent plugin just returns None
     mock_pm.commands.get.reset_mock()
-    assert not _npe2.get_widget_contribution('not-a-thing')
+    with pytest.raises(ValueError, match="No such plugin"):
+        assert not _npe2.get_widget_contribution('not-a-thing')
     mock_pm.commands.get.assert_not_called()
 
 
