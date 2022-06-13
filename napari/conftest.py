@@ -3,7 +3,7 @@
 Notes for using the plugin-related fixtures here:
 
 1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
-   manager instance with a discovery-defficient plugin manager.  No plugins should be
+   manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
    added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
