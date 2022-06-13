@@ -32,6 +32,7 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..plugins import _npe2
 from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
@@ -811,20 +812,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import _npe2, plugin_manager
 
-        # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
-
-        # then try with npe1
-        if data is None:
-            try:
-                data = plugin_manager._sample_data[plugin][sample]['data']
-            except KeyError:
-                available += list(plugin_manager.available_samples())
-        # npe2 uri sample data, extract the path so we can use viewer.open
-        elif hasattr(data.__self__, 'uri'):
-            data = data.__self__.uri
 
         if data is None:
             msg = trans._(
@@ -850,6 +839,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 )
 
             raise KeyError(msg)
+        elif hasattr(data.__self__, 'uri'):
+            data = data.__self__.uri
 
         with layer_source(sample=(plugin, sample)):
             if callable(data):

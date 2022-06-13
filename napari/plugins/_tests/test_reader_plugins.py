@@ -114,23 +114,11 @@ def test_builtin_reader_plugin_url(builtins):
     assert isinstance(layer_data[0], tuple)
 
 
-def test_reader_plugin_can_return_null_layer_sentinel(
-    napari_plugin_manager, monkeypatch
-):
-    from napari_plugin_engine import napari_hook_implementation
+def test_reader_plugin_can_return_null_layer_sentinel(tmp_plugin):
+    @tmp_plugin.contribute.reader(filename_patterns=['*.junk'])
+    def napari_get_reader(path):
+        return lambda p: [(None,)]
 
-    class sample_plugin:
-        @napari_hook_implementation(tryfirst=True)
-        def napari_get_reader(path):
-            def _reader(path):
-                return [(None,)]
-
-            return _reader
-
-    napari_plugin_manager.register(sample_plugin)
-
-    monkeypatch.setattr(io, 'plugin_manager', napari_plugin_manager)
-
-    layer_data, _ = io.read_data_with_plugins([''], stack=False)
+    layer_data, _ = io.read_data_with_plugins(['my.junk'], stack=False)
     assert layer_data is not None
     assert len(layer_data) == 0
