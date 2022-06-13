@@ -1,11 +1,11 @@
 import pytest
+from npe2 import DynamicPlugin
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QPushButton
 
 from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from napari._tests.utils import restore_settings_on_exit
 from napari.settings import get_settings
-from npe2 import DynamicPlugin
 
 
 @pytest.fixture
