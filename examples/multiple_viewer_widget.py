@@ -16,14 +16,14 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt.utils import qthrottled
 
 import napari
 from napari.components.layerlist import Extent
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Vectors, Image, Labels, Layer
+from napari.layers import Image, Labels, Layer, Vectors
 from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
-from superqt.utils import qthrottled
 
 
 def copy_layer(layer: Layer, name: str = ""):
@@ -60,15 +60,18 @@ def center_cross_on_mouse(viewer: napari.Viewer):
     """move the cross to the mouse position"""
 
     print(viewer.title, viewer.cursor.position)
-    #FIXME times to time wrong viewer is selected
+    # FIXME times to time wrong viewer is selected
 
-    viewer.dims.current_step = tuple(np.round(
-        [
-            max(min_, min(p, max_))/step
-            for p, (min_, max_, step) in
-            zip(viewer.cursor.position, viewer.dims.range)
-        ]
-    ).astype(int))
+    viewer.dims.current_step = tuple(
+        np.round(
+            [
+                max(min_, min(p, max_)) / step
+                for p, (min_, max_, step) in zip(
+                    viewer.cursor.position, viewer.dims.range
+                )
+            ]
+        ).astype(int)
+    )
 
 
 action_manager.register_action(
@@ -80,11 +83,13 @@ action_manager.register_action(
 
 action_manager.bind_shortcut('napari:move_point', 'C')
 
+
 class own_partial:
     """
     Workaround for deepcopy do not copy partial functions
     (Qt widgets are not serializable)
     """
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -106,6 +111,7 @@ class CrossWidget(QCheckBox):
     Widget to control the cross layer. because of the performance reason
     the cross update is throttled
     """
+
     def __init__(self, viewer: napari.Viewer):
         super().__init__("Add cross layer")
         self.viewer = viewer
@@ -164,6 +170,7 @@ class ExampleWidget(QWidget):
     Dummy widget to show option to put some additional widgets right to
     additional viewers.
     """
+
     def __init__(self):
         super().__init__()
         self.btn = QPushButton("Perform action")
@@ -177,6 +184,7 @@ class ExampleWidget(QWidget):
 
 class MultipleViewerWidget(QSplitter):
     """The Main widget of the example."""
+
     def __init__(self, viewer: napari.Viewer):
         super().__init__()
         self.viewer = viewer
