@@ -1,6 +1,7 @@
 import typing
 from copy import deepcopy
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
@@ -16,6 +17,7 @@ from napari.components.layerlist import Extent
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Vectors, Image, Labels, Layer
 from napari.qt import QtViewer
+from superqt.utils import qthrottled
 
 
 def copy_layer(layer: Layer, name: str = ""):
@@ -90,6 +92,7 @@ class CrossWidget(QCheckBox):
             self.viewer.layers.remove(self.layer)
         self.update_cross()
 
+    @qthrottled
     def update_cross(self):
         if self.layer not in self.viewer.layers:
             return
