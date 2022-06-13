@@ -288,17 +288,6 @@ def write_layer_data_with_plugins(
     variable to modify the path such that the layers are written to unique
     files in the folder.
 
-    If ``plugin_name`` is ``None`` then we just directly call
-    ``plugin_manager.hook.napari_write_<layer>()`` which will loop through
-    implementations and stop when the first one returns a non-None result. The
-    order in which implementations are called can be changed with the
-    implementation sorter/disabler.
-
-    If ``plugin_name`` is provided, then we call the
-    ``napari_write_<layer_type>`` for that plugin, and if it fails we error.
-    By default, we restrict this function to using only napari ``builtins``
-    plugins.
-
     Parameters
     ----------
     path : str

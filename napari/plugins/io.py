@@ -105,32 +105,6 @@ def save_layers(
 ) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
-    If ``plugin`` is not provided and only one layer is passed, then we
-    directly call ``plugin_manager.hook.napari_write_<layer>()`` which
-    will loop through implementations and stop when the first one returns a
-    non-None result. The order in which implementations are called can be
-    changed with the hook ``bring_to_front`` method, for instance:
-    ``plugin_manager.hook.napari_write_points.bring_to_front``
-
-    If ``plugin`` is not provided and multiple layers are passed, then
-    we call ``plugin_manager.hook.napari_get_writer()`` which loops through
-    plugins to find the first one that knows how to handle the combination of
-    layers and is able to write the file. If no plugins offer
-    ``napari_get_writer`` for that combination of layers then the builtin
-    ``napari_get_writer`` implementation will create a folder and call
-    ``napari_write_<layer>`` for each layer using the ``layer.name`` variable
-    to modify the path such that the layers are written to unique files in the
-    folder.
-
-    If ``plugin`` is provided and a single layer is passed, then
-    we call the ``napari_write_<layer_type>`` for that plugin, and if it
-    fails we error.
-
-    If a ``plugin`` is provided and multiple layers are passed, then
-    we call we call ``napari_get_writer`` for that plugin, and if it
-    doesn’t return a WriterFunction we error, otherwise we call it and if
-    that fails if it we error.
-
     Parameters
     ----------
     path : str
@@ -219,7 +193,7 @@ def _write_multiple_layers_with_plugins(
     to unique files in the folder.
 
     If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
-    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
+    plugin. If it doesn't return a ``WriterFunction`` we error, otherwise we
     call it and if that fails if it we error.
 
     Exceptions will be caught and stored as PluginErrors
