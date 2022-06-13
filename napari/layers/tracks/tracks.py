@@ -458,6 +458,8 @@ class Tracks(Layer):
 
     @tail_length.setter
     def tail_length(self, tail_length: Union[int, float]):
+        if tail_length > self._max_length:
+            self._max_length = tail_length
         self._tail_length = np.clip(tail_length, 1, self._max_length)
         self.events.tail_length()
 
