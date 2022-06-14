@@ -158,9 +158,9 @@ class ApplicationSettings(EventedModel):
     )
     confirm_close_window: bool = Field(
         default=True,
-        title=trans._("Window close confirmation"),
+        title=trans._("Confirm window closing"),
         description=trans._(
-            "Ask for confirmation before close window with {shortcut}",
+            "Ask for confirmation before closing window with {shortcut}",
             shortcut=Shortcut("Control-W").platform,
         ),
     )
