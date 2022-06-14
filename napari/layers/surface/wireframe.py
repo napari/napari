@@ -1,7 +1,6 @@
-from typing import Union
+from napari.utils.color import ColorValue
 
 from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
 
 
 class SurfaceWireframe(EventedModel):
@@ -21,5 +20,6 @@ class SurfaceWireframe(EventedModel):
     """
 
     visible: bool = False
-    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
+    # TODO: check if this change in stored value is desired.
+    color: ColorValue = 'black'
     width: float = 1

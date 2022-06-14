@@ -1,10 +1,10 @@
 from enum import Enum, auto
-from typing import Union
 
 from pydantic import Field
 
+from napari.utils.color import ColorValue
+
 from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
 
 
 class NormalMode(Enum):
@@ -34,7 +34,8 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
+    # TODO: check if this change in stored value is desired.
+    color: ColorValue = 'black'
     width: float = 1
     length: float = 5
 
