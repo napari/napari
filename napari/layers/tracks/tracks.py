@@ -471,7 +471,9 @@ class Tracks(Layer):
 
     @head_length.setter
     def head_length(self, head_length: Union[int, float]):
-        self._head_length = np.clip(head_length, 0, self._max_length)
+        if head_length > self._max_length:
+            self._max_length = head_length
+        self._head_length = head_length
         self.events.head_length()
 
     @property
