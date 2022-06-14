@@ -78,12 +78,12 @@ def mock_pm(sample_plugin):
 
 
 def test_read(mock_pm):
-    _, hookimpl = _npe2.read(["some.fzzy"], stack=False)
+    _, plugin_name = _npe2.read(["some.fzzy"], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert plugin_name == PLUGIN_NAME
 
     mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(["some.fzzy"], stack=True)
+    _, plugin_name = _npe2.read(["some.fzzy"], stack=True)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
 
     mock_pm.commands.get.reset_mock()

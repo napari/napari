@@ -1143,16 +1143,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         for p in paths:
             assert isinstance(p, str)
 
-        if stack:
-            layer_data, hookimpl = read_data_with_plugins(
-                paths, plugin=plugin, stack=stack
-            )
-        else:
+        if not stack:
             assert len(paths) == 1
-            layer_data, hookimpl = read_data_with_plugins(
-                paths, plugin=plugin, stack=stack
-            )
-
+        layer_data, plugin_name = read_data_with_plugins(
+            paths, plugin=plugin, stack=stack
+        )
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
         filenames = []
@@ -1167,14 +1162,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added
-        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, _ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
                 data, kwargs, layer_type, fallback_name=basename
             )
             # actually add the layer
-            with layer_source(path=filename, reader_plugin=plugin):
+            with layer_source(path=filename, reader_plugin=plugin_name):
                 added.extend(self._add_layer_from_data(*_data))
         return added
 

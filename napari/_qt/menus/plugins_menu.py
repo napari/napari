@@ -5,7 +5,6 @@ from qtpy.QtWidgets import QAction
 from ...plugins import _npe2
 from ...utils.translations import trans
 from ..dialogs.qt_plugin_dialog import QtPluginDialog
-from ..dialogs.qt_plugin_report import QtPluginErrReporter
 from ._util import NapariMenu
 
 if TYPE_CHECKING:
@@ -24,13 +23,6 @@ class PluginsMenu(NapariMenu):
         self.clear()
         action = self.addAction(trans._("Install/Uninstall Plugins..."))
         action.triggered.connect(self._show_plugin_install_dialog)
-        action = self.addAction(trans._("Plugin Errors..."))
-        action.setStatusTip(
-            trans._(
-                'Review stack traces for plugin exceptions and notify developers'
-            )
-        )
-        action.triggered.connect(self._show_plugin_err_reporter)
         self.addSeparator()
 
         # Add a menu item (QAction) for each available plugin widget
@@ -87,7 +79,3 @@ class PluginsMenu(NapariMenu):
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
         QtPluginDialog(self._win._qt_window).exec_()
-
-    def _show_plugin_err_reporter(self):
-        """Show dialog that allows users to review and report plugin errors."""
-        QtPluginErrReporter(parent=self._win._qt_window).exec_()

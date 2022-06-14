@@ -5,8 +5,9 @@ localization data.
 
 import gettext
 import os
+from importlib.metadata import distributions
 from pathlib import Path
-from typing import Optional, Union
+from typing import Generator, Optional, Tuple, Union
 
 from yaml import safe_load
 
@@ -98,6 +99,25 @@ def _is_valid_locale(locale: str) -> bool:
     return valid
 
 
+def iter_available_plugins(
+    group: str,
+) -> Generator[Tuple[str, str, Optional[str]], None, None]:
+    """Discover modules by entry_points.
+
+    For background on entry points, see the `Entry Point specification
+    <https://packaging.python.org/specifications/entry-points/>`_.
+
+    Parameters
+    ----------
+    group : str
+        The entry_point group name to search for
+    """
+    for dist in distributions():
+        for ep in dist.entry_points:
+            if ep.group == group:
+                yield (ep.name, ep.value, dist.metadata.get("name"))
+
+
 def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
     """
     Return the available language packs installed in the system.
@@ -126,7 +146,6 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
         },
     }
     """
-    from napari_plugin_engine.manager import iter_available_plugins
 
     lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
     found_locales = {k: v for (k, v, _) in lang_packs}
@@ -334,8 +353,6 @@ class TranslationBundle:
         self._locale = locale
         localedir = None
         if locale.split("_")[0] != _DEFAULT_LOCALE:
-            from napari_plugin_engine.manager import iter_available_plugins
-
             lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
             data = {k: v for (k, v, _) in lang_packs}
             if locale not in data:

@@ -188,7 +188,6 @@
       "license",
       "linux",
       "loading.gif",
-      "napari_plugin_engine",
       "outdated",
       "pip",
       "pip_install_status",
@@ -199,13 +198,6 @@
       "url",
       "version",
       "warning_icon"
-    ],
-    "napari/_qt/dialogs/qt_plugin_report.py": [
-      "QtCopyToClipboardButton",
-      "github.com",
-      "pluginInfo",
-      "url",
-      "{meta.get(\"url\")}/issues/new?&body={err}"
     ],
     "napari/_qt/dialogs/qt_reader_dialog.py": [
       "Choose reader",

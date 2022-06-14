@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from npe2 import DynamicPlugin
 from qtpy.QtWidgets import QWidget
 
 import napari
@@ -42,6 +43,18 @@ dwidget_args = {
     'bad_tuple1': (Widg1, 1),
     'bad_double_tuple': ((Widg1, {}), (Widg2, {})),
 }
+
+
+# monkeypatch, request, recwarn fixtures are from pytest
+@pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
+def test_dock_widget_registration(
+    arg, request, recwarn, tmp_plugin: DynamicPlugin
+):
+    """Test that dock widgets get validated and registerd correctly."""
+
+    @tmp_plugin.contribute.widget(display_name='TestP1')
+    def napari_experimental_provide_dock_widget():
+        return arg
 
 
 def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):

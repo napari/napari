@@ -4,8 +4,6 @@ import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
-from napari_plugin_engine import HookImplementation
-
 from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
@@ -21,7 +19,7 @@ def read_data_with_plugins(
     paths: Sequence[str],
     plugin: Optional[str] = None,
     stack: bool = False,
-) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
+) -> Optional[Tuple[List[LayerData], str]]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -68,12 +66,10 @@ def read_data_with_plugins(
     assert isinstance(paths, list)
     if not stack:
         assert len(paths) == 1
-    hookimpl: Optional[HookImplementation]
 
-    res = _npe2.read(paths, plugin, stack=stack)
-    if res is not None:
-        _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl  # type: ignore [return-value]
+    if (res := _npe2.read(paths, plugin, stack=stack)) is not None:
+        _ld, plugin_name = res
+        return [] if _is_null_layer_sentinel(_ld) else _ld, plugin_name
 
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
 

@@ -28,14 +28,9 @@ if TYPE_CHECKING:
     from ..types import SampleDict
 
 
-class _FakeHookimpl:
-    def __init__(self, name):
-        self.plugin_name = name
-
-
 def read(
     paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
-) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
+) -> Optional[Tuple[List[LayerData], str]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
     assert stack is not None
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
@@ -48,7 +43,7 @@ def read(
         npe1_path = paths[0]
     try:
         layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
-        return layer_data, _FakeHookimpl(reader.plugin_name)
+        return layer_data, reader.plugin_name
     except ValueError as e:
         if 'No readers returned data' not in str(e):
             raise e from e

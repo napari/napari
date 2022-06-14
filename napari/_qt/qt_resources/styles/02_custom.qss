@@ -454,18 +454,6 @@ QtHookImplementationListWidget {
   background-color: {{ console }};
 }
 
-/* for the error reporter */
-#pluginInfo {
-  color: text;
-}
-
-QtPluginErrReporter > QTextEdit {
-  background-color: {{ console }};
-  background-clip: padding;
-  color: {{ text }};
-  selection-background-color: {{ highlight }};
-  margin: 10px;
-}
 
 /* ------------ Notifications ------------ */
 
