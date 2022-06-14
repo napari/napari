@@ -67,16 +67,22 @@ def read_data_with_plugins(
     if not stack:
         assert len(paths) == 1
 
+    paths = [abspath_or_url(p, must_exist=True) for p in paths]
     if (res := _npe2.read(paths, plugin, stack=stack)) is not None:
         _ld, plugin_name = res
         return [] if _is_null_layer_sentinel(_ld) else _ld, plugin_name
 
-    paths = [abspath_or_url(p, must_exist=True) for p in paths]
-
+    if plugin:
+        message = trans._(
+            'Plugin {plugin!r} not capable of reading {repr_path!r}.',
+            deferred=True,
+            plugin=plugin,
+            repr_path=paths,
+        )
     # if layer_data is empty, it means no plugin could read path
     # we just want to provide some useful feedback, which includes
     # whether or not paths were passed to plugins as a list.
-    if stack:
+    elif stack:
         message = trans._(
             'No plugin found capable of reading [{repr_path!r}, ...] as stack.',
             deferred=True,

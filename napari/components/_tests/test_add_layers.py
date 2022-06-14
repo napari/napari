@@ -1,14 +1,13 @@
 from unittest.mock import MagicMock, patch
+from npe2 import DynamicPlugin
 
 import numpy as np
 import pytest
-from napari_plugin_engine import HookImplementation
 
 from napari._tests.utils import layer_test_data
 from napari.components.viewer_model import ViewerModel
 from napari.layers._source import Source
 
-img = np.random.rand(10, 10)
 layer_data = [(lay[1], {}, lay[0].__name__.lower()) for lay in layer_test_data]
 
 
@@ -17,23 +16,29 @@ def _impl(path):
     pass
 
 
-_testimpl = HookImplementation(_impl, plugin_name='testimpl')
+_testimpl = 1
 
 
 @pytest.mark.parametrize("layer_datum", layer_data)
-def test_add_layers_with_plugins(layer_datum):
+def test_add_layers_with_plugins(tmp_path, layer_datum, tmp_plugin: DynamicPlugin):
     """Test that add_layers_with_plugins adds the expected layer types."""
-    with patch(
-        "napari.plugins.io.read_data_with_plugins",
-        MagicMock(return_value=([layer_datum], _testimpl)),
-    ):
-        v = ViewerModel()
-        v._add_layers_with_plugins(['mock_path'], stack=False)
-        layertypes = [layer._type_string for layer in v.layers]
-        assert layertypes == [layer_datum[2]]
 
-        expected_source = Source(path='mock_path', reader_plugin='testimpl')
-        assert all(lay.source == expected_source for lay in v.layers)
+    @tmp_plugin.contribute.reader(filename_patterns=['*.gbrsh'])
+    def read(path):
+        return lambda p: [layer_datum]
+    
+    mock_path = tmp_path / 'mock_path.gbrsh'
+    mock_path.touch()
+
+    v = ViewerModel()
+    v._add_layers_with_plugins([str(mock_path)], stack=False)
+    layertypes = [layer._type_string for layer in v.layers]
+    assert layertypes == [layer_datum[2]]
+
+    expected_source = Source(
+        path=str(mock_path), reader_plugin=tmp_plugin.name
+    )
+    assert all(lay.source == expected_source for lay in v.layers)
 
 
 @patch(
@@ -47,25 +52,29 @@ def test_plugin_returns_nothing():
     assert not v.layers
 
 
-@patch(
-    "napari.plugins.io.read_data_with_plugins",
-    MagicMock(return_value=([(img,)], _testimpl)),
-)
-def test_viewer_open():
+def test_viewer_open(tmp_plugin, tmp_path):
     """Test that a plugin to returning an image adds stuff to the viewer."""
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.gbrsh'])
+    def read(path):
+        return lambda p: [(np.random.rand(10, 10),)]
+
+    mock_path = tmp_path / 'mock_path.gbrsh'
+    mock_path.touch()
+
     viewer = ViewerModel()
     assert len(viewer.layers) == 0
-    viewer.open('mock_path.tif')
+    viewer.open(mock_path, plugin=tmp_plugin.name)
     assert len(viewer.layers) == 1
     # The name should be taken from the path name, stripped of extension
     assert viewer.layers[0].name == 'mock_path'
 
     # stack=True also works... and very long names are truncated
-    viewer.open('mock_path.tif', stack=True)
+    viewer.open(mock_path, stack=True, plugin=tmp_plugin.name)
     assert len(viewer.layers) == 2
     assert viewer.layers[1].name.startswith('mock_path')
 
-    expected_source = Source(path='mock_path.tif', reader_plugin='testimpl')
+    expected_source = Source(path=str(mock_path), reader_plugin=tmp_plugin.name)
     assert all(lay.source == expected_source for lay in viewer.layers)
 
 
@@ -78,6 +87,7 @@ def test_viewer_open_no_plugin(tmp_path):
         viewer.open(fname)
 
 
+img = np.random.rand(10, 10)
 plugin_returns = [
     ([(img, {'name': 'foo'})], {'name': 'bar'}),
     ([(img, {'blending': 'additive'}), (img,)], {'blending': 'translucent'}),
