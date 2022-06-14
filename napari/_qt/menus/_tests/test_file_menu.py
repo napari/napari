@@ -7,22 +7,27 @@ from napari.utils.action_manager import action_manager
 
 
 def test_sample_data_triggers_reader_dialog(
-    mock_npe2_pm, tmp_reader, make_napari_viewer
+    make_napari_viewer, tmp_plugin: DynamicPlugin
 ):
     """Sample data pops reader dialog if multiple compatible readers"""
     # make two tmp readers that take tif files
-    tmp_reader(mock_npe2_pm, 'tif-reader', filename_patterns=['*.tif'])
-    tmp_reader(mock_npe2_pm, 'other-tif-reader', filename_patterns=['*.tif'])
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.tif'])
+    def _(path):
+        ...
 
     # make a sample data reader for tif file
-    tmp_sample_plugin = DynamicPlugin('sample-plugin', mock_npe2_pm)
     my_sample = SampleDataURI(
         key='tmp-sample',
         display_name='Temp Sample',
         uri='some-path/some-file.tif',
     )
-    tmp_sample_plugin.manifest.contributions.sample_data = [my_sample]
-    tmp_sample_plugin.register()
+    tmp_plugin.manifest.contributions.sample_data = [my_sample]
 
     viewer = make_napari_viewer()
     sample_action = viewer.window.file_menu.open_sample_menu.actions()[0]
