@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction
+from qtpy.QtGui import QKeySequence
+from qtpy.QtWidgets import QAction, QMessageBox
 
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari.errors.reader_errors import MultipleReaderError
@@ -102,7 +103,7 @@ class FileMenu(NapariMenu):
             {},
             {
                 'text': trans._('Close Window'),
-                'slot': window._qt_window.close_window,
+                'slot': self._close_window,
                 'shortcut': 'Ctrl+W',
             },
             {
@@ -114,7 +115,7 @@ class FileMenu(NapariMenu):
             # This quits the entire QApplication and closes all windows.
             {
                 'text': trans._('Exit'),
-                'slot': lambda: window._qt_window.close(quit_app=True),
+                'slot': self._close_app,
                 'shortcut': 'Ctrl+Q',
                 'menuRole': QAction.QuitRole,
             },
@@ -124,6 +125,45 @@ class FileMenu(NapariMenu):
         self._pref_dialog = None
         self._rebuild_samples_menu()
         self.update()
+
+    def _close_app(self):
+        message = QMessageBox(
+            QMessageBox.Icon.Warning,
+            trans._("Close application?"),
+            trans._(
+                "Do you want to close the application? ('{shortcut}' to confirm). This will close all Qt Windows in this process",
+                shortcut=QKeySequence('Ctrl+Q').toString(
+                    QKeySequence.NativeText
+                ),
+            ),
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            self._win._qt_window,
+        )
+        close_btn = message.button(QMessageBox.StandardButton.Ok)
+        close_btn.setShortcut(QKeySequence('Ctrl+Q'))
+        if message.exec_() == QMessageBox.StandardButton.Ok:
+            self._win._qt_window.close(quit_app=True)
+
+    def _close_window(self):
+        if not get_settings().application.confirm_close_window:
+            self._win._qt_window.close(quit_app=False)
+            return
+        message = QMessageBox(
+            QMessageBox.Icon.Question,
+            trans._("Close window?"),
+            trans._(
+                "Confirm to close window (or press '{shortcut}')",
+                shortcut=QKeySequence('Ctrl+W').toString(
+                    QKeySequence.NativeText
+                ),
+            ),
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            self._win._qt_window,
+        )
+        close_btn = message.button(QMessageBox.StandardButton.Ok)
+        close_btn.setShortcut(QKeySequence('Ctrl+W'))
+        if message.exec_() == QMessageBox.StandardButton.Ok:
+            self._win._qt_window.close(quit_app=False)
 
     def _layer_count(self, event=None):
         return len(self._win._qt_viewer.viewer.layers)
