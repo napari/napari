@@ -20,6 +20,20 @@ def hold_to_pan_zoom(layer: Labels):
         layer.mode = prev_mode
 
 
+@Labels.bind_key('F')
+def hold_to_flood_fill(layer: Labels):
+    """Hold to enter ."""
+    if layer._mode != Mode.FILL:
+        # on key press
+        prev_mode = layer.mode
+        layer.mode = Mode.FILL
+
+        yield
+
+        # on key release
+        layer.mode = prev_mode
+
+
 def register_label_action(description):
     return register_layer_action(Labels, description)
 
