@@ -386,6 +386,11 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
 
 @pytest.fixture(autouse=True)
 def fresh_settings(monkeypatch):
+    """This fixture ensures that default settings are used for every test.
+
+    and ensures that changes to settings in a test are reverted, and never
+    saved to disk.
+    """
     from napari import settings
     from napari.settings import NapariSettings
 
