@@ -5,8 +5,8 @@ import pytest
 import zarr
 
 from napari.layers import Labels
-from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels import _labels_key_bindings as key_bindings
+from napari.layers.labels._labels_key_bindings import new_label
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def test_max_label_tensorstore(labels_data_4d):
 
 
 def test_hold_to_pan_zoom():
-    data = np.random.randint(0, high=255, size=(100,100)).astype('uint8')
+    data = np.random.randint(0, high=255, size=(100, 100)).astype('uint8')
     layer = Labels(data)
     layer.mode = 'paint'
     # need to go through the generator
@@ -61,7 +61,7 @@ def test_hold_to_pan_zoom():
 
 
 def test_hold_to_flood_fill():
-    data = np.random.randint(0, high=255, size=(100,100)).astype('uint8')
+    data = np.random.randint(0, high=255, size=(100, 100)).astype('uint8')
     layer = Labels(data)
     layer.mode = 'paint'
     # need to go through the generator
