@@ -65,6 +65,12 @@ def pytest_addoption(parser):
         default=False,
         help="run only asynchronous tests",
     )
+    parser.addoption(
+        "--skip_examples",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
+    )
 
 
 @pytest.fixture(
@@ -323,6 +329,15 @@ def skip_async_only(request):
         pytest.skip("not running with --async_only")
 
 
+@pytest.fixture(autouse=True)
+def skip_examples(request):
+    """Skip examples test if ."""
+    if request.node.get_closest_marker(
+        'examples'
+    ) and request.config.getoption("--skip_examples"):
+        pytest.skip("running with --skip_examples")
+
+
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
@@ -503,23 +518,23 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(session, config, items):
     test_order_prefix = [
-        "napari/utils",
-        "napari/layers",
-        "napari/components",
-        "napari/settings",
-        "napari/plugins",
-        "napari/_vispy",
-        "napari/_qt",
-        "napari/qt",
-        "napari/_tests",
+        os.path.join("napari", "utils"),
+        os.path.join("napari", "layers"),
+        os.path.join("napari", "components"),
+        os.path.join("napari", "settings"),
+        os.path.join("napari", "plugins"),
+        os.path.join("napari", "_vispy"),
+        os.path.join("napari", "_qt"),
+        os.path.join("napari", "qt"),
+        os.path.join("napari", "_tests"),
+        os.path.join("napari", "_tests", "test_examples.py"),
     ]
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
-                test_order[i].append(item)
-                break
-        else:
-            test_order[-1].append(item)
+                index = i
+        test_order[index].append(item)
     items[:] = list(chain(*test_order))

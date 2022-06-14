@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QAction
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari.errors.reader_errors import MultipleReaderError
 
+from ...components._viewer_key_bindings import register_viewer_action
 from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
 from ...utils.misc import running_as_bundled_app
@@ -16,6 +17,7 @@ from ..dialogs.screenshot_dialog import ScreenshotDialog
 from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
+    from ... import Viewer
     from ..qt_main_window import Window
 
 
@@ -85,7 +87,7 @@ class FileMenu(NapariMenu):
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
                 'slot': window._qt_viewer.clipboard,
-                'shortcut': 'Alt+Shift+S',
+                'shortcut': 'Alt+C',
                 'statusTip': trans._(
                     'Copy screenshot of current display to the clipboard'
                 ),
@@ -93,7 +95,7 @@ class FileMenu(NapariMenu):
             {
                 'text': trans._('Copy Screenshot with Viewer to Clipboard'),
                 'slot': window.clipboard,
-                'shortcut': 'Alt+Shift+S',
+                'shortcut': 'Alt+Shift+C',
                 'statusTip': trans._(
                     'Copy screenshot of current display with the viewer to the clipboard'
                 ),
@@ -202,3 +204,12 @@ class FileMenu(NapariMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
+
+
+@register_viewer_action(trans._("Show all key bindings"))
+def show_shortcuts(viewer: 'Viewer'):
+    viewer.window.file_menu._open_preferences()
+    pref_list = viewer.window.file_menu._pref_dialog._list
+    for i in range(pref_list.count()):
+        if pref_list.item(i).text() == "Shortcuts":
+            pref_list.setCurrentRow(i)

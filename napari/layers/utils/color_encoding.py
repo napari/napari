@@ -46,6 +46,10 @@ class ColorArray(np.ndarray):
         )
 
 
+"""The default color to use, which may also be used a safe fallback color."""
+DEFAULT_COLOR = ColorValue.validate_type('cyan')
+
+
 @runtime_checkable
 class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
     """Encodes colors from features."""
@@ -94,24 +98,18 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
                 ],
                 value,
             )
-        if isinstance(value, str):
-            return DirectColorEncoding(feature=value, fallback=DEFAULT_COLOR)
         try:
             color_array = ColorArray.validate_type(value)
         except (ValueError, AttributeError, KeyError):
             raise TypeError(
                 trans._(
-                    'value should be a ColorEncoding, a dict, a string, a color, a sequence of colors, or None',
+                    'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
                     deferred=True,
                 )
             )
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
         return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
-
-
-"""The default color to use, which may also be used a safe fallback color."""
-DEFAULT_COLOR = ColorValue.validate_type('cyan')
 
 
 class ConstantColorEncoding(_ConstantStyleEncoding[ColorValue, ColorArray]):

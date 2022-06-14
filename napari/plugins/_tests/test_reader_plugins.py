@@ -8,6 +8,8 @@ from napari import utils
 from napari.components import ViewerModel
 from napari.plugins import io
 
+BUILTINS = 'napari'
+
 
 def test_builtin_reader_plugin():
     """Test the builtin reader plugin reads a temporary file."""
@@ -17,7 +19,7 @@ def test_builtin_reader_plugin():
         utils.io.imsave(tmp.name, data)
         tmp.seek(0)
         layer_data, _ = io.read_data_with_plugins(
-            [tmp.name], 'builtins', stack=False
+            [tmp.name], BUILTINS, stack=False
         )
 
         assert layer_data is not None
@@ -27,7 +29,7 @@ def test_builtin_reader_plugin():
         assert np.allclose(data, layer_data[0][0])
 
         viewer = ViewerModel()
-        viewer.open(tmp.name, plugin='builtins')
+        viewer.open(tmp.name, plugin=BUILTINS)
 
         assert np.allclose(viewer.layers[0].data, data)
 
@@ -40,7 +42,7 @@ def test_builtin_reader_plugin_npy():
         np.save(tmp.name, data)
         tmp.seek(0)
         layer_data, _ = io.read_data_with_plugins(
-            [tmp.name], 'builtins', stack=False
+            [tmp.name], BUILTINS, stack=False
         )
 
         assert layer_data is not None
@@ -50,7 +52,7 @@ def test_builtin_reader_plugin_npy():
         assert np.allclose(data, layer_data[0][0])
 
         viewer = ViewerModel()
-        viewer.open(tmp.name, plugin='builtins')
+        viewer.open(tmp.name, plugin=BUILTINS)
 
         assert np.allclose(viewer.layers[0].data, data)
 
@@ -63,7 +65,7 @@ def test_builtin_reader_plugin_csv(tmpdir):
     data = table[:, 1:]
     # Write csv file
     utils.io.write_csv(tmp, table, column_names=column_names)
-    layer_data, _ = io.read_data_with_plugins([tmp], 'builtins', stack=False)
+    layer_data, _ = io.read_data_with_plugins([tmp], BUILTINS, stack=False)
 
     assert layer_data is not None
     assert isinstance(layer_data, list)
@@ -73,7 +75,7 @@ def test_builtin_reader_plugin_csv(tmpdir):
     assert np.allclose(data, layer_data[0][0])
 
     viewer = ViewerModel()
-    viewer.open(tmp, plugin='builtins')
+    viewer.open(tmp, plugin=BUILTINS)
 
     assert np.allclose(viewer.layers[0].data, data)
 
@@ -93,7 +95,7 @@ def test_builtin_reader_plugin_stacks():
     # pathnames a Path object
     names = [tmp.name for tmp in tmps]
     names[0] = Path(names[0])
-    viewer.open(names, stack=True, plugin='builtins')
+    viewer.open(names, stack=True, plugin=BUILTINS)
     assert np.allclose(viewer.layers[0].data, data)
     for tmp in tmps:
         tmp.close()

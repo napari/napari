@@ -320,6 +320,26 @@ def thread_worker(
 _new_worker_qthread = _qthreading.new_worker_qthread
 
 
+def _add_worker_data(worker: FunctionWorker, return_type, source=None):
+    from ..utils import _injection
+
+    cb = _injection._add_layer_data_to_viewer
+    worker.signals.returned.connect(
+        partial(cb, return_type=return_type, source=source)
+    )
+
+
+def _add_worker_data_from_tuple(
+    worker: FunctionWorker, return_type, source=None
+):
+    from ..utils import _injection
+
+    cb = _injection._add_layer_data_tuples_to_viewer
+    worker.signals.returned.connect(
+        partial(cb, return_type=return_type, source=source)
+    )
+
+
 def _register():
     from functools import partial
 
@@ -328,17 +348,20 @@ def _register():
     from .. import layers, types
     from ..types import LayerDataTuple
     from ..utils import _magicgui as _mgui
+    from ..utils._injection import set_processors
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
-        magicgui.register_type(
-            FunctionWorker[_type], return_callback=_mgui.add_worker_data
-        )
+        t = FunctionWorker[_type]
+        magicgui.register_type(t, return_callback=_mgui.add_worker_data)
+        set_processors({t: _add_worker_data_from_tuple})
     for layer_name in layers.NAMES:
         _type = getattr(types, f'{layer_name.title()}Data')
+        t = FunctionWorker[_type]
         magicgui.register_type(
-            FunctionWorker[_type],
+            t,
             return_callback=partial(_mgui.add_worker_data, _from_tuple=False),
         )
+        set_processors({t: _add_worker_data})
 
 
 _register()

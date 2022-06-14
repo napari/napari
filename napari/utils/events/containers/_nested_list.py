@@ -10,6 +10,7 @@ from typing import (
     DefaultDict,
     Generator,
     Iterable,
+    MutableSequence,
     NewType,
     Tuple,
     TypeVar,
@@ -184,7 +185,9 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(key, tuple):
             item: NestableEventedList[_T] = self
             for idx in key:
-                item = item[idx]  # type: ignore
+                if not isinstance(item, MutableSequence):
+                    raise IndexError(f'index out of range: {key}')
+                item = item[idx]
             return item
         return super().__getitem__(key)
 
@@ -250,13 +253,12 @@ class NestableEventedList(EventedList[_T]):
         """Make sure dest_index is a positive index inside parent_index."""
         destination_group = self[parent_index]
         # not handling slice indexes
-        if isinstance(dest_index, int):
-            if dest_index < 0:
-                dest_index += len(destination_group) + 1
+        if isinstance(dest_index, int) and dest_index < 0:
+            dest_index += len(destination_group) + 1
         return dest_index
 
     def _move_plan(
-        self, sources: Iterable[NestedIndex], dest_index: NestedIndex
+        self, sources: Iterable[MaybeNestedIndex], dest_index: NestedIndex
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
 
@@ -309,6 +311,8 @@ class NestableEventedList(EventedList[_T]):
 
         # we iterate indices from the end first, so pop() always works
         for idx in sorted(sources, reverse=True):
+            if isinstance(idx, (int, slice)):
+                idx = (idx,)
             if idx == ():
                 raise IndexError(
                     trans._(
@@ -416,16 +420,17 @@ class NestableEventedList(EventedList[_T]):
                 )
             )
 
-        if src_par_i == dest_par_i:
-            if isinstance(dest_i, int):
-                if dest_i > src_i:
-                    dest_i -= 1
-                if src_i == dest_i:
-                    return False
+        if src_par_i == dest_par_i and isinstance(dest_i, int):
+            if dest_i > src_i:
+                dest_i -= 1
+            if src_i == dest_i:
+                return False
 
         self.events.moving(index=src_index, new_index=dest_index)
+
+        dest_par = self[dest_par_i]  # grab this before popping src_i
+
         with self.events.blocker_all():
-            dest_par = self[dest_par_i]  # grab this before popping src_i
             value = self[src_par_i].pop(src_i)
             dest_par.insert(dest_i, value)
 
@@ -437,8 +442,8 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(e, list):
             return self.__newlike__(e)
         if self._basetypes:
-            _types = set(self._basetypes) | {NestableEventedList}
-            if not any(isinstance(e, t) for t in _types):
+            _types = tuple(self._basetypes) + (NestableEventedList,)
+            if not isinstance(e, _types):
                 raise TypeError(
                     trans._(
                         'Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}',
@@ -449,21 +454,24 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(self, start=0, stop=None, root=(), deep=False):
+    def _iter_indices(self, start=0, stop=None, root=()):
         """Iter indices from start to stop.
 
         Depth first traversal of the tree
         """
-        if deep:
-            for i in range(start, len(self) if stop is None else stop):
-                if isinstance(self[i], NestableEventedList):
-                    yield from self[i]._iter_indices(  # type: ignore
-                        root=root + (i,), deep=deep
-                    )
-                else:
-                    if root:
-                        yield root + (i,)
-                    else:
-                        yield i
-        else:
-            yield from super()._iter_indices(start, stop)
+        for i, item in enumerate(self[start:stop]):
+            yield root + (i,) if root else i
+            if isinstance(item, NestableEventedList):
+                yield from item._iter_indices(root=root + (i,))
+
+    def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
+        """Return true if `index` is valid for this nestable list."""
+        if isinstance(index, int):
+            return -len(self) <= index < len(self)
+        if isinstance(index, tuple):
+            try:
+                self[index]
+                return True
+            except IndexError:
+                return False
+        raise TypeError(f"Not supported index type {type(index)}")

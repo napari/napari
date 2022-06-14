@@ -29,8 +29,7 @@ def test_cli_shows_plugins(napari_plugin_manager, monkeypatch, capsys):
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
         __main__._run()
-    # this is because sckit-image is OUR builtin providing sample_data
-    assert 'scikit-image' in str(capsys.readouterr())
+    assert 'napari-svg' in str(capsys.readouterr())
 
 
 def test_cli_parses_unknowns(mock_run, monkeypatch, make_napari_viewer):

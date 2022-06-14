@@ -169,10 +169,10 @@ your selection.
 
 Each point can have a different size. You can pass a list or 1-dimensional array
 of points through the size keyword argument to initialize the layer with points
-of different sizes. These sizes are then accessible through the `sizes`
+of different sizes. These sizes are then accessible through the `size`
 property. If you pass a single size then all points will get initialized with
-that size. Points can be pseduo-visualized as n-dimensionsal if the
-`n-dimensional` property is set to `True` or the `n-dimensional` checkbox is
+that size. Points can be pseudo-visualized as n-dimensional if the
+`out_of_slice_display` property is set to `True` or the `out of slice` checkbox is
 checked. In this setting when viewing different slices of the layer points will
 appear in the neighbouring slices to the ones in which they are located with a
 size scaled by the distance from their center to that slice. This feature can be
@@ -183,8 +183,8 @@ Points can also be resized within the GUI by first selecting them and then
 adjusting the point size slider. If no points are selected, then adjusting the
 slider value will only serve to initialize the size for new points that are
 about to be added. The value of the size of the next point to be added can be
-found in the `layer.size` property. Note this property is different from
-`layer.sizes` which contains the current sizes of all the points.
+found in the `layer.current_size` property. Note this property is different from
+`layer.size` which contains the current sizes of all the points.
 
 ## Changing points edge and face color
 
@@ -192,10 +192,11 @@ Individual points can each have different edge and face colors. You can
 initially set these colors by providing a list of colors to the `edge_color` or
 `face_color` keyword arguments respectively, or you can edit them from the GUI.
 The colors of each of the points are available as lists under the
-`layer.edge_colors` and `layer.face_colors` properties. Similar to the `sizes`
-and `size` properties these properties are different from the `layer.edge_color`
-and `layer.face_color` properties that will determine the color of the next
-point to be added or any currently selected points.
+`layer.edge_color` and `layer.face_color` properties. Similar to the `size`
+and `current_size` properties these properties are different from the
+`layer.current_edge_color` and `layer.current_face_color` properties that will
+determine the color of the next point to be added or any currently selected
+points.
 
 To change the point color properties from the GUI you must first select the
 points whose properties you want to change, otherwise you will just be

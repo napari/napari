@@ -75,7 +75,7 @@ layer = viewer.add_shapes(
 # change some attributes of the layer
 layer.selected_data = set(range(layer.nshapes))
 layer.current_edge_width = 5
-layer.current_opacity = 0.75
+layer.opacity = 0.75
 layer.selected_data = set()
 
 # add an ellipse to the layer
