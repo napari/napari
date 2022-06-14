@@ -3,7 +3,7 @@
 Notes for using the plugin-related fixtures here:
 
 1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
-   manager instance with a discovery-defficient plugin manager.  No plugins should be
+   manager instance with a discovery-deficient plugin manager.  No plugins should be
    discovered in tests without explicit registration.
 2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
    added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
@@ -16,10 +16,17 @@ Notes for using the plugin-related fixtures here:
         def f(path): ...
 
         # the plugin name can be accessed at:
-        tmp_plugin.manifest.name
+        tmp_plugin.name
     ```
-4. If you need a _second_ mock plugin, use `tmp_plugin.spawn()` to create another one.
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create
+   another one.
+   ```python
+   new_plugin = tmp_plugin.spawn(register=True)
 
+   @new_plugin.contribute.reader(filename_patterns=["*.tiff"])
+   def get_reader(path):
+       ...
+   ```
 """
 try:
     __import__('dotenv').load_dotenv()
@@ -478,19 +485,11 @@ def builtins(_mock_npe2_pm: PluginManager):
 
 @pytest.fixture
 def tmp_plugin(_mock_npe2_pm: PluginManager):
-    class _DynamicPlugin(DynamicPlugin):
-        def spawn(self, name=None):
-            """Create another tmp_plugin"""
-            name = name or f'tmp_plugin{next(count)}'
-            new = _DynamicPlugin(name, plugin_manager=_mock_npe2_pm)
-            new.register()
-            return new
-
     # guarantee that the name is unique, even if tmp_plugin has already been used
     count = itertools.count(0)
     while (name := f'tmp_plugin{next(count)}') in _mock_npe2_pm._manifests:
         continue
-    with _DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
+    with DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
         yield plugin
 
 

@@ -14,7 +14,7 @@ from napari.components import ViewerModel
 def test_add_single_png_defaults(builtins, single_png):
     image_files = single_png
     viewer = ViewerModel()
-    viewer.open(image_files, plugin=builtins.manifest.name)
+    viewer.open(image_files, plugin=builtins.name)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)
@@ -24,20 +24,20 @@ def test_add_single_png_defaults(builtins, single_png):
 def test_add_multi_png_defaults(builtins, two_pngs):
     image_files = two_pngs
     viewer = ViewerModel()
-    viewer.open(image_files, stack=True, plugin=builtins.manifest.name)
+    viewer.open(image_files, stack=True, plugin=builtins.name)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert isinstance(viewer.layers[0].data, da.Array)
     assert viewer.layers[0].data.shape == (2, 512, 512)
 
-    viewer.open(image_files, stack=False, plugin=builtins.manifest.name)
+    viewer.open(image_files, stack=False, plugin=builtins.name)
     assert len(viewer.layers) == 3
 
 
 def test_add_tiff(builtins, single_tiff):
     image_files = single_tiff
     viewer = ViewerModel()
-    viewer.open(image_files, plugin=builtins.manifest.name)
+    viewer.open(image_files, plugin=builtins.name)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert isinstance(viewer.layers[0].data, np.ndarray)
@@ -48,7 +48,7 @@ def test_add_tiff(builtins, single_tiff):
 def test_add_many_tiffs(builtins, single_tiff):
     image_files = single_tiff * 3
     viewer = ViewerModel()
-    viewer.open(image_files, stack=True, plugin=builtins.manifest.name)
+    viewer.open(image_files, stack=True, plugin=builtins.name)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
     assert isinstance(viewer.layers[0].data, da.Array)
@@ -59,7 +59,7 @@ def test_add_many_tiffs(builtins, single_tiff):
 def test_add_single_filename(builtins, single_tiff):
     image_files = single_tiff[0]
     viewer = ViewerModel()
-    viewer.open(image_files, plugin=builtins.manifest.name)
+    viewer.open(image_files, plugin=builtins.name)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 3
     assert isinstance(viewer.layers[0].data, np.ndarray)
@@ -73,7 +73,7 @@ def test_add_zarr(builtins):
     with TemporaryDirectory(suffix='.zarr') as fout:
         z = zarr.open(fout, 'a', shape=image.shape)
         z[:] = image
-        viewer.open([fout], plugin=builtins.manifest.name)
+        viewer.open([fout], plugin=builtins.name)
         assert len(viewer.layers) == 1
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
@@ -93,7 +93,7 @@ def test_zarr_multiscale(builtins):
             shape = 20 // 2**i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
             z[:] = multiscale[i]
-        viewer.open(fout, multiscale=True, plugin=builtins.manifest.name)
+        viewer.open(fout, multiscale=True, plugin=builtins.name)
         assert len(viewer.layers) == 1
         assert len(multiscale) == len(viewer.layers[0].data)
         # Note: due to lazy loading, the next line needs to happen within
@@ -110,7 +110,7 @@ def test_add_zarr_1d_array_is_ignored(builtins):
         z['1d'] = np.zeros(3)
 
         image_path = os.path.join(zarr_dir, '1d')
-        viewer.open(image_path, plugin=builtins.manifest.name)
+        viewer.open(image_path, plugin=builtins.name)
 
         assert len(viewer.layers) == 0
 
@@ -125,7 +125,7 @@ def test_add_many_zarr_1d_array_is_ignored(builtins):
         z['3d'] = np.zeros((3, 4, 5))
 
         image_paths = [os.path.join(zarr_dir, name) for name in z.array_keys()]
-        viewer.open(image_paths, plugin=builtins.manifest.name)
+        viewer.open(image_paths, plugin=builtins.name)
 
         assert [layer.name for layer in viewer.layers] == ['2d', '3d']
 
@@ -133,7 +133,7 @@ def test_add_many_zarr_1d_array_is_ignored(builtins):
 def test_add_multichannel_rgb(builtins, rgb_png):
     image_files = rgb_png
     viewer = ViewerModel()
-    viewer.open(image_files, channel_axis=2, plugin=builtins.manifest.name)
+    viewer.open(image_files, channel_axis=2, plugin=builtins.name)
     assert len(viewer.layers) == 3
     assert viewer.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)
@@ -143,7 +143,7 @@ def test_add_multichannel_rgb(builtins, rgb_png):
 def test_add_multichannel_tiff(builtins, single_tiff):
     image_files = single_tiff
     viewer = ViewerModel()
-    viewer.open(image_files, channel_axis=0, plugin=builtins.manifest.name)
+    viewer.open(image_files, channel_axis=0, plugin=builtins.name)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)

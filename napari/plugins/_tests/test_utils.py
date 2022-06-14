@@ -46,7 +46,7 @@ def test_get_potential_readers_gives_napari(
 
 
 def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn()  # type: ignore
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
     def read_tif(path):
@@ -72,9 +72,7 @@ def test_get_potential_readers_plugin_name_disp_name(
         ...
 
     readers = get_potential_readers('my_file.fake')
-    assert (
-        readers[tmp_plugin.manifest.name] == tmp_plugin.manifest.display_name
-    )
+    assert readers[tmp_plugin.name] == tmp_plugin.display_name
 
 
 def test_get_all_readers_gives_napari(builtins):
@@ -85,7 +83,7 @@ def test_get_all_readers_gives_napari(builtins):
 
 
 def test_get_all_readers(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn()  # type: ignore
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def read_tif(path):
@@ -113,7 +111,7 @@ def test_get_filename_patterns(tmp_plugin: DynamicPlugin):
     def read_csv(pth):
         ...
 
-    patterns = get_filename_patterns_for_reader(tmp_plugin.manifest.name)
+    patterns = get_filename_patterns_for_reader(tmp_plugin.name)
     assert len(patterns) == 2
     assert '*.tif' in patterns
     assert '*.csv' in patterns

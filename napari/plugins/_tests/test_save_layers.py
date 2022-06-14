@@ -20,7 +20,7 @@ def test_save_layer_single_named_plugin(
         assert not os.path.isfile(path)
 
         # Write data
-        save_layers(path, [layer], plugin=builtins.manifest.name)
+        save_layers(path, [layer], plugin=builtins.name)
 
         # Check file now exists
         assert os.path.isfile(path)
@@ -70,7 +70,7 @@ def test_save_layer_multiple_named_plugin(
     assert not os.path.isdir(path)
 
     # Write data
-    save_layers(path, layers, plugin=builtins.manifest.name)
+    save_layers(path, layers, plugin=builtins.name)
 
     # Check folder now exists
     assert os.path.isdir(path)
@@ -97,7 +97,7 @@ def test_save_layer_multiple_no_named_plugin(
     assert not os.path.isdir(path)
 
     # Write data
-    save_layers(path, layers, plugin=builtins.manifest.name)
+    save_layers(path, layers, plugin=builtins.name)
 
     # Check folder now exists
     assert os.path.isdir(path)

@@ -100,11 +100,11 @@ def test_prepare_dialog_options_multiple_plugins(builtins):
         None,
         RuntimeError(f'Multiple plugins found capable of reading {pth}'),
     )
-    assert builtins.manifest.name in readers
+    assert builtins.name in readers
 
 
 def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
-    tmp2 = tmp_plugin.spawn()  # type: ignore
+    tmp2 = tmp_plugin.spawn(register=True)
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
     def _(path):
@@ -116,11 +116,11 @@ def test_prepare_dialog_options_removes_plugin(tmp_plugin: DynamicPlugin):
 
     readers = prepare_remaining_readers(
         ['my-file.fake'],
-        tmp_plugin.manifest.name,
+        tmp_plugin.name,
         RuntimeError('Reader failed'),
     )
-    assert tmp2.manifest.name in readers
-    assert tmp_plugin.manifest.name not in readers
+    assert tmp2.name in readers
+    assert tmp_plugin.name not in readers
 
 
 def test_open_with_dialog_choices_persist(
@@ -131,20 +131,17 @@ def test_open_with_dialog_choices_persist(
 
     viewer = make_napari_viewer()
     open_with_dialog_choices(
-        display_name=builtins.manifest.display_name,
+        display_name=builtins.display_name,
         persist=True,
         extension='.npy',
-        readers={builtins.manifest.name: builtins.manifest.display_name},
+        readers={builtins.name: builtins.display_name},
         paths=[str(pth)],
         stack=False,
         qt_viewer=viewer.window._qt_viewer,
     )
     assert len(viewer.layers) == 1
     # make sure extension was saved with *
-    assert (
-        get_settings().plugins.extension2reader['*.npy']
-        == builtins.manifest.name
-    )
+    assert get_settings().plugins.extension2reader['*.npy'] == builtins.name
 
 
 def test_open_with_dialog_choices_raises(make_napari_viewer):

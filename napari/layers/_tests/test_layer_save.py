@@ -18,7 +18,7 @@ def test_layer_save(builtins, tmpdir, layer_writer_and_data):
     assert not os.path.isfile(path)
 
     # Write data
-    assert layer.save(path, plugin=builtins.manifest.name)
+    assert layer.save(path, plugin=builtins.name)
 
     # Check file now exists
     assert os.path.isfile(path)
