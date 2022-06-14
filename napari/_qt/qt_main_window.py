@@ -625,7 +625,7 @@ class Window:
         menubar is visible.
         """
         self.main_menu.setVisible(not self.main_menu.isVisible())
-        self._main_menu_shortcut.setEnabled(self.main_menu.isVisible())
+        self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
 
     def _tooltip_visibility_toggle(self, value):
         get_settings().appearance.layer_tooltip_visibility = value
