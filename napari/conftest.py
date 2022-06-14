@@ -1,20 +1,52 @@
+"""
+
+Notes for using the plugin-related fixtures here:
+
+1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+   manager instance with a discovery-deficient plugin manager.  No plugins should be
+   discovered in tests without explicit registration.
+2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
+   added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
+   global mock npe2 plugin manager)
+3. wherever *additional* plugins or contributions need to be added, use the `tmp_plugin`
+   fixture, and add additional contributions _within_ the test (not in the fixture):
+    ```python
+    def test_something(tmp_plugin):
+        @tmp_plugin.contribute.reader(filname_patterns=["*.ext"])
+        def f(path): ...
+
+        # the plugin name can be accessed at:
+        tmp_plugin.name
+    ```
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create
+   another one.
+   ```python
+   new_plugin = tmp_plugin.spawn(register=True)
+
+   @new_plugin.contribute.reader(filename_patterns=["*.tiff"])
+   def get_reader(path):
+       ...
+   ```
+"""
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
     pass
 
+import itertools
 import os
 from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
 import pooch
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import DynamicPlugin, PluginManager
+from npe2 import DynamicPlugin, PluginManager, PluginManifest
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -354,6 +386,11 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
 
 @pytest.fixture(autouse=True)
 def fresh_settings(monkeypatch):
+    """This fixture ensures that default settings are used for every test.
+
+    and ensures that changes to settings in a test are reverted, and never
+    saved to disk.
+    """
     from napari import settings
     from napari.settings import NapariSettings
 
@@ -428,54 +465,32 @@ def _no_error_reports():
         yield
 
 
-@pytest.fixture
-def tmp_reader():
-    """Return a temporary reader registered with the given plugin manager."""
-
-    def make_plugin(
-        pm, name, filename_patterns=['*.fake'], accepts_directories=False
-    ):
-        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
-
-        @reader_plugin.contribute.reader(
-            filename_patterns=filename_patterns,
-            accepts_directories=accepts_directories,
-        )
-        def read_func(pth):
-            ...
-
-        reader_plugin.register()
-        return reader_plugin
-
-    return make_plugin
-
-
-@pytest.fixture
-def mock_npe2_pm():
+@pytest.fixture(autouse=True)
+def _mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
-    mock_reg = MagicMock()
     with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager(reg=mock_reg)
+        _pm = PluginManager()
     with patch('npe2.PluginManager.instance', return_value=_pm):
         yield _pm
 
 
-def event_check():
-    """Return a function to check if events are defined by all properties."""
+@pytest.fixture
+def builtins(_mock_npe2_pm: PluginManager):
+    plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
+    mf = PluginManifest.from_file(Path(__file__).parent / 'builtins.yaml')
+    plugin.manifest = mf
+    with plugin:
+        yield plugin
 
-    def _check(instance, skip):
-        klass = instance.__class__
-        for name, value in klass.__dict__.items():
-            if (
-                isinstance(value, property)
-                and name[0] != '_'
-                and name not in skip
-            ):
-                assert hasattr(
-                    instance.events, name
-                ), f"event {name} not defined"
 
-    return _check
+@pytest.fixture
+def tmp_plugin(_mock_npe2_pm: PluginManager):
+    # guarantee that the name is unique, even if tmp_plugin has already been used
+    count = itertools.count(0)
+    while (name := f'tmp_plugin{next(count)}') in _mock_npe2_pm._manifests:
+        continue
+    with DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
+        yield plugin
 
 
 def _event_check(instance):
