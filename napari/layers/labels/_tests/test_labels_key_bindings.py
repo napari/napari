@@ -57,7 +57,12 @@ def test_hold_to_pan_zoom():
     layer = Labels(data)
     layer.mode = 'paint'
     # need to go through the generator
-    _ = list(key_bindings.hold_to_pan_zoom(layer))
+    gen = key_bindings.hold_to_pan_zoom(layer)
+    next(gen)
+    assert layer.mode == 'pan_zoom'
+    with contextlib.suppress(StopIteration):
+        next(gen)
+    assert layer.mode == 'paint'
 
 
 def test_hold_to_flood_fill():
