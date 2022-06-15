@@ -114,11 +114,13 @@ def test_builtin_reader_plugin_url(builtins):
     assert isinstance(layer_data[0], tuple)
 
 
-def test_reader_plugin_can_return_null_layer_sentinel(tmp_plugin):
+def test_reader_plugin_can_return_null_layer_sentinel(tmp_plugin, tmp_path):
     @tmp_plugin.contribute.reader(filename_patterns=['*.junk'])
     def napari_get_reader(path):
         return lambda p: [(None,)]
 
-    layer_data, _ = io.read_data_with_plugins(['my.junk'], stack=False)
+    mock_path = tmp_path / 'my.junk'
+    mock_path.touch()
+    layer_data, _ = io.read_data_with_plugins([str(mock_path)], stack=False)
     assert layer_data is not None
     assert len(layer_data) == 0

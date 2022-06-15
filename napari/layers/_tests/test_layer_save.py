@@ -1,4 +1,6 @@
 import os
+import sys
+from unittest.mock import MagicMock
 
 import npe2
 import numpy as np
@@ -12,7 +14,7 @@ def test_layer_save(builtins, tmpdir, layer_writer_and_data):
     """Test saving layer data."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data
     layer = Layer(layer_data[0], **layer_data[1])
-    path = os.path.join(tmpdir, 'layer_file' + extension)
+    path = os.path.join(tmpdir, f'layer_file{extension}')
 
     # Check file does not exist
     assert not os.path.isfile(path)
@@ -53,8 +55,9 @@ def test_layer_save(builtins, tmpdir, layer_writer_and_data):
 
 # the layer fixture is defined in napari/conftest.py
 @pytest.mark.filterwarnings('ignore:`np.int` is a deprecated alias')
-def test_layer_save_svg(tmpdir, layer, napari_svg_name):
+def test_layer_save_svg(tmpdir, layer, napari_svg_name, monkeypatch):
     """Test saving layer data to an svg."""
+    monkeypatch.setitem(sys.modules, 'napari_plugin_engine', MagicMock())
     pm = npe2.PluginManager.instance()
     pm.register(npe2.PluginManifest.from_distribution('napari-svg'))
 

@@ -36,9 +36,7 @@ For more general background on the plugin hook calling mechanism, see the
 from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-from napari_plugin_engine import napari_hook_specification
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ..types import (
     AugmentedWidget,
@@ -51,6 +49,30 @@ from ..types import (
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
 # -------------------------------------------------------------------------- #
+
+
+def napari_hook_specification(
+    function: Optional[Callable] = None,
+    firstresult: bool = False,
+    historic: bool = False,
+):
+    def setattr_hookspec_opts(func):
+        setattr(
+            func,
+            "napari_spec",
+            dict(
+                firstresult=firstresult,
+                historic=historic,
+                warn_on_impl=None,
+            ),
+        )
+
+        return func
+
+    if function is not None:
+        return setattr_hookspec_opts(function)
+    else:
+        return setattr_hookspec_opts
 
 
 @napari_hook_specification(historic=True)
