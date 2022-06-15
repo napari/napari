@@ -297,6 +297,7 @@ class Labels(_ImageBase):
             brush_shape=Event,
             contour=Event,
             features=Event,
+            paint=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -317,7 +318,6 @@ class Labels(_ImageBase):
         self._preserve_labels = False
         self._help = trans._('enter paint or fill mode to edit labels')
 
-        self._block_saving = False
         self._reset_history()
 
         # Trigger generation of view slice and thumbnail
@@ -1100,10 +1100,7 @@ class Labels(_ImageBase):
             - the value(s) after the change
         """
         self._redo_history = deque()
-        if not self._block_saving:
-            self._undo_history.append([value])
-        else:
-            self._undo_history[-1].append(value)
+        self._undo_history.append([value])
 
     def _load_history(self, before, after, undoing=True):
         """Load a history item and apply it to the array.
@@ -1145,7 +1142,7 @@ class Labels(_ImageBase):
             self._redo_history, self._undo_history, undoing=False
         )
 
-    def fill(self, coord, new_label, refresh=True):
+    def fill(self, coord, new_label, refresh=True, save_history=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working in the number of dimensions specified by
@@ -1211,13 +1208,15 @@ class Labels(_ImageBase):
             self.data, match_indices
         )
 
-        self._save_history(
-            (
+        history_atom = (
                 match_indices,
                 np.array(self.data[match_indices], copy=True),
                 new_label,
             )
-        )
+        if save_history:
+            self._save_history(history_atom)
+        else:
+            self._staged_history.append(history_atom)
 
         # Replace target pixels with new_label
         self.data[match_indices] = new_label
@@ -1225,8 +1224,14 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def _start_painting(self):
-        pass
+    def _start_painting(self, coordinates, new_label):
+        self._staged_history = []
+        if coordinates is not None:
+            if self._mode in [Mode.PAINT, Mode.ERASE]:
+                self.paint(coordinates, new_label, save_history=False)
+            elif self._mode == Mode.FILL:
+                self.fill(coordinates, new_label, save_history=False)
+
 
     def _paint(self, new_label, last_cursor_coord, coordinates):
         ndisplay = len(self._dims_displayed)
@@ -1240,15 +1245,18 @@ class Labels(_ImageBase):
             ):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(c, new_label, refresh=False)
+                self.paint(c, new_label, refresh=False, save_history=False)
             elif self._mode == Mode.FILL:
-                self.fill(c, new_label, refresh=False)
+                self.fill(c, new_label, refresh=False, save_history=False)
         self.refresh()
 
     def _finish_painting(self):
-        pass
+        if self._staged_history:
+            self._undo_history.append(self._staged_history)
+            self.events.paint(value=self._staged_history)
+            self._staged_history = []
 
-    def paint(self, coord, new_label, refresh=True):
+    def paint(self, coord, new_label, refresh=True, save_history=True):
         """Paint over existing labels with a new label, using the selected
         brush shape and size, either only on the visible slice or in all
         n dimensions.
@@ -1315,13 +1323,15 @@ class Labels(_ImageBase):
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         # save the existing values to the history
-        self._save_history(
-            (
-                slice_coord,
-                np.array(self.data[slice_coord], copy=True),
-                new_label,
-            )
-        )
+        history_atom = (
+                    slice_coord,
+                    np.array(self.data[slice_coord], copy=True),
+                    new_label,
+                )
+        if save_history:
+            self._save_history(history_atom)
+        else:
+            self._staged_history.append(history_atom)
 
         # update the labels image
         self.data[slice_coord] = new_label

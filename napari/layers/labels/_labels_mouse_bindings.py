@@ -33,22 +33,10 @@ def draw(layer, event):
     else:
         new_label = layer.selected_label
 
-    if coordinates is not None:
-        if layer._mode in [Mode.PAINT, Mode.ERASE]:
-            layer.paint(coordinates, new_label)
-        elif layer._mode == Mode.FILL:
-            layer.fill(coordinates, new_label)
-    else:  # still add an item to undo queue
-        # when dragging, if we start a drag outside the layer, we will
-        # incorrectly append to the previous history item. We create a
-        # dummy history item to prevent this.
-        dummy_indices = (np.zeros(shape=0, dtype=int),) * layer.data.ndim
-        layer._undo_history.append([(dummy_indices, [], [])])
-
+    layer._start_painting(coordinates, new_label)
     last_cursor_coord = coordinates
     yield
 
-    layer._block_saving = True
     # on move
     while event.type == 'mouse_move':
         coordinates = mouse_event_to_labels_coordinate(layer, event)
@@ -58,10 +46,7 @@ def draw(layer, event):
         yield
 
     # on release
-    layer._block_saving = False
-    undo_item = layer._undo_history[-1]
-    if len(undo_item) == 1 and len(undo_item[0][0][0]) == 0:
-        layer._undo_history.pop()
+    layer._finish_painting()
 
 
 def pick(layer, event):
