@@ -35,30 +35,21 @@ def magicfunc(viewer: 'napari.Viewer'):
     return viewer
 
 
-dwidget_args = {
-    'single_class': Widg1,
-    'class_tuple': (Widg1, {'area': 'right'}),
-    'tuple_list': [(Widg1, {'area': 'right'}), (Widg2, {})],
-    'tuple_list2': [(Widg1, {'area': 'right'}), Widg2],
-    'bad_class': 1,
-    'bad_tuple1': (Widg1, 1),
-    'bad_double_tuple': ((Widg1, {}), (Widg2, {})),
-}
+@pytest.fixture
+def some_widgets(tmp_plugin: DynamicPlugin):
+    """A smattering of example registered dock widgets and function widgets."""
+    p1: DynamicPlugin = tmp_plugin.spawn(name='TestP1', register=True)
+    p2: DynamicPlugin = tmp_plugin.spawn(name='TestP2', register=True)
+    p3: DynamicPlugin = tmp_plugin.spawn(name='TestP3', register=True)
+
+    p1.contribute.widget(display_name='Widg1')(Widg1)
+    p1.contribute.widget(display_name='Widg2')(Widg2)
+    p2.contribute.widget(display_name='Widg3')(Widg3)
+    p3.contribute.widget(display_name='magic', autogenerate=True)(magicfunc)
+    yield
 
 
-# monkeypatch, request, recwarn fixtures are from pytest
-@pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
-def test_dock_widget_registration(
-    arg, request, recwarn, tmp_plugin: DynamicPlugin
-):
-    """Test that dock widgets get validated and registerd correctly."""
-
-    @tmp_plugin.contribute.widget(display_name='TestP1')
-    def napari_experimental_provide_dock_widget():
-        return arg
-
-
-def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
+def test_plugin_widgets_menus(some_widgets, qtbot):
     """Test the plugin widgets get added to the window menu correctly."""
     # only take the plugin actions
     window = Mock()
@@ -80,7 +71,7 @@ def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
     assert [a.text() for a in tp1.menu().actions()] == ['Widg1', 'Widg2']
 
 
-def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
+def test_making_plugin_dock_widgets(some_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_napari_viewer()
     # only take the plugin actions
@@ -126,7 +117,7 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert not widg.parent()
 
 
-def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
+def test_making_function_dock_widgets(some_widgets, make_napari_viewer):
     """Test that we can create magicgui widgets, and they get the viewer."""
     import magicgui
 
