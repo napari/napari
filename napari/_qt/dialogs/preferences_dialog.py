@@ -85,10 +85,7 @@ class PreferencesDialog(QDialog):
 
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-        # FIXME: this dialog should not need to know about the plugin manager
-        from ...plugins import plugin_manager
 
-        self._starting_pm_order = plugin_manager.call_order()
         self._starting_values = self._settings.dict(exclude={'schema_version'})
 
         self._list.clear()
@@ -201,10 +198,4 @@ class PreferencesDialog(QDialog):
     def reject(self):
         """Restores the settings in place when dialog was launched."""
         self._settings.update(self._starting_values)
-
-        # FIXME: this dialog should not need to know about the plugin manager
-        if self._starting_pm_order:
-            from ...plugins import plugin_manager
-
-            plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()

@@ -660,10 +660,6 @@ QtPluginDialog QSplitter{
 }
 
 
-QtPluginSorter {
-  padding: 20px;
-}
-
 
 QtFontSizePreview {
   border: 1px solid {{ foreground }};

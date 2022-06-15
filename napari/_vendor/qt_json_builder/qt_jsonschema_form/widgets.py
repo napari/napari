@@ -10,7 +10,6 @@ from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
-from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
 
 from ...._qt.widgets.qt_spinbox import QtSpinBox
 
@@ -153,23 +152,6 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
-
-    def setDescription(self, description: str):
-        self.description = description
-
-
-class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
-    @state_property
-    def state(self) -> int:
-        return self.value()
-
-    @state.setter
-    def state(self, state: int):
-        return None
-        # self.setValue(state)
-
-    def configure(self):
-        self.hook_list.order_changed.connect(self.on_changed.emit)
 
     def setDescription(self, description: str):
         self.description = description
@@ -638,6 +620,7 @@ class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
+
 
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
