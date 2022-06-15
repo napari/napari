@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import warnings
-from logging import getLogger
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, cast
 
-from ..layers import Layer
-from ..types import LayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
 from . import _npe2
 
-logger = getLogger(__name__)
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
+
+    from ..layers import Layer
+    from ..types import LayerData
 
 
 def read_data_with_plugins(
@@ -70,7 +69,8 @@ def read_data_with_plugins(
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
     if (res := _npe2.read(paths, plugin, stack=stack)) is not None:
         _ld, plugin_name = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, plugin_name
+        data = [] if _is_null_layer_sentinel(_ld) else _ld
+        return (cast(List['LayerData'], data), plugin_name)
 
     if plugin:
         message = trans._(
