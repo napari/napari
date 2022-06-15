@@ -2,6 +2,7 @@ from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
 from ...layers import Layer
+from ...utils.translations import trans
 from .qt_list_model import QtListModel
 
 ThumbnailRole = Qt.UserRole + 2
@@ -21,11 +22,17 @@ class QtLayerListModel(QtListModel[Layer]):
             return layer.name
         if role == Qt.ToolTipRole:  # for tooltip
             if layer.source.reader_plugin:
-                return f'name: {layer.name},  source: {layer.source.reader_plugin} (plugin)'
+                return trans._(
+                    f'name: {layer.name},  source: {layer.source.reader_plugin} (plugin)'
+                )
             elif layer.source.sample:
-                return f'name: {layer.name},  source: {layer.source.sample[0]} (sample)'
+                return trans._(
+                    f'name: {layer.name},  source: {layer.source.sample[0]} (sample)'
+                )
             elif layer.source.widget:
-                return f'name: {layer.name},  source: {layer.source.widget._function.__name__} (widget)'
+                return trans._(
+                    f'name: {layer.name},  source: {layer.source.widget._function.__name__} (widget)'
+                )
             else:
                 return layer.name
         if role == Qt.CheckStateRole:  # the "checked" state of this item
