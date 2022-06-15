@@ -157,7 +157,7 @@ class ApplicationSettings(EventedModel):
     )
     confirm_close_window: bool = Field(
         default=True,
-        title=trans._("Confirm window closing"),
+        title=trans._("Confirm window or application closing"),
         description=trans._(
             "Ask for confirmation before closing a napari window.",
         ),
