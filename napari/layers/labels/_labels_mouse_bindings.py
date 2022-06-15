@@ -1,9 +1,7 @@
 import numpy as np
 
 from ._labels_constants import Mode
-from ._labels_utils import (
-    mouse_event_to_labels_coordinate,
-)
+from ._labels_utils import mouse_event_to_labels_coordinate
 
 
 def draw(layer, event):

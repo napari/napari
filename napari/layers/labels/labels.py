@@ -28,7 +28,11 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import indices_in_shape, sphere_indices, interpolate_coordinates
+from ._labels_utils import (
+    indices_in_shape,
+    interpolate_coordinates,
+    sphere_indices,
+)
 
 _REV_SHAPE_HELP = {
     trans._('enter paint or fill mode to edit labels'): {
@@ -1159,7 +1163,7 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         save_history : bool
-            Whether to save painted coords to history or now. Set to False to 
+            Whether to save painted coords to history or now. Set to False to
             batch fill calls, which will save painted coords to staged history.
         """
         int_coord = tuple(np.round(coord).astype(int))
@@ -1213,10 +1217,10 @@ class Labels(_ImageBase):
         )
 
         history_atom = (
-                match_indices,
-                np.array(self.data[match_indices], copy=True),
-                new_label,
-            )
+            match_indices,
+            np.array(self.data[match_indices], copy=True),
+            new_label,
+        )
         if save_history:
             self._save_history(history_atom)
         else:
@@ -1260,8 +1264,7 @@ class Labels(_ImageBase):
         self.refresh()
 
     def _finish_painting(self):
-        """Save staged history to undo history and emit paint event.
-        """
+        """Save staged history to undo history and emit paint event."""
         if self._staged_history:
             self._undo_history.append(self._staged_history)
             self.events.paint(value=self._staged_history)
@@ -1282,7 +1285,7 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         save_history : bool
-            Whether to save painted coords to history or now. Set to False to 
+            Whether to save painted coords to history or now. Set to False to
             batch paint calls, which will save painted coords to staged history.
         """
         shape = self.data.shape
@@ -1338,10 +1341,10 @@ class Labels(_ImageBase):
 
         # save the existing values to the history
         history_atom = (
-                    slice_coord,
-                    np.array(self.data[slice_coord], copy=True),
-                    new_label,
-                )
+            slice_coord,
+            np.array(self.data[slice_coord], copy=True),
+            new_label,
+        )
         if save_history:
             self._save_history(history_atom)
         else:
