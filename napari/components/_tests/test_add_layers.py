@@ -15,7 +15,7 @@ layer_data = [(lay[1], {}, lay[0].__name__.lower()) for lay in layer_test_data]
 
 @pytest.mark.parametrize("layer_datum", layer_data)
 def test_add_layers_with_plugins(
-    tmp_path, layer_datum, tmp_plugin: DynamicPlugin
+    tmp_path, layer_datum, tmp_plugin: 'DynamicPlugin'
 ):
     """Test that add_layers_with_plugins adds the expected layer types."""
 
@@ -37,7 +37,7 @@ def test_add_layers_with_plugins(
     assert all(lay.source == expected_source for lay in v.layers)
 
 
-def test_plugin_returns_nothing(tmp_path, tmp_plugin):
+def test_plugin_returns_nothing(tmp_path, tmp_plugin: 'DynamicPlugin'):
     """Test that a plugin returning nothing adds nothing to the Viewer."""
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.gbrsh'])
@@ -51,7 +51,7 @@ def test_plugin_returns_nothing(tmp_path, tmp_plugin):
     assert not v.layers
 
 
-def test_viewer_open(tmp_plugin, tmp_path):
+def test_viewer_open(tmp_path, tmp_plugin: 'DynamicPlugin'):
     """Test that a plugin to returning an image adds stuff to the viewer."""
 
     @tmp_plugin.contribute.reader(filename_patterns=['*.gbrsh'])
@@ -99,7 +99,7 @@ plugin_returns = [
 
 @pytest.mark.parametrize("layer_data, kwargs", plugin_returns)
 def test_add_layers_with_plugins_and_kwargs(
-    tmp_path, tmp_plugin, layer_data, kwargs
+    tmp_path, tmp_plugin: 'DynamicPlugin', layer_data, kwargs
 ):
     """Test that _add_layers_with_plugins kwargs override plugin kwargs.
 
