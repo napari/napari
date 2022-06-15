@@ -159,7 +159,7 @@ class ApplicationSettings(EventedModel):
         default=True,
         title=trans._("Confirm window or application closing"),
         description=trans._(
-            "Ask for confirmation before closing a napari window.",
+            "Ask for confirmation before closing a napari window or application (all napari windows).",
         ),
     )
 
