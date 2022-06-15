@@ -1078,6 +1078,7 @@ class Labels(_ImageBase):
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)
         self._redo_history = deque(maxlen=self._history_limit)
+        self._staged_history = []
 
     def _save_history(self, value):
         """Save a history "atom" to the undo history.
@@ -1157,6 +1158,9 @@ class Labels(_ImageBase):
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
+        save_history : bool
+            Whether to save painted coords to history or now. Set to False to 
+            batch fill calls, which will save painted coords to staged history.
         """
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
@@ -1224,16 +1228,21 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def _start_painting(self, coordinates, new_label):
-        self._staged_history = []
-        if coordinates is not None:
-            if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(coordinates, new_label, save_history=False)
-            elif self._mode == Mode.FILL:
-                self.fill(coordinates, new_label, save_history=False)
+    def _draw(self, new_label, last_cursor_coord, coordinates):
+        """Paint new label into layer at given coordinates,
+        interpolating from the last cursor coordinate.
 
-
-    def _paint(self, new_label, last_cursor_coord, coordinates):
+        Parameters
+        ----------
+        new_label : int
+            value of label to paint
+        last_cursor_coord : sequence
+            last painted cursor coordinates
+        coordinates : sequence
+            new cursor coordinates
+        """
+        if coordinates is None:
+            return
         ndisplay = len(self._dims_displayed)
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size
@@ -1251,6 +1260,8 @@ class Labels(_ImageBase):
         self.refresh()
 
     def _finish_painting(self):
+        """Save staged history to undo history and emit paint event.
+        """
         if self._staged_history:
             self._undo_history.append(self._staged_history)
             self.events.paint(value=self._staged_history)
@@ -1270,6 +1281,9 @@ class Labels(_ImageBase):
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
+        save_history : bool
+            Whether to save painted coords to history or now. Set to False to 
+            batch paint calls, which will save painted coords to staged history.
         """
         shape = self.data.shape
         dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])

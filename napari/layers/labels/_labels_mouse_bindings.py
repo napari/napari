@@ -33,15 +33,15 @@ def draw(layer, event):
     else:
         new_label = layer.selected_label
 
-    layer._start_painting(coordinates, new_label)
-    last_cursor_coord = coordinates
+    layer._draw(new_label, coordinates, coordinates)
     yield
 
+    last_cursor_coord = coordinates
     # on move
     while event.type == 'mouse_move':
         coordinates = mouse_event_to_labels_coordinate(layer, event)
         if coordinates is not None or last_cursor_coord is not None:
-            layer._paint(new_label, last_cursor_coord, coordinates)
+            layer._draw(new_label, last_cursor_coord, coordinates)
         last_cursor_coord = coordinates
         yield
 
