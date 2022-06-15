@@ -17,17 +17,19 @@ class QtLayerInfoDialog(QDialog):
 
         # Layout
         layout = QFormLayout()
-        layout.addRow('Name: ', QLabel(layer.name))
+        layout.addRow(trans._('Name: '), QLabel(layer.name))
         if layer.source.reader_plugin:
             layout.addRow(
-                'Source plugin: ', QLabel(layer.source.reader_plugin)
+                trans._('Source plugin: '), QLabel(layer.source.reader_plugin)
             )
-            layout.addRow('Path: ', QLabel(layer.source.path))
+            layout.addRow(trans._('Path: '), QLabel(layer.source.path))
         if layer.source.sample:
-            layout.addRow('Source sample: ', QLabel(layer.source.sample[0]))
+            layout.addRow(
+                trans._('Source sample: '), QLabel(layer.source.sample[0])
+            )
         if layer.source.widget:
             layout.addRow(
-                'Source widget: ',
+                trans._('Source widget: '),
                 QLabel(str(layer.source.widget._function.__name__)),
             )
 

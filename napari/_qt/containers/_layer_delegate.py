@@ -46,6 +46,7 @@ from ...layers._layer_actions import _LAYER_ACTIONS
 from ...utils._injection import inject_napari_dependencies
 from ...utils.context import get_context
 from ...utils.context._layerlist_context import LayerListContextKeys as LLCK
+from ...utils.translations import trans
 from ..qt_resources import QColoredSVGIcon
 from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
@@ -71,7 +72,7 @@ def show_layer_info(ll: LayerList):
 _QT_LAYER_ACTIONS = [
     {
         'napari:show_layer_info': {
-            'description': 'Show layer info',
+            'description': trans._('Show layer info'),
             'action': show_layer_info,
             'enable_when': LLCK.num_selected_layers == 1,
             'show_when': True,

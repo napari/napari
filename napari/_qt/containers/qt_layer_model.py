@@ -23,15 +23,23 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == Qt.ToolTipRole:  # for tooltip
             if layer.source.reader_plugin:
                 return trans._(
-                    f'name: {layer.name},  source: {layer.source.reader_plugin} (plugin)'
+                    'name: {layer_name},  source: {source} (plugin)',
+                    layer_name=layer.name,
+                    source=layer.source.reader_plugin,
                 )
             elif layer.source.sample:
                 return trans._(
-                    f'name: {layer.name},  source: {layer.source.sample[0]} (sample)'
+                    'name: {layer_name}, source: {source} (sample)',
+                    layer_name=layer.name,
+                    source=layer.source.sample[0],
                 )
             elif layer.source.widget:
                 return trans._(
-                    f'name: {layer.name},  source: {layer.source.widget._function.__name__} (widget)'
+                    trans._(
+                        'name: {layer_name},  source: {source} (widget)',
+                        layer_name=layer.name,
+                        source=layer.source.widget._function.__name__,
+                    )
                 )
             else:
                 return layer.name
