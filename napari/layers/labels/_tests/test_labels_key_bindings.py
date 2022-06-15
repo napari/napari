@@ -65,4 +65,9 @@ def test_hold_to_flood_fill():
     layer = Labels(data)
     layer.mode = 'paint'
     # need to go through the generator
-    _ = list(key_bindings.hold_to_flood_fill(layer))
+    gen = key_bindings.hold_to_flood_fill(layer)
+    next(gen)
+    assert layer.mode == 'fill'
+    with contextlib.suppress(StopIteration):
+        next(gen)
+    assert layer.mode == 'paint'
