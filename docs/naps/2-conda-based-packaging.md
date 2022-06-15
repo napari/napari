@@ -7,7 +7,7 @@
 :Created: 2022-05-05
 :Resolution: <url> (required for Accepted | Rejected | Withdrawn)
 :Resolved: <date resolved, in yyyy-mm-dd format>
-:Status: Draft
+:Status: Approved
 :Type: <Standards Track | Process>
 :Version effective: <version-number> (for accepted NAPs)
 ```
