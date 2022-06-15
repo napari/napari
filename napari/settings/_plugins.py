@@ -42,13 +42,7 @@ class PluginsSettings(EventedModel):
             "Use the following API for querying plugin information.",
         ),
     )
-    call_order: CallOrderDict = Field(
-        default_factory=dict,
-        title=trans._("Plugin sort order"),
-        description=trans._(
-            "Sort plugins for each action in the order to be called.",
-        ),
-    )
+
     disabled_plugins: Set[str] = Field(
         set(),
         title=trans._("Disabled plugins"),

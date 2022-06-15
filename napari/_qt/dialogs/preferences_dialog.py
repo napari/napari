@@ -25,7 +25,6 @@ class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
     ui_schema = {
-        "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},
         "extension2reader": {"ui:widget": "extension2reader"},
