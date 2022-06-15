@@ -1,5 +1,6 @@
 """Test the translations API."""
 
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -82,7 +83,7 @@ es_CO_mo = b'\xde\x12\x04\x95\x00\x00\x00\x00\t\x00\x00\x00\x1c\x00\x00\x00d\x00
 
 
 @pytest.fixture
-def trans(tmp_path):
+def trans(tmp_path, monkeypatch):
     """A good plugin that uses entry points."""
     distinfo = tmp_path / "napari_language_pack_es_CO-0.1.0.dist-info"
     distinfo.mkdir()
@@ -102,19 +103,18 @@ def trans(tmp_path):
     (msgs / "napari.po").write_text(es_CO_po)
     (msgs / "napari.mo").write_bytes(es_CO_mo)
 
-    from napari_plugin_engine.manager import temp_path_additions
-
-    with temp_path_additions(tmp_path):
-        # Load translator and force a locale for testing
-        translator._set_locale(TEST_LOCALE)
-        return translator.load()
+    monkeypatch.setattr(sys, 'path', sys.path + [str(tmp_path)])
+    # Load translator and force a locale for testing
+    translator._set_locale(TEST_LOCALE)
+    return translator.load()
 
 
 def test_get_language_packs(trans):
     result = get_language_packs()
-    assert result == {
-        'en': {'displayName': 'English', 'nativeName': 'English'}
-    }
+    assert (
+        'en',
+        {'displayName': 'English', 'nativeName': 'English'},
+    ) in result.items()
 
 
 def test_get_display_name_valid():
