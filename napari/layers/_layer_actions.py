@@ -19,7 +19,6 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
-from .._qt.dialogs.qt_layer_info_dialog import QtLayerInfoDialog
 from ..utils._injection import inject_napari_dependencies
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
@@ -30,13 +29,6 @@ from .utils._link_layers import get_linked_layers
 if TYPE_CHECKING:
     from ..components import LayerList
     from ..utils.context._expressions import Expr
-
-
-@inject_napari_dependencies
-def _show_layer_info(ll: LayerList):
-    layer = ll.selection.active
-    dlg = QtLayerInfoDialog(layer=layer)
-    dlg.exec_()
 
 
 @inject_napari_dependencies
@@ -260,12 +252,6 @@ def _labeltypedict(key) -> ContextAction:
 
 _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
-        'napari:layer_info': {
-            'description': trans._('Info'),
-            'action': _show_layer_info,
-            'enable_when': True,
-            'show_when': True,
-        },
         'napari:duplicate_layer': {
             'description': trans._('Duplicate Layer'),
             'action': _duplicate_layer,

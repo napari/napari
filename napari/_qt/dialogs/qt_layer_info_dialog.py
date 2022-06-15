@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
+from qtpy.QtWidgets import QDialog, QFormLayout, QLabel
 
 from ...utils.translations import trans
 
@@ -14,29 +14,21 @@ class QtLayerInfoDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle(trans._("Layer Information"))
-        name = QLabel(layer.name)
-        path = QLabel(layer.source.path)
-        plugin = QLabel(layer.source.reader_plugin)
-        sample = QLabel(str(layer.source.sample))
-        widget = QLabel(str(layer.source.widget))
 
         # Layout
-        left_layout = QVBoxLayout()
-        left_layout.addWidget(QLabel('Name: '))
-        left_layout.addWidget(QLabel('Path: '))
-        left_layout.addWidget(QLabel('Reader plugin: '))
-        left_layout.addWidget(QLabel('Sample: '))
-        left_layout.addWidget(QLabel('Widget: '))
+        layout = QFormLayout()
+        layout.addRow('Name: ', QLabel(layer.name))
+        if layer.source.reader_plugin:
+            layout.addRow(
+                'Source plugin: ', QLabel(layer.source.reader_plugin)
+            )
+            layout.addRow('Path: ', QLabel(layer.source.path))
+        if layer.source.sample:
+            layout.addRow('Source sample: ', QLabel(layer.source.sample[0]))
+        if layer.source.widget:
+            layout.addRow(
+                'Source widget: ',
+                QLabel(str(layer.source.widget._function.__name__)),
+            )
 
-        right_layout = QVBoxLayout()
-        right_layout.addWidget(name)
-        right_layout.addWidget(path)
-        right_layout.addWidget(plugin)
-        right_layout.addWidget(sample)
-        right_layout.addWidget(widget)
-
-        final_layout = QHBoxLayout()
-        final_layout.addLayout(left_layout)
-        final_layout.addLayout(right_layout)
-
-        self.setLayout(final_layout)
+        self.setLayout(layout)

@@ -38,11 +38,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, QSize, Qt, QTimer
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QCursor, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
+from ..._qt.dialogs.qt_layer_info_dialog import QtLayerInfoDialog
 from ...layers._layer_actions import _LAYER_ACTIONS
+from ...utils._injection import inject_napari_dependencies
 from ...utils.context import get_context
+from ...utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..qt_resources import QColoredSVGIcon
 from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
@@ -54,6 +57,27 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from ...components.layerlist import LayerList
+
+
+@inject_napari_dependencies
+def show_layer_info(ll: LayerList):
+    layer = ll.selection.active
+    dlg = QtLayerInfoDialog(layer=layer)
+    pos = QCursor.pos()
+    dlg.move(pos)
+    dlg.exec_()
+
+
+_QT_LAYER_ACTIONS = [
+    {
+        'napari:show_layer_info': {
+            'description': 'Show layer info',
+            'action': show_layer_info,
+            'enable_when': LLCK.num_selected_layers == 1,
+            'show_when': True,
+        }
+    }
+]
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -179,8 +203,11 @@ class LayerDelegate(QStyledItemDelegate):
 
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
+
         if not hasattr(self, '_context_menu'):
-            self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
+            self._context_menu = QtActionContextMenu(
+                _QT_LAYER_ACTIONS + _LAYER_ACTIONS
+            )
 
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(get_context(layer_list))

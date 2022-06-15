@@ -20,7 +20,14 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == Qt.EditRole:  # used to populate line edit when editing
             return layer.name
         if role == Qt.ToolTipRole:  # for tooltip
-            return f'name: {layer.name},  plugin: {layer.source.reader_plugin}'
+            if layer.source.reader_plugin:
+                return f'name: {layer.name},  source: {layer.source.reader_plugin} (plugin)'
+            elif layer.source.sample:
+                return f'name: {layer.name},  source: {layer.source.sample[0]} (sample)'
+            elif layer.source.widget:
+                return f'name: {layer.name},  source: {layer.source.widget._function.__name__} (widget)'
+            else:
+                return layer.name
         if role == Qt.CheckStateRole:  # the "checked" state of this item
             return Qt.Checked if layer.visible else Qt.Unchecked
         if role == Qt.SizeHintRole:  # determines size of item
