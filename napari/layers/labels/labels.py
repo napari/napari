@@ -28,7 +28,7 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import indices_in_shape, sphere_indices
+from ._labels_utils import indices_in_shape, sphere_indices, interpolate_coordinates
 
 _REV_SHAPE_HELP = {
     trans._('enter paint or fill mode to edit labels'): {
@@ -1224,6 +1224,29 @@ class Labels(_ImageBase):
 
         if refresh is True:
             self.refresh()
+
+    def _start_painting(self):
+        pass
+
+    def _paint(self, new_label, last_cursor_coord, coordinates):
+        ndisplay = len(self._dims_displayed)
+        interp_coord = interpolate_coordinates(
+            last_cursor_coord, coordinates, self.brush_size
+        )
+        for c in interp_coord:
+            if (
+                ndisplay == 3
+                and self.data[tuple(np.round(c).astype(int))] == 0
+            ):
+                continue
+            if self._mode in [Mode.PAINT, Mode.ERASE]:
+                self.paint(c, new_label, refresh=False)
+            elif self._mode == Mode.FILL:
+                self.fill(c, new_label, refresh=False)
+        self.refresh()
+
+    def _finish_painting(self):
+        pass
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
