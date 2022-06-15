@@ -13,12 +13,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.plugins.utils import (
-    get_all_readers,
-    get_filename_patterns_for_reader,
-    get_potential_readers,
-)
+from napari.plugins.utils import get_filename_patterns_for_reader
 
+from ...plugins import _npe2
 from ...settings import get_settings
 from ...utils.translations import trans
 
@@ -30,17 +27,13 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(self, parent=None, npe2_readers=None, npe1_readers=None):
+    def __init__(self, parent=None, readers=None):
         super().__init__(parent=parent)
 
-        npe2, npe1 = get_all_readers()
-        if npe2_readers is None:
-            npe2_readers = npe2
-        if npe1_readers is None:
-            npe1_readers = npe1
+        if readers is None:
+            readers = _npe2.get_readers()
 
-        self._npe2_readers = npe2_readers
-        self._npe1_readers = npe1_readers
+        self._readers = readers
 
         self._table = QTableWidget()
         self._table.setShowGrid(False)
@@ -122,10 +115,8 @@ class Extension2ReaderTable(QWidget):
         add_reader_widg.layout().setContentsMargins(0, 0, 0, 0)
 
         self._new_reader_dropdown = QComboBox()
-        for i, (plugin_name, display_name) in enumerate(
-            sorted(dict(self._npe2_readers, **self._npe1_readers).items())
-        ):
-            self._add_reader_choice(i, plugin_name, display_name)
+        for i, rdr in enumerate(sorted(self._readers.items())):
+            self._add_reader_choice(i, *rdr)
 
         add_btn = QPushButton('Add')
         add_btn.setToolTip(trans._('Save reader preference for pattern'))
@@ -173,25 +164,18 @@ class Extension2ReaderTable(QWidget):
         """Filter reader dropwdown items to those that accept `new_extension`"""
         self._new_reader_dropdown.clear()
 
-        readers = self._npe2_readers.copy()
-        to_delete = []
+        readers = self._readers.copy()
+        compatible_readers = _npe2.get_readers(new_pattern)
 
-        compatible_readers = get_potential_readers(new_pattern)
-        for plugin_name, display_name in readers.items():
+        for plugin_name in list(readers):
             if plugin_name not in compatible_readers:
-                to_delete.append(plugin_name)
-
-        for reader in to_delete:
-            del readers[reader]
-        readers.update(self._npe1_readers)
+                del readers[plugin_name]
 
         if not readers:
             self._new_reader_dropdown.addItem("None available")
         else:
-            for i, (plugin_name, display_name) in enumerate(
-                sorted(readers.items())
-            ):
-                self._add_reader_choice(i, plugin_name, display_name)
+            for i, rdr in enumerate(sorted(readers.items())):
+                self._add_reader_choice(i, *rdr)
 
     def _save_new_preference(self, event):
         """Save current preference to settings and show in table"""
@@ -217,8 +201,8 @@ class Extension2ReaderTable(QWidget):
     def _edit_existing_preference(self, fn_pattern, reader):
         """Edit existing extension preference"""
         current_reader_label = self.findChild(QLabel, fn_pattern)
-        if reader in self._npe2_readers:
-            reader = self._npe2_readers[reader]
+        if reader in self._readers:
+            reader = self._readers[reader]
         current_reader_label.setText(reader)
 
     def _add_new_row(self, fn_pattern, reader):
@@ -244,8 +228,8 @@ class Extension2ReaderTable(QWidget):
         plugin_widg.setLayout(QHBoxLayout())
         plugin_widg.layout().setContentsMargins(0, 0, 0, 0)
 
-        if reader in self._npe2_readers:
-            reader = self._npe2_readers[reader]
+        if reader in self._readers:
+            reader = self._readers[reader]
         plugin_label = QLabel(reader, objectName=fn_pattern)
         # need object name to easily work out which button was clicked
         remove_btn = QPushButton('X', objectName=fn_pattern)

@@ -103,7 +103,7 @@ def test_all_readers_in_dropdown(
         tif_reader.name: tif_reader.display_name,
     }
 
-    widget = extension2reader_widget(npe2_readers=npe2_readers)
+    widget = extension2reader_widget(readers=npe2_readers)
     all_reader_display_names = list(dict(npe2_readers).values())
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
@@ -122,8 +122,7 @@ def test_directory_readers_not_in_dropdown(
         ...
 
     widget = extension2reader_widget(
-        npe2_readers={tmp_plugin.name: tmp_plugin.display_name},
-        npe1_readers={},
+        readers={tmp_plugin.name: tmp_plugin.display_name},
     )
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
@@ -133,10 +132,14 @@ def test_directory_readers_not_in_dropdown(
 
 
 def test_filtering_readers(
-    extension2reader_widget, builtins, tif_reader, npy_reader
+    builtins, tif_reader, npy_reader, extension2reader_widget
 ):
     widget = extension2reader_widget(
-        npe1_readers={builtins.display_name: builtins.display_name}
+        readers={
+            builtins.name: builtins.display_name,
+            tif_reader.name: tif_reader.display_name,
+            npy_reader.name: npy_reader.display_name,
+        }
     )
 
     assert widget._new_reader_dropdown.count() == 3
@@ -161,7 +164,7 @@ def test_filtering_readers_complex_pattern(
     def f(path):
         ...
 
-    widget = extension2reader_widget(npe1_readers={})
+    widget = extension2reader_widget()
 
     assert widget._new_reader_dropdown.count() == 2
     widget._filter_compatible_readers('my-specific-folder/my-file.tif')
@@ -177,7 +180,7 @@ def test_adding_new_preference(
     extension2reader_widget, tif_reader, npy_reader
 ):
 
-    widget = extension2reader_widget(npe1_readers={})
+    widget = extension2reader_widget()
     widget._fn_pattern_edit.setText('*.tif')
     # will be filtered and tif-reader will be only item
     widget._new_reader_dropdown.setCurrentIndex(0)
@@ -200,7 +203,7 @@ def test_adding_new_preference_no_asterisk(
     extension2reader_widget, tif_reader, npy_reader
 ):
 
-    widget = extension2reader_widget(npe1_readers={})
+    widget = extension2reader_widget()
     widget._fn_pattern_edit.setText('.tif')
     # will be filtered and tif-reader will be only item
     widget._new_reader_dropdown.setCurrentIndex(0)

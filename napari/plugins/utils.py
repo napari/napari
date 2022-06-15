@@ -1,6 +1,6 @@
 import re
 from fnmatch import fnmatch
-from typing import Dict, Set, Tuple, Union
+from typing import Set, Union
 
 from npe2 import PluginManifest
 
@@ -17,33 +17,6 @@ def get_preferred_reader(_path):
         # in case other patterns would match - do we return the most specific?
         if fnmatch(_path, pattern):
             return reader
-
-
-def get_potential_readers(filename: str) -> Dict[str, str]:
-    """Given filename, returns all readers that may read the file.
-
-    Original plugin engine readers are checked based on returning
-    a function from `napari_get_reader`. Npe2 readers are iterated
-    based on file extension and accepting directories.
-
-    Returns
-    -------
-    Dict[str, str]
-        dictionary of registered name to display_name
-    """
-    return _npe2.get_readers(filename)
-
-
-def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
-    """
-    Return a dict of all npe2 readers and one of all npe1 readers
-
-    Can be removed once npe2 shim is activated.
-    """
-
-    npe2_readers = _npe2.get_readers()
-
-    return npe2_readers, {}
 
 
 def normalized_name(name: str) -> str:
@@ -81,10 +54,4 @@ def get_filename_patterns_for_reader(plugin_name: str):
             all_fn_patterns = all_fn_patterns.union(
                 set(reader.filename_patterns)
             )
-    # npe1 plugins
-    else:
-        _, npe1_readers = get_all_readers()
-        if plugin_name in npe1_readers:
-            all_fn_patterns = {'*'}
-
     return all_fn_patterns

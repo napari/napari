@@ -19,7 +19,7 @@ def read_data_with_plugins(
     paths: Sequence[str],
     plugin: Optional[str] = None,
     stack: bool = False,
-) -> Optional[Tuple[List[LayerData], str]]:
+) -> Tuple[List[LayerData], str]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
