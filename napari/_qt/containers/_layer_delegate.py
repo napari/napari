@@ -69,7 +69,8 @@ def show_layer_info(ll: LayerList):
     dlg.exec_()
 
 
-_QT_LAYER_ACTIONS = [
+_LAYER_ACTIONS.insert(
+    0,
     {
         'napari:show_layer_info': {
             'description': trans._('Show layer info'),
@@ -77,8 +78,8 @@ _QT_LAYER_ACTIONS = [
             'enable_when': LLCK.num_selected_layers == 1,
             'show_when': True,
         }
-    }
-]
+    },
+)
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -206,9 +207,7 @@ class LayerDelegate(QStyledItemDelegate):
         """
 
         if not hasattr(self, '_context_menu'):
-            self._context_menu = QtActionContextMenu(
-                _QT_LAYER_ACTIONS + _LAYER_ACTIONS
-            )
+            self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
 
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(get_context(layer_list))
