@@ -280,37 +280,6 @@ def _run():
         run(gui_exceptions=True)
 
 
-def _run_plugin_module(mod, plugin_name):
-    """Register `mod` as a plugin, find/create viewer, and run napari."""
-    from napari import Viewer, run
-    from napari.plugins import plugin_manager
-
-    plugin_manager.register(mod, name=plugin_name)
-
-    # now, check if a viewer was created, and if not, create one.
-    for obj in mod.values():
-        if isinstance(obj, Viewer):
-            _v = obj
-            break
-    else:
-        _v = Viewer()
-
-    try:
-        _v.window._qt_window.parent()
-    except RuntimeError:
-        # this script had a napari.run() in it, and the viewer has already been
-        # used and cleaned up... if we eventually have "reusable viewers", we
-        # can continue here
-        return
-
-    # finally, if the file declared a dock widget, add it to the viewer.
-    dws = plugin_manager.hooks.napari_experimental_provide_dock_widget
-    if any(i.plugin_name == plugin_name for i in dws.get_hookimpls()):
-        _v.window.add_plugin_dock_widget(plugin_name)
-
-    run()
-
-
 def _run_pythonw(python_path):
     """Execute this script again through pythonw.
 

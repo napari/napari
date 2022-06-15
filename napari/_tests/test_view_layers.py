@@ -124,9 +124,8 @@ def test_signature(layer):
         assert class_parameters == method_parameters, fail_msg
 
 
-# plugin_manager fixture is added to prevent errors due to installed plugins
 @pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
-def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
+def test_view(qapp, layer_type, data, ndim):
     np.random.seed(0)
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
         data, show=False
@@ -136,8 +135,7 @@ def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     viewer.close()
 
 
-# plugin_manager fixture is added to prevent errors due to installed plugins
-def test_view_multichannel(qtbot, napari_plugin_manager):
+def test_view_multichannel(qapp):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
