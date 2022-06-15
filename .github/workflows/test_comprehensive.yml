@@ -90,6 +90,22 @@ jobs:
         env:
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
+      # we want to distinguish test suite install time from running time. So we
+      # run it once with --notest to get just install time. This can for example
+      # help us to test effects of caching strategies on install time.
+      - name: Time TOX venv creation
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: python -m tox --notest
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
+          TOXENV: ${{ matrix.toxenv }}
+          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
+          PYVISTA_OFF_SCREEN: True
+          MIN_REQ: ${{ matrix.MIN_REQ }}
+
+
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
