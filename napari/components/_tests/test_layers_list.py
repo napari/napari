@@ -1,4 +1,6 @@
 import os
+import sys
+from unittest.mock import MagicMock
 
 import npe2
 import numpy as np
@@ -409,8 +411,10 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
 
 # the layers fixture is defined in napari/conftest.py
 @pytest.mark.filterwarnings('ignore:`np.int` is a deprecated alias for')
-def test_layers_save_svg(tmpdir, layers, napari_svg_name):
+def test_layers_save_svg(tmpdir, layers, napari_svg_name, monkeypatch):
     """Test saving all layer data to an svg."""
+    monkeypatch.setitem(sys.modules, 'napari_plugin_engine', MagicMock())
+
     pm = npe2.PluginManager.instance()
     pm.register(npe2.PluginManifest.from_distribution('napari-svg'))
 
