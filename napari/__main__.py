@@ -20,44 +20,6 @@ class InfoAction(argparse.Action):
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from .plugins import plugin_manager
-
-        plugin_manager.discover_widgets()
-        if errors := plugin_manager.get_errors():
-            names = {e.plugin_name for e in errors}
-            print("\n!!  Errors were detected in the following plugins:")
-            print("(Run 'napari --plugin-info -v' for more details)")
-            print("\n".join(f"  - {n}" for n in names))
-        sys.exit()
-
-
-class PluginInfoAction(argparse.Action):
-    def __call__(self, *args, **kwargs):
-        # prevent unrelated INFO logs when doing "napari --info"
-        logging.basicConfig(level=logging.WARNING)
-        from .plugins import plugin_manager
-
-        plugin_manager.discover_widgets()
-        print(plugin_manager)
-
-        if errors := plugin_manager.get_errors():
-            print("!!  Some errors occurred:")
-            verbose = '-v' in sys.argv or '--verbose' in sys.argv
-            if not verbose:
-                print("   (use '-v') to show full tracebacks")
-            print("-" * 38)
-
-            for err in errors:
-                print(err.plugin_name)
-                print(f"  error: {err!r}")
-                print(f"  cause: {err.__cause__!r}")
-                if verbose:
-                    print("  traceback:")
-                    import traceback
-                    from textwrap import indent
-
-                    tb = traceback.format_tb(err.__cause__.__traceback__)
-                    print(indent("".join(tb), '   '))
         sys.exit()
 
 
@@ -173,12 +135,6 @@ def parse_sys_argv():
         help='show system information and exit',
     )
     parser.add_argument(
-        '--plugin-info',
-        action=PluginInfoAction,
-        nargs=0,
-        help='show information about plugins and exit',
-    )
-    parser.add_argument(
         '--citation',
         action=CitationAction,
         nargs=0,
@@ -270,31 +226,20 @@ def _run():
             )
 
         # run the file
-        mod = runpy.run_path(args.paths[0])
-
-        from napari_plugin_engine.markers import HookImplementationMarker
-
-        # if this file had any hook implementations, register and run as plugin
-        if any(isinstance(i, HookImplementationMarker) for i in mod.values()):
-            _run_plugin_module(mod, os.path.basename(args.paths[0]))
+        runpy.run_path(args.paths[0])
 
     else:
         if args.with_:
-            from .plugins import _npe2, plugin_manager
+            from .plugins import _npe2
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
-            plugin_manager.discover_widgets()
             pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
-                    _npe2.get_widget_contribution(
-                        pname, wname
-                    ) or plugin_manager.get_widget(pname, wname)
+                    _npe2.get_widget_contribution(pname, wname)
             else:
-                _npe2.get_widget_contribution(
-                    pname
-                ) or plugin_manager.get_widget(pname)
+                _npe2.get_widget_contribution(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
