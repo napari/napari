@@ -40,7 +40,7 @@ class ColorValue(np.ndarray):
 
 
 class ColorArray(np.ndarray):
-    """A custom pydantic field type for storing multiple color values."""
+    """A custom pydantic field type for storing an array of color values."""
 
     @classmethod
     def __get_validators__(cls):
