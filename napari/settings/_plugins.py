@@ -29,10 +29,7 @@ class PluginsSettings(EventedModel):
         False,
         title=trans._("Use npe2 adaptor"),
         description=trans._(
-            "Use npe2-adaptor for first generation plugins. When an npe1 "
-            "plugin is found, this option will import its contributions and "
-            "create/cache a 'shim' npe2 manifest that allows it to be treated "
-            "like an npe2 plugin (with delayed imports, etc...)",
+            "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
         ),
     )
     plugin_api: PluginAPI = Field(

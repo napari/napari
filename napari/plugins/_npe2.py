@@ -289,4 +289,4 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
 
 def index_npe1_adapters():
     """Tell npe2 to import and index any discovered npe1 plugins."""
-    npe2.PluginManager.instance().index_npe1_adapters()
+    pm.index_npe1_adapters()
