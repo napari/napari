@@ -1,6 +1,6 @@
 from functools import partial
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 SKIMAGE_DATA = [
     ('astronaut', trans._('Astronaut (RGB)')),

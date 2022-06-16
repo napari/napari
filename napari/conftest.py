@@ -50,14 +50,14 @@ from npe2 import DynamicPlugin, PluginManager, PluginManifest
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.plugins._builtins import (
+from napari.utils.config import async_loading
+from napari_builtins.io import (
     napari_write_image,
     napari_write_labels,
     napari_write_points,
     napari_write_shapes,
 )
-from napari.utils import io
-from napari.utils.config import async_loading
+from napari_builtins.io._read import csv_to_layer_data, imread
 
 if not hasattr(pooch.utils, 'file_hash'):
     setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
@@ -136,7 +136,7 @@ def layer_writer_and_data(request):
         extension = '.tif'
 
         def reader(path):
-            return (io.imread(path), {}, 'image')  # metadata
+            return (imread(path), {}, 'image')  # metadata
 
     elif request.param == 'labels':
         data = np.random.randint(0, 16000, (32, 32), 'uint64')
@@ -146,7 +146,7 @@ def layer_writer_and_data(request):
         extension = '.tif'
 
         def reader(path):
-            return (io.imread(path), {}, 'labels')  # metadata
+            return (imread(path), {}, 'labels')  # metadata
 
     elif request.param == 'points':
         data = np.random.rand(20, 2)
@@ -154,14 +154,14 @@ def layer_writer_and_data(request):
         layer = Points(data)
         writer = napari_write_points
         extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='points')
+        reader = partial(csv_to_layer_data, require_type='points')
     elif request.param == 'points-with-properties':
         data = np.random.rand(20, 2)
         Layer = Points
         layer = Points(data, properties={'values': np.random.rand(20)})
         writer = napari_write_points
         extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='points')
+        reader = partial(csv_to_layer_data, require_type='points')
     elif request.param == 'shapes':
         np.random.seed(0)
         data = [
@@ -176,7 +176,7 @@ def layer_writer_and_data(request):
         layer = Shapes(data, shape_type=shape_type)
         writer = napari_write_shapes
         extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='shapes')
+        reader = partial(csv_to_layer_data, require_type='shapes')
     else:
         return None, None, None, None, None
 
@@ -476,8 +476,12 @@ def _mock_npe2_pm():
 
 @pytest.fixture
 def builtins(_mock_npe2_pm: PluginManager):
+    import napari_builtins
+
     plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
-    mf = PluginManifest.from_file(Path(__file__).parent / 'builtins.yaml')
+    mf = PluginManifest.from_file(
+        Path(napari_builtins.__file__).parent / 'builtins.yaml'
+    )
     plugin.manifest = mf
     with plugin:
         yield plugin

@@ -4,122 +4,122 @@ name: napari
 contributions:
   commands:
     - id: napari.get_reader
-      python_name: napari.plugins._builtins:napari_get_reader
+      python_name: napari_builtins.io:napari_get_reader
       title: Builtin Reader
 
     - id: napari.write_image
-      python_name: napari.plugins._builtins:napari_write_image
+      python_name: napari_builtins.io:napari_write_image
       title: napari built-in image writer
     - id: napari.write_labels
-      python_name: napari.plugins._builtins:napari_write_labels
+      python_name: napari_builtins.io:napari_write_labels
       title: napari built-in label field writer
     - id: napari.write_points
-      python_name: napari.plugins._builtins:napari_write_points
+      python_name: napari_builtins.io:napari_write_points
       title: napari built-in points writer
     - id: napari.write_shapes
-      python_name: napari.plugins._builtins:napari_write_shapes
+      python_name: napari_builtins.io:napari_write_shapes
       title: napari built-in shapes writer
     - id: napari.write_directory
-      python_name: napari.plugins._builtins:write_layer_data_with_plugins
+      python_name: napari_builtins.io:write_layer_data_with_plugins
       title: napari built-in save to folder
 
     # samples
     - id: napari.data.astronaut
       title: Generate astronaut sample
-      python_name: napari.plugins._skimage_data:astronaut
+      python_name: napari_builtins._skimage_data:astronaut
     - id: napari.data.binary_blobs
       title: Generate binary_blobs sample
-      python_name: napari.plugins._skimage_data:binary_blobs
+      python_name: napari_builtins._skimage_data:binary_blobs
     - id: napari.data.binary_blobs_3D
       title: Generate binary_blobs_3D sample
-      python_name: napari.plugins._skimage_data:binary_blobs_3D
+      python_name: napari_builtins._skimage_data:binary_blobs_3D
     - id: napari.data.brain
       title: Generate brain sample
-      python_name: napari.plugins._skimage_data:brain
+      python_name: napari_builtins._skimage_data:brain
     - id: napari.data.brick
       title: Generate brick sample
-      python_name: napari.plugins._skimage_data:brick
+      python_name: napari_builtins._skimage_data:brick
     - id: napari.data.camera
       title: Generate camera sample
-      python_name: napari.plugins._skimage_data:camera
+      python_name: napari_builtins._skimage_data:camera
     - id: napari.data.cat
       title: Generate cat sample
-      python_name: napari.plugins._skimage_data:cat
+      python_name: napari_builtins._skimage_data:cat
     - id: napari.data.cell
       title: Generate cell sample
-      python_name: napari.plugins._skimage_data:cell
+      python_name: napari_builtins._skimage_data:cell
     - id: napari.data.cells3d
       title: Generate cells3d sample
-      python_name: napari.plugins._skimage_data:cells3d
+      python_name: napari_builtins._skimage_data:cells3d
     - id: napari.data.checkerboard
       title: Generate checkerboard sample
-      python_name: napari.plugins._skimage_data:checkerboard
+      python_name: napari_builtins._skimage_data:checkerboard
     - id: napari.data.clock
       title: Generate clock sample
-      python_name: napari.plugins._skimage_data:clock
+      python_name: napari_builtins._skimage_data:clock
     - id: napari.data.coffee
       title: Generate coffee sample
-      python_name: napari.plugins._skimage_data:coffee
+      python_name: napari_builtins._skimage_data:coffee
     - id: napari.data.coins
       title: Generate coins sample
-      python_name: napari.plugins._skimage_data:coins
+      python_name: napari_builtins._skimage_data:coins
     - id: napari.data.colorwheel
       title: Generate colorwheel sample
-      python_name: napari.plugins._skimage_data:colorwheel
+      python_name: napari_builtins._skimage_data:colorwheel
     - id: napari.data.eagle
       title: Generate eagle sample
-      python_name: napari.plugins._skimage_data:eagle
+      python_name: napari_builtins._skimage_data:eagle
     - id: napari.data.grass
       title: Generate grass sample
-      python_name: napari.plugins._skimage_data:grass
+      python_name: napari_builtins._skimage_data:grass
     - id: napari.data.gravel
       title: Generate gravel sample
-      python_name: napari.plugins._skimage_data:gravel
+      python_name: napari_builtins._skimage_data:gravel
     - id: napari.data.horse
       title: Generate horse sample
-      python_name: napari.plugins._skimage_data:horse
+      python_name: napari_builtins._skimage_data:horse
     - id: napari.data.hubble_deep_field
       title: Generate hubble_deep_field sample
-      python_name: napari.plugins._skimage_data:hubble_deep_field
+      python_name: napari_builtins._skimage_data:hubble_deep_field
     - id: napari.data.human_mitosis
       title: Generate human_mitosis sample
-      python_name: napari.plugins._skimage_data:human_mitosis
+      python_name: napari_builtins._skimage_data:human_mitosis
     - id: napari.data.immunohistochemistry
       title: Generate immunohistochemistry sample
-      python_name: napari.plugins._skimage_data:immunohistochemistry
+      python_name: napari_builtins._skimage_data:immunohistochemistry
     - id: napari.data.kidney
       title: Generate kidney sample
-      python_name: napari.plugins._skimage_data:kidney
+      python_name: napari_builtins._skimage_data:kidney
     - id: napari.data.lfw_subset
       title: Generate lfw_subset sample
-      python_name: napari.plugins._skimage_data:lfw_subset
+      python_name: napari_builtins._skimage_data:lfw_subset
     - id: napari.data.lily
       title: Generate lily sample
-      python_name: napari.plugins._skimage_data:lily
+      python_name: napari_builtins._skimage_data:lily
     - id: napari.data.microaneurysms
       title: Generate microaneurysms sample
-      python_name: napari.plugins._skimage_data:microaneurysms
+      python_name: napari_builtins._skimage_data:microaneurysms
     - id: napari.data.moon
       title: Generate moon sample
-      python_name: napari.plugins._skimage_data:moon
+      python_name: napari_builtins._skimage_data:moon
     - id: napari.data.page
       title: Generate page sample
-      python_name: napari.plugins._skimage_data:page
+      python_name: napari_builtins._skimage_data:page
     - id: napari.data.retina
       title: Generate retina sample
-      python_name: napari.plugins._skimage_data:retina
+      python_name: napari_builtins._skimage_data:retina
     - id: napari.data.rocket
       title: Generate rocket sample
-      python_name: napari.plugins._skimage_data:rocket
+      python_name: napari_builtins._skimage_data:rocket
     - id: napari.data.shepp_logan_phantom
       title: Generate shepp_logan_phantom sample
-      python_name: napari.plugins._skimage_data:shepp_logan_phantom
+      python_name: napari_builtins._skimage_data:shepp_logan_phantom
     - id: napari.data.skin
       title: Generate skin sample
-      python_name: napari.plugins._skimage_data:skin
+      python_name: napari_builtins._skimage_data:skin
     - id: napari.data.text
       title: Generate text sample
-      python_name: napari.plugins._skimage_data:text
+      python_name: napari_builtins._skimage_data:text
 
   readers:
     - command: napari.get_reader
