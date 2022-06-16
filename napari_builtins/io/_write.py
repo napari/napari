@@ -1,6 +1,7 @@
 import csv
 import os
 import shutil
+from tempfile import TemporaryDirectory
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
@@ -265,10 +266,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 def write_layer_data_with_plugins(
-    path: str,
-    layer_data: List[FullLayerData],
-    *,
-    plugin_name: Optional[str] = 'napari',
+    path: str, layer_data: List[FullLayerData]
 ) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
@@ -276,40 +274,20 @@ def write_layer_data_with_plugins(
     variable to modify the path such that the layers are written to unique
     files in the folder.
 
-    If ``plugin_name`` is ``None`` then we just directly call
-    ``plugin_manager.hook.napari_write_<layer>()`` which will loop through
-    implementations and stop when the first one returns a non-None result. The
-    order in which implementations are called can be changed with the
-    implementation sorter/disabler.
-
-    If ``plugin_name`` is provided, then we call the
-    ``napari_write_<layer_type>`` for that plugin, and if it fails we error.
-    By default, we restrict this function to using only napari ``builtins``
-    plugins.
-
     Parameters
     ----------
     path : str
         path to file/directory
     layer_data : list of napari.types.LayerData
         List of layer_data, where layer_data is ``(data, meta, layer_type)``.
-    plugin_name : str, optional
-        Name of the plugin to use for saving. If None then all plugins
-        corresponding to appropriate hook specification will be looped
-        through to find the first one that can save the data. By default,
-        only builtin napari implementations are used.
 
     Returns
     -------
     list of str
         A list of any filepaths that were written.
     """
-    from tempfile import TemporaryDirectory
 
     import npe2
-
-    if plugin_name == 'builtins':
-        plugin_name = 'napari'
 
     # remember whether it was there to begin with
     already_existed = os.path.exists(path)
@@ -336,8 +314,8 @@ def write_layer_data_with_plugins(
                 # or named plugin if provided
                 out = npe2.write(
                     path=full_path,
-                    layer_data=[layer_data_tuple],  # type: ignore
-                    plugin_name=plugin_name,
+                    layer_data=[layer_data_tuple],
+                    plugin_name='napari',
                 )
 
                 written.extend(out)

@@ -1,4 +1,4 @@
-from ._read import imread, napari_get_reader
+from ._read import napari_get_reader
 from ._write import (
     napari_write_image,
     napari_write_labels,

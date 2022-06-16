@@ -23,7 +23,7 @@ except ImportError:
     import imageio  # type: ignore
 
 IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
-READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm'})
+READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm', '.npy'})
 
 
 def _alphanumeric_key(s: str) -> List[Union[str, int]]:
@@ -34,7 +34,7 @@ def _alphanumeric_key(s: str) -> List[Union[str, int]]:
 URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
 
 
-def is_url(filename):
+def _is_url(filename):
     """Return True if string is an http or ftp path.
 
     Originally vendored from scikit-image/skimage/io/util.py
@@ -48,7 +48,7 @@ def file_or_url_context(resource_name):
 
     Originally vendored from scikit-image/skimage/io/util.py
     """
-    if is_url(resource_name):
+    if _is_url(resource_name):
         url_components = urllib.parse.urlparse(resource_name)
         _, ext = os.path.splitext(url_components.path)
         try:
@@ -85,6 +85,9 @@ def imread(filename: str) -> np.ndarray:
     """
     filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
+
+    if ext.lower() in ('.npy',):
+        return np.load(filename)
     if ext.lower() not in [".tif", ".tiff", ".lsm"]:
         return imageio.imread(filename)
     import tifffile
@@ -177,7 +180,7 @@ def _magic_imread(filenames, *, use_dask=None, stack=True):
         if (
             os.path.isdir(filename)
             and not _guess_zarr_path(filename)
-            and not is_url(filename)
+            and not _is_url(filename)
         ):
             dir_contents = sorted(
                 glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
@@ -479,13 +482,6 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List[LayerData]:
     ]
 
 
-def _read_npy(path: Union[str, Sequence[str]]) -> List[LayerData]:
-    if isinstance(path, str):
-        return [(np.load(path),)]
-
-    return [(np.load(p),) for p in path]
-
-
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
@@ -507,11 +503,8 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
             return _csv_reader
         if os.path.isdir(path):
             return _magic_imread
-        if path.endswith('.npy'):
-            return _read_npy
         path = [path]
 
     if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
         return _magic_imread
-
     return None
