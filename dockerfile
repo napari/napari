@@ -10,6 +10,7 @@ RUN apt-get update && \
         build-essential \
         python3.8 \
         python3-pip \
+        git \
         mesa-utils \
         libgl1-mesa-glx \
         libglib2.0-0 \

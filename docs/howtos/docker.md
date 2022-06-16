@@ -2,7 +2,7 @@
 
 ## Build
 
-Builds are avilable through [dockerhub](https://hub.docker.com/repository/docker/napari/napari)
+Builds are available in the [GitHub Container Registry](https://github.com/orgs/napari/packages).
 
 A dockerfile is added to napari root to allow build of a docker image using official napari release.
 It contains two targets built on top of Ubuntu 20.04:
@@ -16,9 +16,9 @@ To build the image, run one of these commands from napari root:
 
 ```bash
 # build napari image
-docker build --target napari -t napari/napari:<version> .
+docker build --target napari -t ghcr.io/napari/napari:<version> .
 # build napari + xpra image
-docker build --target napari-xpra -t napari/napari-xpra:<version> .
+docker build --target napari-xpra -t ghcr.io/napari/napari-xpra:<version> .
 ```
 
 which would build a Docker image tagged with napari version.
@@ -35,7 +35,7 @@ These can be useful if you are looking for options:
 To run a container with external mapping of display, an example being:
 
 ```
-docker run -it --rm -e DISPLAY=host.docker.internal:0 napari/napari
+docker run -it --rm -e DISPLAY=host.docker.internal:0 ghcr.io/napari/napari
 ```
 
 ### `napari-xpra` image
@@ -43,7 +43,7 @@ docker run -it --rm -e DISPLAY=host.docker.internal:0 napari/napari
 With this image you don't need X running on the host. A browser is sufficient!
 
 ```
-docker run -it --rm -p 9876:9876 napari/napari-xpra
+docker run -it --rm -p 9876:9876 ghcr.io/napari/napari-xpra
 ```
 
 Once that's running, you can open a tab on your browser of choice and go to [localhost:9876](http://localhost:9876).
@@ -56,6 +56,30 @@ This image features a series of environment variables you can use to customize i
 * `XPRA_START="python3 -m napari"`: Xpra will run this command once it has started
 * `XPRA_EXIT_WITH_CLIENT="yes"`: By default, Xpra will exit if you close the browser tab
 * `XPRA_XVFB_SCREEN="1920x1080x24+32"`: The resolution and bit depth of the virtual display created by Xvfb
+
+## For development
+
+The Docker images are also useful for developers who need to debug issues on Linux.
+The images include the latest napari version published on PyPI by default, but you can also install your own local version of napari if needed.
+For this, you need to mount a volume as part of the `docker run` command and make sure you land in a `bash` session:
+
+```bash
+# base napari image, we replace entry point (python3 -m napari) with a bash session
+docker run -it --rm -e DISPLAY=host.docker.internal:0 -v ~/devel/napari:/opt/napari --entrypoint /bin/bash ghcr.io/napari/napari
+# napari-xpra image, we replace the command Xpra will run on start (python3 -m napari) to a bash session running on xterm
+docker run -it --rm -p 9876:9876 -v ~/devel/napari:/opt/napari -e XPRA_START=xterm ghcr.io/napari/napari-xpra
+```
+
+> Change `~/devel/napari` to your local copy of the napari repository, which will be visible in the image as `/opt/napari`.
+
+In both cases you'll have a running shell session where you can run these commands:
+
+```bash
+# Install local napari
+$ python3 -m pip install /opt/napari[all]
+# Run napari
+$ python3 -m napari
+```
 
 ## Troubleshooting
 
