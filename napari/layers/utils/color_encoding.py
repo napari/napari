@@ -19,7 +19,7 @@ from .style_encoding import (
 )
 
 """The default color to use, which may also be used a safe fallback color."""
-DEFAULT_COLOR = ColorValue.validate_type('cyan')
+DEFAULT_COLOR = ColorValue.validate('cyan')
 
 
 @runtime_checkable
@@ -71,7 +71,7 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
                 value,
             )
         try:
-            color_array = ColorArray.validate_type(value)
+            color_array = ColorArray.validate(value)
         except (ValueError, AttributeError, KeyError):
             raise TypeError(
                 trans._(
@@ -133,7 +133,7 @@ class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     def __call__(self, features: Any) -> ColorArray:
         # A column-like may be a series or have an object dtype (e.g. color names),
         # neither of which transform_color handles, so convert to a list.
-        return ColorArray.validate_type(list(features[self.feature]))
+        return ColorArray.validate(list(features[self.feature]))
 
 
 class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):

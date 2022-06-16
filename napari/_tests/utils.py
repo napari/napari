@@ -284,6 +284,6 @@ def assert_colors_equal(actual, expected):
     AssertionError:
     ...
     """
-    actual_array = ColorArray.validate_type(actual)
-    expected_array = ColorArray.validate_type(expected)
+    actual_array = ColorArray.validate(actual)
+    expected_array = ColorArray.validate(expected)
     np.testing.assert_array_equal(actual_array, expected_array)
