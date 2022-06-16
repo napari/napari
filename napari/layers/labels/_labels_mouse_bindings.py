@@ -24,25 +24,23 @@ def draw(layer, event):
     coordinates = mouse_event_to_labels_coordinate(layer, event)
 
     # on press
-    if layer._mode == Mode.ERASE:
-        new_label = layer._background_label
-    else:
-        new_label = layer.selected_label
+    with layer.block_history():
+        if layer._mode == Mode.ERASE:
+            new_label = layer._background_label
+        else:
+            new_label = layer.selected_label
 
-    layer._draw(new_label, coordinates, coordinates)
-    yield
-
-    last_cursor_coord = coordinates
-    # on move
-    while event.type == 'mouse_move':
-        coordinates = mouse_event_to_labels_coordinate(layer, event)
-        if coordinates is not None or last_cursor_coord is not None:
-            layer._draw(new_label, last_cursor_coord, coordinates)
-        last_cursor_coord = coordinates
+        layer._draw(new_label, coordinates, coordinates)
         yield
 
-    # on release
-    layer._finish_painting()
+        last_cursor_coord = coordinates
+        # on move
+        while event.type == 'mouse_move':
+            coordinates = mouse_event_to_labels_coordinate(layer, event)
+            if coordinates is not None or last_cursor_coord is not None:
+                layer._draw(new_label, last_cursor_coord, coordinates)
+            last_cursor_coord = coordinates
+            yield
 
 
 def pick(layer, event):
