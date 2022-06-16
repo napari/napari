@@ -381,7 +381,7 @@ class PluginListItem(QFrame):
         if npe_version == 1:
             return
         opacity = 0.4 if npe_version == 'shim' else 1
-        lbl = 'npe1 (adapted)' if npe_version == 'shim' else 'npe2'
+        lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
         npe2_icon = QLabel(self)
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
         npe2_icon.setPixmap(
