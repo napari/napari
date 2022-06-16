@@ -31,6 +31,7 @@ class PluginsSettings(EventedModel):
         description=trans._(
             "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
         ),
+        requires_restart=True,
     )
     plugin_api: PluginAPI = Field(
         PluginAPI.napari_hub,
