@@ -1669,6 +1669,10 @@ class Points(Layer):
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
 
+        # Update the _view_size_scale in accordance to the self._indices_view setter.
+        # If out_of_slice_display is False, scale is a number and not an array.
+        # Therefore we have an additional if statement checking for
+        # self._view_size_scale being an integer.
         if not isinstance(scale, np.ndarray):
             self._view_size_scale = scale
         elif len(self._shown) == 0:
