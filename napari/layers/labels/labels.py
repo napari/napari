@@ -302,7 +302,6 @@ class Labels(_ImageBase):
             brush_shape=Event,
             contour=Event,
             features=Event,
-            paint=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -1269,15 +1268,14 @@ class Labels(_ImageBase):
         self._block_history = True
         try:
             yield
-        finally:
             self._finish_painting()
+        finally:
             self._block_history = prev
 
     def _finish_painting(self):
         """Save staged history to undo history and emit paint event."""
         if self._staged_history:
             self._undo_history.append(self._staged_history)
-            self.events.paint(value=self._staged_history)
             self._staged_history = []
 
     def paint(self, coord, new_label, refresh=True):
