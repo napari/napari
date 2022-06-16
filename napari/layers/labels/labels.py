@@ -1,6 +1,6 @@
-from contextlib import contextmanager
 import warnings
 from collections import deque
+from contextlib import contextmanager
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -1269,7 +1269,7 @@ class Labels(_ImageBase):
         self._block_history = True
         try:
             yield
-        finally: 
+        finally:
             self._finish_painting()
             self._block_history = prev
 
