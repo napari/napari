@@ -2368,6 +2368,12 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     )
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
 
+    # shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[False, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+
     # Out of slice display == True
     layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
@@ -2381,6 +2387,12 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     # Out of slice display == True && shown == [False, True]
     layer = Points(
         data, out_of_slice_display=True, shown=[False, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+
+    # Out of slice display == True && shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[False, False], size=3
     )
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
 
@@ -2405,6 +2417,12 @@ def test_shown_view_size_has_the_correct_values():
     )
     assert np.array_equal(layer._view_size, [])
 
+    # shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[False, False], size=3
+    )
+    assert np.array_equal(layer._view_size, [])
+
     # Out of slice display == True
     layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
     assert np.array_equal(layer._view_size, [3, 1])
@@ -2420,3 +2438,9 @@ def test_shown_view_size_has_the_correct_values():
         data, out_of_slice_display=True, shown=[False, True], size=3
     )
     assert np.array_equal(layer._view_size, [1])
+
+    # Out of slice display == True && shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[False, False], size=3
+    )
+    assert np.array_equal(layer._view_size, [])
