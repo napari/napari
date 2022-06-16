@@ -30,9 +30,7 @@ def save_image(tmp_path: Path):
 
 @pytest.mark.parametrize('ext', ['.tif', '.npy', '.png', '.jpg'])
 @pytest.mark.parametrize('stack', [False, True])
-def test_builtin_reader_plugin_tif(
-    save_image: Callable[..., Path], ext, stack
-):
+def test_reader_plugin_tif(save_image: Callable[..., Path], ext, stack):
     """Test the builtin reader plugin reads a temporary file."""
     files = [
         str(save_image(f'test_{i}{ext}')) for i in range(5 if stack else 1)
@@ -43,7 +41,7 @@ def test_builtin_reader_plugin_tif(
     assert isinstance(layer_data[0], tuple)
 
 
-def test_builtin_reader_plugin_url():
+def test_reader_plugin_url():
     layer_data = npe2.read(
         ['https://samples.fiji.sc/FakeTracks.tif'], stack=False
     )
@@ -52,7 +50,7 @@ def test_builtin_reader_plugin_url():
     assert isinstance(layer_data[0], tuple)
 
 
-def test_builtin_reader_plugin_csv(tmp_path):
+def test_reader_plugin_csv(tmp_path):
     """Test the builtin reader plugin reads a temporary file."""
     dest = str(tmp_path / 'test.csv')
     table = np.random.random((5, 3))
