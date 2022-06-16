@@ -122,8 +122,6 @@ jobs:
           recipe: ${{ matrix.recipe }}
         run: |
           ls
-         ls 
-          ls
           if [ -f "${{ matrix.recipe }}" ]; then
              singularity build container.sif ${{ matrix.recipe }}
              tag=latest
