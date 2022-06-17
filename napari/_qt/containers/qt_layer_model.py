@@ -2,7 +2,6 @@ from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
 from ...layers import Layer
-from ...utils.translations import trans
 from .qt_list_model import QtListModel
 
 ThumbnailRole = Qt.UserRole + 2
@@ -21,28 +20,7 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == Qt.EditRole:  # used to populate line edit when editing
             return layer.name
         if role == Qt.ToolTipRole:  # for tooltip
-            if layer.source.reader_plugin:
-                return trans._(
-                    'name: {layer_name},  source: {source} (plugin)',
-                    layer_name=layer.name,
-                    source=layer.source.reader_plugin,
-                )
-            elif layer.source.sample:
-                return trans._(
-                    'name: {layer_name}, source: {source} (sample)',
-                    layer_name=layer.name,
-                    source=layer.source.sample[0],
-                )
-            elif layer.source.widget:
-                return trans._(
-                    trans._(
-                        'name: {layer_name},  source: {source} (widget)',
-                        layer_name=layer.name,
-                        source=layer.source.widget._function.__name__,
-                    )
-                )
-            else:
-                return layer.name
+            return layer.get_status()
         if role == Qt.CheckStateRole:  # the "checked" state of this item
             return Qt.Checked if layer.visible else Qt.Unchecked
         if role == Qt.SizeHintRole:  # determines size of item

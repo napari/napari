@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import os.path
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
@@ -1596,7 +1597,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_status(
         self,
-        position: np.ndarray,
+        position: Optional[np.ndarray] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1624,13 +1625,44 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        value = self.get_value(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
-        )
-        return generate_layer_status(self.name, position, value)
+        if position:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        else:
+            value = None
+
+        if self.source.reader_plugin:
+            try:
+                layer_base = os.path.basename(self.source.path)
+            except KeyError:
+                pass
+            name = trans._(
+                '{layer_base},  source: {source} (plugin)',
+                layer_base=layer_base,
+                source=self.source.reader_plugin,
+            )
+        elif self.source.sample:
+            name = trans._(
+                '{layer_name}, source: {source} (sample)',
+                layer_name=self.name,
+                source=self.source.sample[0],
+            )
+        elif self.source.widget:
+            name = trans._(
+                trans._(
+                    '{layer_name},  source: {source} (widget)',
+                    layer_name=self.name,
+                    source=self.source.widget._function.__name__,
+                )
+            )
+        else:
+            name = self.name
+
+        return generate_layer_status(name, position, value)
 
     def _get_tooltip_text(
         self,
