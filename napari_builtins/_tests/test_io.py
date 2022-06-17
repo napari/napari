@@ -36,6 +36,7 @@ PNG_RGB = ImageSpec((10, 10, 3), 'uint8', '.png')
 PNG_RECT = ImageSpec((10, 15), 'uint8', '.png')
 TIFF_2D = ImageSpec((15, 10), 'uint8', '.tif')
 TIFF_3D = ImageSpec((2, 15, 10), 'uint8', '.tif')
+ZARR1 = ImageSpec((10, 20, 20), 'uint8', '.zarr')
 
 
 @pytest.fixture
@@ -45,6 +46,10 @@ def _write_spec(tmp_path: Path):
         fname = tmp_path / f'{uuid4()}{spec.ext}'
         if spec.ext == '.tif':
             tifffile.imwrite(str(fname), image)
+        elif spec.ext == '.zarr':
+            fname.mkdir()
+            z = zarr.open(str(fname), 'a', shape=image.shape)
+            z[:] = image
         else:
             imageio.imwrite(str(fname), image)
         return fname
@@ -293,17 +298,12 @@ def test_irregular_images(_write_spec, stack):
     assert all(img.shape == spec.shape for img, spec in zip(images, specs))
 
 
-def test_add_zarr():
+def test_add_zarr(_write_spec):
     viewer = ViewerModel()
-    image = np.random.random((10, 20, 20))
-    with TemporaryDirectory(suffix='.zarr') as fout:
-        z = zarr.open(fout, 'a', shape=image.shape)
-        z[:] = image
-        viewer.open([fout])
-        assert len(viewer.layers) == 1
-        # Note: due to lazy loading, the next line needs to happen within
-        # the context manager. Alternatively, we could convert to NumPy here.
-        np.testing.assert_array_equal(image, viewer.layers[0].data)
+    fout = _write_spec(ZARR1)
+    viewer.open([fout])
+    assert len(viewer.layers) == 1
+    assert viewer.layers[0].data.shape == ZARR1.shape
 
 
 def test_add_zarr_1d_array_is_ignored():
