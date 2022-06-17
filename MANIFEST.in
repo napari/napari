@@ -6,7 +6,6 @@ recursive-include src/napari _tests/*.py
 recursive-include src/napari *.pyi
 recursive-include src/napari *.png *.svg *.qss *.gif *.ico *.icns
 recursive-include src/napari *.yaml
-exclude src/napari/resources/_qt_resources*.py
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
