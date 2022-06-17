@@ -1,15 +1,4 @@
 ---
-jupytext:
-  formats: md:myst
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.10.3
-kernelspec:
-  display_name: Python 3 (ipykernel)
-  language: python
-  name: python3
 theme:
   metaDescription: napari is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
   quickLinks:
@@ -56,118 +45,34 @@ theme:
 
 # napari
 
-## Visualize images, NumPy arrays, or other arrays
+Napari is a fast, multi-dimensional image viewer for the Python programming
+language. It also aims to provide GUI-based access to the scientific Python
+image analysis ecosystem.
 
-Napari is a fast multi-dimensional image viewer in Python
-and for Python. (But it *might* be useful for you outside of
-Python![*](no-python))
-
-```{code-cell} ipython3
-:tags: [hide-input]
-# just setting up data
-from skimage import data
-cells = data.cells3d()
-```
-
-```{code-cell} ipython3
+```python
 import napari
-viewer = napari.view_image(
-    cells,  # a 4D NumPy array
-    channel_axis=1,
-    ndisplay=3,
-)
+viewer = napari.view_image(my_array)
 ```
 
-```{code-cell} ipython3
-:tags: [remove-input]
+[insert webm here]
 
-from napari.utils import nbscreenshot
-viewer.camera.angles = (-30, 30, -135)
-viewer.camera.zoom = 6.5
-nbscreenshot(viewer)
-```
+Napari can help you:
 
-## Annotate images with segmentations, points, polygons, and more
-
-Napari can display complex annotations on top of your images, whether generated
-by a Python computation, manually edited, or a combination of the two.
-
-```{code-cell} ipython3
-from skimage import features, filters, segmentation, util
-
-nuclei = cells[:, 1]
-smoothed = filters.gaussian(nuclei, sigma=20)
-thresholded = filters.threshold_otsu(smoothed) < smoothed
-maxima = features.peak_local_max(thresholded)
-
-labels = util.label_points(coords, nuclei.shape)
-edges = filters.farid(nuclei)
-
-segments = segmentation.watershed(
-    edges, labels, mask=thresholded, compactness=0.01
-)
-
-maxima_layer = viewer.add_points(maxima)
-```
-
-```{code-cell} ipython3
-:tags: [remove-input]
-screenshots = []
-screenshots.append(viewer.screeshot())
-```
-
-```{code-cell} ipython3
-edges_layer = viewer.add_image(edges, colormap='bop orange')
-```
-
-```{code-cell} ipython3
-:tags: [remove-input]
-screenshots.append(viewer.screeshot())
-```
-
-```{code-cell} ipython3
-segments_layer = viewer.add_labels(segments)
-```
-
-```{code-cell} ipython3
-:tags: [remove-input]
-screenshots.append(viewer.screeshot())
-```
-
-```{code-cell} ipython3
-:tags: [remove-input]
-
-for coord in []:
-    points.add(coord)
-    screenshots.append(viewer.screenshot())
-
-```
-
-```{code-cell} ipython3
-new_labels = util.label_points(maxima_layer.data, nuclei.shape)
-new_segments = segmentation.watershed(
-    edges, new_labels, mask=thresholded, compactness=0.01
-)
-segments_layer.data = new_segments
-```
-
-```{code-cell} ipython3
-:tags: [remove-input]
-
-screenshots.append(viewer.screenshot())
-# HELP! generate and display gif or preferably mp4 of screenshots here.
-```
-
-## Use plugins to add capabilities to napari, including data analysis
-
-[carousel of plugins. Highlights for me include napari-clusters-plotter,
-napari-skimage-regionprops, napari-feature-classifier,
-napari-time-series-plotter, napari-properties-plotter, napari-arboretum.]
+- quickly *view* 2D, 3D, and higher-dimensional image data
+- *overlay* segmentations (labels), points, vectors, polygons, surface meshes,
+  vectors, and tracking data
+- *annotate* data, seamlessly weaving human curation with scripts and
+  interactive sessions using Python
+- *analyze* data with a [rich ecosystem of plugins](https://napari-hub.org)
+- and [more!](https://napari.org/community)
 
 ## Installation
 
-Ready to get started? Please read our [installation
-guide](tutorials/fundamentals/installation).
+Ready to get started? Napari can be installed with pip
+(`pip install napari`) and conda (`conda install -c conda-forge napari`).
+You can read our [installation guide](tutorials/fundamentals/installation) for
+more details, or continue with our
+[getting started tutorial](tutorials/fundamentals/getting_started).
 
 # Community
 
