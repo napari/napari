@@ -108,7 +108,7 @@ The details for each milestone will be discussed in subsections.
 napari 0.2.12 was submitted to conda-forge [^staged-recipes-napari] in Oct 2019 and the PR was
 merged some months later. As a result, napari is available on conda-forge since Feb 2020
 [^napari-feedstock-creation]. The conda-forge bots auto-submit PRs to build the new versions
-once detected on PyPI. This means that releases on conda-forge can be slightly lag behind PyPI.
+once detected on PyPI. This means that releases on conda-forge can slightly lag behind PyPI.
 To avoid accidental delays in the releases, conda-forge packaging needs to be considered part
 of the release guide [^release-guide].
 
@@ -116,21 +116,22 @@ Pre-release packages are additionally built in our CI by cloning the conda-forge
 patching it to use the local source. The artifacts are uploaded to the `napari` channel at
 Anaconda.org [^napari-channel].
 
-While napari itself is on conda-forge for some years now, the plugin ecosystem was still
-relying on PyPI. In the case of napari users that relied on conda packages, that means that the
+While napari itself has been on conda-forge for some years now, until recently, the plugin
+ecosystem still broadly
+relied on PyPI. In the case of napari users that relied on conda packages, that means that the
 plugin manager would use `pip` to install the plugin and its dependencies in the conda
 environment, potentially mixing PyPI packages with conda-forge packages and causing conflicts
 due to binary incompatibilities.
 
-To avoid this risk, the recommended way forward is to package all existing napari plugins (and
-their dependencies!) on conda-forge too. This (ongoing) effort started in Jan 2022, resulting
-in ~200 PRs to date [^staged-recipes-all-plugins].
+To avoid this risk, this NAP recommends packaging all existing napari plugins (and
+their dependencies) on conda-forge too. This (ongoing) effort started in Jan 2022, resulting
+in ~200 pull requests (PRs) to date [^staged-recipes-all-plugins].
 
 That said, that is only the initial migration. We need a way to ensure that new plugins are also
 packaged on conda-forge. We recommend adding it to the plugin development documentation, as well
 as adding support for the relevant metadata on napari hub.
 
-Lastly, in order to get the maximum compatibility across plugins, the napari project should also
+Lastly, in order to ensure maximum compatibility across plugins, the napari project should also
 provide documentation and guidelines on what versions of major scientific packages are supported
 on each napari release. For example, we should control the version bounds for `numpy`,
 `scikit-image` and similar members of the PyData ecosystem. Otherwise, we might arrive to a
