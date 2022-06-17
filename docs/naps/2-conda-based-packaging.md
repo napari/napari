@@ -295,7 +295,7 @@ are multiple:
   explicitly (thus overriding the historic preference). For napari, this means that every plugin
   installation will be recorded in the history file, accumulating over time. If we compound this
   with `napari` updates, the problem gets larger with every new release.
-* Guarantee of success: updating an environment to the latest napari release might now work right
+* Guarantee of success: updating an environment to the latest napari release might not work right
   away, specially if the user has installed plugins that have conflicting packaging metadata. Even
   if the installation succeeds, insufficient/incorrect metadata might result in the wrong packages
   being installed, rendering the napari installation non-operational!
