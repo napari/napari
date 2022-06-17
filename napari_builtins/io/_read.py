@@ -13,12 +13,7 @@ import dask.array as da
 import numpy as np
 from dask import delayed
 
-from napari.types import (
-    FullLayerData,
-    LayerData,
-    LayerDataTuple,
-    ReaderFunction,
-)
+from napari.types import FullLayerData, LayerData, ReaderFunction
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
