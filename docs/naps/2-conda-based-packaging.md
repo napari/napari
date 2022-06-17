@@ -36,9 +36,11 @@ however, presents a series of limitations for the napari ecosystem:
 * No standardized building infrastructure. PyPI accepts submissions from any user without requiring
   any validation or review. As a result, packages can be built using arbitrary toolchains or
   expecting different libraries in the system. `cibuildwheel` [^cibuildwheel] and related tools
-  [^audithwheel] [^delocate] [^delvewheel] can definitely help users who want to do it in the right
-  way, but again, there's no guarantee is being used. This can result in ABI incompatibilities with
-  the target system and within the plugin ecosystem, specially when some packages vendor specific
+  [^audithwheel] [^delocate] [^delvewheel] can definitely help users who want
+  to follow community packaging practices,
+  but there is no guarantee of it being used by individual packages.
+  This can result in ABI incompatibilities with
+  the target system and within the plugin ecosystem, especially when some packages vendor specific
   libraries [^pypi-parallelism-abi].
 * PyPI metadata is often not detailed enough. This is a byproduct of the previous point, which
   makes it difficult for the different clients (pip, poetry, etc) to guarantee that the
