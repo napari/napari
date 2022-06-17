@@ -531,7 +531,7 @@ the future, if it makes sense, we can talk about adding a UI on top.
 For Milestone 4 "Enabling in-app napari version updates", we considered other options before
 deciding to use the currently proposed one. Namely:
 
-* Each napari installation only contains a single conda environemnt and version. Users can update
+* Each napari installation only contains a single conda environment and version. Users can update
   by downloading the newer installer, possibly after having received a notification in a running
   napari instance. This was discarded because it required too many user actions to succeed.
 * Each napari installation contains several environments, one per napari version. Each napari
