@@ -9,11 +9,11 @@ import zarr
 from dask import array as da
 
 from napari_builtins.io._read import (
-    _magic_imread,
-    _guess_zarr_path,
-    read_csv,
     _guess_layer_type_from_column_names,
+    _guess_zarr_path,
+    _magic_imread,
     csv_to_layer_data,
+    read_csv,
 )
 from napari_builtins.io._write import write_csv
 

@@ -7,9 +7,9 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
-from imageio import imread
 
 from napari._tests.utils import (
     add_layer_by_type,
