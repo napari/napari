@@ -179,7 +179,7 @@ at napari can help here, but this will not scale if the plugin ecosystem keeps g
 
 As a result, some plugins might end up being available on PyPI but not on conda-forge. This further
 reinforces the idea that conda-forge packaging is a second-class citizen for the plugin ecosystem.
-We would recommend including some packaging guidelines as part of the documentation for plugin
+This NAP recommends including packaging guidelines as part of the documentation for plugin
 developers to alleviate these issues.
 
 ### Milestone 2: Building conda-based installers for napari
