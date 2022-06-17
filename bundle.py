@@ -28,6 +28,8 @@ WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
+NAPARI_ROOT = os.path.join(HERE, 'src', 'napari')
+
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
 ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
@@ -45,7 +47,7 @@ elif MACOS:
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
     EXT, OS = 'dmg', 'macOS'
 
-with open(os.path.join(HERE, "napari", "_version.py")) as f:
+with open(os.path.join(NAPARI_ROOT, "_version.py")) as f:
     match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
     if match:
         VERSION = match.groups()[0].split('+')[0]
