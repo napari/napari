@@ -38,15 +38,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, QSize, Qt, QTimer
-from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from ..._qt.dialogs.qt_layer_info_dialog import QtLayerInfoDialog
 from ...layers._layer_actions import _LAYER_ACTIONS
-from ...utils._injection import inject_napari_dependencies
 from ...utils.context import get_context
-from ...utils.context._layerlist_context import LayerListContextKeys as LLCK
-from ...utils.translations import trans
 from ..qt_resources import QColoredSVGIcon
 from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
@@ -58,28 +54,6 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from ...components.layerlist import LayerList
-
-
-@inject_napari_dependencies
-def show_layer_info(ll: LayerList):
-    layer = ll.selection.active
-    dlg = QtLayerInfoDialog(layer=layer)
-    pos = QCursor.pos()
-    dlg.move(pos)
-    dlg.exec_()
-
-
-_LAYER_ACTIONS.insert(
-    0,
-    {
-        'napari:show_layer_info': {
-            'description': trans._('Show layer info'),
-            'action': show_layer_info,
-            'enable_when': LLCK.num_selected_layers == 1,
-            'show_when': True,
-        }
-    },
-)
 
 
 class LayerDelegate(QStyledItemDelegate):
