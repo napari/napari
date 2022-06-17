@@ -7,7 +7,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "napari/_version.py"
+write_to = "src/napari/_version.py"
 
 [tool.briefcase]
 project_name = "napari"
