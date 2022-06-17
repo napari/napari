@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
+from imageio import imread
 
 from napari._tests.utils import (
     add_layer_by_type,
@@ -21,7 +22,6 @@ from napari._vispy.utils.gl import fix_data_dtype
 from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
-from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
 BUILTINS_DISP = 'napari'

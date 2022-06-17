@@ -13,7 +13,12 @@ import dask.array as da
 import numpy as np
 from dask import delayed
 
-from napari.types import FullLayerData, LayerData, ReaderFunction
+from napari.types import (
+    FullLayerData,
+    LayerData,
+    LayerDataTuple,
+    ReaderFunction,
+)
 from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
@@ -169,7 +174,7 @@ def _magic_imread(filenames, *, use_dask=None, stack=True):
         filenames = filenames.as_posix()
 
     if len(filenames) == 0:
-        return [(None,)]
+        return None
     if isinstance(filenames, str):
         filenames = [filenames]  # ensure list
 
@@ -230,7 +235,7 @@ def _magic_imread(filenames, *, use_dask=None, stack=True):
         images.append(image)
 
     if not images:
-        return [(None,)]
+        return None
 
     if len(images) == 1:
         image = images[0]
@@ -250,7 +255,7 @@ def _magic_imread(filenames, *, use_dask=None, stack=True):
                 raise ValueError(msg) from e
     else:
         image = images  # return a list
-    return [(image,)]
+    return image
 
 
 def _points_csv_to_layerdata(
@@ -482,6 +487,10 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List[LayerData]:
     ]
 
 
+def _magic_imreader(path: str) -> List[LayerData]:
+    return [(_magic_imread(path),)]
+
+
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
@@ -502,9 +511,9 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
         if path.endswith('.csv'):
             return _csv_reader
         if os.path.isdir(path):
-            return _magic_imread
+            return _magic_imreader
         path = [path]
 
     if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
-        return _magic_imread
+        return _magic_imreader
     return None

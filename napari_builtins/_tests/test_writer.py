@@ -1,113 +1,70 @@
 import os
+from pathlib import Path
 
 import numpy as np
+from pyrsistent import b
+import pytest
 
-from napari._tests.utils import assert_layer_state_equal
-from napari_builtins.io import write_layer_data_with_plugins
+from napari import layers
+from napari_builtins.io import napari_get_reader, write_layer_data_with_plugins
+
+_EXTENSION_MAP = {
+    layers.Image: '.tif',
+    layers.Labels: '.tif',
+    layers.Points: '.csv',
+    layers.Shapes: '.csv',
+}
 
 
-# the layer_writer_and_data fixture is defined in napari/conftest.py
-def test_write_layer_with_round_trip(tmpdir, layer_writer_and_data):
-    """Test writing layer data from napari layer_data tuple."""
-    writer, layer_data, extension, reader, Layer = layer_writer_and_data
-    path = os.path.join(tmpdir, 'layer_file' + extension)
+@pytest.mark.parametrize('use_ext', [True, False])
+def test_layer_save(tmp_path: Path, some_layer: layers.Layer, use_ext: bool):
+    """Test saving layer data."""
+    ext = _EXTENSION_MAP[type(some_layer)]
+    path_with_ext = tmp_path / f'layer_file{ext}'
+    path_no_ext = tmp_path / 'layer_file'
+    assert not path_with_ext.is_file()
+    assert some_layer.save(str(path_with_ext if use_ext else path_no_ext))
+    assert path_with_ext.is_file()
 
-    # Check file does not exist
-    assert not os.path.isfile(path)
+    # Read data back in
+    reader = napari_get_reader(str(path_with_ext))
+    assert callable(reader)
+    [(read_data, *rest)] = reader(str(path_with_ext))
 
-    # Write data
-    assert writer(path, layer_data[0], layer_data[1])
-
-    # Check file now exists
-    assert os.path.isfile(path)
-
-    # Read data
-    read_data, read_meta, layer_type = reader(path)
-
-    # Compare read data to original data on layer
-    if type(read_data) is list:
-        for rd, ld in zip(read_data, layer_data[0]):
-            np.testing.assert_allclose(rd, ld)
+    if isinstance(some_layer.data, list):
+        for d in zip(read_data, some_layer.data):
+            np.testing.assert_allclose(*d)
     else:
-        np.testing.assert_allclose(read_data, layer_data[0])
+        np.testing.assert_allclose(read_data, some_layer.data)
 
-    # Instantiate layer
-    read_layer = Layer(read_data, **read_meta)
-    read_layer_data = read_layer.as_layer_data_tuple()
-
-    # Compare layer data
-    if type(read_layer_data[0]) is list:
-        for ld, rld in zip(layer_data[0], read_layer_data[0]):
-            np.testing.assert_allclose(ld, rld)
-    else:
-        np.testing.assert_allclose(layer_data[0], read_layer_data[0])
-
-    # Compare layer metadata
-    assert_layer_state_equal(layer_data[1], read_layer_data[1])
-
-    # Compare layer type
-    assert layer_data[2] == read_layer_data[2]
+    if rest:
+        meta, type_string = rest
+        assert type_string == some_layer._type_string
+        for key, value in meta.items():  # type: ignore
+            np.testing.assert_equal(value, getattr(some_layer, key))
 
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py
-def test_write_layer_no_extension(tmpdir, layer_writer_and_data):
-    """Test writing layer data with no extension."""
-    writer, layer_data, extension, _, _ = layer_writer_and_data
-    path = os.path.join(tmpdir, 'layer_file')
-
-    # Check file does not exist
-    assert not os.path.isfile(path)
-
-    # Write data
-    assert writer(path, layer_data[0], layer_data[1])
-
-    # Check file now exists with extension
-    assert os.path.isfile(path + extension)
-
-
-# the layer_writer_and_data fixture is defined in napari/conftest.py
-def test_no_write_layer_bad_extension(tmpdir, layer_writer_and_data):
+def test_no_write_layer_bad_extension(some_layer: layers.Layer):
     """Test not writing layer data with a bad extension."""
-    writer, layer_data, _, _, _ = layer_writer_and_data
-    path = os.path.join(tmpdir, 'layer_file.bad_extension')
-
-    # Check file does not exist
-    assert not os.path.isfile(path)
-
-    # Check no data is written
-    assert not writer(path, layer_data[0], layer_data[1])
-
-    # Check file still does not exist
-    assert not os.path.isfile(path)
-
-
-# the layer_writer_and_data fixture is defined in napari/conftest.py
-def test_write_layer_no_metadata(tmpdir, layer_writer_and_data):
-    """Test writing layer data with no metadata."""
-    writer, layer_data, extension, _, _ = layer_writer_and_data
-    path = os.path.join(tmpdir, 'layer_file' + extension)
-
-    # Check file does not exist
-    assert not os.path.isfile(path)
-
-    # Write data
-    assert writer(path, layer_data[0], {})
-
-    # Check file now exists
-    assert os.path.isfile(path)
+    with pytest.warns(UserWarning, match='No data written!'):
+        assert not some_layer.save('layer.bad_extension')
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
-def test_get_writer_succeeds(builtins, tmpdir, layer_data_and_types):
+def test_get_writer_succeeds(tmp_path: Path):
     """Test writing layers data."""
-    _, layer_data, _, filenames = layer_data_and_types
-    path = os.path.join(tmpdir, 'layers_folder')
+    from conftest import LAYERS
+    from napari.components import LayerList
 
+    path = tmp_path / 'layers_folder'
+    layer_list = LayerList(LAYERS)
     # Write data
-    assert write_layer_data_with_plugins(path, layer_data, plugin_name=None)
+    layer_list.save(str(path))
+
 
     # Check folder and files exist
-    assert os.path.isdir(path)
+    assert path.is_dir()
     for f in filenames:
         assert os.path.isfile(os.path.join(path, f))
 
