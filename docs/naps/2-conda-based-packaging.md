@@ -73,14 +73,31 @@ In contrast, `conda`-based packaging offers some benefits in those points:
   flexibility to manage a plugin ecosystem with potentially wildly different requirements, which
   would risk conflicts.
 
-This NAP proposes to add a `conda`-based distribution mechanism for napari, supported by five key
-milestones:
+`conda` packaging also has its own downsides compared to `pip`, though:
+
+* pip and PyPI are the *de facto* standard in Python packaging, which means
+  more developers are aware of them and familiar with them, and how to create
+  packages for them. Conda in contrast presents a community education
+  challenge.
+* Although the conda-forge review process is an advantage with regards to
+  correctness and reliability, it presents a scalability challenge in the
+  absence of broader community education about conda packaging.
+* pip can install packages from a simple local directory, from a zip file, or
+  from a GitHub repository. These simple installation methods are favored by
+  small labs and institutions that want to create plugins for internal use,
+  rather than for broad distribution.
+
+This NAP proposes to add a `conda`-based distribution mechanism for the napari
+application and plugins, supported by five key milestones:
 
 1. Distributing napari and plugins on conda-forge
 2. Building conda-based installers for napari
 3. Adding support for conda packages in the plugin manager
 4. Enabling in-app napari version updates
 5. Deprecating Briefcase-based installers
+
+Throughout the process, we will try to minimize conda's downsides by providing
+local conda-based installation options and documentation about how to use them.
 
 ## Detailed Description
 
