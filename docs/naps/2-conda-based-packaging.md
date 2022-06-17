@@ -79,6 +79,9 @@ In contrast, `conda`-based packaging offers some benefits in those points:
   more developers are aware of them and familiar with them, and how to create
   packages for them. Conda in contrast presents a community education
   challenge.
+* Even with a well-developed community of practice among napari and napari
+  plugin developers, some significant industry-provided packages, such as
+  Apple's tensorflow-metal, may *never* be available no conda-forge.
 * Although the conda-forge review process is an advantage with regards to
   correctness and reliability, it presents a scalability challenge in the
   absence of broader community education about conda packaging.
@@ -96,8 +99,10 @@ application and plugins, supported by five key milestones:
 4. Enabling in-app napari version updates
 5. Deprecating Briefcase-based installers
 
-Throughout the process, we will try to minimize conda's downsides by providing
+Throughout the process, we will aim to minimize conda's downsides by providing
 local conda-based installation options and documentation about how to use them.
+We will also provide users an opt-in, "use at your own risk" method to install
+pip packages where they do not exist on conda-forge.
 
 ## Detailed Description
 
