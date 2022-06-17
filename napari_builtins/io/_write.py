@@ -305,21 +305,15 @@ def write_layer_data_with_plugins(
                 _, meta, type_ = layer_data_tuple
 
                 # Create full path using name of layer
-                full_path = abspath_or_url(os.path.join(tmp, meta['name']))
-                if type_ == 'image':
-                    # workaround for https://github.com/napari/npe2/issues/129
-                    full_path += '.tif'
-
                 # Write out data using first plugin found for this hook spec
                 # or named plugin if provided
-                out = npe2.write(
-                    path=full_path,
+                npe2.write(
+                    path=abspath_or_url(os.path.join(tmp, meta['name'])),
                     layer_data=[layer_data_tuple],
                     plugin_name='napari',
                 )
-
-                written.extend(out)
             for fname in os.listdir(tmp):
+                written.append(os.path.join(path, fname))
                 shutil.move(os.path.join(tmp, fname), path)
     except Exception as exc:
         if not already_existed:

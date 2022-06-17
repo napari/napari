@@ -1,12 +1,12 @@
-import os
 from pathlib import Path
 
 import numpy as np
-from pyrsistent import b
 import pytest
+from conftest import LAYERS
 
 from napari import layers
-from napari_builtins.io import napari_get_reader, write_layer_data_with_plugins
+from napari.components import LayerList
+from napari_builtins.io import napari_get_reader
 
 _EXTENSION_MAP = {
     layers.Image: '.tif',
@@ -54,19 +54,18 @@ def test_no_write_layer_bad_extension(some_layer: layers.Layer):
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_succeeds(tmp_path: Path):
     """Test writing layers data."""
-    from conftest import LAYERS
-    from napari.components import LayerList
 
     path = tmp_path / 'layers_folder'
     layer_list = LayerList(LAYERS)
     # Write data
-    layer_list.save(str(path))
+    written = layer_list.save(str(path))
 
-
-    # Check folder and files exist
+    # check expected files were written
+    expected = {
+        str(path / f'{layer.name}{_EXTENSION_MAP[type(layer)]}')
+        for layer in LAYERS
+    }
     assert path.is_dir()
-    for f in filenames:
-        assert os.path.isfile(os.path.join(path, f))
-
-    assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+    assert set(written) == expected
+    for expect in expected:
+        assert Path(expect).is_file()
