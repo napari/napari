@@ -2,114 +2,60 @@ import csv
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import NamedTuple, Tuple
+from uuid import uuid4
 
+import dask.array as da
+import imageio
+import npe2
 import numpy as np
 import pytest
+import tifffile
 import zarr
-from dask import array as da
 
+from napari.components import ViewerModel
 from napari_builtins.io._read import (
-    _magic_imread,
-    _guess_zarr_path,
-    read_csv,
     _guess_layer_type_from_column_names,
+    _guess_zarr_path,
+    _magic_imread,
     csv_to_layer_data,
+    read_csv,
 )
 from napari_builtins.io._write import write_csv
 
-# the following fixtures are defined in napari/conftest.py
-# single_png, two_pngs, irregular_images, single_tiff
+
+class ImageSpec(NamedTuple):
+    shape: Tuple[int, ...]
+    dtype: str
+    ext: str
+    levels: int = 1
 
 
-def test_single_png_defaults(single_png):
-    image_files = single_png
-    images = _magic_imread(image_files)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (512, 512)
+PNG = ImageSpec((10, 10), 'uint8', '.png')
+PNG_RGB = ImageSpec((10, 10, 3), 'uint8', '.png')
+PNG_RECT = ImageSpec((10, 15), 'uint8', '.png')
+TIFF_2D = ImageSpec((15, 10), 'uint8', '.tif')
+TIFF_3D = ImageSpec((2, 15, 10), 'uint8', '.tif')
 
 
-def test_single_png_single_file(single_png):
-    image_files = single_png[0]
-    images = _magic_imread(image_files)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (512, 512)
+@pytest.fixture
+def _write_spec(tmp_path: Path):
+    def writer(spec: ImageSpec):
+        image = np.random.random(spec.shape).astype(spec.dtype)
+        fname = tmp_path / f'{uuid4()}{spec.ext}'
+        if spec.ext == '.tif':
+            tifffile.imwrite(str(fname), image)
+        else:
+            imageio.imwrite(str(fname), image)
+        return fname
+
+    return writer
 
 
-def test_single_png_pathlib(single_png):
-    image_files = Path(single_png[0])
-    images = _magic_imread(image_files)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (512, 512)
-
-
-def test_multi_png_defaults(two_pngs):
-    image_files = two_pngs
-    images = _magic_imread(image_files)
-    assert isinstance(images, da.Array)
-    assert images.shape == (2, 512, 512)
-
-
-def test_multi_png_pathlib(two_pngs):
-    image_files = [Path(png) for png in two_pngs]
-    images = _magic_imread(image_files)
-    assert isinstance(images, da.Array)
-    assert images.shape == (2, 512, 512)
-
-
-def test_multi_png_no_dask(two_pngs):
-    image_files = two_pngs
-    images = _magic_imread(image_files, use_dask=False)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (2, 512, 512)
-
-
-def test_multi_png_no_stack(two_pngs):
-    image_files = two_pngs
-    images = _magic_imread(image_files, stack=False)
-    assert isinstance(images, list)
-    assert len(images) == 2
-    assert all(a.shape == (512, 512) for a in images)
-
-
-def test_no_files_raises(tmp_path, two_pngs):
+def test_no_files_raises(tmp_path):
     with pytest.raises(ValueError) as e:
         _magic_imread(tmp_path)
     assert "No files found in" in str(e.value)
-
-
-def test_irregular_images(irregular_images):
-    image_files = irregular_images
-    # Ideally, this would work "magically" with dask and irregular images,
-    # but there is no foolproof way to do this without reading in all the
-    # files. We need to be able to inspect the file shape without reading
-    # it in first, then we can automatically turn stacking off when shapes
-    # are irregular (and create proper dask arrays)
-    images = _magic_imread(image_files, use_dask=False, stack=False)
-    assert isinstance(images, list)
-    assert len(images) == 2
-    assert tuple(image.shape for image in images) == ((512, 512), (303, 384))
-
-
-def test_tiff(single_tiff):
-    image_files = single_tiff
-    images = _magic_imread(image_files)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (2, 15, 10)
-    assert images.dtype == np.uint8
-
-
-def test_many_tiffs(single_tiff):
-    image_files = single_tiff * 3
-    images = _magic_imread(image_files)
-    assert isinstance(images, da.Array)
-    assert images.shape == (3, 2, 15, 10)
-    assert images.dtype == np.uint8
-
-
-def test_single_filename(single_tiff):
-    image_files = single_tiff[0]
-    images = _magic_imread(image_files)
-    assert images.shape == (2, 15, 10)
 
 
 def test_guess_zarr_path():
@@ -274,3 +220,115 @@ def test_csv_to_layer_data_raises(tmp_path):
         assert csv_to_layer_data(temp, require_type='points')
     with pytest.raises(ValueError):
         csv_to_layer_data(temp, require_type='shapes')
+
+
+@pytest.mark.parametrize('spec', [PNG, PNG_RGB, TIFF_3D, TIFF_2D])
+@pytest.mark.parametrize('stacks', [1, 3])
+def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
+    fnames = [str(_write_spec(spec)) for _ in range(stacks)]
+    [(layer_data,)] = npe2.read(fnames, stack=stacks > 1)
+    assert isinstance(layer_data, np.ndarray if stacks == 1 else da.Array)
+    assert layer_data.shape == tuple(
+        i for i in (stacks,) + spec.shape if i > 1
+    )
+    assert layer_data.dtype == spec.dtype
+
+
+@pytest.mark.parametrize(
+    'spec', [PNG, [PNG], [PNG, PNG], TIFF_3D, [TIFF_3D, TIFF_3D]]
+)
+@pytest.mark.parametrize('stack', [True, False])
+@pytest.mark.parametrize('use_dask', [True, False, None])
+def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
+
+    fnames = (
+        [_write_spec(s) for s in spec]
+        if isinstance(spec, list)
+        else _write_spec(spec)
+    )
+    images = _magic_imread(fnames, stack=stack, use_dask=use_dask)
+    if isinstance(spec, ImageSpec):
+        expect_shape = spec.shape
+    else:
+        expect_shape = (len(spec),) + spec[0].shape if stack else spec[0].shape
+    expect_shape = tuple(i for i in expect_shape if i > 1)
+
+    expected_arr_type = (
+        da.Array
+        if (
+            use_dask
+            or (use_dask is None and isinstance(spec, list) and len(spec) > 1)
+        )
+        else np.ndarray
+    )
+    if isinstance(spec, list) and len(spec) > 1 and not stack:
+        assert isinstance(images, list)
+        assert all(isinstance(img, expected_arr_type) for img in images)
+        assert all(img.shape == expect_shape for img in images)
+    else:
+        assert isinstance(images, expected_arr_type)
+        assert images.shape == expect_shape
+
+
+@pytest.mark.parametrize('stack', [True, False])
+def test_irregular_images(_write_spec, stack):
+    specs = [PNG, PNG_RECT]
+    fnames = [str(_write_spec(spec)) for spec in specs]
+
+    # Ideally, this would work "magically" with dask and irregular images,
+    # but there is no foolproof way to do this without reading in all the
+    # files. We need to be able to inspect the file shape without reading
+    # it in first, then we can automatically turn stacking off when shapes
+    # are irregular (and create proper dask arrays)
+    if stack:
+        with pytest.raises(
+            ValueError, match='input arrays must have the same shape'
+        ):
+            _magic_imread(fnames, use_dask=False, stack=stack)
+        return
+    else:
+        images = _magic_imread(fnames, use_dask=False, stack=stack)
+    assert isinstance(images, list)
+    assert len(images) == 2
+    assert all(img.shape == spec.shape for img, spec in zip(images, specs))
+
+
+def test_add_zarr():
+    viewer = ViewerModel()
+    image = np.random.random((10, 20, 20))
+    with TemporaryDirectory(suffix='.zarr') as fout:
+        z = zarr.open(fout, 'a', shape=image.shape)
+        z[:] = image
+        viewer.open([fout])
+        assert len(viewer.layers) == 1
+        # Note: due to lazy loading, the next line needs to happen within
+        # the context manager. Alternatively, we could convert to NumPy here.
+        np.testing.assert_array_equal(image, viewer.layers[0].data)
+
+
+def test_add_zarr_1d_array_is_ignored():
+    # For more details: https://github.com/napari/napari/issues/1471
+    viewer = ViewerModel()
+    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
+        z = zarr.open(zarr_dir, 'w')
+        z['1d'] = np.zeros(3)
+
+        image_path = os.path.join(zarr_dir, '1d')
+        viewer.open(image_path)
+
+        assert len(viewer.layers) == 0
+
+
+def test_add_many_zarr_1d_array_is_ignored():
+    # For more details: https://github.com/napari/napari/issues/1471
+    viewer = ViewerModel()
+    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
+        z = zarr.open(zarr_dir, 'w')
+        z['1d'] = np.zeros(3)
+        z['2d'] = np.zeros((3, 4))
+        z['3d'] = np.zeros((3, 4, 5))
+
+        image_paths = [os.path.join(zarr_dir, name) for name in z.array_keys()]
+        viewer.open(image_paths)
+
+        assert [layer.name for layer in viewer.layers] == ['2d', '3d']

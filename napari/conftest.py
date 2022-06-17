@@ -35,7 +35,6 @@ except ModuleNotFoundError:
 
 import itertools
 import os
-from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -43,7 +42,6 @@ from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
-import pooch
 import pytest
 from IPython.core.history import HistoryManager
 from npe2 import DynamicPlugin, PluginManager, PluginManifest
@@ -51,9 +49,6 @@ from npe2 import DynamicPlugin, PluginManager, PluginManifest
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.config import async_loading
-
-if not hasattr(pooch.utils, 'file_hash'):
-    setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
 
 
 def pytest_addoption(parser):
