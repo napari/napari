@@ -52,8 +52,9 @@ however, presents a series of limitations for the napari ecosystem:
   restricting the packaging options to a language-specific repository can be limiting.
 * PyPI only provides Python _packages_. It does not distribute Python itself, leaving that to the
   installer infrastructure. In the case of Briefcase, this is obtained via their own distribution
-  mechanisms [^briefcase-python]. One more moving piece that can result in incompatibilities with
-  the target system if not controlled properly (see issues [^appimage-crash][^appimage-crash2]).
+  mechanisms [^briefcase-python]. This presents one more moving piece that can
+  result in incompatibilities with the target system if not controlled properly
+  (see issues [^appimage-crash][^appimage-crash2]).
 
 In contrast, `conda`-based packaging offers some benefits in those points:
 
@@ -67,7 +68,7 @@ In contrast, `conda`-based packaging offers some benefits in those points:
   automated way that ensures binary compatibility across packages and languages. Every
   submission needs to be reviewed and approved by humans after successfully passing the CI.
   This adds guarantees for provenance, transparency and debugging.
-* `conda` has the notion of optional version constrains. A package can provide constrains for other
+* `conda` has the notion of optional version constrains. A package can provide constraints for other
   packages that _could_ be installed alongside, without depending on them. This offers a lot of
   flexibility to manage a plugin ecosystem with potentially wildly different requirements, which
   would risk conflicts.
