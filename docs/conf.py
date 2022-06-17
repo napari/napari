@@ -151,10 +151,7 @@ sphinx_gallery_conf = {
     'gallery_dirs': 'gallery',  # path to where to save gallery generated output
     'filename_pattern': '/*.py',
     'ignore_pattern': 'README.rst|/*_.py',
-    'default_thumb_file': Path(__file__).parent.parent
-    / 'napari'
-    / 'resources'
-    / 'logo.png',
+    'default_thumb_file': Path(napari.__file__) / 'resources' / 'logo.png',
     'plot_gallery': True,
     'download_all_examples': False,
     'min_reported_time': 10,
