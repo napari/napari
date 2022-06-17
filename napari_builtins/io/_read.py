@@ -83,7 +83,7 @@ def imread(filename: str) -> np.ndarray:
     data : np.ndarray
         The image data.
     """
-    filename = abspath_or_url(filename)
+    filename = str(abspath_or_url(filename))
     ext = os.path.splitext(filename)[1]
 
     if ext.lower() in ('.npy',):
