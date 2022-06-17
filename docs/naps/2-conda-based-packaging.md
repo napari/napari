@@ -186,25 +186,24 @@ developers to alleviate these issues.
 
 Anaconda releases their Anaconda and Miniconda distributions with platform specific installers:
 
-* On Windows, the offer an EXE built with NSIS
+* On Windows, they offer an EXE built with NSIS
 * On Linux, a text-based installer is offered as a fat SH script
 * On macOS, a native, graphical PKG installer is provided in addition to the text-based option
 
 These three products are created using `constructor` [^constructor], their own tool to gather
 the required conda dependencies and add the logic to install them on the target machine.
-However, `constructor` hasn't been well maintained during the last years (only small fixes),
-which means that some work will be needed to make it behave the way we want and need. More
-specifically:
+However, `constructor` hasn't been well maintained in recent years (only small fixes),
+which means that some work is needed to meet our needs. More specifically:
 
-* Shortcut creation is only supported on Windows
+* Application shortcut creation is only supported on Windows
 * PKG installers are created with hardcoded Anaconda branding
 * Some conda-specific options cannot be removed (only disabled by default), which might distract
   users in the installers
 
 In order to have `constructor` cover our needs, we need to add the features ourselves. Upstream
-maintenance is meant to be improve over the year, but for now the reviews are coming in slow. As
+maintenance is expected to improve in the coming years, but for now the reviews are coming in slow. As
 a result, we are temporarily forking the project and developing the features as needed while
-submitting PRs to upstream [^constructor-upstream] to keep things tidy. Our improved `constructor`
+submitting PRs upstream [^constructor-upstream] to keep things tidy. Our improved `constructor`
 fork has the following features:
 
 * Cross-platform shortcut creation for the distributed application thanks to a complete `menuinst`
