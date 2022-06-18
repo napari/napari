@@ -83,7 +83,7 @@ def imread(filename: str) -> np.ndarray:
     data : np.ndarray
         The image data.
     """
-    filename = str(abspath_or_url(filename))
+    filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
 
     if ext.lower() in ('.npy',):
@@ -94,7 +94,7 @@ def imread(filename: str) -> np.ndarray:
 
     # Pre-download urls before loading them with tifffile
     with file_or_url_context(filename) as filename:
-        return tifffile.imread(filename)
+        return tifffile.imread(str(filename))
 
 
 def _guess_zarr_path(path: str) -> bool:
