@@ -9,7 +9,7 @@ from napari.layers import Labels
 
 
 @pytest.mark.parametrize('suffix', ['.png', '.tiff'])
-def test_open_labels(suffix, tmp_path):
+def test_open_labels(builtins, suffix, tmp_path):
     viewer = ViewerModel()
     blobs = binary_blobs(length=128, volume_fraction=0.1, n_dim=2)
     labeled = ndi.label(blobs)[0].astype(np.uint8)

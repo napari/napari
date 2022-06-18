@@ -12,7 +12,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from napari_builtins.io._write import imsave_extensions
+from napari_builtins.io import imsave_extensions
 
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,

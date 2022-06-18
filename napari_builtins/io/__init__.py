@@ -1,5 +1,6 @@
-from ._read import napari_get_reader
+from ._read import magic_imread, napari_get_reader
 from ._write import (
+    imsave_extensions,
     napari_write_image,
     napari_write_labels,
     napari_write_points,
@@ -8,6 +9,8 @@ from ._write import (
 )
 
 __all__ = [
+    'imsave_extensions',
+    'magic_imread',
     'napari_get_reader',
     'napari_write_image',
     'napari_write_labels',
