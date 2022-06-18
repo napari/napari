@@ -5,7 +5,7 @@ import pytest
 from conftest import LAYERS
 
 from napari import layers
-from napari.components import LayerList
+from napari.plugins import _npe2
 from napari_builtins.io import napari_get_reader
 
 _EXTENSION_MAP = {
@@ -56,9 +56,8 @@ def test_get_writer_succeeds(tmp_path: Path):
     """Test writing layers data."""
 
     path = tmp_path / 'layers_folder'
-    layer_list = LayerList(LAYERS)
     # Write data
-    written = layer_list.save(str(path))
+    written = _npe2.write_layers(path=str(path), layers=LAYERS)
 
     # check expected files were written
     expected = {
