@@ -57,11 +57,11 @@ def file_or_url_context(resource_name):
                 f.write(u.read())
             # f must be closed before yielding
             yield f.name
-        except (URLError, HTTPError):
+        except (URLError, HTTPError):  # pragma: no cover
             # could not open URL
             os.remove(f.name)
             raise
-        except BaseException:
+        except BaseException:  # pragma: no cover
             # could not create temporary file
             raise
         else:
@@ -131,7 +131,7 @@ def read_zarr_dataset(path):
         ]
         assert image, 'No arrays found in zarr group'
         shape = image[0].shape
-    else:
+    else:  # pragma: no cover
         raise ValueError(
             trans._(
                 "Not a zarr dataset or group: {path}", deferred=True, path=path
@@ -140,7 +140,12 @@ def read_zarr_dataset(path):
     return image, shape
 
 
-def _magic_imread(filenames, *, use_dask=None, stack=True):
+PathOrStr = Union[str, Path]
+
+
+def magic_imread(
+    filenames: Union[PathOrStr, List[PathOrStr]], *, use_dask=None, stack=True
+):
     """Dispatch the appropriate reader given some files.
 
     The files are assumed to all have the same shape.
@@ -164,18 +169,17 @@ def _magic_imread(filenames, *, use_dask=None, stack=True):
     image : array-like
         Array or list of images
     """
-    # cast Path to string
-    if isinstance(filenames, Path):
-        filenames = filenames.as_posix()
-
-    if len(filenames) == 0:
-        return None
-    if isinstance(filenames, str):
-        filenames = [filenames]  # ensure list
+    _filenames: List[str] = (
+        [str(x) for x in filenames]
+        if isinstance(filenames, (list, tuple))
+        else [str(filenames)]
+    )
+    if not _filenames:  # pragma: no cover
+        raise ValueError("No files found")
 
     # replace folders with their contents
     filenames_expanded: List[str] = []
-    for filename in filenames:
+    for filename in _filenames:
         # zarr files are folders, but should be read as 1 file
         if (
             os.path.isdir(filename)
@@ -241,13 +245,13 @@ def _magic_imread(filenames, *, use_dask=None, stack=True):
             try:
                 image = np.stack(images)
             except ValueError as e:
-                if 'input arrays must have the same shape' not in str(e):
-                    raise e
-                msg = trans._(
-                    'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
-                    deferred=True,
-                )
-                raise ValueError(msg) from e
+                if 'input arrays must have the same shape' in str(e):
+                    msg = trans._(
+                        'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
+                        deferred=True,
+                    )
+                    raise ValueError(msg) from e
+                raise  # pragma: no cover
     else:
         image = images  # return a list
     return image
@@ -483,7 +487,7 @@ def _csv_reader(path: Union[str, Sequence[str]]) -> List[LayerData]:
 
 
 def _magic_imreader(path: str) -> List[LayerData]:
-    return [(_magic_imread(path),)]
+    return [(magic_imread(path),)]
 
 
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
@@ -511,4 +515,4 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
     if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
         return _magic_imreader
-    return None
+    return None  # pragma: no cover

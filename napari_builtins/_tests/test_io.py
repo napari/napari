@@ -17,8 +17,8 @@ from napari.components import ViewerModel
 from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
     _guess_zarr_path,
-    _magic_imread,
     csv_to_layer_data,
+    magic_imread,
     read_csv,
 )
 from napari_builtins.io._write import write_csv
@@ -59,7 +59,7 @@ def _write_spec(tmp_path: Path):
 
 def test_no_files_raises(tmp_path):
     with pytest.raises(ValueError) as e:
-        _magic_imread(tmp_path)
+        magic_imread(tmp_path)
     assert "No files found in" in str(e.value)
 
 
@@ -75,7 +75,7 @@ def test_zarr():
     with TemporaryDirectory(suffix='.zarr') as fout:
         z = zarr.open(fout, 'a', shape=image.shape)
         z[:] = image
-        image_in = _magic_imread([fout])
+        image_in = magic_imread([fout])
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
         np.testing.assert_array_equal(image, image_in)
@@ -88,7 +88,7 @@ def test_zarr_nested(tmp_path):
     grp = zarr.open(str(root_path), mode='a')
     grp.create_dataset(image_name, data=image)
 
-    image_in = _magic_imread([str(root_path / image_name)])
+    image_in = magic_imread([str(root_path / image_name)])
     np.testing.assert_array_equal(image, image_in)
 
 
@@ -104,7 +104,7 @@ def test_zarr_multiscale():
             shape = 20 // 2**i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
             z[:] = multiscale[i]
-        multiscale_in = _magic_imread([fout])
+        multiscale_in = magic_imread([fout])
         assert len(multiscale) == len(multiscale_in)
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
@@ -251,7 +251,7 @@ def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
         if isinstance(spec, list)
         else _write_spec(spec)
     )
-    images = _magic_imread(fnames, stack=stack, use_dask=use_dask)
+    images = magic_imread(fnames, stack=stack, use_dask=use_dask)
     if isinstance(spec, ImageSpec):
         expect_shape = spec.shape
     else:
@@ -289,10 +289,10 @@ def test_irregular_images(_write_spec, stack):
         with pytest.raises(
             ValueError, match='input arrays must have the same shape'
         ):
-            _magic_imread(fnames, use_dask=False, stack=stack)
+            magic_imread(fnames, use_dask=False, stack=stack)
         return
     else:
-        images = _magic_imread(fnames, use_dask=False, stack=stack)
+        images = magic_imread(fnames, use_dask=False, stack=stack)
     assert isinstance(images, list)
     assert len(images) == 2
     assert all(img.shape == spec.shape for img, spec in zip(images, specs))

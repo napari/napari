@@ -1,42 +1,5 @@
 from functools import partial
 
-from napari.utils.translations import trans
-
-SKIMAGE_DATA = [
-    ('astronaut', trans._('Astronaut (RGB)')),
-    ('binary_blobs', trans._('Binary Blobs')),
-    ('binary_blobs_3D', trans._('Binary Blobs (3D)')),
-    ('brain', trans._('Brain (3D)')),
-    ('brick', trans._('Brick')),
-    ('camera', trans._('Camera')),
-    ('cat', trans._('Cat (RGB)')),
-    ('cell', trans._('Cell')),
-    ('cells3d', trans._('Cells (3D+2Ch)')),
-    ('checkerboard', trans._('Checkerboard')),
-    ('clock', trans._('Clock')),
-    ('coffee', trans._('Coffee (RGB)')),
-    ('coins', trans._('Coins')),
-    ('colorwheel', trans._('Colorwheel (RGB)')),
-    ('eagle', trans._('Eagle')),
-    ('grass', trans._('Grass')),
-    ('gravel', trans._('Gravel')),
-    ('horse', trans._('Horse')),
-    ('hubble_deep_field', trans._('Hubble Deep Field (RGB)')),
-    ('human_mitosis', trans._('Human Mitosis')),
-    ('immunohistochemistry', trans._('Immunohistochemistry (RGB)')),
-    ('kidney', trans._('Kidney (3D+3Ch)')),
-    ('lfw_subset', trans._('Labeled Faces in the Wild')),
-    ('lily', trans._('Lily (4Ch)')),
-    ('microaneurysms', trans._('Microaneurysms')),
-    ('moon', trans._('Moon')),
-    ('page', trans._('Page')),
-    ('retina', trans._('Retina (RGB)')),
-    ('rocket', trans._('Rocket (RGB)')),
-    ('shepp_logan_phantom', trans._('Shepp Logan Phantom')),
-    ('skin', trans._('Skin (RGB)')),
-    ('text', trans._('Text')),
-]
-
 
 def _load_skimage_data(name, **kwargs):
     import skimage.data
@@ -83,10 +46,13 @@ def _load_skimage_data(name, **kwargs):
     return [(getattr(skimage.data, name)(**kwargs), {'name': name})]
 
 
-_DATA = {
-    key: {'data': partial(_load_skimage_data, key), 'display_name': dname}
-    for (key, dname) in SKIMAGE_DATA
-}
+# fmt: off
+SKIMAGE_DATA = [
+    'astronaut', 'binary_blobs', 'binary_blobs_3D', 'brain', 'brick', 'camera', 'cat',
+    'cell', 'cells3d', 'checkerboard', 'clock', 'coffee', 'coins', 'colorwheel',
+    'eagle', 'grass', 'gravel', 'horse', 'hubble_deep_field', 'human_mitosis',
+    'immunohistochemistry', 'kidney', 'lfw_subset', 'lily', 'microaneurysms', 'moon',
+    'page', 'retina', 'rocket', 'shepp_logan_phantom', 'skin', 'text',
+]
 
-
-globals().update({k: v['data'] for k, v in _DATA.items()})
+globals().update({key: partial(_load_skimage_data, key) for key in SKIMAGE_DATA})
