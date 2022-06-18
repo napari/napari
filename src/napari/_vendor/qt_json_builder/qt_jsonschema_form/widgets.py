@@ -686,8 +686,6 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         if 'title' in schema:
             self.setTitle(schema['title'])
 
-        if 'description' in schema:
-            self.setToolTip(schema['description'])
 
         # Populate rows
         widgets = {}
