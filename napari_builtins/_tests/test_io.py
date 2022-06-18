@@ -13,7 +13,6 @@ import pytest
 import tifffile
 import zarr
 
-from napari.components import ViewerModel
 from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
     _guess_zarr_path,
@@ -299,36 +298,32 @@ def test_irregular_images(_write_spec, stack):
 
 
 def test_add_zarr(_write_spec):
-    viewer = ViewerModel()
-    fout = _write_spec(ZARR1)
-    viewer.open([fout])
-    assert len(viewer.layers) == 1
-    assert viewer.layers[0].data.shape == ZARR1.shape
+    [out] = npe2.read([str(_write_spec(ZARR1))], stack=False)
+    assert out[0].shape == ZARR1.shape  # type: ignore
 
 
 def test_add_zarr_1d_array_is_ignored():
     # For more details: https://github.com/napari/napari/issues/1471
-    viewer = ViewerModel()
     with TemporaryDirectory(suffix='.zarr') as zarr_dir:
         z = zarr.open(zarr_dir, 'w')
         z['1d'] = np.zeros(3)
 
         image_path = os.path.join(zarr_dir, '1d')
-        viewer.open(image_path)
-
-        assert len(viewer.layers) == 0
+        assert npe2.read([image_path], stack=False) == [(None,)]
 
 
 def test_add_many_zarr_1d_array_is_ignored():
     # For more details: https://github.com/napari/napari/issues/1471
-    viewer = ViewerModel()
     with TemporaryDirectory(suffix='.zarr') as zarr_dir:
         z = zarr.open(zarr_dir, 'w')
         z['1d'] = np.zeros(3)
         z['2d'] = np.zeros((3, 4))
         z['3d'] = np.zeros((3, 4, 5))
 
-        image_paths = [os.path.join(zarr_dir, name) for name in z.array_keys()]
-        viewer.open(image_paths)
-
-        assert [layer.name for layer in viewer.layers] == ['2d', '3d']
+        for name in z.array_keys():
+            [out] = npe2.read([os.path.join(zarr_dir, name)], stack=False)
+            if name == '1d':
+                assert out == (None,)
+            else:
+                assert isinstance(out[0], da.Array)
+                assert out[0].ndim == int(name[0])
