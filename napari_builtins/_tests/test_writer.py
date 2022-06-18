@@ -1,25 +1,28 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+import npe2
 import numpy as np
 import pytest
 from conftest import LAYERS
 
-from napari import layers
-from napari.plugins import _npe2
 from napari_builtins.io import napari_get_reader
 
+if TYPE_CHECKING:
+    from napari import layers
+
 _EXTENSION_MAP = {
-    layers.Image: '.tif',
-    layers.Labels: '.tif',
-    layers.Points: '.csv',
-    layers.Shapes: '.csv',
+    'image': '.tif',
+    'labels': '.tif',
+    'points': '.csv',
+    'shapes': '.csv',
 }
 
 
 @pytest.mark.parametrize('use_ext', [True, False])
-def test_layer_save(tmp_path: Path, some_layer: layers.Layer, use_ext: bool):
+def test_layer_save(tmp_path: Path, some_layer: 'layers.Layer', use_ext: bool):
     """Test saving layer data."""
-    ext = _EXTENSION_MAP[type(some_layer)]
+    ext = _EXTENSION_MAP[some_layer._type_string]
     path_with_ext = tmp_path / f'layer_file{ext}'
     path_no_ext = tmp_path / 'layer_file'
     assert not path_with_ext.is_file()
@@ -45,7 +48,7 @@ def test_layer_save(tmp_path: Path, some_layer: layers.Layer, use_ext: bool):
 
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py
-def test_no_write_layer_bad_extension(some_layer: layers.Layer):
+def test_no_write_layer_bad_extension(some_layer: 'layers.Layer'):
     """Test not writing layer data with a bad extension."""
     with pytest.warns(UserWarning, match='No data written!'):
         assert not some_layer.save('layer.bad_extension')
@@ -56,12 +59,14 @@ def test_get_writer_succeeds(tmp_path: Path):
     """Test writing layers data."""
 
     path = tmp_path / 'layers_folder'
-    # Write data
-    written = _npe2.write_layers(path=str(path), layers=LAYERS)
+    written = npe2.write(
+        path=str(path),
+        layer_data=[layer.as_layer_data_tuple() for layer in LAYERS],
+    )
 
     # check expected files were written
     expected = {
-        str(path / f'{layer.name}{_EXTENSION_MAP[type(layer)]}')
+        str(path / f'{layer.name}{_EXTENSION_MAP[layer._type_string]}')
         for layer in LAYERS
     }
     assert path.is_dir()
