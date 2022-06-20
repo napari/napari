@@ -118,3 +118,13 @@ Out[7]:
     'image'
 )
 ```
+
+### Adding to the viewer
+
+To add a `LayerData` tuple to the napari viewer, use :meth:`Layer.create`:
+
+```python
+>>> image_layer_data = (data, {'name': 'My Image', 'colormap': 'red'}, 'image')
+>>> viewer = napari.current_viewer()
+>>> viewer.add_layer(Layer(*image_layer_data))
+```
