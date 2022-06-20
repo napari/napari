@@ -29,8 +29,8 @@ RUN apt-get update && \
         libxcb-xfixes0 \
         libxcb-shape0
 
-# install napari release version + scikit-image (for examples)
-RUN pip3 install napari[all] scikit-image
+# install napari release version
+RUN pip3 install napari[all]
 COPY examples /tmp/examples
 
 ENTRYPOINT ["python3", "-m", "napari"]
