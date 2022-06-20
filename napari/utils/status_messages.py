@@ -60,7 +60,7 @@ def generate_layer_status(name, position, value):
     msg : string
         String containing a message that can be used as a status update.
     """
-    if position:
+    if position is not None:
         full_coord = map(str, np.round(position).astype(int))
         msg = f"{name} [{' '.join(full_coord)}]"
     else:

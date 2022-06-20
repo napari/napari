@@ -1625,7 +1625,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        if position:
+        if position is not None:
             value = self.get_value(
                 position,
                 view_direction=view_direction,
