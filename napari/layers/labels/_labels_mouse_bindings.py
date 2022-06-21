@@ -22,13 +22,13 @@ def draw(layer, event):
     eraser
     """
     coordinates = mouse_event_to_labels_coordinate(layer, event)
+    if layer._mode == Mode.ERASE:
+        new_label = layer._background_label
+    else:
+        new_label = layer.selected_label
 
     # on press
     with layer.block_history():
-        if layer._mode == Mode.ERASE:
-            new_label = layer._background_label
-        else:
-            new_label = layer.selected_label
 
         layer._draw(new_label, coordinates, coordinates)
         yield

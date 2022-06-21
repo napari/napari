@@ -302,6 +302,7 @@ class Labels(_ImageBase):
             brush_shape=Event,
             contour=Event,
             features=Event,
+            paint=Event,
         )
 
         self._feature_table = _FeatureTable.from_layer(
@@ -1085,6 +1086,33 @@ class Labels(_ImageBase):
         self._staged_history = []
         self._block_history = False
 
+    @contextmanager
+    def block_history(self):
+        prev = self._block_history
+        self._block_history = True
+        try:
+            yield
+            self._commit_staged_history()
+        finally:
+            self._block_history = prev
+
+    def _commit_staged_history(self):
+        """Save staged history to undo history and clear it."""
+        if self._staged_history:
+            self._undo_append(self._staged_history)
+            self._staged_history = []
+
+    def _undo_append(self, item):
+        """Append item to history and emit paint event
+
+        Parameters
+        ----------
+        item : List[Tuple[ndarray, ndarray, int]]
+            list of history atoms to append to undo history
+        """
+        self._undo_history.append(item)
+        self.events.paint(value=item)
+
     def _save_history(self, value):
         """Save a history "atom" to the undo history.
 
@@ -1107,7 +1135,7 @@ class Labels(_ImageBase):
         """
         self._redo_history = deque()
         if not self._block_history:
-            self._undo_history.append([value])
+            self._undo_append([value])
         else:
             self._staged_history.append(value)
 
@@ -1217,19 +1245,7 @@ class Labels(_ImageBase):
             self.data, match_indices
         )
 
-        self._save_history(
-            (
-                match_indices,
-                np.array(self.data[match_indices], copy=True),
-                new_label,
-            )
-        )
-
-        # Replace target pixels with new_label
-        self.data[match_indices] = new_label
-
-        if refresh is True:
-            self.refresh()
+        self.data_setitem(match_indices, new_label, refresh)
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
         """Paint new label into layer at given coordinates,
@@ -1261,22 +1277,6 @@ class Labels(_ImageBase):
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
         self.refresh()
-
-    @contextmanager
-    def block_history(self):
-        prev = self._block_history
-        self._block_history = True
-        try:
-            yield
-            self._finish_painting()
-        finally:
-            self._block_history = prev
-
-    def _finish_painting(self):
-        """Save staged history to undo history and emit paint event."""
-        if self._staged_history:
-            self._undo_history.append(self._staged_history)
-            self._staged_history = []
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
@@ -1344,18 +1344,30 @@ class Labels(_ImageBase):
                 keep_coords = self.data[slice_coord] == self._background_label
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
-        # save the existing values to the history
+        self.data_setitem(slice_coord, new_label, refresh)
+
+    def data_setitem(self, indices, value, refresh=True):
+        """Set `indices` in `data` to `value`.
+
+        Parameters
+        ----------
+        indices : sequence of int
+            indices in data to overwrite
+        value : int
+            new label value
+        refresh : bool, optional
+            whether to refresh the view, by default True
+        """
         self._save_history(
             (
-                slice_coord,
-                np.array(self.data[slice_coord], copy=True),
-                new_label,
+                indices,
+                np.array(self.data[indices], copy=True),
+                value,
             )
         )
 
         # update the labels image
-        self.data[slice_coord] = new_label
-
+        self.data[indices] = value
         if refresh is True:
             self.refresh()
 
