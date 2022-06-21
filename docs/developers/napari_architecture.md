@@ -21,7 +21,7 @@ The separation of the python models from viewer GUI code allows:
 * napari has the option to move away from the rendering backend currently used
 * tests can easily be run headlessly
 
-## Event e
+## EventedModel
 
 Users are able to interact with the napari viewer via both the python console
 and the GUI interface. This means that python models and qt objects
