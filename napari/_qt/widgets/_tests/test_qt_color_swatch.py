@@ -13,15 +13,9 @@ from napari._qt.widgets.qt_color_swatch import (
 def test_succesfull_create_qcolorswatchedit(qtbot, color, tooltip):
     widget = QColorSwatchEdit(initial_color=color, tooltip=tooltip)
     qtbot.add_widget(widget)
-    if color is None:
-        test_color = TRANSPARENT
-    else:
-        test_color = color
 
-    if tooltip is None:
-        test_tooltip = 'click to set color'
-    else:
-        test_tooltip = tooltip
+    test_color = color or TRANSPARENT
+    test_tooltip = tooltip or 'click to set color'
 
     assert widget.color_swatch.toolTip() == test_tooltip
     numpy.testing.assert_array_equal(widget.color, test_color)
@@ -32,15 +26,9 @@ def test_succesfull_create_qcolorswatchedit(qtbot, color, tooltip):
 def test_succesfull_create_qcolorswatch(qtbot, color, tooltip):
     widget = QColorSwatch(initial_color=color, tooltip=tooltip)
     qtbot.add_widget(widget)
-    if color is None:
-        test_color = TRANSPARENT
-    else:
-        test_color = color
 
-    if tooltip is None:
-        test_tooltip = 'click to set color'
-    else:
-        test_tooltip = tooltip
+    test_color = color or TRANSPARENT
+    test_tooltip = tooltip or 'click to set color'
 
     assert widget.toolTip() == test_tooltip
     numpy.testing.assert_array_equal(widget.color, test_color)
