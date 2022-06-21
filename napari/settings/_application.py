@@ -7,7 +7,6 @@ from pydantic import Field, validator
 from ..utils._base import _DEFAULT_LOCALE
 from ..utils.events.custom_types import conint
 from ..utils.events.evented_model import EventedModel
-from ..utils.interactions import Shortcut
 from ..utils.notifications import NotificationSeverity
 from ..utils.translations import trans
 from ._constants import LoopMode
@@ -158,10 +157,9 @@ class ApplicationSettings(EventedModel):
     )
     confirm_close_window: bool = Field(
         default=True,
-        title=trans._("Confirm window closing"),
+        title=trans._("Confirm window or application closing"),
         description=trans._(
-            "Ask for confirmation before closing window with {shortcut}",
-            shortcut=Shortcut("Control-W").platform,
+            "Ask for confirmation before closing a napari window or application (all napari windows).",
         ),
     )
 
