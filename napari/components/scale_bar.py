@@ -20,7 +20,7 @@ class ScaleBar(EventedModel):
         If scale bar are colored or not. If colored then
         default color is magenta. If not colored than
         scale bar color is the opposite of the canvas
-        background.
+        background or the background box.
     color : Optional[str | array-like]
         Scalebar and text color. Can be any color name recognized by vispy or
         hex value if starting with `#`. If array-like must be 1-dimensional
@@ -39,7 +39,7 @@ class ScaleBar(EventedModel):
     box : bool
         If background box is visible or not.
     box_color : Optional[str | array-like]
-        Box color. Can be any color name recognized by vispy or
+        Background box color. Can be any color name recognized by vispy or
         hex value if starting with `#`. If array-like must be 1-dimensional
         array with 3 or 4 elements.
     unit : Optional[str]
@@ -49,18 +49,18 @@ class ScaleBar(EventedModel):
 
     visible: bool = False
     colored: bool = False
-    color: Optional[Array[float, (4,)]] = None
+    color: Array[float, (4,)] = [1, 0, 1, 1]
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     box: bool = False
-    box_color: Optional[Array[float, (4,)]] = None
+    box_color: Array[float, (4,)] = [0, 0, 0, 0.6]
     unit: Optional[str] = None
 
-    @validator('color', pre=True)
+    @validator('color', pre=True, always=True)
     def _coerce_color(cls, v):
         return transform_color(v)[0]
 
-    @validator('box_color', pre=True)
+    @validator('box_color', pre=True, always=True)
     def _coerce_box_color(cls, v):
         return transform_color(v)[0]
