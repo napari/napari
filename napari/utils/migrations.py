@@ -1,0 +1,39 @@
+import warnings
+from functools import wraps
+
+from napari.utils.translations import trans
+
+
+def rename_argument(from_name: str, to_name: str):
+    """
+    This is decorator for simple rename function argument
+    without break backward compatibility.
+
+    Parameters
+    ----------
+    from_name : str
+        old name of argument
+    to_name : str
+        new name of argument
+    """
+
+    def _wrapper(func):
+        @wraps(func)
+        def _update_from_dict(*args, **kwargs):
+            if from_name in kwargs:
+                warnings.warn(
+                    trans._(
+                        "Argument {from_name} is deprecated, please use {to_name} instead.",
+                        from_name=from_name,
+                        to_name=to_name,
+                    ),
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+                kwargs = kwargs.copy()
+                kwargs[to_name] = kwargs.pop(from_name)
+            return func(*args, **kwargs)
+
+        return _update_from_dict
+
+    return _wrapper

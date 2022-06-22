@@ -1,0 +1,26 @@
+import pytest
+
+from napari.utils.migrations import rename_argument
+
+
+def test_simple():
+    @rename_argument("a", "b")
+    def sample_fun(b):
+        return b
+
+    assert sample_fun(1) == 1
+    assert sample_fun(b=1) == 1
+    with pytest.warns(FutureWarning):
+        assert sample_fun(a=1) == 1
+
+
+def test_constructor():
+    class Sample:
+        @rename_argument("a", "b")
+        def __init__(self, b):
+            self.b = b
+
+    assert Sample(1).b == 1
+    assert Sample(b=1).b == 1
+    with pytest.warns(FutureWarning):
+        assert Sample(a=1).b == 1
