@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt.utils import qthrottled
+from packaging.version import parse as parse_version
 
 import napari
 from napari.components.layerlist import Extent
@@ -26,7 +27,7 @@ from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
 
 
-NAPARI_GE_4_16 = tuple(int(x) for x in napari.__version__.split(".")[:3]) > (0, 4, 16)
+NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version("0.4.16")
 
 def copy_layer(layer: Layer, name: str = ""):
     res_layer = deepcopy(layer)
@@ -388,7 +389,7 @@ if __name__ == "__main__":
     dock_widget = MultipleViewerWidget(view)
     cross = CrossWidget(view)
 
-view.window.add_dock_widget(dock_widget, name="Sample")
-view.window.add_dock_widget(cross, name="Cross", area="left")
+    view.window.add_dock_widget(dock_widget, name="Sample")
+    view.window.add_dock_widget(cross, name="Cross", area="left")
 
-napari.run()
+    napari.run()
