@@ -383,9 +383,10 @@ class MultipleViewerWidget(QSplitter):
             self._block = False
 
 
-view = napari.Viewer()
-dock_widget = MultipleViewerWidget(view)
-cross = CrossWidget(view)
+if __name__ == "__main__":
+    view = napari.Viewer()
+    dock_widget = MultipleViewerWidget(view)
+    cross = CrossWidget(view)
 
 view.window.add_dock_widget(dock_widget, name="Sample")
 view.window.add_dock_widget(cross, name="Cross", area="left")
