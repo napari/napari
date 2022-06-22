@@ -46,7 +46,7 @@ class Dims(EventedModel):
 The `Dims` class inherits from the `EventedModel` and has the field `ndisplay`
 which can either take on the value `2` or `3`.
 
-The matching qt class is `QtDims` and have a reference to `Dims` object,
+The matching qt class is `QtDims` and has a reference to `Dims` object,
 allowing direct updates if the field is changed via the GUI. We also
 connect a function `self._update_display` such that it is called to when the
 field `ndisplay` changes:
