@@ -52,7 +52,6 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
 
             if field.field_info.extra.get('requires_restart'):
                 emitter = getattr(self.events, name)
-                print(name)
 
                 @emitter.connect
                 def _warn_restart(*_):
