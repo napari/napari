@@ -13,6 +13,7 @@ from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.migrations import rename_argument
 from ...utils.naming import magic_name
 from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
@@ -209,6 +210,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
+    @rename_argument("interpolation", "interpolation2d")
     def __init__(
         self,
         data,
@@ -217,7 +219,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         colormap='gray',
         contrast_limits=None,
         gamma=1,
-        interpolation='nearest',
+        interpolation2d='nearest',
+        interpolation3d='linear',
         rendering='mip',
         iso_threshold=0.5,
         attenuation=0.05,
@@ -292,6 +295,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.add(
             mode=Event,
             interpolation=Event,
+            interpolation2d=Event,
+            interpolation3d=Event,
             rendering=Event,
             depiction=Event,
             iso_threshold=Event,
@@ -354,15 +359,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # triggered (self._update_dims(), below).
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
-        self._interpolation = {
-            2: Interpolation.NEAREST,
-            3: (
-                Interpolation3D.NEAREST
-                if self.__class__.__name__ == 'Labels'
-                else Interpolation3D.LINEAR
-            ),
-        }
-        self.interpolation = interpolation
+        self._interpolation2d = Interpolation.NEAREST
+        self._interpolation3d = Interpolation3D.NEAREST
+        self.interpolation2d = interpolation2d
+        self.interpolation3d = interpolation3d
         self.rendering = rendering
         self.depiction = depiction
         if plane is not None:
@@ -527,18 +527,46 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self._ndisplay])
+        return str(
+            self._interpolation2d
+            if self._ndisplay == 2
+            else self._interpolation3d
+        )
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
+        warnings.warn(
+            trans._(
+                "Interpolation setting is deprecated. Please use interpolation2d or interpolation3d",
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
         if self._ndisplay == 3:
-            self._interpolation[self._ndisplay] = Interpolation3D(
-                interpolation
-            )
+            self.interpolation3d = interpolation
+            self.events.interpolation(value=self.interpolation3d)
         else:
-            self._interpolation[self._ndisplay] = Interpolation(interpolation)
-        self.events.interpolation(value=self._interpolation[self._ndisplay])
+            self.interpolation2d = interpolation
+            self.events.interpolation(value=self.interpolation2d)
+
+    @property
+    def interpolation2d(self):
+        return str(self._interpolation2d)
+
+    @interpolation2d.setter
+    def interpolation2d(self, value):
+        self._interpolation2d = Interpolation(value)
+        self.events.interpolation2d(value=self._interpolation2d)
+
+    @property
+    def interpolation3d(self):
+        return str(self._interpolation3d)
+
+    @interpolation3d.setter
+    def interpolation3d(self, value):
+        self._interpolation3d = Interpolation3D(value)
+        self.events.interpolation3d(value=self._interpolation3d)
 
     @property
     def depiction(self):
@@ -1016,7 +1044,8 @@ class Image(_ImageBase):
                 'multiscale': self.multiscale,
                 'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
+                'interpolation2d': self.interpolation2d,
+                'interpolation3d': self.interpolation3d,
                 'rendering': self.rendering,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),

@@ -59,7 +59,12 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(
             self._on_contrast_limits_change

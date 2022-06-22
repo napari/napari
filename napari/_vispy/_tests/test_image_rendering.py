@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari._tests.utils import skip_on_win_ci
 from napari._vispy.layers.image import VispyImageLayer
@@ -17,8 +18,11 @@ def test_image_rendering(make_napari_viewer):
     assert layer.rendering == 'mip'
 
     # Change the interpolation property
-    layer.interpolation = 'linear'
+    with pytest.warns(FutureWarning):
+        layer.interpolation = 'linear'
+    assert layer.interpolation2d == 'nearest'
     assert layer.interpolation == 'linear'
+    assert layer.interpolation3d == 'linear'
 
     # Change rendering property
     layer.rendering = 'translucent'

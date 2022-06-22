@@ -315,10 +315,12 @@ def test_interpolation():
     layer = Image(data)
     assert layer.interpolation == 'nearest'
 
-    layer = Image(data, interpolation='bicubic')
+    layer = Image(data, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'bicubic'
     assert layer.interpolation == 'bicubic'
 
-    layer.interpolation = 'bilinear'
+    layer.interpolation2d = 'bilinear'
+    assert layer.interpolation2d == 'bilinear'
     assert layer.interpolation == 'bilinear'
 
 

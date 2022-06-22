@@ -55,7 +55,12 @@ class QtImageControls(QtBaseImageControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
@@ -260,7 +265,7 @@ class QtImageControls(QtBaseImageControls):
         """
         interp_string = event.value.value
 
-        with self.layer.events.interpolation.blocker():
+        with self.layer.events.interpolation.blocker(), self.layer.events.interpolation2d.blocker(), self.layer.events.interpolation3d.blocker():
             if self.interpComboBox.findText(interp_string) == -1:
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)
