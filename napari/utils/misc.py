@@ -31,6 +31,7 @@ from typing import (
 
 import numpy as np
 
+from napari.types import LayerDataTupleNamed
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -470,11 +471,15 @@ def ensure_layer_data_tuple(val):
     return val
 
 
-def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
-    # allow empty list to be returned but do nothing in that case
+def ensure_list_of_named_layer_data_tuple(val) -> List[LayerDataTupleNamed]:
+    """
+    Make sure *val* is a list of LayerDataTupleNamed objects.
+    """
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
-            return [ensure_layer_data_tuple(v) for v in val]
+            return [
+                LayerDataTupleNamed(ensure_layer_data_tuple(v)) for v in val
+            ]
     raise TypeError(
         trans._('Not a valid list of layer data tuples!', deferred=True)
     )

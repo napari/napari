@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union, get_origin
 from napari import layers, types, viewer
 from napari._app_model.injection._providers import _provide_viewer
 from napari.layers._source import layer_source
+from napari.utils.misc import ensure_list_of_named_layer_data_tuple
 
 
 def _add_layer_data_tuples_to_viewer(
@@ -15,19 +16,17 @@ def _add_layer_data_tuples_to_viewer(
     viewer=None,
     source: Optional[dict] = None,
 ):
-    from napari.utils.misc import ensure_list_of_layer_data_tuple
-
     if viewer is None:
         viewer = _provide_viewer()
     if viewer and data is not None:
         data = data if isinstance(data, list) else [data]
-        for datum in ensure_list_of_layer_data_tuple(data):
+        for datum in ensure_list_of_named_layer_data_tuple(data):
             # then try to update a viewer layer with the same name.
-            if len(datum) > 1 and (name := datum[1].get("name")):
+            if (name := datum.attributes.name) is not None:
                 with suppress(KeyError):
                     layer = viewer.layers[name]
-                    layer.data = datum[0]
-                    for k, v in datum[1].items():
+                    layer.data = datum.data
+                    for k, v in datum.attributes.items():
                         setattr(layer, k, v)
                     continue
             with layer_source(**source) if source else nullcontext():

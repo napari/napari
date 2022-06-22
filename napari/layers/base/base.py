@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
@@ -48,6 +48,9 @@ from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari.types import FullLayerData
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -869,7 +872,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _type_string(self):
         return self.__class__.__name__.lower()
 
-    def as_layer_data_tuple(self):
+    def as_layer_data_tuple(self) -> FullLayerData:
         state = self._get_state()
         state.pop('data', None)
         return self.data, state, self._type_string
