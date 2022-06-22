@@ -26,6 +26,8 @@ from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
 
 
+NAPARI_GE_4_16 = tuple(int(x) for x in napari.__version__.split(".")[:3]) > (0, 4, 16)
+
 def copy_layer(layer: Layer, name: str = ""):
     res_layer = deepcopy(layer)
     # this deepcopy is not optimal for layers and images layers
@@ -128,16 +130,24 @@ class CrossWidget(QCheckBox):
 
     @qthrottled
     def _update_extent(self):
-        extent_list = [
-            layer.extent
-            for layer in self.viewer.layers
-            if layer is not self.layer
-        ]
-        self._extent = Extent(
-            data=None,
-            world=self.viewer.layers._get_extent_world(extent_list),
-            step=self.viewer.layers._get_step_size(extent_list),
-        )
+        if NAPARI_GE_4_16:
+            layers = [
+                layer
+                for layer in self.viewer.layers
+                if layer is not self.layer
+            ]
+            self._extent = self.viewer.layers.get_extent(layers)
+        else:
+            extent_list = [
+                layer.extent
+                for layer in self.viewer.layers
+                if layer is not self.layer
+            ]
+            self._extent = Extent(
+                data=None,
+                world=self.viewer.layers._get_extent_world(extent_list),
+                step=self.viewer.layers._get_step_size(extent_list),
+            )
         self.update_cross()
 
     def _update_ndim(self, event):
