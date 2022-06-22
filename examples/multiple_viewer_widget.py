@@ -130,6 +130,11 @@ class CrossWidget(QCheckBox):
 
     @qthrottled
     def _update_extent(self):
+        """
+        In this function there is calculated range and steep of data.
+        To not impact this values by added cross layer there is steep
+        of filtering layers.
+        """
         if NAPARI_GE_4_16:
             layers = [
                 layer
