@@ -12,8 +12,7 @@ class ColorValue(np.ndarray):
 
     Using this as a field type in a pydantic model means that validation
     of that field (e.g. on initialization or setting) will automatically
-    use the ``validate`` method to coerce an input value to a single color
-    value.
+    use the ``validate`` method to coerce a value to a single color.
     """
 
     @classmethod
@@ -76,8 +75,7 @@ class ColorArray(np.ndarray):
 
     Using this as a field type in a pydantic model means that validation
     of that field (e.g. on initialization or setting) will automatically
-    use the ``validate`` method to coerce an input value to an array of
-    color values.
+    use the ``validate`` method to coerce a value to an array of colors.
     """
 
     @classmethod
