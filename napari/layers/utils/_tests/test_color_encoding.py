@@ -1,9 +1,8 @@
-import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils._color_encoding import (
-    ColorArray,
+from napari._tests.utils import assert_colors_equal
+from napari.layers.utils.color_encoding import (
     ColorEncoding,
     ConstantColorEncoding,
     DirectColorEncoding,
@@ -177,9 +176,9 @@ def test_quantitative_with_missing_feature(features):
         encoding(features)
 
 
-def test_validate_from_string():
-    argument = 'class'
-    expected = DirectColorEncoding(feature=argument)
+def test_validate_from_named_color():
+    argument = 'red'
+    expected = ConstantColorEncoding(constant=argument)
 
     actual = ColorEncoding.validate(argument)
 
@@ -258,9 +257,3 @@ def test_validate_from_quantitative_dict(features):
     actual = ColorEncoding.validate(argument)
 
     assert actual == expected
-
-
-def assert_colors_equal(actual, expected):
-    actual_array = ColorArray.validate_type(actual)
-    expected_array = ColorArray.validate_type(expected)
-    np.testing.assert_array_equal(actual_array, expected_array)
