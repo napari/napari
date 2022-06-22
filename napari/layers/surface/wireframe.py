@@ -20,6 +20,5 @@ class SurfaceWireframe(EventedModel):
     """
 
     visible: bool = False
-    # TODO: check if this change in stored value is desired.
     color: ColorValue = 'black'
     width: float = 1

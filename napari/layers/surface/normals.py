@@ -34,7 +34,6 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    # TODO: check if this change in stored value is desired.
     color: ColorValue = 'black'
     width: float = 1
     length: float = 5
