@@ -45,11 +45,12 @@ Additionally, while this was not the main goal of this NAP, people have sometime
 
 # Implementation proposal
 
+There are a few ways to tackle this issue (see [](nap-3:alternatives)), with different upsides and downsides; the current "main" proposal is aiming to solve the issue by avoiding breaking or major api changes (which are instead required for the alternatives).
+
 ## API
 
 `ViewerModel.spaces` would be a (selectable) `EventedList` or similar evented collection, each containing a `Space` object, with the following attributes:
 - `layers`: a `layerlist` (or top-level `layergroup`, in the future)
-- `active`: similar to how a layer in a `layerlist` can be active, a `Space` in the `spaces` can be active; this will determine which space is loaded into the layerlist and used to populate the canvas
 - `camera`: a snapshot of the state of the `Camera` model (i.e: `Camera.dict()`)
 - `dims`: a snapshot of the state of the `Dims` model (i.e: `Dims.dict()`)
 
@@ -74,6 +75,11 @@ The remaining fields should probably not be serialized:
 
 In the end, all `spaces` would do is effectively provide a quick way to swap some of the `ViewerModel` state in and out.
 
+---
+
+At the level of `ViewerModel` itself, we would have an `active_space` attribute: similar to how a layer in a `layerlist` can be active, a `Space` in the `spaces` can be active (with the important distinction that only *one* space can be active); this will determine which space is loaded into the layerlist and used to populate the canvas.
+    - in a future with multi-canvas (or multi-viewer), this could be on a per-canvas (or per-viewer) basis.
+
 ## GUI
 
 The GUI could expose this as a (searchable) dropdown menu above the layerlist, and provide shortcuts to navigate easility through spaces, such as `page-up`, `page-down`.
@@ -86,6 +92,7 @@ Reader/writer plugins should be able to provide/consume spaces. If unspecified, 
 Widget plugins would be backwards compatible, as they simply act on the active `Space`. On the other hand, new plugins would be able to access other spaces as well, allowing for easier abstraction of "batch" workflows.
 
 
+(nap-3:alternatives)=
 # Alternatives
 
 ## Naming
@@ -96,24 +103,37 @@ Instead of `Space`, we could use a different name:
 - `State`: better conveys that non only layerlist state is retained. A bit generic.
 
 (nap-3:multiple-viewers)=
-## Multiple viewers
+## Multiple viewers, `app` interface
 
 These problems could be also solved by allowing multiple `Viewer` objects, each with its own `ViewerModel`, by separating out the `QtViewer` logic to an `Application` level [^application].
 
 ```python
-app.viewers # list of all viewers
-app.viewer # current viewer model
-app.window # the singleton window now lives on the app rather than the viewer
+app.viewers  # list of all viewers
+app.viewer  # current viewer model
+app.window  # the singleton window now lives on the app rather than the viewer
 ```
 
-This is in many ways equivalent to `spaces`, with object serving the same purpose but being named differently: `Application` takes place of the `Viewer` object; `Viewers` are acting as `spaces`, with the difference that they are themselves a `ViewerModel`, rather than holding a snapshot of parts of a `ViewerModel`.
+This is in many ways equivalent to `spaces`, with object serving the same purpose but being named differently: `Application` takes place of the `Viewer` object; `Viewers` are acting as `Spaces`, with the difference that they are themselves a `ViewerModel`, rather than holding a snapshot of parts of a `ViewerModel`.
 
-While the nomenclature is not one of the important points of this NAP, I find the use of the word `Viewer` confusing in this alternative implementation. Intuitively, for me (and, I expect, for most users) the `Viewer` is the window, regardless of the abstraction of `ViewerModel` and `Viewer` that we have on the backend. Additionally, the above changes would cause a big API change in the most basic interaction with `napari` (`app.viewer` rather than `viewer`), unless we "hide" it away (`viewer.app.viewers`), which would hurt usability and discoverability.
+While the nomenclature is not one of the important points of this NAP, I find the use of the word `Viewer` confusing in this alternative implementation. Intuitively, for me (and, I expect, for most users) the `Viewer` is the window, regardless of the abstraction of `ViewerModel` and `Viewer` that we have on the backend. Additionally, the above changes would cause a big API change in the most basic interaction with `napari` (`app.viewer` rather than `viewer`), unless we "hide" it away (i.e: `viewer.app.viewers`), which would hurt usability and discoverability.
 
 Additionally, there are no benefits to keeping multiple `ViewerModel` objects alive, since their purpose is simply to act as an evented model to update the GUI.
 
 Finally, this alternative would further complicate our ability to support multiple *actual* `Viewers` with their own window, separate from each other [^multiple-viewers]. In that case, the `viewer.app.viewers` seems like a better fit and wouldn't add too much overhead to basic operations.
 
+## Spaces, `app` interface
+
+Alternatively, the `app` interface can be used in conjunction with the `spaces` approach, distinguishing between `Space` and `Viewer`:
+
+```python
+app = viewer.app  # shared app object between viewer
+app.spaces  # spaces list, but held by the app object (and thus accessible across viewers)
+viewer.active_space = app.spaces[0]  # choose which space to display in a viewer
+```
+
+This improves on the [](nap-3:multiple-viewers) approach ont the clarity of separation between `Spaces` and `Viewers`, and on the main proposal by explicitly allowing sharing spaces between viewers. 
+
+A downside is that we lose the single point of truth for the `Spaces`. If a space is loaded in two viewers, we would need to connect events so that if something about the state is changed (such as the `Dims`) it should update the state of all the other Viewers attached to the state. This is not necessary for the layerlist and the layers, since those would *be* the same objects; in fact, this is a point in favour of using `ViewerModel` themselves to encode the state, as proposed in [](nap-3:multiple-viewers), or to at least *split out* from the `ViewerModel` the fields that would be instead held by `Spaces`.
 
 # Backward compatibility
 
