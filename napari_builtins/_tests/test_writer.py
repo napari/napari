@@ -59,10 +59,7 @@ def test_get_writer_succeeds(tmp_path: Path):
     """Test writing layers data."""
 
     path = tmp_path / 'layers_folder'
-    written = npe2.write(
-        path=str(path),
-        layer_data=[layer.as_layer_data_tuple() for layer in LAYERS],
-    )
+    written = npe2.write(path=str(path), layer_data=LAYERS)  # type: ignore
 
     # check expected files were written
     expected = {
