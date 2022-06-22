@@ -1120,7 +1120,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.value)
+        self._status_bar.setStatusText(event.value)
 
     def _title_changed(self, event):
         """Update window title.

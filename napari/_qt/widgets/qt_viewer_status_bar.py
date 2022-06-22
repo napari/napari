@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QStatusBar
+from superqt import QElidingLabel
 
 from ...utils.translations import trans
 from ..dialogs.qt_activity_dialog import ActivityToggleItem
@@ -10,12 +11,16 @@ from ..dialogs.qt_activity_dialog import ActivityToggleItem
 if TYPE_CHECKING:
     from ..qt_main_window import _QtMainWindow
 
+STATUS_MSG_WIDTH = 600
+
 
 class ViewerStatusBar(QStatusBar):
     def __init__(self, parent: '_QtMainWindow') -> None:
         super().__init__(parent=parent)
 
-        self.showMessage(trans._('Ready'))
+        self._status_message = QElidingLabel(trans._('Ready'))
+        self._status_message.setElideMode(Qt.TextElideMode.ElideMiddle)
+        self.addWidget(self._status_message)
         self._help = QLabel('')
         self.addPermanentWidget(self._help)
 
@@ -29,6 +34,12 @@ class ViewerStatusBar(QStatusBar):
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
+
+    def setStatusText(self, text: str) -> None:
+        self._status_message.resize(
+            STATUS_MSG_WIDTH, self._status_message.height()
+        )
+        self._status_message.setText(text)
 
     def _toggle_activity_dock(self, visible: bool):
         par: _QtMainWindow = self.parent()
