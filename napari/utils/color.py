@@ -96,7 +96,7 @@ class ColorArray(np.ndarray):
             A supported sequence of single color values.
             See ``ColorValue.validate`` for valid single color values.
             In general each value should be of the same type, so avoid
-            passing values like ``['red', [0, 0, 1]]``
+            passing values like ``['red', [0, 0, 1]]``.
 
         Returns
         ----------
@@ -123,8 +123,8 @@ class ColorArray(np.ndarray):
         array([[1., 0., 0., 1.],
                [0., 0., 1., 1.]], dtype=float32)
         """
-        return (
-            np.empty((0, 4), np.float32)
-            if len(value) == 0
-            else transform_color(value)
-        )
+        # Special case an empty supported sequence because transform_color
+        # warns and returns an array containing a default color in that case.
+        if isinstance(value, (np.ndarray, list, tuple)) and len(value) == 0:
+            return np.empty((0, 4), np.float32)
+        return transform_color(value)
