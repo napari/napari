@@ -11,10 +11,9 @@ class SurfaceWireframe(EventedModel):
     ----------
     visible : bool
         Whether the wireframe is displayed.
-    color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
+    color : ColorValue
+        The color of the wireframe lines.
+        See ``ColorValue.validate`` for supported values.
     width : float
         The width of the wireframe lines.
     """

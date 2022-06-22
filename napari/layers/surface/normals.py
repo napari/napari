@@ -23,9 +23,8 @@ class Normals(EventedModel):
     visible : bool
         Whether the normals are displayed.
     color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
+        The color of the normal lines.
+        See ``ColorValue.validate`` for supported values.
     width : float
         The width of the normal lines.
     length : float
