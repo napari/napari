@@ -3,14 +3,13 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import root_validator, validator
-
-from napari.utils.color import ColorArray, ColorValue
+from pydantic import Field, root_validator, validator
 
 from ...utils.colormaps import Colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ._color_manager_constants import ColorMode
 from .color_manager_utils import (
@@ -144,7 +143,7 @@ class ColorManager(EventedModel):
     """
 
     # fields
-    current_color: Optional[ColorValue] = None
+    current_color: Optional[Array[float, (4,)]] = None
     color_mode: ColorMode = ColorMode.DIRECT
     color_properties: Optional[ColorProperties] = None
     continuous_colormap: Colormap = ensure_colormap('viridis')
@@ -152,12 +151,30 @@ class ColorManager(EventedModel):
     categorical_colormap: CategoricalColormap = CategoricalColormap.from_array(
         [0, 0, 0, 1]
     )
-    colors: ColorArray = []
+    colors: Array[float, (-1, 4)] = Field(
+        default_factory=lambda: np.empty((0, 4))
+    )
 
     # validators
     @validator('continuous_colormap', pre=True)
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
+
+    @validator('colors', pre=True)
+    def _ensure_color_array(cls, v):
+        if len(v) > 0:
+            return transform_color(v)
+        else:
+            return np.empty((0, 4))
+
+    @validator('current_color', pre=True)
+    def _coerce_current_color(cls, v):
+        if v is None:
+            return v
+        elif len(v) == 0:
+            return None
+        else:
+            return transform_color(v)[0]
 
     @root_validator()
     def _validate_colors(cls, values):
@@ -426,7 +443,7 @@ class ColorManager(EventedModel):
             If the ColorManager is not in DIRECT mode, updating the values
             will change the mode to DIRECT.
         """
-        self.current_color = current_color
+        self.current_color = transform_color(current_color)[0]
         if len(update_indices) > 0:
             self.color_mode = ColorMode.DIRECT
             cur_colors = self.colors.copy()

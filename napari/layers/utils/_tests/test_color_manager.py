@@ -120,6 +120,7 @@ def test_invalid_color_properties(c_props):
     'curr_color,expected',
     [
         (None, np.array([0, 0, 0, 1])),
+        ([], np.array([0, 0, 0, 1])),
         ('red', np.array([1, 0, 0, 1])),
         ([1, 0, 0, 1], np.array([1, 0, 0, 1])),
     ],
@@ -130,14 +131,6 @@ def test_current_color_coercion(curr_color, expected):
         colors=colors, current_color=curr_color, color_mode='direct'
     )
     np.testing.assert_allclose(cm.current_color, expected)
-
-
-# TODO: should we change transform_color to handle an empty list
-# without a warning? Should the default be white or black like None?
-def test_current_color_coercion_with_empty_list():
-    with pytest.warns(UserWarning):
-        cm = ColorManager(current_color=[], color_mode='direct')
-    np.testing.assert_allclose(cm.current_color, [1, 1, 1, 1])
 
 
 color_str = ['red', 'red', 'red']
