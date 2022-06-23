@@ -109,6 +109,22 @@ class own_partial:
         )
 
 
+class QtViewerWrap(QtViewer):
+    def __init__(self, main_viewer, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.main_viewer = main_viewer
+
+    def _qt_open(
+        self,
+        filenames: list,
+        stack: bool,
+        plugin: str = None,
+        layer_type: str = None,
+        **kwargs,
+    ):
+        """for drag and drop open files"""
+        self.main_viewer.window._qt_viewer._qt_open(filenames, stack, plugin, layer_type, **kwargs)
+
 class CrossWidget(QCheckBox):
     """
     Widget to control the cross layer. because of the performance reason
@@ -215,8 +231,8 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model1 = ViewerModel(title="model1")
         self.viewer_model2 = ViewerModel(title="model2")
         self._block = False
-        self.qt_viewer1 = QtViewer(self.viewer_model1)
-        self.qt_viewer2 = QtViewer(self.viewer_model2)
+        self.qt_viewer1 = QtViewerWrap(viewer, self.viewer_model1)
+        self.qt_viewer2 = QtViewerWrap(viewer, self.viewer_model2)
         self.tab_widget = QTabWidget()
         w1 = ExampleWidget()
         w2 = ExampleWidget()
