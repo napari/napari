@@ -25,7 +25,7 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Image, Labels, Layer, Vectors
 from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
-
+from napari.utils.notifications import show_info
 
 NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version("0.4.16")
 
@@ -64,6 +64,11 @@ def center_cross_on_mouse(viewer: napari.Viewer):
 
     print(viewer.title, viewer.cursor.position)
     # FIXME times to time wrong viewer is selected
+
+    if not getattr(viewer, "_mouse_over_canvas", True):
+        # There is no way fo napari 0.4.15 to check if mose is over sending canvas. 
+        show_info("Mouse is not over the canvas. You may need to click on the canvas.")
+        return
 
     viewer.dims.current_step = tuple(
         np.round(
@@ -262,7 +267,6 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model2.events.status.connect(self._status_update)
 
     def _status_update(self, event):
-        print(event.value)
         self.viewer.status = event.value
 
 
