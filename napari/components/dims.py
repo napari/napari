@@ -346,7 +346,7 @@ class Dims(EventedModel):
         self.range = ((0, 2, 1),) * self.ndim
         self.current_step = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
-        
+
     def transpose(self):
         """Transpose displayed dimensions."""
         self._transpose()
