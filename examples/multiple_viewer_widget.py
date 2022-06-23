@@ -241,6 +241,11 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model1.dims.events.current_step.connect(self._point_update)
         self.viewer_model2.dims.events.current_step.connect(self._point_update)
         self.viewer.dims.events.order.connect(self._order_update)
+        self.viewer.events.reset_view.connect(self._reset_view)
+
+    def _reset_view(self):
+        self.viewer_model1.reset_view()
+        self.viewer_model2.reset_view()
 
     def _layer_selection_changed(self, event):
         """
