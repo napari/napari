@@ -66,7 +66,10 @@ multi-canvas and multi-scale slicing.
 
 ### Goals
 
-To summarize the scope of this project, we define a few high level goals, each with many prioritized features where P0 is a must-have, P1 is a should-have, and P2 is a could-have. Some of these goals may already be achieved by napari in its current form, but are captured here to prevent any regression caused by this work. 
+To summarize the scope of this project, we define a few high level goals.
+Each goal has many prioritized features where P0 is a must-have, P1 is a should-have,
+and P2 is a could-have. Some of these goals may already be achieved by napari in its
+current form, but are captured here to prevent any regression caused by this work.
 
 
 #### 1. Remain responsive when slicing slow data
