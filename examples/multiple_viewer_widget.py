@@ -145,7 +145,7 @@ class CrossWidget(QCheckBox):
         self._update_extent()
         self.viewer.dims.events.connect(self._update_extent)
 
-    @qthrottled
+    @qthrottled(leading=False)
     def _update_extent(self):
         """
         In this function there is calculated range and steep of data.
