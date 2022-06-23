@@ -346,6 +346,10 @@ class Dims(EventedModel):
         self.range = ((0, 2, 1),) * self.ndim
         self.current_step = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
+        
+    def transpose(self):
+        """Transpose displayed dimensions."""
+        self._transpose()
 
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
