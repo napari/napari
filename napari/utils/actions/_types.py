@@ -6,9 +6,8 @@ from typing import Callable, List, NewType, Optional, Union
 
 from pydantic import BaseModel
 
-from napari.utils import context
-from napari.utils.translations import TranslationString
-
+from ...utils import context
+from ...utils.translations import TranslationString
 from ._menus import MenuId
 
 WINDOWS = os.name == 'nt'
@@ -41,10 +40,6 @@ class KeybindingRule(BaseModel):
         return self.primary
 
 
-class BoundKeybindingRule(KeybindingRule):
-    id: CommandId
-
-
 # menus
 
 
@@ -56,6 +51,14 @@ class _MenuItemBase(BaseModel):
 
 class MenuRule(_MenuItemBase):
     id: MenuId
+
+
+class MenuItem(_MenuItemBase):
+    command: CommandRule
+    alt: Optional[CommandRule] = None
+
+    class Config:
+        extra = 'ignore'
 
 
 # commands
@@ -78,6 +81,7 @@ class Icon(BaseModel):
     light: Optional[str] = None
 
 
+# Actions, potential combination of all the above
 class Action(CommandRule):
     run: Callable
     description: Optional[str] = None
@@ -86,9 +90,4 @@ class Action(CommandRule):
     add_to_command_palette: bool = True
 
 
-class MenuItem(_MenuItemBase):
-    command: CommandRule
-    alt: Optional[CommandRule] = None
-
-    class Config:
-        extra = 'ignore'
+MenuItem.update_forward_refs()

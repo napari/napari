@@ -1,52 +1,52 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, NamedTuple, overload
 
 from psygnal import Signal
 
-from napari.utils import context
-
-from ._types import Action, CommandId, KeyCode, MenuItem
+from ._types import Action, MenuItem
 
 if TYPE_CHECKING:
+    from typing import (
+        Any,
+        Callable,
+        Dict,
+        Iterator,
+        List,
+        Literal,
+        Optional,
+        Sequence,
+        Set,
+        Tuple,
+        Union,
+    )
+
+    from napari.utils import context
 
     from ._menus import MenuId
     from ._types import (
+        CommandId,
         CommandRule,
         Icon,
         KeybindingRule,
+        KeyCode,
         MenuRule,
         TranslationOrStr,
     )
 
-DisposeCallable = Callable[[], None]
-
-
-class RegisteredCommand(NamedTuple):
-    id: str
-    run: Callable
-    description: Optional[str] = None
+    DisposeCallable = Callable[[], None]
 
 
 class CommandsRegistry:
+
     registered = Signal(str)
     _commands: Dict[CommandId, List[RegisteredCommand]] = {}
     __instance: Optional[CommandsRegistry] = None
+
+    class RegisteredCommand(NamedTuple):
+        id: str
+        run: Callable
+        description: Optional[str] = None
 
     @classmethod
     def instance(cls) -> CommandsRegistry:
@@ -62,7 +62,7 @@ class CommandsRegistry:
     ) -> DisposeCallable:
         commands = self._commands.setdefault(id, [])
 
-        cmd = RegisteredCommand(id, run=callback, description=description)
+        cmd = self.RegisteredCommand(id, run=callback, description=description)
         commands.insert(0, cmd)
 
         def _dispose():
@@ -80,17 +80,17 @@ class CommandsRegistry:
         return id in self._commands
 
 
-class RegisteredKeyBinding(NamedTuple):
-    keybinding: KeyCode
-    command_id: CommandId
-    weight: int
-    when: Optional[context.Expr] = None
-
-
 class KeybindingsRegistry:
+
     registered = Signal()
     _coreKeybindings: List[RegisteredKeyBinding] = []
     __instance: Optional[KeybindingsRegistry] = None
+
+    class RegisteredKeyBinding(NamedTuple):
+        keybinding: KeyCode
+        command_id: CommandId
+        weight: int
+        when: Optional[context.Expr] = None
 
     @classmethod
     def instance(cls) -> KeybindingsRegistry:
@@ -102,7 +102,7 @@ class KeybindingsRegistry:
         self, id: CommandId, rule: KeybindingRule
     ) -> Optional[DisposeCallable]:
         if bound_keybinding := rule._bind_to_current_platform():
-            entry = RegisteredKeyBinding(
+            entry = self.RegisteredKeyBinding(
                 keybinding=bound_keybinding,
                 command_id=id,
                 weight=rule.weight,
