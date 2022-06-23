@@ -189,7 +189,6 @@ class CrossWidget(QCheckBox):
     def update_cross(self):
         if self.layer not in self.viewer.layers:
             return
-        # self.viewer.layers.remove(self.layer)
 
         point = self.viewer.dims.current_step
         vec = []
@@ -204,7 +203,6 @@ class CrossWidget(QCheckBox):
         if np.any(self.layer.scale != self._extent.step):
             self.layer.scale = self._extent.step
         self.layer.data = vec
-        # self.viewer.layers.append(self.layer)
 
 
 class ExampleWidget(QWidget):
@@ -260,6 +258,13 @@ class MultipleViewerWidget(QSplitter):
         self.viewer_model2.dims.events.current_step.connect(self._point_update)
         self.viewer.dims.events.order.connect(self._order_update)
         self.viewer.events.reset_view.connect(self._reset_view)
+        self.viewer_model1.events.status.connect(self._status_update)
+        self.viewer_model2.events.status.connect(self._status_update)
+
+    def _status_update(self, event):
+        print(event.value)
+        self.viewer.status = event.value
+
 
     def _reset_view(self):
         self.viewer_model1.reset_view()
