@@ -315,6 +315,14 @@ class Expr(ast.AST, Generic[T]):
         # note: we're using the invert operator `~` to mean "not ___"
         return UnaryOp(ast.Not(), self)
 
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        return v if isinstance(v, Expr) else parse_expression(v)
+
 
 class Name(Expr[T], ast.Name):
     """A variable name.
