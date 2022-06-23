@@ -66,7 +66,7 @@ def center_cross_on_mouse(viewer: napari.Viewer):
     # FIXME times to time wrong viewer is selected
 
     if not getattr(viewer, "_mouse_over_canvas", True):
-        # There is no way fo napari 0.4.15 to check if mose is over sending canvas. 
+        # There is no way fo napari 0.4.15 to check if mouse is over sending canvas. 
         show_info("Mouse is not over the canvas. You may need to click on the canvas.")
         return
 
