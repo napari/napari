@@ -33,30 +33,30 @@ models and qt classes. These qt classes are instantiated with a reference to
 the python model, which gets updated directly when a field is changed via the
 GUI.
 
-A simple example of this in napari code is the `ndisplay` field of the
-`Dims` class, which specifies whether the data should be shown in 2D or 3D.
-Below is the napari code for this field, keeping only the code relevant for the
-example:
+A simple example of this in napari code is `Dims` class, looking specically at
+the `current_step` field, which specifies the slider position for each dims
+slider. Below is the napari code for this field, keeping only the code relevant
+for the example:
 
 ```python
 class Dims(EventedModel):
-    ndisplay: Literal[2, 3] = 2
+    current_step: Tuple[int, ...] = ()
 ```
 
-The `Dims` class inherits from the `EventedModel` and has the field `ndisplay`
-which can either take on the value `2` or `3`.
+The `Dims` class inherits from the `EventedModel` and has the field
+`current_step` which is a tuple if ints.
 
-The matching qt class is `QtDims` and has a reference to `Dims` object,
-allowing direct updates if the field is changed via the GUI. We also
-connect a function `self._update_display` such that it is called to when the
-field `ndisplay` changes:
+The matching qt class is `QtDims` which is instantiated with a reference to
+the `Dims` object, allowing direct updates if the field is changed via the GUI.
+We also connect the method `self._update_slider` such that it is called
+when the field `current_step` changes:
 
 ```python
 class QtDims(QWidget):
 
     def __init__(self, dims: Dims, parent=None):
 
-      self.dims.events.ndisplay.connect(self._update_display)
+      self.dims.events.current_step.connect(self._update_slider)
 ```
 
 Note napari layer models are not `EventedModel`s yet but there is intention
