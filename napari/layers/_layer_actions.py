@@ -20,9 +20,10 @@ import numpy as np
 from typing_extensions import TypedDict
 
 from ..utils._injection import inject_napari_dependencies
+from ..utils.actions import MenuId, register_action
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
-from .base.base import Layer
+from . import Image, Layer
 from .utils import stack_utils
 from .utils._link_layers import get_linked_layers
 
@@ -31,20 +32,37 @@ if TYPE_CHECKING:
     from ..utils.context._expressions import Expr
 
 
-@inject_napari_dependencies
-def _duplicate_layer(ll: LayerList):
+@register_action(
+    'napari:layers:duplicate_layer',
+    title=trans._('Duplicate Layer'),
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+)
+def _duplicate_layer(ll: LayerList, *, name: str = ''):
     from copy import deepcopy
 
     for lay in list(ll.selection):
         new = deepcopy(lay)
-        new.name += ' copy'
+        new.name = name or f'{new.name} copy'
         ll.insert(ll.index(lay) + 1, new)
 
 
-@inject_napari_dependencies
+@register_action(
+    'napari:split_stack',
+    title=trans._('Split Stack'),
+    precondition=LLCK.active_layer_type == "image",
+    menus=[
+        {'id': MenuId.LAYERLIST_CONTEXT, 'when': ~LLCK.active_layer_is_rgb}
+    ],
+)
+# @register_action(
+#     'napari:split_stack',
+#     title=trans._('Split RGB'),
+#     menus=[{'id': MenuId.LAYERLIST_CONTEXT, 'when': LLCK.active_layer_is_rgb}],
+#     precondition=LLCK.active_layer_is_rgb,
+# )
 def _split_stack(ll: LayerList, axis: int = 0):
     layer = ll.selection.active
-    if not layer:
+    if not isinstance(layer, Image):
         return
     if layer.rgb:
         images = stack_utils.split_rgb(layer)
@@ -55,7 +73,6 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.selection = set(images)  # type: ignore
 
 
-@inject_napari_dependencies
 def _project(ll: LayerList, axis: int = 0, mode='max'):
     layer = ll.selection.active
     if not layer:
@@ -252,12 +269,6 @@ def _labeltypedict(key) -> ContextAction:
 
 _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
-        'napari:duplicate_layer': {
-            'description': trans._('Duplicate Layer'),
-            'action': _duplicate_layer,
-            'enable_when': True,
-            'show_when': True,
-        },
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
             'action': _convert_to_labels,
@@ -326,18 +337,6 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         }
     },
     {
-        'napari:split_stack': {
-            'description': trans._('Split Stack'),
-            'action': _split_stack,
-            'enable_when': LLCK.active_layer_type == "image",
-            'show_when': ~LLCK.active_layer_is_rgb,
-        },
-        'napari:split_rgb': {
-            'description': trans._('Split RGB'),
-            'action': _split_stack,
-            'enable_when': LLCK.active_layer_is_rgb,
-            'show_when': LLCK.active_layer_is_rgb,
-        },
         'napari:merge_stack': {
             'description': trans._('Merge to Stack'),
             'action': _merge_stack,

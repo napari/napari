@@ -10,13 +10,16 @@ from napari.utils.actions._registries import (
     KeybindingsRegistry,
     MenuRegistry,
 )
+from napari.utils.context import LayerListContextKeys
 
 PRIMARY_KEY = 'ctrl+a'
 OS_KEY = 'ctrl+b'
 
 KWARGS = [
     {},
-    dict(menus=[{'id': MenuId.LAYERS_CONTEXT}]),
+    dict(precondition=LayerListContextKeys.active_layer_is_rgb),
+    dict(menus=[{'id': MenuId.LAYERLIST_CONTEXT}]),
+    dict(precondition='3 >= 1', menus=[{'id': MenuId.LAYERLIST_CONTEXT}]),
     dict(keybindings=[{'primary': PRIMARY_KEY}]),
     dict(
         keybindings=[
@@ -30,7 +33,7 @@ KWARGS = [
     ),
     dict(
         keybindings=[{'primary': 'ctrl+a'}],
-        menus=[{'id': MenuId.LAYERS_CONTEXT}],
+        menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
     ),
 ]
 
