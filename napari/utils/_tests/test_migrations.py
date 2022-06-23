@@ -12,6 +12,8 @@ def test_simple():
     assert sample_fun(b=1) == 1
     with pytest.warns(FutureWarning):
         assert sample_fun(a=1) == 1
+    with pytest.raises(ValueError):
+        sample_fun(b=1, a=1)
 
 
 def test_constructor():

@@ -21,6 +21,14 @@ def rename_argument(from_name: str, to_name: str, version: str):
         @wraps(func)
         def _update_from_dict(*args, **kwargs):
             if from_name in kwargs:
+                if to_name in kwargs:
+                    raise ValueError(
+                        trans._(
+                            "Argument {to_name} already defined, please do not mix {from_name} and {to_name} in one call.",
+                            from_name=from_name,
+                            to_name=to_name,
+                        )
+                    )
                 warnings.warn(
                     trans._(
                         "Argument {from_name} is deprecated, please use {to_name} instead. It will be removed in {version}.",
