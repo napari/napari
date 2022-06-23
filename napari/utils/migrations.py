@@ -4,7 +4,7 @@ from functools import wraps
 from napari.utils.translations import trans
 
 
-def rename_argument(from_name: str, to_name: str):
+def rename_argument(from_name: str, to_name: str, version: str):
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -23,9 +23,10 @@ def rename_argument(from_name: str, to_name: str):
             if from_name in kwargs:
                 warnings.warn(
                     trans._(
-                        "Argument {from_name} is deprecated, please use {to_name} instead.",
+                        "Argument {from_name} is deprecated, please use {to_name} instead. It will be removed in {version}.",
                         from_name=from_name,
                         to_name=to_name,
+                        version=version,
                     ),
                     category=FutureWarning,
                     stacklevel=2,

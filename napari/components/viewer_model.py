@@ -538,7 +538,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
-    @rename_argument("interpolation", "interpolation2d")
+    @rename_argument("interpolation", "interpolation2d", "0.6.0")
     def add_image(
         self,
         data=None,

@@ -4,7 +4,7 @@ from napari.utils.migrations import rename_argument
 
 
 def test_simple():
-    @rename_argument("a", "b")
+    @rename_argument("a", "b", "1")
     def sample_fun(b):
         return b
 
@@ -16,7 +16,7 @@ def test_simple():
 
 def test_constructor():
     class Sample:
-        @rename_argument("a", "b")
+        @rename_argument("a", "b", "1")
         def __init__(self, b):
             self.b = b
 
