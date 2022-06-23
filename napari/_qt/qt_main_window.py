@@ -1020,7 +1020,7 @@ class Window:
         self._qt_window.resize(width, height)
 
     def set_geometry(self, left, top, width, height):
-        """Set the Geometry of the widget
+        """Set the geometry of the widget
 
         Parameters
         left : int
