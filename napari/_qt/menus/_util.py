@@ -115,11 +115,11 @@ def populate_menu_view(view: QMenu, model: Menu):
     ----------
     view : qtpy.QtWidgets.QMenu
         Qt view to populate.
-    menu : napari.components.menu.Menu
+    model : napari.components.menu.Menu
         Menu model to populate from.
     """
     for child in model.children:
-        if isinstance(model, Menu):
+        if isinstance(child, Menu):
             if child.enabled:
                 # in case of a submenu, recurse
                 submenu: QMenu = view.addMenu(child.label)
@@ -131,9 +131,10 @@ def populate_menu_view(view: QMenu, model: Menu):
         else:
             # common attributes
             action: QAction = view.addAction(child.label)
-            action.setShortcut(
-                convert_keybinding_to_shortcut(child.keybinding)
-            )
+            if child.keybinding:
+                action.setShortcut(
+                    convert_keybinding_to_shortcut(child.keybinding)
+                )
             action.setStatusTip(child.description)
             action.setEnabled(child.enabled)
 
