@@ -1018,10 +1018,10 @@ class Window:
             Height in logical pixels.
         """
         self._qt_window.resize(width, height)
-        
+
     def setGeometry(self, left, top, width, height):
         """Set the Geometry of the widget
-        
+
         Parameters
         left : int
             X coordinate of the upper left border.
