@@ -13,6 +13,7 @@ from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.events.event import WarningEmitter
 from ...utils.migrations import rename_argument
 from ...utils.naming import magic_name
 from ...utils.translations import trans
@@ -294,7 +295,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         self.events.add(
             mode=Event,
-            interpolation=Event,
+            interpolation=WarningEmitter(
+                trans._(
+                    "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
+                    deferred=True,
+                ),
+                type='select',
+            ),
             interpolation2d=Event,
             interpolation3d=Event,
             rendering=Event,
