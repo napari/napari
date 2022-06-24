@@ -54,12 +54,12 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
         {'id': MenuId.LAYERLIST_CONTEXT, 'when': ~LLCK.active_layer_is_rgb}
     ],
 )
-# @register_action(
-#     'napari:split_stack',
-#     title=trans._('Split RGB'),
-#     menus=[{'id': MenuId.LAYERLIST_CONTEXT, 'when': LLCK.active_layer_is_rgb}],
-#     precondition=LLCK.active_layer_is_rgb,
-# )
+@register_action(
+    'napari:split_stack',
+    title=trans._('Split RGB'),
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT, 'when': LLCK.active_layer_is_rgb}],
+    precondition=LLCK.active_layer_is_rgb,
+)
 def _split_stack(ll: LayerList, axis: int = 0):
     layer = ll.selection.active
     if not isinstance(layer, Image):
@@ -152,17 +152,50 @@ def _convert(ll: LayerList, type_: str):
         ll.insert(idx, new_layer)
 
 
-@inject_napari_dependencies
+# TODO: currently, we have to create a thin _convert_to_x wrapper around _convert
+# here for the purpose of type hinting (which partial doesn't do) ...
+# so that inject_dependencies works correctly.
+# however, we could conceivably add an `args` option to register_action
+# that would allow us to pass additional arguments, like a partial.
+@register_action(
+    'napari:convert_to_image',
+    title=trans._('Convert to Labels'),
+    precondition=(
+        (
+            (LLCK.num_selected_image_layers >= 1)
+            | (LLCK.num_selected_shapes_layers >= 1)
+        )
+        & LLCK.all_selected_layers_same_type
+    ),
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+)
 def _convert_to_labels(ll: LayerList):
     return _convert(ll, 'labels')
 
 
-@inject_napari_dependencies
+@register_action(
+    'napari:convert_to_image',
+    title=trans._('Convert to Image'),
+    precondition=(
+        (LLCK.num_selected_labels_layers >= 1)
+        & LLCK.all_selected_layers_same_type
+    ),
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+)
 def _convert_to_image(ll: LayerList):
     return _convert(ll, 'image')
 
 
-@inject_napari_dependencies
+@register_action(
+    'napari:merge_stack',
+    title=trans._('Merge to Stack'),
+    precondition=(
+        (LLCK.num_selected_layers > 1)
+        & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
+        & LLCK.all_selected_layers_same_shape
+    ),
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+)
 def _merge_stack(ll: LayerList, rgb=False):
     # force selection to follow LayerList ordering
     selection = [layer for layer in ll if layer in ll.selection]
@@ -175,15 +208,52 @@ def _merge_stack(ll: LayerList, rgb=False):
     ll.append(new)
 
 
-@inject_napari_dependencies
+@register_action(
+    'napari:toggle_visibility',
+    title=trans._('Toggle visibility'),
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+)
 def _toggle_visibility(ll: LayerList):
     for lay in ll.selection:
         lay.visible = not lay.visible
 
 
-@inject_napari_dependencies
+@register_action(
+    'napari:select_linked_layers',
+    title=trans._('Select Linked Layers'),
+    precondition=LLCK.num_unselected_linked_layers,
+    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+)
 def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
+
+
+register_action(
+    'napari:link_selected_layers',
+    title=trans._('Link Layers'),
+    precondition=(
+        (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
+    ),
+    menus=[
+        {
+            'id': MenuId.LAYERLIST_CONTEXT,
+            'when': ~LLCK.num_selected_layers_linked,
+        }
+    ],
+    run=lambda ll: ll.link_layers(ll.selection),
+)
+register_action(
+    'napari:unlink_selected_layers',
+    title=trans._('Unlink Layers'),
+    precondition=LLCK.num_selected_layers_linked,
+    menus=[
+        {
+            'id': MenuId.LAYERLIST_CONTEXT,
+            'when': LLCK.num_selected_layers_linked,
+        }
+    ],
+    run=lambda ll: ll.unlink_layers(ll.selection),
+)
 
 
 class _MenuItem(TypedDict):
@@ -268,35 +338,6 @@ def _labeltypedict(key) -> ContextAction:
 
 
 _LAYER_ACTIONS: Sequence[MenuItem] = [
-    {
-        'napari:convert_to_labels': {
-            'description': trans._('Convert to Labels'),
-            'action': _convert_to_labels,
-            'enable_when': (
-                (
-                    (LLCK.num_selected_image_layers >= 1)
-                    | (LLCK.num_selected_shapes_layers >= 1)
-                )
-                & LLCK.all_selected_layers_same_type
-            ),
-            'show_when': True,
-        },
-        'napari:convert_to_image': {
-            'description': trans._('Convert to Image'),
-            'action': _convert_to_image,
-            'enable_when': (
-                (LLCK.num_selected_labels_layers >= 1)
-                & LLCK.all_selected_layers_same_type
-            ),
-            'show_when': True,
-        },
-        'napari:toggle_visibility': {
-            'description': trans._('Toggle visibility'),
-            'action': _toggle_visibility,
-            'enable_when': True,
-            'show_when': True,
-        },
-    },
     # (each new dict creates a seperated section in the menu)
     {
         'napari:group:convert_type': {
@@ -335,40 +376,5 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
                 'napari:median_projection': _projdict('median'),
             },
         }
-    },
-    {
-        'napari:merge_stack': {
-            'description': trans._('Merge to Stack'),
-            'action': _merge_stack,
-            'enable_when': (
-                (LLCK.num_selected_layers > 1)
-                & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
-                & LLCK.all_selected_layers_same_shape
-            ),
-            'show_when': True,
-        },
-    },
-    {
-        'napari:link_selected_layers': {
-            'description': trans._('Link Layers'),
-            'action': lambda ll: ll.link_layers(ll.selection),
-            'enable_when': (
-                (LLCK.num_selected_layers > 1)
-                & ~LLCK.num_selected_layers_linked
-            ),
-            'show_when': ~LLCK.num_selected_layers_linked,
-        },
-        'napari:unlink_selected_layers': {
-            'description': trans._('Unlink Layers'),
-            'action': lambda ll: ll.unlink_layers(ll.selection),
-            'enable_when': LLCK.num_selected_layers_linked,
-            'show_when': LLCK.num_selected_layers_linked,
-        },
-        'napari:select_linked_layers': {
-            'description': trans._('Select Linked Layers'),
-            'action': _select_linked_layers,
-            'enable_when': LLCK.num_unselected_linked_layers,
-            'show_when': True,
-        },
     },
 ]
