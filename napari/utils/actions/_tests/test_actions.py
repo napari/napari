@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from napari.utils._injection import set_providers
 from napari.utils.actions import Action, register_action
 from napari.utils.actions._menus import MenuId
 from napari.utils.actions._registries import (
@@ -10,6 +11,7 @@ from napari.utils.actions._registries import (
     KeybindingsRegistry,
     MenuRegistry,
 )
+from napari.utils.actions._types import CommandId
 from napari.utils.context import LayerListContextKeys
 
 PRIMARY_KEY = 'ctrl+a'
@@ -70,50 +72,69 @@ def menu_reg():
 
 @pytest.mark.parametrize('kwargs', KWARGS)
 @pytest.mark.parametrize('mode', ['str', 'decorator', 'action'])
-def test_register_action_decorator(kwargs, cmd_reg, key_reg, menu_reg, mode):
+def test_register_action_decorator(
+    kwargs,
+    cmd_reg: CommandsRegistry,
+    key_reg: KeybindingsRegistry,
+    menu_reg: MenuRegistry,
+    mode,
+):
     assert not (list(menu_reg) or list(key_reg) or list(cmd_reg))
     dispose: Optional[Callable] = None
-    cmd_id = 'cmd.id'
-    title = 'Test title'
+    cmd_id = CommandId('cmd.id')
+    kwargs['title'] = 'Test title'
 
     # register the action
     if mode == 'decorator':
 
-        @register_action(cmd_id, title, **kwargs)
-        def f1():
-            return 1
+        @register_action(cmd_id, **kwargs)
+        def f1(x: int):
+            return x
 
-    elif mode == 'str':
-        dispose = register_action(cmd_id, title, run=lambda: 1, **kwargs)
+        assert f1(1) == 1  # decorator returns the function
 
-    elif mode == 'action':
-        action = Action(id=cmd_id, title=title, run=lambda: 1, **kwargs)
-        dispose = register_action(action)
+    else:
+
+        def f2(x: int):
+            return x
+
+        if mode == 'str':
+            dispose = register_action(cmd_id, run=f2, **kwargs)
+
+        elif mode == 'action':
+            action = Action(id=cmd_id, run=f2, **kwargs)
+            dispose = register_action(action)
 
     # make sure the command is registered
-    assert 'cmd.id' in cmd_reg
+    assert cmd_id in cmd_reg
     assert list(cmd_reg)
-    cmd_reg.registered_emit.assert_called_once_with(cmd_id)
+    # make sure an event was emitted signaling the command was registered
+    cmd_reg.registered_emit.assert_called_once_with(cmd_id)  # type: ignore
+
+    # make sure we can call the command, and that we can inject dependencies.
+    with set_providers({int: lambda: 2}):
+        assert cmd_reg.execute_command(cmd_id).result() == 2
 
     # make sure menus are registered if specified
     if menus := kwargs.get('menus'):
         for entry in menus:
             assert entry['id'] in menu_reg
-            menu_reg.menus_changed_emit.assert_called_with({entry['id']})
+            menu_reg.menus_changed_emit.assert_called_with({entry['id']})  # type: ignore
     else:
         assert not list(menu_reg)
 
     # make sure keybindings are registered if specified
     if keybindings := kwargs.get('keybindings'):
         for entry in keybindings:
-            key = PRIMARY_KEY if len(entry) == 1 else OS_KEY
+            key = PRIMARY_KEY if len(entry) == 1 else OS_KEY  # see KWARGS[5]
             assert any(i.keybinding == key for i in key_reg)
-            key_reg.registered_emit.assert_called()
+            key_reg.registered_emit.assert_called()  # type: ignore
     else:
         assert not list(key_reg)
 
     # if we're not using the decorator, check that calling the dispose
-    # function removes everything
+    # function removes everything.  (the decorator returns the function, so can't
+    # return the dispose function)
     if dispose:
         dispose()
         assert not list(cmd_reg)

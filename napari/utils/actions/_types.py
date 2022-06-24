@@ -102,6 +102,12 @@ class MenuItem(_MenuItemBase):
     alt: Optional[CommandRule] = None
 
 
+class SubmenuItem(_MenuItemBase):
+    submenu: MenuId
+    title: TranslationOrStr
+    icon: Optional[Icon] = None
+
+
 # Actions, potential combination of all the above
 class Action(CommandRule):
     run: Callable
