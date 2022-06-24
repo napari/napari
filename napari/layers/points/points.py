@@ -1172,6 +1172,7 @@ class Points(Layer):
                 'data': self.data,
                 'features': self.features,
                 'shading': self.shading,
+                'antialiasing': self.antialiasing,
                 'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
                 'shown': self.shown,
             }
