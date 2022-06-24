@@ -1140,7 +1140,7 @@ class Labels(_ImageBase):
             - the values corresponding to those elements before the change
             - the value(s) after the change
         """
-        self._redo_history = deque()
+        self._redo_history.clear()
         if not self._block_history:
             self._append_to_undo_history([value])
         else:
