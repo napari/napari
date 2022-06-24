@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, NamedTuple, overload
 
 from psygnal import Signal
@@ -32,10 +35,23 @@ if TYPE_CHECKING:
         KeyCode,
         MenuRule,
         MenuRuleDict,
+        SubmenuItem,
         TranslationOrStr,
     )
 
     DisposeCallable = Callable[[], None]
+
+
+@dataclass
+class RegisteredCommand:
+    id: str
+    run: Callable
+
+    @cached_property
+    def run_injected(self):
+        from .._injection import inject_napari_dependencies
+
+        return inject_napari_dependencies(self.run)
 
 
 class CommandsRegistry:
@@ -43,10 +59,6 @@ class CommandsRegistry:
     registered = Signal(str)
     _commands: Dict[CommandId, List[RegisteredCommand]] = {}
     __instance: Optional[CommandsRegistry] = None
-
-    class RegisteredCommand(NamedTuple):
-        id: str
-        run: Callable
 
     @classmethod
     def instance(cls) -> CommandsRegistry:
@@ -61,7 +73,7 @@ class CommandsRegistry:
     ) -> DisposeCallable:
         commands = self._commands.setdefault(id, [])
 
-        cmd = self.RegisteredCommand(id, run=callback)
+        cmd = RegisteredCommand(id, callback)
         commands.insert(0, cmd)
 
         def _dispose():
@@ -84,11 +96,13 @@ class CommandsRegistry:
     def __getitem__(self, id: CommandId) -> List[RegisteredCommand]:
         return self._commands[id]
 
-    def execute(self, id: CommandId, *args, **kwargs):
-        from .._injection import inject_napari_dependencies
-
-        for cmd in self[id]:
-            inject_napari_dependencies(cmd.run)(*args, **kwargs)
+    def execute_command(self, id: CommandId, *args, **kwargs) -> Future:
+        with ThreadPoolExecutor() as executor:
+            if cmds := self._commands[id]:
+                # TODO: decide whether we'll ever have more than one command
+                # and if so, how to handle it
+                return executor.submit(cmds[0].run_injected, *args, **kwargs)
+            raise KeyError(f'Command "{id}" has no registered callbacks')
 
 
 class KeybindingsRegistry:
@@ -134,7 +148,7 @@ class KeybindingsRegistry:
 
 class MenuRegistry:
     menus_changed = Signal(set)
-    _menu_items: Dict[MenuId, List[MenuItem]] = {}
+    _menu_items: Dict[MenuId, List[MenuItem | SubmenuItem]] = {}
     _commands: Dict[CommandId, CommandRule] = {}
     __instance: Optional[MenuRegistry] = None
 
@@ -145,7 +159,7 @@ class MenuRegistry:
         return cls.__instance
 
     def append_menu_items(
-        self, items: Sequence[Tuple[MenuId, MenuItem]]
+        self, items: Sequence[Tuple[MenuId, MenuItem | SubmenuItem]]
     ) -> DisposeCallable:
         changed_ids: Set[MenuId] = set()
         disposers = []
@@ -162,6 +176,7 @@ class MenuRegistry:
             for id in changed_ids:
                 if not self._menu_items.get(id):
                     del self._menu_items[id]
+            self.menus_changed.emit(changed_ids)
 
         if changed_ids:
             self.menus_changed.emit(changed_ids)
@@ -173,11 +188,16 @@ class MenuRegistry:
             self._commands[command.id] = command
         # TODO: signal?
 
-    def __iter__(self) -> Iterator[Tuple[MenuId, List[MenuItem]]]:
+    def __iter__(
+        self,
+    ) -> Iterator[Tuple[MenuId, List[MenuItem | SubmenuItem]]]:
         yield from self._menu_items.items()
 
     def __contains__(self, id: object) -> bool:
         return id in self._menu_items
+
+    def __getitem__(self, id: MenuId) -> List[MenuItem | SubmenuItem]:
+        return self._menu_items[id]
 
 
 @overload

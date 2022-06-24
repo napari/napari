@@ -409,13 +409,13 @@ class BinOp(Expr[T], ast.BinOp):
 
 
 class BoolOp(Expr[T], ast.BoolOp):
-    """A boolean operation, ‘or’ or ‘and’.
+    """A boolean operation, 'or' or 'and'.
 
     `op` is Or or And. `values` are the values involved. Consecutive operations
     with the same operator, such as a or b or c, are collapsed into one node
     with several values.
 
-    This doesn’t include `not`, which is a :class:`UnaryOp`.
+    This doesn't include `not`, which is a :class:`UnaryOp`.
     """
 
     def __init__(
