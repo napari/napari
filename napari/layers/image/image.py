@@ -767,7 +767,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.reset_contrast_limits_range()
             self.reset_contrast_limits()
             self._should_calc_clims = False
-        if self._keep_auto_contrast:
+        elif self._keep_auto_contrast:
             self.reset_contrast_limits()
 
     @property
