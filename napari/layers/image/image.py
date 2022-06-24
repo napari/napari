@@ -559,10 +559,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         if self._ndisplay == 3:
             self.interpolation3d = interpolation
-            self.events.interpolation(value=self.interpolation3d)
         else:
             self.interpolation2d = interpolation
-            self.events.interpolation(value=self.interpolation2d)
 
     @property
     def interpolation2d(self):
@@ -572,6 +570,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def interpolation2d(self, value):
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
+        self.events.interpolation(value=self._interpolation2d)
 
     @property
     def interpolation3d(self):
@@ -581,6 +580,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def interpolation3d(self, value):
         self._interpolation3d = Interpolation3D(value)
         self.events.interpolation3d(value=self._interpolation3d)
+        self.events.interpolation(value=self._interpolation3d)
 
     @property
     def depiction(self):
