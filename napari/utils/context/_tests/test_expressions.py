@@ -1,4 +1,5 @@
 import ast
+from copy import deepcopy
 
 import pytest
 
@@ -202,3 +203,13 @@ def test_serdes(expr):
 def test_bad_serdes(expr):
     with pytest.raises(SyntaxError):
         parse_expression(expr)
+
+
+def test_deepcopy_expression():
+    deepcopy(parse_expression('1'))
+    deepcopy(parse_expression('1 > 2'))
+    deepcopy(parse_expression('1 & 2'))
+    deepcopy(parse_expression('1 or 2'))
+    deepcopy(parse_expression('not 1'))
+    deepcopy(parse_expression('~x'))
+    deepcopy(parse_expression('2 if x else 3'))
