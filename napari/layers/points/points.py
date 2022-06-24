@@ -353,7 +353,7 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
             shading=Event,
-            _antialias=Event,
+            antialiasing=Event,
             experimental_canvas_size_limits=Event,
             features=Event,
             feature_defaults=Event,
@@ -762,16 +762,33 @@ class Points(Layer):
             self.events.size()
 
     @property
-    def _antialias(self):
+    def antialiasing(self) -> float:
+        """Amount of antialiasing in pixels."""
+        return self._antialiasing
+
+    @antialiasing.setter
+    def antialiasing(self, value: float):
+        """Set the amount of antialiasing in pixels.
+
+        Values below zero will be clipped to zero.
+        """
+        self._antialiasing = float(np.clip(value, a_min=0, a_max=None))
+        self.events._antialias()
+
+    @property
+    def _antialias(self) -> float:
         """float: amount in pixels of antialiasing"""
+        warnings.warn(
+            'the private attribute _antialias is deprecated, please use '
+        )
         return self.__antialias
 
     @_antialias.setter
-    def _antialias(self, value) -> Union[int, float]:
+    def _antialias(self, value):
         if value < 0:
             value = 0
         self.__antialias = float(value)
-        self.events._antialias()
+        self.events.antialiasing()
 
     @property
     def shading(self) -> Shading:
