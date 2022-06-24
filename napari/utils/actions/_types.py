@@ -62,20 +62,6 @@ class CommandRule(BaseModel):
     # source: Optional[str] = None
     # toggled: Optional[context.Expr] = None
 
-    class Config:
-        copy_on_model_validation = True
-
-    def _reduce_to_rule(self) -> CommandRule:
-        return CommandRule(
-            id=self.id,
-            title=self.title,
-            short_title=self.short_title,
-            category=self.category,
-            tooltip=self.tooltip,
-            icon=self.icon,
-            precondition=self.precondition,
-        )
-
 
 # keys
 

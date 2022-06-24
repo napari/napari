@@ -338,10 +338,7 @@ def _register_action(action: Action) -> DisposeCallable:
     items = []
     for rule in action.menus or ():
         menu_item = MenuItem(
-            command=action._reduce_to_rule(),
-            when=rule.when,
-            group=rule.group,
-            order=rule.order,
+            command=action, when=rule.when, group=rule.group, order=rule.order
         )
         items.append((rule.id, menu_item))
 
