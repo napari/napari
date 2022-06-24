@@ -36,6 +36,8 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    SupportsIndex,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -315,7 +317,7 @@ class Expr(ast.AST, Generic[T]):
         # note: we're using the invert operator `~` to mean "not ___"
         return UnaryOp(ast.Not(), self)
 
-    def __reduce_ex__(self, protocol: int) -> Tuple[Any, ...]:
+    def __reduce_ex__(self, protocol: SupportsIndex) -> Tuple[Any, ...]:
         rv = list(super().__reduce_ex__(protocol))
         rv[1] = tuple(getattr(self, f) for f in self._fields)
         return tuple(rv)
