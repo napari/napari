@@ -164,7 +164,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_antialiasing_change(self):
-        self.node.antialias = self.layer._antialias
+        self.node.antialias = self.layer.antialiasing
 
     def _on_shading_change(self):
         shading = self.layer.shading

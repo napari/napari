@@ -142,6 +142,8 @@ class Points(Layer):
           No shading is added to the points.
         * 'spherical'
           Shading and depth buffer are changed to give a 3D spherical look to the points
+    antialiasing: float
+        Amount of antialiasing in pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -241,6 +243,8 @@ class Points(Layer):
         COLORMAP allows color to be set via a color map over an attribute
     shading : Shading
         Shading mode.
+    antialiasing: float
+        Amount of antialiasing in pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -266,8 +270,6 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
-    _antialias : float
-        The amount of antialiasing pixels for both the marker and marker edge.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -312,6 +314,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
+        antialiasing=None,
         experimental_canvas_size_limits=(0, 10000),
         shown=True,
     ):
@@ -447,7 +450,7 @@ class Points(Layer):
 
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
-        self._antialias = True
+        self.antialiasing = 1 if antialiasing is None else antialiasing
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
