@@ -547,7 +547,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             trans._(
                 "Interpolation setting is deprecated. Please use interpolation2d or interpolation3d",
             ),
-            category=FutureWarning,
+            category=DeprecationWarning,
             stacklevel=2,
         )
         if self._ndisplay == 3:

@@ -10,7 +10,7 @@ def test_simple():
 
     assert sample_fun(1) == 1
     assert sample_fun(b=1) == 1
-    with pytest.warns(FutureWarning):
+    with pytest.deprecated_call():
         assert sample_fun(a=1) == 1
     with pytest.raises(ValueError):
         sample_fun(b=1, a=1)
@@ -24,5 +24,5 @@ def test_constructor():
 
     assert Sample(1).b == 1
     assert Sample(b=1).b == 1
-    with pytest.warns(FutureWarning):
+    with pytest.deprecated_call():
         assert Sample(a=1).b == 1

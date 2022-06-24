@@ -36,7 +36,7 @@ def rename_argument(from_name: str, to_name: str, version: str):
                         to_name=to_name,
                         version=version,
                     ),
-                    category=FutureWarning,
+                    category=DeprecationWarning,
                     stacklevel=2,
                 )
                 kwargs = kwargs.copy()
