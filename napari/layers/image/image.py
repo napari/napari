@@ -534,6 +534,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
+        warnings.warn(
+            trans._(
+                "Interpolation attribute is deprecated. Please use interpolation2d or interpolation3d",
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return str(
             self._interpolation2d
             if self._ndisplay == 2
