@@ -150,7 +150,11 @@ class VispyImageLayer(VispyBaseLayer):
         node.update()
 
     def _on_interpolation_change(self):
-        self.node.interpolation = self.layer.interpolation
+        self.node.interpolation = (
+            self.layer.interpolation2d
+            if self.layer._ndisplay == 2
+            else self.layer.interpolation3d
+        )
 
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):

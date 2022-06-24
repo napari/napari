@@ -21,7 +21,8 @@ def test_image_rendering(make_napari_viewer):
     with pytest.deprecated_call():
         layer.interpolation = 'linear'
     assert layer.interpolation2d == 'nearest'
-    assert layer.interpolation == 'linear'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'linear'
     assert layer.interpolation3d == 'linear'
 
     # Change rendering property
