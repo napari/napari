@@ -1141,10 +1141,10 @@ class Labels(_ImageBase):
             - the value(s) after the change
         """
         self._redo_history.clear()
-        if not self._block_history:
-            self._append_to_undo_history([value])
-        else:
+        if self._block_history:
             self._staged_history.append(value)
+        else:
+            self._append_to_undo_history([value])
 
     def _load_history(self, before, after, undoing=True):
         """Load a history item and apply it to the array.
