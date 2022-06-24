@@ -49,7 +49,7 @@ class IntensityVisualizationMixin:
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
         """
-        if np.issubdtype(self.dtype, np.integer):
+        if np.issubdtype(self.dtype.type, np.integer):
             info = np.iinfo(self.dtype)
             self.contrast_limits_range = (info.min, info.max)
         else:
