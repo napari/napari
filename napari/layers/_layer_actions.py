@@ -6,18 +6,9 @@ on a layer in the LayerList.
 from __future__ import annotations
 
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Mapping,
-    Sequence,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
-from typing_extensions import TypedDict
 
 from ..utils._injection import inject_napari_dependencies
 from ..utils.actions import MenuId, register_action
@@ -29,7 +20,6 @@ from .utils._link_layers import get_linked_layers
 
 if TYPE_CHECKING:
     from ..components import LayerList
-    from ..utils.context._expressions import Expr
 
 
 @register_action(
@@ -105,8 +95,9 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     new = Layer.create(data, meta, layer._type_string)
     # add transforms from original layer, but drop the axis of the projection
     new._transforms = layer._transforms.set_slice(
-        [ax for ax in range(0, layer.ndim) if ax != axis]
+        [ax for ax in range(layer.ndim) if ax != axis]
     )
+
     ll.append(new)
 
 
@@ -256,43 +247,45 @@ register_action(
 )
 
 
-class _MenuItem(TypedDict):
-    """An object that encapsulates an Item in a QtActionContextMenu.
-
-    Parameters
-    ----------
-    description : str
-        The words that appear in the menu
-    enable_when : str
-        An expression that evaluates to a boolean (in namespace of some
-        context) and controls whether the menu item is enabled.
-    show_when : str
-        An expression that evaluates to a boolean (in namespace of some
-        context) and controls whether the menu item is visible.
-    """
-
-    description: str
-    enable_when: Union[bool, Expr]
-    show_when: Union[bool, Expr]
-
-
-class ContextAction(_MenuItem):
-    """An object that encapsulates a QAction in a QtActionContextMenu.
-
-    Parameters
-    ----------
-    action : callable
-        A function that may be called if the item is selected in the menu
-    """
-
-    action: Callable
+def _register_dtype_actions():
+    for dtype in (
+        'int8',
+        'int16',
+        'int32',
+        'int64',
+        'uint8',
+        'uint16',
+        'uint32',
+        'uint64',
+    ):
+        register_action(
+            f'napari:convert_to_{dtype}',
+            title=trans._('Convert to {dtype}', dtype=dtype),
+            run=partial(_convert_dtype, mode=dtype),
+            precondition=(
+                (LLCK.num_selected_labels_layers == LLCK.num_selected_layers)
+                & (LLCK.active_layer_dtype != dtype)
+            ),
+            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+        )
 
 
-class SubMenu(_MenuItem):
-    action_group: Mapping[str, ContextAction]
+def _register_projection_actions():
+    for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
+        register_action(
+            f'napari:{mode}_projection',
+            title=trans._('{mode} projection', mode=mode.title()),
+            run=partial(_project, mode=mode),
+            precondition=(
+                (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim
+                > 2
+            ),
+            menus=[{'id': MenuId.LAYERS_PROJECT}],
+        )
 
 
-MenuItem = Dict[str, Union[ContextAction, SubMenu]]
+_register_dtype_actions()
+_register_projection_actions()
 
 
 # Each item in LAYER_ACTIONS will be added to the `QtActionContextMenu` created
@@ -312,69 +305,3 @@ MenuItem = Dict[str, Union[ContextAction, SubMenu]]
 # expressions.  See, e.g., 'link_selected_layers' and 'unlink_selected_layers'
 
 # To add a separator, add any key with a value of _SEPARATOR
-
-
-def _projdict(key) -> ContextAction:
-    return {
-        'description': key,
-        'action': partial(_project, mode=key),
-        'enable_when': (
-            (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
-        ),
-        'show_when': True,
-    }
-
-
-def _labeltypedict(key) -> ContextAction:
-    return {
-        'description': key,
-        'action': partial(_convert_dtype, mode=key),
-        'enable_when': (
-            (LLCK.num_selected_labels_layers == LLCK.num_selected_layers)
-            & (LLCK.active_layer_dtype != key)
-        ),
-        'show_when': True,
-    }
-
-
-_LAYER_ACTIONS: Sequence[MenuItem] = [
-    # (each new dict creates a seperated section in the menu)
-    {
-        'napari:group:convert_type': {
-            'description': trans._('Convert datatype'),
-            'enable_when': (
-                (LLCK.num_selected_labels_layers >= 1)
-                & LLCK.all_selected_layers_same_type
-            ),
-            'show_when': True,
-            'action_group': {
-                'napari:to_int8': _labeltypedict('int8'),
-                'napari:to_int16': _labeltypedict('int16'),
-                'napari:to_int32': _labeltypedict('int32'),
-                'napari:to_int64': _labeltypedict('int64'),
-                'napari:to_uint8': _labeltypedict('uint8'),
-                'napari:to_uint16': _labeltypedict('uint16'),
-                'napari:to_uint32': _labeltypedict('uint32'),
-                'napari:to_uint64': _labeltypedict('uint64'),
-            },
-        }
-    },
-    {
-        'napari:group:projections': {
-            'description': trans._('Make Projection'),
-            'enable_when': (
-                (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim
-                > 2
-            ),
-            'show_when': True,
-            'action_group': {
-                'napari:max_projection': _projdict('max'),
-                'napari:min_projection': _projdict('min'),
-                'napari:std_projection': _projdict('std'),
-                'napari:sum_projection': _projdict('sum'),
-                'napari:mean_projection': _projdict('mean'),
-                'napari:median_projection': _projdict('median'),
-            },
-        }
-    },
-]

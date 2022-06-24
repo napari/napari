@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING, NamedTuple, overload
 
 from psygnal import Signal
 
-from ._types import Action, MenuItem
+from ...utils.translations import trans
+from ._menus import MenuId
+from ._types import Action, MenuItem, SubmenuItem
 
 if TYPE_CHECKING:
     from typing import (
@@ -26,7 +28,6 @@ if TYPE_CHECKING:
 
     from napari.utils import context
 
-    from ._menus import MenuId
     from ._types import (
         CommandId,
         CommandRule,
@@ -35,16 +36,17 @@ if TYPE_CHECKING:
         KeyCode,
         MenuRule,
         MenuRuleDict,
-        SubmenuItem,
         TranslationOrStr,
     )
 
     DisposeCallable = Callable[[], None]
+    MenuItemSequence = Sequence[Tuple[MenuId, MenuItem | SubmenuItem]]
 
 
 @dataclass
 class RegisteredCommand:
     id: str
+    title: TranslationOrStr
     run: Callable
 
     @cached_property
@@ -69,11 +71,12 @@ class CommandsRegistry:
     def register_command(
         self,
         id: CommandId,
+        title: TranslationOrStr,
         callback: Callable,
     ) -> DisposeCallable:
         commands = self._commands.setdefault(id, [])
 
-        cmd = RegisteredCommand(id, callback)
+        cmd = RegisteredCommand(id, title, callback)
         commands.insert(0, cmd)
 
         def _dispose():
@@ -103,6 +106,12 @@ class CommandsRegistry:
                 # and if so, how to handle it
                 return executor.submit(cmds[0].run_injected, *args, **kwargs)
             raise KeyError(f'Command "{id}" has no registered callbacks')
+
+    def __str__(self) -> str:
+        lines = []
+        for id, cmds in self:
+            lines.extend(f"{id!r} -> {cmd.title!r}" for cmd in cmds)
+        return "\n".join(lines)
 
 
 class KeybindingsRegistry:
@@ -158,9 +167,7 @@ class MenuRegistry:
             cls.__instance = cls()
         return cls.__instance
 
-    def append_menu_items(
-        self, items: Sequence[Tuple[MenuId, MenuItem | SubmenuItem]]
-    ) -> DisposeCallable:
+    def append_menu_items(self, items: MenuItemSequence) -> DisposeCallable:
         changed_ids: Set[MenuId] = set()
         disposers = []
 
@@ -350,7 +357,9 @@ def _register_action(action: Action) -> DisposeCallable:
     """
     # command
     disposers = [
-        CommandsRegistry.instance().register_command(action.id, action.run)
+        CommandsRegistry.instance().register_command(
+            action.id, action.title, action.run
+        )
     ]
 
     # menu
@@ -379,3 +388,35 @@ def _register_action(action: Action) -> DisposeCallable:
             d()
 
     return _dispose
+
+
+def _register_submenus():
+    MenuRegistry.instance().append_menu_items(
+        [
+            (
+                MenuId.LAYERLIST_CONTEXT,
+                SubmenuItem(
+                    submenu=MenuId.LAYERS_CONVERT_DTYPE,
+                    title=trans._('Convert data type'),
+                    group=None,
+                    order=None,
+                ),
+            ),
+            (
+                MenuId.LAYERLIST_CONTEXT,
+                SubmenuItem(
+                    submenu=MenuId.LAYERS_PROJECT,
+                    title=trans._('Projections'),
+                    group=None,
+                    order=None,
+                ),
+            ),
+        ]
+    )
+
+
+_register_submenus()
+
+menu_registry = MenuRegistry.instance()
+commands_registry = CommandsRegistry.instance()
+keybindings_registry = KeybindingsRegistry.instance()
