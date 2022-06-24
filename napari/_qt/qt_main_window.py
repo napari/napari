@@ -19,7 +19,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot, QRect
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -1023,6 +1023,7 @@ class Window:
         """Set the geometry of the widget
 
         Parameters
+        ----------
         left : int
             X coordinate of the upper left border.
         top : int
@@ -1033,6 +1034,16 @@ class Window:
             Height of the rectangle shape of the window.
         """
         self._qt_window.setGeometry(left, top, width, height)
+    
+    def geometry(self):
+        """Get the geometry of the widget
+
+        Returns
+        -------
+        qrect : QRect
+            Geometry of the window.
+        """
+        return self._qt_window.geometry()
 
     def show(self, *, block=False):
         """Resize, show, and bring forward the window.
