@@ -1099,10 +1099,10 @@ class Labels(_ImageBase):
     def _commit_staged_history(self):
         """Save staged history to undo history and clear it."""
         if self._staged_history:
-            self._undo_append(self._staged_history)
+            self._append_to_undo_history(self._staged_history)
             self._staged_history = []
 
-    def _undo_append(self, item):
+    def _append_to_undo_history(self, item):
         """Append item to history and emit paint event
 
         Parameters
@@ -1135,7 +1135,7 @@ class Labels(_ImageBase):
         """
         self._redo_history = deque()
         if not self._block_history:
-            self._undo_append([value])
+            self._append_to_undo_history([value])
         else:
             self._staged_history.append(value)
 
