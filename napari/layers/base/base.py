@@ -1597,7 +1597,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_status(
         self,
-        position: Optional[np.ndarray] = None,
+        position: Optional[Tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1653,11 +1653,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
         elif self.source.widget:
             name = trans._(
-                trans._(
-                    '{layer_name},  source: {source} (widget)',
-                    layer_name=self.name,
-                    source=self.source.widget._function.__name__,
-                )
+                '{layer_name},  source: {source} (widget)',
+                layer_name=self.name,
+                source=self.source.widget._function.__name__,
             )
         else:
             name = self.name
