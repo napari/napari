@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -2411,3 +2412,22 @@ def test_shown_view_size_and_view_data_have_the_same_dimension():
     assert layer._view_size.shape[0] == layer._view_data.shape[0]
     assert layer._view_size.shape[0] == 0
     assert np.array_equal(layer._view_size, [])
+
+
+def test_antialiasing_setting_and_event_emission():
+    """Antialiasing changing should cause event emission."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    layer.events.antialiasing = Mock()
+    layer.antialiasing = 5
+    assert layer.antialiasing == 5
+    layer.events.antialiasing.assert_called_once()
+
+
+def test_antialiasing_value_clipping():
+    """Antialiasing can only be set to positive values."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    with pytest.warns(RuntimeWarning):
+        layer.antialiasing = -1
+    assert layer.antialiasing == 0

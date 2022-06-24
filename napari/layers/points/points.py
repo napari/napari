@@ -770,24 +770,14 @@ class Points(Layer):
     def antialiasing(self, value: float):
         """Set the amount of antialiasing in pixels.
 
-        Values below zero will be clipped to zero.
+        Values can only be positive.
         """
-        self._antialiasing = float(np.clip(value, a_min=0, a_max=None))
-        self.events._antialias()
-
-    @property
-    def _antialias(self) -> float:
-        """float: amount in pixels of antialiasing"""
-        warnings.warn(
-            'the private attribute _antialias is deprecated, please use '
-        )
-        return self.__antialias
-
-    @_antialias.setter
-    def _antialias(self, value):
         if value < 0:
-            value = 0
-        self.__antialias = float(value)
+            warnings.warn(
+                message='antialiasing amount must be positive, value will be clipped.',
+                category=RuntimeWarning,
+            )
+        self._antialiasing = float(np.clip(value, a_min=0, a_max=None))
         self.events.antialiasing()
 
     @property
