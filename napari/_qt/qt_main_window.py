@@ -1044,7 +1044,7 @@ class Window:
         """
         self._qt_window.setGeometry(left, top, width, height)
 
-    def geometry(self):
+    def geometry(self) -> Tuple[int, int, int, int]:
         """Get the geometry of the widget
 
         Returns
