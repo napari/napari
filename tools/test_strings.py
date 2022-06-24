@@ -557,6 +557,21 @@ def test_translation_errors(checks):
     assert no_trans_errors
 
 
+def getch():
+    import sys
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
 if __name__ == '__main__':
 
     issues, outdated_strings, trans_errors = _checks()
@@ -571,6 +586,34 @@ if __name__ == '__main__':
             # files.
             data['SKIP_WORDS'][file].remove(to_remove)
 
-    pth.write_text(json.dumps(data, indent=2, sort_keys=True))
+    break_ = False
+    for file, missing in issues.items():
+        code = Path(file).read_text().splitlines()
+        if break_:
+            break
+        for line, text in missing:
+            print()
+            print("i : ignore –  add to ignored localised strings")
+            print("q : quit –  quit w/o saving")
+            print("s : save and quit")
+            print()
+            print(f"{file}:{line}", repr(text))
+            print()
+            for lt in code[line - 3 : line - 1]:
+                print(' ', lt)
+            print('>', code[line - 1])
+            for lt in code[line : line + 3]:
+                print(' ', lt)
+            val = getch()
+            if val == 'i':
+                data['SKIP_WORDS'].setdefault(file, []).append(text)
+            elif val == 'q':
+                import sys
 
+                sys.exit(0)
+            elif val == 's':
+                break_ = True
+                break
+
+    pth.write_text(json.dumps(data, indent=2, sort_keys=True))
     # test_outdated_string_skips(issues, outdated_strings, trans_errors)
