@@ -709,7 +709,6 @@
       "_QtMainWindow"
     ],
     "napari/_qt/widgets/qt_welcome.py": [
-      "Ctrl+Alt+/",
       "Ctrl+O",
       "QEvent",
       "drag",
@@ -964,8 +963,6 @@
     "napari/benchmarks/benchmark_qt_viewer.py": [],
     "napari/benchmarks/benchmark_qt_viewer_image.py": [],
     "napari/benchmarks/benchmark_qt_viewer_labels.py": [
-      "Event",
-      "is_dragging",
       "paint"
     ],
     "napari/benchmarks/benchmark_shapes_layer.py": [
@@ -1016,9 +1013,7 @@
       "bottom_center",
       "crosshair"
     ],
-    "napari/components/_viewer_key_bindings.py": [
-      "napari:"
-    ],
+    "napari/components/_viewer_key_bindings.py": [],
     "napari/components/_viewer_mouse_bindings.py": [
       "Control"
     ],
@@ -1939,7 +1934,6 @@
       "builtins",
       "index",
       "name",
-      "napari_write_{layer_type}",
       "properties",
       "rectangle",
       "shape-type",
@@ -1960,7 +1954,6 @@
     "napari/plugins/_plugin_manager.py": [
       "`napari_experimental_provide_dock_widget`",
       "`napari_experimental_provide_function`",
-      "builtins",
       "data",
       "display_name",
       "dock",
@@ -1972,8 +1965,6 @@
       "napari.plugin",
       "napari_provide_sample_data",
       "plugin",
-      "scikit-image",
-      "skimage",
       ".{extension}",
       ".{ext}",
       "_extension2{type_}",
@@ -2076,7 +2067,6 @@
       "{url}{page}"
     ],
     "napari/plugins/utils.py": [
-      "builtins",
       "napari_get_reader"
     ],
     "napari/qt/__init__.py": [],
@@ -2180,7 +2170,6 @@
       "VectorsData",
       "dask.array.Array",
       "zarr.Array",
-      "{layer_name.title()}Data",
       "_DType_co"
     ],
     "napari/utils/__init__.py": [],
@@ -2206,8 +2195,6 @@
     ],
     "napari/utils/_magicgui.py": [
       "Data",
-      "add_{layer_type}",
-      "name",
       "native",
       "parent",
       "_qt_viewer",
@@ -2783,7 +2770,6 @@
     ],
     "napari/utils/notebook_display.py": [
       "png",
-      "<img src=\"{url}\"></img>",
       "data:image/png;base64,",
       "utf-8"
     ],
@@ -2917,7 +2903,6 @@
       ": {status_format(value[0])}",
       "[",
       "]",
-      "{name} {full_coord}",
       "{value:0.3g}"
     ],
     "napari/utils/temporary_file.py": [],
