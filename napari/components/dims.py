@@ -416,7 +416,6 @@ class Dims(EventedModel):
         self.transpose()
 
 
-
 def reorder_after_dim_reduction(order):
     """Ensure current dimension order is preserved after dims are dropped.
 
