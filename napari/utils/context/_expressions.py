@@ -315,6 +315,11 @@ class Expr(ast.AST, Generic[T]):
         # note: we're using the invert operator `~` to mean "not ___"
         return UnaryOp(ast.Not(), self)
 
+    def __reduce_ex__(self, protocol: int) -> None:
+        rv = list(super().__reduce_ex__(protocol))
+        rv[1] = tuple(getattr(self, f) for f in self._fields)
+        return tuple(rv)
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -330,7 +335,9 @@ class Name(Expr[T], ast.Name):
     `id` holds the name as a string.
     """
 
-    def __init__(self, id: str, **kwargs: Any) -> None:
+    def __init__(
+        self, id: str, ctx: ast.expr_context = ast.Load(), **kwargs: Any
+    ) -> None:
         kwargs['ctx'] = ast.Load()
         super().__init__(id, **kwargs)
 
@@ -347,7 +354,9 @@ class Constant(Expr[V], ast.Constant):
 
     value: V
 
-    def __init__(self, value: V, **kwargs: Any) -> None:
+    def __init__(
+        self, value: V, kind: Optional[str] = None, **kwargs: Any
+    ) -> None:
         _valid_type = (type(None), str, bytes, bool, int, float)
         if not isinstance(value, _valid_type):
             raise TypeError(
@@ -357,7 +366,7 @@ class Constant(Expr[V], ast.Constant):
                     _valid_type=_valid_type,
                 )
             )
-        super().__init__(value, **kwargs)
+        super().__init__(value, kind, **kwargs)
 
 
 class Compare(Expr[bool], ast.Compare):
