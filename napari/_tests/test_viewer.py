@@ -222,7 +222,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
-    viewer.dims._transpose()
+    viewer.dims.transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 

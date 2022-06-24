@@ -349,7 +349,9 @@ class Dims(EventedModel):
 
     def transpose(self):
         """Transpose displayed dimensions."""
-        self._transpose()
+        order = list(self.order)
+        order[-2], order[-1] = order[-1], order[-2]
+        self.order = order
 
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
@@ -402,9 +404,17 @@ class Dims(EventedModel):
 
     def _transpose(self):
         """Transpose displayed dimensions."""
-        order = list(self.order)
-        order[-2], order[-1] = order[-1], order[-2]
-        self.order = order
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'viewer.dims._transpose' is deprecated and will be removed in v0.5.0. Please use 'viewer.dims.transpose' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        self.transpose()
+
 
 
 def reorder_after_dim_reduction(order):
