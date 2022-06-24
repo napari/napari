@@ -31,6 +31,7 @@ if TYPE_CHECKING:
         KeybindingRule,
         KeyCode,
         MenuRule,
+        MenuRuleDict,
         TranslationOrStr,
     )
 
@@ -46,7 +47,6 @@ class CommandsRegistry:
     class RegisteredCommand(NamedTuple):
         id: str
         run: Callable
-        description: Optional[str] = None
 
     @classmethod
     def instance(cls) -> CommandsRegistry:
@@ -58,11 +58,10 @@ class CommandsRegistry:
         self,
         id: CommandId,
         callback: Callable,
-        description: Optional[str] = None,
     ) -> DisposeCallable:
         commands = self._commands.setdefault(id, [])
 
-        cmd = self.RegisteredCommand(id, run=callback, description=description)
+        cmd = self.RegisteredCommand(id, run=callback)
         commands.insert(0, cmd)
 
         def _dispose():
@@ -78,6 +77,18 @@ class CommandsRegistry:
 
     def __contains__(self, id: str) -> bool:
         return id in self._commands
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} ({len(self._commands)} commands)>"
+
+    def __getitem__(self, id: CommandId) -> List[RegisteredCommand]:
+        return self._commands[id]
+
+    def execute(self, id: CommandId, *args, **kwargs):
+        from .._injection import inject_napari_dependencies
+
+        for cmd in self[id]:
+            inject_napari_dependencies(cmd.run)(*args, **kwargs)
 
 
 class KeybindingsRegistry:
@@ -178,13 +189,11 @@ def register_action(
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
-    source: Optional[str] = None,
-    toggled: Optional[context.Expr] = None,
+    precondition: Optional[context.Expr] = None,
     run: Literal[None] = None,
     add_to_command_palette: bool = True,
-    menus: Optional[List[MenuRule]] = None,
+    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
     keybindings: Optional[List[KeybindingRule]] = None,
-    description: Optional[str] = None,
 ) -> Callable:
     ...
 
@@ -198,14 +207,11 @@ def register_action(
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
-    source: Optional[str] = None,
     precondition: Optional[context.Expr] = None,
-    toggled: Optional[context.Expr] = None,
     run: Callable,
     add_to_command_palette: bool = True,
-    menus: Optional[List[MenuRule]] = None,
+    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
     keybindings: Optional[List[KeybindingRule]] = None,
-    description: Optional[str] = None,
 ) -> DisposeCallable:
     ...
 
@@ -223,13 +229,11 @@ def register_action(
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
-    source: Optional[str] = None,
     precondition: Optional[context.Expr] = None,
     run: Optional[Callable] = None,
     add_to_command_palette: bool = True,
-    menus: Optional[List[MenuRule]] = None,
+    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
     keybindings: Optional[List[KeybindingRule]] = None,
-    description: Optional[str] = None,
 ) -> Union[Callable, DisposeCallable, None]:
     """Register an action.
 
@@ -265,7 +269,7 @@ def register_action(
         _description_, by default None
     add_to_command_palette : bool, optional
         _description_, by default True
-    menus : Optional[List[MenuRule]], optional
+    menus : Optional[List[Union[MenuRule, MenuRuleDict]]], optional
         _description_, by default None
     keybindings : Optional[List[KeybindingRule]], optional
         _description_, by default None
@@ -326,21 +330,19 @@ def _register_action(action: Action) -> DisposeCallable:
     """
     # command
     disposers = [
-        CommandsRegistry.instance().register_command(
-            action.id, action.run, action.description
-        )
+        CommandsRegistry.instance().register_command(action.id, action.run)
     ]
 
     # menu
 
-    disposers.append(
-        MenuRegistry.instance().append_menu_items(
-            [
-                (rule.id, MenuItem(command=action, **rule.dict()))
-                for rule in action.menus or ()
-            ]
+    items = []
+    for rule in action.menus or ():
+        menu_item = MenuItem(
+            command=action, when=rule.when, group=rule.group, order=rule.order
         )
-    )
+        items.append((rule.id, menu_item))
+
+    disposers.append(MenuRegistry.instance().append_menu_items(items))
     if action.add_to_command_palette:
         # TODO: dispose?
         MenuRegistry.instance().add_commands(action)

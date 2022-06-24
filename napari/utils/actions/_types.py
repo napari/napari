@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Callable, List, NewType, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    List,
+    NewType,
+    Optional,
+    TypedDict,
+    Union,
+)
 
 from pydantic import BaseModel
 
@@ -17,6 +25,42 @@ LINUX = sys.platform.startswith("linux")
 TranslationOrStr = Union[TranslationString, str]
 CommandId = NewType("CommandId", str)
 KeyCode = NewType("KeyCode", str)
+
+if TYPE_CHECKING:
+
+    class MenuRuleDict(TypedDict, total=False):
+        when: Optional[context.Expr]
+        group: str
+        order: Optional[int]
+        id: MenuId
+
+    class KeybindingRuleDict(TypedDict, total=False):
+        primary: Optional[KeyCode]
+        win: Optional[KeyCode]
+        linux: Optional[KeyCode]
+        mac: Optional[KeyCode]
+        weight: int
+        when: Optional[context.Expr]
+
+
+# commands
+
+
+class Icon(BaseModel):
+    dark: Optional[str] = None
+    light: Optional[str] = None
+
+
+class CommandRule(BaseModel):
+    id: CommandId
+    title: TranslationOrStr
+    short_title: Optional[TranslationOrStr] = None
+    category: Optional[TranslationOrStr] = None
+    tooltip: Optional[TranslationOrStr] = None
+    icon: Optional[Icon] = None
+    precondition: Optional[context.Expr] = None
+    # source: Optional[str] = None
+    # toggled: Optional[context.Expr] = None
 
 
 # keys
@@ -57,37 +101,10 @@ class MenuItem(_MenuItemBase):
     command: CommandRule
     alt: Optional[CommandRule] = None
 
-    class Config:
-        extra = 'ignore'
-
-
-# commands
-
-
-class CommandRule(BaseModel):
-    id: CommandId
-    title: TranslationOrStr
-    short_title: Optional[TranslationOrStr] = None
-    category: Optional[TranslationOrStr] = None
-    tooltip: Optional[TranslationOrStr] = None
-    icon: Optional[Icon] = None
-    source: Optional[str] = None
-    precondition: Optional[context.Expr] = None
-    toggled: Optional[context.Expr] = None
-
-
-class Icon(BaseModel):
-    dark: Optional[str] = None
-    light: Optional[str] = None
-
 
 # Actions, potential combination of all the above
 class Action(CommandRule):
     run: Callable
-    description: Optional[str] = None
     menus: Optional[List[MenuRule]] = None
     keybindings: Optional[List[KeybindingRule]] = None
     add_to_command_palette: bool = True
-
-
-MenuItem.update_forward_refs()
