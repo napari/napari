@@ -1088,6 +1088,13 @@ class Labels(_ImageBase):
 
     @contextmanager
     def block_history(self):
+        """Context manager to group history-editing operations together.
+
+        While in the context, history atoms are grouped together into a
+        "staged" history. When exiting the context, that staged history is
+        committed to the undo history queue, and an event is emitted
+        containing the change.
+        """
         prev = self._block_history
         self._block_history = True
         try:
@@ -1103,12 +1110,12 @@ class Labels(_ImageBase):
             self._staged_history = []
 
     def _append_to_undo_history(self, item):
-        """Append item to history and emit paint event
+        """Append item to history and emit paint event.
 
         Parameters
         ----------
         item : List[Tuple[ndarray, ndarray, int]]
-            list of history atoms to append to undo history
+            list of history atoms to append to undo history.
         """
         self._undo_history.append(item)
         self.events.paint(value=item)
