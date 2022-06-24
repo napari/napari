@@ -24,7 +24,6 @@ from qtpy.QtCore import (
     QEventLoop,
     QPoint,
     QProcess,
-    QRect,
     QSize,
     Qt,
     Slot,
