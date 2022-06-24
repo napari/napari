@@ -1,4 +1,5 @@
 import ast
+import sys
 from copy import deepcopy
 
 import pytest
@@ -38,7 +39,10 @@ def test_constants():
     assert Constant(False).eval() is False
     assert Constant(None).eval() is None
 
-    assert repr(Constant(1)) == 'Constant(value=1)'
+    if sys.version_info > (3, 8):
+        assert repr(Constant(1)) == 'Constant(value=1)'
+    else:
+        assert repr(Constant(1)) == 'Constant(value=1, kind=None)'
 
     # only {None, str, bytes, bool, int, float} allowed
     with pytest.raises(TypeError):
