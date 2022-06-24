@@ -1059,7 +1059,7 @@ class Window:
             Height of the rectangle shape of the window.
         """
         rect = self._qt_window.geometry()
-        return rext.left(), rect.top(), rect.width(), rect.height()
+        return rect.left(), rect.top(), rect.width(), rect.height()
 
     def show(self, *, block=False):
         """Resize, show, and bring forward the window.
