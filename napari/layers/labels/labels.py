@@ -1248,8 +1248,9 @@ class Labels(_ImageBase):
         self.data_setitem(match_indices, new_label, refresh)
 
     def _draw(self, new_label, last_cursor_coord, coordinates):
-        """Paint new label into layer at given coordinates,
-        interpolating from the last cursor coordinate.
+        """Paint into coordinates, accounting for mode and cursor movement.
+
+        The draw operation depends on the current mode of the layer.
 
         Parameters
         ----------
@@ -1347,16 +1348,22 @@ class Labels(_ImageBase):
         self.data_setitem(slice_coord, new_label, refresh)
 
     def data_setitem(self, indices, value, refresh=True):
-        """Set `indices` in `data` to `value`.
+        """Set `indices` in `data` to `value`, while writing to edit history.
 
         Parameters
         ----------
-        indices : sequence of int
-            indices in data to overwrite
-        value : int
-            new label value
-        refresh : bool, optional
+        indices : tuple of int, slice, or sequence of int
+            Indices in data to overwrite. Can be any valid NumPy indexing
+            expression [1]_.
+        value : int or array of int
+            New label value(s). If more than one value, must match or
+            broadcast with the given indices.
+        refresh : bool, default True
             whether to refresh the view, by default True
+
+        References
+        ----------
+        ..[1] https://numpy.org/doc/stable/user/basics.indexing.html
         """
         self._save_history(
             (
