@@ -39,7 +39,7 @@ def test_constants():
     assert Constant(False).eval() is False
     assert Constant(None).eval() is None
 
-    if sys.version_info > (3, 8):
+    if sys.version_info >= (3, 9):
         assert repr(Constant(1)) == 'Constant(value=1)'
     else:
         assert repr(Constant(1)) == 'Constant(value=1, kind=None)'
