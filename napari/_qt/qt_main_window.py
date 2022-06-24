@@ -19,7 +19,16 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot, QRect
+from qtpy.QtCore import (
+    QEvent,
+    QEventLoop,
+    QPoint,
+    QProcess,
+    QRect,
+    QSize,
+    Qt,
+    Slot,
+)
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -1034,7 +1043,7 @@ class Window:
             Height of the rectangle shape of the window.
         """
         self._qt_window.setGeometry(left, top, width, height)
-    
+
     def geometry(self):
         """Get the geometry of the widget
 
