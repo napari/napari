@@ -19,15 +19,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy.QtCore import (
-    QEvent,
-    QEventLoop,
-    QPoint,
-    QProcess,
-    QSize,
-    Qt,
-    Slot,
-)
+from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
