@@ -89,7 +89,7 @@ class KeybindingRule(BaseModel):
 
 class _MenuItemBase(BaseModel):
     when: Optional[context.Expr] = None
-    group: str = "navigation"
+    group: Optional[str] = None
     order: Optional[int] = None
 
 
