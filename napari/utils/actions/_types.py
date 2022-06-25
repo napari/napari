@@ -138,21 +138,40 @@ class KeybindingRule(BaseModel):
 
 
 class _RegisteredKeyBinding(NamedTuple):
-    keybinding: KeyCode
-    command_id: CommandId
-    weight: int
-    when: Optional[context.Expr] = None
+    """Internal object representing a fully registered keybinding."""
+
+    keybinding: KeyCode  # the keycode to bind to
+    command_id: CommandId  # the command to run
+    weight: int  # the weight of the binding, for prioritization
+    when: Optional[
+        context.Expr
+    ] = None  # condition which must be true to enable
 
 
 # menus
 
 
 class _MenuItemBase(BaseModel):
-    when: Optional[context.Expr] = None
-    group: Optional[str] = None
-    # note, order is not part of the plugin schema, it is provided with an group@order
+    """Data representing where and when a menu item should be shown."""
 
-    order: Optional[float] = None
+    when: Optional[context.Expr] = Field(
+        None,
+        description="(Optional) Condition which must be true to show the item.",
+    )
+    group: Optional[str] = Field(
+        None,
+        description="(Optional) Menu group to which this item should be added. Menu "
+        "groups are strings (like `'1_cutandpaste'`) that napari provides for specific "
+        "menus. But plugins may also create groups. 'navigation' is a special group "
+        "that always appears at the top of a menu.  If not provided, the item is added "
+        "in the last group of the menu.",
+    )
+    order: Optional[float] = Field(
+        None,
+        description="(Optional) Order of the item *within* its group. Note, order is "
+        "not part of the plugin schema, plugins may provide it using the group key "
+        "and the syntax 'group@order'.  If not provided, items are sorted by title.",
+    )
 
 
 class MenuRule(_MenuItemBase):
