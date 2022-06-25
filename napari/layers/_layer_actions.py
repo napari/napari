@@ -22,15 +22,15 @@ if TYPE_CHECKING:
     from ..components import LayerList
     from ..utils.actions._types import MenuRuleDict
 
-CTX_SPLIT_MERGE: MenuRuleDict = {
+LAYERCTX_SPLITMERGE: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
 }
-CTX_CONVERSION: MenuRuleDict = {
+LAYERCTX_CONVERSION: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
 }
-CTX_LINK: MenuRuleDict = {
+LAYERCTX_LINK: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
 }
@@ -39,7 +39,7 @@ CTX_LINK: MenuRuleDict = {
 @register_action(
     'napari:layers:duplicate_layer',
     title=trans._('Duplicate Layer'),
-    menus=[CTX_SPLIT_MERGE],
+    menus=[LAYERCTX_SPLITMERGE],
 )
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
     from copy import deepcopy
@@ -54,12 +54,12 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
     'napari:split_stack',
     title=trans._('Split Stack'),
     precondition=LLCK.active_layer_type == "image",
-    menus=[{**CTX_SPLIT_MERGE, 'when': ~LLCK.active_layer_is_rgb}],
+    menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLCK.active_layer_is_rgb}],
 )
 @register_action(
     'napari:split_stack',
     title=trans._('Split RGB'),
-    menus=[{**CTX_SPLIT_MERGE, 'when': LLCK.active_layer_is_rgb}],
+    menus=[{**LAYERCTX_SPLITMERGE, 'when': LLCK.active_layer_is_rgb}],
     precondition=LLCK.active_layer_is_rgb,
 )
 def _split_stack(ll: LayerList, axis: int = 0):
@@ -104,7 +104,7 @@ def _convert(ll: LayerList, type_: str):
         )
         & LLCK.all_selected_layers_same_type
     ),
-    menus=[CTX_CONVERSION],
+    menus=[LAYERCTX_CONVERSION],
 )
 def _convert_to_labels(ll: LayerList):
     return _convert(ll, 'labels')
@@ -117,7 +117,7 @@ def _convert_to_labels(ll: LayerList):
         (LLCK.num_selected_labels_layers >= 1)
         & LLCK.all_selected_layers_same_type
     ),
-    menus=[CTX_CONVERSION],
+    menus=[LAYERCTX_CONVERSION],
 )
 def _convert_to_image(ll: LayerList):
     return _convert(ll, 'image')
@@ -131,7 +131,7 @@ def _convert_to_image(ll: LayerList):
         & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
         & LLCK.all_selected_layers_same_shape
     ),
-    menus=[CTX_SPLIT_MERGE],
+    menus=[LAYERCTX_SPLITMERGE],
 )
 def _merge_stack(ll: LayerList, rgb=False):
     # force selection to follow LayerList ordering
@@ -164,7 +164,7 @@ def _toggle_visibility(ll: LayerList):
     'napari:select_linked_layers',
     title=trans._('Select Linked Layers'),
     precondition=LLCK.num_unselected_linked_layers,
-    menus=[CTX_LINK],
+    menus=[LAYERCTX_LINK],
 )
 def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
@@ -176,14 +176,14 @@ register_action(
     precondition=(
         (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
     ),
-    menus=[{**CTX_LINK, 'when': ~LLCK.num_selected_layers_linked}],
+    menus=[{**LAYERCTX_LINK, 'when': ~LLCK.num_selected_layers_linked}],
     run=lambda ll: ll.link_layers(ll.selection),
 )
 register_action(
     'napari:unlink_selected_layers',
     title=trans._('Unlink Layers'),
     precondition=LLCK.num_selected_layers_linked,
-    menus=[{**CTX_LINK, 'when': LLCK.num_selected_layers_linked}],
+    menus=[{**LAYERCTX_LINK, 'when': LLCK.num_selected_layers_linked}],
     run=lambda ll: ll.unlink_layers(ll.selection),
 )
 

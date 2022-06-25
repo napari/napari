@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 import sys
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Callable,
     List,
+    NamedTuple,
     NewType,
     Optional,
     TypedDict,
@@ -84,6 +86,13 @@ class KeybindingRule(BaseModel):
         return self.primary
 
 
+class RegisteredKeyBinding(NamedTuple):
+    keybinding: KeyCode
+    command_id: CommandId
+    weight: int
+    when: Optional[context.Expr] = None
+
+
 # menus
 
 
@@ -114,3 +123,18 @@ class Action(CommandRule):
     menus: Optional[List[MenuRule]] = None
     keybindings: Optional[List[KeybindingRule]] = None
     add_to_command_palette: bool = True
+
+
+class RegisteredCommand:
+    def __init__(
+        self, id: str, title: TranslationOrStr, run: Callable
+    ) -> None:
+        self.id = id
+        self.title = title
+        self.run = run
+
+    @cached_property
+    def run_injected(self):
+        from .._injection import inject_napari_dependencies
+
+        return inject_napari_dependencies(self.run)
