@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         when: Optional[context.Expr]
 
 
-# commands
+# ------------------ commands-related types --------------------
 
 
 class Icon(BaseModel):
@@ -94,7 +94,9 @@ class CommandRule(BaseModel):
         description="(Optional) Category string by which the command may be grouped "
         "in the UI",
     )
-    tooltip: Optional[TranslationOrStr] = None
+    tooltip: Optional[TranslationOrStr] = Field(
+        None, description="(Optional) Tooltip to show when hovered."
+    )
     icon: Optional[Icon] = Field(
         None,
         description="(Optional) Icon used to represent this command, e.g. on buttons "
@@ -112,20 +114,62 @@ class CommandRule(BaseModel):
         "the UI. Menus pick either `title` or `short_title` depending on the context "
         "in which they show commands.",
     )
-    # source: Optional[str] = None
-    # toggled: Optional[context.Expr] = None
 
 
-# keys
+class _RegisteredCommand:
+    """Small object to represent a command in the CommandsRegistry.
+
+    Only used internally by the CommandsRegistry.
+    This helper class allows us to cache the dependency-injected variant of the
+    command. As usual with `cached_property`, the cache can be cleard by deleting
+    the attribute: `del cmd.run_injected`
+    """
+
+    def __init__(
+        self, id: CommandId, title: TranslationOrStr, run: Callable
+    ) -> None:
+        self.id = id
+        self.title = title
+        self.run = run
+
+    @cached_property
+    def run_injected(self):
+        from .._injection import inject_napari_dependencies
+
+        return inject_napari_dependencies(self.run)
+
+
+# ------------------ keybinding-related types --------------------
 
 
 class KeybindingRule(BaseModel):
-    primary: Optional[KeyCode] = None
-    win: Optional[KeyCode] = None
-    linux: Optional[KeyCode] = None
-    mac: Optional[KeyCode] = None
-    weight: int = 0
-    when: Optional[context.Expr] = None
+    """Data representing a keybinding and when it should be active.
+
+    This model lacks a corresponding command. That gets linked up elsewhere,
+    such as below in `Action`.
+    """
+
+    primary: Optional[KeyCode] = Field(
+        None, description="(Optional) Key combo, (e.g. Ctrl+O)."
+    )
+    win: Optional[KeyCode] = Field(
+        None, description="(Optional) Windows specific key combo."
+    )
+    linux: Optional[KeyCode] = Field(
+        None, description="(Optional) Linux specific key combo."
+    )
+    mac: Optional[KeyCode] = Field(
+        None, description="(Optional) MacOS specific key combo."
+    )
+    when: Optional[context.Expr] = Field(
+        None,
+        description="(Optional) Condition when the keybingding is active.",
+    )
+    weight: int = Field(
+        0,
+        description="Internal weight used to sort keybindings. "
+        "This is not part of the plugin schema",
+    )
 
     def _bind_to_current_platform(self) -> Optional[KeyCode]:
         if WINDOWS and self.win:
@@ -148,7 +192,7 @@ class _RegisteredKeyBinding(NamedTuple):
     ] = None  # condition which must be true to enable
 
 
-# menus
+# ------------------ menus-related types --------------------
 
 
 class _MenuItemBase(BaseModel):
@@ -215,7 +259,9 @@ class SubmenuItem(_MenuItemBase):
     )
 
 
-# Actions, potential combination of all the above
+# ------------------ (complete) action-related types --------------------
+
+
 class Action(CommandRule):
     """Callable object along with specific context, menu, keybindings logic.
 
@@ -242,26 +288,3 @@ class Action(CommandRule):
         description="Whether to add this command to the global Command Palette "
         "during registration.",
     )
-
-
-class _RegisteredCommand:
-    """Small object to represent a command in the CommandsRegistry.
-
-    Only used internally by the CommandsRegistry.
-    This helper class allows us to cache the dependency-injected variant of the command.
-    As usual with `cached_property`, the cache can be cleard by deleting the attribute:
-    `del cmd.run_injected`
-    """
-
-    def __init__(
-        self, id: CommandId, title: TranslationOrStr, run: Callable
-    ) -> None:
-        self.id = id
-        self.title = title
-        self.run = run
-
-    @cached_property
-    def run_injected(self):
-        from .._injection import inject_napari_dependencies
-
-        return inject_napari_dependencies(self.run)
