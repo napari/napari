@@ -4,12 +4,13 @@ from unittest.mock import Mock, patch
 import pytest
 
 from napari.utils._injection import set_providers
-from napari.utils.actions import Action, register_action
-from napari.utils.actions._menus import MenuId
-from napari.utils.actions._registries import (
+from napari.utils.actions import (
+    Action,
     CommandsRegistry,
     KeybindingsRegistry,
+    MenuId,
     MenuRegistry,
+    register_action,
 )
 from napari.utils.actions._types import CommandId
 from napari.utils.context import LayerListContextKeys
@@ -79,7 +80,11 @@ def test_register_action_decorator(
     menu_reg: MenuRegistry,
     mode,
 ):
-    assert not (list(menu_reg) or list(key_reg) or list(cmd_reg))
+    # make sure mocks are working
+    assert not list(cmd_reg)
+    assert not list(key_reg)
+    assert not list(menu_reg)
+
     dispose: Optional[Callable] = None
     cmd_id = CommandId('cmd.id')
     kwargs['title'] = 'Test title'
