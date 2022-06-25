@@ -37,7 +37,7 @@ class ViewerStatusBar(QStatusBar):
 
     def setStatusText(self, text: str) -> None:
         # print(dir(self.parent()))
-        width = self.parent().width() * STATUS_FRACTION_WIDTH
+        width = int(self.parent().width() * STATUS_FRACTION_WIDTH)
         self._status_message.resize(width, self._status_message.height())
         self._status_message.setText(text)
 
