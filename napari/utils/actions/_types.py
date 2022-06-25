@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from ...utils import context
 from ...utils.translations import TranslationString
@@ -29,11 +29,6 @@ CommandId = NewType("CommandId", str)
 KeyCode = NewType("KeyCode", str)
 
 if TYPE_CHECKING:
-
-    # Typed dicts mimic the API of their pydantic counterparts.
-    # Since pydantic allows you to pass in either an object or a dict,
-    # This lets us use either anywhere, without losing typing support.
-    # e.g. Union[MenuRuleDict, MenuRule]
 
     class MenuRuleDict(TypedDict, total=False):
         when: Optional[context.Expr]
@@ -59,19 +54,13 @@ class Icon(BaseModel):
 
 
 class CommandRule(BaseModel):
-    id: CommandId = Field(
-        ..., description="A globally unique identifier for the command."
-    )
-    title: TranslationOrStr = Field(
-        ...,
-        description="The title of the command. This will be used wherever a command is "
-        "shown in the UI, such as in a menu, or a command palette.",
-    )
+    id: CommandId
+    title: TranslationOrStr
     short_title: Optional[TranslationOrStr] = None
     category: Optional[TranslationOrStr] = None
     tooltip: Optional[TranslationOrStr] = None
     icon: Optional[Icon] = None
-    precondition: Optional[context.Expr] = None
+    enablement: Optional[context.Expr] = None
     # source: Optional[str] = None
     # toggled: Optional[context.Expr] = None
 
