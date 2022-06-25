@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Callable, Optional
 
 from psygnal import Signal
 
 from ...utils.translations import trans
 from ._menus import MenuGroup, MenuId
 from ._types import (
-    Action,
     MenuItem,
     SubmenuItem,
     _RegisteredCommand,
@@ -17,33 +16,19 @@ from ._types import (
 from ._util import MockFuture
 
 if TYPE_CHECKING:
-    from typing import (
-        Any,
-        Callable,
-        Dict,
-        Iterator,
-        List,
-        Literal,
-        Optional,
-        Sequence,
-        Set,
-        Tuple,
-        Union,
-    )
-
-    from napari.utils import context
+    from typing import Dict, Iterator, List, Sequence, Set, Tuple, Union
 
     from ._types import (
+        CommandHandler,
         CommandId,
         CommandRule,
-        Icon,
         KeybindingRule,
-        MenuRule,
-        MenuRuleDict,
         TranslationOrStr,
     )
 
     DisposeCallable = Callable[[], None]
+    CommandDecorator = Callable[[CommandHandler], CommandHandler]
+    MenuOrSubmenu = Union[MenuItem, SubmenuItem]
 
 
 class CommandsRegistry:
@@ -61,12 +46,28 @@ class CommandsRegistry:
     def register_command(
         self,
         id: CommandId,
-        title: TranslationOrStr,
-        callback: Callable,
+        callback: CommandHandler,
+        title: TranslationOrStr = '',
     ) -> DisposeCallable:
+        """Register a callable as the handler for command `id`.
+
+        Parameters
+        ----------
+        id : CommandId
+            Command identifier
+        callback : Callable
+            Callable to be called when the command is executed
+        title : TranslationOrStr
+            Optional title for the command.
+
+        Returns
+        -------
+        DisposeCallable
+            A function that can be called to unregister the command.
+        """
         commands = self._commands.setdefault(id, [])
 
-        cmd = _RegisteredCommand(id, title, callback)
+        cmd = _RegisteredCommand(id, callback, title)
         commands.insert(0, cmd)
 
         def _dispose():
@@ -88,6 +89,7 @@ class CommandsRegistry:
         return f"<{name} at {hex(id(self))} ({len(self._commands)} commands)>"
 
     def __getitem__(self, id: CommandId) -> List[_RegisteredCommand]:
+        """Retrieve commands registered under a given ID"""
         return self._commands[id]
 
     def execute_command(
@@ -181,7 +183,7 @@ class KeybindingsRegistry:
 
 class MenuRegistry:
     menus_changed = Signal(set)
-    _menu_items: Dict[MenuId, List[MenuItem | SubmenuItem]] = {}
+    _menu_items: Dict[MenuId, List[MenuOrSubmenu]] = {}
     _commands: Dict[CommandId, CommandRule] = {}
     __instance: Optional[MenuRegistry] = None
 
@@ -192,7 +194,7 @@ class MenuRegistry:
         return cls.__instance
 
     def append_menu_items(
-        self, items: Sequence[Tuple[MenuId, MenuItem | SubmenuItem]]
+        self, items: Sequence[Tuple[MenuId, MenuOrSubmenu]]
     ) -> DisposeCallable:
         changed_ids: Set[MenuId] = set()
         disposers = []
@@ -223,13 +225,13 @@ class MenuRegistry:
 
     def __iter__(
         self,
-    ) -> Iterator[Tuple[MenuId, List[MenuItem | SubmenuItem]]]:
+    ) -> Iterator[Tuple[MenuId, List[MenuOrSubmenu]]]:
         yield from self._menu_items.items()
 
     def __contains__(self, id: object) -> bool:
         return id in self._menu_items
 
-    def __getitem__(self, id: MenuId) -> List[MenuItem | SubmenuItem]:
+    def __getitem__(self, id: MenuId) -> List[MenuOrSubmenu]:
         return self._menu_items[id]
 
     def __repr__(self) -> str:
@@ -243,11 +245,10 @@ class MenuRegistry:
         """Return registered menu items as lines of strings."""
         lines = []
 
-        for menu, children in self:
+        branch = "  ├──"
+        for menu in self._menu_items:
             lines.append(menu.value)
-
-            branch = "  ├──"
-            for group in _sorted_groups(children):
+            for group in self.iter_menu_groups(menu):
                 first = next(iter(group))
                 lines.append(f"  ├───────────{first.group}───────────────")
                 for child in group:
@@ -267,161 +268,22 @@ class MenuRegistry:
 
     def iter_menu_groups(
         self, menu_id: MenuId
-    ) -> Iterator[List[MenuItem | SubmenuItem]]:
-        yield from _sorted_groups(self[menu_id])
+    ) -> Iterator[List[MenuOrSubmenu]]:
+        yield from MenuRegistry._sorted_groups(self[menu_id])
 
+    @staticmethod
+    def _sorted_groups(
+        items: List[MenuOrSubmenu],
+        group_sorter: Callable = lambda x: 0 if x == 'navigation' else 1,
+        order_sorter: Callable = lambda x: getattr(x, 'order', '') or 0,
+    ) -> Iterator[List[MenuOrSubmenu]]:
+        """Sort a list of menu items based on their .group and .order attributes."""
+        groups: dict[Optional[str], List[MenuOrSubmenu]] = {}
+        for item in items:
+            groups.setdefault(item.group, []).append(item)
 
-def _sorted_groups(
-    items: List[MenuItem | SubmenuItem],
-    group_sorter: Callable = lambda x: 0 if x == 'navigation' else 1,
-    order_sorter: Callable = lambda x: getattr(x, 'order', '') or 0,
-) -> Iterator[List[MenuItem | SubmenuItem]]:
-    """Sort a list of menu items based on their .group and .order attributes."""
-    groups: dict[Optional[str], List[MenuItem | SubmenuItem]] = {}
-    for item in items:
-        groups.setdefault(item.group, []).append(item)
-
-    for group_id in sorted(groups, key=group_sorter):
-        yield sorted(groups[group_id], key=order_sorter)
-
-
-@overload
-def register_action(
-    id_or_action: str,
-    title: TranslationOrStr,
-    *,
-    category: Optional[TranslationOrStr] = None,
-    tooltip: Optional[TranslationOrStr] = None,
-    icon: Optional[Icon] = None,
-    enablement: Optional[context.Expr] = None,
-    run: Literal[None] = None,
-    add_to_command_palette: bool = True,
-    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
-    keybindings: Optional[List[KeybindingRule]] = None,
-) -> Callable:
-    ...
-
-
-@overload
-def register_action(
-    id_or_action: str,
-    title: TranslationOrStr,
-    *,
-    category: Optional[TranslationOrStr] = None,
-    tooltip: Optional[TranslationOrStr] = None,
-    icon: Optional[Icon] = None,
-    enablement: Optional[context.Expr] = None,
-    run: Callable,
-    add_to_command_palette: bool = True,
-    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
-    keybindings: Optional[List[KeybindingRule]] = None,
-) -> DisposeCallable:
-    ...
-
-
-@overload
-def register_action(id_or_action: Action) -> DisposeCallable:
-    ...
-
-
-def register_action(
-    id_or_action: Union[str, Action],
-    title: Optional[TranslationOrStr] = None,
-    *,
-    category: Optional[TranslationOrStr] = None,
-    tooltip: Optional[TranslationOrStr] = None,
-    icon: Optional[Icon] = None,
-    enablement: Optional[context.Expr] = None,
-    run: Optional[Callable] = None,
-    add_to_command_palette: bool = True,
-    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
-    keybindings: Optional[List[KeybindingRule]] = None,
-) -> Union[Callable, DisposeCallable, None]:
-    """Register an action.
-
-    Can be used as a function or as a decorator.
-
-    When the first `id_or_action` argument is a string, it is the `id` of the command
-    being registered, and `title` must also be provided.  If `run` is not provided,
-    then a decorator is returned that can be used to decorate the callable that
-    executes the command.
-
-    When the first `id_or_action` argument is an `Action`, then all other arguments
-    are ignored, and the action object is registered directly.
-    """
-    if isinstance(id_or_action, Action):
-        return _register_action(id_or_action)
-    if isinstance(id_or_action, str):
-        if title is None:
-            raise ValueError("'title' is required when 'id' is a string")
-        _kwargs = locals().copy()
-        _kwargs['id'] = _kwargs.pop("id_or_action")
-        return _register_action_str(**_kwargs)
-    raise TypeError("'id_or_action' must be a string or an Action")
-
-
-def _register_action_str(
-    **kwargs: Any,
-) -> Union[Callable[[Callable], Callable], DisposeCallable]:
-    """Create and register an Action with a string id and title.
-
-    Helper for `register_action()`.
-
-    If the `kwargs['run']` is not callable, a decorator is created and returned.
-    Otherwise an action is created (thereby performing validation and casting)
-    and registered.
-    """
-    if not callable(kwargs.get('run')):
-
-        def decorator(callable: Callable, **k) -> Callable:
-            _register_action(Action(**{**kwargs, **k, 'run': callable}))
-            return callable
-
-        decorator.__doc__ = (
-            f"Decorate function as callback for command {kwargs['id']!r}"
-        )
-        return decorator
-    return _register_action(Action(**kwargs))
-
-
-def _register_action(action: Action) -> DisposeCallable:
-    """Register an Action object.
-
-    Helper for `register_action()`.
-    """
-    # command
-    disposers = [
-        CommandsRegistry.instance().register_command(
-            action.id, action.title, action.run
-        )
-    ]
-
-    # menu
-
-    items = []
-    for rule in action.menus or ():
-        menu_item = MenuItem(
-            command=action, when=rule.when, group=rule.group, order=rule.order
-        )
-        items.append((rule.id, menu_item))
-
-    disposers.append(MenuRegistry.instance().append_menu_items(items))
-    if action.add_to_command_palette:
-        # TODO: dispose?
-        MenuRegistry.instance().add_commands(action)
-
-    # keybinding
-    for keyb in action.keybindings or ():
-        if _d := KeybindingsRegistry.instance().register_keybinding_rule(
-            action.id, keyb
-        ):
-            disposers.append(_d)
-
-    def _dispose():
-        for d in disposers:
-            d()
-
-    return _dispose
+        for group_id in sorted(groups, key=group_sorter):
+            yield sorted(groups[group_id], key=order_sorter)
 
 
 def _register_submenus():

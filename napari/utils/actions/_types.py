@@ -5,12 +5,14 @@ import sys
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     List,
     NamedTuple,
     NewType,
     Optional,
     TypedDict,
+    TypeVar,
     Union,
 )
 
@@ -28,6 +30,7 @@ TranslationOrStr = Union[TranslationString, str]
 CommandId = NewType("CommandId", str)
 KeyCode = NewType("KeyCode", str)
 IconCode = NewType("IconCode", str)
+CommandHandler = TypeVar("CommandHandler", bound=Callable[..., Any])
 
 if TYPE_CHECKING:
 
@@ -126,11 +129,11 @@ class _RegisteredCommand:
     """
 
     def __init__(
-        self, id: CommandId, title: TranslationOrStr, run: Callable
+        self, id: CommandId, run: CommandHandler, title: TranslationOrStr
     ) -> None:
         self.id = id
-        self.title = title
         self.run = run
+        self.title = title
 
     @cached_property
     def run_injected(self):
@@ -187,9 +190,7 @@ class _RegisteredKeyBinding(NamedTuple):
     keybinding: KeyCode  # the keycode to bind to
     command_id: CommandId  # the command to run
     weight: int  # the weight of the binding, for prioritization
-    when: Optional[
-        context.Expr
-    ] = None  # condition which must be true to enable
+    when: Optional[context.Expr] = None  # condition to enable keybinding
 
 
 # ------------------ menus-related types --------------------
@@ -271,7 +272,7 @@ class Action(CommandRule):
     and registered using `register_action`.
     """
 
-    run: Callable = Field(
+    run: CommandHandler = Field(
         ...,
         description="A function to call when the associated CommandId is executed.",
     )
