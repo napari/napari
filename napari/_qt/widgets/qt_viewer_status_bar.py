@@ -11,7 +11,7 @@ from ..dialogs.qt_activity_dialog import ActivityToggleItem
 if TYPE_CHECKING:
     from ..qt_main_window import _QtMainWindow
 
-STATUS_MSG_WIDTH = 600
+STATUS_FRACTION_WIDTH = 0.6
 
 
 class ViewerStatusBar(QStatusBar):
@@ -36,9 +36,9 @@ class ViewerStatusBar(QStatusBar):
         self._help.setText(text)
 
     def setStatusText(self, text: str) -> None:
-        self._status_message.resize(
-            STATUS_MSG_WIDTH, self._status_message.height()
-        )
+        # print(dir(self.parent()))
+        width = self.parent().width() * STATUS_FRACTION_WIDTH
+        self._status_message.resize(width, self._status_message.height())
         self._status_message.setText(text)
 
     def _toggle_activity_dock(self, visible: bool):

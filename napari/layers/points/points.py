@@ -1,4 +1,3 @@
-import os.path
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
@@ -2063,30 +2062,7 @@ class Points(Layer):
         else:
             value = None
 
-        if self.source.reader_plugin:
-            try:
-                layer_base = os.path.basename(self.source.path)
-            except KeyError:
-                pass
-            name = trans._(
-                '{layer_base},  source: {source} (plugin)',
-                layer_base=layer_base,
-                source=self.source.reader_plugin,
-            )
-        elif self.source.sample:
-            name = trans._(
-                '{layer_name}, source: {source} (sample)',
-                layer_name=self.name,
-                source=self.source.sample[0],
-            )
-        elif self.source.widget:
-            name = trans._(
-                '{layer_name},  source: {source} (widget)',
-                layer_name=self.name,
-                source=self.source.widget._function.__name__,
-            )
-        else:
-            name = self.name
+        name = self._get_source_str()
 
         msg = generate_layer_status(name, position, value)
 

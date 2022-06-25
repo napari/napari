@@ -1595,6 +1595,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
+    def _get_source_str(self):
+
+        if self.source.reader_plugin:
+            try:
+                layer_base = os.path.basename(self.source.path)
+            except KeyError:
+                return ''
+            return trans._(
+                '{layer_base},  source: {source} (plugin)',
+                layer_base=layer_base,
+                source=self.source.reader_plugin,
+            )
+        elif self.source.sample:
+            return trans._(
+                '{layer_name}, source: {source} (sample)',
+                layer_name=self.name,
+                source=self.source.sample[0],
+            )
+        elif self.source.widget:
+            return trans._(
+                '{layer_name},  source: {source} (widget)',
+                layer_name=self.name,
+                source=self.source.widget._function.__name__,
+            )
+        else:
+            return self.name
+
     def get_status(
         self,
         position: Optional[Tuple] = None,
@@ -1635,30 +1662,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             value = None
 
-        if self.source.reader_plugin:
-            try:
-                layer_base = os.path.basename(self.source.path)
-            except KeyError:
-                pass
-            name = trans._(
-                '{layer_base},  source: {source} (plugin)',
-                layer_base=layer_base,
-                source=self.source.reader_plugin,
-            )
-        elif self.source.sample:
-            name = trans._(
-                '{layer_name}, source: {source} (sample)',
-                layer_name=self.name,
-                source=self.source.sample[0],
-            )
-        elif self.source.widget:
-            name = trans._(
-                '{layer_name},  source: {source} (widget)',
-                layer_name=self.name,
-                source=self.source.widget._function.__name__,
-            )
-        else:
-            name = self.name
+        name = self._get_source_str()
 
         return generate_layer_status(name, position, value)
 
