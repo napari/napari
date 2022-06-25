@@ -12,6 +12,7 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from ..layers._layer_actions import _register_layer_actions
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
@@ -193,6 +194,7 @@ def get_app(
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
         _register_napari_resources()
+        _register_layer_actions()
 
     _app_ref = app  # prevent garbage collection
 
