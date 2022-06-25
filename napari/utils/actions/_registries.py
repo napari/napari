@@ -191,6 +191,7 @@ class MenuRegistry:
 
     def __init__(self) -> None:
         self._menu_items: Dict[MenuId, List[MenuOrSubmenu]] = {}
+        # TODO: do we need this?
         self._commands: Dict[CommandId, CommandRule] = {}
 
     @classmethod
