@@ -41,8 +41,6 @@ from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from napari.layers import _layer_actions  # noqa  # TODO: move me
-
 from ...utils.actions import MenuId
 from ...utils.context import get_context
 from ..qt_resources import QColoredSVGIcon

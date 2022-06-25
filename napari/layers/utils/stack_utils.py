@@ -286,7 +286,7 @@ def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
     return Image(new_data, **meta)
 
 
-def merge_rgb(images: List[Image]) -> List[Image]:
+def merge_rgb(images: List[Image]) -> Image:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
         raise ValueError(

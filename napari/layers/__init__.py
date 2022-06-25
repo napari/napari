@@ -8,6 +8,7 @@ import inspect as _inspect
 from importlib import import_module as _imp
 
 from ..utils.misc import all_subclasses as _all_subcls
+from ._layer_actions import _register_layer_actions
 from .base import Layer
 from .image import Image
 from .labels import Labels
@@ -35,3 +36,7 @@ __all__ = [
     'Vectors',
     'NAMES',
 ]
+
+
+_register_layer_actions()
+del _register_layer_actions
