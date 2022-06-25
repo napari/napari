@@ -290,7 +290,6 @@ def register_action(
     id_or_action: str,
     title: TranslationOrStr,
     *,
-    short_title: Optional[TranslationOrStr] = None,
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
@@ -308,7 +307,6 @@ def register_action(
     id_or_action: str,
     title: TranslationOrStr,
     *,
-    short_title: Optional[TranslationOrStr] = None,
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
@@ -330,7 +328,6 @@ def register_action(
     id_or_action: Union[str, Action],
     title: Optional[TranslationOrStr] = None,
     *,
-    short_title: Optional[TranslationOrStr] = None,
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
@@ -351,47 +348,6 @@ def register_action(
 
     When the first `id_or_action` argument is an `Action`, then all other arguments
     are ignored, and the action object is registered directly.
-
-    Parameters
-    ----------
-    id_or_action : Union[str, Action]
-        _description_
-    title : Optional[TranslationOrStr], optional
-        _description_, by default None
-    short_title : Optional[TranslationOrStr], optional
-        _description_, by default None
-    category : Optional[TranslationOrStr], optional
-        _description_, by default None
-    tooltip : Optional[TranslationOrStr], optional
-        _description_, by default None
-    icon : Optional[Icon], optional
-        _description_, by default None
-    source : Optional[str], optional
-        _description_, by default None
-    enablement : Optional[context.Expr], optional
-        _description_, by default None
-    run : Optional[Callable], optional
-        _description_, by default None
-    add_to_command_palette : bool, optional
-        _description_, by default True
-    menus : Optional[List[Union[MenuRule, MenuRuleDict]]], optional
-        _description_, by default None
-    keybindings : Optional[List[KeybindingRule]], optional
-        _description_, by default None
-    description : Optional[str], optional
-        _description_, by default None
-
-    Returns
-    -------
-    Union[Callable, Action, None]
-        _description_
-
-    Raises
-    ------
-    ValueError
-        _description_
-    TypeError
-        _description_
     """
     if isinstance(id_or_action, Action):
         return _register_action(id_or_action)

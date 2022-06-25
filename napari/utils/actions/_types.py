@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ...utils import context
 from ...utils.translations import TranslationString
@@ -27,9 +27,14 @@ LINUX = sys.platform.startswith("linux")
 TranslationOrStr = Union[TranslationString, str]
 CommandId = NewType("CommandId", str)
 KeyCode = NewType("KeyCode", str)
+IconCode = NewType("IconCode", str)
 
 if TYPE_CHECKING:
 
+    # Typed dicts mimic the API of their pydantic counterparts.
+    # Since pydantic allows you to pass in either an object or a dict,
+    # This lets us use either anywhere, without losing typing support.
+    # e.g. Union[MenuRuleDict, MenuRule]
     class MenuRuleDict(TypedDict, total=False):
         when: Optional[context.Expr]
         group: str
@@ -49,18 +54,64 @@ if TYPE_CHECKING:
 
 
 class Icon(BaseModel):
-    dark: Optional[str] = None
-    light: Optional[str] = None
+    """Icons used to represent commands, or submenus.
+
+    May provide both a light and dark variant.  If only one is provided, it is used
+    in all theme types.
+    """
+
+    dark: Optional[IconCode] = Field(
+        None,
+        description="Icon path when a dark theme is used. These may be superqt "
+        "fonticon keys, such as `fa5s.arrow_down`",
+    )
+    light: Optional[IconCode] = Field(
+        None,
+        description="Icon path when a light theme is used. These may be superqt "
+        "fonticon keys, such as `fa5s.arrow_down`",
+    )
 
 
 class CommandRule(BaseModel):
-    id: CommandId
-    title: TranslationOrStr
-    short_title: Optional[TranslationOrStr] = None
-    category: Optional[TranslationOrStr] = None
+    """Data representing a command and its presentation.
+
+    Presentation of contributed commands depends on the containing menu. The Command
+    Palette, for instance, prefixes commands with their category, allowing for easy
+    grouping. However, the Command Palette doesn't show icons nor disabled commands.
+    Menus, on the other hand, shows disabled items as grayed out, but don't show the
+    category label.
+    """
+
+    id: CommandId = Field(
+        ..., description="A globally unique identifier for the command."
+    )
+    title: TranslationOrStr = Field(
+        ...,
+        description="Title by which the command is represented in the UI.",
+    )
+    category: Optional[TranslationOrStr] = Field(
+        None,
+        description="(Optional) Category string by which the command may be grouped "
+        "in the UI",
+    )
     tooltip: Optional[TranslationOrStr] = None
-    icon: Optional[Icon] = None
-    enablement: Optional[context.Expr] = None
+    icon: Optional[Icon] = Field(
+        None,
+        description="(Optional) Icon used to represent this command, e.g. on buttons "
+        "or in menus. These may be superqt fonticon keys, such as `fa5s.arrow_down`",
+    )
+    enablement: Optional[context.Expr] = Field(
+        None,
+        description="(Optional) Condition which must be true to enable the command in "
+        "the UI (menu and keybindings). Does not prevent executing the command by "
+        "other means, like the `execute_command` API.",
+    )
+    short_title: Optional[TranslationOrStr] = Field(
+        None,
+        description="(Optional) Short title by which the command is represented in "
+        "the UI. Menus pick either `title` or `short_title` depending on the context "
+        "in which they show commands.",
+    )
     # source: Optional[str] = None
     # toggled: Optional[context.Expr] = None
 
@@ -99,16 +150,36 @@ class RegisteredKeyBinding(NamedTuple):
 class _MenuItemBase(BaseModel):
     when: Optional[context.Expr] = None
     group: Optional[str] = None
-    order: Optional[float] = None
+    order: Optional[
+        float
+    ] = None  # note, order is not part of the plugin schema, it is provided with an group@order
 
 
 class MenuRule(_MenuItemBase):
-    id: MenuId
+    """A MenuRule defines a menu location and conditions for presentation.
+
+    It does not define an actual command. That is done in either `MenuItem` or `Action`.
+    """
+
+    id: MenuId = Field(..., description="Menu in which to place this item.")
 
 
 class MenuItem(_MenuItemBase):
-    command: CommandRule
-    alt: Optional[CommandRule] = None
+    """Combination of a Command and conditions for menu presentation.
+
+    This object is mostly constructed by `register_action` right before menu item
+    registration.
+    """
+
+    command: CommandRule = Field(
+        ...,
+        description="CommandRule to execute when this menu item is selected.",
+    )
+    alt: Optional[CommandRule] = Field(
+        None,
+        description="Alternate command to execute when this menu item is selected, "
+        "(e.g. when the Alt-key is held when opening the menu)",
+    )
 
 
 class SubmenuItem(_MenuItemBase):
