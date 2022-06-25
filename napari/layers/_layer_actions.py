@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 
 from ..utils._injection import inject_napari_dependencies
-from ..utils.actions import MenuId, register_action
+from ..utils.actions import MenuGroup, MenuId, register_action
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
 from . import Image, Layer
@@ -20,12 +20,26 @@ from .utils._link_layers import get_linked_layers
 
 if TYPE_CHECKING:
     from ..components import LayerList
+    from ..utils.actions._types import MenuRuleDict
+
+CTX_SPLIT_MERGE: MenuRuleDict = {
+    'id': MenuId.LAYERLIST_CONTEXT,
+    'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+}
+CTX_CONVERSION: MenuRuleDict = {
+    'id': MenuId.LAYERLIST_CONTEXT,
+    'group': MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
+}
+CTX_LINK: MenuRuleDict = {
+    'id': MenuId.LAYERLIST_CONTEXT,
+    'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
+}
 
 
 @register_action(
     'napari:layers:duplicate_layer',
     title=trans._('Duplicate Layer'),
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
+    menus=[CTX_SPLIT_MERGE],
 )
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
     from copy import deepcopy
@@ -40,14 +54,12 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
     'napari:split_stack',
     title=trans._('Split Stack'),
     precondition=LLCK.active_layer_type == "image",
-    menus=[
-        {'id': MenuId.LAYERLIST_CONTEXT, 'when': ~LLCK.active_layer_is_rgb}
-    ],
+    menus=[{**CTX_SPLIT_MERGE, 'when': ~LLCK.active_layer_is_rgb}],
 )
 @register_action(
     'napari:split_stack',
     title=trans._('Split RGB'),
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT, 'when': LLCK.active_layer_is_rgb}],
+    menus=[{**CTX_SPLIT_MERGE, 'when': LLCK.active_layer_is_rgb}],
     precondition=LLCK.active_layer_is_rgb,
 )
 def _split_stack(ll: LayerList, axis: int = 0):
@@ -61,6 +73,170 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.remove(layer)
     ll.extend(images)
     ll.selection = set(images)  # type: ignore
+
+
+def _convert(ll: LayerList, type_: str):
+    from ..layers import Shapes
+
+    for lay in list(ll.selection):
+        idx = ll.index(lay)
+        ll.pop(idx)
+        if isinstance(lay, Shapes) and type_ == 'labels':
+            data = lay.to_labels()
+        else:
+            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+        new_layer = Layer.create(data, lay._get_base_state(), type_)
+        ll.insert(idx, new_layer)
+
+
+# TODO: currently, we have to create a thin _convert_to_x wrapper around _convert
+# here for the purpose of type hinting (which partial doesn't do) ...
+# so that inject_dependencies works correctly.
+# however, we could conceivably add an `args` option to register_action
+# that would allow us to pass additional arguments, like a partial.
+@register_action(
+    'napari:convert_to_image',
+    title=trans._('Convert to Labels'),
+    precondition=(
+        (
+            (LLCK.num_selected_image_layers >= 1)
+            | (LLCK.num_selected_shapes_layers >= 1)
+        )
+        & LLCK.all_selected_layers_same_type
+    ),
+    menus=[CTX_CONVERSION],
+)
+def _convert_to_labels(ll: LayerList):
+    return _convert(ll, 'labels')
+
+
+@register_action(
+    'napari:convert_to_image',
+    title=trans._('Convert to Image'),
+    precondition=(
+        (LLCK.num_selected_labels_layers >= 1)
+        & LLCK.all_selected_layers_same_type
+    ),
+    menus=[CTX_CONVERSION],
+)
+def _convert_to_image(ll: LayerList):
+    return _convert(ll, 'image')
+
+
+@register_action(
+    'napari:merge_stack',
+    title=trans._('Merge to Stack'),
+    precondition=(
+        (LLCK.num_selected_layers > 1)
+        & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
+        & LLCK.all_selected_layers_same_shape
+    ),
+    menus=[CTX_SPLIT_MERGE],
+)
+def _merge_stack(ll: LayerList, rgb=False):
+    # force selection to follow LayerList ordering
+    selection = [layer for layer in ll if layer in ll.selection]
+    for layer in selection:
+        ll.remove(layer)
+    if rgb:
+        new = stack_utils.merge_rgb(selection)
+    else:
+        new = stack_utils.images_to_stack(selection)
+    ll.append(new)
+
+
+@register_action(
+    'napari:toggle_visibility',
+    title=trans._('Toggle visibility'),
+    menus=[
+        {
+            'id': MenuId.LAYERLIST_CONTEXT,
+            'group': MenuGroup.LAYERLIST_CONTEXT.NAVIGATION,
+        }
+    ],
+)
+def _toggle_visibility(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = not lay.visible
+
+
+@register_action(
+    'napari:select_linked_layers',
+    title=trans._('Select Linked Layers'),
+    precondition=LLCK.num_unselected_linked_layers,
+    menus=[CTX_LINK],
+)
+def _select_linked_layers(ll: LayerList):
+    ll.selection.update(get_linked_layers(*ll.selection))
+
+
+register_action(
+    'napari:link_selected_layers',
+    title=trans._('Link Layers'),
+    precondition=(
+        (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
+    ),
+    menus=[{**CTX_LINK, 'when': ~LLCK.num_selected_layers_linked}],
+    run=lambda ll: ll.link_layers(ll.selection),
+)
+register_action(
+    'napari:unlink_selected_layers',
+    title=trans._('Unlink Layers'),
+    precondition=LLCK.num_selected_layers_linked,
+    menus=[{**CTX_LINK, 'when': LLCK.num_selected_layers_linked}],
+    run=lambda ll: ll.unlink_layers(ll.selection),
+)
+
+
+@inject_napari_dependencies
+def _convert_dtype(ll: LayerList, mode='int64'):
+    layer = ll.selection.active
+    if not layer:
+        return
+    if layer._type_string != 'labels':
+        raise NotImplementedError(
+            trans._(
+                "Data type conversion only implemented for labels",
+                deferred=True,
+            )
+        )
+
+    target_dtype = np.dtype(mode)
+    if (
+        np.min(layer.data) < np.iinfo(target_dtype).min
+        or np.max(layer.data) > np.iinfo(target_dtype).max
+    ):
+        raise AssertionError(
+            trans._(
+                "Labeling contains values outside of the target data type range.",
+                deferred=True,
+            )
+        )
+    else:
+        layer.data = layer.data.astype(np.dtype(mode))
+
+
+def _register_dtype_actions():
+    for dtype in (
+        'int8',
+        'int16',
+        'int32',
+        'int64',
+        'uint8',
+        'uint16',
+        'uint32',
+        'uint64',
+    ):
+        register_action(
+            f'napari:convert_to_{dtype}',
+            title=trans._('Convert to {dtype}', dtype=dtype),
+            run=partial(_convert_dtype, mode=dtype),
+            precondition=(
+                (LLCK.num_selected_labels_layers == LLCK.num_selected_layers)
+                & (LLCK.active_layer_dtype != dtype)
+            ),
+            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+        )
 
 
 def _project(ll: LayerList, axis: int = 0, mode='max'):
@@ -99,175 +275,6 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     )
 
     ll.append(new)
-
-
-@inject_napari_dependencies
-def _convert_dtype(ll: LayerList, mode='int64'):
-    layer = ll.selection.active
-    if not layer:
-        return
-    if layer._type_string != 'labels':
-        raise NotImplementedError(
-            trans._(
-                "Data type conversion only implemented for labels",
-                deferred=True,
-            )
-        )
-
-    target_dtype = np.dtype(mode)
-    if (
-        np.min(layer.data) < np.iinfo(target_dtype).min
-        or np.max(layer.data) > np.iinfo(target_dtype).max
-    ):
-        raise AssertionError(
-            trans._(
-                "Labeling contains values outside of the target data type range.",
-                deferred=True,
-            )
-        )
-    else:
-        layer.data = layer.data.astype(np.dtype(mode))
-
-
-def _convert(ll: LayerList, type_: str):
-    from ..layers import Shapes
-
-    for lay in list(ll.selection):
-        idx = ll.index(lay)
-        ll.pop(idx)
-        if isinstance(lay, Shapes) and type_ == 'labels':
-            data = lay.to_labels()
-        else:
-            data = lay.data.astype(int) if type_ == 'labels' else lay.data
-        new_layer = Layer.create(data, lay._get_base_state(), type_)
-        ll.insert(idx, new_layer)
-
-
-# TODO: currently, we have to create a thin _convert_to_x wrapper around _convert
-# here for the purpose of type hinting (which partial doesn't do) ...
-# so that inject_dependencies works correctly.
-# however, we could conceivably add an `args` option to register_action
-# that would allow us to pass additional arguments, like a partial.
-@register_action(
-    'napari:convert_to_image',
-    title=trans._('Convert to Labels'),
-    precondition=(
-        (
-            (LLCK.num_selected_image_layers >= 1)
-            | (LLCK.num_selected_shapes_layers >= 1)
-        )
-        & LLCK.all_selected_layers_same_type
-    ),
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
-)
-def _convert_to_labels(ll: LayerList):
-    return _convert(ll, 'labels')
-
-
-@register_action(
-    'napari:convert_to_image',
-    title=trans._('Convert to Image'),
-    precondition=(
-        (LLCK.num_selected_labels_layers >= 1)
-        & LLCK.all_selected_layers_same_type
-    ),
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
-)
-def _convert_to_image(ll: LayerList):
-    return _convert(ll, 'image')
-
-
-@register_action(
-    'napari:merge_stack',
-    title=trans._('Merge to Stack'),
-    precondition=(
-        (LLCK.num_selected_layers > 1)
-        & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
-        & LLCK.all_selected_layers_same_shape
-    ),
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
-)
-def _merge_stack(ll: LayerList, rgb=False):
-    # force selection to follow LayerList ordering
-    selection = [layer for layer in ll if layer in ll.selection]
-    for layer in selection:
-        ll.remove(layer)
-    if rgb:
-        new = stack_utils.merge_rgb(selection)
-    else:
-        new = stack_utils.images_to_stack(selection)
-    ll.append(new)
-
-
-@register_action(
-    'napari:toggle_visibility',
-    title=trans._('Toggle visibility'),
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
-)
-def _toggle_visibility(ll: LayerList):
-    for lay in ll.selection:
-        lay.visible = not lay.visible
-
-
-@register_action(
-    'napari:select_linked_layers',
-    title=trans._('Select Linked Layers'),
-    precondition=LLCK.num_unselected_linked_layers,
-    menus=[{'id': MenuId.LAYERLIST_CONTEXT}],
-)
-def _select_linked_layers(ll: LayerList):
-    ll.selection.update(get_linked_layers(*ll.selection))
-
-
-register_action(
-    'napari:link_selected_layers',
-    title=trans._('Link Layers'),
-    precondition=(
-        (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
-    ),
-    menus=[
-        {
-            'id': MenuId.LAYERLIST_CONTEXT,
-            'when': ~LLCK.num_selected_layers_linked,
-        }
-    ],
-    run=lambda ll: ll.link_layers(ll.selection),
-)
-register_action(
-    'napari:unlink_selected_layers',
-    title=trans._('Unlink Layers'),
-    precondition=LLCK.num_selected_layers_linked,
-    menus=[
-        {
-            'id': MenuId.LAYERLIST_CONTEXT,
-            'when': LLCK.num_selected_layers_linked,
-        }
-    ],
-    run=lambda ll: ll.unlink_layers(ll.selection),
-)
-
-
-def _register_dtype_actions():
-    for dtype in (
-        'int8',
-        'int16',
-        'int32',
-        'int64',
-        'uint8',
-        'uint16',
-        'uint32',
-        'uint64',
-    ):
-        register_action(
-            f'napari:convert_to_{dtype}',
-            title=trans._('Convert to {dtype}', dtype=dtype),
-            run=partial(_convert_dtype, mode=dtype),
-            precondition=(
-                (LLCK.num_selected_labels_layers == LLCK.num_selected_layers)
-                & (LLCK.active_layer_dtype != dtype)
-            ),
-            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
-        )
 
 
 def _register_projection_actions():

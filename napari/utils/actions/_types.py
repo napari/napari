@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     class MenuRuleDict(TypedDict, total=False):
         when: Optional[context.Expr]
         group: str
-        order: Optional[int]
+        order: Optional[float]
         id: MenuId
 
     class KeybindingRuleDict(TypedDict, total=False):
@@ -90,7 +90,7 @@ class KeybindingRule(BaseModel):
 class _MenuItemBase(BaseModel):
     when: Optional[context.Expr] = None
     group: Optional[str] = None
-    order: Optional[int] = None
+    order: Optional[float] = None
 
 
 class MenuRule(_MenuItemBase):
