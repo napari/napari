@@ -226,9 +226,218 @@ It's important to understand what state is currently used for slicing in napari.
 
 ## Detailed description
 
-This section should provide a detailed description of the proposed change. It
-should include examples of how the new functionality would be used, intended
-use-cases, and pseudocode illustrating its use.
+This project aims to perform slicing on layers asynchronously.
+To do so, we introduce a few new types to encapsulate state that is critical
+to slicing, some new methods that redefine the core logic of slicing,
+and show these new things integrate into napari's existing design.
+
+### Slice request and response
+
+First, we introduce a type to encapsulate the input to slicing.
+A slice request should be immutable and should contain all the state
+required to perform slicing.
+For example, the following could be a minimal definition.
+
+```python
+class _LayerSliceRequest:
+    data: ArrayLike
+    world_to_data: Transform
+    point: Tuple[float, ...]
+    dims_displayed: Tuple[int, ...]
+    dims_not_displayed: Tuple[int, ...]
+```
+
+The expectation is that slicing will capture an immutable instance of this
+type on the main thread that another thread can use to perform slicing.
+In general, `data` will be too large to copy, so we should instead store a
+reference to that, and possibly a weak one.
+If `Layer.data` is mutated in-place on the main thread while slicing is being
+performed on another thread, this may create an inconsistent slice output
+depending on when the values in `data` are accessed, but should be safe.
+If `Layer.data` is reassigned on the main thread, then we can safely slice
+using all the old data, but we may not want anything to consume the output
+because it is now stale in which case slicing may return `None`.
+
+This helps with goal (1) because it allows us to execute asynchronous slicing
+without worrying about mutations of layer state on the main thread, which might
+be unsafe or create inconsistent output.
+Alternatively, we could use concurrency primitives like locks to temporarily
+block read/write access to layer state, but this is less clear and could lead
+to concurrency issues in the future, like deadlocks.
+
+This definition also helps with goal (2) because encapsulating the input to
+slicing in one type clarifies exactly what that input is, which is less clear
+right now.
+
+Second, we introduce a type to encapsulate the output to slicing.
+A slice response should also be immutable and should contain all the state
+that consumers need from a slice.
+For example, the following could be a minimal definition.
+
+```python
+class _LayerSliceResponse:
+    data: ArrayLike
+    data_to_world: Transform
+```
+
+These class names include a leading underscore to indicate that they are
+private implementation details and external users should not depend on
+their existence or any of their fields, as these may change and be
+refined over time.
+
+This may change in the future, especially for the response because people
+may want to handle those in their own way. But there are too many unknowns
+to commit to any stability right now.
+
+
+### Layer methods
+
+We require that each Layer type implements two methods related to slicing.
+
+```python
+class Layer:
+    ...
+
+    @abstractmethod
+    def _make_slice_request(dims: Dims) -> _LayerSliceRequest:
+        pass
+
+    @abstractmethod
+    @staticmethod
+    def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
+        pass
+```
+
+The first, `_make_slice_request`, combines the state of the layer with the
+current state of the viewer's instance of `Dims` passed in as a parameter
+to create an immutable slice request that slicing will use.
+This method should be called from the main thread, so that nothing else
+should be mutating the `Layer` or `Dims`.
+Therefore, we should expect and try to ensure that this method does not
+do too much in order not to block the main thread.
+
+The second, `_get_slice`, takes the slice request and generates a response
+using layer-type specific logic that defines what slicing means for an image
+layer compared to a points layer.
+The method is abstract to prevent it from using any layer state directly and
+instead can only use the state in the slice request. 
+As this method is static
+This allows us to execute this method on another thread without worrying
+about mutations to the layer that might occur on the main thread.
+
+The main consumer of the a layer slice response is the corresponding vispy
+layer. We require that a vispy layer type implement `_set_slice` to handle
+how it consumes the slice output.
+
+```python
+class VispyBaseLayer:
+    ...
+
+    @abstractmethod
+    def _set_slice(self, response: _LayerSliceResponse) -> None:
+        pass
+```
+
+### LayerSlicer object
+
+We define a dedicated class to handle execution of slicing tasks to
+avoid the associated state and logic leaking into the already complex
+`ViewerModel`.
+
+```python
+class _LayerSlicer:
+    ...
+
+    _executor: Executor = ThreadPoolExecutor(max_workers=1)
+    _task: Optional[Future[ViewerSliceResponse]] = None
+    ready = Signal(ViewerSliceResponse)
+
+    def slice_layers_async(self, layers: LayerList, dims: Dims) -> None:
+        if self._task is not None:
+            self._task.cancel()
+        requests = {layer: layer._make_slice_request(dims) for layer in layers}
+        self._task = self._executor.submit(self._slice_layers, request)
+        self._task.add_done_callback(self._on_slice_done)
+
+    def slice_layers(self, requests: ViewerSliceRequest) -> ViewerSliceResponse:
+        return {layer: layer._get_slice(request) for layer, request in requests.items()}
+
+    def _on_slice_done(self, task: Future[ViewerSliceResponse]) -> None:
+        if task.cancelled():
+            return
+        self.ready.emit(task.result())
+```
+
+While the state and logic is relatively simple right now,
+we anticipate that this might grow, further motivating a distinct type.
+
+For this class to be useful, there should be at least one connection to the `ready` signal.
+In napari, we expect the `QtViewer` to marshall the slice response that this signal carries
+to the vispy layers so that the canvas can be updated.
+
+Again this class is marked as private because it's unlikely this
+definition will be stable in the short term.
+It gives us enough for a minimal version of asynchronous slicing,
+but in the future we may want to use more than thread in which case
+we may need to add to this definition.
+
+
+### Hooking up the viewer
+
+Using Python's standard library threads in the `ViewerModel`
+mean that we have a portable way to perform asynchronous slicing
+in napari without an explicit dependency on Qt.
+
+```python
+
+class ViewerModel:
+    ...
+
+    dims: Dims
+    _slicer: _LayerSlicer = _LayerSlicer()
+
+    def __init__(self, ...):
+        ...
+        self.dims.events.current_step.connect(self._slice_layers_async)
+
+    ...
+
+    def _slice_layers_async(self) -> None:
+        self._slicer.slice_layers_async(self.layers, self.dims)
+```
+
+The main response to the slice being ready occurs on the `QtViewer`.
+That's because `QtViewer.layer_to_visual` provides a way to map from
+a layer to its corresponding vispy layer.
+
+It's also because `QtViewer` is a `QObject` that lives in the main
+thread so can ensure that the slice response is handled on the main
+thread. That's useful because consuming the slice response is likely
+to update some instances of `QWidget`, which can only be safely updated
+on the main thread. Those `QWidgets` may be native to napari or they
+may be defined by plugins that respond to napari events.
+
+```python
+_ViewerSliceRequest = Dict[Layer, _LayerSliceRequest]
+_ViewerSliceResponse = Dict[Layer, _LayerSliceResponse]
+
+class QtViewer:
+    ...
+
+    viewer: ViewerModel
+    layer_to_visual: Dict[Layer, VispyBaseLayer]
+
+    def __init__(self, ...):
+        ...
+        self.viewer._slicer.ready.connect(self._on_slice_ready)
+
+    @ensure_main_thread
+    def _on_slice_ready(self, responses: ViewerSliceResponse):
+        for layer, response in responses.items():
+            if visual := self.layer_to_visual[layer]:
+                visual._set_slice(response)
+                
+```
 
 
 ## Implementation
@@ -282,18 +491,24 @@ All NAPs should be declared as dedicated to the public domain with the CC0
 license [^cc0], as in `Copyright`, below, with attribution encouraged with
 CC0+BY [^cc0-by].
 
-
 [^cc0]: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication, <https://creativecommons.org/publicdomain/zero/1.0/>
-[^cc0-by]: <https://dancohen.org/2013/11/26/cc0-by/>
+
+[^cc0-by]: CO0+BY, <https://dancohen.org/2013/11/26/cc0-by/>
+
 [^issue-792]: napari issue 792, <https://github.com/napari/napari/issues/792>
+
 [^issue-1353]: napari issue 1353, <https://github.com/napari/napari/issues/1353>
+
 [^issue-1574]: napari issue 1574, <https://github.com/napari/napari/issues/1574>
+
 [^issue-1775]: napari issue 1775, <https://github.com/napari/napari/issues/1775>
+
 [^issue-2156]: napari issue 2156, <https://github.com/napari/napari/issues/2156>
+
 [^pull-4334]: napari pull request 4334, <https://github.com/napari/napari/pull/4334>
 
 ## Copyright
 
 This document is dedicated to the public domain with the Creative Commons CC0
-license [^id3]. Attribution to this source is encouraged where appropriate, as per
-CC0+BY [^id4].
+license [^cc0]. Attribution to this source is encouraged where appropriate, as per
+CC0+BY [^cc0-by].
