@@ -87,7 +87,7 @@ class CommandRule(BaseModel):
     """
 
     id: CommandId = Field(
-        ..., description="A globally unique identifier for the command."
+        ..., description="The global identifier for the command."
     )
     title: TranslationOrStr = Field(
         ...,
