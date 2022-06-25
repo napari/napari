@@ -12,13 +12,17 @@ if TYPE_CHECKING:
 
     from ._types import (
         CommandHandler,
+        CommandId,
         Icon,
         KeybindingRule,
+        KeybindingRuleDict,
         MenuRule,
         MenuRuleDict,
         TranslationOrStr,
     )
 
+    KeybindingRuleOrDict = Union[KeybindingRule, KeybindingRuleDict]
+    MenuRuleOrDict = Union[MenuRule, MenuRuleDict]
     DisposeCallable = Callable[[], None]
     CommandDecorator = Callable[[CommandHandler], CommandHandler]
 
@@ -30,7 +34,7 @@ def register_action(id_or_action: Action) -> DisposeCallable:
 
 @overload
 def register_action(
-    id_or_action: str,
+    id_or_action: CommandId,
     title: TranslationOrStr,
     *,
     category: Optional[TranslationOrStr] = None,
@@ -38,16 +42,16 @@ def register_action(
     icon: Optional[Icon] = None,
     enablement: Optional[context.Expr] = None,
     run: Literal[None] = None,
+    menus: Optional[List[MenuRuleOrDict]] = None,
+    keybindings: Optional[List[KeybindingRuleOrDict]] = None,
     add_to_command_palette: bool = True,
-    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
-    keybindings: Optional[List[KeybindingRule]] = None,
 ) -> CommandDecorator:
     ...
 
 
 @overload
 def register_action(
-    id_or_action: str,
+    id_or_action: CommandId,
     title: TranslationOrStr,
     *,
     category: Optional[TranslationOrStr] = None,
@@ -55,15 +59,15 @@ def register_action(
     icon: Optional[Icon] = None,
     enablement: Optional[context.Expr] = None,
     run: CommandHandler,
+    menus: Optional[List[MenuRuleOrDict]] = None,
+    keybindings: Optional[List[KeybindingRuleOrDict]] = None,
     add_to_command_palette: bool = True,
-    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
-    keybindings: Optional[List[KeybindingRule]] = None,
 ) -> DisposeCallable:
     ...
 
 
 def register_action(
-    id_or_action: Union[str, Action],
+    id_or_action: Union[CommandId, Action],
     title: Optional[TranslationOrStr] = None,
     *,
     category: Optional[TranslationOrStr] = None,
@@ -71,9 +75,9 @@ def register_action(
     icon: Optional[Icon] = None,
     enablement: Optional[context.Expr] = None,
     run: Optional[CommandHandler] = None,
+    menus: Optional[List[MenuRuleOrDict]] = None,
+    keybindings: Optional[List[KeybindingRuleOrDict]] = None,
     add_to_command_palette: bool = True,
-    menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
-    keybindings: Optional[List[KeybindingRule]] = None,
 ) -> Union[CommandDecorator, DisposeCallable]:
     """Register an action.
 

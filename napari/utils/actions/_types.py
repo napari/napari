@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Generic,
     List,
     NamedTuple,
     NewType,
@@ -263,7 +264,7 @@ class SubmenuItem(_MenuItemBase):
 # ------------------ (complete) action-related types --------------------
 
 
-class Action(CommandRule):
+class Action(CommandRule, Generic[CommandHandler]):
     """Callable object along with specific context, menu, keybindings logic.
 
     This is the "complete" representation of a command.  Including a pointer to the
