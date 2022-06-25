@@ -1,4 +1,4 @@
-from ._menus import MenuId
+from ._menus import MenuGroup, MenuId
 from ._registries import (
     CommandsRegistry,
     KeybindingsRegistry,
@@ -17,6 +17,7 @@ __all__ = [
     'keybindings_registry',
     'KeybindingsRegistry',
     'menu_registry',
+    'MenuGroup',
     'MenuId',
     'MenuRegistry',
     'register_action',

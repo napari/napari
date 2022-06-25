@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass
-from functools import cached_property
-from typing import TYPE_CHECKING, NamedTuple, overload
+from typing import TYPE_CHECKING, overload
 
 from psygnal import Signal
 
 from ...utils.translations import trans
-from ._menus import MenuId
-from ._types import Action, MenuItem, SubmenuItem
+from ._menus import MenuGroup, MenuId
+from ._types import (
+    Action,
+    MenuItem,
+    RegisteredCommand,
+    RegisteredKeyBinding,
+    SubmenuItem,
+)
+from ._util import MockFuture
 
 if TYPE_CHECKING:
     from typing import (
@@ -33,27 +38,12 @@ if TYPE_CHECKING:
         CommandRule,
         Icon,
         KeybindingRule,
-        KeyCode,
         MenuRule,
         MenuRuleDict,
         TranslationOrStr,
     )
 
     DisposeCallable = Callable[[], None]
-    MenuItemSequence = Sequence[Tuple[MenuId, MenuItem | SubmenuItem]]
-
-
-@dataclass
-class RegisteredCommand:
-    id: str
-    title: TranslationOrStr
-    run: Callable
-
-    @cached_property
-    def run_injected(self):
-        from .._injection import inject_napari_dependencies
-
-        return inject_napari_dependencies(self.run)
 
 
 class CommandsRegistry:
@@ -94,23 +84,59 @@ class CommandsRegistry:
         return id in self._commands
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} ({len(self._commands)} commands)>"
+        name = self.__class__.__name__
+        return f"<{name} at {hex(id(self))} ({len(self._commands)} commands)>"
 
     def __getitem__(self, id: CommandId) -> List[RegisteredCommand]:
         return self._commands[id]
 
-    def execute_command(self, id: CommandId, *args, **kwargs) -> Future:
-        with ThreadPoolExecutor() as executor:
-            if cmds := self._commands[id]:
-                # TODO: decide whether we'll ever have more than one command
-                # and if so, how to handle it
-                return executor.submit(cmds[0].run_injected, *args, **kwargs)
+    def execute_command(
+        self, id: CommandId, *args, execute_asychronously=False, **kwargs
+    ) -> Future:
+        """Execute a registered command
+
+        Parameters
+        ----------
+        id : CommandId
+            ID of the command to execute
+        execute_asychronously : bool
+            Whether to execute the command asynchronously in a thread,
+            by default `False`.  Note that *regardless* of this setting,
+            the return value will implement the `Future` API (so it's necessary)
+            to call `result()` on the returned object.  Eventually, this will
+            default to True, but we need to solve `ensure_main_thread` Qt threading
+            issues first
+
+        Returns
+        -------
+        Future: conconrent.futures.Future
+            Future object containing the result of the command
+
+        Raises
+        ------
+        KeyError
+            If the command is not registered or has no callbacks.
+        """
+        if cmds := self[id]:
+            # TODO: decide whether we'll ever have more than one command
+            # and if so, how to handle it
+            cmd = cmds[0].run_injected
+        else:
             raise KeyError(f'Command "{id}" has no registered callbacks')
 
+        if execute_asychronously:
+            with ThreadPoolExecutor() as executor:
+                return executor.submit(cmd, *args, **kwargs)
+        else:
+            try:
+                return MockFuture(cmd(*args, **kwargs), None)
+            except Exception as e:
+                return MockFuture(None, e)
+
     def __str__(self) -> str:
-        lines = []
+        lines: list = []
         for id, cmds in self:
-            lines.extend(f"{id!r} -> {cmd.title!r}" for cmd in cmds)
+            lines.extend(f"{id!r:<32} -> {cmd.title!r}" for cmd in cmds)
         return "\n".join(lines)
 
 
@@ -119,12 +145,6 @@ class KeybindingsRegistry:
     registered = Signal()
     _coreKeybindings: List[RegisteredKeyBinding] = []
     __instance: Optional[KeybindingsRegistry] = None
-
-    class RegisteredKeyBinding(NamedTuple):
-        keybinding: KeyCode
-        command_id: CommandId
-        weight: int
-        when: Optional[context.Expr] = None
 
     @classmethod
     def instance(cls) -> KeybindingsRegistry:
@@ -136,7 +156,7 @@ class KeybindingsRegistry:
         self, id: CommandId, rule: KeybindingRule
     ) -> Optional[DisposeCallable]:
         if bound_keybinding := rule._bind_to_current_platform():
-            entry = self.RegisteredKeyBinding(
+            entry = RegisteredKeyBinding(
                 keybinding=bound_keybinding,
                 command_id=id,
                 weight=rule.weight,
@@ -154,6 +174,10 @@ class KeybindingsRegistry:
     def __iter__(self) -> Iterator[RegisteredKeyBinding]:
         yield from self._coreKeybindings
 
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        return f"<{name} at {hex(id(self))} ({len(self._coreKeybindings)} bindings)>"
+
 
 class MenuRegistry:
     menus_changed = Signal(set)
@@ -167,7 +191,9 @@ class MenuRegistry:
             cls.__instance = cls()
         return cls.__instance
 
-    def append_menu_items(self, items: MenuItemSequence) -> DisposeCallable:
+    def append_menu_items(
+        self, items: Sequence[Tuple[MenuId, MenuItem | SubmenuItem]]
+    ) -> DisposeCallable:
         changed_ids: Set[MenuId] = set()
         disposers = []
 
@@ -205,6 +231,58 @@ class MenuRegistry:
 
     def __getitem__(self, id: MenuId) -> List[MenuItem | SubmenuItem]:
         return self._menu_items[id]
+
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        return f"<{name} at {hex(id(self))} ({len(self._menu_items)} menus)>"
+
+    def __str__(self) -> str:
+        return "\n".join(self._render())
+
+    def _render(self) -> List[str]:
+        """Return registered menu items as lines of strings."""
+        lines = []
+
+        for menu, children in self:
+            lines.append(menu.value)
+
+            branch = "  ├──"
+            for group in _sorted_groups(children):
+                first = next(iter(group))
+                lines.append(f"  ├───────────{first.group}───────────────")
+                for child in group:
+                    if isinstance(child, MenuItem):
+                        lines.append(
+                            f"{branch} {child.command.title} ({child.command.id})"
+                        )
+                    else:
+                        lines.extend(
+                            [
+                                f"{branch} {child.submenu.value}",
+                                "  ├──  └── ...",
+                            ]
+                        )
+            lines.append('')
+        return lines
+
+    def iter_menu_groups(
+        self, menu_id: MenuId
+    ) -> Iterator[List[MenuItem | SubmenuItem]]:
+        yield from _sorted_groups(self[menu_id])
+
+
+def _sorted_groups(
+    items: List[MenuItem | SubmenuItem],
+    group_sorter: Callable = lambda x: 0 if x == 'navigation' else 1,
+    order_sorter: Callable = lambda x: getattr(x, 'order', '') or 0,
+) -> Iterator[List[MenuItem | SubmenuItem]]:
+    """Sort a list of menu items based on their .group and .order attributes."""
+    groups: dict[Optional[str], List[MenuItem | SubmenuItem]] = {}
+    for item in items:
+        groups.setdefault(item.group, []).append(item)
+
+    for group_id in sorted(groups, key=group_sorter):
+        yield sorted(groups[group_id], key=order_sorter)
 
 
 @overload
@@ -398,7 +476,7 @@ def _register_submenus():
                 SubmenuItem(
                     submenu=MenuId.LAYERS_CONVERT_DTYPE,
                     title=trans._('Convert data type'),
-                    group=None,
+                    group=MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
                     order=None,
                 ),
             ),
@@ -407,7 +485,7 @@ def _register_submenus():
                 SubmenuItem(
                     submenu=MenuId.LAYERS_PROJECT,
                     title=trans._('Projections'),
-                    group=None,
+                    group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
                     order=None,
                 ),
             ),
