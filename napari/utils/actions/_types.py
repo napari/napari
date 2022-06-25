@@ -137,7 +137,7 @@ class KeybindingRule(BaseModel):
         return self.primary
 
 
-class RegisteredKeyBinding(NamedTuple):
+class _RegisteredKeyBinding(NamedTuple):
     keybinding: KeyCode
     command_id: CommandId
     weight: int
@@ -150,9 +150,9 @@ class RegisteredKeyBinding(NamedTuple):
 class _MenuItemBase(BaseModel):
     when: Optional[context.Expr] = None
     group: Optional[str] = None
-    order: Optional[
-        float
-    ] = None  # note, order is not part of the plugin schema, it is provided with an group@order
+    # note, order is not part of the plugin schema, it is provided with an group@order
+
+    order: Optional[float] = None
 
 
 class MenuRule(_MenuItemBase):
@@ -177,28 +177,65 @@ class MenuItem(_MenuItemBase):
     )
     alt: Optional[CommandRule] = Field(
         None,
-        description="Alternate command to execute when this menu item is selected, "
-        "(e.g. when the Alt-key is held when opening the menu)",
+        description="(Optional) Alternate command to execute when this menu item is "
+        "selected, (e.g. when the Alt-key is held when opening the menu)",
     )
 
 
 class SubmenuItem(_MenuItemBase):
-    submenu: MenuId
-    title: TranslationOrStr
-    icon: Optional[Icon] = None
+    """Point to another Menu that will be displayed as a submenu."""
+
+    submenu: MenuId = Field(..., description="Menu to insert as a submenu.")
+    title: TranslationOrStr = Field(
+        ..., description="Title of this submenu, shown in the UI."
+    )
+    icon: Optional[Icon] = Field(
+        None,
+        description="(Optional) Icon used to represent this submenu. "
+        "These may be superqt fonticon keys, such as `fa5s.arrow_down`",
+    )
 
 
 # Actions, potential combination of all the above
 class Action(CommandRule):
-    run: Callable
-    menus: Optional[List[MenuRule]] = None
-    keybindings: Optional[List[KeybindingRule]] = None
-    add_to_command_palette: bool = True
+    """Callable object along with specific context, menu, keybindings logic.
+
+    This is the "complete" representation of a command.  Including a pointer to the
+    actual callable object, as well as any additional menu and keybinding rules.
+    Most internal napari commands and menu items will be represented by Actions,
+    and registered using `register_action`.
+    """
+
+    run: Callable = Field(
+        ...,
+        description="A function to call when the associated CommandId is executed.",
+    )
+    menus: Optional[List[MenuRule]] = Field(
+        None,
+        description="(Optional) Menus to which this action should be added.",
+    )
+    keybindings: Optional[List[KeybindingRule]] = Field(
+        None,
+        description="(Optional) Default keybinding(s) that will trigger this command.",
+    )
+    add_to_command_palette: bool = Field(
+        True,
+        description="Whether to add this command to the global Command Palette "
+        "during registration.",
+    )
 
 
-class RegisteredCommand:
+class _RegisteredCommand:
+    """Small object to represent a command in the CommandsRegistry.
+
+    Only used internally by the CommandsRegistry.
+    This helper class allows us to cache the dependency-injected variant of the command.
+    As usual with `cached_property`, the cache can be cleard by deleting the attribute:
+    `del cmd.run_injected`
+    """
+
     def __init__(
-        self, id: str, title: TranslationOrStr, run: Callable
+        self, id: CommandId, title: TranslationOrStr, run: Callable
     ) -> None:
         self.id = id
         self.title = title

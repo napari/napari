@@ -10,9 +10,9 @@ from ._menus import MenuGroup, MenuId
 from ._types import (
     Action,
     MenuItem,
-    RegisteredCommand,
-    RegisteredKeyBinding,
     SubmenuItem,
+    _RegisteredCommand,
+    _RegisteredKeyBinding,
 )
 from ._util import MockFuture
 
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 class CommandsRegistry:
 
     registered = Signal(str)
-    _commands: Dict[CommandId, List[RegisteredCommand]] = {}
+    _commands: Dict[CommandId, List[_RegisteredCommand]] = {}
     __instance: Optional[CommandsRegistry] = None
 
     @classmethod
@@ -66,7 +66,7 @@ class CommandsRegistry:
     ) -> DisposeCallable:
         commands = self._commands.setdefault(id, [])
 
-        cmd = RegisteredCommand(id, title, callback)
+        cmd = _RegisteredCommand(id, title, callback)
         commands.insert(0, cmd)
 
         def _dispose():
@@ -77,7 +77,7 @@ class CommandsRegistry:
         self.registered.emit(id)
         return _dispose
 
-    def __iter__(self) -> Iterator[Tuple[CommandId, List[RegisteredCommand]]]:
+    def __iter__(self) -> Iterator[Tuple[CommandId, List[_RegisteredCommand]]]:
         yield from self._commands.items()
 
     def __contains__(self, id: str) -> bool:
@@ -87,7 +87,7 @@ class CommandsRegistry:
         name = self.__class__.__name__
         return f"<{name} at {hex(id(self))} ({len(self._commands)} commands)>"
 
-    def __getitem__(self, id: CommandId) -> List[RegisteredCommand]:
+    def __getitem__(self, id: CommandId) -> List[_RegisteredCommand]:
         return self._commands[id]
 
     def execute_command(
@@ -143,7 +143,7 @@ class CommandsRegistry:
 class KeybindingsRegistry:
 
     registered = Signal()
-    _coreKeybindings: List[RegisteredKeyBinding] = []
+    _coreKeybindings: List[_RegisteredKeyBinding] = []
     __instance: Optional[KeybindingsRegistry] = None
 
     @classmethod
@@ -156,7 +156,7 @@ class KeybindingsRegistry:
         self, id: CommandId, rule: KeybindingRule
     ) -> Optional[DisposeCallable]:
         if bound_keybinding := rule._bind_to_current_platform():
-            entry = RegisteredKeyBinding(
+            entry = _RegisteredKeyBinding(
                 keybinding=bound_keybinding,
                 command_id=id,
                 weight=rule.weight,
@@ -171,7 +171,7 @@ class KeybindingsRegistry:
             return _dispose
         return None  # pragma: no cover
 
-    def __iter__(self) -> Iterator[RegisteredKeyBinding]:
+    def __iter__(self) -> Iterator[_RegisteredKeyBinding]:
         yield from self._coreKeybindings
 
     def __repr__(self) -> str:
