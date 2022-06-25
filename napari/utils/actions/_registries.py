@@ -294,7 +294,7 @@ def register_action(
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
-    precondition: Optional[context.Expr] = None,
+    enablement: Optional[context.Expr] = None,
     run: Literal[None] = None,
     add_to_command_palette: bool = True,
     menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
@@ -312,7 +312,7 @@ def register_action(
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
-    precondition: Optional[context.Expr] = None,
+    enablement: Optional[context.Expr] = None,
     run: Callable,
     add_to_command_palette: bool = True,
     menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
@@ -334,7 +334,7 @@ def register_action(
     category: Optional[TranslationOrStr] = None,
     tooltip: Optional[TranslationOrStr] = None,
     icon: Optional[Icon] = None,
-    precondition: Optional[context.Expr] = None,
+    enablement: Optional[context.Expr] = None,
     run: Optional[Callable] = None,
     add_to_command_palette: bool = True,
     menus: Optional[List[Union[MenuRule, MenuRuleDict]]] = None,
@@ -368,7 +368,7 @@ def register_action(
         _description_, by default None
     source : Optional[str], optional
         _description_, by default None
-    precondition : Optional[context.Expr], optional
+    enablement : Optional[context.Expr], optional
         _description_, by default None
     run : Optional[Callable], optional
         _description_, by default None

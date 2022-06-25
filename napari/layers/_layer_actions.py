@@ -53,14 +53,14 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
 @register_action(
     'napari:split_stack',
     title=trans._('Split Stack'),
-    precondition=LLCK.active_layer_type == "image",
+    enablement=LLCK.active_layer_type == "image",
     menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLCK.active_layer_is_rgb}],
 )
 @register_action(
     'napari:split_stack',
     title=trans._('Split RGB'),
     menus=[{**LAYERCTX_SPLITMERGE, 'when': LLCK.active_layer_is_rgb}],
-    precondition=LLCK.active_layer_is_rgb,
+    enablement=LLCK.active_layer_is_rgb,
 )
 def _split_stack(ll: LayerList, axis: int = 0):
     layer = ll.selection.active
@@ -97,7 +97,7 @@ def _convert(ll: LayerList, type_: str):
 @register_action(
     'napari:convert_to_image',
     title=trans._('Convert to Labels'),
-    precondition=(
+    enablement=(
         (
             (LLCK.num_selected_image_layers >= 1)
             | (LLCK.num_selected_shapes_layers >= 1)
@@ -113,7 +113,7 @@ def _convert_to_labels(ll: LayerList):
 @register_action(
     'napari:convert_to_image',
     title=trans._('Convert to Image'),
-    precondition=(
+    enablement=(
         (LLCK.num_selected_labels_layers >= 1)
         & LLCK.all_selected_layers_same_type
     ),
@@ -126,7 +126,7 @@ def _convert_to_image(ll: LayerList):
 @register_action(
     'napari:merge_stack',
     title=trans._('Merge to Stack'),
-    precondition=(
+    enablement=(
         (LLCK.num_selected_layers > 1)
         & (LLCK.num_selected_image_layers == LLCK.num_selected_layers)
         & LLCK.all_selected_layers_same_shape
@@ -163,7 +163,7 @@ def _toggle_visibility(ll: LayerList):
 @register_action(
     'napari:select_linked_layers',
     title=trans._('Select Linked Layers'),
-    precondition=LLCK.num_unselected_linked_layers,
+    enablement=LLCK.num_unselected_linked_layers,
     menus=[LAYERCTX_LINK],
 )
 def _select_linked_layers(ll: LayerList):
@@ -173,7 +173,7 @@ def _select_linked_layers(ll: LayerList):
 register_action(
     'napari:link_selected_layers',
     title=trans._('Link Layers'),
-    precondition=(
+    enablement=(
         (LLCK.num_selected_layers > 1) & ~LLCK.num_selected_layers_linked
     ),
     menus=[{**LAYERCTX_LINK, 'when': ~LLCK.num_selected_layers_linked}],
@@ -182,7 +182,7 @@ register_action(
 register_action(
     'napari:unlink_selected_layers',
     title=trans._('Unlink Layers'),
-    precondition=LLCK.num_selected_layers_linked,
+    enablement=LLCK.num_selected_layers_linked,
     menus=[{**LAYERCTX_LINK, 'when': LLCK.num_selected_layers_linked}],
     run=lambda ll: ll.unlink_layers(ll.selection),
 )
@@ -231,7 +231,7 @@ def _register_dtype_actions():
             f'napari:convert_to_{dtype}',
             title=trans._('Convert to {dtype}', dtype=dtype),
             run=partial(_convert_dtype, mode=dtype),
-            precondition=(
+            enablement=(
                 (LLCK.num_selected_labels_layers == LLCK.num_selected_layers)
                 & (LLCK.active_layer_dtype != dtype)
             ),
@@ -283,7 +283,7 @@ def _register_projection_actions():
             f'napari:{mode}_projection',
             title=trans._('{mode} projection', mode=mode.title()),
             run=partial(_project, mode=mode),
-            precondition=(
+            enablement=(
                 (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim
                 > 2
             ),

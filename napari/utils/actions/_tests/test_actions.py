@@ -19,9 +19,9 @@ OS_KEY = 'ctrl+b'
 
 KWARGS = [
     {},
-    dict(precondition=LayerListContextKeys.active_layer_is_rgb),
+    dict(enablement=LayerListContextKeys.active_layer_is_rgb),
     dict(menus=[{'id': MenuId.LAYERLIST_CONTEXT}]),
-    dict(precondition='3 >= 1', menus=[{'id': MenuId.LAYERLIST_CONTEXT}]),
+    dict(enablement='3 >= 1', menus=[{'id': MenuId.LAYERLIST_CONTEXT}]),
     dict(keybindings=[{'primary': PRIMARY_KEY}]),
     dict(
         keybindings=[

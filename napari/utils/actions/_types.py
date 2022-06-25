@@ -60,7 +60,7 @@ class CommandRule(BaseModel):
     category: Optional[TranslationOrStr] = None
     tooltip: Optional[TranslationOrStr] = None
     icon: Optional[Icon] = None
-    precondition: Optional[context.Expr] = None
+    enablement: Optional[context.Expr] = None
     # source: Optional[str] = None
     # toggled: Optional[context.Expr] = None
 

@@ -65,7 +65,7 @@ class QtModelMenu(QMenu):
             if isinstance(item, MenuItem):
                 action.setEnabled(
                     expr.eval(ctx)
-                    if (expr := item.command.precondition)
+                    if (expr := item.command.enablement)
                     else True
                 )
                 action.setVisible(
