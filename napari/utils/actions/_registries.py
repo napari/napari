@@ -34,8 +34,10 @@ if TYPE_CHECKING:
 class CommandsRegistry:
 
     registered = Signal(str)
-    _commands: Dict[CommandId, List[_RegisteredCommand]] = {}
     __instance: Optional[CommandsRegistry] = None
+
+    def __init__(self) -> None:
+        self._commands: Dict[CommandId, List[_RegisteredCommand]] = {}
 
     @classmethod
     def instance(cls) -> CommandsRegistry:
@@ -145,8 +147,10 @@ class CommandsRegistry:
 class KeybindingsRegistry:
 
     registered = Signal()
-    _coreKeybindings: List[_RegisteredKeyBinding] = []
     __instance: Optional[KeybindingsRegistry] = None
+
+    def __init__(self) -> None:
+        self._coreKeybindings: List[_RegisteredKeyBinding] = []
 
     @classmethod
     def instance(cls) -> KeybindingsRegistry:
@@ -183,9 +187,11 @@ class KeybindingsRegistry:
 
 class MenuRegistry:
     menus_changed = Signal(set)
-    _menu_items: Dict[MenuId, List[MenuOrSubmenu]] = {}
-    _commands: Dict[CommandId, CommandRule] = {}
     __instance: Optional[MenuRegistry] = None
+
+    def __init__(self) -> None:
+        self._menu_items: Dict[MenuId, List[MenuOrSubmenu]] = {}
+        self._commands: Dict[CommandId, CommandRule] = {}
 
     @classmethod
     def instance(cls) -> MenuRegistry:
@@ -286,6 +292,11 @@ class MenuRegistry:
             yield sorted(groups[group_id], key=order_sorter)
 
 
+menu_registry = MenuRegistry.instance()
+commands_registry = CommandsRegistry.instance()
+keybindings_registry = KeybindingsRegistry.instance()
+
+
 def _register_submenus():
     MenuRegistry.instance().append_menu_items(
         [
@@ -312,7 +323,3 @@ def _register_submenus():
 
 
 _register_submenus()
-
-menu_registry = MenuRegistry.instance()
-commands_registry = CommandsRegistry.instance()
-keybindings_registry = KeybindingsRegistry.instance()

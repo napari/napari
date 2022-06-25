@@ -90,10 +90,11 @@ def register_action(
     if isinstance(id_or_action, Action):
         return _register_action(id_or_action)
     if isinstance(id_or_action, str):
-        if title is None:
+        if not title:
             raise ValueError("'title' is required when 'id' is a string")
         return _register_action_str(
             id=id_or_action,
+            title=title,
             category=category,
             tooltip=tooltip,
             icon=icon,

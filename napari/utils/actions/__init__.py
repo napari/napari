@@ -1,4 +1,5 @@
 from ._menus import MenuGroup, MenuId
+from ._register_action import register_action
 from ._registries import (
     CommandsRegistry,
     KeybindingsRegistry,
@@ -6,7 +7,6 @@ from ._registries import (
     commands_registry,
     keybindings_registry,
     menu_registry,
-    register_action,
 )
 from ._types import Action
 
