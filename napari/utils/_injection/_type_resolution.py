@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import types
 import typing
 from functools import lru_cache
@@ -8,6 +9,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
 
 if TYPE_CHECKING:
     from typing import _get_type_hints_obj_allowed_types
+
+PY39_OR_GREATER = sys.version_info >= (3, 9)
 
 
 @lru_cache(maxsize=1)
@@ -119,13 +122,16 @@ def resolve_single_type_hints(
     >>> resolve_single_type_hints('hi', localns={'hi': typing.Any})
     (typing.Any,)
     """
-    annotations = {str(n): v for n, v in enumerate(objs)}
-    hints = resolve_type_hints(
-        type('_T', (), {'__annotations__': annotations})(),
+    kwargs = dict(
         localns=localns,
-        include_extras=include_extras,
         inject_napari_namespace=inject_napari_namespace,
     )
+    if PY39_OR_GREATER:
+        kwargs['include_extras'] = include_extras
+
+    annotations = {str(n): v for n, v in enumerate(objs)}
+    mock_obj = type('_T', (), {'__annotations__': annotations})()
+    hints = resolve_type_hints(mock_obj, **kwargs)
     return tuple(hints[k] for k in annotations)
 
 
