@@ -314,7 +314,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
-        antialiasing=None,
+        antialiasing=1,
         experimental_canvas_size_limits=(0, 10000),
         shown=True,
     ):
@@ -450,7 +450,7 @@ class Points(Layer):
 
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
-        self.antialiasing = 1 if antialiasing is None else antialiasing
+        self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
