@@ -1,6 +1,6 @@
 from functools import wraps
-from inspect import isgeneratorfunction, signature
-from typing import Any, Callable, Dict, Optional, TypeVar
+from inspect import Signature, isgeneratorfunction, signature
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 
 from typing_extensions import get_type_hints
 
@@ -23,19 +23,26 @@ __all__ = [
 ]
 
 
-def napari_type_hints(obj: Any) -> Dict[str, Any]:
-    """variant of get_type_hints with napari namespace awareness."""
+def resolve_sig_hints(sig: Signature) -> Tuple[Any, Dict[str, Any]]:
+    from typing import _eval_type
+
     import napari
 
-    return get_type_hints(
-        obj,
-        {
-            'napari': napari,
-            **viewer.__dict__,
-            **layers.__dict__,
-            **components.__dict__,
-        },
-    )
+    localns = {
+        'napari': napari,
+        **viewer.__dict__,
+        **layers.__dict__,
+        **components.__dict__,
+    }
+
+    required_parameters = {}
+    for param in sig.parameters.values():
+        if param.default is sig.empty:
+            hint = _eval_type(param.annotation, {}, localns)
+            required_parameters[param.name] = hint
+
+    return_hint = _eval_type(sig.return_annotation, {}, localns)
+    return return_hint, required_parameters
 
 
 def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
@@ -79,17 +86,9 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
 
     sig = signature(func)
     # get type hints for the object, with forward refs of napari hints resolved
-    hints = napari_type_hints(func)
-    # get provider functions for each required parameter
-    required_parameters = {}
-    return_hint = None
-    for name, hint in hints.items():
-        if name == 'return':
-            return_hint = hint
-            continue
-        if sig.parameters[name].default is sig.empty:
-            required_parameters[name] = hint
+    return_hint, required_parameters = resolve_sig_hints(sig)
 
+    # get provider functions for each required parameter
     @wraps(func)
     def _exec(*args, **kwargs):
         # when we call the function, we call the provider functions to get
@@ -121,7 +120,9 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
 
     # update the signature
     p = [
-        p.replace(default=None, annotation=Optional[hints[p.name]])
+        p.replace(
+            default=None, annotation=Optional[required_parameters[p.name]]
+        )
         if p.name in required_parameters
         else p
         for p in sig.parameters.values()
