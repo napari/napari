@@ -41,7 +41,9 @@ def resolve_sig_hints(sig: Signature) -> Tuple[Any, Dict[str, Any]]:
             hint = _eval_type(param.annotation, {}, localns)
             required_parameters[param.name] = hint
 
-    return_hint = _eval_type(sig.return_annotation, {}, localns)
+    return_hint = None
+    if sig.return_annotation is not sig.empty:
+        return_hint = _eval_type(sig.return_annotation, {}, localns)
     return return_hint, required_parameters
 
 
