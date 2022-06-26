@@ -41,7 +41,7 @@ def processor(func: C) -> C:
     """
     hints = get_type_hints(func)
     hints.pop("return", None)
-    if not hints:
+    if not hints:  # pragma: no cover
         raise TypeError(
             f"{func} has no argument type hints. Cannot be a processor."
         )
