@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 from typing_extensions import get_args, get_origin, get_type_hints
 
@@ -56,7 +56,9 @@ def _provide_active_layer_list() -> Optional[components.LayerList]:
     return v.layers if (v := _provide_viewer()) else None
 
 
-def get_provider(type_: Type[T]) -> Optional[Callable[..., Optional[T]]]:
+def get_provider(
+    type_: Union[Any, Type[T]]
+) -> Optional[Callable[..., Optional[T]]]:
     """Return object provider function given a type.
 
     An object provider is a function that returns an instance of a

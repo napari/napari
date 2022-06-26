@@ -197,7 +197,7 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-def get_processor(type_: Type[T]) -> Optional[Callable[[], Optional[T]]]:
+def get_processor(type_: Type[T]) -> Optional[Callable[[T], Any]]:
     """Return processor function for a given type.
 
     A processor is a function that can "process" a given return type.  The term
