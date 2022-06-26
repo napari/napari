@@ -43,8 +43,31 @@ def inject_napari_dependencies(
 
     Parameters
     ----------
-    func : Callable
-        A function with napari type hints.
+    func : Callable[P, R]
+        a function with type hints
+    localns : Optional[dict]
+        Optional local namespace for name resolution, by default None
+    on_unresolved_required_args : RaiseWarnReturnIgnore
+        What to do when a required parameter (one without a default) is encountered
+        with an unresolvable type annotation.
+        Must be one of the following (by default 'raise'):
+
+            - 'raise': immediately raise an exception
+            - 'warn': warn and return the original function
+            - 'return': return the original function without warning
+            - 'ignore': currently an alias for `return`, but will be used in
+              the future to allow the decorator to proceed.
+
+    on_unannotated_required_args : RaiseWarnReturnIgnore
+        What to do when a required parameter (one without a default) is encountered
+        with an *no* type annotation. These functions are likely to fail when called
+        later if the required parameter is not provided.
+        Must be one of the following (by default 'warn'):
+
+            - 'raise': immediately raise an exception
+            - 'warn': warn, but continue decorating
+            - 'return': stop decorating, return the original function without warning
+            - 'ignore': continue decorating without warning.
 
     Returns
     -------
