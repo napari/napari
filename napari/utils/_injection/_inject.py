@@ -86,7 +86,7 @@ def inject_napari_dependencies(
     def _exec(*args: P.args, **kwargs: P.kwargs) -> R:
         # we're actually calling the "injected function" now
 
-        _sig = cast(Signature, sig)
+        _sig = cast('Signature', sig)
         # first, get and call the provider functions for each parameter type:
         _kwargs = {
             param_name: provider()

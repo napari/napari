@@ -96,7 +96,7 @@ def test_type_resolved_signature():
 
     with pytest.raises(
         NameError,
-        match="Could not resolve hint for non-optional parameter 'param'",
+        match="Could not resolve type hint for required parameter 'param'",
     ):
         type_resolved_signature(
             requires_unknown, raise_unresolved_optional_args=False

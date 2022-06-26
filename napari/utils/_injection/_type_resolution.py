@@ -220,7 +220,7 @@ def _resolve_mandatory_params(
     hints = {}
     for name, param in sig.parameters.items():
         if param.annotation is sig.empty:
-            continue
+            continue  # pragma: no cover
         try:
             hints[name] = resolve_single_type_hints(
                 param.annotation,
