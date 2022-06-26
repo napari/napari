@@ -142,8 +142,8 @@ def inject_napari_dependencies(
 def _resolve_sig_or_inform(
     func: Callable,
     localns: Optional[dict],
-    on_unresolved_required_args: bool,
-    on_unannotated_required_args: bool,
+    on_unresolved_required_args: RaiseWarnReturnIgnore,
+    on_unannotated_required_args: RaiseWarnReturnIgnore,
 ) -> Optional[Signature]:
     """Helper function for user warnings/errors during inject_napari_dependencies.
 
