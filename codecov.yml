@@ -31,7 +31,7 @@ coverage:
         target: 0%
 codecov:
   notify:
-    after_n_builds: 12
+    after_n_builds: 11
 comment:
   require_changes: true  # if true: only post the PR comment if coverage changes
-  after_n_builds: 12
+  after_n_builds: 11
