@@ -28,6 +28,9 @@ def test_get_preferred_reader_complex_pattern():
     reader = get_preferred_reader('my-specific-folder/my_file.tif')
     assert reader == 'fake-plugin'
 
+    reader = get_preferred_reader('../my-specific-folder/my_file.tif')
+    assert reader == 'fake-plugin'
+
 
 def test_get_preferred_reader_higher_specificity():
     get_settings().plugins.extension2reader = {
@@ -35,10 +38,12 @@ def test_get_preferred_reader_higher_specificity():
         '*.tif': 'generic-tif-plugin',
         # more nested so higher specificity
         'my-specific-folder/*.tif': 'fake-plugin',
+        # even more nested so even higher specificity
+        'my-specific-folder/nested/*.tif': 'very-specific-plugin',
     }
 
-    reader = get_preferred_reader('my-specific-folder/my_file.tif')
-    assert reader == 'fake-plugin'
+    reader = get_preferred_reader('my-specific-folder/nested/my_file.tif')
+    assert reader == 'very-specific-plugin'
 
 
 def test_get_preferred_reader_no_extension():
