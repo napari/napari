@@ -25,11 +25,12 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Image, Labels, Layer, Vectors
 from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
+from napari.utils.events.event import WarningEmitter
 from napari.utils.notifications import show_info
 
 NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version("0.4.16")
 
-def copy_layer(layer: Layer, name: str = ""):
+def copy_layer_le_4_16(layer: Layer, name: str = ""):
     res_layer = deepcopy(layer)
     # this deepcopy is not optimal for layers and images layers
     if isinstance(layer, (Image, Labels)):
@@ -44,11 +45,20 @@ def copy_layer(layer: Layer, name: str = ""):
         emitter.source = res_layer
     return res_layer
 
+def copy_layer(layer: Layer, name: str = ""):
+    if NAPARI_GE_4_16:
+        return copy_layer_le_4_16(layer, name)
+
+    res_layer = Layer.create(*layer.as_layer_data_tuple())
+    res_layer.metadata["viewer_name"] = name
+    return res_layer
 
 def get_property_names(layer: Layer):
     klass = layer.__class__
     res = []
-    for event_name in layer.events.emitters:
+    for event_name, event_emitter in layer.events.emitters.items():
+        if isinstance(event_emitter, WarningEmitter):
+            continue
         if event_name in ("thumbnail", "name"):
             continue
         if (
