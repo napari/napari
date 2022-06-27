@@ -271,7 +271,8 @@ class Labels(_ImageBase):
             rgb=False,
             colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
-            interpolation='nearest',
+            interpolation2d='nearest',
+            interpolation3d='nearest',
             rendering=rendering,
             depiction=depiction,
             iso_threshold=0,
@@ -778,10 +779,7 @@ class Labels(_ImageBase):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale:
-                self.editable = False
-            else:
-                self.editable = True
+            self.editable = not self.multiscale
 
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
