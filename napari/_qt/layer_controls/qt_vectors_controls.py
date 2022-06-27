@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
@@ -7,6 +9,9 @@ from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtVectorsControls(QtLayerControls):
@@ -43,6 +48,8 @@ class QtVectorsControls(QtLayerControls):
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
     """
+
+    layer: 'napari.layers.Tracks'
 
     def __init__(self, layer):
         super().__init__(layer)
