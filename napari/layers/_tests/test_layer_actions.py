@@ -56,7 +56,7 @@ def test_duplicate_layers():
         pass
 
     layer_list = LayerList()
-    layer_list.append(Points(name="test"))
+    layer_list.append(Points([[0, 0]], name="test"))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
     assert len(layer_list[0].events.data.callbacks) == 2
