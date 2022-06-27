@@ -3,7 +3,7 @@
 # NAP-4: asynchronous slicing
 
 ```{eval-rst}
-:Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni
+:Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni, Eric Perlman
 :Created: 2022-06-23
 :Status: Draft
 :Type: Standards Track
@@ -223,6 +223,28 @@ It's important to understand what state is currently used for slicing in napari.
     - `_max_points_thumbnail`: `int`, if more points than this in slice, randomly sample them
     - `_selected_view`: `list[int]`, intersection of `_selected_data` and `_indices_view`, could be a cached property
 
+- `Shapes`
+    - `_data_view`: `ShapeList`, container around shape data
+
+    - `ShapeList`
+		- `_slice_key`: `list(int)`, current slice key
+		- `_mesh`: `Mesh`, container to store concatinated meshes from all shapes
+		- `shapes`: `list(Shape)`, list of shapes
+		- `_displayed`: `Array[bool, (len(shapes))]`, mask to identify which shapes intersect current slice_key.
+		- `displayed_vertices`, `Array[float, (N,2)]`, subset of vertices to be shown
+		- `displayed_index`, `Array[int, (N)]`, index values corresponding to (z-order object layering) `displayed_vertices`
+
+	- `Shape` (and subclasses... `PolygonBase`, `Polygon`, etc.)
+		- `slice_key`: `list[int]`, min/max of non-displayed dimensions
+
+	- `Mesh`
+	    - Data to be shown
+			- `displayed_triangles`: `Array[int, (N,3)]`, triangles to be drawn
+			- `displayed_triangles_index`: `Array[int, (N)]`
+			- `displayed_triangles_colors`: `Array[float, (N,4)]`, per triangle color
+		- Shape meshes generated at shape insertion
+		    - `vertices`, `vertices_centers`, `vertices_offsets`, `vertices_index`,
+		      `triangles`, `triangles_index`, `triangles_colors`, `triangles_z_order`
 
 ## Detailed description
 
