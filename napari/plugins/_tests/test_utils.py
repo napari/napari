@@ -29,6 +29,18 @@ def test_get_preferred_reader_complex_pattern():
     assert reader == 'fake-plugin'
 
 
+def test_get_preferred_reader_higher_specificity():
+    get_settings().plugins.extension2reader = {
+        # less nested so less specificity
+        '*.tif': 'generic-tif-plugin',
+        # more nested so higher specificity
+        'my-specific-folder/*.tif': 'fake-plugin',
+    }
+
+    reader = get_preferred_reader('my-specific-folder/my_file.tif')
+    assert reader == 'fake-plugin'
+
+
 def test_get_preferred_reader_no_extension():
     assert get_preferred_reader('my_file') is None
 
