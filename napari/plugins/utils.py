@@ -9,14 +9,57 @@ from napari.settings import get_settings
 from . import _npe2, plugin_manager
 
 
-def get_preferred_reader(_path):
-    """Return preferred reader for _path from settings, if one exists."""
+def _get_preferred_readers(path):
+    """Given filepath, find matching readers from preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    filtered_preferences : Iterable[Tuple[str, str]]
+        Filtered patterns and their corresponding readers.
+    """
     reader_settings = get_settings().plugins.extension2reader
-    for pattern, reader in reader_settings.items():
+
+    return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
+
+
+def get_preferred_readers(path):
+    """Given filepath, find matching readers from preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    filtered_readers : List[str]
+        Preferred readers which match the given filepath.
+    """
+    return [reader for (pattern, reader) in _get_preferred_readers(path)]
+
+
+def get_preferred_reader(path):
+    """Given filepath, find the best matching reader from the preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    reader : str
+        Best matching reader, if found.
+    """
+    for pattern, reader in _get_preferred_readers(path):
         # TODO: we return the first one we find - more work should be done here
         # in case other patterns would match - do we return the most specific?
-        if fnmatch(_path, pattern):
-            return reader
+        return reader
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:
