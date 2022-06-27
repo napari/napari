@@ -349,7 +349,7 @@ class Dims(EventedModel):
 
     def transpose(self):
         """Transpose displayed dimensions.
-        
+
         This swaps the order of the last two displayed dimensions.
         The order of the displayed is taken from Dims.order.
         """
