@@ -526,7 +526,7 @@ class PluginListItem(QFrame):
             return
 
         for npe1_name, _, distname in plugin_manager.iter_available():
-            if distname and (distname == plugin_name):
+            if distname and (normalized_name(distname) == plugin_name):
                 plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
@@ -814,7 +814,7 @@ class QtPluginDialog(QDialog):
                 continue
             enabled = not pm2.is_disabled(manifest.name)
             # if it's an Npe1 adaptor, call it v1
-            npev = 'shim' if 'npe1' in type(manifest).__name__.lower() else 2
+            npev = 'shim' if manifest.npe1_shim else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
         for (
@@ -825,7 +825,7 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
-            if distname in self.already_installed:
+            if normalized_name(distname or '') in self.already_installed:
                 continue
             _add_to_installed(
                 distname, not plugin_manager.is_blocked(plugin_name)
