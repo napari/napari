@@ -348,7 +348,11 @@ class Dims(EventedModel):
         self.order = tuple(range(self.ndim))
 
     def transpose(self):
-        """Transpose displayed dimensions."""
+        """Transpose displayed dimensions.
+        
+        This swaps the order of the last two displayed dimensions.
+        The order of the displayed is taken from Dims.order.
+        """
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
