@@ -2062,7 +2062,7 @@ class Points(Layer):
         else:
             value = None
 
-        name = self._get_source_str()
+        source_info = self._get_source_str()
 
         msg = generate_layer_status(source_info, position, value)
 
