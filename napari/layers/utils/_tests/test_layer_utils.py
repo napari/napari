@@ -472,11 +472,22 @@ def test_feature_table_from_layer_with_custom_index_and_num_data():
             pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
         ],
         [
+            {'col1': np.array([1, 2]), 'col2': [3, 4]},
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
+        ],
+        [
             {'col1': [1, 2], 'col2': [3, 4]},
             pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
         ],
         [
             {'col1': pd.Series([1, 2]), 'col2': pd.Series([3, 4])},
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
+        ],
+        [
+            {
+                'col1': [1, 2],
+                'col2': pd.Series([3, 4], index=[2, 3]),
+            },
             pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
         ],
         [

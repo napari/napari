@@ -910,6 +910,7 @@ def _validate_features(
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
     elif isinstance(features, dict):
+        # One needs to reset pd.Series object's indices as well
         for key, value in features.copy().items():
             if isinstance(value, pd.Series):
                 features[key] = value.reset_index(drop=True)
