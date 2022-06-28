@@ -895,7 +895,9 @@ def _get_default_column(column: pd.Series) -> pd.Series:
 
 
 def _validate_features(
-    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]],
+    features: Optional[
+        Union[Dict[str, Union[np.ndarray, pd.Series]], pd.DataFrame]
+    ],
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
@@ -907,6 +909,10 @@ def _validate_features(
     """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
+    elif isinstance(features, dict):
+        for key, value in features.copy().items():
+            if isinstance(value, pd.Series):
+                features[key] = value.reset_index(drop=True)
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 

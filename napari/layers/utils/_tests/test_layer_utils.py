@@ -7,6 +7,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
+    _validate_features,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -461,3 +462,32 @@ def test_feature_table_from_layer_with_custom_index_and_num_data():
     feature_table = _FeatureTable.from_layer(features=features, num_data=2)
     expected = features.reset_index(drop=True)
     pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+@pytest.mark.parametrize(
+    'params',
+    [
+        [
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[2, 3]),
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
+        ],
+        [
+            {'col1': [1, 2], 'col2': [3, 4]},
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
+        ],
+        [
+            {'col1': pd.Series([1, 2]), 'col2': pd.Series([3, 4])},
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
+        ],
+        [
+            {
+                'col1': pd.Series([1, 2], index=[1, 2]),
+                'col2': pd.Series([3, 4], index=[2, 3]),
+            },
+            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
+        ],
+    ],
+)
+def test_validate_features(params):
+    input_df, output_df = params
+    assert _validate_features(input_df).equals(output_df)
