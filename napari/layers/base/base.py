@@ -1662,9 +1662,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             value = None
 
-        name = self._get_source_str()
+        source_info = self._get_source_str()
 
-        return generate_layer_status(name, position, value)
+        return generate_layer_status(source_info, position, value)
 
     def _get_tooltip_text(
         self,
