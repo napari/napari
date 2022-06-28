@@ -499,6 +499,6 @@ def test_feature_table_from_layer_with_custom_index_and_num_data():
         ],
     ],
 )
-def test_validate_features(params):
+def test_validate_features_returns_correct_df(params):
     input_df, output_df = params
     assert _validate_features(input_df).equals(output_df)
