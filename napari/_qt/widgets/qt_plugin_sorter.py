@@ -207,7 +207,7 @@ class QtHookImplementationListWidget(QListWidget):
         hook_implementation : HookImplementation
             The hook implementation object to add to the list.
         """
-        item = QListWidgetItem(parent=self)
+        item = QListWidgetItem(self)
         item.hook_implementation = hook_implementation
         self.addItem(item)
         widg = ImplementationListItem(item, parent=self)

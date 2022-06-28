@@ -339,3 +339,17 @@ def test_not_playing_after_ndisplay_changes(qtbot):
     dims.ndisplay = 3
 
     assert not view.is_playing
+
+
+def test_set_axis_labels_after_ndim_changes(qtbot):
+    """See https://github.com/napari/napari/issues/3753"""
+    dims = Dims(ndim=3, ndisplay=2)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    dims.ndim = 2
+    dims.axis_labels = ['y', 'x']
+
+    assert len(view.slider_widgets) == 2
+    assert view.slider_widgets[0].axis_label.text() == 'y'
+    assert view.slider_widgets[1].axis_label.text() == 'x'

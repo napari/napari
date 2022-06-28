@@ -625,7 +625,7 @@ class Window:
         menubar is visible.
         """
         self.main_menu.setVisible(not self.main_menu.isVisible())
-        self._main_menu_shortcut.setEnabled(self.main_menu.isVisible())
+        self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
 
     def _tooltip_visibility_toggle(self, value):
         get_settings().appearance.layer_tooltip_visibility = value
@@ -1018,6 +1018,39 @@ class Window:
             Height in logical pixels.
         """
         self._qt_window.resize(width, height)
+
+    def set_geometry(self, left, top, width, height):
+        """Set the geometry of the widget
+
+        Parameters
+        ----------
+        left : int
+            X coordinate of the upper left border.
+        top : int
+            Y coordinate of the upper left border.
+        width : int
+            Width of the rectangle shape of the window.
+        height : int
+            Height of the rectangle shape of the window.
+        """
+        self._qt_window.setGeometry(left, top, width, height)
+
+    def geometry(self) -> Tuple[int, int, int, int]:
+        """Get the geometry of the widget
+
+        Returns
+        -------
+        left : int
+            X coordinate of the upper left border.
+        top : int
+            Y coordinate of the upper left border.
+        width : int
+            Width of the rectangle shape of the window.
+        height : int
+            Height of the rectangle shape of the window.
+        """
+        rect = self._qt_window.geometry()
+        return rect.left(), rect.top(), rect.width(), rect.height()
 
     def show(self, *, block=False):
         """Resize, show, and bring forward the window.

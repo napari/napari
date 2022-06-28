@@ -4,10 +4,10 @@ from napari.layers._source import Source, current_source, layer_source
 
 def test_layer_source():
     """Test basic layer source assignment mechanism"""
-    with layer_source(path='some_path', reader_plugin='builtins'):
+    with layer_source(path='some_path', reader_plugin='napari'):
         points = Points()
 
-    assert points.source == Source(path='some_path', reader_plugin='builtins')
+    assert points.source == Source(path='some_path', reader_plugin='napari')
 
 
 def test_source_context():

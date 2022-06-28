@@ -209,6 +209,10 @@ class QtDims(QWidget):
         slider_widget = self.slider_widgets.pop(index)
         self._displayed_sliders.pop(index)
         self.layout().removeWidget(slider_widget)
+        # As we delete this widget later, callbacks with a weak reference
+        # to it may successfully grab the instance, but may be incompatible
+        # with other update state like dims.
+        self.dims.events.axis_labels.disconnect(slider_widget._pull_label)
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))

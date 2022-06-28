@@ -100,6 +100,9 @@ def napari_plugin_manager(monkeypatch):
     pm.discovery_blocker.stop()
 
 
+GCPASS = 0
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot, request: 'FixtureRequest', napari_plugin_manager
@@ -149,7 +152,13 @@ def make_napari_viewer(
     from napari._qt.qt_viewer import QtViewer
     from napari.settings import get_settings
 
-    gc.collect()
+    global GCPASS
+    GCPASS += 1
+
+    if GCPASS % 50 == 0:
+        gc.collect()
+    else:
+        gc.collect(1)
 
     _do_not_inline_below = len(QtViewer._instances)
     # # do not inline to avoid pytest trying to compute repr of expression.
@@ -213,7 +222,10 @@ def make_napari_viewer(
         else:
             viewer.close()
 
-    gc.collect()
+    if GCPASS % 50 == 0 or len(QtViewer._instances):
+        gc.collect()
+    else:
+        gc.collect(1)
 
     if request.config.getoption(_SAVE_GRAPH_OPNAME):
         fail_obj_graph(QtViewer)

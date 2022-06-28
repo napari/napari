@@ -5,19 +5,13 @@ Spheres
 Display two spheres with Surface layers
 """
 
-try:
-    from meshzoo import icosa_sphere
-except ModuleNotFoundError as e:
-    raise ModuleNotFoundError(
-        "This example uses a meshzoo but meshzoo is not installed. "
-        "To install try 'pip install meshzoo'."
-    ) from e
 import napari
+from vispy.geometry import create_sphere
 
+mesh = create_sphere(method='ico')
 
-vert, faces = icosa_sphere(10)
-
-vert *= 100
+faces = mesh.get_faces()
+vert = mesh.get_vertices() * 100
 
 sphere1 = (vert + 30, faces)
 sphere2 = (vert - 30, faces)

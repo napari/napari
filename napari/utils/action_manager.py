@@ -8,7 +8,6 @@ from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from ..utils.events import EmitterGroup
-from ._injection import inject_napari_dependencies
 from .interactions import Shortcut
 from .translations import trans
 
@@ -47,6 +46,8 @@ class Action:
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
+        from ._injection import inject_napari_dependencies
+
         return inject_napari_dependencies(self.command)
 
 

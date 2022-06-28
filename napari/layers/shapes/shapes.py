@@ -26,6 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
+from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
 from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
@@ -1598,6 +1599,12 @@ class Shapes(Layer):
         )
 
     @property
+    def _view_text_color(self) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        self.text.color._apply(self.features)
+        return self.text._view_color(self._indices_view)
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -2761,7 +2768,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[float, int], None]:
+    ) -> Tuple[Union[None, float, int], Union[None, np.ndarray]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -2781,41 +2788,34 @@ class Shapes(Layer):
 
         Returns
         -------
-        value
+        value Union[None, float, int]
             The data value along the supplied ray.
-        intersection_point : np.ndarray
+        intersection_point : Union[None, np.ndarray]
             (n,) array containing the point where the ray intersects the first shape
             (i.e., the shape most in the foreground). The coordinate is in layer
             coordinates.
         """
-        if len(dims_displayed) == 3:
-            if (start_point is not None) and (end_point is not None):
-                # Get the normal vector of the click plane
-                start_position_view = start_point[dims_displayed]
-                end_position_view = end_point[dims_displayed]
-                ray_direction = end_position_view - start_position_view
-                ray_direction_normed = ray_direction / np.linalg.norm(
-                    ray_direction
-                )
-                # step the start position back a little bit to be able to detect shapes
-                # that contain the start_position
-                start_position_view = (
-                    start_position_view - 0.1 * ray_direction_normed
-                )
-                value, intersection = self._data_view._inside_3d(
-                    start_position_view, ray_direction_normed
-                )
+        if len(dims_displayed) != 3:
+            # return None if in 2D mode
+            return None, None
+        if (start_point is None) or (end_point is None):
+            # return None if the ray doesn't intersect the data bounding box
+            return None, None
 
-                # add the full nD coords to intersection
-                intersection_point = start_point.copy()
-                intersection_point[dims_displayed] = intersection
+        # Get the normal vector of the click plane
+        start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+        value, intersection = self._data_view._inside_3d(
+            start_position, ray_direction
+        )
 
-            else:
-                value = None
-                intersection_point = None
-        else:
-            value = None
-            intersection_point = None
+        # add the full nD coords to intersection
+        intersection_point = start_point.copy()
+        intersection_point[dims_displayed] = intersection
+
         return value, intersection_point
 
     def get_index_and_intersection(
