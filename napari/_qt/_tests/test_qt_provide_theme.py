@@ -15,9 +15,8 @@ def test_provide_theme_hook_registered_correctly(
     make_napari_viewer,
     napari_plugin_manager,
 ):
-    with pytest.warns(FutureWarning):
-        dark = get_theme("dark")
-        dark["name"] = "dark-test-2"
+    dark = get_theme("dark", as_dict=True)
+    dark["name"] = "dark-test-2"
 
     class TestPlugin:
         @napari_hook_implementation
