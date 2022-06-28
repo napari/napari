@@ -417,7 +417,7 @@ def _omit_viewer_args(constructor):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated and should not be used"
+                    "viewer argument is deprecated since 0.4.14 and should not be used"
                 ),
                 category=FutureWarning,
                 stacklevel=2,
@@ -426,7 +426,7 @@ def _omit_viewer_args(constructor):
         if "viewer" in kwargs:
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated and should not be used"
+                    "viewer argument is deprecated since 0.4.14 and should not be used"
                 ),
                 category=FutureWarning,
                 stacklevel=2,
