@@ -1,7 +1,6 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import re
-import warnings
 from ast import literal_eval
 from typing import Union
 
@@ -163,7 +162,7 @@ def template(css: str, **theme):
     return css
 
 
-def get_system_theme():
+def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
         name = darkdetect.theme().lower()
@@ -173,7 +172,7 @@ def get_system_theme():
     return name
 
 
-def get_theme(name, as_dict=None):
+def get_theme(name, as_dict=False):
     """Get a copy of theme based on it's name.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -209,16 +208,8 @@ def get_theme(name, as_dict=None):
         )
     theme = _themes[name]
     _theme = theme.copy()
-    if as_dict is None:
-        warnings.warn(
-            trans._(
-                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        as_dict = True
+    assert as_dict in (True, False)
+    assert isinstance(_theme, Theme)
     if as_dict:
         _theme = _theme.dict()
         _theme = {

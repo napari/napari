@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import dask
@@ -278,15 +277,9 @@ def prepare_properties(
     """
     # If there is no data, non-empty properties represent choices as a deprecated behavior.
     if num_data == 0 and properties:
-        warnings.warn(
-            trans._(
-                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
+        raise ValueError(
+            "Property choices should be passed as property_choices, not properties."
         )
-        choices = properties
-        properties = {}
 
     properties = validate_properties(properties, expected_len=num_data)
     choices = _validate_property_choices(choices)

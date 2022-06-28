@@ -162,7 +162,7 @@ def test_custom_theme_settings(test_settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         test_settings.appearance.theme = custom_theme_name
 
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', as_dict=True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -312,14 +312,6 @@ def test_get_settings_fails(monkeypatch, tmp_path):
 def test_first_time():
     """This test just confirms that we don't load an existing file (locally)"""
     assert NapariSettings().application.first_time is True
-
-
-# def test_deprecated_SETTINGS():
-#     """Test that direct access of SETTINGS warns."""
-#     from napari.settings import SETTINGS
-
-#     with pytest.warns(FutureWarning):
-#         assert SETTINGS.appearance.theme == 'dark'
 
 
 def test_no_save_path():

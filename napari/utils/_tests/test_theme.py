@@ -21,16 +21,16 @@ def test_default_themes():
 
 
 def test_get_theme():
-    theme = get_theme('dark')
+    # get theme in the old-style dict format
+    theme = get_theme('dark', as_dict=True)
     assert isinstance(theme, dict)
     assert theme['name'] == 'dark'
 
-    # get theme in the old-style dict format
     theme = get_theme("dark")
-    assert isinstance(theme, dict)
+    assert isinstance(theme, Theme)
 
     # get theme in the new model-based format
-    theme = get_theme("dark", False)
+    theme = get_theme("dark", as_dict=False)
     assert isinstance(theme, Theme)
 
 
@@ -40,7 +40,7 @@ def test_register_theme():
     assert 'test_blue' not in themes
 
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', as_dict=True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -56,20 +56,20 @@ def test_register_theme():
     assert 'test_blue' in themes
 
     # Check that the dark theme has not been overwritten
-    dark_theme = get_theme('dark')
+    dark_theme = get_theme('dark', as_dict=True)
     assert not dark_theme['background'] == blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
-    theme = get_theme('test_blue')
+    theme = get_theme('test_blue', as_dict=True)
     assert theme['background'] == blue_theme['background']
 
-    theme = get_theme("test_blue", False)
+    theme = get_theme("test_blue", as_dict=False)
     assert theme.background.as_rgb() == blue_theme["background"]
 
 
 def test_unregister_theme():
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', as_dict=True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',

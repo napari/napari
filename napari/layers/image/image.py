@@ -536,7 +536,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         warnings.warn(
             trans._(
-                "Interpolation attribute is deprecated. Please use interpolation2d or interpolation3d",
+                "Interpolation attribute is deprecated since 0.4.16. Please use interpolation2d or interpolation3d",
             ),
             category=DeprecationWarning,
             stacklevel=2,
@@ -552,7 +552,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current interpolation mode."""
         warnings.warn(
             trans._(
-                "Interpolation setting is deprecated. Please use interpolation2d or interpolation3d",
+                "Interpolation setting is deprecated since 0.4.16. Please use interpolation2d or interpolation3d",
             ),
             category=DeprecationWarning,
             stacklevel=2,
