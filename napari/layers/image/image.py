@@ -1079,6 +1079,9 @@ if config.async_octree:
         pass
 
 
+Image.__doc__ = _ImageBase.__doc__
+
+
 class _weakref_hide:
     def __init__(self, obj):
         import weakref
