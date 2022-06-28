@@ -2064,7 +2064,7 @@ class Points(Layer):
 
         name = self._get_source_str()
 
-        msg = generate_layer_status(name, position, value)
+        msg = generate_layer_status(source_info, position, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
