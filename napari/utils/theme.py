@@ -5,7 +5,7 @@ import re
 import warnings
 from ast import literal_eval
 from contextlib import suppress
-from typing import List, Union
+from typing import Any, Dict, List, Union
 
 import npe2
 from pydantic import validator
@@ -93,6 +93,13 @@ class Theme(EventedModel):
             value=value,
         )
         return value
+
+    def dict(self) -> Dict[str, Any]:
+        th = super().dict()
+        return {
+            k: v if not isinstance(v, Color) else v.as_rgb()
+            for (k, v) in th.items()
+        }
 
 
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
@@ -190,7 +197,7 @@ def get_system_theme() -> str:
     return id_
 
 
-def get_theme(theme_id, as_dict=None):
+def get_theme(theme_id, as_dict=None) -> Union[Theme, Dict[str, Any]]:
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -224,8 +231,7 @@ def get_theme(theme_id, as_dict=None):
                 themes=available_themes(),
             )
         )
-    theme = _themes[theme_id]
-    _theme = theme.copy()
+    theme = _themes[theme_id].copy()
     if as_dict is None:
         warnings.warn(
             trans._(
@@ -238,13 +244,8 @@ def get_theme(theme_id, as_dict=None):
         )
         as_dict = False
     if as_dict:
-        _theme = _theme.dict()
-        _theme = {
-            k: v if not isinstance(v, Color) else v.as_rgb()
-            for (k, v) in _theme.items()
-        }
-        return _theme
-    return _theme
+        return theme.dict()
+    return theme
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
