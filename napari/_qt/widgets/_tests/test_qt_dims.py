@@ -320,12 +320,11 @@ def test_not_playing_after_ndim_changes(qtbot):
     view = QtDims(dims)
     qtbot.addWidget(view)
     view.play()
-    # TODO: wait until we actually start playing?
-    assert view.is_playing
+    qtbot.waitUntil(lambda: view.is_playing)
 
     dims.ndim = 2
 
-    assert not view.is_playing
+    qtbot.waitUntil(lambda: not view.is_playing)
 
 
 def test_not_playing_after_ndisplay_changes(qtbot):
@@ -333,12 +332,11 @@ def test_not_playing_after_ndisplay_changes(qtbot):
     view = QtDims(dims)
     qtbot.addWidget(view)
     view.play()
-    # TODO: wait until we actually start playing?
-    assert view.is_playing
+    qtbot.waitUntil(lambda: view.is_playing)
 
     dims.ndisplay = 3
 
-    assert not view.is_playing
+    qtbot.waitUntil(lambda: not view.is_playing)
 
 
 def test_set_axis_labels_after_ndim_changes(qtbot):
