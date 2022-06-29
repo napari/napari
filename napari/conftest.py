@@ -554,7 +554,17 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 @pytest.fixture(autouse=True)
-def disable_notif_thread(monkeypatch):
+def disable_notification_close_timer(monkeypatch):
+    """
+    This fixture disables starting timer for closing notification
+    by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
+
+    As Qt timer is realised by thread and keep reference to the object,
+    without increase of reference counter object could be garbage collected and
+    cause segmentation fault error when Qt (C++) code try to access it without
+    checking if Python object exists.
+    """
+
     with suppress(ImportError):
         from napari._qt.dialogs.qt_notification import NapariQtNotification
 
