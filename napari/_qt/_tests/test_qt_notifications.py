@@ -71,6 +71,8 @@ def test_notification_manager_via_gui(
     warnButton = QPushButton()
     errButton.clicked.connect(raise_func)
     warnButton.clicked.connect(warn_func)
+    qtbot.addWidget(errButton)
+    qtbot.addWidget(warnButton)
 
     with notification_manager:
         for btt, expected_message in [
