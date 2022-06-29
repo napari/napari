@@ -30,6 +30,8 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+from contextlib import suppress
+
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
@@ -549,3 +551,11 @@ def pytest_collection_modifyitems(session, config, items):
                 index = i
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.fixture(autouse=True)
+def disable_notif_thread(monkeypatch):
+    with suppress(ImportError):
+        from napari._qt.dialogs.qt_notification import NapariQtNotification
+
+        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
