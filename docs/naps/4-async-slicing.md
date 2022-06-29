@@ -156,7 +156,6 @@ To help clarify the scope, we also define some things that were are not explicit
 	- Solutions for goal (2) should not block this in the future.
 - Keep the experimental async fork working.
 	- Nice to have, but should not put too much effort into this.
-	- Do not delete some existing code, which may be moved into vispy (e.g. VispyTiledImageLayer).
 
     
 ## Related work
@@ -275,14 +274,13 @@ It's important to understand what state is currently used for slicing in napari.
 This project aims to perform slicing on layers asynchronously.
 To do so, we introduce a few new types to encapsulate state that is critical
 to slicing, some new methods that redefine the core logic of slicing,
-and show these new things integrate into napari's existing design.
+and show how these new things integrate into napari's existing design.
 
 ### Slice request and response
 
 First, we introduce a type to encapsulate the input to slicing.
 A slice request should be immutable and should contain all the state
 required to perform slicing.
-For example, the following could be a minimal definition.
 
 ```python
 class _LayerSliceRequest:
@@ -296,29 +294,25 @@ class _LayerSliceRequest:
 The expectation is that slicing will capture an immutable instance of this
 type on the main thread that another thread can use to perform slicing.
 In general, `data` will be too large to copy, so we should instead store a
-reference to that, and possibly a weak one.
+reference to that, and possibly a weak one to avoid hogging memory unnecessarily.
 If `Layer.data` is mutated in-place on the main thread while slicing is being
 performed on another thread, this may create an inconsistent slice output
 depending on when the values in `data` are accessed, but should be safe.
 If `Layer.data` is reassigned on the main thread, then we can safely slice
 using all the old data, but we may not want anything to consume the output
-because it is now stale in which case slicing may return `None`.
+because it is now stale.
 
-This helps with goal (1) because it allows us to execute asynchronous slicing
-without worrying about mutations of layer state on the main thread, which might
-be unsafe or create inconsistent output.
-Alternatively, we could use concurrency primitives like locks to temporarily
-block read/write access to layer state, but this is less clear and could lead
-to concurrency issues in the future, like deadlocks.
+This definition helps with goal (1) because it allows us to execute asynchronous
+slicing without worrying about mutations of layer state on the main thread, which
+might be unsafe or create inconsistent output.
+It also helps with goal (2) because encapsulating the input to slicing in one type
+clarifies exactly what that input is, which is much less clear right now.
 
-This definition also helps with goal (2) because encapsulating the input to
-slicing in one type clarifies exactly what that input is, which is less clear
-right now.
+#### Response
 
 Second, we introduce a type to encapsulate the output to slicing.
 A slice response should also be immutable and should contain all the state
 that consumers need from a slice.
-For example, the following could be a minimal definition.
 
 ```python
 class _LayerSliceResponse:
@@ -326,14 +320,12 @@ class _LayerSliceResponse:
     data_to_world: Transform
 ```
 
-These class names include a leading underscore to indicate that they are
+Both these class names include a leading underscore to indicate that they are
 private implementation details and external users should not depend on
 their existence or any of their fields, as these may change and be
-refined over time.
-
-This may change in the future, especially for the response because people
-may want to handle those in their own way. But there are too many unknowns
-to commit to any stability right now.
+refined over time. This may change in the future, especially for the response
+because people may want to handle those in their own way. But there are too
+many unknowns to commit to any stability right now.
 
 
 ### Layer methods
@@ -346,12 +338,12 @@ class Layer:
 
     @abstractmethod
     def _make_slice_request(dims: Dims) -> _LayerSliceRequest:
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     @staticmethod
     def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
-        pass
+        raise NotImplementedError()
 ```
 
 The first, `_make_slice_request`, combines the state of the layer with the
@@ -363,15 +355,13 @@ Therefore, we should expect and try to ensure that this method does not
 do too much in order not to block the main thread.
 
 The second, `_get_slice`, takes the slice request and generates a response
-using layer-type specific logic that defines what slicing means for an image
-layer compared to a points layer.
-The method is abstract to prevent it from using any layer state directly and
+using layer-type specific logic.
+The method is static to prevent it from using any layer state directly and
 instead can only use the state in the slice request. 
-As this method is static
 This allows us to execute this method on another thread without worrying
 about mutations to the layer that might occur on the main thread.
 
-The main consumer of the a layer slice response is the corresponding vispy
+The main consumer of a layer slice response is the corresponding vispy
 layer. We require that a vispy layer type implement `_set_slice` to handle
 how it consumes the slice output.
 
@@ -381,7 +371,7 @@ class VispyBaseLayer:
 
     @abstractmethod
     def _set_slice(self, response: _LayerSliceResponse) -> None:
-        pass
+        raise NotImplementedError()
 ```
 
 ### LayerSlicer object
@@ -391,6 +381,9 @@ avoid the associated state and logic leaking into the already complex
 `ViewerModel`.
 
 ```python
+_ViewerSliceRequest = dict[Layer, _LayerSliceRequest]
+_ViewerSliceResponse = dict[Layer, _LayerSliceResponse]
+
 class _LayerSlicer:
     ...
 
@@ -464,9 +457,6 @@ on the main thread. Those `QWidgets` may be native to napari or they
 may be defined by plugins that respond to napari events.
 
 ```python
-_ViewerSliceRequest = Dict[Layer, _LayerSliceRequest]
-_ViewerSliceResponse = Dict[Layer, _LayerSliceResponse]
-
 class QtViewer:
     ...
 
@@ -484,6 +474,11 @@ class QtViewer:
                 visual._set_slice(response)
                 
 ```
+
+In general, updates to vispy nodes should be done on the main thread [^vispy-faq-threads].
+From some prototyping, it seems like Qt backends may be safe
+possibly because Qt's signals, slots, and thread affinity can achieve
+some automatic thread safety, but that should probably not be relied on.
 
 
 ## Implementation
@@ -552,6 +547,8 @@ CC0+BY [^cc0-by].
 [^issue-2156]: napari issue 2156, <https://github.com/napari/napari/issues/2156>
 
 [^pull-4334]: napari pull request 4334, <https://github.com/napari/napari/pull/4334>
+
+[^vispy-faq-threads]: Vispy FAQs: Is VisPy multi-threaded or thread-safe?, <https://vispy.org/faq.html#is-vispy-multi-threaded-or-thread-safe>
 
 ## Copyright
 
