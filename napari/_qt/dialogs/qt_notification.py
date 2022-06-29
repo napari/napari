@@ -175,11 +175,22 @@ class NapariQtNotification(QDialog):
 
     def close(self):
         """Fade out then close."""
+        self.timer.stop()
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+
         self.opacity_anim.setDuration(self.FADE_OUT_RATE)
         self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
         self.opacity_anim.finished.connect(super().close)
+
+    def deleteLater(self) -> None:
+        """stop all animations and timers before deleting"""
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+        self.timer.stop()
+        super().deleteLater()
 
     def toggle_expansion(self):
         """Toggle the expanded state of the notification frame."""
