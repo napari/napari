@@ -313,13 +313,20 @@ def test_interpolation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.interpolation == 'nearest'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'nearest'
+    assert layer.interpolation2d == 'nearest'
+    assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, interpolation='bicubic')
-    assert layer.interpolation == 'bicubic'
+    layer = Image(data, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'bicubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'bicubic'
 
-    layer.interpolation = 'bilinear'
-    assert layer.interpolation == 'bilinear'
+    layer.interpolation2d = 'bilinear'
+    assert layer.interpolation2d == 'bilinear'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'bilinear'
 
 
 def test_colormaps():
