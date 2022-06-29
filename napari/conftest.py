@@ -569,3 +569,5 @@ def disable_notification_dismiss_timer(monkeypatch):
         from napari._qt.dialogs.qt_notification import NapariQtNotification
 
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
