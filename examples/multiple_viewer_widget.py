@@ -69,23 +69,23 @@ def get_property_names(layer: Layer):
     return res
 
 
-def center_cross_on_mouse(viewer: napari.Viewer):
+def center_cross_on_mouse(viewer_model: napari.components.viewer_model.ViewerModel):
     """move the cross to the mouse position"""
 
-    print(viewer.title, viewer.cursor.position)
+    print(viewer_model.title, viewer_model.cursor.position)
     # FIXME times to time wrong viewer is selected
 
-    if not getattr(viewer, "_mouse_over_canvas", True):
+    if not getattr(viewer_model, "_mouse_over_canvas", True):
         # There is no way fo napari 0.4.15 to check if mouse is over sending canvas. 
         show_info("Mouse is not over the canvas. You may need to click on the canvas.")
         return
 
-    viewer.dims.current_step = tuple(
+    viewer_model.dims.current_step = tuple(
         np.round(
             [
                 max(min_, min(p, max_)) / step
                 for p, (min_, max_, step) in zip(
-                    viewer.cursor.position, viewer.dims.range
+                    viewer_model.cursor.position, viewer_model.dims.range
                 )
             ]
         ).astype(int)
