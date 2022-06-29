@@ -3,7 +3,7 @@
 # NAP-4: asynchronous slicing
 
 ```{eval-rst}
-:Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni
+:Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni, Eric Perlman, Kim Pevey
 :Created: 2022-06-23
 :Status: Draft
 :Type: Standards Track
@@ -222,6 +222,52 @@ It's important to understand what state is currently used for slicing in napari.
     - `_round_index`: `bool`, used to round data slice indices for all layer types except points
     - `_max_points_thumbnail`: `int`, if more points than this in slice, randomly sample them
     - `_selected_view`: `list[int]`, intersection of `_selected_data` and `_indices_view`, could be a cached property
+
+- `Shapes`
+    - `_data_view`: `ShapeList`, container around shape data
+
+    - `ShapeList`
+		- `_slice_key`: `list(int)`, current slice key
+		- `_mesh`: `Mesh`, container to store concatinated meshes from all shapes
+		- `shapes`: `list(Shape)`, list of shapes
+		- `_displayed`: `Array[bool, (len(shapes))]`, mask to identify which shapes intersect current slice_key.
+		- `displayed_vertices`, `Array[float, (N,2)]`, subset of vertices to be shown
+		- `displayed_index`, `Array[int, (N)]`, index values corresponding to (z-order object layering) `displayed_vertices`
+
+	- `Shape` (and subclasses... `PolygonBase`, `Polygon`, etc.)
+		- `slice_key`: `list[int]`, min/max of non-displayed dimensions
+
+	- `Mesh`
+	    - Data to be shown
+			- `displayed_triangles`: `Array[int, (N,3)]`, triangles to be drawn
+			- `displayed_triangles_index`: `Array[int, (N)]`
+			- `displayed_triangles_colors`: `Array[float, (N,4)]`, per triangle color
+		- Shape meshes generated at shape insertion
+		    - `vertices`, `vertices_centers`, `vertices_offsets`, `vertices_index`,
+		      `triangles`, `triangles_index`, `triangles_colors`, `triangles_z_order`
+
+- `Vectors`
+    - `_view_data`: `(M, 2, 2) array`:
+        The start point and projections of N vectors in 2D for vectors whose
+        start point is in the currently viewed slice. Subset of `data`
+    - `_view_indices`: `(1, M) array`:
+        indices for the M in view vectors (indices for subsetting `data`)
+    - `_view_alphas`: `(M,) or float`:
+        relative opacity for the M in view vectors
+    - `_view_faces`:  `(2M, 3) or (4M, 3) np.ndarray`:
+        indices of the `_mesh_vertices` that form the faces of the M in view vectors.
+        Shape is (2M, 2) for 2D and (4M, 2) for 3D. 
+		* Subset of `_mesh_triangles`
+    - `_view_vertices`: `(4M, 2) or (8M, 2) np.ndarray`:
+        the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
+		* Subset of `_mesh_vertices`
+    - `out_of_slice_display`: `bool`:
+        If True, renders vectors not just in central plane but also slightly out of slice
+        according to specified point marker size.
+
+	- Note: `_view_faces` and `_view_vertices` require:
+		- `_mesh_vertices` - output from `generate_vector_meshes`, not specific to slice
+		- `_mesh_triangles` - output from `generate_vector_meshes`, not specific to slice
 
 
 ## Detailed description
@@ -512,3 +558,65 @@ CC0+BY [^cc0-by].
 This document is dedicated to the public domain with the Creative Commons CC0
 license [^cc0]. Attribution to this source is encouraged where appropriate, as per
 CC0+BY [^cc0-by].
+
+
+## Related technical details
+
+### Methods and properties on vector layer used by slicing
+
+* **METHOD**:`Vectors._set_view_slice()`: Sets the view given the indices to slice with.
+    * Uses
+        * `_slice_indices`: property (see below)
+        * `_displayed_stored` - I think this should just be removed altogether. I don't see a purpose. 
+        * `_dims_displayed`
+        * `_mesh_vertices`
+        * `_mesh_triangles`
+
+    * Calls
+        * `slice_data()`: to generate the `indices` and `alphas` (see below)
+            * Which uses the property `_slice_indices`
+        * `generate_vector_meshes()`: If the mesh hasn't already been generated, it will create it to get the vertices and triangles (see below)
+    * Sets: 
+        * `_view_data` 
+        * `_view_indices`
+        * `_view_alphas`
+        * `_view_faces`
+        * `_view_vertices`
+
+* **METHOD**: `Vectors._slice_data()`: Determines the slice of vectors given the indices.
+    * Used by: `_set_view_slice`
+    * Uses `_slice_indices` 
+
+* **METHOD**: `_vector_utils.generate_vector_meshes()`: creates the vertices and faces on which to display the vectors (for all the data, not just the current slice)
+    * Uses:
+        * `_data`
+            * is subset using:
+                * `_dims_displayed`
+                    * `_ndisplay` (connected to event)  Number of visualized dimensions
+                    * `_dims_order` List of dims as indices (if ndim=3, dims_order=[0, 1, 2])
+                    * if there are fewer dims displayed (ndisplay) than the size of the data (dims_order), then napari will automatically grab the last 2 dims to visualize (dims_displayed)
+                        * `_ndim` Number of dims of the data itself
+        * `edge_width`
+        * `length`
+    * Output:
+        * `vertices`
+        * `triangles`
+
+* **PROPERTY**: `Vectors.out_of_slice_display`: bool: 
+    * renders vectors slightly out of slice, accounts for vectors which are "slightly-out-of-frame"
+    * has a setter which calls
+        * `self.events.out_of_slice_display()`
+        * `self.refresh()`
+
+* **PROPERTY**: `Base._slice_indices`: (D, ) array: 
+    * slice indices into data coordinates
+    * complex getter
+        * Uses: 
+            * `_dims_not_displayed`
+            * `ndim`
+            * `_ndisplay`
+            * `_dims_point`
+        * Could use (via `if` statement):
+            * `_data_to_world.inverse`
+            * `utils.transforms.Affine`
+            * `_dims_displayed`
