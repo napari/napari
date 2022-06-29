@@ -554,7 +554,7 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 @pytest.fixture(autouse=True)
-def disable_notification_close_timer(monkeypatch):
+def disable_notification_dismiss_timer(monkeypatch):
     """
     This fixture disables starting timer for closing notification
     by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
