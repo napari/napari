@@ -1,11 +1,13 @@
 """VispyCanvas class.
 """
+import time
 from weakref import WeakSet
 
 from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas, Widget
 
 from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events import EmitterGroup, Event
 from .utils.gl import get_max_texture_sizes
 
 
@@ -96,3 +98,77 @@ class VispyCanvas(SceneCanvas):
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
         super()._process_mouse_event(event)
+
+
+class FramerateMonitor:
+    """Tracks and filters the framerate emitted from the canvas measure_fps() callback."""
+
+    def __init__(
+        self, stale_threshold: float = 1.1, debounce_threshold: int = 2
+    ):
+
+        self.events = EmitterGroup(source=self, fps=Event)
+        self._debounce_counter = 0
+        self._debounce_threshold = debounce_threshold
+        self._last_update = time.time()
+        self._stale_threshold = stale_threshold
+
+        self._fps = 0
+        self._stale = True
+        self._last_measurement_valid = False
+
+    @property
+    def fps(self) -> float:
+        """The most recently measure framerate in frames per second."""
+        return self._fps
+
+    @property
+    def valid(self) -> bool:
+        """Flag set to True if the current fps measurement is valid."""
+        return self._last_measurement_valid and not self._fps_stale()
+
+    def _fps_stale(self):
+        """Check if the too much time has elapsed since the last fps update.
+
+        Returns
+        -------
+        fps_stale : bool
+            Flag set to True if the time since the last update is greater
+            than the _stale_threshold
+        """
+        return (time.time() - self._last_update) > self._stale_threshold
+
+    def update_fps(self, fps: float):
+        """Update with the most recently measured framerate.
+
+        This only stores the new framerate if the last draw was within
+        the specified stale_threshold and the debounce condition has
+        been met.
+
+        If the framerate update is valid, the fps event is emitted.
+
+        This is generally connected to the canvas.measure_fps() callback.
+
+        Parameters
+        ----------
+        fps : float
+            The newly measured framerate in frames per second.
+        """
+        if self._fps_stale():
+            self._stale = True
+            self._last_measurement_valid = False
+            self._debounce_counter = 0
+        else:
+            self._stale = False
+
+        self._last_update = time.time()
+
+        if self._stale is True:
+            return
+
+        # debounce and update fps
+        self._debounce_counter += 1
+        if self._debounce_counter > self._debounce_threshold:
+            self._fps = fps
+            self._last_measurement_valid = True
+            self.events.fps(fps=self.fps)

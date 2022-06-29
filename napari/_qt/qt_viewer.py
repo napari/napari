@@ -12,12 +12,14 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from .._vispy.canvas import FramerateMonitor
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..errors import MultipleReaderError, ReaderPluginError
+from ..layers import Image
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..utils import config, perf
@@ -61,7 +63,6 @@ from .._vispy import (  # isort:skip
     VispyTextOverlay,
     create_vispy_visual,
 )
-
 
 if TYPE_CHECKING:
     from ..components import ViewerModel
@@ -305,6 +306,17 @@ class QtViewer(QSplitter):
             self.view, self.viewer.camera, self.viewer.dims
         )
         self.canvas.events.draw.connect(self.camera.on_draw)
+
+        # add the FPS monitor
+        self._fps_window = 0.5
+        stale_threshold = self._fps_window + 0.1
+        self._fps_monitor = FramerateMonitor(
+            stale_threshold=stale_threshold, debounce_threshold=2
+        )
+        self.canvas.measure_fps(
+            window=self._fps_window, callback=self._fps_monitor.update_fps
+        )
+        self._fps_monitor.events.fps.connect(self.on_fps_update)
 
         # Add axes, scale bar
         self._add_visuals()
@@ -1041,6 +1053,24 @@ class QtViewer(QSplitter):
                     ],
                     shape_threshold=self.canvas.size,
                 )
+
+    def on_fps_update(self, event):
+        image_layers = [
+            layer for layer in self.viewer.layers if isinstance(layer, Image)
+        ]
+
+        nodes = []
+        for image in image_layers:
+            visual = self.layer_to_visual[image]
+            nodes.append(visual._layer_node.get_node(3))
+
+        fps = event.fps
+        if fps < 30:
+            for node in nodes:
+                node.relative_step_size = min(node.relative_step_size * 2, 2)
+        if fps > 45:
+            for node in nodes:
+                node.relative_step_size = max(node.relative_step_size / 2, 0.1)
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
