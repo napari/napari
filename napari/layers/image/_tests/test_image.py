@@ -832,3 +832,11 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
+
+
+def test_dask_contrast_limits_range_init():
+    np_arr = np.array([[0.000001, -0.0002], [0, 0.0000004]])
+    da_arr = da.array(np_arr)
+    i1 = Image(np_arr)
+    i2 = Image(da_arr)
+    assert i1.contrast_limits_range == i2.contrast_limits_range
