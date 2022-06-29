@@ -1010,6 +1010,7 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self._process_mouse_event(mouse_move_callbacks, event)
+        self.setFocus()
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
