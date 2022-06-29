@@ -873,15 +873,12 @@ class _FeatureTable:
             If the input property columns are not all the same length, or if
             that length is not equal to the given num_data.
         """
-        print(1)
         if properties is not None or property_choices is not None:
-            print(2)
             features = _features_from_properties(
                 properties=properties,
                 property_choices=property_choices,
                 num_data=num_data,
             )
-        print(3)
         return cls(features, num_data=num_data)
 
 
