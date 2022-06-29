@@ -7,7 +7,6 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
-    _validate_features,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -464,41 +463,21 @@ def test_feature_table_from_layer_with_custom_index_and_num_data():
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
-@pytest.mark.parametrize(
-    'params',
-    [
-        [
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[2, 3]),
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
-        ],
-        [
-            {'col1': np.array([1, 2]), 'col2': [3, 4]},
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
-        ],
-        [
-            {'col1': [1, 2], 'col2': [3, 4]},
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
-        ],
-        [
-            {'col1': pd.Series([1, 2]), 'col2': pd.Series([3, 4])},
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
-        ],
-        [
-            {
-                'col1': [1, 2],
-                'col2': pd.Series([3, 4], index=[2, 3]),
-            },
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
-        ],
-        [
-            {
-                'col1': pd.Series([1, 2], index=[1, 2]),
-                'col2': pd.Series([3, 4], index=[2, 3]),
-            },
-            pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]}, index=[0, 1]),
-        ],
-    ],
-)
-def test_validate_features_returns_correct_df(params):
-    input_df, output_df = params
-    assert _validate_features(input_df).equals(output_df)
+def test_feature_table_from_layer_with_unordered_pd_series_properties():
+    properties = {
+        'a': pd.Series([1, 3], index=[3, 4]),
+        'b': pd.Series([7.5, -2.1], index=[1, 2]),
+    }
+    feature_table = _FeatureTable.from_layer(properties=properties, num_data=2)
+    expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
+    pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+def test_feature_table_from_layer_with_unordered_pd_series_features():
+    features = {
+        'a': pd.Series([1, 3], index=[3, 4]),
+        'b': pd.Series([7.5, -2.1], index=[1, 2]),
+    }
+    feature_table = _FeatureTable.from_layer(features=features, num_data=2)
+    expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
+    pd.testing.assert_frame_equal(feature_table.values, expected)

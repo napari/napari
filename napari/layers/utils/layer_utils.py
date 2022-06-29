@@ -873,12 +873,15 @@ class _FeatureTable:
             If the input property columns are not all the same length, or if
             that length is not equal to the given num_data.
         """
+        print(1)
         if properties is not None or property_choices is not None:
+            print(2)
             features = _features_from_properties(
                 properties=properties,
                 property_choices=property_choices,
                 num_data=num_data,
             )
+        print(3)
         return cls(features, num_data=num_data)
 
 
@@ -895,9 +898,7 @@ def _get_default_column(column: pd.Series) -> pd.Series:
 
 
 def _validate_features(
-    features: Optional[
-        Union[Dict[str, Union[np.ndarray, pd.Series]], pd.DataFrame]
-    ],
+    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]],
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
@@ -910,10 +911,14 @@ def _validate_features(
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
     elif isinstance(features, dict):
-        # One needs to reset pd.Series object's indices as well
-        for key, value in features.copy().items():
-            if isinstance(value, pd.Series):
-                features[key] = value.reset_index(drop=True)
+        # Convert all array-like objects into a numpy array.
+        # This section was introduced due to an unexpected behavior when using
+        # a pandas Series with mixed indices as input.
+        # This way should handle all array-like objects correctly.
+        # See https://github.com/napari/napari/pull/4755 for more details.
+        features = {
+            key: np.array(value, copy=False) for key, value in features.items()
+        }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
