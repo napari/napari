@@ -1019,6 +1019,39 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
+    def set_geometry(self, left, top, width, height):
+        """Set the geometry of the widget
+
+        Parameters
+        ----------
+        left : int
+            X coordinate of the upper left border.
+        top : int
+            Y coordinate of the upper left border.
+        width : int
+            Width of the rectangle shape of the window.
+        height : int
+            Height of the rectangle shape of the window.
+        """
+        self._qt_window.setGeometry(left, top, width, height)
+
+    def geometry(self) -> Tuple[int, int, int, int]:
+        """Get the geometry of the widget
+
+        Returns
+        -------
+        left : int
+            X coordinate of the upper left border.
+        top : int
+            Y coordinate of the upper left border.
+        width : int
+            Width of the rectangle shape of the window.
+        height : int
+            Height of the rectangle shape of the window.
+        """
+        rect = self._qt_window.geometry()
+        return rect.left(), rect.top(), rect.width(), rect.height()
+
     def show(self, *, block=False):
         """Resize, show, and bring forward the window.
 

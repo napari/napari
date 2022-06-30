@@ -1,4 +1,6 @@
 import ast
+import sys
+from copy import deepcopy
 
 import pytest
 
@@ -37,7 +39,10 @@ def test_constants():
     assert Constant(False).eval() is False
     assert Constant(None).eval() is None
 
-    assert repr(Constant(1)) == 'Constant(value=1)'
+    if sys.version_info >= (3, 9):
+        assert repr(Constant(1)) == 'Constant(value=1)'
+    else:
+        assert repr(Constant(1)) == 'Constant(value=1, kind=None)'
 
     # only {None, str, bytes, bool, int, float} allowed
     with pytest.raises(TypeError):
@@ -202,3 +207,13 @@ def test_serdes(expr):
 def test_bad_serdes(expr):
     with pytest.raises(SyntaxError):
         parse_expression(expr)
+
+
+def test_deepcopy_expression():
+    deepcopy(parse_expression('1'))
+    deepcopy(parse_expression('1 > 2'))
+    deepcopy(parse_expression('1 & 2'))
+    deepcopy(parse_expression('1 or 2'))
+    deepcopy(parse_expression('not 1'))
+    deepcopy(parse_expression('~x'))
+    deepcopy(parse_expression('2 if x else 3'))
