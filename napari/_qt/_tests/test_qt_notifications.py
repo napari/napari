@@ -87,7 +87,9 @@ def test_notification_manager_via_gui(
 
 
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_show_notification_from_thread(mock_show, monkeypatch, qtbot):
+def test_show_notification_from_thread(
+    mock_show, monkeypatch, qtbot, clean_current
+):
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -117,7 +119,9 @@ def test_show_notification_from_thread(mock_show, monkeypatch, qtbot):
 
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_display(mock_show, severity, monkeypatch, qtbot):
+def test_notification_display(
+    mock_show, severity, monkeypatch, qtbot, clean_current
+):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
