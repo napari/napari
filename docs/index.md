@@ -194,8 +194,9 @@ napari.run()  # start the event loop and show viewer
 
 ## Features
 
-Check out the scripts in our `examples` folder to see some of the functionality
-we're developing!
+Check out the scripts in our
+[`examples` folder](https://github.com/napari/napari/tree/main/examples)
+to see some of the functionality we're developing!
 
 **napari** supports six main different layer types, `Image`, `Labels`, `Points`,
 `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type,
