@@ -273,6 +273,8 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer._dims_displayed):
                 scale[d] = downsample[i]
+            # TODO: downsample texture should be called when slicing/rather than in here
+            # so this mutation should go away.
             self.layer._transforms['tile2data'].scale = scale
             self._on_matrix_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
