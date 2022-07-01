@@ -1704,15 +1704,19 @@ class Points(Layer):
             size=request.size,
             out_of_slice_display=request.out_of_slice_display,
         )
-        data = request.data[np.ix_(indices, request.dims_displayed)]
+        data_index = np.ix_(indices, request.dims_displayed)
+        data = request.data[data_index]
         transform = request.data_to_world.set_slice(
             list(request.dims_displayed)
         )
+        # TODO: incorporate scale from _get_slice_data
+        size = request.size[data_index].mean(axis=1)
         return _LayerSliceResponse(
             request=request,
             data=data,
             data_to_world=transform,
             face_color=request.face_color[indices],
+            size=size,
         )
 
     def _set_view_slice(self):

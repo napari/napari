@@ -79,6 +79,7 @@ class _LayerSliceResponse:
     request: _LayerSliceRequest
     data: Any
     data_to_world: Transform
+    size: Optional[np.ndarray] = field(default=None, repr=False)  # for points
     face_color: Optional[np.ndarray] = field(
         default=None, repr=False
     )  # for points

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import itertools
+import logging
 import os
 import warnings
 from functools import lru_cache
@@ -75,6 +76,8 @@ if TYPE_CHECKING:
 
 PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
+
+LOGGER = logging.getLogger("napari.components.viewer_model")
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -345,6 +348,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _slice_layers_async(self) -> None:
         self._layer_slicer.slice_layers_async(self.layers, self.dims)
+
+    def _on_layer_set_view_slice(self, event) -> None:
+        layer = event.layer
+        LOGGER.debug('ViewerModel._on_layer_set_view_slice: %s', layer)
+        self._layer_slicer.slice_layers(
+            {layer: layer._make_slice_request(self.dims)}
+        )
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""

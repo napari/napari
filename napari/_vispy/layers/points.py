@@ -48,6 +48,7 @@ class VispyPointsLayer(VispyBaseLayer):
         LOGGER.debug('VispyPointsLayer._set_slice : %s', response.request)
         self.node._subvisuals[0].set_data(
             response.data[:, ::-1],
+            size=response.size,
             face_color=response.face_color,
         )
         self._master_transform.matrix = _prepare_transform(
