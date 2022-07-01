@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ..utils._dtype import normalize_dtype
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event
 from ..utils.status_messages import format_float
@@ -49,8 +50,9 @@ class IntensityVisualizationMixin:
         """Scale contrast limits range to data type if dtype is an integer,
         or use the current maximum data range otherwise.
         """
-        if np.issubdtype(self.dtype.type, np.integer):
-            info = np.iinfo(self.dtype)
+        dtype = normalize_dtype(self.dtype)
+        if np.issubdtype(dtype, np.integer):
+            info = np.iinfo(dtype)
             self.contrast_limits_range = (info.min, info.max)
         else:
             mode = mode or self._auto_contrast_source
