@@ -21,43 +21,127 @@ The separation of the python models from viewer GUI code allows:
 * napari has the option to move away from the rendering backend currently used
 * tests can easily be run headlessly
 
-## EventedModel
+## Events
 
-Users are able to interact with the napari viewer via both the python console
-and the GUI interface. This means that python models and qt objects
-need to communicate with each other. This is often achieved via the generic
-model base class `EventedModel`. This class inherits from pydantic `BaseModel`,
-provides type checking and coercion for fields and will emit events when
-fields change. There is usually one to one mapping between core python
-models and qt classes. These qt classes are instantiated with a reference to
-the python model, which gets updated directly when a field is changed via the
-GUI.
+Commonly, python models in napari are classes that store information about their
+state as an attribute and are the "source of ground truth". When these
+attributes are changed an "event" needs to be emitted such that relevant
+obserers of the model (such as other classes) can take the appropriate
+action. See [An Introduction to the Event Loop in napari](events/event_loop))
+for a little more background on events and the event-loop.
 
-A simple example of this in napari code is `Dims` class, looking specically at
-the `current_step` field, which specifies the slider position for each dims
-slider. Below is the napari code for this field, keeping only the code relevant
-for the example:
+One way this is achieved in napari is via getters and setters:
 
 ```python
-class Dims(EventedModel):
-    current_step: Tuple[int, ...] = ()
+from napari.utils.events import EmitterGroup
+
+class Weather:
+    """A simple model to track changes in the weather.
+
+    Parameters
+    ----------
+    temperature : float
+        Degrees in Fahrenheit.
+    humidity : float
+        Percent humidity
+    wind : float
+        Wind speed in mph
+    """
+    def __init__(self, temperature, humidity=70, wind=0):
+        self._temperature = temperature
+        self._humidity = humidity
+        self._wind = wind
+
+        # an `EmitterGroup` manages a set of `EventEmitters`
+        # we add one emitter for each attribute we'd like to track
+        self.events = EmitterGroup(
+            source=self, temperature=None, humidity=None, wind=None
+        )
+
+    # for each attribute, we create a `@property` getter/setter
+    # so that we can emit the appropriate event when that attribute
+    # is changed using the syntax: ``weather.attribute = new_value``
+    @property
+    def temperature(self):
+        """Degrees in Fahrenheit."""
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, value):
+        self._temperature = value
+        # emit the temperature "changed" event
+        self.events.temperature(value=value)
+
+    @property
+    def humidity(self):
+        """Percent humidity."""
+        return self._humidity
+
+    @humidity.setter
+    def humidity(self, value):
+        self._humidity = value
+        # emit the humidity "changed" event
+        self.events.humidity(value=value)
+
+    @property
+    def wind(self):
+        """Wind speed in mph."""
+        return self._wind
+
+    @wind.setter
+    def wind(self, value):
+        self._wind = value
+        # emit the wind "changed" event
+        self.events.wind(value=value)
 ```
 
-The `Dims` class inherits from the `EventedModel` and has the field
-`current_step` which is a tuple if ints.
-
-The matching qt class is `QtDims` which is instantiated with a reference to
-the `Dims` object, allowing direct updates if the field is changed via the GUI.
-We also connect the method `self._update_slider` such that it is called
-when the field `current_step` changes:
+Another object can then "listen" for changes in our weather model and register
+a callback function with the event emitter of the attribute they would like
+to watch:
 
 ```python
-class QtDims(QWidget):
+# create an instance of the model
+weather = Weather(temperature=72, humidity=65, wind=0)
 
-    def __init__(self, dims: Dims, parent=None):
+# define some callback that should respond to changes in the model
+def hurricane_watch(event):
+    if event.value > 74:
+        print("Hurricane! Evacuate!")
 
-      self.dims.events.current_step.connect(self._update_slider)
+# register our callback with the model
+weather.events.wind.connect(hurricane_watch)
+
+# now, everytime weather.wind is changed, hurricane_watch is called
+weather.wind = 90  # prints: "Hurricane! Evacuate!"
 ```
 
-Note napari layer models are not `EventedModel`s yet but there is intention
-to convert them in the future.
+This method is very customizable but requires a lot of boilerplate. The
+generic base model `EventedModel` was added to reduce this and
+"standardize" this change/emit pattern. The `EventedModel` provides the
+following features:
+
+* type validation and coersion on class instantiation and attribute assignment
+* event emission after successful attribute assignment
+
+Using `EventedModel` would reduce the above `weather` class code to:
+
+```python
+class weather(EventedModel):
+    """A simple model to track changes in the weather.
+
+    Parameters
+    ----------
+    temperature : float
+        Degrees in Fahrenheit.
+    humidity : float
+        Percent humidity
+    wind : float
+    """
+    temperature: float
+    humidity: float
+    wind: float
+```
+
+Currently most of the models in `napari/components/` are `EventedModels` but
+not the layer models although there is intention to convert these to
+`EventedModels` in the future.
