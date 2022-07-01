@@ -140,7 +140,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     _mouse_over_canvas: bool = False
 
-    # Need to use default factory because slicer is not copiable which
+    # Need to use default factory because slicer is not copyable which
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
 
@@ -158,9 +158,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
-
-        # One slicer for each viewer.
-        # self._layer_slicer = _LayerSlicer()
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
