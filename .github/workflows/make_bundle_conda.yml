@@ -233,7 +233,7 @@ jobs:
           mkdir -p ${CONDA_BLD_PATH}/noarch
 
       - name: Download local build artifacts (napari)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ${{ needs.conda-build.outputs.artifact-id }}
           path: ${{ env.CONDA_BLD_PATH }}/noarch
