@@ -1,3 +1,4 @@
+import logging
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
@@ -6,6 +7,8 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from scipy.stats import gmean
+
+from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
@@ -32,6 +35,8 @@ from ._points_utils import (
 )
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
+
+LOGGER = logging.getLogger("napari.layers.points")
 
 
 class Points(Layer):
@@ -1467,18 +1472,37 @@ class Points(Layer):
             values of 1 corresponds to points located in the slice, and values
             less than 1 correspond to points located in neighboring slices.
         """
+        return Points._get_slice_data(
+            data=self.data,
+            ndim=self.ndim,
+            dims_indices=dims_indices,
+            dims_not_displayed=self._dims_not_displayed,
+            size=self.size,
+            out_of_slice_display=self.out_of_slice_display,
+        )
+
+    @staticmethod
+    def _get_slice_data(
+        *,
+        data,
+        ndim,
+        dims_indices,
+        dims_not_displayed,
+        size,
+        out_of_slice_display,
+    ):
         # Get a list of the data for the points in this slice
-        not_disp = list(self._dims_not_displayed)
+        not_disp = list(dims_not_displayed)
         # We want a numpy array so we can use fancy indexing with the non-displayed
         # indices, but as dims_indices can (and often/always does) contain slice
         # objects, the array has dtype=object which is then very slow for the
         # arithmetic below. As Points._round_index is always False, we can safely
         # convert to float to get a major performance improvement.
         not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
-        if len(self.data) > 0:
-            if self.out_of_slice_display is True and self.ndim > 2:
-                distances = abs(self.data[:, not_disp] - not_disp_indices)
-                sizes = self.size[:, not_disp] / 2
+        if len(data) > 0:
+            if out_of_slice_display and ndim > 2:
+                distances = abs(data[:, not_disp] - not_disp_indices)
+                sizes = size[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
                 size_match = sizes[matches]
                 size_match[size_match == 0] = 1
@@ -1488,7 +1512,7 @@ class Points(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, scale
             else:
-                data = self.data[:, not_disp]
+                data = data[:, not_disp]
                 distances = np.abs(data - not_disp_indices)
                 matches = np.all(distances <= 0.5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
@@ -1667,6 +1691,26 @@ class Points(Layer):
             bounding_box=bounding_box,
         )
         return start_point, end_point
+
+    @staticmethod
+    def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
+        LOGGER.debug('Points._get_slice : %s', request)
+        slice_indices = Layer._get_slice_indices(request)
+        indices, _ = Points._get_slice_data(
+            data=request.data,
+            ndim=request.ndim,
+            dims_indices=slice_indices,
+            dims_not_displayed=request.dims_not_displayed,
+            size=request.size,
+            out_of_slice_display=request.out_of_slice_display,
+        )
+        data = request.data[np.ix_(indices, request.dims_displayed)]
+        transform = request.data_to_world.set_slice(
+            list(request.dims_displayed)
+        )
+        return _LayerSliceResponse(
+            request=request, data=data, data_to_world=transform
+        )
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""

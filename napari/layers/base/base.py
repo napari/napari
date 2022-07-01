@@ -64,11 +64,13 @@ class _LayerSliceRequest:
     point: Tuple[float, ...]
     dims_displayed: Tuple[int, ...]
     dims_not_displayed: Tuple[int, ...]
-    multiscale: bool
+    multiscale: bool  # image specific
     rgb: bool  # image specific
     data_level: int  # should be computed when slicing
     corner_pixels: np.ndarray  # 2xD where D=ndim, int
-    round_index: bool
+    round_index: bool  # used in Layer, True for points only
+    out_of_slice_display: bool  # for points, vectors
+    size: Optional[np.ndarray] = field(repr=False)  # for points
 
 
 @dataclass(frozen=True)
@@ -981,6 +983,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             data_level=getattr(self, 'data_level', 0),
             corner_pixels=self.corner_pixels,
             round_index=getattr(self, '_round_index', True),
+            out_of_slice_display=getattr(self, 'out_of_slice_display', False),
+            size=getattr(self, 'size', None),
         )
 
     @staticmethod

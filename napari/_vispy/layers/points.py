@@ -1,4 +1,8 @@
+import logging
+
 import numpy as np
+
+from napari.layers.base.base import _LayerSliceResponse
 
 from ...settings import get_settings
 from ...utils.colormaps.standardize_color import transform_color
@@ -6,7 +10,9 @@ from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES
 from ..utils.text import update_text
 from ..visuals.points import PointsVisual
-from .base import VispyBaseLayer
+from .base import VispyBaseLayer, _prepare_transform
+
+LOGGER = logging.getLogger("napari._vispy.layers.points")
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -37,6 +43,13 @@ class VispyPointsLayer(VispyBaseLayer):
         )
 
         self._on_data_change()
+
+    def _set_slice(self, response: _LayerSliceResponse) -> None:
+        LOGGER.debug('VispyPointsLayer._set_slice : %s', response.request)
+        self.node._subvisuals[0].set_data(response.data[:, ::-1])
+        self._master_transform.matrix = _prepare_transform(
+            response.data_to_world
+        )
 
     def _on_data_change(self):
         if len(self.layer._indices_view) > 0:
