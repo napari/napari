@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import skimage
 from skimage.transform import pyramid_gaussian
 
@@ -223,13 +224,20 @@ def test_interpolation():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer.interpolation == 'nearest'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'nearest'
+    assert layer.interpolation2d == 'nearest'
+    assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, multiscale=True, interpolation='bicubic')
-    assert layer.interpolation == 'bicubic'
+    layer = Image(data, multiscale=True, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'bicubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'bicubic'
 
-    layer.interpolation = 'bilinear'
-    assert layer.interpolation == 'bilinear'
+    layer.interpolation2d = 'bilinear'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'bilinear'
+    assert layer.interpolation2d == 'bilinear'
 
 
 def test_colormaps():

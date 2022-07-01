@@ -299,7 +299,7 @@ class Layer:
     ...
 
     @abstractmethod
-    def _make_slice_request(dims: Dims) -> _LayerSliceRequest:
+    def _make_slice_request(self, dims: Dims) -> _LayerSliceRequest:
         pass
 
     @abstractmethod
@@ -356,7 +356,7 @@ class _LayerSlicer:
         if self._task is not None:
             self._task.cancel()
         requests = {layer: layer._make_slice_request(dims) for layer in layers}
-        self._task = self._executor.submit(self._slice_layers, request)
+        self._task = self._executor.submit(self._slice_layers, requests)
         self._task.add_done_callback(self._on_slice_done)
 
     def slice_layers(self, requests: ViewerSliceRequest) -> ViewerSliceResponse:

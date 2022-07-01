@@ -1,10 +1,5 @@
-import numpy as np
-
 from ._labels_constants import Mode
-from ._labels_utils import (
-    interpolate_coordinates,
-    mouse_event_to_labels_coordinate,
-)
+from ._labels_utils import mouse_event_to_labels_coordinate
 
 
 def draw(layer, event):
@@ -26,57 +21,26 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
-    ndisplay = len(layer._dims_displayed)
     coordinates = mouse_event_to_labels_coordinate(layer, event)
-
-    # on press
     if layer._mode == Mode.ERASE:
         new_label = layer._background_label
     else:
         new_label = layer.selected_label
 
-    if coordinates is not None:
-        if layer._mode in [Mode.PAINT, Mode.ERASE]:
-            layer.paint(coordinates, new_label)
-        elif layer._mode == Mode.FILL:
-            layer.fill(coordinates, new_label)
-    else:  # still add an item to undo queue
-        # when dragging, if we start a drag outside the layer, we will
-        # incorrectly append to the previous history item. We create a
-        # dummy history item to prevent this.
-        dummy_indices = (np.zeros(shape=0, dtype=int),) * layer.data.ndim
-        layer._undo_history.append([(dummy_indices, [], [])])
+    # on press
+    with layer.block_history():
 
-    last_cursor_coord = coordinates
-    yield
-
-    layer._block_saving = True
-    # on move
-    while event.type == 'mouse_move':
-        coordinates = mouse_event_to_labels_coordinate(layer, event)
-        if coordinates is not None or last_cursor_coord is not None:
-            interp_coord = interpolate_coordinates(
-                last_cursor_coord, coordinates, layer.brush_size
-            )
-            for c in interp_coord:
-                if (
-                    ndisplay == 3
-                    and layer.data[tuple(np.round(c).astype(int))] == 0
-                ):
-                    continue
-                if layer._mode in [Mode.PAINT, Mode.ERASE]:
-                    layer.paint(c, new_label, refresh=False)
-                elif layer._mode == Mode.FILL:
-                    layer.fill(c, new_label, refresh=False)
-            layer.refresh()
-        last_cursor_coord = coordinates
+        layer._draw(new_label, coordinates, coordinates)
         yield
 
-    # on release
-    layer._block_saving = False
-    undo_item = layer._undo_history[-1]
-    if len(undo_item) == 1 and len(undo_item[0][0][0]) == 0:
-        layer._undo_history.pop()
+        last_cursor_coord = coordinates
+        # on move
+        while event.type == 'mouse_move':
+            coordinates = mouse_event_to_labels_coordinate(layer, event)
+            if coordinates is not None or last_cursor_coord is not None:
+                layer._draw(new_label, last_cursor_coord, coordinates)
+            last_cursor_coord = coordinates
+            yield
 
 
 def pick(layer, event):
