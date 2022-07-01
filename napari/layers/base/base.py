@@ -66,8 +66,8 @@ class _LayerSliceRequest:
     dims_not_displayed: Tuple[int, ...]
     multiscale: bool  # image specific
     rgb: bool  # image specific
-    data_level: int  # should be computed when slicing
-    corner_pixels: np.ndarray  # 2xD where D=ndim, int
+    data_level: int  # image specific, should be computed when slicing
+    corner_pixels: np.ndarray  # image specific, 2xD where D=ndim, int
     round_index: bool  # used in Layer, True for points only
     out_of_slice_display: bool  # for points, vectors
     size: Optional[np.ndarray] = field(repr=False)  # for points
