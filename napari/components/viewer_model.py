@@ -20,7 +20,7 @@ from typing import (
 
 import numpy as np
 from psygnal import throttled
-from pydantic import Extra, Field, validator
+from pydantic import Extra, Field, PrivateAttr, validator
 
 from .. import layers
 from ..errors import (
@@ -44,6 +44,7 @@ from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
+from ._layer_slicer import _LayerSlicer
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -138,6 +139,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     _mouse_over_canvas: bool = False
 
+    # Need to use default factory because slicer is not copiable which
+    # is required for default values.
+    _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
+
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
         self._ctx = create_context(self, max_depth=0)
@@ -152,6 +157,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+
+        # One slicer for each viewer.
+        # self._layer_slicer = _LayerSlicer()
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -180,7 +188,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
-        self.dims.events.current_step.connect(self._update_layers)
+        # Slider events trigger async slicing.
+        self.dims.events.current_step.connect(self._slice_layers_async)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
             throttled(self._update_status_bar_from_cursor, timeout=50)
@@ -335,6 +344,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
         self.cursor.position = position
+
+    def _slice_layers_async(self) -> None:
+        self._layer_slicer.slice_layers_async(self.layers, self.dims)
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""

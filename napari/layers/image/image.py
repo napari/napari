@@ -2,12 +2,16 @@
 """
 from __future__ import annotations
 
+import logging
 import types
 import warnings
 from typing import TYPE_CHECKING, List, Sequence, Union
 
 import numpy as np
 from scipy import ndimage as ndi
+
+from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
+from napari.utils.transforms.transforms import Affine
 
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
@@ -40,6 +44,8 @@ from ._image_utils import guess_multiscale, guess_rgb
 
 if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
+
+LOGGER = logging.getLogger("napari.layers.image")
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -476,15 +482,21 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self):
         """array: Shapes of each level of the multiscale or just of image."""
-        shapes = self.data.shapes if self.multiscale else [self.data.shape]
-        if self.rgb:
+        return Image._get_level_shapes(self.data, self.multiscale, self.rgb)
+
+    def _get_level_shapes(data, multiscale: bool, rgb: bool) -> np.ndarray:
+        shapes = data.shapes if multiscale else [data.shape]
+        if rgb:
             shapes = [s[:-1] for s in shapes]
         return np.array(shapes)
 
     @property
     def downsample_factors(self):
         """list: Downsample factors for each level of the multiscale."""
-        return np.divide(self.level_shapes[0], self.level_shapes)
+        return Image._get_downsample_factors(self.level_shapes)
+
+    def _get_downsample_factors(level_shapes) -> np.ndarray:
+        return np.divide(level_shapes[0], level_shapes)
 
     @property
     def iso_threshold(self):
@@ -659,6 +671,117 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         image = raw
         return image
+
+    @staticmethod
+    def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
+        LOGGER.debug('Image._get_slice : %s', request)
+
+        slice_indices = Layer._get_slice_indices(request)
+
+        full_transform = request.data_to_world
+        if request.multiscale:
+            data, tile_to_data = Image._get_slice_data_multi_scale(
+                slice_indices, request
+            )
+            full_transform = tile_to_data.compose(full_transform)
+        else:
+            data = Image._get_slice_data(slice_indices, request)
+
+        dims_displayed = list(request.dims_displayed)
+        transform = full_transform.set_slice(dims_displayed)
+        if request.ndisplay == 2:
+            transform = Image._offset_2d_image_transform(transform)
+
+        # TODO: expand dims of data if ndisplay is 3 and ndim is 2.
+
+        # TODO: downsample data if it exceeds GL texture max size.
+
+        return _LayerSliceResponse(
+            request=request,
+            data=data,
+            data_to_world=transform,
+        )
+
+    @staticmethod
+    def _get_slice_data(
+        slice_indices, request: _LayerSliceRequest
+    ) -> np.ndarray:
+        return np.asarray(request.data[slice_indices])
+
+    @staticmethod
+    def _get_slice_data_multi_scale(
+        slice_indices, request: _LayerSliceRequest
+    ) -> tuple[np.ndarray, Affine]:
+        if request.ndisplay == 3:
+            warnings.warn(
+                trans._(
+                    'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                    deferred=True,
+                ),
+                category=UserWarning,
+            )
+            level = len(request.data) - 1
+        else:
+            level = request.data_level
+
+        level_shapes = Image._get_level_shapes(
+            request.data, request.multiscale, request.rgb
+        )
+        downsample_factors = Image._get_downsample_factors(level_shapes)
+
+        indices = Image._get_downsampled_indices(
+            downsample_factors,
+            level_shapes,
+            slice_indices,
+            list(request.dims_not_displayed),
+            level,
+        )
+
+        scale = np.ones(request.ndim)
+        for d in request.dims_displayed:
+            scale[d] = downsample_factors[request.data_level][d]
+
+        # This only needs to be a ScaleTranslate but different types
+        # of transforms in a chain don't play nicely together right now.
+        tile_to_data = Affine(scale=scale)
+        if request.ndisplay == 2:
+            for d in request.dims_displayed:
+                indices[d] = slice(
+                    request.corner_pixels[0, d],
+                    request.corner_pixels[1, d],
+                    1,
+                )
+            tile_to_data.translate = (
+                request.corner_pixels[0] * tile_to_data.scale
+            )
+
+        data = np.asarray(request.data[level][tuple(indices)])
+
+        return data, tile_to_data
+
+    @staticmethod
+    def _get_downsampled_indices(
+        downsample_factors, level_shapes, indices, not_disp, level
+    ) -> np.ndarray:
+        indices = np.array(indices)
+        ds_indices = indices[not_disp] / downsample_factors[level, not_disp]
+        ds_indices = np.round(ds_indices.astype(float)).astype(int)
+        ds_indices = np.clip(ds_indices, 0, level_shapes[level, not_disp] - 1)
+        indices[not_disp] = ds_indices
+        return indices
+
+    @staticmethod
+    def _offset_2d_image_transform(transform: Affine) -> Affine:
+        # Perform pixel offset to shift origin from top left corner
+        # of pixel to center of pixel.
+        offset_matrix = transform.linear_matrix
+        offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
+        # Embed in full affine matrix
+        affine_offset = np.eye(3)
+        affine_offset[: len(offset), -1] = offset
+        # Post compose with original affine
+        transform_matrix = transform.affine_matrix @ affine_offset
+        return Affine(affine_matrix=transform_matrix)
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""

@@ -1,14 +1,19 @@
+import logging
 import warnings
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
+from napari.layers.base.base import _LayerSliceResponse
+
 from ...utils.translations import trans
 from ..utils.gl import fix_data_dtype, get_gl_extensions
 from ..visuals.image import Image as ImageNode
 from ..visuals.volume import Volume as VolumeNode
-from .base import VispyBaseLayer
+from .base import VispyBaseLayer, _prepare_transform
+
+LOGGER = logging.getLogger("napari._vispy.layers.image")
 
 
 class ImageLayerNode:
@@ -81,6 +86,31 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_display_change()
         self.reset()
         self._on_data_change()
+
+    def _set_slice(self, response: _LayerSliceResponse) -> None:
+        LOGGER.debug('VispyImageLayer._set_slice : %s', response.request)
+
+        data = fix_data_dtype(response.data)
+
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            response.request.ndisplay == 3
+            and not isinstance(self.node, VolumeNode)
+        ) or (
+            response.request.ndisplay == 2
+            and not isinstance(self.node, ImageNode)
+        ):
+            self._on_display_change(data)
+
+        self.node.set_data(data)
+
+        # TODO: If layer is not visible, then we should skip slicing altogether.
+        self.node.visible = self.layer.visible
+
+        # TODO: need to include tile2data from layer too.
+        self._master_transform.matrix = _prepare_transform(
+            response.data_to_world
+        )
 
     def _on_display_change(self, data=None):
         parent = self.node.parent

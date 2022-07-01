@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
+from napari.layers.base.base import _LayerSliceResponse
+from napari.utils.transforms.transforms import Affine
+
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
 
@@ -111,6 +114,10 @@ class VispyBaseLayer(ABC):
     def _on_refresh_change(self):
         self.node.update()
 
+    # @abstractmethod
+    def _set_slice(self, request: _LayerSliceResponse) -> None:
+        raise NotImplementedError()
+
     def _on_visible_change(self):
         self.node.visible = self.layer.visible
 
@@ -181,3 +188,18 @@ class VispyBaseLayer(ABC):
         disconnect_events(self.layer.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
+
+
+def _prepare_transform(transform: Affine) -> np.ndarray:
+    # convert NumPy axis ordering to VisPy axis ordering
+    # by reversing the axes order and flipping the linear
+    # matrix
+    translate = transform.translate[::-1]
+    matrix = transform.linear_matrix[::-1, ::-1].T
+
+    # Embed in the top left corner of a 4x4 affine matrix
+    affine_matrix = np.eye(4)
+    affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
+    affine_matrix[-1, : len(translate)] = translate
+
+    return affine_matrix

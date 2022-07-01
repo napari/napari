@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+
+from napari.utils.transforms.transforms import Transform
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
@@ -37,7 +41,41 @@ from ..utils.layer_utils import (
 from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
 
+if TYPE_CHECKING:
+    from napari.components import Dims
+
+
 Extent = namedtuple('Extent', 'data world step')
+
+# Configuration should be done elsewhere, but this is good enough for now.
+logging.basicConfig(
+    format='%(levelname)s : %(asctime)s : %(threadName)s : %(pathname)s:%(lineno)d : %(message)s',
+    level=logging.DEBUG,
+)
+LOGGER = logging.getLogger("napari.layers.base")
+
+
+@dataclass(frozen=True)
+class _LayerSliceRequest:
+    data: Any = field(repr=False)
+    data_to_world: Transform
+    ndim: int
+    ndisplay: int
+    point: Tuple[float, ...]
+    dims_displayed: Tuple[int, ...]
+    dims_not_displayed: Tuple[int, ...]
+    multiscale: bool
+    rgb: bool  # image specific
+    data_level: int  # should be computed when slicing
+    corner_pixels: np.ndarray  # 2xD where D=ndim, int
+    round_index: bool
+
+
+@dataclass(frozen=True)
+class _LayerSliceResponse:
+    request: _LayerSliceRequest
+    data: Any
+    data_to_world: Transform
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -919,6 +957,92 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             plane = ClippingPlane()
             plane.update(new_plane)
             self._experimental_clipping_planes.append(plane)
+
+    def _make_slice_request(self, dims: Dims) -> _LayerSliceRequest:
+        LOGGER.debug('Layer._make_slice_request: %s', dims)
+
+        # Simplification of _world_to_data_dims_displayed since
+        # ndim_other is guaranteed to be non-negative.
+        ndim_other = dims.ndim - self.ndim
+        self_order = [i - ndim_other for i in dims.order if i >= ndim_other]
+
+        return _LayerSliceRequest(
+            data=self.data,
+            # This is the composition of two affine transforms so is
+            # guaranteed to be affine too.
+            data_to_world=self._transforms[1:3].simplified,
+            ndim=self.ndim,
+            ndisplay=dims.ndisplay,
+            point=dims.point[ndim_other:],
+            dims_displayed=self_order[-dims.ndisplay :],
+            dims_not_displayed=self_order[: -dims.ndisplay],
+            multiscale=self.multiscale,
+            rgb=getattr(self, 'rgb', False),
+            data_level=getattr(self, 'data_level', 0),
+            corner_pixels=self.corner_pixels,
+            round_index=getattr(self, '_round_index', True),
+        )
+
+    @staticmethod
+    def _get_slice_indices(request: _LayerSliceRequest) -> tuple:
+        # Copied from _slice_indices and modified to not depend on slice
+        # state that we want to remove.
+        LOGGER.debug('Layer._get_slice_indices: %s', request)
+
+        # If all data is displayed, return full slices.
+        if request.ndim < request.ndisplay:
+            return (slice(None),) * request.ndim
+
+        world_to_data = request.data_to_world.inverse
+
+        Layer._check_displayed_mapped_subspace(request, world_to_data)
+
+        slice_inv_transform = world_to_data.set_slice(
+            request.dims_not_displayed
+        )
+
+        world_pts = [request.point[ax] for ax in request.dims_not_displayed]
+        data_pts = slice_inv_transform(world_pts)
+        if request.round_index:
+            # A round is taken to convert these values to slicing integers
+            data_pts = np.round(data_pts).astype(int)
+
+        indices = [slice(None)] * request.ndim
+        for i, ax in enumerate(request.dims_not_displayed):
+            indices[ax] = data_pts[i]
+
+        return tuple(indices)
+
+    @staticmethod
+    def _check_displayed_mapped_subspace(
+        request: _LayerSliceRequest, world_to_data: Affine
+    ):
+        # Subspace spanned by non displayed dimensions
+        non_displayed_subspace = np.zeros(request.ndim)
+        for d in request.dims_not_displayed:
+            non_displayed_subspace[d] = 1
+        # Map subspace through world to data transform, ignoring translation
+        world_to_data = Affine(affine_matrix=world_to_data.affine_matrix)
+        world_to_data.translate = None
+        mapped_nd_subspace = world_to_data(non_displayed_subspace)
+        # Look at displayed subspace
+        displayed_mapped_subspace = (
+            mapped_nd_subspace[d] for d in request.dims_displayed
+        )
+        # Check that displayed subspace is null
+        if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
+            warnings.warn(
+                trans._(
+                    'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
+                    deferred=True,
+                ),
+                category=UserWarning,
+            )
+
+    @staticmethod
+    @abstractmethod
+    def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
+        raise NotImplementedError()
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():
