@@ -1709,7 +1709,10 @@ class Points(Layer):
             list(request.dims_displayed)
         )
         return _LayerSliceResponse(
-            request=request, data=data, data_to_world=transform
+            request=request,
+            data=data,
+            data_to_world=transform,
+            face_color=request.face_color[indices],
         )
 
     def _set_view_slice(self):

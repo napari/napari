@@ -46,7 +46,10 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _set_slice(self, response: _LayerSliceResponse) -> None:
         LOGGER.debug('VispyPointsLayer._set_slice : %s', response.request)
-        self.node._subvisuals[0].set_data(response.data[:, ::-1])
+        self.node._subvisuals[0].set_data(
+            response.data[:, ::-1],
+            face_color=response.face_color,
+        )
         self._master_transform.matrix = _prepare_transform(
             response.data_to_world
         )

@@ -71,6 +71,7 @@ class _LayerSliceRequest:
     round_index: bool  # used in Layer, True for points only
     out_of_slice_display: bool  # for points, vectors
     size: Optional[np.ndarray] = field(repr=False)  # for points
+    face_color: Optional[np.ndarray] = field(repr=False)  # for points
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,9 @@ class _LayerSliceResponse:
     request: _LayerSliceRequest
     data: Any
     data_to_world: Transform
+    face_color: Optional[np.ndarray] = field(
+        default=None, repr=False
+    )  # for points
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -985,6 +989,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             round_index=getattr(self, '_round_index', True),
             out_of_slice_display=getattr(self, 'out_of_slice_display', False),
             size=getattr(self, 'size', None),
+            face_color=getattr(self, 'face_color', None),
         )
 
     @staticmethod
