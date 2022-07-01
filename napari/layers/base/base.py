@@ -1596,31 +1596,49 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.corner_pixels = corners
 
     def _get_source_str(self):
+        components = {}
 
         if self.source.reader_plugin:
             try:
-                layer_base = os.path.basename(self.source.path)
+                components['layer base'] = os.path.basename(self.source.path)
             except KeyError:
-                return ''
-            return trans._(
-                '{layer_base},  source: {source} (plugin)',
-                layer_base=layer_base,
-                source=self.source.reader_plugin,
-            )
+                components['layer_base'] = ''
+
+            components['source type'] = 'plugin'
+            components['source'] = self.source.reader_plugin
+            return components
+            # return trans._(
+            #     '{layer_base},  source: {source} (plugin)',
+            #     layer_base=layer_base,
+            #     source=self.source.reader_plugin,
+            # )
+
         elif self.source.sample:
-            return trans._(
-                '{layer_name}, source: {source} (sample)',
-                layer_name=self.name,
-                source=self.source.sample[0],
-            )
+            components['layer base'] = self.name
+            components['source type'] = 'sample'
+            components['source'] = self.source.sample[0]
+            return components
+            # return trans._(
+            #     '{layer_name}, source: {source} (sample)',
+            #     layer_name=self.name,
+            #     source=self.source.sample[0],
+            # )
         elif self.source.widget:
-            return trans._(
-                '{layer_name},  source: {source} (widget)',
-                layer_name=self.name,
-                source=self.source.widget._function.__name__,
-            )
+            components['layer base'] = self.name
+            components['source type'] = 'widget'
+            components['source'] = self.source.widget._function.__name__
+            return components
+            # return trans._(
+            #     '{layer_name},  source: {source} (widget)',
+            #     layer_name=self.name,
+            #     source=self.source.widget._function.__name__,
+            # )
         else:
-            return self.name
+            components['layer base'] = self.name
+            components['source type'] = ''
+            components['source'] = ''
+            return components
+            # return self.name
 
     def get_status(
         self,
@@ -1663,6 +1681,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             value = None
 
         source_info = self._get_source_str()
+        print(source_info)
 
         return generate_layer_status(source_info, position, value)
 
