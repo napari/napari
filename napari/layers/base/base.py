@@ -13,8 +13,6 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
-from napari.utils.transforms.transforms import Transform
-
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -58,18 +56,24 @@ LOGGER = logging.getLogger("napari.layers.base")
 @dataclass(frozen=True)
 class _LayerSliceRequest:
     data: Any = field(repr=False)
-    data_to_world: Transform
+    data_to_world: Affine = field(repr=False)
     ndim: int
     ndisplay: int
     point: Tuple[float, ...]
     dims_displayed: Tuple[int, ...]
     dims_not_displayed: Tuple[int, ...]
-    multiscale: bool  # image specific
-    rgb: bool  # image specific
-    data_level: int  # image specific, should be computed when slicing
-    corner_pixels: np.ndarray  # image specific, 2xD where D=ndim, int
-    round_index: bool  # used in Layer, True for points only
-    out_of_slice_display: bool  # for points, vectors
+    multiscale: bool = field(repr=False)  # image specific
+    rgb: bool = field(repr=False)  # image specific
+    data_level: int = field(
+        repr=False
+    )  # image specific, should be computed when slicing
+    corner_pixels: np.ndarray = field(
+        repr=False
+    )  # image specific, 2xD where D=ndim, int
+    round_index: bool = field(
+        repr=False
+    )  # used in Layer, True for points only
+    out_of_slice_display: bool = field(repr=False)  # for points, vectors
     size: Optional[np.ndarray] = field(repr=False)  # for points
     face_color: Optional[np.ndarray] = field(repr=False)  # for points
 
@@ -77,8 +81,8 @@ class _LayerSliceRequest:
 @dataclass(frozen=True)
 class _LayerSliceResponse:
     request: _LayerSliceRequest
-    data: Any
-    data_to_world: Transform
+    data: Any = field(repr=False)
+    data_to_world: Affine = field(repr=False)
     size: Optional[np.ndarray] = field(default=None, repr=False)  # for points
     face_color: Optional[np.ndarray] = field(
         default=None, repr=False
