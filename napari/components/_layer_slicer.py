@@ -18,6 +18,7 @@ class _LayerSlicer:
         self._task: Optional[Future[_ViewerSliceResponse]] = None
 
     def slice_layers_async(self, layers: LayerList, dims: Dims) -> None:
+        """This should only be called from the main thread."""
         if self._task is not None:
             self._task.cancel()
         requests = {layer: layer._make_slice_request(dims) for layer in layers}
@@ -27,12 +28,15 @@ class _LayerSlicer:
     def slice_layers(
         self, requests: _ViewerSliceRequest
     ) -> _ViewerSliceResponse:
+        """This can be called from the main or slicing thread."""
         return {
             layer: layer._get_slice(request)
             for layer, request in requests.items()
         }
 
     def _on_slice_done(self, task: Future[_ViewerSliceResponse]) -> None:
+        """This can be called from the main or slicing thread."""
         if task.cancelled():
             return
-        self.ready.emit(task.result())
+        result = task.result()
+        self.ready.emit(result)
