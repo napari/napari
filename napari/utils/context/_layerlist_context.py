@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING, Optional, Tuple
+
+from app_model.expressions import ContextKey
 
 from ...utils._dtype import normalize_dtype
 from ...utils.translations import trans
-from ._context_keys import ContextKey, ContextNamespace
+from ._context_keys import ContextNamespace
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
@@ -40,7 +43,7 @@ def _only_img(s: LayerSel) -> bool:
 
 
 def _n_selected_imgs(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "image")
+    return sum(x._type_string == "image" for x in s)
 
 
 def _only_labels(s: LayerSel) -> bool:
@@ -48,7 +51,7 @@ def _only_labels(s: LayerSel) -> bool:
 
 
 def _n_selected_labels(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "labels")
+    return sum(x._type_string == "labels" for x in s)
 
 
 def _only_points(s: LayerSel) -> bool:
@@ -56,7 +59,7 @@ def _only_points(s: LayerSel) -> bool:
 
 
 def _n_selected_points(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "labels")
+    return sum(x._type_string == "labels" for x in s)
 
 
 def _only_shapes(s: LayerSel) -> bool:
@@ -64,7 +67,7 @@ def _only_shapes(s: LayerSel) -> bool:
 
 
 def _n_selected_shapes(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "shapes")
+    return sum(x._type_string == "shapes" for x in s)
 
 
 def _only_surface(s: LayerSel) -> bool:
@@ -72,7 +75,7 @@ def _only_surface(s: LayerSel) -> bool:
 
 
 def _n_selected_surfaces(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "surface")
+    return sum(x._type_string == "surface" for x in s)
 
 
 def _only_vectors(s: LayerSel) -> bool:
@@ -80,7 +83,7 @@ def _only_vectors(s: LayerSel) -> bool:
 
 
 def _n_selected_vectors(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "vectors")
+    return sum(x._type_string == "vectors" for x in s)
 
 
 def _only_tracks(s: LayerSel) -> bool:
@@ -88,7 +91,7 @@ def _only_tracks(s: LayerSel) -> bool:
 
 
 def _n_selected_tracks(s: LayerSel) -> int:
-    return sum(1 for x in s if x._type_string == "tracks")
+    return sum(x._type_string == "tracks" for x in s)
 
 
 def _active_type(s: LayerSel) -> Optional[str]:
@@ -110,10 +113,8 @@ def _same_shape(s: LayerSel) -> bool:
 def _active_dtype(s: LayerSel) -> DTypeLike:
     dtype = None
     if s.active:
-        try:
+        with contextlib.suppress(AttributeError):
             dtype = normalize_dtype(s.active.data.dtype).__name__
-        except AttributeError:
-            pass
     return dtype
 
 
