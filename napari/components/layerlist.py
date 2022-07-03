@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
-from .._app.context import create_context
-from .._app.context._layerlist_context import LayerListContextKeys
 from ..layers import Layer
 from ..layers.image.image import _ImageBase
 from ..utils.events.containers import SelectableEventedList
@@ -64,6 +62,10 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+
+        from .._app.context import create_context
+        from .._app.context._layerlist_context import LayerListContextKeys
+
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
             self._ctx_keys = LayerListContextKeys(self._ctx)

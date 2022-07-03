@@ -6,6 +6,7 @@ on a layer in the LayerList.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING, List
 
 from app_model.types import Action
@@ -127,35 +128,36 @@ LAYER_ACTIONS: List[Action] = [
     ),
 ]
 
+from ...layers import _layer_actions
 
-# for _dtype in (
-#     'int8',
-#     'int16',
-#     'int32',
-#     'int64',
-#     'uint8',
-#     'uint16',
-#     'uint32',
-#     'uint64',
-# ):
-#     LAYER_ACTIONS.append(
-#         Action(
-#             id=f'napari:convert_to_{_dtype}',
-#             title=trans._('Convert to {dtype}', dtype=_dtype),
-#             callback=partial('napari.layers._layer_actions:_convert_dtype', mode=_dtype),
-#             enablement=(_only_labels & (LLCK.active_layer_dtype != _dtype)),
-#             menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
-#         )
-#     )
+for _dtype in (
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+):
+    LAYER_ACTIONS.append(
+        Action(
+            id=f'napari:convert_to_{_dtype}',
+            title=trans._('Convert to {dtype}', dtype=_dtype),
+            callback=partial(_layer_actions._convert_dtype, mode=_dtype),
+            enablement=(_only_labels & (LLCK.active_layer_dtype != _dtype)),
+            menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
+        )
+    )
 
-# _image_is_3d = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
-# for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
-#     LAYER_ACTIONS.append(
-#         Action(
-#             id=f'napari:{mode}_projection',
-#             title=trans._('{mode} projection', mode=mode.title()),
-#             callback=partial('napari.layers._layer_actions:_project', mode=mode),
-#             enablement=_image_is_3d,
-#             menus=[{'id': MenuId.LAYERS_PROJECT}],
-#         )
-#     )
+_image_is_3d = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
+for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
+    LAYER_ACTIONS.append(
+        Action(
+            id=f'napari:{mode}_projection',
+            title=trans._('{mode} projection', mode=mode.title()),
+            callback=partial(_layer_actions._project, mode=mode),
+            enablement=_image_is_3d,
+            menus=[{'id': MenuId.LAYERS_PROJECT}],
+        )
+    )

@@ -99,7 +99,7 @@ def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
 
 
-@inject_napari_dependencies
+# @inject_napari_dependencies
 def _convert_dtype(ll: LayerList, mode='int64'):
     if not (layer := ll.selection.active):
         return
