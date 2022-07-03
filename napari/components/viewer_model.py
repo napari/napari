@@ -23,6 +23,7 @@ from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
+from .._app.context import Context, create_context
 from ..errors import (
     MultipleReaderError,
     NoAvailableReaderError,
@@ -36,7 +37,6 @@ from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument

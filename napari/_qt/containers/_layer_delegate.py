@@ -43,7 +43,7 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from ..._app._menus import MenuId
-from ...utils.context import get_context
+from ..._app.context import get_context
 from ..qt_resources import QColoredSVGIcon
 from ._base_item_model import ItemRole
 from .qt_layer_model import ThumbnailRole

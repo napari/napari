@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from .._app.context import create_context
+from .._app.context._layerlist_context import LayerListContextKeys
 from ..layers import Layer
 from ..layers.image.image import _ImageBase
-from ..utils.context import create_context
-from ..utils.context._layerlist_context import LayerListContextKeys
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
