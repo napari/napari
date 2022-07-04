@@ -734,8 +734,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if request.ndisplay == 2:
             transform = Image._offset_2d_image_transform(transform)
 
-        # TODO: expand dims of data if ndisplay is 3 and ndim is 2.
-
         # TODO: downsample data if it exceeds GL texture max size.
 
         return _LayerSliceResponse(
