@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import Anchor
+from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -229,12 +230,12 @@ def test_empty_layer_with_text_property_choices():
         text=text_kwargs,
     )
     assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
 
     # add a shape and check that the appropriate text value was added
     layer.add(np.random.random((1, 4, 2)))
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
 
 
 def test_empty_layer_with_text_formatted():
@@ -299,7 +300,7 @@ def test_text_from_property_fstring(properties):
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {shape_type}',
-        'color': [0, 0, 0, 1],
+        'color': ConstantColorEncoding(constant=[0, 0, 0, 1]),
         'rotation': 10,
         'translation': [5, 5],
         'anchor': Anchor.UPPER_LEFT,
@@ -2153,3 +2154,15 @@ def test_world_data_extent():
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_set_data_3d():
+    """Test for reproduce https://github.com/napari/napari/issues/4527"""
+    lines = [
+        np.array([[0, 0, 0], [500, 0, 0]]),
+        np.array([[0, 0, 0], [0, 300, 0]]),
+        np.array([[0, 0, 0], [0, 0, 200]]),
+    ]
+    shapes = Shapes(lines, shape_type='line')
+    shapes._ndisplay = 3
+    shapes.data = lines

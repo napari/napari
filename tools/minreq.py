@@ -10,7 +10,6 @@ other than '1'.
 """
 
 import os
-import sys
 from configparser import ConfigParser
 
 
@@ -18,13 +17,6 @@ def pin_config_minimum_requirements(config_filename):
     # read it with configparser
     config = ConfigParser()
     config.read(config_filename)
-
-    if 'numpy>=1.20' in config['options.extras_require']:
-        sys.exit('please restore meshzoo install in minreq.py, ')
-    else:
-        config['options.extras_require']['testing'] = config[
-            'options.extras_require'
-        ]['testing'].replace('meshzoo', '')
 
     # swap out >= requirements for ==
     config['options']['install_requires'] = config['options'][

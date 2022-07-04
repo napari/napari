@@ -28,9 +28,9 @@ def hub_plugin_info(
     ----------
     name : str
         name of the package
-    min_dev_statur : int, optional
+    min_dev_status : int, optional
         Development status. Default is 3.
-    conda_forge: bool, optional
+    conda_forge : bool, optional
         Check if package is available in conda-forge. Default is True.
 
     Returns
@@ -55,9 +55,12 @@ def hub_plugin_info(
         try:
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
-                if version in anaconda_info.get("versions", []):
-                    is_available_in_conda_forge = True
+                versions = anaconda_info.get("versions", [])
+                if versions:
+                    if version not in versions:
+                        version = versions[-1]
 
+                    is_available_in_conda_forge = True
         except error.HTTPError:
             pass
 

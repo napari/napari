@@ -89,36 +89,54 @@ class Installer(QObject):
         installer: InstallerTypes = "pip",
     ):
         process = QProcess()
-        if installer != "pip":
-            process.setProgram(installer)
-        else:
-            process.setProgram(self._sys_executable_or_bundled_python())
-
         process.setProcessChannelMode(QProcess.MergedChannels)
         process.readyReadStandardOutput.connect(
             lambda process=process: self._on_stdout_ready(process)
         )
+        env = QProcessEnvironment.systemEnvironment()
 
-        # setup process path
-        env = QProcessEnvironment()
-        combined_paths = os.pathsep.join(
-            [user_site_packages(), env.systemEnvironment().value("PYTHONPATH")]
-        )
-        env.insert("PYTHONPATH", combined_paths)
-        # use path of parent process
-        env.insert(
-            "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
-        )
+        if installer == "pip":
+            process.setProgram(self._sys_executable_or_bundled_python())
+            # patch process path
+            combined_paths = os.pathsep.join(
+                [
+                    user_site_packages(),
+                    env.systemEnvironment().value("PYTHONPATH"),
+                ]
+            )
+            env.insert("PYTHONPATH", combined_paths)
+        else:
+            process.setProgram(installer)
 
-        # workaround https://github.com/napari/napari/issues/4247
-        if (
-            installer == "mamba"
-            and os.name == "nt"
-            and not QProcessEnvironment.systemEnvironment().contains("TEMP")
-        ):
-            temp = gettempdir()
-            env.insert("TMP", temp)
-            env.insert("TEMP", temp)
+        if installer == "mamba":
+            from ..._version import version_tuple
+
+            # To avoid napari version changing when installing a plugin, we
+            # add a pin to the current napari version, that way we can
+            # restrict any changes to the actual napari application.
+            # Conda/mamba also pin python by default, so we effectively
+            # constrain python and napari versions from changing, when
+            # installing plugins inside the constructor bundled application.
+            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
+            napari_version = ".".join(str(v) for v in version_tuple[:3])
+            if env.contains("CONDA_PINNED_PACKAGES"):
+                # str delimiter is '&'
+                system_pins = f"&{env.value('CONDA_PINNED_PACKAGES')}"
+            else:
+                system_pins = ""
+            env.insert(
+                "CONDA_PINNED_PACKAGES",
+                f"napari={napari_version}{system_pins}",
+            )
+            if os.name == "nt":
+                # workaround https://github.com/napari/napari/issues/4247, 4484
+                if not env.contains("TEMP"):
+                    temp = gettempdir()
+                    env.insert("TMP", temp)
+                    env.insert("TEMP", temp)
+                if not env.contains("USERPROFILE"):
+                    env.insert("HOME", os.path.expanduser("~"))
+                    env.insert("USERPROFILE", os.path.expanduser("~"))
 
         process.setProcessEnvironment(env)
         self.set_output_widget(self._output_widget)
@@ -199,21 +217,8 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         installer = installer or self._installer_type
-        process_environment = QProcessEnvironment.systemEnvironment()
+        process = self._create_process(installer)
         if installer != "pip":
-            from ..._version import version_tuple
-
-            # To avoid napari version changing when installing a plugin, we
-            # add a pin to the current napari version, that way we can
-            # restrict any changes to the actual napari application.
-            # Conda/mamba also pin python by default, so we effectively
-            # constrain python and napari versions from changing, when
-            # installing plugins inside the constructor bundled application.
-            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
-            napari_version = ".".join(str(v) for v in version_tuple[:3])
-            process_environment.insert(
-                "CONDA_PINNED_PACKAGES", f"napari={napari_version}"
-            )
             cmd = [
                 'install',
                 '-y',
@@ -236,8 +241,6 @@ class Installer(QObject):
                 user_plugin_dir(),
             ]
 
-        process = self._create_process(installer)
-        process.setProcessEnvironment(process_environment)
         process.setArguments(cmd + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
@@ -363,8 +366,7 @@ class PluginListItem(QFrame):
 
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
-        if npe_version != 1:
-            self._handle_npe2_plugin()
+        self._handle_npe2_plugin(npe_version)
 
         if installed:
             self.enabled_checkbox.show()
@@ -375,11 +377,17 @@ class PluginListItem(QFrame):
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
 
-    def _handle_npe2_plugin(self):
+    def _handle_npe2_plugin(self, npe_version):
+        if npe_version == 1:
+            return
+        opacity = 0.4 if npe_version == 'shim' else 1
+        lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
         npe2_icon = QLabel(self)
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
-        npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
-        self.row1.insertWidget(2, QLabel('npe2'))
+        npe2_icon.setPixmap(
+            icon.colored(color='#33F0FF', opacity=opacity).pixmap(20, 20)
+        )
+        self.row1.insertWidget(2, QLabel(lbl))
         self.row1.insertWidget(2, npe2_icon)
 
     def _get_dialog(self) -> QDialog:
@@ -518,7 +526,7 @@ class PluginListItem(QFrame):
             return
 
         for npe1_name, _, distname in plugin_manager.iter_available():
-            if distname and (distname == plugin_name):
+            if distname and (normalized_name(distname) == plugin_name):
                 plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
@@ -557,20 +565,18 @@ class QPluginList(QListWidget):
         enabled=True,
         npe_version=1,
     ):
+        pkg_name = project_info.name
         # don't add duplicates
-        if (
-            self.findItems(project_info.name, Qt.MatchFixedString)
-            and not plugin_name
-        ):
+        if self.findItems(pkg_name, Qt.MatchFixedString) and not plugin_name:
             return
 
         # including summary here for sake of filtering below.
-        searchable_text = project_info.name + " " + project_info.summary
-        item = QListWidgetItem(searchable_text, parent=self)
+        searchable_text = f"{pkg_name} {project_info.summary}"
+        item = QListWidgetItem(searchable_text, self)
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(
-            package_name=project_info.name,
+            package_name=pkg_name,
             version=project_info.version,
             url=project_info.home_page,
             summary=project_info.summary,
@@ -596,17 +602,14 @@ class QPluginList(QListWidget):
             )
         else:
             widg.help_button.setVisible(False)
-
         widg.action_button.clicked.connect(
-            lambda: self.handle_action(item, project_info.name, action_name)
+            lambda: self.handle_action(item, pkg_name, action_name)
         )
         widg.update_btn.clicked.connect(
-            lambda: self.handle_action(
-                item, project_info.name, "install", update=True
-            )
+            lambda: self.handle_action(item, pkg_name, "install", update=True)
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.handle_action(item, project_info.name, "cancel")
+            lambda: self.handle_action(item, pkg_name, "cancel")
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
@@ -635,6 +638,9 @@ class QPluginList(QListWidget):
 
         if action_name == "install":
             if update:
+                if hasattr(item, 'latest_version'):
+                    pkg_name += f"=={item.latest_version}"
+
                 widget.set_busy(trans._("updating..."), update)
                 widget.action_button.setDisabled(True)
             else:
@@ -655,8 +661,11 @@ class QPluginList(QListWidget):
             widget.set_busy(trans._("cancelling..."), update)
             method((pkg_name,))
 
-    @Slot(PackageMetadata)
-    def tag_outdated(self, project_info: PackageMetadata):
+    @Slot(PackageMetadata, bool)
+    def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
+        if not is_available:
+            return
+
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             current = item.version
             latest = project_info.version
@@ -667,6 +676,7 @@ class QPluginList(QListWidget):
                 continue
 
             item.outdated = True
+            item.latest_version = latest
             widg = self.itemWidget(item)
             widg.update_btn.setVisible(True)
             widg.update_btn.setText(
@@ -803,7 +813,9 @@ class QtPluginDialog(QDialog):
             if distname in self.already_installed or distname == 'napari':
                 continue
             enabled = not pm2.is_disabled(manifest.name)
-            _add_to_installed(distname, enabled, npe_version=2)
+            # if it's an Npe1 adaptor, call it v1
+            npev = 'shim' if manifest.npe1_shim else 2
+            _add_to_installed(distname, enabled, npe_version=npev)
 
         for (
             plugin_name,
@@ -813,7 +825,7 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
-            if distname in self.already_installed:
+            if normalized_name(distname or '') in self.already_installed:
                 continue
             _add_to_installed(
                 distname, not plugin_manager.is_blocked(plugin_name)
@@ -998,7 +1010,7 @@ class QtPluginDialog(QDialog):
     def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
         project_info, is_available = data
         if project_info.name in self.already_installed:
-            self.installed_list.tag_outdated(project_info)
+            self.installed_list.tag_outdated(project_info, is_available)
         else:
             self.available_list.addItem(project_info)
             if not is_available:

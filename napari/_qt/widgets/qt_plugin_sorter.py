@@ -172,9 +172,7 @@ class QtHookImplementationListWidget(QListWidget):
         self.setAcceptDrops(True)
         self.setSpacing(1)
         self.setMinimumHeight(1)
-        self.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
-        )
+        self.setMaximumHeight(80)
         self.order_changed.connect(self.permute_hook)
         self.hook_caller: Optional[HookCaller] = None
         self.set_hook_caller(hook_caller)
@@ -209,7 +207,7 @@ class QtHookImplementationListWidget(QListWidget):
         hook_implementation : HookImplementation
             The hook implementation object to add to the list.
         """
-        item = QListWidgetItem(parent=self)
+        item = QListWidgetItem(self)
         item.hook_implementation = hook_implementation
         self.addItem(item)
         widg = ImplementationListItem(item, parent=self)

@@ -72,7 +72,7 @@ def layer_source(**source_kwargs):
 
     Parameters
     ----------
-    **source_kwargs :
+    **source_kwargs
         keys/values should be valid parameters for :class:`Source`.
 
     Examples

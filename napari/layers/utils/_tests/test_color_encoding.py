@@ -1,15 +1,14 @@
-import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils._color_encoding import (
-    ColorArray,
+from napari._tests.utils import assert_colors_equal
+from napari.layers.utils.color_encoding import (
+    ColorEncoding,
     ConstantColorEncoding,
     DirectColorEncoding,
     ManualColorEncoding,
     NominalColorEncoding,
     QuantitativeColorEncoding,
-    validate_color_encoding,
 )
 
 
@@ -177,11 +176,11 @@ def test_quantitative_with_missing_feature(features):
         encoding(features)
 
 
-def test_validate_from_string():
-    argument = 'class'
-    expected = DirectColorEncoding(feature=argument)
+def test_validate_from_named_color():
+    argument = 'red'
+    expected = ConstantColorEncoding(constant=argument)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -190,7 +189,7 @@ def test_validate_from_sequence():
     argument = ['red', 'green', 'cyan']
     expected = ManualColorEncoding(array=argument)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -200,7 +199,7 @@ def test_validate_from_constant_dict():
     argument = {'constant': constant}
     expected = ConstantColorEncoding(constant=constant)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -211,7 +210,7 @@ def test_validate_from_manual_dict():
     argument = {'array': array, 'default': default}
     expected = ManualColorEncoding(array=array, default=default)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -221,7 +220,7 @@ def test_validate_from_direct_dict():
     argument = {'feature': feature}
     expected = DirectColorEncoding(feature=feature)
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -235,7 +234,7 @@ def test_validate_from_nominal_dict():
         colormap=colormap,
     )
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
 
@@ -255,12 +254,6 @@ def test_validate_from_quantitative_dict(features):
         contrast_limits=contrast_limits,
     )
 
-    actual = validate_color_encoding(argument)
+    actual = ColorEncoding.validate(argument)
 
     assert actual == expected
-
-
-def assert_colors_equal(actual, expected):
-    actual_array = ColorArray.validate_type(actual)
-    expected_array = ColorArray.validate_type(expected)
-    np.testing.assert_array_equal(actual_array, expected_array)

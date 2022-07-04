@@ -4,6 +4,7 @@ default_shortcuts = {
     'napari:toggle_ndisplay': ['Control-Y'],
     'napari:toggle_theme': ['Control-Shift-T'],
     'napari:reset_view': ['Control-R'],
+    'napari:show_shortcuts': ['Control-Alt-/'],
     'napari:increment_dims_left': ['Left'],
     'napari:increment_dims_right': ['Right'],
     'napari:focus_axes_up': ['Alt-Up'],

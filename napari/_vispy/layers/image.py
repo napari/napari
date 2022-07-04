@@ -59,7 +59,12 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(
             self._on_contrast_limits_change
@@ -145,7 +150,11 @@ class VispyImageLayer(VispyBaseLayer):
         node.update()
 
     def _on_interpolation_change(self):
-        self.node.interpolation = self.layer.interpolation
+        self.node.interpolation = (
+            self.layer.interpolation2d
+            if self.layer._ndisplay == 2
+            else self.layer.interpolation3d
+        )
 
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):
@@ -162,6 +171,9 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
+        if isinstance(self.node, VolumeNode):
+            self.node.mip_cutoff = self.node._texture.clim_normalized[0]
+            self.node.minip_cutoff = self.node._texture.clim_normalized[1]
 
     def _on_gamma_change(self):
         if len(self.node.shared_program.frag._set_items) > 0:

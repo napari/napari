@@ -52,7 +52,7 @@ viewer = napari.view_surface(surface)  # add the surface
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="A viewer with a surface")
 ```
 
 ```{code-cell} python

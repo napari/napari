@@ -162,7 +162,7 @@ class Viewer(ViewerModel):
 
         Returns
         -------
-        int :
+        int
             number of viewer closed.
 
         """

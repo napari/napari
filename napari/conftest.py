@@ -1,3 +1,35 @@
+"""
+
+Notes for using the plugin-related fixtures here:
+
+1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+   manager instance with a discovery-deficient plugin manager.  No plugins should be
+   discovered in tests without explicit registration.
+2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
+   added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
+   global mock npe2 plugin manager)
+3. wherever *additional* plugins or contributions need to be added, use the `tmp_plugin`
+   fixture, and add additional contributions _within_ the test (not in the fixture):
+    ```python
+    def test_something(tmp_plugin):
+        @tmp_plugin.contribute.reader(filname_patterns=["*.ext"])
+        def f(path): ...
+
+        # the plugin name can be accessed at:
+        tmp_plugin.name
+    ```
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create
+   another one.
+   ```python
+   new_plugin = tmp_plugin.spawn(register=True)
+
+   @new_plugin.contribute.reader(filename_patterns=["*.tiff"])
+   def get_reader(path):
+       ...
+   ```
+"""
+from __future__ import annotations
+
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
@@ -7,14 +39,15 @@ import os
 from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
 import pooch
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import DynamicPlugin, PluginManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -47,6 +80,10 @@ except ImportError:
             return path
 
 
+if TYPE_CHECKING:
+    from npe2._pytest_plugin import TestPluginManager
+
+
 def pytest_addoption(parser):
     """Add napari specific command line options.
 
@@ -61,6 +98,12 @@ def pytest_addoption(parser):
 
     parser.addoption(
         "--async_only",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
+    )
+    parser.addoption(
+        "--skip_examples",
         action="store_true",
         default=False,
         help="run only asynchronous tests",
@@ -323,6 +366,15 @@ def skip_async_only(request):
         pytest.skip("not running with --async_only")
 
 
+@pytest.fixture(autouse=True)
+def skip_examples(request):
+    """Skip examples test if ."""
+    if request.node.get_closest_marker(
+        'examples'
+    ) and request.config.getoption("--skip_examples"):
+        pytest.skip("running with --skip_examples")
+
+
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
@@ -339,6 +391,11 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
 
 @pytest.fixture(autouse=True)
 def fresh_settings(monkeypatch):
+    """This fixture ensures that default settings are used for every test.
+
+    and ensures that changes to settings in a test are reverted, and never
+    saved to disk.
+    """
     from napari import settings
     from napari.settings import NapariSettings
 
@@ -413,56 +470,82 @@ def _no_error_reports():
         yield
 
 
-@pytest.fixture
-def tmp_reader():
-    """Return a temporary reader registered with the given plugin manager."""
-
-    def make_plugin(
-        pm,
-        name,
-        filename_patterns=['*.fake'],
-    ):
-        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
-
-        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
-        def read_func(pth):
-            ...
-
-        reader_plugin.register()
-        return reader_plugin
-
-    return make_plugin
+@pytest.fixture(autouse=True)
+def _npe2pm(npe2pm):
+    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    return npe2pm
 
 
 @pytest.fixture
-def mock_npe2_pm():
-    """Mock plugin manager with no registered plugins."""
-    mock_reg = MagicMock()
-    with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager(reg=mock_reg)
-    with patch('npe2.PluginManager.instance', return_value=_pm):
-        yield _pm
+def builtins(_npe2pm: TestPluginManager):
+    mf_path = str(Path(__file__).parent / 'builtins.yaml')
+    with _npe2pm.tmp_plugin(manifest=mf_path) as plugin:
+        yield plugin
+
+
+@pytest.fixture
+def tmp_plugin(_npe2pm: TestPluginManager):
+    with _npe2pm.tmp_plugin() as plugin:
+        yield plugin
+
+
+def _event_check(instance):
+    def _prepare_check(name, no_event_):
+        def check(instance, no_event=no_event_):
+            if name in no_event:
+                assert not hasattr(
+                    instance.events, name
+                ), f"event {name} defined"
+            else:
+                assert hasattr(
+                    instance.events, name
+                ), f"event {name} not defined"
+
+        return check
+
+    no_event_set = set()
+    if isinstance(instance, tuple):
+        no_event_set = instance[1]
+        instance = instance[0]
+
+    for name, value in instance.__class__.__dict__.items():
+        if isinstance(value, property) and name[0] != '_':
+            yield _prepare_check(name, no_event_set), instance, name
+
+
+def pytest_generate_tests(metafunc):
+    """Generate separate test for each test toc check if all events are defined."""
+    if 'event_define_check' in metafunc.fixturenames:
+        res = []
+        ids = []
+
+        for obj in metafunc.cls.get_objects():
+            for check, instance, name in _event_check(obj):
+                res.append((check, instance))
+                ids.append(f"{name}-{instance}")
+
+        metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
 
 def pytest_collection_modifyitems(session, config, items):
     test_order_prefix = [
-        "napari/utils",
-        "napari/layers",
-        "napari/components",
-        "napari/settings",
-        "napari/plugins",
-        "napari/_vispy",
-        "napari/_qt",
-        "napari/qt",
-        "napari/_tests",
+        os.path.join("napari", "utils"),
+        os.path.join("napari", "layers"),
+        os.path.join("napari", "components"),
+        os.path.join("napari", "settings"),
+        os.path.join("napari", "plugins"),
+        os.path.join("napari", "_vispy"),
+        os.path.join("napari", "_qt"),
+        os.path.join("napari", "qt"),
+        os.path.join("napari", "_tests"),
+        os.path.join("napari", "_tests", "test_examples.py"),
     ]
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
-                test_order[i].append(item)
-                break
-        else:
-            test_order[-1].append(item)
+                index = i
+        test_order[index].append(item)
     items[:] = list(chain(*test_order))

@@ -807,7 +807,7 @@ class _FeatureTable:
         if size < current_size:
             self.remove(range(size, current_size))
         elif size > current_size:
-            to_append = pd.concat([self._defaults] * (size - current_size))
+            to_append = self._defaults.iloc[np.zeros(size - current_size)]
             self.append(to_append)
 
     def append(self, to_append: pd.DataFrame) -> None:
@@ -828,11 +828,6 @@ class _FeatureTable:
         indices : Any
             The indices of the rows to remove. Must be usable as the labels parameter
             to pandas.DataFrame.drop.
-
-        Returns
-        -------
-        pd.DataFrame
-            The resulting features table, which contain copies of the existing data.
         """
         self._values = self._values.drop(labels=indices, axis=0).reset_index(
             drop=True
@@ -912,6 +907,15 @@ def _validate_features(
     """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
+    elif isinstance(features, dict):
+        # Convert all array-like objects into a numpy array.
+        # This section was introduced due to an unexpected behavior when using
+        # a pandas Series with mixed indices as input.
+        # This way should handle all array-like objects correctly.
+        # See https://github.com/napari/napari/pull/4755 for more details.
+        features = {
+            key: np.array(value, copy=False) for key, value in features.items()
+        }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 

@@ -120,7 +120,7 @@ def test_multichannel(shape, kwargs):
                 assert viewer.layers[i].colormap.name == base_colormaps[i]
         if 'blending' not in kwargs:
             assert (
-                viewer.layers[i].blending == 'translucent'
+                viewer.layers[i].blending == 'translucent_no_depth'
                 if i == 0
                 else 'additive'
             )
