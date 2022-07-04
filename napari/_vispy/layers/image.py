@@ -110,9 +110,6 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.set_data(data)
 
-        # TODO: If layer is not visible, should we skip slicing altogether?
-        self.node.visible = self.layer.visible
-
         # TODO: need to include world2grid from layer too.
         self._master_transform.matrix = _prepare_transform(
             response.data_to_world
