@@ -1719,6 +1719,8 @@ class Points(Layer):
             data_to_world=transform,
             face_color=request.face_color[indices],
             edge_color=request.edge_color[indices],
+            edge_width=request.edge_width[indices],
+            edge_width_is_relative=request.edge_width_is_relative,
             size=size,
         )
 

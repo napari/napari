@@ -77,6 +77,8 @@ class _LayerSliceRequest:
     size: Optional[np.ndarray] = field(repr=False)  # for points
     face_color: Optional[np.ndarray] = field(repr=False)  # for points
     edge_color: Optional[np.ndarray] = field(repr=False)  # for points
+    edge_width: Optional[np.ndarray] = field(repr=False)  # for points
+    edge_width_is_relative: bool = field(repr=False)  # for points
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,12 @@ class _LayerSliceResponse:
     )  # for points
     edge_color: Optional[np.ndarray] = field(
         default=None, repr=False
+    )  # for points
+    edge_width: Optional[np.ndarray] = field(
+        default=None, repr=False
+    )  # for points
+    edge_width_is_relative: bool = field(
+        default=False, repr=False
     )  # for points
 
 
@@ -1000,6 +1008,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             size=getattr(self, 'size', None),
             face_color=getattr(self, 'face_color', None),
             edge_color=getattr(self, 'edge_color', None),
+            edge_width=getattr(self, 'edge_width', None),
+            edge_width_is_relative=getattr(
+                self, 'edge_width_is_relative', False
+            ),
         )
 
     @staticmethod
