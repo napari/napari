@@ -1696,7 +1696,7 @@ class Points(Layer):
     def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
         LOGGER.debug('Points._get_slice : %s', request)
         slice_indices = Layer._get_slice_indices(request)
-        indices, _ = Points._get_slice_data(
+        indices, scale = Points._get_slice_data(
             data=request.data,
             ndim=request.ndim,
             dims_indices=slice_indices,
@@ -1709,8 +1709,10 @@ class Points(Layer):
         transform = request.data_to_world.set_slice(
             list(request.dims_displayed)
         )
-        # TODO: incorporate scale from _get_slice_data
-        size = request.size[data_index].mean(axis=1)
+
+        # TODO: do we need shown here?
+        size = scale * request.size[data_index].mean(axis=1)
+
         return _LayerSliceResponse(
             request=request,
             data=data,
