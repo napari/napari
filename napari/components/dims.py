@@ -406,19 +406,6 @@ class Dims(EventedModel):
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
 
-    def _transpose(self):
-        """Transpose displayed dimensions."""
-        import warnings
-
-        warnings.warn(
-            trans._(
-                "'viewer.dims._transpose' is deprecated and will be removed in v0.5.0. Please use 'viewer.dims.transpose' instead"
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        self.transpose()
-
 
 def reorder_after_dim_reduction(order):
     """Ensure current dimension order is preserved after dims are dropped.
