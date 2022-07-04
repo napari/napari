@@ -93,6 +93,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _set_slice(self, response: _LayerSliceResponse) -> None:
+        # Copied from set_node_data without downsampling (TODO).
         LOGGER.debug('VispyImageLayer._set_slice : %s', response.request)
 
         data = fix_data_dtype(response.data)

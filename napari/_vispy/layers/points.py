@@ -50,6 +50,7 @@ class VispyPointsLayer(VispyBaseLayer):
             response.data[:, ::-1],
             size=response.size,
             face_color=response.face_color,
+            edge_color=response.edge_color,
         )
         self._master_transform.matrix = _prepare_transform(
             response.data_to_world

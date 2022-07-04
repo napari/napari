@@ -61,7 +61,7 @@ class _LayerSliceRequest:
     ndisplay: int
     point: Tuple[float, ...]
     dims_displayed: Tuple[int, ...]
-    dims_not_displayed: Tuple[int, ...]
+    dims_not_displayed: Tuple[int, ...] = field(repr=False)
     multiscale: bool = field(repr=False)  # image specific
     rgb: bool = field(repr=False)  # image specific
     data_level: int = field(
@@ -76,6 +76,7 @@ class _LayerSliceRequest:
     out_of_slice_display: bool = field(repr=False)  # for points, vectors
     size: Optional[np.ndarray] = field(repr=False)  # for points
     face_color: Optional[np.ndarray] = field(repr=False)  # for points
+    edge_color: Optional[np.ndarray] = field(repr=False)  # for points
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,9 @@ class _LayerSliceResponse:
     data_to_world: Affine = field(repr=False)
     size: Optional[np.ndarray] = field(default=None, repr=False)  # for points
     face_color: Optional[np.ndarray] = field(
+        default=None, repr=False
+    )  # for points
+    edge_color: Optional[np.ndarray] = field(
         default=None, repr=False
     )  # for points
 
@@ -995,6 +999,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             out_of_slice_display=getattr(self, 'out_of_slice_display', False),
             size=getattr(self, 'size', None),
             face_color=getattr(self, 'face_color', None),
+            edge_color=getattr(self, 'edge_color', None),
         )
 
     @staticmethod
