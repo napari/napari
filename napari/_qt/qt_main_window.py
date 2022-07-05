@@ -294,6 +294,7 @@ class _QtMainWindow(QMainWindow):
 
     def show(self, block=False):
         super().show()
+        self._qt_viewer.setFocus()
         if block:
             self._ev = QEventLoop()
             self._ev.exec()
