@@ -571,6 +571,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation2d.setter
     def interpolation2d(self, value):
+        if value == 'bilinear':
+            value = 'linear'
+            warnings.warn(
+                trans._(
+                    "'bilinear' interpolation is deprecated. Please use 'linear' instead",
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
