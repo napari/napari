@@ -102,7 +102,7 @@ application and plugins, supported by five key milestones:
 Throughout the process, we will aim to minimize conda's downsides by providing
 local conda-based installation options and documentation about how to use them.
 We will also provide users an opt-in, "use at your own risk" method to install
-pip packages where they do not exist on conda-forge.
+PyPI packages where they do not exist on conda-forge.
 
 ## Detailed Description
 
@@ -122,11 +122,10 @@ patching it to use the local source. The artifacts are uploaded to the `napari` 
 Anaconda.org [^napari-channel].
 
 While napari itself has been on conda-forge for some years now, until recently, the plugin
-ecosystem still broadly
-relied on PyPI. In the case of napari users that relied on conda packages, that means that the
-plugin manager would use `pip` to install the plugin and its dependencies in the conda
-environment, potentially mixing PyPI packages with conda-forge packages and causing conflicts
-due to binary incompatibilities.
+ecosystem still broadly relied on PyPI. In the case of napari users that relied on conda packages,
+that means that the plugin manager would use `pip` to install the plugin and its dependencies in
+the conda environment, potentially mixing PyPI packages with conda-forge packages and causing
+conflicts due to binary incompatibilities.
 
 To avoid this risk, this NAP recommends packaging all existing napari plugins (and
 their dependencies) on conda-forge too. This (ongoing) effort started in Jan 2022, resulting
@@ -141,7 +140,7 @@ provide documentation and guidelines on what versions of major scientific packag
 on each napari release. For example, we should control the version bounds for `numpy`,
 `scikit-image` and similar members of the PyData ecosystem. Otherwise, we might arrive to a
 situation where plugin developers are choosing wildly different `numpy` versions for their projects,
-making then non-installable together. In conda jargon, the set of conditional restrains are called
+making them non-installable together. In conda jargon, the set of conditional restraints are called
 pinnings and implemented as part of a metapackage (a package that doesn't distribute files, only
 provides metadata). From now on we will refer to them as _napari pinnings_.
 
@@ -180,7 +179,8 @@ at napari can help here, but this will not scale if the plugin ecosystem keeps g
 As a result, some plugins might end up being available on PyPI but not on conda-forge. This further
 reinforces the idea that conda-forge packaging is a second-class citizen for the plugin ecosystem.
 This NAP recommends including packaging guidelines as part of the documentation for plugin
-developers to alleviate these issues.
+developers to alleviate these issues. That said, PyPI packages will still be allowed as a fallback
+option for those projects that are not (yet) available on conda-forge.
 
 ### Milestone 2: Building conda-based installers for napari
 
@@ -235,7 +235,7 @@ This separation allows us to:
   Milestone 3).
 
 The installer relies on conda-forge to obtain the needed packages. Pre-release installers
-can be built thanks to the nightlies available on the napari channel.
+can be built thanks to the nightlies available on the napari channel in Anaconda.org.
 
 ### Milestone 3: Adding support for conda packages in the plugin manager
 
@@ -256,17 +256,19 @@ PyPI. To make it compatible with conda packaging, three key changes are needed:
     In the future, we might explore how to deal with PyPI packages within conda in a safer way, but
     this is an open packaging question that is extremely difficult to tackle robustly.
 3.  Instrument the plugin manager backend so it can use `conda` or `mamba` to run the plugin
-    installation, update or removal.
+    installation, update or removal. Some level of customizability is needed to configure extra
+    channels (e.g. a laboratory published their conda packages into their own private channel) and
+    local sources (e.g. drag&drop a conda tarball).
 4.  Add some control to the dependency landscape of the plugin ecosystem using the
     `napari-pinnings` metapackage mentioned in Milestone 1.
 
 There are some technical limitations we need to work out as well, namely:
 
 * Some plugin updates might fail because some files are in use already. For example, a plugin
-  requires a more recent build of numpy (still allowed in our pinnings), but numpy has been
-  imported already, so Windows has blocked the library files. An off-process update will be needed
+  requires a more recent build of numpy (still allowed in our pinnings); however, numpy has been
+  imported already and Windows has blocked the library files. An off-process update will be needed
   on Windows for the installation to succeed. On Unix systems this might not be a problem, but the
-  update will still be incomplete without a napari restart (because numpy was already imported).
+  update will still be incomplete without a napari restart (because `numpy` was already imported).
   This can be solved by watching the imported modules and the files involved in the conda
   transaction. On Windows, we can write a one-off activation script that will run before `napari`
   starts the next time. On Unix systems, a notification saying "Restart needed for full effect"
@@ -349,7 +351,7 @@ scope" section. Other alternatives we considered before choosing `conda` were:
 
 This NAP has described the whole strategy to implement a successful and comprehensive conda
 packaging story for napari. This work involves many moving pieces across different projects and
-tools, hence why a single PR is out of the question. In the following sections, we wll list the
+tools, hence why a single PR is out of the question. In the following sections, we will list the
 relevant PRs opened so far. Before that, though, we will propose a general strategy on how this
 infrastructure will be maintained and governed.
 
@@ -457,10 +459,10 @@ Some more work is needed to offer full support to the plugin ecosystem, as detai
       install, uninstall and update, but each on of these actions, are queued and run sequentially.
 
 > Note: Using both `conda` and `pip` presents certain risks that could irreversibly disrupt the
-> installation, so it needs to be studied very carefully. At the beginning we will only let `pip`
-> install pure Python packages, with no dependencies or compiled libraries. Dependencies should be
-> provided from `conda-forge` whenever possible. Previous experiments on this kind of automations
-> might be useful here [^conda-pip-issue-comment] [^pamba].
+> installation, so it needs to be studied very carefully. Dependencies should be
+> provided from `conda-forge` whenever possible (see previous experiments on this kind of automation
+> [^conda-pip-issue-comment] [^pamba]), but PyPI packages can still be used as long as the user
+> consents to a warning detailing the risks and recovery options.
 
 ### Milestone 4: Enabling in-app napari version updates
 
@@ -519,6 +521,13 @@ Linux or DMG for macOS, which were the ones previously used with Briefcase. We d
 as a problem though, given the small number of downloads each format enjoyed in previous
 releases [^napari-releases-json].
 
+It's very important that napari users can still rely on PyPI packages to install plugins. While
+conda packaging offers a series of benefits, it can also constitute an access barrier for some
+developers and users. For that reason, PyPI packages will still be available on the plugin manager
+as an alternative installation method. To enable this mode, the user will need to accept a warning
+that details the potential problems it can cause, and how to use the `napari-updater` tool to fix
+it, if needed.
+
 ## Future Work
 
 The tool handling the updates and managing different napari installations will start simple. In
@@ -546,7 +555,7 @@ deciding to use the currently proposed one. Namely:
 - [PR #4404](https://github.com/napari/napari/pull/4404) (Switch to a more declarative configuration
   for conda packaging)
 - [PR #4519](https://github.com/napari/napari/pull/4519) (Initial draft of this NAP and discussion)
-- [PR #4602](https://github.com/napari/napari/pull/4602) (PR to discuss the approval this NAP)
+- [PR #4602](https://github.com/napari/napari/pull/4602) (PR to discuss the approval of this NAP)
 - [Zulip thread](https://napari.zulipchat.com/#narrow/stream/322105-naps/topic/Proposal.20to.20accept.20NAP-2)
   to discuss the approval of this NAP
 
