@@ -17,6 +17,7 @@ class Interpolation(StringEnum):
     BESSEL = auto()
     BICUBIC = auto()
     LINEAR = auto()
+    BILINEAR = auto()  # same as LINEAR
     BLACKMAN = auto()
     CATROM = auto()
     GAUSSIAN = auto()
