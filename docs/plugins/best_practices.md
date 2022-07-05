@@ -229,3 +229,95 @@ up to report test coverage, but you can test locally as well, using
    from coverage with the comment `# pragma: no cover`
 5. In the cookiecutter, coverage tests from github actions will be uploaded to
    codecov.io
+
+## Set style for additional windows in your plugin
+
+In napari plugins we strongly advise to use widget docked in napari window,
+but sometimes is required to use separate window. 
+The best practice is to use [`QDialog`](https://doc.qt.io/qt-5/qdialog.html)
+based windows with parent set to widget
+already docked in napari window (sample code snip on the end).
+
+```python
+from qtpy.QtWidgets import QDialog, QWidget, QSpinBox, QPushButton, QGridLayout, QLabel
+
+class MyInputDialog(QDialog):
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self.setWindowTitle("My Input Dialog")
+        self.number = QSpinBox()
+        self.ok_btn = QPushButton("OK")
+        self.cancel_btn = QPushButton("Cancel")
+        
+        layout = QGridLayout()
+        layout.addWidget(QLabel("Number:"), 0, 0)
+        layout.addWidget(self.number, 0, 1)
+        layout.addWidget(self.ok_btn, 1, 0)
+        layout.addWidget(self.cancel_btn, 1, 1)
+        self.setLayout(layout)
+        
+        self.ok_btn.clicked.connect(self.accept)
+        self.cancel_btn.clicked.connect(self.reject)
+        
+class MyWidget(QWidget):
+  def __init__(self, viewer: "napari.Viewer"):
+        super().__init__()
+        self.viewer = viewer
+        self.open_dialog = QPushButton("Open dialog")
+        self.open_dialog.clicked.connect(self.open_dialog_clicked)
+        
+    def open_dialog(self):
+        dialog = MyInputDialog(self)  
+        # this setting parent to self allow to inheritance of style from napari window
+        dialog.exec_()
+        if dialog.result() == QDialog.Accepted:
+            print(dialog.number.value())
+```
+
+When you want to use magicgui to create widget you could still wrap it in 
+`QDialog`:
+
+```python
+from typing import Callable
+
+from magicgui import magicgui
+from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton
+
+
+def sample_add(a: int, b: int) -> int:
+    return a + b
+
+class MguiDialog(QDialog):
+    def __init__(self, fun: Callable, parent=None):
+        super().__init__(parent)
+        self.mgui_widget = magicgui(fun)  # close of dialog will destroy widget
+        layout = QVBoxLayout()
+        layout.addWidget(self.mgui_widget.native)
+        self.setLayout(layout)
+        self.mgui_widget.called.connect(self.run)
+
+    def run(self, value):
+        print('run', value)
+        self.close()
+
+class MyWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.btn = QPushButton('Click me')
+        self.btn.clicked.connect(self.click)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.btn)
+        self.setLayout(self.layout)
+
+
+    def click(self):
+        dialog = MguiDialog(sample_add, self)
+        dialog.exec_()
+```
+
+But if there are any reason that you need to use separate window that
+is `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
+and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) from [`napari.qt`](/api/napari.qt.html) module.
+
+```py 
+```
