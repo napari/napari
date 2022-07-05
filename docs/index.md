@@ -93,8 +93,8 @@ napari.
 
 ## Report bugs
 
-If you encounter any issues while using napari, please check out our 
-[Github Issues](https://github.com/napari/napari/issues) and submit a 
+If you encounter any issues while using napari, please check out our
+[Github Issues](https://github.com/napari/napari/issues) and submit a
 new one if it doesn't already exist.
 
 ## Chat with us
