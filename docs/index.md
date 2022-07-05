@@ -54,7 +54,11 @@ import napari
 viewer = napari.view_image(my_array)
 ```
 
-[insert webm here]
+<video width="90%" autoplay loop muted playsinline>
+  <source src="images/alisterburt-viewer-cryoet.webm" type="video/webm" />
+  <img src="images/alisterburt-viewer-cryoet.png"
+      title="Your browser does not support the video tag." />
+</video>
 
 Napari can help you:
 
