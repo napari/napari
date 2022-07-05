@@ -62,7 +62,7 @@ def get_stylesheet(
     return stylesheet
 
 
-def get_current_stylesheet(extra: Optional[List[str]]) -> str:
+def get_current_stylesheet(extra: Optional[List[str]] = None) -> str:
     """
     Return the current stylesheet base on settings. This is wrapper around
     :py:func:`get_stylesheet` that takes the current theme base on settings.

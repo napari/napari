@@ -319,5 +319,26 @@ But if there are any reason that you need to use separate window that
 is `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
 and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) from [`napari.qt`](/api/napari.qt.html) module.
 
-```py 
+Here example for magicgui (but could be easily generalised to qt based widgets):
+
+```python
+from magicgui import magicgui
+
+from napari.qt import get_stylesheet
+from napari.settings import get_settings
+
+def sample_add(a: int, b: int) -> int:
+    return a + b
+
+@magicgui
+def sample_add(a: int, b: int) -> int:
+    return a + b
+
+def change_style():
+    sample_add.native.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
+
+
+get_settings().appearance.events.theme.connect(change_style)
+change_style()
+
 ```
