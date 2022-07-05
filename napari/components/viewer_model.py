@@ -11,6 +11,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -23,7 +24,6 @@ from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
-from .._app.context import Context, create_context
 from ..errors import (
     MultipleReaderError,
     NoAvailableReaderError,
@@ -134,13 +134,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
-    _ctx: Context
+    _ctx: Mapping
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     _mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
+        from .._app.context import create_context
+
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow

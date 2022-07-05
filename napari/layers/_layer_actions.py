@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List, cast
 
 import numpy as np
 
-from ..utils._injection import inject_napari_dependencies
+# from ..utils._injection import inject_napari_dependencies
 from ..utils.translations import trans
 from . import Image, Labels, Layer
 from .utils import stack_utils
@@ -99,7 +99,6 @@ def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
 
 
-# @inject_napari_dependencies
 def _convert_dtype(ll: LayerList, mode='int64'):
     if not (layer := ll.selection.active):
         return

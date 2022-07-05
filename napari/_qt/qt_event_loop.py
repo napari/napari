@@ -186,6 +186,8 @@ def get_app(
         perf_config.patch_callables()
 
     if not _app_ref:  # running get_app for the first time
+        from napari import _app  # noqa   # TEMPORARY
+
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)

@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, List
 
 from app_model.types import Action
 
+from ...layers import _layer_actions
 from ...utils.translations import trans
 from .._menus import MenuGroup, MenuId
-
-# from ...layers import _layer_actions
 from ..context import LayerListContextKeys as LLCK
 
 if TYPE_CHECKING:
@@ -128,7 +127,6 @@ LAYER_ACTIONS: List[Action] = [
     ),
 ]
 
-from ...layers import _layer_actions
 
 for _dtype in (
     'int8',
