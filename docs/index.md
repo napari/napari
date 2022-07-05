@@ -113,7 +113,6 @@ topics of napari development. To participate, see the [community
 calendar](community/meeting_schedule). (It might be a good idea to drop us a
 line on [Zulip](https://napari.zulipchat.com) so we know to expect you!)
 
-[maybe embed calendar here]
 
 ## Follow us
 
