@@ -199,7 +199,11 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
 
 
 def find_viewer_ancestor(widget) -> Optional[Viewer]:
-    """Return the Viewer object if it is an ancestor of ``widget``, else None.
+    """Return the closest parent Viewer of ``widget``.
+
+    Priority is given to `Viewer` ancestors of ``widget``.
+    `napari.current_viewer()` is called for Widgets without a
+    Viewer ancestor.
 
     Parameters
     ----------
@@ -209,7 +213,7 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     Returns
     -------
     viewer : napari.Viewer or None
-        Viewer instance if one exists, else None.
+        Viewer ancestor if it exists, else `napari.current_viewer()`
     """
     from .._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
@@ -219,6 +223,8 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
         parent = widget.native.parent()
     else:
         parent = widget.parent()
+    from napari.viewer import current_viewer
+
     while parent:
         if hasattr(parent, '_qt_viewer'):  # QMainWindow
             return parent._qt_viewer.viewer
@@ -226,9 +232,9 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
             qt_viewer = parent._ref_qt_viewer()
             if qt_viewer is not None:
                 return qt_viewer.viewer
-            return None
+            return current_viewer()
         parent = parent.parent()
-    return None
+    return current_viewer()
 
 
 def proxy_viewer_ancestor(widget) -> Optional[PublicOnlyProxy[Viewer]]:

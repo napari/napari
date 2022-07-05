@@ -794,7 +794,7 @@ class QtPluginDialog(QDialog):
                 continue
             enabled = not pm.is_disabled(manifest.name)
             # if it's an Npe1 adaptor, call it v1
-            npev = 'shim' if 'npe1' in type(manifest).__name__.lower() else 2
+            npev = 'shim' if manifest.npe1_shim else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
         self.installed_label.setText(
