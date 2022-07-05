@@ -644,7 +644,7 @@ CC0+BY [^cc0by].
 
 [^conda-pip-issue-comment]: https://github.com/napari/napari/issues/3223#issuecomment-972189348
 
-[^pamba]: https://gist.github.com/tlambert03/cdc63d68f4fd1bce20f8f3e769217759
+[^pamba]: https://github.com/tlambert03/pamba
 
 [^napari-installer-class]: https://github.com/napari/napari/blob/5c10022337601f350ad64ce56eddf6664306e40e/napari/_qt/dialogs/qt_plugin_dialog.py#L64
 
