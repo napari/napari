@@ -224,7 +224,7 @@ When migrating, you'll need to fill out the `layer_types` and
 `filename_extensions` used by your writer. `layer_types` is a set of
 constraints describing the combinations of layer types acceptable by this
 writer. More about layer types can be found in the
-[Writer contribution guide](./guides.html#layer-type-constraints).
+[Writer contribution guide](layer-type-constraints).
 
 In the example below, the svg writer accepts a set of layers with 0 or more
 images, and 0 or more label layers, and so on. It will not accept surface
