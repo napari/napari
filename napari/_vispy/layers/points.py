@@ -46,21 +46,36 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _set_slice(self, response: _LayerSliceResponse) -> None:
         LOGGER.debug('VispyPointsLayer._set_slice : %s', response.request)
+        data = response.data[:, ::-1]
+
+        if len(data) > 0:
+            edge_color = response.edge_color
+            face_color = response.face_color
+            size = response.size
+            edge_width = response.edge_width
+        else:
+            data = np.zeros((1, self.layer._ndisplay))
+            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+            size = [0]
+            edge_width = [0]
+
         if response.edge_width_is_relative:
             edge_kw = {
                 'edge_width': None,
-                'edge_width_rel': response.edge_width,
+                'edge_width_rel': edge_width,
             }
         else:
             edge_kw = {
-                'edge_width': response.edge_width,
+                'edge_width': edge_width,
                 'edge_width_rel': None,
             }
+
         self.node._subvisuals[0].set_data(
             response.data[:, ::-1],
-            size=response.size,
-            face_color=response.face_color,
-            edge_color=response.edge_color,
+            size=size,
+            face_color=face_color,
+            edge_color=edge_color,
             **edge_kw,
         )
         self._master_transform.matrix = _prepare_transform(
