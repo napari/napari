@@ -330,7 +330,7 @@ def _run():
             running_as_bundled_app,
         )
 
-        if running_as_bundled_app:
+        if running_as_bundled_app():
             install_certifi_opener()
         run(gui_exceptions=True)
 

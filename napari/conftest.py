@@ -28,27 +28,31 @@ Notes for using the plugin-related fixtures here:
        ...
    ```
 """
+from __future__ import annotations
+
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
     pass
 
-import itertools
 import os
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import DynamicPlugin, PluginManager, PluginManifest
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.config import async_loading
+
+if TYPE_CHECKING:
+    from npe2._pytest_plugin import TestPluginManager
 
 
 def pytest_addoption(parser):
@@ -334,34 +338,21 @@ def _no_error_reports():
 
 
 @pytest.fixture(autouse=True)
-def _mock_npe2_pm():
-    """Mock plugin manager with no registered plugins."""
-    with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager()
-    with patch('npe2.PluginManager.instance', return_value=_pm):
-        yield _pm
+def _npe2pm(npe2pm):
+    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    return npe2pm
 
 
 @pytest.fixture
-def builtins(_mock_npe2_pm: PluginManager):
-    import napari_builtins
-
-    plugin = DynamicPlugin('napari', plugin_manager=_mock_npe2_pm)
-    mf = PluginManifest.from_file(
-        Path(napari_builtins.__file__).parent / 'builtins.yaml'
-    )
-    plugin.manifest = mf
-    with plugin:
+def builtins(_npe2pm: TestPluginManager):
+    mf_path = str(Path(__file__).parent / 'builtins.yaml')
+    with _npe2pm.tmp_plugin(manifest=mf_path) as plugin:
         yield plugin
 
 
 @pytest.fixture
-def tmp_plugin(_mock_npe2_pm: PluginManager):
-    # guarantee that the name is unique, even if tmp_plugin has already been used
-    count = itertools.count(0)
-    while (name := f'tmp_plugin{next(count)}') in _mock_npe2_pm._manifests:
-        continue
-    with DynamicPlugin(name, plugin_manager=_mock_npe2_pm) as plugin:
+def tmp_plugin(_npe2pm: TestPluginManager):
+    with _npe2pm.tmp_plugin() as plugin:
         yield plugin
 
 
