@@ -134,8 +134,9 @@ def handle_gui_reading(
         list of paths to open, as strings
     qt_viewer : QtViewer
         QtViewer to associate dialog with
-    stack : bool
-        True if list of paths should be stacked, otherwise False
+    stack : bool or list[list[str]]
+        True if list of paths should be stacked, otherwise False.
+        Can also be a list containing lists of files to stack
     plugin_name : str | None
         name of plugin already tried, if any
     error : ReaderPluginError | None

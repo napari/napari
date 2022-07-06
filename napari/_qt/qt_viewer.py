@@ -759,8 +759,9 @@ class QtViewer(QSplitter):
         ----------
         filenames : List[str]
             paths to open
-        stack : bool
-            whether to stack files or not
+        stack : bool or list[list[str]]
+            whether to stack files or not. Can also be a list containing
+            files to stack.
         """
         try:
             self.viewer.open(

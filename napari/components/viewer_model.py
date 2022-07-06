@@ -1008,8 +1008,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             keyword arguments to pass to layer adding method, by default {}
         layer_type : Optional[str], optional
             layer type for paths, by default None
-        stack : bool, optional
-            True if files should be opened as a stack, by default False
+        stack : bool or list[list[str]], optional
+            True if files should be opened as a stack, by default False.
+            Can also be a list containing lists of files to stack.
 
         Returns
         -------
