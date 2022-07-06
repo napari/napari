@@ -1,10 +1,8 @@
 import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
-from functools import lru_cache, partial
+from functools import partial
 from typing import Any, List, Optional, Set, Union
-
-from in_n_out import Store
 
 from ... import layers, types, viewer
 from ...layers._source import layer_source
@@ -151,20 +149,16 @@ def _add_future_data(
     _FUTURES.add(future)
 
 
-@lru_cache
-def _init_processors(store: Store):
+# Add future and LayerData processors for each layer type.
+PROCESSORS = {
+    types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
+    List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
+    layers.Layer: _add_layer_to_viewer,
+}
+for t in types._LayerData.__args__:
+    PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
-    # Add future and LayerData processors for each layer type.
-    processors = {
-        types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
-        List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
-        layers.Layer: _add_layer_to_viewer,
-    }
-    for t in types._LayerData.__args__:
-        processors[t] = partial(_add_layer_data_to_viewer, return_type=t)
-
-        if sys.version_info >= (3, 9):
-            processors[Future[t]] = partial(
-                _add_future_data, return_type=t, _from_tuple=False
-            )
-    store.register(processors=processors)
+    if sys.version_info >= (3, 9):
+        PROCESSORS[Future[t]] = partial(
+            _add_future_data, return_type=t, _from_tuple=False
+        )
