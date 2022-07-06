@@ -40,19 +40,12 @@ def _raise():
 
 @pytest.fixture
 def clean_current(monkeypatch, qtbot):
-    from napari._qt.qt_main_window import _QtMainWindow
-
-    def none_return(*_, **__):
-        return None
-
     base_show = NapariQtNotification.show
 
     def store_widget(self, *args, **kwargs):
         qtbot.addWidget(self)
         base_show(self, *args, **kwargs)
 
-    # monkeypatch.setattr(qt_notification.QPropertyAnimation, "start", none_return)
-    monkeypatch.setattr(_QtMainWindow, "current", none_return)
     monkeypatch.setattr(NapariQtNotification, "show", store_widget)
 
 
