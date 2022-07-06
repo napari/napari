@@ -418,7 +418,7 @@ def test_deepcopy(kwargs):
 
     See:
       - https://github.com/napari/napari/issues/2911
-      - https://github.com/napari/napari/issues/4736    
+      - https://github.com/napari/napari/issues/4736
     """
     t = TranslationString(**kwargs)
     u = deepcopy(t)
