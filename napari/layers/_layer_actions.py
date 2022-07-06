@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, List, cast
 
 import numpy as np
 
-# from ..utils._injection import inject_napari_dependencies
 from ..utils.translations import trans
 from . import Image, Labels, Layer
 from .utils import stack_utils

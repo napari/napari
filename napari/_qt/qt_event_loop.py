@@ -23,7 +23,10 @@ from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
-from .qthreading import wait_for_workers_to_quit
+from .qthreading import (
+    _register_threadworker_processors,
+    wait_for_workers_to_quit,
+)
 from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
@@ -195,6 +198,8 @@ def get_app(
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
         _register_napari_resources()
+
+        _register_threadworker_processors()
 
     _app_ref = app  # prevent garbage collection
 

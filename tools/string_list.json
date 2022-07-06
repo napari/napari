@@ -2201,9 +2201,6 @@
     "napari/utils/_dask_utils.py": [
       "optimization.fuse.active"
     ],
-    "napari/utils/_injection.py": [
-      "T"
-    ],
     "napari/utils/_magicgui.py": [
       "Data",
       "add_{layer_type}",
