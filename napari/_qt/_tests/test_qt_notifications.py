@@ -40,13 +40,29 @@ def _raise():
 
 @pytest.fixture
 def clean_current(monkeypatch, qtbot):
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    base_current = _QtMainWindow.current
     base_show = NapariQtNotification.show
+
+    _check = False
+
+    def set_check(val):
+        nonlocal _check
+        _check = val
+
+    def check_none_current(*_, **__):
+        assert _check or base_current() is None
+        return None
 
     def store_widget(self, *args, **kwargs):
         qtbot.addWidget(self)
         base_show(self, *args, **kwargs)
 
     monkeypatch.setattr(NapariQtNotification, "show", store_widget)
+    monkeypatch.setattr(_QtMainWindow, "current", check_none_current)
+
+    yield set_check
 
 
 @pytest.mark.parametrize(
@@ -180,11 +196,12 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
 
 
 @pytest.mark.sync_only
-def test_notifications_error_with_threading(make_napari_viewer):
+def test_notifications_error_with_threading(make_napari_viewer, clean_current):
     """Test notifications of `threading` threads, using a dask example."""
+    clean_current(True)
     random_image = da.random.random((10, 10))
     with notification_manager:
-        viewer = make_napari_viewer()
+        viewer = make_napari_viewer(strict_qt=False)
         viewer.add_image(random_image)
         result = da.divide(random_image, da.zeros((10, 10)))
         viewer.add_image(result)
