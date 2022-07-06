@@ -155,10 +155,9 @@ def _add_future_data(
 def _init_processors(store: Store):
 
     # Add future and LayerData processors for each layer type.
-    # TODO: List[types.LayerDataTuple]
-
     processors = {
         types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
+        List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
         layers.Layer: _add_layer_to_viewer,
     }
     for t in types._LayerData.__args__:
@@ -168,4 +167,4 @@ def _init_processors(store: Store):
             processors[Future[t]] = partial(
                 _add_future_data, return_type=t, _from_tuple=False
             )
-    store.register_processors(processors)
+    store.register(processors=processors)

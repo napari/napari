@@ -12,7 +12,7 @@ from .injection._processors import _init_processors
 from .injection._providers import _init_providers
 
 if TYPE_CHECKING:
-    from in_n_out._inject import RaiseWarnReturnIgnore
+    from in_n_out._type_resolution import RaiseWarnReturnIgnore
 
 
 C = TypeVar("C", bound=Callable)
@@ -25,9 +25,10 @@ class NapariApplication(Application):
         _init_processors(store=self.injection_store)
         _init_providers(store=self.injection_store)
 
-        self.menus.append_menu_items(SUBMENUS)
         for action in LAYER_ACTIONS:
             self.register_action(action)
+
+        self.menus.append_menu_items(SUBMENUS)
 
     def inject_dependencies(
         self,

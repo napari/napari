@@ -20,12 +20,13 @@ def _provide_active_layer_list() -> Optional[components.LayerList]:
 
 @lru_cache
 def _init_providers(store: Store):
-    from ... import components, layers, viewer
+    from ... import viewer
 
-    store.register_providers(
-        [
-            (Optional[viewer.Viewer], viewer.current_viewer),
-            (Optional[layers.Layer], _provide_active_layer),
-            (Optional[components.LayerList], _provide_active_layer_list),
+    # TODO: fix syntax for this upstream
+    store.register(
+        providers=[
+            (viewer.current_viewer,),
+            (_provide_active_layer,),
+            (_provide_active_layer_list,),
         ]
     )
