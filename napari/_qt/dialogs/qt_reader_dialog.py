@@ -114,7 +114,7 @@ class QtReaderDialog(QDialog):
 def handle_gui_reading(
     paths: List[str],
     qt_viewer,
-    stack: Union[bool, list[list[str]]],
+    stack: Union[bool, List[List[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
     **kwargs,

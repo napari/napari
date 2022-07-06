@@ -878,7 +878,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: Union[bool, list[list[str]]] = False,
+        stack: Union[bool, List[List[str]]] = False,
         plugin: Optional[str] = 'napari',
         layer_type: Optional[str] = None,
         **kwargs,
@@ -980,7 +980,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths: List[Union[Path, str]],
         kwargs: Dict[str, Any] = {},
         layer_type: Optional[str] = None,
-        stack: Union[bool, list[list[str]]] = False,
+        stack: Union[bool, List[List[str]]] = False,
     ):
         """Open paths if plugin choice is unambiguous, raising any errors.
 

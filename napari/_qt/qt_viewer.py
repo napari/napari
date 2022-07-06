@@ -745,7 +745,7 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: List[str],
-        stack: Union[bool, list[list[str]]],
+        stack: Union[bool, List[List[str]]],
         plugin: str = None,
         layer_type: str = None,
         **kwargs,
