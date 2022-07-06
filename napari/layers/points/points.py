@@ -780,7 +780,7 @@ class Points(Layer):
                 message='antialiasing amount must be positive, value will be clipped.',
                 category=RuntimeWarning,
             )
-        self._antialiasing = float(np.clip(value, a_min=0, a_max=None))
+        self._antialiasing = max(0, value)
         self.events.antialiasing()
 
     @property
