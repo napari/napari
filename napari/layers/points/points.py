@@ -781,7 +781,7 @@ class Points(Layer):
                 category=RuntimeWarning,
             )
         self._antialiasing = max(0, value)
-        self.events.antialiasing()
+        self.events.antialiasing(value=self._antialiasing)
 
     @property
     def shading(self) -> Shading:
