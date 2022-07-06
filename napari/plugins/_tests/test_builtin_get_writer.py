@@ -4,9 +4,8 @@ from napari.plugins._builtins import write_layer_data_with_plugins
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
-def test_get_writer_succeeds(tmpdir, layer_data_and_types):
+def test_get_writer_succeeds(builtins, tmpdir, layer_data_and_types):
     """Test writing layers data."""
-
     _, layer_data, _, filenames = layer_data_and_types
     path = os.path.join(tmpdir, 'layers_folder')
 

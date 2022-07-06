@@ -1144,11 +1144,15 @@ class Points(Layer):
                 'symbol': self.symbol,
                 'edge_width': self.edge_width,
                 'edge_width_is_relative': self.edge_width_is_relative,
-                'face_color': self.face_color,
+                'face_color': self.face_color
+                if self.data.size
+                else [self.current_face_color],
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self.edge_color,
+                'edge_color': self.edge_color
+                if self.data.size
+                else [self.current_edge_color],
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
@@ -1668,7 +1672,18 @@ class Points(Layer):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
-        self._view_size_scale = scale
+
+        # Update the _view_size_scale in accordance to the self._indices_view setter.
+        # If out_of_slice_display is False, scale is a number and not an array.
+        # Therefore we have an additional if statement checking for
+        # self._view_size_scale being an integer.
+        if not isinstance(scale, np.ndarray):
+            self._view_size_scale = scale
+        elif len(self._shown) == 0:
+            self._view_size_scale = np.empty(0, int)
+        else:
+            self._view_size_scale = scale[self.shown[indices]]
+
         self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(

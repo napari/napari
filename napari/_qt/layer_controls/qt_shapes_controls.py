@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
@@ -14,6 +15,9 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtShapesControls(QtLayerControls):
@@ -76,6 +80,8 @@ class QtShapesControls(QtLayerControls):
     ValueError
         Raise error if shapes mode is not recognized.
     """
+
+    layer: 'napari.layers.Shapes'
 
     def __init__(self, layer):
         super().__init__(layer)
