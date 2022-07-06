@@ -89,14 +89,13 @@ class NotebookScreenshot:
             cleaner = Cleaner()
             try:
                 doc = document_fromstring(alt_text)
+                alt_text = cleaner.clean_html(doc).text_content()
             except ParserError:
-                alt_text = ""
                 warn(
                     'The provided alt text does not constitute valid html, so it was discarded.',
                     stacklevel=3,
                 )
-            alt_text = cleaner.clean_html(doc).text_content()
-            # alt_text = html.escape(alt_text)
+                alt_text = ""
             if alt_text == "":
                 alt_text = None
         return alt_text
@@ -125,13 +124,8 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        if self.alt_text is None:
-            html_output = f'<img src="{url}"></img>'
-        else:
-            html_output = (
-                f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
-            )
-        return html_output
+        _alt = html.escape(self.alt_text) if self.alt_text is not None else ''
+        return f'<img src="{url}" alt="{_alt}"></img>'
 
 
 nbscreenshot = NotebookScreenshot

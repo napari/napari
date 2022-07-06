@@ -287,3 +287,12 @@ def test_prevent_dask_cache(delayed_dask_stack):
     for i in range(3):
         v.dims.set_point(0, i)
     assert len(_dask_utils._DASK_CACHE.cache.heap.heap) == 0
+
+
+@pytest.mark.sync_only
+def test_dask_contrast_limits_range_init():
+    np_arr = np.array([[0.000001, -0.0002], [0, 0.0000004]])
+    da_arr = da.array(np_arr)
+    i1 = layers.Image(np_arr)
+    i2 = layers.Image(da_arr)
+    assert i1.contrast_limits_range == i2.contrast_limits_range
