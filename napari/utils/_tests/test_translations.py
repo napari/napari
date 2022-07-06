@@ -380,12 +380,54 @@ def test_bundle_exceptions(trans):
 
 
 def test_deepcopy():
-    """see https://github.com/napari/napari/issues/2911
+    """See https://github.com/napari/napari/issues/2911
 
     Object containing translation strings can't bee deep-copied.
     """
 
     t = TranslationString(msgid='huhu')
+    u = deepcopy(t)
+    assert t is not u
+    assert t == u
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {
+            'msgid': 'Convert to {dtype}',
+            'dtype': 'uint16',
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'dtype': 'uint16',
+            'deferred': True,
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'dtype': 'uint16',
+            'deferred': False,
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'msgid_plural': 'Convert to {dtype}s',
+            'n': 1,
+            'dtype': 'uint16',
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'msgid_plural': 'Convert to {dtype}s',
+            'n': 2,
+            'dtype': 'uint16',
+        },
+    ],
+)
+def test_deepcopy_args(kwargs):
+    """See https://github.com/napari/napari/issues/4736
+
+    Object containing translation strings can't bee deep-copied when passing args.
+    """
+    t = TranslationString(**kwargs)
     u = deepcopy(t)
     assert t is not u
     assert t == u

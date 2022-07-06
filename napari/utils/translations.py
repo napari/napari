@@ -167,6 +167,10 @@ class TranslationString(str):
     def __deepcopy__(self, memo):
         from copy import deepcopy
 
+        kwargs = deepcopy(self._kwargs)
+        # Remove `n` from `kwargs` added in the initializer
+        # See https://github.com/napari/napari/issues/4736
+        kwargs.pop("n")
         return TranslationString(
             domain=self._domain,
             msgctxt=self._msgctxt,
@@ -174,7 +178,7 @@ class TranslationString(str):
             msgid_plural=self._msgid_plural,
             n=self._n,
             deferred=self._deferred,
-            kwargs=deepcopy(self._kwargs),
+            **kwargs,
         )
 
     def __new__(
