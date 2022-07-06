@@ -486,6 +486,7 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
+        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
         yield plugin
 
 
