@@ -236,7 +236,7 @@ In napari plugins we strongly advise additional widgets be docked in the main na
 but sometimes a separate window is required. 
 The best practice is to use [`QDialog`](https://doc.qt.io/qt-5/qdialog.html)
 based windows with parent set to widget
-already docked in the viewer (sample code snippet at the end).
+already docked in the viewer.
 
 ```python
 from qtpy.QtWidgets import QDialog, QWidget, QSpinBox, QPushButton, QGridLayout, QLabel
@@ -267,8 +267,9 @@ class MyWidget(QWidget):
         self.open_dialog.clicked.connect(self.open_dialog_clicked)
         
     def open_dialog(self):
+        # setting parent to self allows the dialog to inherit its 
+        # style from the viewer by pass self as argument
         dialog = MyInputDialog(self)  
-        # setting parent to self allows the dialog to inherit its style from the viewer
         dialog.exec_()
         if dialog.result() == QDialog.Accepted:
             print(dialog.number.value())
