@@ -232,11 +232,11 @@ up to report test coverage, but you can test locally as well, using
 
 ## Set style for additional windows in your plugin
 
-In napari plugins we strongly advise to use widget docked in napari window,
-but sometimes is required to use separate window. 
+In napari plugins we strongly advise additional widgets be docked in the main napari viewer,
+but sometimes a separate window is required. 
 The best practice is to use [`QDialog`](https://doc.qt.io/qt-5/qdialog.html)
 based windows with parent set to widget
-already docked in napari window (sample code snip on the end).
+already docked in the viewer (sample code snippet at the end).
 
 ```python
 from qtpy.QtWidgets import QDialog, QWidget, QSpinBox, QPushButton, QGridLayout, QLabel
@@ -268,13 +268,13 @@ class MyWidget(QWidget):
         
     def open_dialog(self):
         dialog = MyInputDialog(self)  
-        # this setting parent to self allow to inheritance of style from napari window
+        # setting parent to self allows the dialog to inherit its style from the viewer
         dialog.exec_()
         if dialog.result() == QDialog.Accepted:
             print(dialog.number.value())
 ```
 
-When you want to use magicgui to create widget you could still wrap it in 
+When you want to use magicgui to create your widget you could still wrap it in 
 `QDialog`:
 
 ```python
@@ -315,11 +315,11 @@ class MyWidget(QWidget):
         dialog.exec_()
 ```
 
-But if there are any reason that you need to use separate window that
-is `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
-and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) from [`napari.qt`](/api/napari.qt.html) module.
+If there is a particular reason that you need to use a separate window that
+inherits from `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
+and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) functions from the [`napari.qt`](/api/napari.qt.html) module.
 
-Here example for magicgui (but could be easily generalised to qt based widgets):
+Here is a `magicgui` example (but could be easily generalised to native `qt` based widgets):
 
 ```python
 from magicgui import magicgui
