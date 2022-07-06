@@ -2,7 +2,7 @@ import sys
 from concurrent.futures import Future
 from contextlib import nullcontext, suppress
 from functools import partial
-from typing import Any, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from ... import layers, types, viewer
 from ...layers._source import layer_source
@@ -150,12 +150,12 @@ def _add_future_data(
 
 
 # Add future and LayerData processors for each layer type.
-PROCESSORS = {
+PROCESSORS: Dict[object, Callable] = {
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     List[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
     layers.Layer: _add_layer_to_viewer,
 }
-for t in types._LayerData.__args__:
+for t in types._LayerData.__args__:  # type: ignore [attr-defined]
     PROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
     if sys.version_info >= (3, 9):
