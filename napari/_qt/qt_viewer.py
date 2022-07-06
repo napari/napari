@@ -4,7 +4,7 @@ import logging
 import traceback
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
 import numpy as np
@@ -745,7 +745,7 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: List[str],
-        stack: bool,
+        stack: Union[bool, list[list[str]]],
         plugin: str = None,
         layer_type: str = None,
         **kwargs,

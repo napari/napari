@@ -184,10 +184,14 @@ def parse_sys_argv():
         nargs=0,
         help='show citation information and exit',
     )
+    # Allow multiple --stack options to be provided.
+    # Each stack option will result in its own stack
     parser.add_argument(
         '--stack',
-        action='store_true',
-        help='concatenate multiple input files into a single stack.',
+        action='append',
+        nargs='*',
+        default=[],
+        help='concatenate multiple input files into a single stack. Can be provided multiple times for multiple stacks.',
     )
     parser.add_argument(
         '--plugin',
@@ -308,6 +312,12 @@ def _run():
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
         viewer = Viewer()
+
+        # For backwards compatibility
+        # If the --stack option is provided without additional arguments
+        # just set stack to True similar to the previous store_true action
+        if args.stack and len(args.stack[0]) == 0:
+            args.stack = True
         viewer._window._qt_viewer._qt_open(
             args.paths,
             stack=args.stack,

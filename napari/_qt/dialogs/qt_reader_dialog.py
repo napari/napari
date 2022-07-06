@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -114,7 +114,7 @@ class QtReaderDialog(QDialog):
 def handle_gui_reading(
     paths: List[str],
     qt_viewer,
-    stack: bool,
+    stack: Union[bool, list[list[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
     **kwargs,
