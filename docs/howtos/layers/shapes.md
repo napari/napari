@@ -366,10 +366,10 @@ Individual shapes can each have different edge and face colors. You can
 initially set these colors by providing a list of colors to the `edge_color` or
 `face_color` keyword arguments respectively, or you can edit them from the GUI.
 The colors of each of the shapes are available as lists under the
-`layer.edge_colors` and `layer.face_colors` properties. These properties are
-different from the `layer.edge_color` and `layer.face_color` properties that
-will determine the color of the next shape to be added or any currently selected
-shapes.
+`layer.edge_color` and `layer.face_color` properties. These properties are
+different from the `layer.current_edge_color` and `layer.current_face_color`
+properties that will determine the color of the next shape to be added or any 
+currently selected shapes.
 
 To change the shape color properties from the GUI you must first select the
 shape whose properties you want to change, otherwise you will just be
@@ -380,10 +380,10 @@ initializing the property for the next shape you add.
 Individual shapes can each have different edge widths. You can initially set the
 edge widths by providing a list of values to the `edge_width` keyword arguments
 respectively, or you can edit them from the GUI. The widths of each of the
-shapes are available as a list under the `layer.edge_widths` property. Similar
+shapes are available as a list under the `layer.edge_width` property. Similar
 to the edge and face colors, these property is different from the
-`layer.edge_width` property that will determine the edge width of the next shape
-to be added or any currently selected shapes.
+`layer.current_edge_width` property that will determine the edge width of the
+next shape to be added or any currently selected shapes.
 
 To change the edge with property from the GUI you must first select the shape
 whose properties you want to change, otherwise you will just be initializing the
@@ -407,14 +407,12 @@ will be updated with the new slice values.
 
 ## Shapes layer opacity
 
-The {ref}`opacity value <layer_opacity>` applies individually to each shape in
-the layer, and so you must have shapes selected for it to have an effect. You
-can initialize the shape opacities using the `opacity` keyword argument which
-accepts either a list of opacities or a single opacity value that will be
-applied globally. You can then access the opacity of every shape using the
-`layer.opacities` property. Note that this property is different from the
-`layer.opacity` property that determines the opacity of the next shape to be
-added.
+The {ref}`opacity value <layer_opacity>` applies to all shapes. You can 
+initialize the shape opacities using the `opacity` keyword argument which
+accepts a single opacity value that will be applied globally. You can then
+access the opacity using the `layer.opacity` property. In order to adjust the
+opacity of individual shapes you need to adjust the alpha value in the
+`layer.edge_color` and `layer.face_color` properties.
 
 ## Putting it all together
 

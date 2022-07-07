@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from napari_plugin_engine import napari_hook_implementation
@@ -6,6 +6,7 @@ from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer
+from napari._qt.menus import PluginsMenu
 from napari._qt.qt_main_window import _instantiate_dock_widget
 from napari.utils._proxies import PublicOnlyProxy
 
@@ -87,14 +88,16 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     yield
 
 
-def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
+def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
     """Test the plugin widgets get added to the window menu correctly."""
-    viewer = make_napari_viewer()
     # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()
+    window = Mock()
+    qtwin = QWidget()
+    qtbot.addWidget(qtwin)
+    with patch.object(window, '_qt_window', qtwin):
+        actions = PluginsMenu(window=window).actions()
     for cnt, action in enumerate(actions):
         if action.text() == "":
-            # this is the separator
             break
     actions = actions[cnt + 1 :]
     texts = [a.text() for a in actions]
