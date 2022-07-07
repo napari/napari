@@ -1,11 +1,15 @@
 import sys
+import os
 
 import pytest
 
-if '--test-examples' not in sys.argv:
-    pytest.skip('Use `--test-examples` to test examples', allow_module_level=True)
+# check if this module has been explicitly requested or `--test-examples` is included
+fpath = os.path.join(*__file__.split(os.path.sep)[-3:])
+if '--test-examples' not in sys.argv and fpath not in sys.argv:
+    pytest.skip(
+        'Use `--test-examples` to test examples', allow_module_level=True
+    )
 
-import os
 import runpy
 from pathlib import Path
 
@@ -54,7 +58,11 @@ def test_examples(builtins, fname, monkeypatch):
     # prevent running the event loop
     monkeypatch.setattr(napari, 'run', lambda *a, **k: None)
     # Prevent downloading example data because this sometimes fails.
-    monkeypatch.setattr(skimage.data, 'cells3d', lambda: np.zeros((60, 2, 256, 256), dtype=np.uint16))
+    monkeypatch.setattr(
+        skimage.data,
+        'cells3d',
+        lambda: np.zeros((60, 2, 256, 256), dtype=np.uint16),
+    )
 
     # make sure our sys.excepthook override doesn't hide errors
     def raise_errors(etype, value, tb):
