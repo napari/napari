@@ -174,9 +174,9 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node.spherical = False
 
     def _on_canvas_size_limits_change(self):
-        min_size, max_size = self.layer.experimental_canvas_size_limits
-        self.node.clamp_filter.min_size = min_size
-        self.node.clamp_filter.max_size = max_size
+        self.node.canvas_size_limits = (
+            self.layer.experimental_canvas_size_limits
+        )
 
     def reset(self):
         super().reset()

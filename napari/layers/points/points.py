@@ -312,7 +312,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
-        experimental_canvas_size_limits=(0, 10000),
+        experimental_canvas_size_limits=(5, 100),
         shown=True,
     ):
         if ndim is None and scale is not None:
