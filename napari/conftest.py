@@ -102,12 +102,6 @@ def pytest_addoption(parser):
         default=False,
         help="run only asynchronous tests",
     )
-    parser.addoption(
-        "--skip_examples",
-        action="store_true",
-        default=False,
-        help="run only asynchronous tests",
-    )
 
 
 @pytest.fixture(

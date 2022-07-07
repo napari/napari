@@ -1,11 +1,17 @@
+import sys
+
+import pytest
+
+if '--test-examples' not in sys.argv:
+    pytest.skip('Use `--test-examples` to test examples', allow_module_level=True)
+
 import os
 import runpy
 from pathlib import Path
 
 import numpy as np
-import pytest
-from qtpy import API_NAME
 import skimage.data
+from qtpy import API_NAME
 
 import napari
 from napari._qt.qt_main_window import Window
@@ -37,7 +43,6 @@ if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
 
-@pytest.mark.examples
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
