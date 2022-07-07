@@ -6,7 +6,12 @@
 	},
 	{
 		"name": "stable",
-		"version": "0.4.15",
+		"version": "0.4.16",
 		"url": "https://napari.org/stable/"
+	}
+	{
+		"name": "0.4.15",
+		"version": "0.4.15",
+		"url": "https://napari.org/0.4.15/"
 	}
 ]
