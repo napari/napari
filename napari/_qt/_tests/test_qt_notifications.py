@@ -65,6 +65,13 @@ def clean_current(monkeypatch, qtbot):
     monkeypatch.setattr(_QtMainWindow, "current", mock_current_main_window)
 
 
+def test_clean_current_path_exist(make_napari_viewer):
+    """If this test fail then you need to fix also clean_current fixture"""
+    assert isinstance(
+        make_napari_viewer().window._qt_viewer._canvas_overlay, QWidget
+    )
+
+
 @pytest.mark.parametrize(
     "raise_func,warn_func",
     [(_raise, _warn), (_threading_raise, _threading_warn)],
