@@ -58,7 +58,6 @@ def clean_current(monkeypatch, qtbot):
         return mock_window
 
     def store_widget(self, *args, **kwargs):
-        qtbot.addWidget(self)
         base_show(self, *args, **kwargs)
 
     monkeypatch.setattr(NapariQtNotification, "show", store_widget)
