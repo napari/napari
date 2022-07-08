@@ -1,12 +1,12 @@
 import threading
 import warnings
 from concurrent.futures import Future
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dask.array as da
 import pytest
 from qtpy.QtCore import Qt, QThread
-from qtpy.QtWidgets import QPushButton
+from qtpy.QtWidgets import QPushButton, QWidget
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS
@@ -42,31 +42,27 @@ def _raise():
 def clean_current(monkeypatch, qtbot):
     from napari._qt.qt_main_window import _QtMainWindow
 
-    base_current = _QtMainWindow.current
     base_show = NapariQtNotification.show
 
-    _check = False
+    widget = QWidget()
+    qtbot.addWidget(widget)
+    mock_window = MagicMock()
+    widget.resized = MagicMock()
+    mock_window._qt_viewer._canvas_overlay = widget
 
-    def set_check(val):
-        nonlocal _check
-        _check = val
-
-    def check_none_current(*_, **__):
-        assert _check or base_current() is None
-        return None
+    def mock_current_main_window(*_, **__):
+        """
+        This return mock main window object to ensure that
+        notification dialog has parent added to qtbot
+        """
+        return mock_window
 
     def store_widget(self, *args, **kwargs):
         qtbot.addWidget(self)
         base_show(self, *args, **kwargs)
 
     monkeypatch.setattr(NapariQtNotification, "show", store_widget)
-    monkeypatch.setattr(_QtMainWindow, "current", check_none_current)
-
-    yield set_check
-
-
-def test_dummy_run(make_napari_viewer):
-    make_napari_viewer()
+    monkeypatch.setattr(_QtMainWindow, "current", mock_current_main_window)
 
 
 @pytest.mark.parametrize(
@@ -202,7 +198,6 @@ def test_notification_error(mock_show, monkeypatch, qtbot):
 @pytest.mark.sync_only
 def test_notifications_error_with_threading(make_napari_viewer, clean_current):
     """Test notifications of `threading` threads, using a dask example."""
-    clean_current(True)
     random_image = da.random.random((10, 10))
     with notification_manager:
         viewer = make_napari_viewer(strict_qt=False)
