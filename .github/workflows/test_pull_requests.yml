@@ -58,6 +58,12 @@ jobs:
             platform: windows-latest
             backend: pyside2
           - python: 3.9
+            platform: windows-latest
+            backend: pyside2
+          - python: 3.10
+            platform: windows-latest
+            backend: pyside2
+          - python: 3.9
             platform: macos-latest
             backend: pyqt5
           # minimum specified requirements
