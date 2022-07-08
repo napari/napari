@@ -451,13 +451,7 @@ class Vectors(Layer):
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self._edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
+        self._update_mesh()
         self._displayed_stored = copy(self._dims_displayed)
 
         self.events.edge_width()
@@ -472,13 +466,7 @@ class Vectors(Layer):
     def length(self, length: Union[int, float]):
         self._length = float(length)
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self._length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
+        self._update_mesh()
         self._displayed_stored = copy(self._dims_displayed)
 
         self.events.length()
@@ -683,13 +671,7 @@ class Vectors(Layer):
 
         indices, alphas = self._slice_data(self._slice_indices)
         if not self._dims_displayed == self._displayed_stored:
-            vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims_displayed)],
-                self.edge_width,
-                self.length,
-            )
-            self._mesh_vertices = vertices
-            self._mesh_triangles = triangles
+            self._update_mesh()
             self._displayed_stored = copy(self._dims_displayed)
 
         vertices = self._mesh_vertices
@@ -791,3 +773,15 @@ class Vectors(Layer):
             Value of the data at the coord.
         """
         return None
+
+    def _update_mesh(self):
+        """Generate a new vector mesh and update the stored vertices and
+        trianges for the mesh.
+        """
+        vertices, triangles = generate_vector_meshes(
+            self.data[:, :, list(self._dims_displayed)],
+            self.edge_width,
+            self.length,
+        )
+        self._mesh_vertices = vertices
+        self._mesh_triangles = triangles
