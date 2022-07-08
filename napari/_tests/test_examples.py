@@ -20,7 +20,6 @@ skip = [
     'live_tiffs_generator_.py',
     'points-over-time.py',  # too resource hungry
     'embed_ipython_.py',  # fails without monkeypatch
-    'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
 ]
@@ -38,10 +37,11 @@ if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
 
+@pytest.mark.examples
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
-def test_examples(fname, monkeypatch):
+def test_examples(builtins, fname, monkeypatch):
     """Test that all of our examples are still working without warnings."""
 
     # hide viewer window

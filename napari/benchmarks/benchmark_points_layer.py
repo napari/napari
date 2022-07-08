@@ -92,6 +92,7 @@ class PointsSlicingSuite:
     """Benchmarks for slicing the Points layer with 3D data."""
 
     params = [True, False]
+    timeout = 300
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)
