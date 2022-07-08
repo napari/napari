@@ -230,14 +230,7 @@ class Vectors(Layer):
 
         self._data = data
 
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._update_mesh()
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -281,14 +274,7 @@ class Vectors(Layer):
         self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._update_mesh()
 
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
@@ -452,7 +438,6 @@ class Vectors(Layer):
         self._edge_width = edge_width
 
         self._update_mesh()
-        self._displayed_stored = copy(self._dims_displayed)
 
         self.events.edge_width()
         self.refresh()
@@ -467,7 +452,6 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._update_mesh()
-        self._displayed_stored = copy(self._dims_displayed)
 
         self.events.length()
         self.refresh()
@@ -672,7 +656,6 @@ class Vectors(Layer):
         indices, alphas = self._slice_data(self._slice_indices)
         if not self._dims_displayed == self._displayed_stored:
             self._update_mesh()
-            self._displayed_stored = copy(self._dims_displayed)
 
         vertices = self._mesh_vertices
         disp = list(self._dims_displayed)
@@ -785,3 +768,4 @@ class Vectors(Layer):
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
+        self._displayed_stored = copy(self._dims_displayed)
