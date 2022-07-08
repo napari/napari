@@ -653,10 +653,14 @@ class Vectors(Layer):
             values, based on how far from the current slice they originate.
         """
         not_disp = list(self._dims_not_displayed)
-        indices = np.array(dims_indices)
+        # We want a numpy array so we can use fancy indexing with the non-displayed
+        # indices, but as dims_indices can (and often/always does) contain slice
+        # objects, the array has dtype=object which is then very slow for the
+        # arithmetic below.
+        not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
         if len(self.data) > 0:
             data = self.data[:, 0, not_disp]
-            distances = abs(data - indices[not_disp])
+            distances = abs(data - not_disp_indices)
             if self.out_of_slice_display is True:
                 projected_lengths = abs(
                     self.data[:, 1, not_disp] * self.length
