@@ -165,17 +165,16 @@ def test_notification_display(
         mock_show.assert_not_called()
 
     dialog = NapariQtNotification.from_notification(notif)
+    qtbot.add_widget(dialog)
     assert not dialog.property('expanded')
     dialog.toggle_expansion()
     assert dialog.property('expanded')
     dialog.toggle_expansion()
     assert not dialog.property('expanded')
-    dialog.close()
-    dialog.deleteLater()
 
 
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_error(mock_show, monkeypatch, clean_current):
+def test_notification_error(mock_show, monkeypatch, qtbot):
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -192,6 +191,7 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
         notif = ErrorNotification(e)
 
     dialog = NapariQtNotification.from_notification(notif)
+    qtbot.add_widget(dialog)
     bttn = dialog.row2_widget.findChild(QPushButton)
     assert bttn.text() == 'View Traceback'
     mock_show.assert_not_called()
