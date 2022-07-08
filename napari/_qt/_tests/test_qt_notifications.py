@@ -65,6 +65,10 @@ def clean_current(monkeypatch, qtbot):
     yield set_check
 
 
+def test_dummy_run(make_napari_viewer):
+    make_napari_viewer()
+
+
 @pytest.mark.parametrize(
     "raise_func,warn_func",
     [(_raise, _warn), (_threading_raise, _threading_warn)],
