@@ -402,25 +402,18 @@ def _create_hex_to_name_dict():
     """
     colordict = get_color_dict()
     hex_to_name = {f"{v.lower()}ff": k for k, v in colordict.items()}
-    hex_to_name["#00000000"] = "transparent"
     return hex_to_name
 
 
 def get_color_namelist():
-    """A wrapper around vispy's get_color_names designed to add a
-    "transparent" (alpha = 0) color to it.
-
-    Once https://github.com/vispy/vispy/pull/1794 is merged this
-    function is no longer necessary.
+    """Gets all the color names supported by napari.
 
     Returns
     -------
-    color_dict : list
-        A list of all valid vispy color names plus "transparent".
+    list[str]
+        All the color names supported by napari.
     """
-    names = get_color_names()
-    names.append('transparent')
-    return names
+    return get_color_names()
 
 
 hex_to_name = _create_hex_to_name_dict()
