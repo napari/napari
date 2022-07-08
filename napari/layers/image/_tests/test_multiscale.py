@@ -432,3 +432,43 @@ def test_multiscale_data_protocol():
     assert layer.data.dtype == float
     assert layer.data.shape == shapes[0]
     assert isinstance(layer.data[0], np.ndarray)
+
+
+def test_update_draw_with_2d_isotropic_image_level_0_threshold():
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    # In world coordinates.
+    corner_pixels_displayed = np.array([[0, 0], [20, 20]])
+    shape_threshold = (16, 16)
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=corner_pixels_displayed,
+        shape_threshold=shape_threshold,
+    )
+
+    assert layer.data_level == 0
+    # In data coordinates (wrt data_level).
+    expected_corner_pixels = [[0, 0], [20, 20]]
+    np.testing.assert_equal(layer.corner_pixels, expected_corner_pixels)
+
+
+def test_update_draw_with_2d_isotropic_image_level_1_threshold():
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    # In world coordinates.
+    corner_pixels_displayed = np.array([[0, 0], [20, 20]])
+    shape_threshold = (8, 8)
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=corner_pixels_displayed,
+        shape_threshold=shape_threshold,
+    )
+
+    assert layer.data_level == 1
+    # In data coordinates (wrt data_level).
+    expected_corner_pixels = [[0, 0], [10, 10]]
+    np.testing.assert_equal(layer.corner_pixels, expected_corner_pixels)

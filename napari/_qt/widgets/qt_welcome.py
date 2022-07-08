@@ -177,7 +177,7 @@ class QtWidgetOverlay(QStackedWidget):
 
         # Widget setup
         self.addWidget(widget)
-        self.addWidget(self._overlay)
+        # self.addWidget(self._overlay)
         self.setCurrentIndex(0)
 
         # Signals
@@ -185,7 +185,8 @@ class QtWidgetOverlay(QStackedWidget):
 
     def set_welcome_visible(self, visible=True):
         """Show welcome screen widget on stack."""
-        self.setCurrentIndex(int(visible))
+        pass
+        # self.setCurrentIndex(int(visible))
 
     def resizeEvent(self, event):
         """Emit our own event when canvas was resized."""
