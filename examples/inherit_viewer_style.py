@@ -8,7 +8,7 @@ from main napari window.
 
 from typing import Callable
 
-from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton
+from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
 
 from magicgui import magicgui
 
@@ -16,32 +16,35 @@ import napari
 from napari.qt import get_stylesheet
 from napari.settings import get_settings
 
+@magicgui
 def sample_add(a: int, b: int) -> int:
     return a + b
 
-@magicgui
-def sample_add2(a: int, b: int) -> int:
-    return a + b
-
 def change_style():
-    sample_add2.native.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
+    sample_add.native.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
 
 
 get_settings().appearance.events.theme.connect(change_style)
 change_style()
 
 
-class MguiDialog(QDialog):
-    def __init__(self, fun: Callable, parent=None):
+class MyDialog(QDialog):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.mgui_widget = magicgui(fun)  # close of dialog will destroy widget
-        layout = QVBoxLayout()
-        layout.addWidget(self.mgui_widget.native)
+        self.first_input = QSpinBox()
+        self.second_input = QSpinBox()
+        self.btn = QPushButton('Add')
+        layout = QGridLayout()
+        layout.addWidget(QLabel("first input"), 0, 0)
+        layout.addWidget(self.first_input, 0, 1)
+        layout.addWidget(QLabel("second input"), 1, 0)
+        layout.addWidget(self.second_input, 1, 1)
+        layout.addWidget(self.btn, 2, 0, 1, 2)
         self.setLayout(layout)
-        self.mgui_widget.called.connect(self.run)
+        self.btn.clicked.connect(self.run)
 
-    def run(self, value):
-        print('run', value)
+    def run(self):
+        print('run', self.first_input.value() + self.second_input.value())
         self.close()
 
 class MyWidget(QWidget):
@@ -57,11 +60,11 @@ class MyWidget(QWidget):
         self.setLayout(self.layout)
 
     def show_dialog(self):
-        dialog = MguiDialog(sample_add, self)
+        dialog = MyDialog(self)
         dialog.exec_()
 
     def show_widget(self):
-        sample_add2.show()
+        sample_add.show()
 
 
 

@@ -275,47 +275,6 @@ class MyWidget(QWidget):
             print(dialog.number.value())
 ```
 
-When you want to use magicgui to create your widget you could still wrap it in 
-`QDialog`:
-
-```python
-from typing import Callable
-
-from magicgui import magicgui
-from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton
-
-
-def sample_add(a: int, b: int) -> int:
-    return a + b
-
-class MguiDialog(QDialog):
-    def __init__(self, fun: Callable, parent=None):
-        super().__init__(parent)
-        self.mgui_widget = magicgui(fun)  # close of dialog will destroy widget
-        layout = QVBoxLayout()
-        layout.addWidget(self.mgui_widget.native)
-        self.setLayout(layout)
-        self.mgui_widget.called.connect(self.run)
-
-    def run(self, value):
-        print('run', value)
-        self.close()
-
-class MyWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.btn = QPushButton('Click me')
-        self.btn.clicked.connect(self.click)
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.btn)
-        self.setLayout(self.layout)
-
-
-    def click(self):
-        dialog = MguiDialog(sample_add, self)
-        dialog.exec_()
-```
-
 If there is a particular reason that you need to use a separate window that
 inherits from `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
 and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) functions from the [`napari.qt`](/api/napari.qt.html) module.
