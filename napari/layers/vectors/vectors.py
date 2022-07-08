@@ -682,6 +682,64 @@ class Vectors(Layer):
         else:
             return [], np.empty(0)
 
+    def _slice_data_generic(
+        self, dims_indices
+    ) -> Tuple[List[int], Union[float, np.ndarray]]:
+        """Determines the slice of vectors given the indices.
+
+        Parameters
+        ----------
+        dims_indices : sequence of int or slice
+            Indices to slice with.
+
+        Returns
+        -------
+        slice_indices : list
+            Indices of vectors in the currently viewed slice.
+        alpha : float, (N, ) array
+            The computed, relative opacity of vectors in the current slice.
+            If `out_of_slice_display` is mode is off, this is always 1.
+            Otherwise, vectors originating in the current slice are assigned a value of 1,
+            while vectors passing through the current slice are assigned progressively lower
+            values, based on how far from the current slice they originate.
+        """
+        not_disp = list(self._dims_not_displayed)
+        # We want a numpy array so we can use fancy indexing with the non-displayed
+        # indices, but as dims_indices can (and often/always does) contain slice
+        # objects, the array has dtype=object which is then very slow for the
+        # arithmetic below.
+        not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
+        if len(self.data) > 0:
+            positions = self.data[:, 0, not_disp]
+            distances = abs(
+                positions - not_disp_indices
+            )  # TODO what does this line mean?
+            # display vectors outside of the slice
+            if self.out_of_slice_display is True:
+                # get the lengths of all the vectors currently outside of the slice
+                # the 1 here is for projections, then they are scaled by length
+                # TODO: don't know why the abs is needed
+                projected_lengths = abs(
+                    self.data[:, 1, not_disp] * self.length
+                )
+                # find the vectors what are closer than a projected length away #TODO away from what?
+                matches = np.all(distances <= projected_lengths, axis=1)
+                alpha_match = projected_lengths[matches]
+                alpha_match[alpha_match == 0] = 1
+                alpha_per_dim = (
+                    alpha_match - distances[matches]
+                ) / alpha_match
+                alpha_per_dim[alpha_match == 0] = 1
+                alpha = np.prod(alpha_per_dim, axis=1).astype(float)
+            else:
+                matches = np.all(distances <= 0.5, axis=1)
+                alpha = 1.0
+
+            slice_indices = np.where(matches)[0].astype(int)
+            return slice_indices, alpha
+        else:
+            return [], np.empty(0)
+
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
