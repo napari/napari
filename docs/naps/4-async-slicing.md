@@ -11,7 +11,7 @@
 
 ## Abstract
 
-Slicing a layer in napari generates a partial view of the layer's data.
+Slicing a layer in napari generates a partial view of the layer.
 The main use of slicing is to define the data that should be rendered
 in napari's canvas based on the dimension slider positions.
 
@@ -33,9 +33,9 @@ may be scoped to image and points layers.
 ## Motivation and scope
 
 Currently, all slicing in napari is performed synchronously.
-For example, if a dimension slider is moved, napari waits to slice each layer
+When a dimension slider is moved, napari waits to slice each layer
 before updating the canvas. When slicing layers is slow, this blocking behavior
-makes interacting with data difficult and napari may be reported as non-responsive
+makes navigating data difficult and napari may be reported as not responding
 by the host operating system.
 
 ![The napari viewer displaying a 2D slice of 10 million random 3D points. Dragging the slider changes the 2D slice, but the slider position and canvas updates are slow and make napari non-responsive.](https://i.imgur.com/CSGQbrA.gif)
@@ -107,18 +107,15 @@ current form, but are captured here to prevent any regression caused by this wor
 #### 3. Measure slicing latencies on representative examples
 
 - P0. Define representative examples that currently cause *desirable* behavior in napari, so that I can check that async slicing does not degrade those.
-	- e.g. Medium 3D image layer.
-	- Small: all data fits in VRAM (i.e. < 1GB).
-	- Medium: all data fits in RAM but not in VRAM (e.g. 1GB < x < 8GB).
+	- e.g. 3D image layer that fits in RAM, but not in VRAM.
 - P0. Define representative examples that currently cause *undesirable* behavior in napari, so that I can check that async slicing improves those.
-	- e.g. Large local 3D points layer.
-	- e.g. Huge remote 3D image layer.
-	- Large: all data fits on local storage but not in RAM (e.g. 8GB < x < 128GB).
-	- Huge: all data does not fit on local storage (e.g. > 128GB).
+	- e.g. 3D points layer that fits in RAM.
+    - e.g. 3D image layer that does not fit on local storage.
 - P0. Define slicing benchmarks, so that I can understand if my changes impact overall timing or memory usage.
 	- E.g. Do not increase the latency of generating a single slice more than 10%.
 	- E.g. Decrease the latency of dealing with 25 slice requests over 1 second by 50%.
 - P1. Log specific slicing latencies, so that I can summarize important measurements beyond granular profile timings.
+    - E.g. Decrease the time spent processing the slider position move by 50%.
 	- Latency logs are local only (i.e. not sent/stored remotely).
 	- Add an easy way for users to enable writing these latency measurements.
 
@@ -128,40 +125,36 @@ current form, but are captured here to prevent any regression caused by this wor
 To help clarify the scope, we also define some things that were are not explicit goals of this project and give some insight into why they were rejected.
 
 - Make a single slicing operation faster.
-	- The slicing code should mostly remain unchanged.
-	- Useful future work, that may be made easier by changes here.
-	- Scope creep: can be done independently on this work.
+	- Can be done independently of this work.
 - Improve slicing functionality.
 	- For example, handling out-of-plane rotations in 3D+ images.
-	- The slicing code should mostly remain unchanged.
-	- Useful future work, that may be made easier by changes here.
-	- Scope creep: can be done independently on this work.
+	- Can be done independently of this work.
 - Toggle the async setting on or off, so that I have control over the way my data loads.
     - May complicate the program flow of slicing.
-- When moving a dimension slider and the slice doesn’t immediately load, show of a low level of detail version of it, so that I can preview what is upcoming.
+- When moving a dimension slider and the slice doesn’t immediately load, show of a low level of detail version of it.
 	- Requires a low level of detail version to exist.
-	- Scope creep: should be part of a to-be-defined multi-scale project.
+	- Should be part of a to-be-defined multi-scale project.
 - Store multiple slices associated with each layer, so that I can easily implement a multi-canvas mode for napari.
-	- Scope creep: should be part of a to-be-defined multi-canvas project.
+	- Should be part of a to-be-defined multi-canvas project.
 	- Solutions for goal (2) should not block this in the future.
 - Open/save layers asynchronously.
     - More related to plugin execution.
 - Lazily load parts of data based on the canvas' current field of view.
     - An optimization that is dependent on specific data formats (e.g. tiled image).
 - Identify and assign dimensions to layers and transforms.
-	- Scope creep: should be part of a to-be-defined dimensions project.
+	- Should be part of a to-be-defined dimensions project.
 	- Solutions for goal (2) should not block this in the future.
 - Thick slices of non-visualized dimensions.
-	- Scope creep: currently being prototyped [^pull-4334].
+	- Currently being prototyped [^pull-4334].
 	- Solutions for goal (2) should not block this in the future.
 - Keep the experimental async fork working.
 	- Nice to have, but should not put too much effort into this.
-	- Do not delete some existing code, which may be moved into vispy (e.g. VispyTiledImageLayer).
 
     
 ## Related work
 
-As this project focuses on re-designing slicing in napari, this section contains information on how slicing in napari currently works.
+As this project focuses on re-designing slicing in napari,
+this section contains information on how slicing in napari currently works.
 
 
 ### Existing slice logic
