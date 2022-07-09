@@ -126,8 +126,31 @@ class LayerList(SelectableEventedList[Layer]):
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
 
+    def _ensure_unique(self, values, allow=()):
+        bad = set(self._list) - set(allow)
+        values = tuple(values) if isinstance(values, Iterable) else (values,)
+        for v in values:
+            if v in bad:
+                raise ValueError(
+                    trans._(
+                        "Layer '{v}' is already present in layer list",
+                        deferred=True,
+                        v=v,
+                    )
+                )
+        return values
+
+    def __setitem__(self, key, value):
+        old = self._list[key]
+        if isinstance(key, slice):
+            value = self._ensure_unique(value, old)
+        elif isinstance(key, int):
+            (value,) = self._ensure_unique((value,), (old,))
+        super().__setitem__(key, value)
+
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
+        (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
@@ -409,7 +432,11 @@ class LayerList(SelectableEventedList[Layer]):
         """
         from ..plugins.io import save_layers
 
-        layers = list(self.selection) if selected else list(self)
+        layers = (
+            [x for x in self if x in self.selection]
+            if selected
+            else list(self)
+        )
 
         if selected:
             msg = trans._("No layers selected", deferred=True)
