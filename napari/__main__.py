@@ -296,7 +296,7 @@ def _run():
         # For backwards compatibility
         # If the --stack option is provided without additional arguments
         # just set stack to True similar to the previous store_true action
-        if args.stack and len(args.stack[0]) == 0:
+        if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
             args.stack = True
         viewer._window._qt_viewer._qt_open(
             args.paths,
