@@ -108,6 +108,6 @@ We're a community partner on the [image.sc forum](https://forum.image.sc/tags/na
 Bug reports should be made on our [github issues](https://github.com/napari/napari/issues/new?template=bug_report.md) using
 the bug report template. If you think something isn't working, don't hesitate to reach out - it is probably us and not you!
 
-## insitutional and funding partners
+## institutional and funding partners
 
 ![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)
