@@ -130,7 +130,7 @@ class _QtMainWindow(QMainWindow):
         return super().statusBar()
 
     @classmethod
-    def current(cls):
+    def current(cls) -> Optional['_QtMainWindow']:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
