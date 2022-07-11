@@ -1,6 +1,9 @@
 """
-This is an example on how to have more than one viewer in the same napari instance.
-Additional viewers state will be synchronized with the main viewer and do not
+This is an example on how to have more than one viewer in the same napari window.
+Additional viewers state will be synchronized with the main viewer.
+Switch to 3d viewer will only impact main viewer.
+
+This example also contain option to enable cross that will be moved to the mouse position.
 """
 
 from copy import deepcopy
