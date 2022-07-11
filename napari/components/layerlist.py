@@ -261,12 +261,12 @@ class LayerList(SelectableEventedList[Layer]):
         scales = [extent.step for extent in layer_extent_list]
         return self._step_size_from_scales(scales)
 
-    def get_extent(self, layers: List[Layer]) -> Extent:
+    def get_extent(self, layers: Sequence[Layer]) -> Extent:
         """
         Return extent for a given layer list.
-        This function allows to calculate extent for subset of layers
-        when preparing and updating some technical layers.
-        For example Vectors cross in `multiple_viewer_widget` example
+        This function is useful for calculating the extent of a subset of layers
+        when preparing and updating some supplementary layers.
+        For example see the cross Vectors layer in the `multiple_viewer_widget` example.
 
         Parameters
         ----------

@@ -1,7 +1,7 @@
 """
 This is an example on how to have more than one viewer in the same napari window.
 Additional viewers state will be synchronized with the main viewer.
-Switch to 3d viewer will only impact main viewer.
+Switching to 3D display will only impact the main viewer.
 
 This example also contain option to enable cross that will be moved to the mouse position.
 """
@@ -250,7 +250,7 @@ class ExampleWidget(QWidget):
 
 
 class MultipleViewerWidget(QSplitter):
-    """The Main widget of the example."""
+    """The main widget of the example."""
 
     def __init__(self, viewer: napari.Viewer):
         super().__init__()
