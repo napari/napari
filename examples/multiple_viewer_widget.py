@@ -81,7 +81,7 @@ def center_cross_on_mouse(
     """move the cross to the mouse position"""
 
     if not getattr(viewer_model, "_mouse_over_canvas", True):
-        # There is no way fo napari 0.4.15 to check if mouse is over sending canvas.
+        # There is no way for napari 0.4.15 to check if mouse is over sending canvas.
         show_info(
             "Mouse is not over the canvas. You may need to click on the canvas."
         )
@@ -111,7 +111,7 @@ action_manager.bind_shortcut('napari:move_point', 'C')
 
 class own_partial:
     """
-    Workaround for deepcopy do not copy partial functions
+    Workaround for deepcopy not copying partial functions
     (Qt widgets are not serializable)
     """
 
@@ -173,9 +173,9 @@ class CrossWidget(QCheckBox):
     @qthrottled(leading=False)
     def _update_extent(self):
         """
-        In this function there is calculated range and steep of data.
-        To not impact this values by added cross layer there is steep
-        of filtering layers.
+        Calculate the extent of the data.
+        
+        Ignores the the cross layer itself in calculating the extent.
         """
         if NAPARI_GE_4_16:
             layers = [
@@ -234,8 +234,8 @@ class CrossWidget(QCheckBox):
 
 class ExampleWidget(QWidget):
     """
-    Dummy widget to show option to put some additional widgets right to
-    additional viewers.
+    Dummy widget showcasing how to place additional widgets to the right
+    of the additional viewers.
     """
 
     def __init__(self):
