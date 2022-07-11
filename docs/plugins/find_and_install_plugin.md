@@ -30,3 +30,13 @@ directly from within napari:
    ![napari viewer's Plugin dialog. At the bottom of the dialog, there is a place to install by name, URL, or dropping in a file.](/images/plugin-install-dialog.png)
 
 3. Click the “Install” button next to the input bar.
+
+```{note}
+When wanting to install a plugin from a URL you need to respect a specific syntax required by pypi!
+You need to add the vcs (version control system) information before the URL for pip to be able to handle the URL.
+You will find more information about this on the [pip documentation](https://pip.pypa.io/en/stable/topics/vcs-support/)
+
+
+Example:
+If you want to install the plugin `napari-svg` directly from the [source code url](https://github.com/napari/napari-svg), you need to write `git+https://github.com/napari/napari-svg.git` in the text field.
+```
