@@ -304,7 +304,7 @@ def _run():
                     "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.4.11.",
                 ),
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
             args.stack = True
         viewer._window._qt_viewer._qt_open(
