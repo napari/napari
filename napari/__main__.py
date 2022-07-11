@@ -12,6 +12,8 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
+from .utils.translations import trans
+
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
@@ -297,6 +299,13 @@ def _run():
         # If the --stack option is provided without additional arguments
         # just set stack to True similar to the previous store_true action
         if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
+            warnings.warn(
+                trans._(
+                    "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.4.11.",
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
             args.stack = True
         viewer._window._qt_viewer._qt_open(
             args.paths,
