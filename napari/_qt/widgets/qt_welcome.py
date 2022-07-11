@@ -84,6 +84,9 @@ class QtWelcomeWidget(QWidget):
         )
 
     def minimumSizeHint(self):
+        """
+        Ovewritte minimum size to allow creating small viewer instance
+        """
         return QSize(100, 100)
 
     def _show_shortcuts_updated(self):
