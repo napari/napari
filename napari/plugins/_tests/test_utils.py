@@ -28,7 +28,7 @@ def test_get_preferred_reader_complex_pattern():
     reader = get_preferred_reader('my-specific-folder/my_file.tif')
     assert reader == 'fake-plugin'
 
-    reader = get_preferred_reader('../my-specific-folder/my_file.tif')
+    reader = get_preferred_reader('foo/my-specific-folder/my_file.tif')
     assert reader == 'fake-plugin'
 
 
