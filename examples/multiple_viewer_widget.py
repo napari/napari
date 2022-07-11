@@ -33,6 +33,7 @@ from napari.utils.notifications import show_info
 
 NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version("0.4.16")
 
+
 def copy_layer_le_4_16(layer: Layer, name: str = ""):
     res_layer = deepcopy(layer)
     # this deepcopy is not optimal for labels and images layers
@@ -48,6 +49,7 @@ def copy_layer_le_4_16(layer: Layer, name: str = ""):
         emitter.source = res_layer
     return res_layer
 
+
 def copy_layer(layer: Layer, name: str = ""):
     if NAPARI_GE_4_16:
         return copy_layer_le_4_16(layer, name)
@@ -55,6 +57,7 @@ def copy_layer(layer: Layer, name: str = ""):
     res_layer = Layer.create(*layer.as_layer_data_tuple())
     res_layer.metadata["viewer_name"] = name
     return res_layer
+
 
 def get_property_names(layer: Layer):
     klass = layer.__class__
@@ -72,12 +75,16 @@ def get_property_names(layer: Layer):
     return res
 
 
-def center_cross_on_mouse(viewer_model: napari.components.viewer_model.ViewerModel):
+def center_cross_on_mouse(
+    viewer_model: napari.components.viewer_model.ViewerModel,
+):
     """move the cross to the mouse position"""
 
     if not getattr(viewer_model, "_mouse_over_canvas", True):
-        # There is no way fo napari 0.4.15 to check if mouse is over sending canvas. 
-        show_info("Mouse is not over the canvas. You may need to click on the canvas.")
+        # There is no way fo napari 0.4.15 to check if mouse is over sending canvas.
+        show_info(
+            "Mouse is not over the canvas. You may need to click on the canvas."
+        )
         return
 
     viewer_model.dims.current_step = tuple(
@@ -138,7 +145,10 @@ class QtViewerWrap(QtViewer):
         **kwargs,
     ):
         """for drag and drop open files"""
-        self.main_viewer.window._qt_viewer._qt_open(filenames, stack, plugin, layer_type, **kwargs)
+        self.main_viewer.window._qt_viewer._qt_open(
+            filenames, stack, plugin, layer_type, **kwargs
+        )
+
 
 class CrossWidget(QCheckBox):
     """
@@ -211,7 +221,9 @@ class CrossWidget(QCheckBox):
             if (upper - lower) / self._extent.step[i] == 1:
                 continue
             point1 = list(point)
-            point1[i] = (lower + self._extent.step[i] / 2) / self._extent.step[i]
+            point1[i] = (lower + self._extent.step[i] / 2) / self._extent.step[
+                i
+            ]
             point2 = [0 for _ in point]
             point2[i] = (upper - lower) / self._extent.step[i]
             vec.append((point1, point2))
@@ -278,7 +290,6 @@ class MultipleViewerWidget(QSplitter):
 
     def _status_update(self, event):
         self.viewer.status = event.value
-
 
     def _reset_view(self):
         self.viewer_model1.reset_view()
