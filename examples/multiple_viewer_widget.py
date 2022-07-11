@@ -3,7 +3,8 @@ This is an example on how to have more than one viewer in the same napari window
 Additional viewers state will be synchronized with the main viewer.
 Switching to 3D display will only impact the main viewer.
 
-This example also contain option to enable cross that will be moved to the mouse position.
+This example also contain option to enable cross that will be moved to the
+current dims point (`viewer.dims.point`).
 """
 
 from copy import deepcopy
@@ -161,7 +162,7 @@ class CrossWidget(QCheckBox):
         self.viewer = viewer
         self.setChecked(False)
         self.stateChanged.connect(self._update_cross_visibility)
-        self.layer = None  # Vectors(name=".cross", ndim=self.viewer.dims.ndim)
+        self.layer = None
         self.viewer.dims.events.order.connect(self.update_cross)
         self.viewer.dims.events.ndim.connect(self._update_ndim)
         self.viewer.dims.events.current_step.connect(self.update_cross)
