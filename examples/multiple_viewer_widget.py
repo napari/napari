@@ -1,5 +1,5 @@
 """
-This is example how to have more than one viewer in the same napari instance.
+This is an example on how to have more than one viewer in the same napari instance.
 Additional viewers state will be synchronized with the main viewer and do not
 """
 
@@ -32,7 +32,7 @@ NAPARI_GE_4_16 = parse_version(napari.__version__) > parse_version("0.4.16")
 
 def copy_layer_le_4_16(layer: Layer, name: str = ""):
     res_layer = deepcopy(layer)
-    # this deepcopy is not optimal for layers and images layers
+    # this deepcopy is not optimal for labels and images layers
     if isinstance(layer, (Image, Labels)):
         res_layer.data = layer.data
 
