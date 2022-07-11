@@ -1814,7 +1814,6 @@ class Points(Layer):
         ----------
         coord : sequence of indices to add point at
         """
-        print("add", coord)
         self.data = np.append(self.data, np.atleast_2d(coord), axis=0)
 
     def remove_selected(self):
