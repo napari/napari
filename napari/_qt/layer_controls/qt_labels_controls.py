@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
@@ -27,6 +29,10 @@ from ..utils import disable_with_opacity
 from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
+
 
 INT32_MAX = 2**31 - 1
 
@@ -74,6 +80,8 @@ class QtLabelsControls(QtLayerControls):
         Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, ERASE, or
         FILL.
     """
+
+    layer: 'napari.layers.Labels'
 
     def __init__(self, layer):
         super().__init__(layer)
