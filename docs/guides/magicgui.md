@@ -148,6 +148,7 @@ def my_widget(layer: Layer):
     ...
 ```
 
+(annotating-as-napari-types-data)=
 ### Annotating as `napari.types.*Data`
 
 In the previous example, the object passed to your function will be the actual
@@ -186,7 +187,7 @@ def my_widget(viewer: Viewer):
 ```{caution}
 Please use this sparingly, as a last resort. If you need to *add* layers
 to the viewer from your function, prefer one of the return-annotation methods
-described [below](#adding-layers-to-napari-from-your-magicgui-function).
+described [below](#return-annotations).
 If you find that you require the viewer instance because of functionality that
 is otherwise missing here, please consider opening an issue in the
 [napari issue tracker](https://github.com/napari/napari/issues/new/choose),
@@ -251,6 +252,7 @@ function is called.  To update an existing layer, you must use the
 `LayerDataTuple` approach described below
 ```
 
+(returning-napari-types-data)=
 ### Returning `napari.types.*Data`
 
 In the previous example, the object returned by the function had to be an actual
@@ -264,7 +266,7 @@ returned by your function to be turned into the corresponding
 {class}`~napari.layers.Layer` type, and added to the viewer.
 
 For example, in combination with the {attr}`~napari.types.ImageData` paramater
-annotation [described above](#annotating-as-napari-types-data):
+annotation [described above](annotating-as-napari-types-data):
 
 ```{code-cell} python
 :tags: [remove-output]
@@ -466,7 +468,7 @@ In most cases, the {func}`@magicgui <magicgui.magicgui>` decorator used in the
 preceding examples can simply be replaced with the {func}`@magic_factory <magicgui.magic_factory>`
 decorator, to use it as a plugin dock widget.
 
-For example, the threshold widget [shown above](#returning-napari-types-data)
+For example, the threshold widget [shown above](returning-napari-types-data)
 could be provided as a napari plugin as follows:
 
 ```python

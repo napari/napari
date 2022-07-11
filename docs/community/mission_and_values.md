@@ -23,6 +23,7 @@ The founding napari team came together around a shared vision for a Python based
 
 As the project has grown we've turned these original principles into the mission statement and set of values that we described below.
 
+(our-mission)=
 ## Our mission
 
 napari aims to be the **multi-dimensional image viewer for Python** and to **provide GUI access to a plugin ecosystem of image analysis tools for scientists** to use in their daily work. We hope to accomplish this by:
@@ -39,6 +40,7 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - **ensuring correctness**. We strive for complete test coverage of both the code and GUI, with all code reviewed by a core developer before being included in the repository.
 
+(our-values)=
 ## Our values
 
 - We are **inclusive**. We welcome and mentor newcomers who are making their first contribution and strive to grow our most dedicated contributors into [core developers](core-dev-guide). We have a [Code of Conduct](napari-coc) to make napari
