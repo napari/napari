@@ -261,7 +261,7 @@ class LayerList(SelectableEventedList[Layer]):
         scales = [extent.step for extent in layer_extent_list]
         return self._step_size_from_scales(scales)
 
-    def get_extent(self, layers: Sequence[Layer]) -> Extent:
+    def get_extent(self, layers: Iterable[Layer]) -> Extent:
         """
         Return extent for a given layer list.
         This function is useful for calculating the extent of a subset of layers
