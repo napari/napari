@@ -414,7 +414,7 @@ def test_bundle_exceptions(trans):
     ],
 )
 def test_deepcopy(kwargs):
-    """Object containing translation strings can't bee deep-copied.
+    """Object containing translation strings can't be deep-copied.
 
     See:
       - https://github.com/napari/napari/issues/2911
