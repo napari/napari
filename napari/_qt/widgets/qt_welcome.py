@@ -85,7 +85,7 @@ class QtWelcomeWidget(QWidget):
 
     def minimumSizeHint(self):
         """
-        Ovewritte minimum size to allow creating small viewer instance
+        Overwrite minimum size to allow creating small viewer instance
         """
         return QSize(100, 100)
 
