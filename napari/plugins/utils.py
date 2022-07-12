@@ -1,10 +1,10 @@
 import re
-from fnmatch import fnmatch
 from typing import Dict, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
 from napari.settings import get_settings
+from napari.utils.wildmatch import score_key, wildmatch
 
 from . import _npe2, plugin_manager
 
@@ -24,7 +24,10 @@ def _get_preferred_readers(path):
     """
     reader_settings = get_settings().plugins.extension2reader
 
-    return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
+    return filter(
+        lambda kv: wildmatch(kv[0], path, any_depth=True),
+        reader_settings.items(),
+    )
 
 
 def get_preferred_readers(path):
@@ -56,10 +59,12 @@ def get_preferred_reader(path):
     reader : str
         Best matching reader, if found.
     """
-    for pattern, reader in _get_preferred_readers(path):
-        # TODO: we return the first one we find - more work should be done here
-        # in case other patterns would match - do we return the most specific?
-        return reader
+    readers = sorted(
+        _get_preferred_readers(path), key=lambda kv: score_key(kv[0])
+    )
+
+    if readers:
+        return readers[0][1]
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:
