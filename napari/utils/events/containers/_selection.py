@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
+from typing import Generic, Iterable, Optional, TypeVar
 
 from ...translations import trans
 from ..event import EmitterGroup
 from ._set import EventedSet
-
-if TYPE_CHECKING:
-    from pydantic.fields import ModelField
 
 _T = TypeVar("_T")
 _S = TypeVar("_S")
@@ -134,12 +131,11 @@ class Selection(EventedSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v, field: 'ModelField'):
+    def validate(cls, v):
         """Pydantic validator."""
-        from pydantic.utils import sequence_like
 
         if isinstance(v, dict):
-            data = v.get("selection", [])
+            data = v.get("selection", {})
             current = v.get("_current", None)
         elif isinstance(v, Selection):
             data = v._set
@@ -148,40 +144,18 @@ class Selection(EventedSet[_T]):
             data = v
             current = None
 
-        if not sequence_like(data):
+        if not isinstance(data, Iterable):
             raise TypeError(
                 trans._(
-                    'Value is not a valid sequence: {data}',
+                    'Value is not a valid Iterable: {data}',
                     deferred=True,
                     data=data,
                 )
             )
 
-        # no type parameter was provided, just return
-        if not field.sub_fields:
-            obj = cls(data=data)
-            obj._current_ = current
-            return obj
-
-        # Selection[type] parameter was provided.  Validate contents
-        type_field = field.sub_fields[0]
-        errors = []
-        for i, v_ in enumerate(data):
-            _, error = type_field.validate(v_, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-        if current is not None:
-            _, error = type_field.validate(current, {}, loc='current')
-            if error:
-                errors.append(error)
-
-        if errors:
-            from pydantic import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore
-        obj = cls(data=data)
-        obj._current_ = current
-        return obj
+        sel = cls(data)
+        sel._current = current
+        return sel
 
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
