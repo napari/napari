@@ -30,10 +30,10 @@ class Array(np.ndarray):
         yield cls.validate_type
 
     @classmethod
-    def validate_type(cls, val, field):
+    def validate_type(cls, val, field=None):
         # we have to explicitly allow None when field.allow_none is True
         # because post_validators are still fired for Optional
-        if field.allow_none and val is None:
+        if field is not None and field.allow_none and val is None:
             return None
 
         dtype = getattr(cls, '__dtype__', None)
