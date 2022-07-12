@@ -461,7 +461,7 @@ def score_key(pattern):
 
     Absolute paths have highest specificity,
     followed by paths with the most nesting,
-    followed by path segments broken down by the least ambiguous.
+    then by path segments with the least ambiguity.
 
     Parameters
     ----------
