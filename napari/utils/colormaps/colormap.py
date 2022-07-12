@@ -65,7 +65,7 @@ class Colormap(EventedModel):
     def _check_controls(cls, v, values):
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
-            n_controls = len(values.get('colors', [])) + int(
+            n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
             return np.linspace(0, 1, n_controls)
