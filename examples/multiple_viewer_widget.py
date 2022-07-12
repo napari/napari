@@ -81,7 +81,7 @@ def center_cross_on_mouse(
 ):
     """move the cross to the mouse position"""
 
-    if not getattr(viewer_model, "_mouse_over_canvas", True):
+    if not getattr(viewer_model, "mouse_over_canvas", True):
         # There is no way for napari 0.4.15 to check if mouse is over sending canvas.
         show_info(
             "Mouse is not over the canvas. You may need to click on the canvas."
