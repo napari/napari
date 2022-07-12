@@ -135,6 +135,7 @@ exclude_patterns = [
     '.DS_Store',
     '.jupyter_cache',
     'jupyter_execute',
+    'plugins/_*.md',
 ]
 
 napoleon_custom_sections = [('Events', 'params_style')]
