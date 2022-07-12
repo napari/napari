@@ -151,15 +151,6 @@ class EventedSet(MutableSet[_T]):
         """Return a set containing the union of sets"""
         return type(self)(self._set.union(others))
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Iterable):
-        """Pydantic validator."""
-        return cls(value)
-
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         return list(self)

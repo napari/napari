@@ -2,7 +2,7 @@ from string import Formatter
 from typing import Any, Dict, Sequence, Union
 
 import numpy as np
-from pydantic import parse_obj_as
+from pydantic import Field, parse_obj_as
 from typing_extensions import Literal, Protocol, runtime_checkable
 
 from ...utils.events.custom_types import Array
@@ -98,7 +98,7 @@ class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
         this from other encodings when passing this as a dictionary.
     """
 
-    constant: StringValue
+    constant: StringValue = Field(coerce_type=False)
     encoding_type: Literal['ConstantStringEncoding'] = 'ConstantStringEncoding'
 
 

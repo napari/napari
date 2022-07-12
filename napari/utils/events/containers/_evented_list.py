@@ -358,14 +358,5 @@ class EventedList(TypedMutableSequence[_T]):
         self._list.reverse()
         self.events.reordered(value=self)
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Iterable):
-        """Pydantic validator."""
-        return cls(value)
-
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._list)})"

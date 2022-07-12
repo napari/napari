@@ -8,6 +8,8 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Protocol,
+    Sequence,
     Set,
     Union,
     get_args,
@@ -15,10 +17,11 @@ from typing import (
 )
 
 import numpy as np
+import pydantic
 from pydantic import BaseModel, PrivateAttr
 from pydantic import main as pydantic_main
 from pydantic import utils as pydantic_utils
-from pydantic.fields import SHAPE_SET, ModelField, Validator
+from pydantic.fields import SHAPE_SET, ModelField, Validator, prep_validators
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
@@ -88,19 +91,16 @@ class ParametrizedGenericCompliantModelField(ModelField):
 
     def _type_analysis(self):
         super()._type_analysis()
-        # if class validators are unset, it means pydantic ignored them. We add them back in.
+        # if class validators are unset, it means pydantic ignored them, so
+        # we add them back in just like pydantic does
         if not self.class_validators:
             get_validators = getattr(
                 self.outer_type_, '__get_validators__', dict
             )
-            # differently from the original _type_analysis() code, we use `pre=False`. This is needed to prevent
-            # conflict with how the "special" validators works for things like Sequence, Mapping and so on.
-            # this means that, for types where normally `__get_validators__` didn't work, it will now work,
-            # but the resulting validators will be fired *after* the rest.
             self.class_validators.update(
                 {
                     f'{self.outer_type_.__name__}_{i}': Validator(
-                        validator, pre=False
+                        validator, pre=True
                     )
                     for i, validator in enumerate(get_validators())
                 }
@@ -122,13 +122,40 @@ class ParametrizedGenericCompliantModelField(ModelField):
         super().populate_validators()
         # we need to get rid of the basic arbitrary_types validator because otherwise
         # in cases where we don't coerce type (e.g: Colormap) it always fails cause the type is wrong
-        # We anyways have to coerce the type ourselves in class validators (see EventedList & Co.),
-        # or this will fire too early and fail if we pass values of the wrong type
+        # We then coerce the type ourselves below, which can be opted out by adding to a field the
+        # coerce_type=False kwarg, or by adding _coerce_type=False as a class attribute to a type
         self.validators = [
             f
             for f in self.validators
             if f.__name__ != 'arbitrary_type_validator'
         ]
+
+        origin = get_origin(self.outer_type_) or self.outer_type_
+        # anything that's not really a class should not be used for coercion
+        if (
+            not isinstance(origin, type)
+            or origin is Union
+            or issubclass(origin, Protocol)
+        ):
+            return
+        # skip special things
+        if (
+            issubclass(origin, BaseModel)
+            or not getattr(origin, '_coerce_type', True)
+            or not self.field_info.extra.get('coerce_type', True)
+        ):
+            return
+
+        # we should get here only if origin is a *real* class and we want to coerce it
+        def coerce_type(cls, value, field):
+            if field.allow_none and value is None:
+                return None
+            if isinstance(value, origin):
+                return value
+            return origin(value)
+
+        self.post_validators = self.post_validators or []
+        self.post_validators.extend(prep_validators([coerce_type]))
 
 
 @contextmanager
@@ -138,8 +165,16 @@ def parametrized_generic_fix():
 
     This context temporarily replaces ModelField with
     ParametrizedGenericCompliantModelField.
+    It also permanently overrides pydantic.sequence_like() to be more lax.
     """
     pydantic_main.ModelField = ParametrizedGenericCompliantModelField
+    seq_like = pydantic_utils.sequence_like
+
+    def sequence_like(v):
+        return seq_like or isinstance(v, Sequence)
+
+    pydantic.fields.sequence_like = sequence_like
+
     try:
         yield
     finally:
@@ -171,13 +206,14 @@ class EventedMetaclass(pydantic_main.ModelMetaclass):
             # encoders for this model.
             # NOTE: a _json_encode field must return an object that can be
             # passed to json.dumps ... but it needn't return a string.
-            if hasattr(f.type_, '_json_encode'):
-                encoder = f.type_._json_encode
-                cls.__config__.json_encoders[f.type_] = encoder
+            origin = get_origin(f.outer_type_) or f.outer_type_
+            encoder = getattr(origin, '_json_encode', None)
+            if encoder is not None:
+                cls.__config__.json_encoders[origin] = encoder
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.__config__.json_encoders[f.type_] = encoder
+                EventedModel.__config__.json_encoders[origin] = encoder
 
         # check for @_.setters defined on the class, so we can allow them
         # in EventedModel.__setattr__

@@ -15,6 +15,8 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
+    _coerce_type = False
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -77,6 +79,8 @@ class ColorArray(np.ndarray):
     of that field (e.g. on initialization or setting) will automatically
     use the ``validate`` method to coerce a value to an array of colors.
     """
+
+    _coerce_type = False
 
     @classmethod
     def __get_validators__(cls):

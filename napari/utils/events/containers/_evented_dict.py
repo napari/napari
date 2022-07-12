@@ -109,14 +109,5 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             if v is value or v == value:
                 return k
 
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Mapping):
-        """Pydantic validator."""
-        return cls(value)
-
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._dict)})"
