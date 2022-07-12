@@ -109,7 +109,12 @@ class ParametrizedGenericCompliantModelField(ModelField):
         origin = get_origin(self.outer_type_)
         # since issubclass(collections.abc.Set, typing.Set) == False, and our EventedSet
         # is a collections.abc.Set, we have to tell pydantic to treat it the same as the other sets
-        if origin is not None and issubclass(origin, abc.Set):
+        # isinstance(origin, type) is needed for non-class origins (e.g: Literal)
+        if (
+            origin is not None
+            and isinstance(origin, type)
+            and issubclass(origin, abc.Set)
+        ):
             self.shape = SHAPE_SET
             self.type_ = get_args(self.outer_type_)[0]
 
