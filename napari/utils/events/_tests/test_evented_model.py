@@ -531,7 +531,7 @@ def test_validate_parametrized_evented_collections():
     assert isinstance(m.d, EventedDict)
 
     assert m.ls == [1.0, 2.0, 3.0]
-    assert all(isinstance(el, float) for el in m.ls)
+    assert all([isinstance(el, float) for el in m.ls])
     assert m.s == {'1', '2'}
     assert all(isinstance(el, str) for el in m.s)
     assert m.d == {1.0: '2'}

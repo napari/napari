@@ -1,7 +1,6 @@
 """MutableMapping that emits events when altered."""
 from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
 
-from ....utils.translations import trans
 from ..event import EmitterGroup, Event
 from ..types import SupportsEvents
 from ._dict import _K, _T, TypedMutableMapping
@@ -120,35 +119,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     @classmethod
     def validate(cls, value: Mapping, field: 'ModelField'):
         """Pydantic validator."""
-        if not isinstance(value, Mapping):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid mapping: {value}',
-                    deferred=True,
-                    value=value,
-                )
-            )
-
-        if not field.key_field:
-            return cls(value)
-
-        validated = {}
-        errors = []
-        for i, (k, v) in enumerate(value.items()):
-            valid_key, error = field.key_field[0].validate(k, {}, loc=f'[{i}]')
-            if error:
-                errors.append(error)
-            valid_item, error = field.key_field[1].validate(
-                v, {}, loc=f'[{i}]'
-            )
-            if error:
-                errors.append(error)
-            validated[valid_key] = valid_item
-        if errors:
-            from pydantic import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore
-        return cls(validated)
+        return cls(value)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._dict)})"

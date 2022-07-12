@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
 from ....utils.events import EmitterGroup
-from ....utils.translations import trans
 
 _T = TypeVar("_T")
 
@@ -162,31 +161,7 @@ class EventedSet(MutableSet[_T]):
     @classmethod
     def validate(cls, value: Iterable, field: ModelField):
         """Pydantic validator."""
-        if not isinstance(value, Iterable):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid iterable: {value}',
-                    deferred=True,
-                    value=value,
-                )
-            )
-        if not field.sub_fields:
-            return cls(value)
-
-        # set does not validate field type in pydantic
-        type_field = field.sub_fields[0]
-        validated = []
-        errors = []
-        for i, v in enumerate(value):
-            valid, error = type_field.validate(v, {}, loc=f'[{i}]')
-            validated.append(valid)
-            if error:
-                errors.append(error)
-        if errors:
-            from pydantic import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore
-        return cls(validated)
+        return cls(value)
 
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""

@@ -23,17 +23,7 @@ cover this in test_evented_list.py)
 """
 
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
 from ...translations import trans
 from ..event import EmitterGroup, Event
@@ -41,9 +31,6 @@ from ..types import SupportsEvents
 from ._typed import _L, _T, Index, TypedMutableSequence
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    from pydantic.fields import ModelField
 
 
 class EventedList(TypedMutableSequence[_T]):
@@ -376,32 +363,9 @@ class EventedList(TypedMutableSequence[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Iterable, field: 'ModelField'):
+    def validate(cls, value: Iterable):
         """Pydantic validator."""
-        if not isinstance(value, Iterable):
-            raise TypeError(
-                trans._(
-                    'Value is not a valid iterable: {value}',
-                    deferred=True,
-                    value=value,
-                )
-            )
-
-        if not field.key_field:
-            return cls(value)
-
-        validated = []
-        errors = []
-        for i, v in enumerate(value):
-            valid, error = field.key_field.validate(v, {}, loc=f'[{i}]')
-            validated.append(valid)
-            if error:
-                errors.append(error)
-        if errors:
-            from pydantic import ValidationError
-
-            raise ValidationError(errors, cls)  # type: ignore
-        return cls(validated)
+        return cls(value)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._list)})"

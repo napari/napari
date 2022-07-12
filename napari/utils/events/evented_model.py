@@ -1,12 +1,14 @@
 import operator
 import sys
 import warnings
+from collections import abc
 from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
+    Sequence,
     Set,
     Union,
     get_args,
@@ -14,11 +16,14 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils
+from pydantic import BaseModel, PrivateAttr
+from pydantic import fields as pydantic_fields
+from pydantic import main as pydantic_main
+from pydantic import utils as pydantic_utils
+from pydantic.fields import SHAPE_SET, ModelField, Validator
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
-from .containers import EventedDict, EventedList
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -65,15 +70,86 @@ def no_class_attributes():
     def _return2(x, y):
         return y
 
-    main.ClassAttribute = _return2
+    pydantic_main.ClassAttribute = _return2
     try:
         yield
     finally:
         # undo our monkey patch
-        main.ClassAttribute = utils.ClassAttribute
+        pydantic_main.ClassAttribute = pydantic_utils.ClassAttribute
 
 
-class EventedMetaclass(main.ModelMetaclass):
+class ParametrizedGenericCompliantModelField(ModelField):
+    """
+    A ModelField that correcly interprets and validates a wider variety
+    of parametrized generics.
+
+    See:
+    - https://github.com/napari/napari/pull/4609
+    - https://github.com/samuelcolvin/pydantic/issues/4161
+    """
+
+    def _type_analysis(self):
+        super()._type_analysis()
+        # if class validators are unset, it means pydantic ignored them. We add them back in.
+        if not self.class_validators:
+            get_validators = getattr(
+                self.outer_type_, '__get_validators__', dict
+            )
+            # differently from the original _type_analysis() code, we use `pre=False`. This is needed to prevent
+            # conflict with how the "special" validators works for things like Sequence, Mapping and so on.
+            # this means that, for types where normally `__get_validators__` didn't work, it will now work,
+            # but the resulting validators will be fired *after* the rest.
+            self.class_validators.update(
+                {
+                    f'{self.outer_type_.__name__}_{i}': Validator(
+                        validator, pre=False
+                    )
+                    for i, validator in enumerate(get_validators())
+                }
+            )
+
+        origin = get_origin(self.outer_type_)
+        # since issubclass(collections.abc.Set, typing.Set) == False, and our EventedSet
+        # is a collections.abc.Set, we have to tell pydantic to treat it the same as the other sets
+        if origin is not None and issubclass(origin, abc.Set):
+            self.shape = SHAPE_SET
+            self.type_ = get_args(self.outer_type_)[0]
+
+    def populate_validators(self):
+        super().populate_validators()
+        # we need to get rid of the basic arbitrary_types validator because otherwise
+        # in cases where we don't coerce type (e.g: Colormap) it always fails cause the type is wrong
+        # We anyways have to coerce the type ourselves in class validators (see EventedList & Co.),
+        # or this will fire too early and fail if we pass values of the wrong type
+        self.validators = [
+            f
+            for f in self.validators
+            if f.__name__ != 'arbitrary_type_validator'
+        ]
+
+
+@contextmanager
+def parametrized_generic_fix():
+    """
+    Context in which pydantic more consistently validates parametrized generics.
+
+    This context temporarily replaces ModelField with
+    ParametrizedGenericCompliantModelField.
+    It also permanently replaces pydantic's `sequence_like` with a
+    more lax `isinstance(x, Sequence)` check.
+    """
+    pydantic_main.ModelField = ParametrizedGenericCompliantModelField
+    _seq_like = pydantic_fields.sequence_like
+    pydantic_fields.sequence_like = lambda x: isinstance(x, Sequence)
+    try:
+        yield
+    finally:
+        pydantic_main.ModelField = ModelField
+        # this needs to stay the same
+        pydantic_fields.sequence_like = _seq_like
+
+
+class EventedMetaclass(pydantic_main.ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
     A metaclass is the thing that "constructs" a class, and ``ModelMetaclass``
@@ -88,20 +164,9 @@ class EventedMetaclass(main.ModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        # pydantic fails in a number of ways with annotated generics
-        # (subclasses of Sequence break, __get_validators__ are ignored, ...)
-        # in order to preserve type hints for pypy but prevent issues with
-        # pydantic, we replace parametrized generics with their origin
-        annotations = namespace.get('__annotations__', {}).copy()
-        for k, v in annotations.items():
-            origin = get_origin(v)
-            if isinstance(origin, type) and issubclass(
-                origin, (EventedList, EventedDict)
-            ):
-                namespace['__annotations__'][k] = origin
-
         with no_class_attributes():
-            cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+            with parametrized_generic_fix():
+                cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {}
         for n, f in cls.__fields__.items():
             cls.__eq_operators__[n] = pick_equality_operator(f.type_)
@@ -116,28 +181,6 @@ class EventedMetaclass(main.ModelMetaclass):
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
                 EventedModel.__config__.json_encoders[f.type_] = encoder
-            # we now reinsert type hints for our own validations
-            # hijacking the key_field (cannot make new ones because of __slots__)
-            # which is otherwise unused
-            if f.type_ is EventedList:
-                hint = get_args(annotations[n])
-                if hint:
-                    f.key_field = f._create_sub_type(
-                        get_args(annotations[n])[0], 'i_' + f.name
-                    )
-            if f.type_ is EventedDict:
-                hint = get_args(annotations[n])
-                if hint:
-                    if len(hint) != 2:
-                        raise TypeError('Dict annotation must be a 2-tuple')
-                    f.key_field = [
-                        f._create_sub_type(
-                            get_args(annotations[n])[0], 'k_' + f.name
-                        ),
-                        f._create_sub_type(
-                            get_args(annotations[n])[1], 'i_' + f.name
-                        ),
-                    ]
 
         # check for @_.setters defined on the class, so we can allow them
         # in EventedModel.__setattr__
@@ -412,7 +455,7 @@ def get_defaults(obj: BaseModel):
     dflt = {}
     for k, v in obj.__fields__.items():
         d = v.get_default()
-        if d is None and isinstance(v.type_, main.ModelMetaclass):
+        if d is None and isinstance(v.type_, pydantic_main.ModelMetaclass):
             d = get_defaults(v.type_)
         dflt[k] = d
     return dflt
