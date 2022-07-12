@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from ..utils.events import EventedModel
@@ -35,18 +37,18 @@ class InteractionBox(EventedModel):
         Bool indicating whether the interaction box allows creating a new selection by dragging outside an existing interaction_box.
     """
 
-    points: Array[float, (-1, 2)] = None
+    points: Optional[Array[float, (-1, 2)]] = None
     show: bool = False
     show_handle: bool = False
     show_vertices: bool = False
-    selection_box_drag: Array[float, (4, 2)] = None
-    selection_box_final: Array[float, (4, 2)] = None
+    selection_box_drag: Optional[Array[float, (4, 2)]] = None
+    selection_box_final: Optional[Array[float, (4, 2)]] = None
     transform_start: Affine = Affine()
     transform_drag: Affine = Affine()
     transform_final: Affine = Affine()
     transform: Affine = Affine()
     allow_new_selection: bool = True
-    selected_vertex: int = None
+    selected_vertex: Optional[int] = None
 
     @property
     def _box(self):
