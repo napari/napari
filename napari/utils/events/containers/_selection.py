@@ -135,7 +135,7 @@ class Selection(EventedSet[_T]):
         """Pydantic validator."""
 
         if isinstance(v, dict):
-            data = v.get("selection", {})
+            data = v.get("selection", [])
             current = v.get("_current", None)
         elif isinstance(v, Selection):
             data = v._set
