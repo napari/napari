@@ -1,3 +1,4 @@
+import pathlib
 import re
 from typing import Dict, Set, Tuple, Union
 
@@ -25,7 +26,9 @@ def _get_preferred_readers(path):
     reader_settings = get_settings().plugins.extension2reader
 
     return filter(
-        lambda kv: wildmatch(kv[0], path, any_depth=True),
+        lambda kv: wildmatch(
+            kv[0], str(pathlib.Path(path).as_posix()), any_depth=True
+        ),
         reader_settings.items(),
     )
 
