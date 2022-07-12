@@ -8,7 +8,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    Sequence,
     Set,
     Union,
     get_args,
@@ -17,7 +16,6 @@ from typing import (
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr
-from pydantic import fields as pydantic_fields
 from pydantic import main as pydantic_main
 from pydantic import utils as pydantic_utils
 from pydantic.fields import SHAPE_SET, ModelField, Validator
@@ -135,18 +133,12 @@ def parametrized_generic_fix():
 
     This context temporarily replaces ModelField with
     ParametrizedGenericCompliantModelField.
-    It also permanently replaces pydantic's `sequence_like` with a
-    more lax `isinstance(x, Sequence)` check.
     """
     pydantic_main.ModelField = ParametrizedGenericCompliantModelField
-    _seq_like = pydantic_fields.sequence_like
-    pydantic_fields.sequence_like = lambda x: isinstance(x, Sequence)
     try:
         yield
     finally:
         pydantic_main.ModelField = ModelField
-        # this needs to stay the same
-        pydantic_fields.sequence_like = _seq_like
 
 
 class EventedMetaclass(pydantic_main.ModelMetaclass):

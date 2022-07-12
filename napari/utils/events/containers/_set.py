@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import Any, Iterable, Iterator, MutableSet, TypeVar
 
 from ....utils.events import EmitterGroup
 
 _T = TypeVar("_T")
-
-if TYPE_CHECKING:
-    from pydantic.fields import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -159,7 +156,7 @@ class EventedSet(MutableSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Iterable, field: ModelField):
+    def validate(cls, value: Iterable):
         """Pydantic validator."""
         return cls(value)
 
