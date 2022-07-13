@@ -17,7 +17,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.layers.utils.color_encoding import ColorArray
+from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -284,6 +284,6 @@ def assert_colors_equal(actual, expected):
     AssertionError:
     ...
     """
-    actual_array = ColorArray.validate_type(actual)
-    expected_array = ColorArray.validate_type(expected)
+    actual_array = ColorArray.validate(actual)
+    expected_array = ColorArray.validate(expected)
     np.testing.assert_array_equal(actual_array, expected_array)
