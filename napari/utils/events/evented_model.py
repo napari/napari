@@ -166,7 +166,7 @@ def parametrized_generic_fix():
     seq_like = pydantic_utils.sequence_like
 
     def sequence_like(v):
-        return seq_like or isinstance(v, Sequence)
+        return seq_like or isinstance(v, Sequence) and not isinstance(v, str)
 
     pydantic.fields.sequence_like = sequence_like
 
