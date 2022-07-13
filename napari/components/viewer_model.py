@@ -143,7 +143,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # max_depth=0 means don't look for parent contexts.
         from .._app.context import create_context
 
-        # FIXME: just like the LayerList, this object should ideally be created 
+        # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
