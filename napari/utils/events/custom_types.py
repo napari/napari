@@ -32,7 +32,8 @@ class Array(np.ndarray):
     @classmethod
     def validate_type(cls, val, field=None):
         # we have to explicitly allow None when field.allow_none is True
-        # because post_validators are still fired for Optional
+        # because this is called before type coercion (which normally does this job).
+        # Also, field=None is necessary because this validator is sometimes called manually
         if field is not None and field.allow_none and val is None:
             return None
 
