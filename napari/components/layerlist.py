@@ -63,6 +63,10 @@ class LayerList(SelectableEventedList[Layer]):
             lookup={str: lambda e: e.name},
         )
 
+        # TODO: figure out how to move this context creation bit.
+        # Ideally, the app should be aware of the layerlist, but not vice versa.
+        # This could probably be done by having the layerlist emit events when a
+        # and the actual `_ctx` object here would live on the app, (not here)
         from .._app.context import create_context
         from .._app.context._layerlist_context import LayerListContextKeys
 
