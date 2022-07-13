@@ -1,3 +1,4 @@
+import contextlib
 from tempfile import TemporaryDirectory
 
 import numpy as np
