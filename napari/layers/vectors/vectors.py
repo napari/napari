@@ -392,7 +392,9 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
-                'edge_color': self.edge_color,
+                'edge_color': self.edge_color
+                if self.data.size
+                else [self._edge.current_color],
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,

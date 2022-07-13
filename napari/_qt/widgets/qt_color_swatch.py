@@ -153,7 +153,7 @@ class QColorSwatch(QFrame):
     ):
         super().__init__(parent)
         self.setObjectName('colorSwatch')
-        self.setToolTip(tooltip or trans.__('click to set color'))
+        self.setToolTip(tooltip or trans._('click to set color'))
         self.setCursor(Qt.PointingHandCursor)
 
         self.color_changed.connect(self._update_swatch_style)

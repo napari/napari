@@ -61,7 +61,7 @@ jobs:
 
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+        uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
 
@@ -71,6 +71,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -109,8 +110,7 @@ jobs:
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
       - name: Report Failures
         if: ${{ failure() }}
@@ -138,6 +138,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 

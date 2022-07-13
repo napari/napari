@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
@@ -5,6 +7,9 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtTracksControls(QtLayerControls):
@@ -23,6 +28,8 @@ class QtTracksControls(QtLayerControls):
         An instance of a Tracks layer.
 
     """
+
+    layer: 'napari.layers.Tracks'
 
     def __init__(self, layer):
         super().__init__(layer)

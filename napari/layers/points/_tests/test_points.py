@@ -2346,3 +2346,75 @@ def test_selected_data_with_non_uniform_sizes():
     # should change to that mean.
     layer.selected_data = (0, 2)
     assert layer.current_size == 2
+
+
+def test_shown_view_size_and_view_data_have_the_same_dimension():
+    data = [[0, 0, 0], [1, 1, 1]]
+    # Data with default settings
+    layer = Points(
+        data, out_of_slice_display=False, shown=[True, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [3])
+
+    # shown == [True, False]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[True, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [3])
+
+    # shown == [False, True]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[False, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 0
+    assert np.array_equal(layer._view_size, [])
+
+    # shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[False, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 0
+    assert np.array_equal(layer._view_size, [])
+
+    # Out of slice display == True
+    layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 2
+    assert np.array_equal(layer._view_size, [3, 1])
+
+    # Out of slice display == True && shown == [True, False]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[True, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [3])
+
+    # Out of slice display == True && shown == [False, True]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[False, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [1])
+
+    # Out of slice display == True && shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[False, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 0
+    assert np.array_equal(layer._view_size, [])
+
+
+def test_empty_data_from_tuple():
+    """Test that empty data raises an error."""
+    layer = Points(name="points")
+    layer2 = Points.create(*layer.as_layer_data_tuple())
+    assert layer2.data.size == 0

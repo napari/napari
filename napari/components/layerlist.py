@@ -432,7 +432,11 @@ class LayerList(SelectableEventedList[Layer]):
         """
         from ..plugins.io import save_layers
 
-        layers = list(self.selection) if selected else list(self)
+        layers = (
+            [x for x in self if x in self.selection]
+            if selected
+            else list(self)
+        )
 
         if selected:
             msg = trans._("No layers selected", deferred=True)

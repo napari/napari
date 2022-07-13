@@ -115,6 +115,8 @@ myst_enable_extensions = [
     'tasklist',
 ]
 
+myst_heading_anchors = 3
+
 nb_output_stderr = 'show'
 
 panels_add_bootstrap_css = False

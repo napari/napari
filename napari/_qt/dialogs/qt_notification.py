@@ -162,7 +162,7 @@ class NapariQtNotification(QDialog):
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
-            self.timer.timeout.connect(self.close)
+            self.timer.timeout.connect(self.close_with_fade)
             self.timer.start()
 
     def mouseMoveEvent(self, event):
@@ -174,12 +174,29 @@ class NapariQtNotification(QDialog):
         self.toggle_expansion()
 
     def close(self):
+        self.timer.stop()
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+        super().close()
+
+    def close_with_fade(self):
         """Fade out then close."""
+        self.timer.stop()
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+
         self.opacity_anim.setDuration(self.FADE_OUT_RATE)
         self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
-        self.opacity_anim.finished.connect(super().close)
+        self.opacity_anim.finished.connect(self.close)
+
+    def deleteLater(self) -> None:
+        """stop all animations and timers before deleting"""
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+        self.timer.stop()
+        super().deleteLater()
 
     def toggle_expansion(self):
         """Toggle the expanded state of the notification frame."""
@@ -312,7 +329,7 @@ class NapariQtNotification(QDialog):
                 return _inner
 
             btn.clicked.connect(call_back_with_self(callback, self))
-            btn.clicked.connect(self.close)
+            btn.clicked.connect(self.close_with_fade)
             self.row2.addWidget(btn)
         if actions:
             self.row2_widget.show()
