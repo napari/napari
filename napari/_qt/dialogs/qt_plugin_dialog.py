@@ -366,8 +366,7 @@ class PluginListItem(QFrame):
 
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
-        if npe_version != 1:
-            self._handle_npe2_plugin()
+        self._handle_npe2_plugin(npe_version)
 
         if installed:
             self.enabled_checkbox.show()
@@ -378,11 +377,17 @@ class PluginListItem(QFrame):
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
 
-    def _handle_npe2_plugin(self):
+    def _handle_npe2_plugin(self, npe_version):
+        if npe_version == 1:
+            return
+        opacity = 0.4 if npe_version == 'shim' else 1
+        lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
         npe2_icon = QLabel(self)
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
-        npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
-        self.row1.insertWidget(2, QLabel('npe2'))
+        npe2_icon.setPixmap(
+            icon.colored(color='#33F0FF', opacity=opacity).pixmap(20, 20)
+        )
+        self.row1.insertWidget(2, QLabel(lbl))
         self.row1.insertWidget(2, npe2_icon)
 
     def _get_dialog(self) -> QDialog:
@@ -521,7 +526,7 @@ class PluginListItem(QFrame):
             return
 
         for npe1_name, _, distname in plugin_manager.iter_available():
-            if distname and (distname == plugin_name):
+            if distname and (normalized_name(distname) == plugin_name):
                 plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
@@ -808,7 +813,9 @@ class QtPluginDialog(QDialog):
             if distname in self.already_installed or distname == 'napari':
                 continue
             enabled = not pm2.is_disabled(manifest.name)
-            _add_to_installed(distname, enabled, npe_version=2)
+            # if it's an Npe1 adaptor, call it v1
+            npev = 'shim' if manifest.npe1_shim else 2
+            _add_to_installed(distname, enabled, npe_version=npev)
 
         for (
             plugin_name,
@@ -818,7 +825,7 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
-            if distname in self.already_installed:
+            if normalized_name(distname or '') in self.already_installed:
                 continue
             _add_to_installed(
                 distname, not plugin_manager.is_blocked(plugin_name)

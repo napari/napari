@@ -39,6 +39,7 @@ from ..utils.colormaps import ensure_colormap
 from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
+from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
@@ -537,6 +538,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
+    @rename_argument("interpolation", "interpolation2d", "0.6.0")
     def add_image(
         self,
         data=None,
@@ -546,7 +548,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         colormap=None,
         contrast_limits=None,
         gamma=1,
-        interpolation='nearest',
+        interpolation2d='nearest',
+        interpolation3d='linear',
         rendering='mip',
         depiction='volume',
         iso_threshold=0.5,
@@ -713,7 +716,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
-            'interpolation': interpolation,
+            'interpolation2d': interpolation2d,
+            'interpolation3d': interpolation3d,
             'rendering': rendering,
             'depiction': depiction,
             'iso_threshold': iso_threshold,

@@ -135,6 +135,9 @@ class FileMenu(NapariMenu):
         self.update()
 
     def _close_app(self):
+        if not get_settings().application.confirm_close_window:
+            self._win._qt_window.close(quit_app=True)
+            return
         message = QMessageBox(
             QMessageBox.Icon.Warning,
             trans._("Close application?"),

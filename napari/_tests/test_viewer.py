@@ -222,7 +222,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
-    viewer.dims._transpose()
+    viewer.dims.transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
@@ -339,3 +339,21 @@ def test_empty_shapes_dims(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     viewer.add_shapes(None)
     viewer.dims.ndisplay = 3
+
+
+def test_current_viewer(make_napari_viewer):
+    """Test that the viewer made last is the "current_viewer()" until another is activated"""
+    # Make two DIFFERENT viewers
+    viewer1: Viewer = make_napari_viewer()
+    viewer2: Viewer = make_napari_viewer()
+    assert viewer2 is not viewer1
+    # Ensure one is returned by napari.current_viewer()
+    from napari import current_viewer
+
+    assert current_viewer() is viewer2
+    assert current_viewer() is not viewer1
+
+    viewer1.window.activate()
+
+    assert current_viewer() is viewer1
+    assert current_viewer() is not viewer2
