@@ -122,8 +122,7 @@ class ParametrizedGenericCompliantModelField(ModelField):
         super().populate_validators()
         # we need to get rid of the basic arbitrary_types validator because otherwise
         # in cases where we don't coerce type (e.g: Colormap) it always fails cause the type is wrong
-        # We then coerce the type ourselves below, which can be opted out by adding to a field the
-        # coerce_type=False kwarg, or by adding _coerce_type=False as a class attribute to a type
+        # We then coerce the type ourselves below
         self.validators = [
             f
             for f in self.validators
@@ -138,16 +137,12 @@ class ParametrizedGenericCompliantModelField(ModelField):
             or issubclass(origin, Protocol)
         ):
             return
-        # skip special things
-        if (
-            issubclass(origin, BaseModel)
-            or not getattr(origin, '_coerce_type', True)
-            or not self.field_info.extra.get('coerce_type', True)
-        ):
-            return
 
         # we should get here only if origin is a *real* class and we want to coerce it
         def coerce_type(cls, value, field):
+            """
+            Last validator to be run, ensures the returned type matches the annotation.
+            """
             if field.allow_none and value is None:
                 return None
             if isinstance(value, origin):

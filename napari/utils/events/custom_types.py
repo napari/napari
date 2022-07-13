@@ -22,8 +22,6 @@ if TYPE_CHECKING:
 
 
 class Array(np.ndarray):
-    _coerce_type = False
-
     def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
 
