@@ -503,7 +503,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     viewer.layers.clear()
     qtbot.wait(100)
     gc.collect()
-    assert not gc.collect()
+    gc.collect()
     assert not lr()
     assert not dr()
 
@@ -518,7 +518,7 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     viewer.layers.clear()
     qtbot.wait(100)
     gc.collect()
-    assert not gc.collect()
+    gc.collect()
     assert not lr()
     assert not dr()
 
