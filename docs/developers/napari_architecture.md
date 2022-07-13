@@ -21,7 +21,7 @@ The separation of the python models from viewer GUI code allows:
 * napari has the option to move away from the rendering backend currently used
 * tests can easily be run headlessly
 
-## Events
+## Python models and events
 
 Commonly, python models in napari are classes that store information about their
 state as an attribute and are the "source of ground truth". When these
@@ -145,3 +145,20 @@ class weather(EventedModel):
 Currently most of the models in `napari/components/` are `EventedModels` but
 not the layer models although there is intention to convert these to
 `EventedModels` in the future.
+
+## Qt models
+
+Qt classes are responsible for all napari's user interface elements. There is
+generally one to one mapping between Python models and qt models in napari, for
+example Python model `Dims` and Qt model `QtDims`.
+The Qt class can register callbacks such that when an attribute of the
+corresponding Python model changes, the appropriate actions are taken.
+The Qt classes are also instantiated with a reference to
+the Python model, which gets updated directly when a field is changed via the
+GUI.
+
+## Vispy models
+
+Vispy classes are responsible for drawing the canvas contents, thus need to be
+informed of any changes to Python models. They achieve this by connecting
+callbacks to Python model events just like Qt models.
