@@ -104,12 +104,11 @@ def test_all_readers_in_dropdown(
     }
 
     widget = extension2reader_widget(npe2_readers=npe2_readers)
-    all_reader_display_names = list(dict(npe2_readers).values())
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
     ]
-    assert sorted(all_reader_display_names) == sorted(all_dropdown_items)
+    assert all(i in all_dropdown_items for i in npe2_readers.values())
 
 
 def test_directory_readers_not_in_dropdown(
