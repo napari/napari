@@ -38,7 +38,6 @@ def test_shape_controls_edge_color(qtbot):
 def test_select_all_selects_value_change(qtbot):
     layer = Shapes(
         _SHAPES,
-        shape_type='polygon',
         edge_width=5,
         edge_color='red',
         face_color='red',
