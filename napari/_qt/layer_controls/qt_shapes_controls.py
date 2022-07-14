@@ -74,6 +74,8 @@ class QtShapesControls(QtLayerControls):
         Button to remove vertex from shapes.
     widthSlider : qtpy.QtWidgets.QSlider
         Slider controlling line edge width of shapes.
+    selectAllCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to influence all components
 
     Raises
     ------

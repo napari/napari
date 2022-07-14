@@ -48,6 +48,8 @@ class QtPointsControls(QtLayerControls):
         An instance of a napari Points layer.
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether to render out of slice.
+    selectAllCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to influence all components
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
     select_button : qtpy.QtWidgets.QtModeRadioButton
