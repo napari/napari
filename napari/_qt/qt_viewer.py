@@ -317,29 +317,25 @@ class QtViewer(QSplitter):
 
     @property
     def dockLayerList(self):
-        try:
-            if self._dockLayerList is None:
-                layerList = QWidget()
-                layerList.setObjectName('layerList')
-                layerListLayout = QVBoxLayout()
-                layerListLayout.addWidget(self.layerButtons)
-                layerListLayout.addWidget(self.layers)
-                layerListLayout.addWidget(self.viewerButtons)
-                layerListLayout.setContentsMargins(8, 4, 8, 6)
-                layerList.setLayout(layerListLayout)
-                self._dockLayerList = QtViewerDockWidget(
-                    self,
-                    layerList,
-                    name=trans._('layer list'),
-                    area='left',
-                    allowed_areas=['left', 'right'],
-                    object_name='layer list',
-                    close_btn=False,
-                )
-            return self._dockLayerList
-        except Exception as e:
-            print(e)
-            return None
+        if self._dockLayerList is None:
+            layerList = QWidget()
+            layerList.setObjectName('layerList')
+            layerListLayout = QVBoxLayout()
+            layerListLayout.addWidget(self.layerButtons)
+            layerListLayout.addWidget(self.layers)
+            layerListLayout.addWidget(self.viewerButtons)
+            layerListLayout.setContentsMargins(8, 4, 8, 6)
+            layerList.setLayout(layerListLayout)
+            self._dockLayerList = QtViewerDockWidget(
+                self,
+                layerList,
+                name=trans._('layer list'),
+                area='left',
+                allowed_areas=['left', 'right'],
+                object_name='layer list',
+                close_btn=False,
+            )
+        return self._dockLayerList
 
     @property
     def dockLayerControls(self):
