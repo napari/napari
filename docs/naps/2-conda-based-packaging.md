@@ -5,11 +5,11 @@
 ```{eval-rst}
 :Author: Jaime Rodríguez-Guerra, Gonzalo Peña-Castellanos
 :Created: 2022-05-05
-:Resolution: <url> (required for Accepted | Rejected | Withdrawn)
-:Resolved: <date resolved, in yyyy-mm-dd format>
+:Resolution: https://github.com/napari/napari/pull/4602#issuecomment-1184061072
+:Resolved: 2022-07-14
 :Status: Draft
-:Type: <Standards Track | Process>
-:Version effective: <version-number> (for accepted NAPs)
+:Type: Standards Track
+:Version effective: N/A
 ```
 
 ## Abstract
