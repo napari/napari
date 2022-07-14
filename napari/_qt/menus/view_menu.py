@@ -1,6 +1,6 @@
 import platform
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from ...settings import get_settings
 from ...utils import config as async_config
@@ -10,6 +10,14 @@ from ._util import NapariMenu, populate_menu
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
+from app_model.types import Action, MenuRule
+from ..._app._menus
+
+VIEW_ACTIONS: List[Action] = [
+    Action(
+        id=''
+    )
+]
 
 class ViewMenu(NapariMenu):
     def __init__(self, window: 'Window'):

@@ -6,6 +6,7 @@ from ..utils.translations import trans
 
 
 class MenuId(str, Enum):
+    VIEW = 'napari/view'
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
