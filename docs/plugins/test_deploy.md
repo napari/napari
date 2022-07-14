@@ -10,7 +10,7 @@ Python](https://realpython.com/python-testing/)
 
 We recommend using
 [pytest](https://docs.pytest.org/en/6.2.x/getting-started.html) for testing your
-plugin. Aim for [100% test coverage](best_practices.html#how-to-check-test-coverage)!
+plugin. Aim for [100% test coverage](./best_practices.md#how-to-check-test-coverage)!
 
 ### The `make_napari_viewer` fixture
 
