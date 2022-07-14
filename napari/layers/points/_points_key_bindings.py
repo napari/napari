@@ -59,7 +59,7 @@ def paste(layer: Points):
 @register_points_action(
     trans._("Select all points in the current view slice."),
 )
-def select_all(layer: Points):
+def select_all_in_slice(layer: Points):
     new_selected = set(layer._indices_view[: len(layer._view_data)])
 
     # If all visible points are already selected, deselect the visible points
@@ -92,7 +92,7 @@ def select_all(layer: Points):
 @register_points_action(
     trans._("Select all points in the layer."),
 )
-def select_all_3d(layer: Points):
+def select_all_data(layer: Points):
     new_selected = set(range(layer.data.shape[0]))
     # Needed for the notification
     view_selected = set(layer._indices_view[: len(layer._view_data)])
