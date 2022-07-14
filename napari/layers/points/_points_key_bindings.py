@@ -58,7 +58,36 @@ def paste(layer: Points):
     trans._("Select all points in the current view slice."),
 )
 def select_all(layer: Points):
-    layer.selected_data = set(layer._indices_view[: len(layer._view_data)])
+    new_selected = set(layer._indices_view[: len(layer._view_data)])
+    if new_selected & layer.selected_data == new_selected:
+        layer.selected_data = layer.selected_data - new_selected
+        print(
+            f"Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({len(layer.selected_data)} selected)"
+        )
+    else:
+        layer.selected_data = layer.selected_data | new_selected
+        print(
+            f"Selected {len(new_selected)} points in this slice, use Shift-A to select all points on the layer. ({len(layer.selected_data)} selected)"
+        )
+    layer._set_highlight()
+
+
+@register_points_action(
+    trans._("Select all points in the layer."),
+)
+def select_all_3d(layer: Points):
+    new_selected = set(range(layer.data.shape[0]))
+    view_selected = set(layer._indices_view[: len(layer._view_data)])
+    if layer.selected_data == new_selected:
+        layer.selected_data = set()
+        print(
+            f"Deselected all points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+        )
+    else:
+        layer.selected_data = new_selected
+        print(
+            f"Selected {len(new_selected)} points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+        )
     layer._set_highlight()
 
 

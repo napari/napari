@@ -47,12 +47,78 @@ def test_select_all(layer):
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
     layer.mode = 'select'
+    layer._set_view_slice()
 
     assert len(layer.data) == 4
     assert len(layer.selected_data) == 0
 
     key_bindings.select_all(layer)
     assert len(layer.selected_data) == 4
+
+    key_bindings.select_all(layer)
+    assert len(layer.selected_data) == 0
+
+
+def test_select_all_3d_data(layer):
+
+    data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
+    layer = Points(data, size=1)
+    layer.mode = 'select'
+    layer._set_view_slice()
+
+    assert len(layer.data) == 4
+    assert len(layer.selected_data) == 0
+
+    key_bindings.select_all(layer)
+    assert len(layer.selected_data) == 3
+
+    key_bindings.select_all(layer)
+    assert len(layer.selected_data) == 0
+
+
+def test_select_all_3d(layer):
+
+    data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
+    layer = Points(data, size=1)
+    layer.mode = 'select'
+    layer._set_view_slice()
+
+    assert len(layer.data) == 4
+    assert len(layer.selected_data) == 0
+
+    key_bindings.select_all_3d(layer)
+    assert len(layer.selected_data) == 4
+
+    key_bindings.select_all_3d(layer)
+    assert len(layer.selected_data) == 0
+
+
+def test_select_all_mixed(layer):
+    data = [[0, 1, 3], [0, 8, 4], [0, 10, 10], [1, 15, 4]]
+    layer = Points(data, size=1)
+    layer.mode = 'select'
+    layer._set_view_slice()
+
+    assert len(layer.data) == 4
+    assert len(layer.selected_data) == 0
+
+    key_bindings.select_all_3d(layer)
+    assert len(layer.selected_data) == 4
+
+    key_bindings.select_all(layer)
+    assert len(layer.selected_data) == 1
+
+    key_bindings.select_all(layer)
+    assert len(layer.selected_data) == 4
+
+    key_bindings.select_all(layer)
+    assert len(layer.selected_data) == 1
+
+    key_bindings.select_all_3d(layer)
+    assert len(layer.selected_data) == 4
+
+    key_bindings.select_all_3d(layer)
+    assert len(layer.selected_data) == 0
 
 
 def test_delete_selected_points(layer):
