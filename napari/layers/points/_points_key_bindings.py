@@ -67,7 +67,9 @@ def select_all(layer: Points):
         layer.selected_data = layer.selected_data - new_selected
         show_info(
             trans._(
-                f"Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({len(layer.selected_data)} selected)"
+                "Deselected all points in this slice,"
+                " use Shift-A to deselect all points on the layer."
+                f" ({len(layer.selected_data)} selected)"
             )
         )
 
@@ -76,7 +78,9 @@ def select_all(layer: Points):
         layer.selected_data = layer.selected_data | new_selected
         show_info(
             trans._(
-                f"Selected {len(new_selected)} points in this slice, use Shift-A to select all points on the layer. ({len(layer.selected_data)} selected)"
+                f"Selected {len(new_selected)} points in this slice,"
+                " use Shift-A to select all points on the layer."
+                f" ({len(layer.selected_data)} selected)"
             )
         )
     layer._set_highlight()
@@ -95,7 +99,9 @@ def select_all_3d(layer: Points):
         layer.selected_data = set()
         show_info(
             trans._(
-                f"Deselected all points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+                "Deselected all points across all slices,"
+                f" including {len(new_selected - view_selected)}"
+                f" points not currently visible. ({len(layer.selected_data)} selected)"
             )
         )
 
@@ -104,7 +110,9 @@ def select_all_3d(layer: Points):
         layer.selected_data = new_selected
         show_info(
             trans._(
-                f"Selected {len(new_selected)} points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+                f"Selected {len(new_selected)} points across all slices,"
+                f" including {len(new_selected - view_selected)}"
+                f" points not currently visible. ({len(layer.selected_data)} selected)"
             )
         )
     layer._set_highlight()
