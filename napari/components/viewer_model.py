@@ -878,7 +878,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: bool = False,
+        stack: Union[bool, List[List[str]]] = False,
         plugin: Optional[str] = 'napari',
         layer_type: Optional[str] = None,
         **kwargs,
@@ -893,12 +893,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ----------
         path : str or list of str
             A filepath, directory, or URL (or a list of any) to open.
-        stack : bool, optional
-            If a list of strings is passed and ``stack`` is ``True``, then the
+        stack : bool or list[list[str]], optional
+            If a list of strings is passed as ``path`` and ``stack`` is ``True``, then the
             entire list will be passed to plugins.  It is then up to individual
             plugins to know how to handle a list of paths.  If ``stack`` is
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
+            If the stack option is a list of lists containing individual paths,
+            the inner lists are passedto the reader and will be stacked.
         plugin : str, optional
             Name of a plugin to use, by default builtins.  If provided, will
             force ``path`` to be read with the specified ``plugin``.
@@ -927,26 +929,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
             plugin = 'napari'
 
-        paths: List[str | Path] = (
+        paths: List[str | Path | List[str | Path]] = (
             [os.fspath(path)]
             if isinstance(path, (Path, str))
             else [os.fspath(p) for p in path]
         )
 
-        if stack:
-            if plugin:
-                layers = self._add_layers_with_plugins(
-                    paths,
-                    kwargs=kwargs,
-                    plugin=plugin,
-                    layer_type=layer_type,
-                    stack=stack,
-                )
-            else:
-                layers = self._open_or_raise_error(
-                    paths, kwargs, layer_type, stack
-                )
-            return layers
+        # If stack is a bool and True, add an additional layer of nesting.
+        if isinstance(stack, bool) and stack:
+            paths = [paths]
+
+        # If stack is a list and True, extend the paths with the inner lists.
+        elif isinstance(stack, list) and stack:
+            paths.extend(stack)
 
         added: List[Layer] = []  # for layers that get added
         with progress(
@@ -957,20 +952,24 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
+                # If _path is a list, set stack to True
+                _stack = True if isinstance(_path, list) else False
+                # If _path is not a list already, make it a list.
+                _path = [_path] if not isinstance(_path, list) else _path
                 if plugin:
                     added.extend(
                         self._add_layers_with_plugins(
-                            [_path],
+                            _path,
                             kwargs=kwargs,
                             plugin=plugin,
                             layer_type=layer_type,
-                            stack=stack,
+                            stack=_stack,
                         )
                     )
                 # no plugin choice was made
                 else:
                     layers = self._open_or_raise_error(
-                        [_path], kwargs, layer_type, stack
+                        _path, kwargs, layer_type, _stack
                     )
                     added.extend(layers)
 
@@ -981,7 +980,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths: List[Union[Path, str]],
         kwargs: Dict[str, Any] = {},
         layer_type: Optional[str] = None,
-        stack: bool = False,
+        stack: Union[bool, List[List[str]]] = False,
     ):
         """Open paths if plugin choice is unambiguous, raising any errors.
 
@@ -1009,8 +1008,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             keyword arguments to pass to layer adding method, by default {}
         layer_type : Optional[str], optional
             layer type for paths, by default None
-        stack : bool, optional
-            True if files should be opened as a stack, by default False
+        stack : bool or list[list[str]], optional
+            True if files should be opened as a stack, by default False.
+            Can also be a list containing lists of files to stack.
 
         Returns
         -------
