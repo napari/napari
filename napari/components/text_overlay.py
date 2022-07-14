@@ -1,9 +1,7 @@
 """Text label model."""
-from pydantic import validator
+from napari.utils.color import ColorValue
 
-from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import EventedModel
-from ..utils.events.custom_types import Array
 from ._viewer_constants import TextOverlayPosition
 
 
@@ -29,11 +27,7 @@ class TextOverlay(EventedModel):
 
     # fields
     visible: bool = False
-    color: Array[float, (4,)] = (0.5, 0.5, 0.5, 1.0)
+    color: ColorValue = (0.5, 0.5, 0.5, 1.0)
     font_size: float = 10
     position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
     text: str = ""
-
-    @validator('color', pre=True)
-    def _coerce_color(cls, v):
-        return transform_color(v)[0]
