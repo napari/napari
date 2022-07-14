@@ -162,6 +162,9 @@ class ApplicationSettings(EventedModel):
             "Ask for confirmation before closing a napari window or application (all napari windows).",
         ),
     )
+    hold_button_delay: float = Field(
+        default=0.5, title=trans._("Delay to treat button as hold in seconds")
+    )
 
     @validator('window_state')
     def _validate_qbtye(cls, v):

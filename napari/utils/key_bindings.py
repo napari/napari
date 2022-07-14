@@ -32,13 +32,18 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
+
+import contextlib
 import inspect
 import re
+import time
 import types
+import typing
 from collections import ChainMap
 
 from vispy.util import keys
 
+from ..settings import get_settings
 from ..utils.translations import trans
 
 SPECIAL_KEYS = [
@@ -449,6 +454,9 @@ class KeymapHandler:
             else:
                 key, _ = parse_key_combo(key_combo)
                 self._key_release_generators[key] = gen
+        if isinstance(gen, typing.Callable):
+            key, _ = parse_key_combo(key_combo)
+            self._key_release_generators[key] = gen, time.time()
 
     def release_key(self, key_combo):
         """Simulate a key release for a keybinding.
@@ -459,10 +467,17 @@ class KeymapHandler:
             Key combination.
         """
         key, _ = parse_key_combo(key_combo)
-        try:
-            next(self._key_release_generators[key])  # call function
-        except (KeyError, StopIteration):
-            pass
+        with contextlib.suppress(KeyError, StopIteration):
+            val = self._key_release_generators[key]
+            if isinstance(val, tuple):
+                gen, start = val
+                if (
+                    time.time() - start
+                    > get_settings().application.hold_button_delay
+                ):
+                    gen()
+            else:
+                next(val)  # call function
 
     def on_key_press(self, event):
         """Callback that whenever key pressed in canvas.

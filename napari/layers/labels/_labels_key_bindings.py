@@ -1,6 +1,9 @@
 import numpy as np
 
-from ...layers.utils.layer_utils import register_layer_action
+from ...layers.utils.layer_utils import (
+    register_label_attr_action,
+    register_layer_action,
+)
 from ...utils.translations import trans
 from ._labels_constants import Mode
 from .labels import Labels
@@ -24,28 +27,32 @@ def register_label_action(description):
     return register_layer_action(Labels, description)
 
 
-@register_label_action(trans._("Activate the paint brush"))
+def register_label_mode_action(description):
+    return register_label_attr_action(Labels, description, 'mode')
+
+
+@register_label_mode_action(trans._("Activate the paint brush"))
 def activate_paint_mode(layer: Labels):
     layer.mode = Mode.PAINT
 
 
-@register_label_action(trans._("Activate the fill bucket"))
+@register_label_mode_action(trans._("Activate the fill bucket"))
 def activate_fill_mode(layer: Labels):
     layer.mode = Mode.FILL
 
 
-@register_label_action(trans._('Pan/zoom mode'))
+@register_label_mode_action(trans._('Pan/zoom mode'))
 def activate_label_pan_zoom_mode(layer: Labels):
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_label_action(trans._('Pick mode'))
+@register_label_mode_action(trans._('Pick mode'))
 def activate_label_picker_mode(layer: Labels):
     """Activate the label picker."""
     layer.mode = Mode.PICK
 
 
-@register_label_action(trans._("Activate the label eraser"))
+@register_label_mode_action(trans._("Activate the label eraser"))
 def activate_label_erase_mode(layer: Labels):
     layer.mode = Mode.ERASE
 

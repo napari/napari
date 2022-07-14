@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import functools
+import inspect
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -59,6 +61,68 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
         return func
 
     return _inner
+
+
+def register_label_attr_action(
+    keymapprovider,
+    description: str,
+    attribute_name: str,
+    shortcuts=None,
+):
+    """
+    Convenient decorator to register an action with the current Layers
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+
+    Parameters
+    ----------
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    attribute_name : str
+        The name of the attribute to be restored if key is hold over `get_settings().get_settings().application.hold_button_delay.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
+    """
+
+    def _handle(func):
+        sig = inspect.signature(func)
+        try:
+            name = next(iter(sig.parameters))
+        except StopIteration:
+            return register_layer_action(
+                keymapprovider, description, shortcuts
+            )(func)
+
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            if args:
+                obj = args[0]
+            else:
+                obj = kwargs[name]
+            prev_mode = getattr(obj, attribute_name)
+            func(*args, **kwargs)
+
+            def _callback():
+                setattr(obj, attribute_name, prev_mode)
+
+            return _callback
+
+        register_layer_action(keymapprovider, description, shortcuts)(_wrapper)
+        return func
+
+    return _handle
 
 
 def _nanmin(array):
