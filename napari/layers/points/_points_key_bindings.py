@@ -69,6 +69,7 @@ def select_all_in_slice(layer: Points):
             trans._(
                 "Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({n_total} selected)",
                 n_total=len(layer.selected_data),
+                deferred=True,
             )
         )
 
@@ -80,6 +81,7 @@ def select_all_in_slice(layer: Points):
                 "Selected {n_new} points in this slice, use Shift-A to select all points on the layer. ({n_total} selected)",
                 n_new=len(new_selected),
                 n_total=len(layer.selected_data),
+                deferred=True,
             )
         )
     layer._set_highlight()
@@ -93,7 +95,7 @@ def select_all_data(layer: Points):
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()
-        show_info(trans._("Cleared all selections."))
+        show_info(trans._("Cleared all selections.", deferred=True))
 
     # Select all points
     else:
@@ -107,6 +109,7 @@ def select_all_data(layer: Points):
                 n_new=len(new_selected),
                 n_invis=len(new_selected - view_selected),
                 n_total=len(layer.selected_data),
+                deferred=True,
             )
         )
     layer._set_highlight()
