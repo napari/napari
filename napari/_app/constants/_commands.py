@@ -17,7 +17,7 @@ from ...utils.translations import trans
 class CommandId(str, Enum):
     """Id representing a napari command."""
 
-    LAYER_DUPLICATE = 'napari:layer:duplicate_layer'
+    LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
     LAYER_MERGE_STACK = 'napari:layer:merge_stack'

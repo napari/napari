@@ -41,8 +41,8 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.selection = set(images)  # type: ignore
 
 
-def _split_rgb(ll: LayerList, axis: int = 0):
-    return _split_stack(ll, axis)
+def _split_rgb(ll: LayerList):
+    return _split_stack(ll)
 
 
 def _convert(ll: LayerList, type_: str):
