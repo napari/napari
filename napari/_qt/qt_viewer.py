@@ -183,8 +183,6 @@ class QtViewer(QSplitter):
     _instances = WeakSet()
 
     def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
-        # Avoid circular import.
-        from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
         self._instances.add(self)
@@ -198,57 +196,18 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtLayerControlsContainer(self.viewer)
-        self.layers = QtLayerList(self.viewer.layers)
-        self.layerButtons = QtLayerButtons(self.viewer)
-        self.viewerButtons = QtViewerButtons(self.viewer)
+        self._controls = None
+        self._layers = None
+        self._layersButtons = None
+        self._viewerButtons = None
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
         self._console = None
 
-        layerList = QWidget()
-        layerList.setObjectName('layerList')
-        layerListLayout = QVBoxLayout()
-        layerListLayout.addWidget(self.layerButtons)
-        layerListLayout.addWidget(self.layers)
-        layerListLayout.addWidget(self.viewerButtons)
-        layerListLayout.setContentsMargins(8, 4, 8, 6)
-        layerList.setLayout(layerListLayout)
-
-        self.dockLayerList = QtViewerDockWidget(
-            self,
-            layerList,
-            name=trans._('layer list'),
-            area='left',
-            allowed_areas=['left', 'right'],
-            object_name='layer list',
-            close_btn=False,
-        )
-        self.dockLayerControls = QtViewerDockWidget(
-            self,
-            self.controls,
-            name=trans._('layer controls'),
-            area='left',
-            allowed_areas=['left', 'right'],
-            object_name='layer controls',
-            close_btn=False,
-        )
-        self.dockConsole = QtViewerDockWidget(
-            self,
-            QWidget(),
-            name=trans._('console'),
-            area='bottom',
-            allowed_areas=['top', 'bottom'],
-            object_name='console',
-            close_btn=False,
-        )
-        self.dockConsole.setVisible(False)
-        # because the console is loaded lazily in the @getter, this line just
-        # gets (or creates) the console when the dock console is made visible.
-        self.dockConsole.visibilityChanged.connect(self._ensure_connect)
-
-        # Only created if using perfmon.
-        self.dockPerformance = self._create_performance_dock_widget()
+        self._dockLayerList = None
+        self._dockLayerControls = None
+        self._dockConsole = None
+        self._dockPerformance = None
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -328,6 +287,95 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+    @property
+    def controls(self):
+        if self._controls is None:
+            # Avoid circular import.
+            from .layer_controls import QtLayerControlsContainer
+
+            self._controls = QtLayerControlsContainer(self.viewer)
+        return self._controls
+
+    @property
+    def layers(self):
+        if self._layers is None:
+            self._layers = QtLayerList(self.viewer.layers)
+        return self._layers
+
+    @property
+    def layerButtons(self):
+        if self._layersButtons is None:
+            self._layersButtons = QtLayerButtons(self.viewer)
+        return self._layersButtons
+
+    @property
+    def viewerButtons(self):
+        if self._viewerButtons is None:
+            self._viewerButtons = QtViewerButtons(self.viewer)
+        return self._viewerButtons
+
+    @property
+    def dockLayerList(self):
+        try:
+            if self._dockLayerList is None:
+                layerList = QWidget()
+                layerList.setObjectName('layerList')
+                layerListLayout = QVBoxLayout()
+                layerListLayout.addWidget(self.layerButtons)
+                layerListLayout.addWidget(self.layers)
+                layerListLayout.addWidget(self.viewerButtons)
+                layerListLayout.setContentsMargins(8, 4, 8, 6)
+                layerList.setLayout(layerListLayout)
+                self._dockLayerList = QtViewerDockWidget(
+                    self,
+                    layerList,
+                    name=trans._('layer list'),
+                    area='left',
+                    allowed_areas=['left', 'right'],
+                    object_name='layer list',
+                    close_btn=False,
+                )
+            return self._dockLayerList
+        except Exception as e:
+            print(e)
+            return None
+
+    @property
+    def dockLayerControls(self):
+        if self._dockLayerControls is None:
+            self._dockLayerControls = QtViewerDockWidget(
+                self,
+                self.controls,
+                name=trans._('layer controls'),
+                area='left',
+                allowed_areas=['left', 'right'],
+                object_name='layer controls',
+                close_btn=False,
+            )
+        return self._dockLayerControls
+
+    @property
+    def dockConsole(self):
+        if self._dockConsole is None:
+            self._dockConsole = QtViewerDockWidget(
+                self,
+                QWidget(),
+                name=trans._('console'),
+                area='bottom',
+                allowed_areas=['top', 'bottom'],
+                object_name='console',
+                close_btn=False,
+            )
+            self._dockConsole.setVisible(False)
+            self._dockConsole.visibilityChanged.connect(self._ensure_connect)
+        return self._dockConsole
+
+    @property
+    def dockPerformance(self):
+        if self._dockPerformance is None:
+            self._dockPerformance = self._create_performance_dock_widget()
+        return self._dockPerformance
 
     def _leave_canvas(self):
         """disable status on canvas leave"""
