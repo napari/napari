@@ -1,3 +1,6 @@
+"""All commands that are available in the napari GUI are defined here.
+
+"""
 from enum import Enum
 from typing import NamedTuple, Optional
 
