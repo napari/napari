@@ -5,7 +5,7 @@ from typing import Dict
 
 from app_model import Application
 
-from ._menus import SUBMENUS
+from ._submenus import SUBMENUS
 from .actions._layer_actions import LAYER_ACTIONS
 from .injection._processors import PROCESSORS
 from .injection._providers import PROVIDERS

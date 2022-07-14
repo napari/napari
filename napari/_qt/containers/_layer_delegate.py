@@ -37,13 +37,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app_model.backends.qt import QModelMenu
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from ..._app._menus import MenuId
+from ..._app.constants import MenuId
 from ..._app.context import get_context
+from .._qapp_model import build_qmodel_menu
 from ..qt_resources import QColoredSVGIcon
 from ._base_item_model import ItemRole
 from .qt_layer_model import ThumbnailRole
@@ -179,9 +179,7 @@ class LayerDelegate(QStyledItemDelegate):
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
         if not hasattr(self, '_context_menu'):
-            self._context_menu = QModelMenu(
-                MenuId.LAYERLIST_CONTEXT, app='napari'
-            )
+            self._context_menu = build_qmodel_menu(MenuId.LAYERLIST_CONTEXT)
 
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(get_context(layer_list))
