@@ -69,7 +69,8 @@ def select_all(layer: Points):
             trans._(
                 "Deselected all points in this slice,"
                 " use Shift-A to deselect all points on the layer."
-                f" ({len(layer.selected_data)} selected)"
+                " ({n_total} selected)",
+                n_total=len(layer.selected_data),
             )
         )
 
@@ -78,9 +79,11 @@ def select_all(layer: Points):
         layer.selected_data = layer.selected_data | new_selected
         show_info(
             trans._(
-                f"Selected {len(new_selected)} points in this slice,"
+                "Selected {n_new} points in this slice,"
                 " use Shift-A to select all points on the layer."
-                f" ({len(layer.selected_data)} selected)"
+                " ({n_total} selected)",
+                n_new=len(new_selected),
+                n_total=len(layer.selected_data),
             )
         )
     layer._set_highlight()
@@ -100,8 +103,10 @@ def select_all_3d(layer: Points):
         show_info(
             trans._(
                 "Deselected all points across all slices,"
-                f" including {len(new_selected - view_selected)}"
-                f" points not currently visible. ({len(layer.selected_data)} selected)"
+                " including {n_invis}"
+                " points not currently visible. ({n_total} selected)",
+                n_invis=len(new_selected - view_selected),
+                n_total=len(layer.selected_data),
             )
         )
 
@@ -110,9 +115,12 @@ def select_all_3d(layer: Points):
         layer.selected_data = new_selected
         show_info(
             trans._(
-                f"Selected {len(new_selected)} points across all slices,"
-                f" including {len(new_selected - view_selected)}"
-                f" points not currently visible. ({len(layer.selected_data)} selected)"
+                "Selected {n_new} points across all slices,"
+                " including {n_invis}"
+                " points not currently visible. ({n_total})",
+                n_new=len(new_selected),
+                n_invis=len(new_selected - view_selected),
+                n_total=len(layer.selected_data),
             )
         )
     layer._set_highlight()
