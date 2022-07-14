@@ -76,6 +76,9 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits.connect(
             self._on_contrast_limits_change
         )
+        self.layer.events.contrast_limits_range.connect(
+            self._on_contrast_limits_range_change
+        )
 
         comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
@@ -142,15 +145,28 @@ class QtBaseImageControls(QtLayerControls):
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""
         with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setRange(
-                *self.layer.contrast_limits_range
-            )
             self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
 
         if self.clim_popup:
-            self.clim_popup.slider.setRange(*self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_popup.slider):
                 self.clim_popup.slider.setValue(self.layer.contrast_limits)
+
+    def _on_contrast_limits_range_change(self):
+        """Receive layer model contrast limits change event and update slider."""
+        with qt_signals_blocked(self.contrastLimitsSlider):
+            decimals = range_to_decimals(
+                self.layer.contrast_limits_range, self.layer.dtype
+            )
+            self.contrastLimitsSlider.setRange(
+                *self.layer.contrast_limits_range
+            )
+            self.contrastLimitsSlider.setSingleStep(10**-decimals)
+
+        if self.clim_popup:
+            with qt_signals_blocked(self.clim_popup.slider):
+                self.clim_popup.slider.setRange(
+                    *self.layer.contrast_limits_range
+                )
 
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update dropdown menu."""

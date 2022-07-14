@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Run check
@@ -20,7 +20,7 @@ jobs:
         run: python tools/check_vendored_modules.py --ci
 
       - name: Create PR updating vendored modules
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           commit-message: Update vendored modules.
           branch: update-vendored-examples

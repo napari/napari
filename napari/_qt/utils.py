@@ -12,13 +12,11 @@ import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
-    QObject,
     QPoint,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
-    Signal,
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import (
@@ -457,15 +455,6 @@ def _maybe_allow_interrupt(qapp):
             signal.signal(signal.SIGINT, old_sigint_handler)
             if handler_args is not None:
                 old_sigint_handler(*handler_args)
-
-
-class Sentry(QObject):
-    """Small object to trigger events across threads."""
-
-    alerted = Signal()
-
-    def alert(self, *_):
-        self.alerted.emit()
 
 
 def qt_might_be_rich_text(text) -> bool:

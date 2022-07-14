@@ -1,4 +1,7 @@
+import platform
 from unittest.mock import patch
+
+import pytest
 
 from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari.utils.theme import (
@@ -9,7 +12,7 @@ from napari.utils.theme import (
 )
 
 
-def test_current_viewer(make_napari_viewer, qapp):
+def test_current_viewer(make_napari_viewer):
     """Test that we can retrieve the "current" viewer window easily.
 
     ... where "current" means it was the last viewer the user interacted with.
@@ -43,6 +46,13 @@ def test_current_viewer(make_napari_viewer, qapp):
     v1.close()
     assert _QtMainWindow._instances == []
     assert _QtMainWindow.current() is None
+
+
+def test_set_geometry(make_napari_viewer):
+    viewer = make_napari_viewer()
+    values = (70, 70, 1000, 700)
+    viewer.window.set_geometry(*values)
+    assert viewer.window.geometry() == values
 
 
 @patch.object(Window, "_update_theme_no_event")
@@ -80,3 +90,16 @@ def test_lazy_console(make_napari_viewer):
     assert v.window._qt_viewer._console is None
     v.update_console({"test": "test"})
     assert v.window._qt_viewer._console is None
+
+
+@pytest.mark.skipif(
+    platform.system() == "Darwin", reason="Cannot control menu bar on MacOS"
+)
+def test_menubar_shortcut(make_napari_viewer):
+    v = make_napari_viewer()
+    v.show()
+    assert v.window.main_menu.isVisible()
+    assert not v.window._main_menu_shortcut.isEnabled()
+    v.window._toggle_menubar_visible()
+    assert not v.window.main_menu.isVisible()
+    assert v.window._main_menu_shortcut.isEnabled()

@@ -2,13 +2,14 @@ import numpy as np
 import pytest
 
 from napari.components.experimental.chunk._commands import LoaderCommands
+from napari.viewer import ViewerModel
 
 
 @pytest.mark.async_only
-def test_help(make_napari_viewer, capsys):
+def test_help(capsys):
     """Test loader.help."""
-    viewer = make_napari_viewer()
-    loader = loader = viewer.experimental.cmds.loader
+    viewer = ViewerModel()
+    loader = viewer.experimental.cmds.loader
 
     loader.help
     out, _ = capsys.readouterr()
@@ -16,9 +17,9 @@ def test_help(make_napari_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_no_layers(make_napari_viewer, capsys):
+def test_no_layers(capsys):
     """Test loader.layers with no layers."""
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     LoaderCommands(viewer.layers).layers
     out, _ = capsys.readouterr()
     for x in ["ID", "NAME", "LAYER"]:  # Just check a few.
@@ -26,9 +27,9 @@ def test_no_layers(make_napari_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_one_layer(make_napari_viewer, capsys):
+def test_one_layer(capsys):
     """Test loader.layer with one layer."""
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     loader = viewer.experimental.cmds.loader
 
     data = np.random.random((10, 15))
@@ -40,13 +41,13 @@ def test_one_layer(make_napari_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_many_layers(make_napari_viewer, capsys):
+def test_many_layers(capsys):
     """Test loader.layer with many layers."""
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     loader = viewer.experimental.cmds.loader
 
     num_images = 10
-    for i in range(num_images):
+    for _ in range(num_images):
         data = np.random.random((10, 15))
         viewer.add_image(data)
     loader.layers
@@ -55,9 +56,9 @@ def test_many_layers(make_napari_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_levels(make_napari_viewer, capsys):
+def test_levels(capsys):
     """Test loader.levels."""
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     loader = viewer.experimental.cmds.loader
 
     data = np.random.random((10, 15))

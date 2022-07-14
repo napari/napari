@@ -19,7 +19,7 @@ repos:
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.32.1
+    rev: v2.34.0
     hooks:
     - id: pyupgrade
       args: ["--py38-plus", "--keep-runtime-typing"]

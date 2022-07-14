@@ -155,6 +155,13 @@ class ApplicationSettings(EventedModel):
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
     )
+    confirm_close_window: bool = Field(
+        default=True,
+        title=trans._("Confirm window or application closing"),
+        description=trans._(
+            "Ask for confirmation before closing a napari window or application (all napari windows).",
+        ),
+    )
 
     @validator('window_state')
     def _validate_qbtye(cls, v):

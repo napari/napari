@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -19,6 +21,9 @@ from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from .qt_image_controls_base import QtBaseImageControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtImageControls(QtBaseImageControls):
@@ -53,10 +58,17 @@ class QtImageControls(QtBaseImageControls):
         Label for the rendering mode dropdown menu.
     """
 
+    layer: 'napari.layers.Image'
+
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
@@ -184,7 +196,10 @@ class QtImageControls(QtBaseImageControls):
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
         """
-        self.layer.interpolation = text
+        if self.layer._ndisplay == 2:
+            self.layer.interpolation2d = text
+        else:
+            self.layer.interpolation3d = text
 
     def changeRendering(self, text):
         """Change rendering mode for image display.
@@ -263,7 +278,7 @@ class QtImageControls(QtBaseImageControls):
         """
         interp_string = event.value.value
 
-        with self.layer.events.interpolation.blocker():
+        with self.layer.events.interpolation.blocker(), self.layer.events.interpolation2d.blocker(), self.layer.events.interpolation3d.blocker():
             if self.interpComboBox.findText(interp_string) == -1:
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)
@@ -326,10 +341,15 @@ class QtImageControls(QtBaseImageControls):
             if self.layer._ndisplay == 3
             else [i.value for i in Interpolation.view_subset()]
         )
+        interp = (
+            self.layer.interpolation2d
+            if self.layer._ndisplay == 2
+            else self.layer.interpolation3d
+        )
         with qt_signals_blocked(self.interpComboBox):
             self.interpComboBox.clear()
             self.interpComboBox.addItems(interp_names)
-            self.interpComboBox.setCurrentText(self.layer.interpolation)
+            self.interpComboBox.setCurrentText(interp)
 
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""

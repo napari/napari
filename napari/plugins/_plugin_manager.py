@@ -1,4 +1,3 @@
-import importlib.util
 import sys
 import warnings
 from functools import partial
@@ -31,7 +30,7 @@ from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.theme import Theme, register_theme, unregister_theme
 from ..utils.translations import trans
-from . import _builtins, hook_specifications
+from . import hook_specifications
 
 
 class PluginHookOption(TypedDict):
@@ -93,19 +92,13 @@ class NapariPluginManager(PluginManager):
             str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
         ] = {}
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
-        self._theme_data: Dict[str, Dict[str, Theme]] = dict()
+        self._theme_data: Dict[str, Dict[str, Theme]] = {}
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
 
     def _initialize(self):
         with self.discovery_blocked():
-            self.register(_builtins, name='builtins')
-            if importlib.util.find_spec("skimage") is not None:
-                from . import _skimage_data
-
-                self.register(_skimage_data, name='scikit-image')
-
             from ..settings import get_settings
 
             # dicts to store maps from extension -> plugin_name

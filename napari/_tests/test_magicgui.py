@@ -59,7 +59,9 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
 )
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
-def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
+def test_magicgui_add_future_data(
+    qtbot, make_napari_viewer, LayerType, data, ndim
+):
     """Test that annotating with Future[] works."""
     from concurrent.futures import Future
     from functools import partial
@@ -84,10 +86,10 @@ def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
         assert isinstance(viewer.layers[0], LayerType)
         assert viewer.layers[0].source.widget == add_data
 
-    add_data()
     assert len(viewer.layers) == 0
-    QTimer.singleShot(50, _assert_stuff)
-    time.sleep(0.1)
+    with qtbot.waitSignal(viewer.layers.events.inserted):
+        add_data()
+    _assert_stuff()
 
 
 @pytest.mark.sync_only
@@ -227,19 +229,36 @@ def test_magicgui_data_updated(make_napari_viewer):
 
 def test_magicgui_get_viewer(make_napari_viewer):
     """Test that annotating with napari.Viewer gets the Viewer"""
-    viewer = make_napari_viewer()
+    # Make two DIFFERENT viewers
+    viewer1 = make_napari_viewer()
+    viewer2 = make_napari_viewer()
+    assert viewer2 is not viewer1
+    # Ensure one is returned by napari.current_viewer()
+    from napari import current_viewer
+
+    assert current_viewer() is viewer2
 
     @magicgui
     def func(v: Viewer):
         return v
 
-    assert func() is None
-    viewer.window.add_dock_widget(func)
-    v = func()
-    assert isinstance(v, PublicOnlyProxy)
-    assert v.__wrapped__ is viewer
+    def func_returns(v: Viewer) -> bool:
+        """Helper function determining whether func() returns v"""
+        func_viewer = func()
+        assert isinstance(func_viewer, PublicOnlyProxy)
+        return func_viewer.__wrapped__ is v
+
+    # We expect func's Viewer to be current_viewer, not viewer
+    assert func_returns(viewer2)
+    assert not func_returns(viewer1)
+    # With viewer as parent, it should be returned instead
+    viewer1.window.add_dock_widget(func)
+    assert func_returns(viewer1)
+    assert not func_returns(viewer2)
     # no widget should be shown
     assert not func.v.visible
+    # ensure that viewer2 is still the current viewer
+    assert current_viewer() is viewer2
 
 
 MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']

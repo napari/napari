@@ -8,8 +8,7 @@ assignees: liaprins-czi
 ---
 
 ### Overview of design need
-- Is there an existing GitHub issue this design work pertains to? 
-- If so, provide a link to it
+- Is there an existing GitHub issue this design work pertains to? If so, provide a link to it
 - Also link to any specific comments or threads where the problem to be solved by design is mentioned
 - In a sentence or two, describe the problem to be solved for users
 
@@ -18,7 +17,7 @@ _This section may be updated by the designer / UX researcher working on this iss
 
 - [ ] **User experience research:**  high-level recommendation/exploration of user needs, design heuristics, and / or best practices to inform a design experience  
 (Use this option when you feel there’s a challenge to be solved, but you’re curious about what the experience should be — may involve research studies to understand challenges/opportunities for design)
-- [ ] **information flow / conceptual:** organizing and structuring of information flow and content, including layout on screen or across multiple steps
+- [ ] **Information flow / conceptual:** organizing and structuring of information flow and content, including layout on screen or across multiple steps
 - [ ] **Visual:** creating mockups, icons, etc
 (If choosing this level alone, it means that the content to be mocked up and its organization is already known and specified)
 

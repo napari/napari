@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
@@ -11,6 +13,9 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtPointsControls(QtLayerControls):
@@ -58,6 +63,8 @@ class QtPointsControls(QtLayerControls):
         Raise error if points mode is not recognized.
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
+
+    layer: 'napari.layers.Points'
 
     def __init__(self, layer):
         super().__init__(layer)

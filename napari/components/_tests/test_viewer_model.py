@@ -2,12 +2,9 @@ import time
 
 import numpy as np
 import pytest
+from npe2 import DynamicPlugin
 
-from napari._tests.utils import (
-    good_layer_data,
-    layer_test_data,
-    restore_settings_on_exit,
-)
+from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
@@ -797,12 +794,18 @@ def test_viewer_object_event_sources():
     assert viewer.camera.events.source is viewer.camera
 
 
-def test_open_or_get_error_multiple_readers(mock_npe2_pm, tmp_reader):
+def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
     """Assert error is returned when multiple plugins are available to read."""
     viewer = ViewerModel()
+    tmp2 = tmp_plugin.spawn(register=True)
 
-    tmp_reader(mock_npe2_pm, 'p1')
-    tmp_reader(mock_npe2_pm, 'p2')
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
 
     with pytest.raises(
         MultipleReaderError, match='Multiple plugins found capable'
@@ -810,7 +813,7 @@ def test_open_or_get_error_multiple_readers(mock_npe2_pm, tmp_reader):
         viewer._open_or_raise_error(['my_file.fake'])
 
 
-def test_open_or_get_error_no_plugin(mock_npe2_pm):
+def test_open_or_get_error_no_plugin():
     """Assert error is raised when no plugin is available."""
     viewer = ViewerModel()
 
@@ -820,7 +823,7 @@ def test_open_or_get_error_no_plugin(mock_npe2_pm):
         viewer._open_or_raise_error(['my_file.fake'])
 
 
-def test_open_or_get_error_builtins(mock_npe2_pm, tmp_path):
+def test_open_or_get_error_builtins(builtins: DynamicPlugin, tmp_path):
     """Test builtins is available to read npy files."""
     viewer = ViewerModel()
 
@@ -833,78 +836,73 @@ def test_open_or_get_error_builtins(mock_npe2_pm, tmp_path):
     layer = added[0]
     assert isinstance(layer, Image)
     np.testing.assert_allclose(layer.data, data)
-    assert layer.source.reader_plugin == 'builtins'
+    assert layer.source.reader_plugin == builtins.name
 
 
-def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader, tmp_path):
+def test_open_or_get_error_prefered_plugin(
+    tmp_path, builtins: DynamicPlugin, tmp_plugin: DynamicPlugin
+):
     """Test plugin preference is respected."""
     viewer = ViewerModel()
     pth = tmp_path / 'my-file.npy'
     np.save(pth, np.random.random((10, 10)))
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.npy': 'builtins'}
+    @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
+    def _(path):
+        ...
 
-        tmp_reader(mock_npe2_pm, 'fake-reader', filename_patterns=['*.npy'])
-        tmp_reader(
-            mock_npe2_pm, 'other-fake-reader', filename_patterns=['*.npy']
-        )
+    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
-        added = viewer._open_or_raise_error([str(pth)])
-        assert len(added) == 1
-        assert added[0].source.reader_plugin == 'builtins'
+    added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.name
 
 
-def test_open_or_get_error_cant_find_plugin(
-    tmp_path, mock_npe2_pm, tmp_reader
-):
+def test_open_or_get_error_cant_find_plugin(tmp_path, builtins: DynamicPlugin):
     """Test user is warned and only plugin used if preferred plugin missing."""
     viewer = ViewerModel()
     pth = tmp_path / 'my-file.npy'
     np.save(pth, np.random.random((10, 10)))
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
+    get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
 
-        with pytest.warns(
-            RuntimeWarning, match="Can't find fake-reader plugin"
-        ):
-            added = viewer._open_or_raise_error([str(pth)])
-        assert len(added) == 1
-        assert added[0].source.reader_plugin == 'builtins'
+    with pytest.warns(RuntimeWarning, match="Can't find fake-reader plugin"):
+        added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.name
 
 
 def test_open_or_get_error_no_prefered_plugin_many_available(
-    mock_npe2_pm, tmp_reader
+    tmp_plugin: DynamicPlugin,
 ):
     """Test MultipleReaderError raised if preferred plugin missing."""
     viewer = ViewerModel()
+    tmp2 = tmp_plugin.spawn(register=True)
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
 
-        tmp_reader(mock_npe2_pm, 'fake-reader', filename_patterns=['*.fake'])
-        tmp_reader(
-            mock_npe2_pm, 'other-fake-reader', filename_patterns=['*.fake']
-        )
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
 
-        with pytest.warns(
-            RuntimeWarning, match="Can't find not-a-plugin plugin"
+    get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
+
+    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
+        with pytest.raises(
+            MultipleReaderError, match='Multiple plugins found capable'
         ):
-            with pytest.raises(
-                MultipleReaderError, match='Multiple plugins found capable'
-            ):
-                viewer._open_or_raise_error(['my_file.fake'])
+            viewer._open_or_raise_error(['my_file.fake'])
 
 
-def test_open_or_get_error_preferred_fails(tmp_path):
+def test_open_or_get_error_preferred_fails(builtins, tmp_path):
     viewer = ViewerModel()
     pth = tmp_path / 'my-file.npy'
 
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'*.npy': 'napari'}
+    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
 
-        with pytest.raises(
-            ReaderPluginError, match='Tried opening with napari, but failed.'
-        ):
-            viewer._open_or_raise_error([str(pth)])
+    with pytest.raises(
+        ReaderPluginError, match='Tried opening with napari, but failed.'
+    ):
+        viewer._open_or_raise_error([str(pth)])

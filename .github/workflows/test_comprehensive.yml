@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -61,16 +61,17 @@ jobs:
 
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+        uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
 
       - uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -109,8 +110,7 @@ jobs:
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
       - name: Report Failures
         if: ${{ failure() }}
@@ -135,9 +135,10 @@ jobs:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -156,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - uses: tlambert03/setup-qt-libs@v1

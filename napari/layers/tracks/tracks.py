@@ -93,8 +93,6 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
-    _max_length = 300
-    _max_width = 20
 
     def __init__(
         self,
@@ -173,6 +171,10 @@ class Tracks(Layer):
 
         # use this to update shaders when the displayed dims change
         self._current_displayed_dims = None
+
+        # track display default limits
+        self._max_length = 300
+        self._max_width = 20
 
         # track display properties
         self.tail_width = tail_width
@@ -458,7 +460,9 @@ class Tracks(Layer):
 
     @tail_length.setter
     def tail_length(self, tail_length: Union[int, float]):
-        self._tail_length = np.clip(tail_length, 1, self._max_length)
+        if tail_length > self._max_length:
+            self._max_length = tail_length
+        self._tail_length = tail_length
         self.events.tail_length()
 
     @property
@@ -467,7 +471,9 @@ class Tracks(Layer):
 
     @head_length.setter
     def head_length(self, head_length: Union[int, float]):
-        self._head_length = np.clip(head_length, 0, self._max_length)
+        if head_length > self._max_length:
+            self._max_length = head_length
+        self._head_length = head_length
         self.events.head_length()
 
     @property
