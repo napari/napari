@@ -93,25 +93,17 @@ def select_all_in_slice(layer: Points):
     trans._("Select all points in the layer."),
 )
 def select_all_data(layer: Points):
-    new_selected = set(range(layer.data.shape[0]))
-    # Needed for the notification
-    view_selected = set(layer._indices_view[: len(layer._view_data)])
 
     # If all points are already selected, deselect all points
-    if layer.selected_data == new_selected:
+    if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()
-        show_info(
-            trans._(
-                "Deselected all points across all slices,"
-                " including {n_invis}"
-                " points not currently visible. ({n_total} selected)",
-                n_invis=len(new_selected - view_selected),
-                n_total=len(layer.selected_data),
-            )
-        )
+        show_info(trans._("Cleared all selections."))
 
     # Select all points
     else:
+        new_selected = set(range(layer.data.shape[0]))
+        # Needed for the notification
+        view_selected = set(layer._indices_view[: len(layer._view_data)])
         layer.selected_data = new_selected
         show_info(
             trans._(
