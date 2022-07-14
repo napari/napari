@@ -4,7 +4,7 @@ import logging
 import traceback
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
 import numpy as np
@@ -745,7 +745,7 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: List[str],
-        stack: bool,
+        stack: Union[bool, List[List[str]]],
         plugin: str = None,
         layer_type: str = None,
         **kwargs,
@@ -759,8 +759,9 @@ class QtViewer(QSplitter):
         ----------
         filenames : List[str]
             paths to open
-        stack : bool
-            whether to stack files or not
+        stack : bool or list[list[str]]
+            whether to stack files or not. Can also be a list containing
+            files to stack.
         """
         try:
             self.viewer.open(
