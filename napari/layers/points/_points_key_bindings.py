@@ -67,9 +67,7 @@ def select_all_in_slice(layer: Points):
         layer.selected_data = layer.selected_data - new_selected
         show_info(
             trans._(
-                "Deselected all points in this slice,"
-                " use Shift-A to deselect all points on the layer."
-                " ({n_total} selected)",
+                "Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({n_total} selected)",
                 n_total=len(layer.selected_data),
             )
         )
@@ -79,9 +77,7 @@ def select_all_in_slice(layer: Points):
         layer.selected_data = layer.selected_data | new_selected
         show_info(
             trans._(
-                "Selected {n_new} points in this slice,"
-                " use Shift-A to select all points on the layer."
-                " ({n_total} selected)",
+                "Selected {n_new} points in this slice, use Shift-A to select all points on the layer. ({n_total} selected)",
                 n_new=len(new_selected),
                 n_total=len(layer.selected_data),
             )
@@ -107,9 +103,7 @@ def select_all_data(layer: Points):
         layer.selected_data = new_selected
         show_info(
             trans._(
-                "Selected {n_new} points across all slices,"
-                " including {n_invis}"
-                " points not currently visible. ({n_total})",
+                "Selected {n_new} points across all slices, including {n_invis} points not currently visible. ({n_total})",
                 n_new=len(new_selected),
                 n_invis=len(new_selected - view_selected),
                 n_total=len(layer.selected_data),
