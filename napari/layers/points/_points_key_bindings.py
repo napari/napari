@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from napari.utils.notifications import show_info
+
 from ...layers.utils.layer_utils import register_layer_action
 from ...utils.translations import trans
 from ._points_constants import Mode
@@ -63,17 +65,19 @@ def select_all(layer: Points):
     # If all visible points are already selected, deselect the visible points
     if new_selected & layer.selected_data == new_selected:
         layer.selected_data = layer.selected_data - new_selected
-        # TODO: Make this a napari notification
-        print(
-            f"Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({len(layer.selected_data)} selected)"
+        show_info(
+            trans._(
+                f"Deselected all points in this slice, use Shift-A to deselect all points on the layer. ({len(layer.selected_data)} selected)"
+            )
         )
 
     # If not all visible points are already selected, additionally select the visible points
     else:
         layer.selected_data = layer.selected_data | new_selected
-        # TODO: Make this a napari notification
-        print(
-            f"Selected {len(new_selected)} points in this slice, use Shift-A to select all points on the layer. ({len(layer.selected_data)} selected)"
+        show_info(
+            trans._(
+                f"Selected {len(new_selected)} points in this slice, use Shift-A to select all points on the layer. ({len(layer.selected_data)} selected)"
+            )
         )
     layer._set_highlight()
 
@@ -89,17 +93,19 @@ def select_all_3d(layer: Points):
     # If all points are already selected, deselect all points
     if layer.selected_data == new_selected:
         layer.selected_data = set()
-        # TODO: Make this a napari notification
-        print(
-            f"Deselected all points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+        show_info(
+            trans._(
+                f"Deselected all points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+            )
         )
 
     # Select all points
     else:
         layer.selected_data = new_selected
-        # TODO: Make this a napari notification
-        print(
-            f"Selected {len(new_selected)} points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+        show_info(
+            trans._(
+                f"Selected {len(new_selected)} points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)} selected)"
+            )
         )
     layer._set_highlight()
 
