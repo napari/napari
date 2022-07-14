@@ -1,5 +1,12 @@
 """All commands that are available in the napari GUI are defined here.
 
+Internally, prefer using the CommandId enum instead of the string literal.
+When adding a new command, add a new title/description in the _COMMAND_INFO dict
+below.  The title will be used in the GUI, and the may be used in auto generated
+documentation.
+
+CommandId values should be namespaced, e.g. 'napari:layer:something' for a command
+that operates on layers.
 """
 from enum import Enum
 from typing import NamedTuple, Optional
@@ -8,6 +15,8 @@ from ...utils.translations import trans
 
 
 class CommandId(str, Enum):
+    """Id representing a napari command."""
+
     LAYER_DUPLICATE = 'napari:layer:duplicate_layer'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
