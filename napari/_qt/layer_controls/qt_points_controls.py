@@ -135,6 +135,10 @@ class QtPointsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
+        select_all_cb = QCheckBox()
+        select_all_cb.setToolTip(trans._('Select all'))
+        self.selectAllCheckBox = select_all_cb
+
         self.select_button = QtModeRadioButton(
             layer,
             'select_points',
@@ -193,6 +197,7 @@ class QtPointsControls(QtLayerControls):
         self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
         self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
         self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
+        self.layout().addRow(trans._('select all:'), self.selectAllCheckBox)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.
@@ -243,6 +248,8 @@ class QtPointsControls(QtLayerControls):
             Size of points.
         """
         self.layer.current_size = value
+        if self.selectAllCheckBox.isChecked():
+            self.layer.size = value
 
     def change_out_of_slice(self, state):
         """Toggleout of slice display of points layer.
@@ -292,12 +299,16 @@ class QtPointsControls(QtLayerControls):
         """Update face color of layer model from color picker user input."""
         with self.layer.events.current_face_color.blocker():
             self.layer.current_face_color = color
+            if self.selectAllCheckBox.isChecked():
+                self.layer.face_color = color
 
     @Slot(np.ndarray)
     def changeEdgeColor(self, color: np.ndarray):
         """Update edge color of layer model from color picker user input."""
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
+            if self.selectAllCheckBox.isChecked():
+                self.layer.edge_color = color
 
     def _on_current_face_color_change(self):
         """Receive layer.current_face_color() change event and update view."""

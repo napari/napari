@@ -293,6 +293,10 @@ class QtShapesControls(QtLayerControls):
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
+        select_all_cb = QCheckBox()
+        select_all_cb.setToolTip(trans._('Select all'))
+        self.selectAllCheckBox = select_all_cb
+
         self.layout().addRow(button_grid)
         self.layout().addRow(trans._('opacity:'), self.opacitySlider)
         self.layout().addRow(trans._('edge width:'), self.widthSlider)
@@ -300,6 +304,7 @@ class QtShapesControls(QtLayerControls):
         self.layout().addRow(trans._('face color:'), self.faceColorEdit)
         self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
         self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
+        self.layout().addRow(trans._('select all:'), self.selectAllCheckBox)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.
@@ -359,6 +364,8 @@ class QtShapesControls(QtLayerControls):
         """
         with self.layer.events.current_face_color.blocker():
             self.layer.current_face_color = color
+            if self.selectAllCheckBox.isChecked():
+                self.layer.face_color = color
 
     def changeEdgeColor(self, color: np.ndarray):
         """Change edge color of shapes.
@@ -371,6 +378,8 @@ class QtShapesControls(QtLayerControls):
         """
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
+            if self.selectAllCheckBox.isChecked():
+                self.layer.edge_color = color
 
     def changeWidth(self, value):
         """Change edge line width of shapes on the layer model.
@@ -381,6 +390,8 @@ class QtShapesControls(QtLayerControls):
             Line width of shapes.
         """
         self.layer.current_edge_width = float(value)
+        if self.selectAllCheckBox.isChecked():
+            self.layer.edge_width = float(value)
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
