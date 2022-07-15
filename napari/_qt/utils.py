@@ -82,7 +82,7 @@ def str_to_qbytearray(string: str) -> QByteArray:
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
-def QImg2array(img):
+def QImg2array(img) -> np.ndarray:
     """Convert QImage to an array.
 
     Parameters
