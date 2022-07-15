@@ -70,7 +70,8 @@ def register_label_attr_action(
     shortcuts=None,
 ):
     """
-    Convenient decorator to register an action with the current Layers
+    Convenient decorator to register an action with the current Layers.
+    This will get and restore attribute from function first argument.
 
     It will use the function name as the action name. We force the description
     to be given instead of function docstring for translation purpose.
@@ -99,18 +100,18 @@ def register_label_attr_action(
     def _handle(func):
         sig = inspect.signature(func)
         try:
-            name = next(iter(sig.parameters))
+            first_variable_name = next(iter(sig.parameters))
         except StopIteration:
-            return register_layer_action(
-                keymapprovider, description, shortcuts
-            )(func)
+            raise RuntimeError(
+                "If actions has no arguments there is no way to know what to set the attribute to."
+            )
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
             if args:
                 obj = args[0]
             else:
-                obj = kwargs[name]
+                obj = kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 
