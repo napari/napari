@@ -487,8 +487,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Update dims and grid model
         self._on_layers_change()
         self._on_grid_change()
-        # Slice current layer based on dims
-        self._update_layers(layers=[layer])
+        # Slice all layers based on dims
+        self._update_layers()
 
         if len(self.layers) == 1:
             self.reset_view()
