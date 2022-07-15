@@ -72,6 +72,11 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     Callable
         A function with napari dependencies injected
     """
+    if not func.__code__.co_argcount and 'return' not in getattr(
+        func, '__annotations__', {}
+    ):
+        return func
+
     sig = signature(func)
     # get type hints for the object, with forward refs of napari hints resolved
     hints = napari_type_hints(func)
