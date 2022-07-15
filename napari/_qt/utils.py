@@ -156,11 +156,11 @@ def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
     size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
-    painter.setPen(Qt.white)
+    painter.setPen(Qt.GlobalColor.white)
     painter.drawRect(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.black)
+    painter.setPen(Qt.GlobalColor.black)
     painter.drawRect(1, 1, size - 3, size - 3)
     painter.end()
     return pixmap
@@ -174,7 +174,7 @@ def crosshair_pixmap():
     size = 25
 
     pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
 
     # Base measures
@@ -183,7 +183,7 @@ def crosshair_pixmap():
     rect_size = center + 2 * width
     square = rect_size + width * 4
 
-    pen = QPen(Qt.white, 1)
+    pen = QPen(Qt.GlobalColor.white, 1)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
 
@@ -198,7 +198,7 @@ def crosshair_pixmap():
         (size - square) // 2, (size - square) // 2, square - 1, square - 1
     )
 
-    pen = QPen(Qt.black, 2)
+    pen = QPen(Qt.GlobalColor.black, 2)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
 
@@ -210,7 +210,7 @@ def crosshair_pixmap():
         square - 4,
     )
 
-    pen = QPen(Qt.black, 3)
+    pen = QPen(Qt.GlobalColor.black, 3)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
 
@@ -241,13 +241,13 @@ def crosshair_pixmap():
 @lru_cache(maxsize=64)
 def circle_pixmap(size: int):
     """Create a white/black hollow circle pixmap. For use as labels cursor."""
-    size = max(int(size), 1)
+    size = max(size, 1)
     pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
-    painter.setPen(Qt.white)
+    painter.setPen(Qt.GlobalColor.white)
     painter.drawEllipse(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.black)
+    painter.setPen(Qt.GlobalColor.black)
     painter.drawEllipse(1, 1, size - 3, size - 3)
     painter.end()
     return pixmap
@@ -284,7 +284,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     drag.setMimeData(list_widget.mimeData(list_widget.selectedItems()))
     size = list_widget.viewport().visibleRegion().boundingRect().size()
     pixmap = QPixmap(size)
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     for index in list_widget.selectedIndexes():
         rect = list_widget.visualRect(index)
@@ -426,35 +426,34 @@ def _maybe_allow_interrupt(qapp):
     """
     old_sigint_handler = signal.getsignal(signal.SIGINT)
     handler_args = None
-    skip = False
     if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
-        skip = True
-    else:
-        wsock, rsock = socket.socketpair()
-        wsock.setblocking(False)
-        old_wakeup_fd = signal.set_wakeup_fd(wsock.fileno())
-        sn = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
+        yield
+        return
 
-        # Clear the socket to re-arm the notifier.
-        sn.activated.connect(lambda *args: rsock.recv(1))
+    wsock, rsock = socket.socketpair()
+    wsock.setblocking(False)
+    old_wakeup_fd = signal.set_wakeup_fd(wsock.fileno())
+    sn = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
 
-        def handle(*args):
-            nonlocal handler_args
-            handler_args = args
-            qapp.exit()
+    # Clear the socket to re-arm the notifier.
+    sn.activated.connect(lambda *args: rsock.recv(1))
 
-        signal.signal(signal.SIGINT, handle)
+    def handle(*args):
+        nonlocal handler_args
+        handler_args = args
+        qapp.exit()
+
+    signal.signal(signal.SIGINT, handle)
     try:
         yield
     finally:
-        if not skip:
-            wsock.close()
-            rsock.close()
-            sn.setEnabled(False)
-            signal.set_wakeup_fd(old_wakeup_fd)
-            signal.signal(signal.SIGINT, old_sigint_handler)
-            if handler_args is not None:
-                old_sigint_handler(*handler_args)
+        wsock.close()
+        rsock.close()
+        sn.setEnabled(False)
+        signal.set_wakeup_fd(old_wakeup_fd)
+        signal.signal(signal.SIGINT, old_sigint_handler)
+        if handler_args is not None:
+            old_sigint_handler(*handler_args)
 
 
 def qt_might_be_rich_text(text) -> bool:

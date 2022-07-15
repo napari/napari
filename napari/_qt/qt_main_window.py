@@ -722,7 +722,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, Widget],
+        widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
         area: str = 'right',

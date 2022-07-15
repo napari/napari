@@ -162,8 +162,6 @@ class QtViewer(QSplitter):
         Dimension sliders; Qt View for Dims model.
     dockConsole : QtViewerDockWidget
         QWidget wrapped in a QDockWidget with forwarded viewer events.
-    aboutKeybindings : QtAboutKeybindings
-        Key bindings for the 'About' Qt dialog.
     dockLayerControls : QtViewerDockWidget
         QWidget wrapped in a QDockWidget with forwarded viewer events.
     dockLayerList : QtViewerDockWidget
@@ -190,7 +188,7 @@ class QtViewer(QSplitter):
 
         super().__init__()
         self._instances.add(self)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
 
@@ -272,14 +270,14 @@ class QtViewer(QSplitter):
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
-        self.setOrientation(Qt.Vertical)
+        self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
         self._cursors = {
-            'cross': Qt.CrossCursor,
-            'forbidden': Qt.ForbiddenCursor,
-            'pointing': Qt.PointingHandCursor,
-            'standard': QCursor(),
+            'cross': Qt.CursorShape.CrossCursor,
+            'forbidden': Qt.CursorShape.ForbiddenCursor,
+            'pointing': Qt.CursorShape.PointingHandCursor,
+            'standard': Qt.CursorShape.ArrowCursor,
         }
 
         self._on_active_change()
@@ -804,7 +802,7 @@ class QtViewer(QSplitter):
             size = self.viewer.cursor.size * self.viewer.camera.zoom
         else:
             size = self.viewer.cursor.size
-
+        size = int(size)
         if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
@@ -1098,10 +1096,13 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
-        shift_down = QGuiApplication.keyboardModifiers() & Qt.ShiftModifier
+        shift_down = (
+            QGuiApplication.keyboardModifiers()
+            & Qt.KeyboardModifier.ShiftModifier
+        )
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
@@ -1123,7 +1124,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QCloseEvent
             Event from the Qt context.
         """
         self.layers.close()

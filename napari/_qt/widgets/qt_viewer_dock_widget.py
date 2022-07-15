@@ -69,7 +69,7 @@ class QtViewerDockWidget(QDockWidget):
     def __init__(
         self,
         qt_viewer,
-        widget: Union[QWidget, Widget],
+        widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
         area: str = 'right',

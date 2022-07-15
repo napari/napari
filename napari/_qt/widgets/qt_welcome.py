@@ -46,8 +46,8 @@ class QtWelcomeWidget(QWidget):
         # Widget setup
         self.setAutoFillBackground(True)
         self.setAcceptDrops(True)
-        self._image.setAlignment(Qt.AlignCenter)
-        self._label.setAlignment(Qt.AlignCenter)
+        self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()
@@ -125,7 +125,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragEnterEvent
             Event from the Qt context.
         """
         self._update_property("drag", True)
@@ -141,7 +141,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragLeaveEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)
@@ -153,7 +153,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)

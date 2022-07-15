@@ -136,8 +136,12 @@ def get_app(
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
         if PYQT5:
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-            QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
+            )
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
+            )
 
         argv = sys.argv.copy()
         if sys.platform == "darwin" and not argv[0].endswith("napari"):
