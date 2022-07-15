@@ -171,6 +171,10 @@ class Dims(EventedModel):
         )
         return point
 
+    @point.setter
+    def point(self, point: Tuple[int, ...]) -> None:
+        self.point = point
+
     @property
     def displayed(self) -> Tuple[int, ...]:
         """Tuple: Dimensions that are displayed."""
