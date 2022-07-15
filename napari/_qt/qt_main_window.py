@@ -352,6 +352,15 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if (
+            event.spontaneous()
+            and get_settings().application.confirm_close_window
+            and self._qt_viewer.viewer.layers
+            and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
+        ):
+            event.ignore()
+            return
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
