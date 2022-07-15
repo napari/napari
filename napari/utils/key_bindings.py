@@ -444,19 +444,22 @@ class KeymapHandler:
                 )
             )
 
-        gen = func()
+        generator_or_callback = func()
 
         if inspect.isgeneratorfunction(func):
             try:
-                next(gen)  # call function
+                next(generator_or_callback)  # call function
             except StopIteration:  # only one statement
                 pass
             else:
                 key, _ = parse_key_combo(key_combo)
-                self._key_release_generators[key] = gen
-        if isinstance(gen, typing.Callable):
+                self._key_release_generators[key] = generator_or_callback
+        if isinstance(generator_or_callback, typing.Callable):
             key, _ = parse_key_combo(key_combo)
-            self._key_release_generators[key] = gen, time.time()
+            self._key_release_generators[key] = (
+                generator_or_callback,
+                time.time(),
+            )
 
     def release_key(self, key_combo):
         """Simulate a key release for a keybinding.
@@ -469,13 +472,16 @@ class KeymapHandler:
         key, _ = parse_key_combo(key_combo)
         with contextlib.suppress(KeyError, StopIteration):
             val = self._key_release_generators[key]
+            # val could be callback function with time to check
+            # if it should be called or generator that need to make
+            # additional step on key release
             if isinstance(val, tuple):
-                gen, start = val
+                callback, start = val
                 if (
                     time.time() - start
                     > get_settings().application.hold_button_delay
                 ):
-                    gen()
+                    callback()
             else:
                 next(val)  # call function
 
