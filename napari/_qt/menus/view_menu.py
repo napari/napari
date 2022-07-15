@@ -1,23 +1,13 @@
-import platform
 from functools import partial
 from typing import TYPE_CHECKING, List
 
 from ...settings import get_settings
-from ...utils import config as async_config
 from ...utils.translations import trans
 from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
-from app_model.types import Action, MenuRule
-from ..._app._menus
-
-VIEW_ACTIONS: List[Action] = [
-    Action(
-        id=''
-    )
-]
 
 class ViewMenu(NapariMenu):
     def __init__(self, window: 'Window'):
@@ -35,33 +25,7 @@ class ViewMenu(NapariMenu):
                 'check_on': getattr(obj.events, prop),
             }
 
-        settings = get_settings()
-
         ACTIONS = [
-            {
-                'text': trans._('Toggle Full Screen'),
-                'slot': window._toggle_fullscreen,
-                'shortcut': 'Ctrl+F',
-            },
-            {
-                'when': platform.system() != "Darwin",
-                'text': trans._('Toggle Menubar Visibility'),
-                'slot': window._toggle_menubar_visible,
-                'shortcut': 'Ctrl+M',
-                'statusTip': trans._('Hide Menubar'),
-            },
-            {
-                'text': trans._('Toggle Play'),
-                'slot': window._toggle_play,
-                'shortcut': 'Ctrl+Alt+P',
-            },
-            {},
-            {
-                'when': async_config.async_octree,
-                'text': trans._('Toggle Chunk Outlines'),
-                'slot': window._qt_viewer._toggle_chunk_outlines,
-                'shortcut': 'Ctrl+Alt+O',
-            },
             {
                 'menu': 'Axes',
                 'items': [
@@ -81,23 +45,12 @@ class ViewMenu(NapariMenu):
                 ],
             },
             {
-                'text': trans._('Layer Tooltip visibility'),
-                'slot': self._tooltip_visibility_toggle,
-                'checkable': True,
-                'checked': settings.appearance.layer_tooltip_visibility,
-                'check_on': settings.appearance.events.layer_tooltip_visibility,
-            },
-            {
                 'text': trans._('Activity Dock'),
                 'slot': window._status_bar._toggle_activity_dock,
                 'checkable': True,
                 'checked': window._qt_window._activity_dialog.isVisible(),
                 'check_on': window._status_bar._activity_item._activityBtn.toggled,
             },
-            {},
         ]
 
         populate_menu(self, ACTIONS)
-
-    def _tooltip_visibility_toggle(self, value):
-        get_settings().appearance.layer_tooltip_visibility = value

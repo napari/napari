@@ -12,7 +12,7 @@ from enum import Enum
 class MenuId(str, Enum):
     """Id representing a menu somewhere in napari."""
 
-    VIEW = 'napari/view'
+    MENUBAR_VIEW = 'napari/view'
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'

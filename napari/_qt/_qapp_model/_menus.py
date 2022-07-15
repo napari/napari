@@ -1,7 +1,7 @@
 from app_model.backends.qt import QModelMenu
 
 
-def build_qmodel_menu(menu_id: str) -> QModelMenu:
+def build_qmodel_menu(menu_id: str, title: str = None) -> QModelMenu:
     """Build a QModelMenu from the napari app model
 
     Parameters
@@ -14,4 +14,4 @@ def build_qmodel_menu(menu_id: str) -> QModelMenu:
     QModelMenu
         QMenu subclass populated with all items in `menu_id` menu.
     """
-    return QModelMenu(menu_id=menu_id, app='napari')
+    return QModelMenu(menu_id=menu_id, app='napari', title=title)

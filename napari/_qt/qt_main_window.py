@@ -19,6 +19,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+from app_model.backends.qt import QModelMenu
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
@@ -75,9 +76,12 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(self, viewer: 'Viewer', parent=None) -> None:
+    def __init__(
+        self, viewer: 'Viewer', window: 'Window', parent=None
+    ) -> None:
         super().__init__(parent)
         self._ev = None
+        self._window = window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -421,7 +425,7 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer)
+        self._qt_window = _QtMainWindow(viewer, self)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -603,9 +607,13 @@ class Window:
             self._toggle_menubar_visible
         )
 
+        from ._qapp_model import build_qmodel_menu
+
         self.file_menu = menus.FileMenu(self)
         self.main_menu.addMenu(self.file_menu)
-        self.view_menu = menus.ViewMenu(self)
+        self.view_menu = build_qmodel_menu(
+            MenuId.MENUBAR_VIEW, title=trans._('View')
+        )
         self.main_menu.addMenu(self.view_menu)
         self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
@@ -1333,3 +1341,82 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
+
+
+from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
+
+from .._app.constants import CommandId, MenuId
+
+
+def _tooltip_visibility_toggle(value):
+    get_settings().appearance.layer_tooltip_visibility = value
+
+
+VIEW_ACTIONS: List[Action] = [
+    Action(
+        id=CommandId.TOGGLE_FULLSCREEN,
+        title=CommandId.TOGGLE_FULLSCREEN.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': 'navigation', 'order': 1}],
+        callback=Window._toggle_fullscreen,
+        keybindings=[StandardKeyBinding.FullScreen],
+    ),
+    Action(
+        id=CommandId.TOGGLE_MENUBAR,
+        title=CommandId.TOGGLE_MENUBAR.title,
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': 'navigation',
+                'order': 2,
+                'when': 'not is_mac',
+            }
+        ],
+        callback=Window._toggle_menubar_visible,
+        keybindings=[
+            {
+                'win': KeyMod.CtrlCmd | KeyCode.KeyM,
+                'linux': KeyMod.CtrlCmd | KeyCode.KeyM,
+            }
+        ],
+        enablement='not is_mac',
+        status_tip=trans._('Show/Hide Menubar'),
+    ),
+    Action(
+        id=CommandId.TOGGLE_PLAY,
+        title=CommandId.TOGGLE_PLAY.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': 'navigation', 'order': 3}],
+        callback=Window._toggle_play,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyP}],
+    ),
+    Action(
+        id=CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES,
+        title=CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 1}],
+        callback=QtViewer._toggle_chunk_outlines,
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
+        enablement='settings_experimental_octree',
+    ),
+    # TODO: this could be made into a toggle setting Action subclass
+    Action(
+        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
+        title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
+        callback=_tooltip_visibility_toggle,
+        toggled='settings_appearance_layer_tooltip_visibility',
+    ),
+]
+
+
+def _init_module():
+    from napari._app import app
+
+    for action in VIEW_ACTIONS:
+        app.register_action(action)
+
+    ns = app.injection_store.namespace
+    ns.update({'Window': Window})
+    app.injection_store.namespace = ns
+    print(ns)
+
+
+_init_module()
