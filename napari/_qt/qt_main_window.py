@@ -689,7 +689,7 @@ class Window:
             return dock_widget, wdg
 
         wdg = _instantiate_dock_widget(
-            Widget, cast(self._qt_viewer.viewer, Viewer)
+            Widget, cast('Viewer', self._qt_viewer.viewer)
         )
 
         # Add dock widget
