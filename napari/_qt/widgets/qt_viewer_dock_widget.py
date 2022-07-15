@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 from functools import reduce
 from itertools import count
@@ -168,7 +169,11 @@ class QtViewerDockWidget(QDockWidget):
 
     def destroyOnClose(self):
         """Destroys dock plugin dock widget when 'x' is clicked."""
-        self._ref_qt_viewer().viewer.window.remove_dock_widget(self)
+        from napari.viewer import Viewer
+
+        viewer = self._ref_qt_viewer().viewer
+        if isinstance(viewer, Viewer):
+            viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
@@ -248,23 +253,23 @@ class QtViewerDockWidget(QDockWidget):
         return self.size().height() > self.size().width()
 
     def _on_visibility_changed(self, visible):
-        try:
-            actions = [
-                action.text()
-                for action in self._ref_qt_viewer().viewer.window.plugins_menu.actions()
-            ]
-            idx = actions.index(self.name)
+        from napari.viewer import Viewer
 
-            current_action = (
-                self._ref_qt_viewer().viewer.window.plugins_menu.actions()[idx]
-            )
-            current_action.setChecked(visible)
+        with contextlib.suppress(AttributeError, ValueError):
+            viewer = self._ref_qt_viewer().viewer
+            if isinstance(viewer, Viewer):
+                actions = [
+                    action.text()
+                    for action in viewer.window.plugins_menu.actions()
+                ]
+                idx = actions.index(self.name)
+
+                viewer.window.plugins_menu.actions()[idx].setChecked(visible)
+
             self.setVisible(visible)
-
-        except (AttributeError, ValueError):
             # AttributeError: This error happens when the plugins menu is not yet built.
             # ValueError: This error is when the action is from the windows menu.
-            pass
+
         if not visible:
             return
         with qt_signals_blocked(self):
