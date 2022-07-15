@@ -805,9 +805,7 @@ class QtViewer(QSplitter):
         size = int(size)
         if cursor == 'square':
             # make sure the square fits within the current canvas
-            if size < 8 or size > (
-                min(*self.viewer.window._qt_viewer.canvas.size) - 4
-            ):
+            if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
@@ -1077,7 +1075,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragEvent
             Event from the Qt context.
         """
         if event.mimeData().hasUrls():
