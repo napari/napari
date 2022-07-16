@@ -112,20 +112,17 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     viewer = ViewerModel()
     point = viewer.add_points([[10, 5, 5]])
     np.testing.assert_array_equal(point._indices_view, [0])
-
     assert viewer.dims.point == (10, 5, 5)
 
     other_point = viewer.add_points([[8, 1, 1]])
     np.testing.assert_array_equal(point._indices_view, [0])
     np.testing.assert_array_equal(other_point._indices_view, [])
-
     assert viewer.dims.point == (10, 5, 5)
 
     other_point2 = viewer.add_points([[10, 1, 1]])
     np.testing.assert_array_equal(point._indices_view, [0])
     np.testing.assert_array_equal(other_point._indices_view, [])
     np.testing.assert_array_equal(other_point2._indices_view, [0])
-
     assert viewer.dims.point == (10, 5, 5)
 
     other_point3 = viewer.add_points([[14, 1, 1]])
@@ -133,23 +130,22 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     np.testing.assert_array_equal(other_point._indices_view, [])
     np.testing.assert_array_equal(other_point2._indices_view, [0])
     np.testing.assert_array_equal(other_point3._indices_view, [])
-
     assert viewer.dims.point == (10, 5, 5)
 
     viewer.layers.remove(other_point)
     np.testing.assert_array_equal(point._indices_view, [0])
     np.testing.assert_array_equal(other_point2._indices_view, [0])
     np.testing.assert_array_equal(other_point3._indices_view, [])
-
     assert viewer.dims.point == (10, 5, 5)
 
     viewer.layers.remove(other_point2)
     np.testing.assert_array_equal(point._indices_view, [0])
     np.testing.assert_array_equal(other_point3._indices_view, [])
-
     assert viewer.dims.point == (10, 5, 5)
 
     viewer.layers.remove(point)
     np.testing.assert_array_equal(other_point3._indices_view, [0])
-
     assert viewer.dims.point == (14, 1, 1)
+
+    viewer.layers.remove(other_point3)
+    assert viewer.dims.point == (0, 0)
