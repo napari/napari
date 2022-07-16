@@ -13,23 +13,6 @@ from typing import NamedTuple, Optional
 
 from ...utils.translations import trans
 
-# 'menu': 'Axes',
-# 'items': [
-#     _toggle_dict(trans._('Visible'), 'axes', 'visible'),
-#     _toggle_dict(trans._('Colored'), 'axes', 'colored'),
-#     _toggle_dict(trans._('Labels'), 'axes', 'labels'),
-#     _toggle_dict(trans._('Dashed'), 'axes', 'dashed'),
-#     _toggle_dict(trans._('Arrows'), 'axes', 'arrows'),
-# ],
-# },
-# {
-# 'menu': 'Scale Bar',
-# 'items': [
-#     _toggle_dict(trans._('Visible'), 'scale_bar', 'visible'),
-#     _toggle_dict(trans._('Colored'), 'scale_bar', 'colored'),
-#     _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
-# ],
-
 
 class CommandId(str, Enum):
     """Id representing a napari command."""
