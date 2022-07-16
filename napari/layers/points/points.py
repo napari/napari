@@ -626,7 +626,6 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
         ):
             update_indices = list(self.selected_data)
         self._feature_table.set_currents(
@@ -753,8 +752,7 @@ class Points(Layer):
         self._current_size = size
         if (
             self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
+            and len(self.selected_data) > 0  
         ):
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
@@ -859,7 +857,6 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
         ):
             for i in self.selected_data:
                 self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
@@ -931,7 +928,6 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
         ):
             update_indices = list(self.selected_data)
         else:
@@ -1023,7 +1019,6 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
         ):
             update_indices = list(self.selected_data)
         else:
