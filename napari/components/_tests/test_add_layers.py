@@ -116,3 +116,10 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     other_point = viewer.add_points([[8, 1, 1]])
     np.testing.assert_array_equal(point._indices_view, [])
     np.testing.assert_array_equal(other_point._indices_view, [0])
+
+    viewer.dims.set_point(range(len(viewer.layers._ranges)), (10, 5, 5))
+    np.testing.assert_array_equal(point._indices_view, [0])
+    np.testing.assert_array_equal(other_point._indices_view, [])
+
+    viewer.layers.remove(point)
+    np.testing.assert_array_equal(other_point._indices_view, [0])
