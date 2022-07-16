@@ -2429,6 +2429,7 @@ def test_empty_data_from_tuple():
     ]
 )
 def test_new_point_size_editable(attribute, new_value):
+    """tests the newly placed points may be edited without re-elescting"""
     layer = Points(name="Points")
     layer.mode = Mode.ADD
     layer.add((0,0))
