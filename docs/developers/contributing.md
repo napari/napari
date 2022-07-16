@@ -219,7 +219,7 @@ You can then make a
 
 Install the documents tools:
 ```sh
-pip install -e ".[doc]"  # (quotes only needed for zsh shell)
+pip install -e ".[docs]"  # (quotes only needed for zsh shell)
 ```
 
 From the project root:
