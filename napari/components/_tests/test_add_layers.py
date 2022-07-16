@@ -105,3 +105,14 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
                 if 'name' not in kwargs:
                     assert layer.name.startswith('mock_path')
             assert layer.source == expected_source
+
+
+def test_add_points_layer_with_different_range_updates_all_slices():
+    """See https://github.com/napari/napari/pull/4819"""
+    viewer = ViewerModel()
+    point = viewer.add_points([[10, 5, 5]])
+    np.testing.assert_array_equal(point._indices_view, [0])
+
+    other_point = viewer.add_points([[8, 1, 1]])
+    np.testing.assert_array_equal(point._indices_view, [])
+    np.testing.assert_array_equal(other_point._indices_view, [0])
