@@ -44,6 +44,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from ._qapp_model import build_qmodel_menu
 from ._qapp_model._qactions import _init_qactions
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
@@ -608,8 +609,6 @@ class Window:
         self._main_menu_shortcut.activated.connect(
             self._toggle_menubar_visible
         )
-
-        from ._qapp_model import build_qmodel_menu
 
         self.file_menu = menus.FileMenu(self)
         self.main_menu.addMenu(self.file_menu)
