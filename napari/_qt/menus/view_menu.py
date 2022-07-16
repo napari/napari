@@ -1,9 +1,8 @@
 from functools import partial
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
-from ...settings import get_settings
 from ...utils.translations import trans
-from ._util import NapariMenu, populate_menu
+from ._util import NapariMenu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
@@ -44,13 +43,4 @@ class ViewMenu(NapariMenu):
                     _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
                 ],
             },
-            {
-                'text': trans._('Activity Dock'),
-                'slot': window._status_bar._toggle_activity_dock,
-                'checkable': True,
-                'checked': window._qt_window._activity_dialog.isVisible(),
-                'check_on': window._status_bar._activity_item._activityBtn.toggled,
-            },
         ]
-
-        populate_menu(self, ACTIONS)

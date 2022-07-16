@@ -22,6 +22,7 @@ class CommandId(str, Enum):
     TOGGLE_PLAY = 'window:view:toggle_play'
     TOGGLE_OCTREE_CHUNK_OUTLINES = 'window:view:toggle_octree_chunk_outlines'
     TOGGLE_LAYER_TOOLTIPS = 'window:view:toggle_layer_tooltips'
+    TOGGLE_ACTIVITY_DOCK = 'window:view:toggle_activity_dock'
 
     LAYER_DUPLICATE = 'layer:duplicate'
     LAYER_SPLIT_STACK = 'layer:split_stack'
@@ -73,6 +74,7 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_PLAY: _ci(trans._('Toggle Play'),),
     CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _ci(trans._('Toggle Chunk Outlines'),),
     CommandId.TOGGLE_LAYER_TOOLTIPS: _ci(trans._('Toggle Layer Tooltips'),),
+    CommandId.TOGGLE_ACTIVITY_DOCK: _ci(trans._('Toggle Activity Dock'),),
 
     CommandId.LAYER_DUPLICATE: _ci(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _ci(trans._('Split Stack'),),

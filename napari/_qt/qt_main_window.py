@@ -1352,6 +1352,7 @@ def _tooltip_visibility_toggle():
     settings = get_settings().appearance
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
+
 VIEW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_FULLSCREEN,
@@ -1394,7 +1395,7 @@ VIEW_ACTIONS: List[Action] = [
         menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 1}],
         callback=QtViewer._toggle_chunk_outlines,
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
-        enablement='settings_experimental_octree',
+        enablement='settings_experimental_octree',  # TODO
     ),
     # TODO: this could be made into a toggle setting Action subclass
     Action(
@@ -1402,7 +1403,15 @@ VIEW_ACTIONS: List[Action] = [
         title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
         menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
         callback=_tooltip_visibility_toggle,
-        toggled='settings_appearance_layer_tooltip_visibility',
+        toggled='settings_appearance_layer_tooltip_visibility',  # TODO
+    ),
+    Action(
+        id=CommandId.TOGGLE_ACTIVITY_DOCK,
+        title=CommandId.TOGGLE_ACTIVITY_DOCK.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 11}],
+        callback=Window._status_bar._toggle_activity_dock,
+        toggled='settings_appearance_activity_dock_visible',  # TODO
+        # 'checked': window._qt_window._activity_dialog.isVisible(),
     ),
 ]
 
