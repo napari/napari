@@ -69,9 +69,8 @@ def _init_qactions():
                 {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 1}
             ],
             callback=QtViewer._toggle_chunk_outlines,
-            keybindings=[
-                {'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}
-            ],
+            # this used to have a keybinding of Ctrl+Alt+O, but that conflicts with
+            # Open files as stack
             enablement='settings_experimental_octree',  # TODO
         ),
         # TODO: this could be made into a toggle setting Action subclass

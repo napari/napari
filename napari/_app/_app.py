@@ -15,7 +15,7 @@ from .injection._providers import PROVIDERS
 
 class NapariApplication(Application):
     def __init__(self) -> None:
-        super().__init__('napari')
+        super().__init__('napari', raise_synchronous_exceptions=True)
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
         self.injection_store.register(
             providers=PROVIDERS, processors=PROCESSORS

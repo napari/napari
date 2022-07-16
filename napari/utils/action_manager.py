@@ -378,7 +378,7 @@ class ActionManager:
 
         # injected functions return a Future.  since we're currently synchronous,
         # we call `.result()` to force raising any exceptions.
-        return self._actions[name].injected().result()
+        return self._actions[name].injected()
 
 
 action_manager = ActionManager()
