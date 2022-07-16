@@ -13,6 +13,23 @@ from typing import NamedTuple, Optional
 
 from ...utils.translations import trans
 
+# 'menu': 'Axes',
+# 'items': [
+#     _toggle_dict(trans._('Visible'), 'axes', 'visible'),
+#     _toggle_dict(trans._('Colored'), 'axes', 'colored'),
+#     _toggle_dict(trans._('Labels'), 'axes', 'labels'),
+#     _toggle_dict(trans._('Dashed'), 'axes', 'dashed'),
+#     _toggle_dict(trans._('Arrows'), 'axes', 'arrows'),
+# ],
+# },
+# {
+# 'menu': 'Scale Bar',
+# 'items': [
+#     _toggle_dict(trans._('Visible'), 'scale_bar', 'visible'),
+#     _toggle_dict(trans._('Colored'), 'scale_bar', 'colored'),
+#     _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
+# ],
+
 
 class CommandId(str, Enum):
     """Id representing a napari command."""
@@ -23,6 +40,17 @@ class CommandId(str, Enum):
     TOGGLE_OCTREE_CHUNK_OUTLINES = 'window:view:toggle_octree_chunk_outlines'
     TOGGLE_LAYER_TOOLTIPS = 'window:view:toggle_layer_tooltips'
     TOGGLE_ACTIVITY_DOCK = 'window:view:toggle_activity_dock'
+
+    TOGGLE_VIEWER_AXES = 'window:view:toggle_viewer_axes'
+    TOGGLE_VIEWER_AXES_COLORED = 'window:view:toggle_viewer_axes_colored'
+    TOGGLE_VIEWER_AXES_LABELS = 'window:view:toggle_viewer_axes_labels'
+    TOGGLE_VIEWER_AXES_DASHED = 'window:view:toggle_viewer_axesdashed'
+    TOGGLE_VIEWER_AXES_ARROWS = 'window:view:toggle_viewer_axes_arrows'
+    TOGGLE_VIEWER_SCALE_BAR = 'window:view:toggle_viewer_scale_bar'
+    TOGGLE_VIEWER_SCALE_BAR_COLORED = (
+        'window:view:toggle_viewer_scale_bar_colored'
+    )
+    TOGGLE_VIEWER_SCALE_BAR_TICKS = 'window:view:toggle_viewer_scale_bar_ticks'
 
     LAYER_DUPLICATE = 'layer:duplicate'
     LAYER_SPLIT_STACK = 'layer:split_stack'
@@ -75,6 +103,14 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _ci(trans._('Toggle Chunk Outlines'),),
     CommandId.TOGGLE_LAYER_TOOLTIPS: _ci(trans._('Toggle Layer Tooltips'),),
     CommandId.TOGGLE_ACTIVITY_DOCK: _ci(trans._('Toggle Activity Dock'),),
+    CommandId.TOGGLE_VIEWER_AXES: _ci(trans._('Axes Visible')),
+    CommandId.TOGGLE_VIEWER_AXES_COLORED: _ci(trans._('Axes Colored')),
+    CommandId.TOGGLE_VIEWER_AXES_LABELS: _ci(trans._('Axes Labels')),
+    CommandId.TOGGLE_VIEWER_AXES_DASHED: _ci(trans._('Axes Dashed')),
+    CommandId.TOGGLE_VIEWER_AXES_ARROWS: _ci(trans._('Axes Arrows')),
+    CommandId.TOGGLE_VIEWER_SCALE_BAR: _ci(trans._('Scale Bar Visible')),
+    CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _ci(trans._('Scale Bar Colored')),
+    CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _ci(trans._('Scale Bar Ticks')),
 
     CommandId.LAYER_DUPLICATE: _ci(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _ci(trans._('Split Stack'),),

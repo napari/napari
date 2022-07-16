@@ -13,6 +13,9 @@ class MenuId(str, Enum):
     """Id representing a menu somewhere in napari."""
 
     MENUBAR_VIEW = 'napari/view'
+    VIEW_AXES = 'napari/view/axes'
+    VIEW_SCALEBAR = 'napari/view/scalebar'
+
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'

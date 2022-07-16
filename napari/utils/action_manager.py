@@ -12,8 +12,9 @@ from .interactions import Shortcut
 from .translations import trans
 
 if TYPE_CHECKING:
-    from typing_extensions import Protocol
     from concurrent.futures import Future
+
+    from typing_extensions import Protocol
 
     from .key_bindings import KeymapProvider
 

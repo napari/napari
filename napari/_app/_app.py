@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from itertools import chain
 from typing import Dict
 
 from app_model import Application
 
 from ._submenus import SUBMENUS
 from .actions._layer_actions import LAYER_ACTIONS
+from .actions._view_actions import VIEW_ACTIONS
 from .injection._processors import PROCESSORS
 from .injection._providers import PROVIDERS
 
@@ -19,7 +21,7 @@ class NapariApplication(Application):
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in LAYER_ACTIONS:
+        for action in chain(LAYER_ACTIONS, VIEW_ACTIONS):
             self.register_action(action)
 
         self.menus.append_menu_items(SUBMENUS)

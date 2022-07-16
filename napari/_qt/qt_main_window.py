@@ -19,7 +19,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from app_model.backends.qt import QModelMenu
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
@@ -33,6 +32,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .._app.constants import MenuId
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
@@ -44,6 +44,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from ._qapp_model._qactions import _init_qactions
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -129,6 +130,8 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        _init_qactions()
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -417,7 +420,6 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
-
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
             str, QtViewerDockWidget
@@ -1341,95 +1343,3 @@ def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
 
     # instantiate the widget
     return wdg_cls(**kwargs)
-
-
-from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
-
-from .._app.constants import CommandId, MenuId
-
-
-def _tooltip_visibility_toggle():
-    settings = get_settings().appearance
-    settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
-
-
-VIEW_ACTIONS: List[Action] = [
-    Action(
-        id=CommandId.TOGGLE_FULLSCREEN,
-        title=CommandId.TOGGLE_FULLSCREEN.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': 'navigation', 'order': 1}],
-        callback=Window._toggle_fullscreen,
-        keybindings=[StandardKeyBinding.FullScreen],
-    ),
-    Action(
-        id=CommandId.TOGGLE_MENUBAR,
-        title=CommandId.TOGGLE_MENUBAR.title,
-        menus=[
-            {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': 'navigation',
-                'order': 2,
-                'when': 'not is_mac',
-            }
-        ],
-        callback=Window._toggle_menubar_visible,
-        keybindings=[
-            {
-                'win': KeyMod.CtrlCmd | KeyCode.KeyM,
-                'linux': KeyMod.CtrlCmd | KeyCode.KeyM,
-            }
-        ],
-        enablement='not is_mac',
-        status_tip=trans._('Show/Hide Menubar'),
-    ),
-    Action(
-        id=CommandId.TOGGLE_PLAY,
-        title=CommandId.TOGGLE_PLAY.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': 'navigation', 'order': 3}],
-        callback=Window._toggle_play,
-        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyP}],
-    ),
-    Action(
-        id=CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES,
-        title=CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 1}],
-        callback=QtViewer._toggle_chunk_outlines,
-        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
-        enablement='settings_experimental_octree',  # TODO
-    ),
-    # TODO: this could be made into a toggle setting Action subclass
-    Action(
-        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-        title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
-        callback=_tooltip_visibility_toggle,
-        toggled='settings_appearance_layer_tooltip_visibility',  # TODO
-    ),
-    Action(
-        id=CommandId.TOGGLE_ACTIVITY_DOCK,
-        title=CommandId.TOGGLE_ACTIVITY_DOCK.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 11}],
-        callback=Window._status_bar._toggle_activity_dock,
-        toggled='settings_appearance_activity_dock_visible',  # TODO
-        # 'checked': window._qt_window._activity_dialog.isVisible(),
-    ),
-]
-
-
-def _init_module():
-    from napari._app import app
-
-    for action in VIEW_ACTIONS:
-        app.register_action(action)
-
-    def _provide_window() -> Optional[Window]:
-        if _qmainwin := _QtMainWindow.current():
-            return _qmainwin._window
-
-    ns = app.injection_store.namespace
-    ns.update({'Window': Window})
-    app.injection_store.namespace = ns
-    app.injection_store.register_provider(_provide_window)
-
-
-_init_module()
