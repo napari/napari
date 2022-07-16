@@ -13,6 +13,7 @@ from .translations import trans
 
 if TYPE_CHECKING:
     from typing_extensions import Protocol
+    from concurrent.futures import Future
 
     from .key_bindings import KeymapProvider
 
@@ -39,7 +40,7 @@ class Action:
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
 
     @cached_property
-    def injected(self) -> Callable:
+    def injected(self) -> Callable[..., Future]:
         """command with napari objects injected.
 
         This will inject things like the current viewer, or currently selected
@@ -373,7 +374,10 @@ class ActionManager:
 
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""
-        return self._actions[name].injected()
+
+        # injected functions return a Future.  since we're currently synchronous,
+        # we call `.result()` to force raising any exceptions.
+        return self._actions[name].injected().result()
 
 
 action_manager = ActionManager()

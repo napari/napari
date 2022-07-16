@@ -1348,9 +1348,9 @@ from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 from .._app.constants import CommandId, MenuId
 
 
-def _tooltip_visibility_toggle(value):
-    get_settings().appearance.layer_tooltip_visibility = value
-
+def _tooltip_visibility_toggle():
+    settings = get_settings().appearance
+    settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 VIEW_ACTIONS: List[Action] = [
     Action(
@@ -1413,10 +1413,14 @@ def _init_module():
     for action in VIEW_ACTIONS:
         app.register_action(action)
 
+    def _provide_window() -> Optional[Window]:
+        if _qmainwin := _QtMainWindow.current():
+            return _qmainwin._window
+
     ns = app.injection_store.namespace
     ns.update({'Window': Window})
     app.injection_store.namespace = ns
-    print(ns)
+    app.injection_store.register_provider(_provide_window)
 
 
 _init_module()
