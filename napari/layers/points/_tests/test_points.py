@@ -2436,24 +2436,3 @@ def test_new_point_size_editable(attribute, new_value):
 
     setattr(layer, f"current_{attribute}", new_value)
     np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
-
-# def test_new_point_face_color_editable():
-#     layer = Points(name="Points")
-#     layer.mode = Mode.ADD
-#     layer.add((0,0))
- 
-#     new_color = np.asarray([0., 0., 1., 1.])
-#     layer.current_face_color = new_color
-
-#     np.testing.assert_allclose(layer.face_color[0], new_color)
-
-    
-# def test_new_point_edge_color_editable():
-#     layer = Points(name="Points")
-#     layer.mode = Mode.ADD
-#     layer.add((0,0))
-
-#     new_color = np.asarray([0., 0., 1., 1.])
-#     layer.current_edge_color = new_color
-
-#     np.testing.assert_allclose(layer.edge_color[0], new_color)
