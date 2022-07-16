@@ -217,6 +217,11 @@ You can then make a
 
 ## Building the docs
 
+Install the documents tools:
+```sh
+pip install -e ".[doc]"  # (quotes only needed for zsh shell)
+```
+
 From the project root:
 ```sh
 make docs
