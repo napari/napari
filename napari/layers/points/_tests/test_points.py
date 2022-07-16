@@ -12,13 +12,13 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.layers import Points
+from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
-from napari.layers.points._points_constants import Mode
 
 
 def _make_cycled_properties(values, length):
@@ -2420,19 +2420,20 @@ def test_empty_data_from_tuple():
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
 
+
 @pytest.mark.parametrize(
     'attribute, new_value',
     [
         ("size", [20, 20]),
-        ("face_color", np.asarray([0., 0., 1., 1.])),
-        ("edge_color", np.asarray([0., 0., 1., 1.]))
-    ]
+        ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+    ],
 )
 def test_new_point_size_editable(attribute, new_value):
     """tests the newly placed points may be edited without re-elescting"""
     layer = Points(name="Points")
     layer.mode = Mode.ADD
-    layer.add((0,0))
+    layer.add((0, 0))
 
     setattr(layer, f"current_{attribute}", new_value)
     np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
