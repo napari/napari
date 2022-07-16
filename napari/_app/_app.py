@@ -15,7 +15,15 @@ from .injection._providers import PROVIDERS
 
 class NapariApplication(Application):
     def __init__(self) -> None:
+        # raise_synchronous_exceptions means that commands triggered via
+        # ``execute_command`` will immediately raise exceptions. Normally,
+        # `execute_command` returns a Future object (which by definition does not
+        # raise exceptions until requested).  While we could use that future to raise
+        # exceptions with `.result()`, for now, raising immediately should
+        # prevent any unexpected silent errors.  We can turn it off later if we
+        # adopt asynchronous command execution.
         super().__init__('napari', raise_synchronous_exceptions=True)
+
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
         self.injection_store.register(
             providers=PROVIDERS, processors=PROCESSORS
