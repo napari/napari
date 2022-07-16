@@ -1,10 +1,12 @@
 from npe2 import DynamicPlugin
 
 from napari.plugins.utils import (
+    MatchFlag,
     get_all_readers,
     get_filename_patterns_for_reader,
     get_potential_readers,
     get_preferred_reader,
+    score_specificity,
 )
 from napari.settings import get_settings
 
@@ -23,12 +25,12 @@ def test_get_preferred_reader_for_extension():
 
 def test_get_preferred_reader_complex_pattern():
     get_settings().plugins.extension2reader = {
-        'my-specific-folder/*.tif': 'fake-plugin'
+        '*/my-specific-folder/*.tif': 'fake-plugin'
     }
-    reader = get_preferred_reader('my-specific-folder/my_file.tif')
+    reader = get_preferred_reader('/asdf/my-specific-folder/my_file.tif')
     assert reader == 'fake-plugin'
 
-    reader = get_preferred_reader('foo/my-specific-folder/my_file.tif')
+    reader = get_preferred_reader('/asdf/foo/my-specific-folder/my_file.tif')
     assert reader == 'fake-plugin'
 
 
@@ -37,13 +39,129 @@ def test_get_preferred_reader_higher_specificity():
         # less nested so less specificity
         '*.tif': 'generic-tif-plugin',
         # more nested so higher specificity
-        'my-specific-folder/*.tif': 'fake-plugin',
+        '*/my-specific-folder/*.tif': 'fake-plugin',
         # even more nested so even higher specificity
-        'my-specific-folder/nested/*.tif': 'very-specific-plugin',
+        '*/my-specific-folder/nested/*.tif': 'very-specific-plugin',
     }
 
-    reader = get_preferred_reader('my-specific-folder/nested/my_file.tif')
+    reader = get_preferred_reader(
+        '/asdf/my-specific-folder/nested/my_file.tif'
+    )
     assert reader == 'very-specific-plugin'
+
+
+def test_get_preferred_reader_abs_path():
+    get_settings().plugins.extension2reader = {
+        # abs path so highest specificity
+        '/asdf/*.tif': 'most-specific-plugin',
+        # less nested so less specificity
+        '*.tif': 'generic-tif-plugin',
+        # more nested so higher specificity
+        '*/my-specific-folder/*.tif': 'fake-plugin',
+        # even more nested so even higher specificity
+        '*/my-specific-folder/nested/*.tif': 'very-specific-plugin',
+    }
+
+    reader = get_preferred_reader(
+        '/asdf/my-specific-folder/nested/my_file.tif'
+    )
+    assert reader == 'most-specific-plugin'
+
+
+def test_score_specificity_simple():
+    relpath, nested, score = score_specificity('')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.NONE]
+
+    relpath, nested, score = score_specificity('a')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.NONE]
+
+    relpath, nested, score = score_specificity('ab*c')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.STAR]
+
+    relpath, nested, score = score_specificity('a?c')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.ANY]
+
+    relpath, nested, score = score_specificity('a[a-zA-Z]c')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.SET]
+
+    relpath, nested, score = score_specificity('*[a-zA-Z]*a?c')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.STAR | MatchFlag.ANY | MatchFlag.SET]
+
+
+def test_score_specificity_complex():
+    relpath, nested, score = score_specificity(
+        '*/my-specific-folder/[nested]/*?.tif'
+    )
+    assert relpath is True
+    assert nested == -3
+    assert score == [
+        MatchFlag.STAR,
+        MatchFlag.NONE,
+        MatchFlag.SET,
+        MatchFlag.STAR | MatchFlag.ANY,
+    ]
+
+    relpath, nested, score = score_specificity(
+        '/my-specific-folder/[nested]/*?.tif'
+    )
+    assert relpath is False
+    assert nested == -2
+    assert score == [
+        MatchFlag.NONE,
+        MatchFlag.SET,
+        MatchFlag.STAR | MatchFlag.ANY,
+    ]
+
+
+def test_score_specificity_collapse_star():
+    relpath, nested, score = score_specificity('*/*/?*.tif')
+    assert relpath is True
+    assert nested == -1
+    assert score == [MatchFlag.STAR, MatchFlag.STAR | MatchFlag.ANY]
+
+    relpath, nested, score = score_specificity('*/*/*.tif')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.STAR]
+
+    relpath, nested, score = score_specificity('*/abc*/*.tif')
+    assert relpath is True
+    assert nested == -1
+    assert score == [MatchFlag.STAR, MatchFlag.STAR]
+
+    relpath, nested, score = score_specificity('/abc*/*.tif')
+    assert relpath is False
+    assert nested == 0
+    assert score == [MatchFlag.STAR]
+
+
+def test_score_specificity_range():
+    _, _, score = score_specificity('[abc')
+    assert score == [MatchFlag.NONE]
+
+    _, _, score = score_specificity('[abc]')
+    assert score == [MatchFlag.SET]
+
+    _, _, score = score_specificity('[abc[')
+    assert score == [MatchFlag.NONE]
+
+    _, _, score = score_specificity('][abc')
+    assert score == [MatchFlag.NONE]
+
+    _, _, score = score_specificity('[[abc]]')
+    assert score == [MatchFlag.SET]
 
 
 def test_get_preferred_reader_no_extension():
