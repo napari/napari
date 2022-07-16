@@ -3,13 +3,14 @@
 # NAP-2 — Distributing napari with conda-based packaging
 
 ```{eval-rst}
-:Author: Jaime Rodríguez-Guerra, Gonzalo Peña-Castellanos
+:Author: Jaime Rodríguez-Guerra
+:Author: Gonzalo Peña-Castellanos
 :Created: 2022-05-05
-:Resolution: <url> (required for Accepted | Rejected | Withdrawn)
-:Resolved: <date resolved, in yyyy-mm-dd format>
-:Status: Draft
+:Resolution: https://github.com/napari/napari/pull/4602#pullrequestreview-1028720579
+:Resolved: 2022-07-14
+:Status: Accepted
 :Type: <Standards Track | Process>
-:Version effective: <version-number> (for accepted NAPs)
+:Version effective: 0.4.17, 0.5
 ```
 
 ## Abstract
