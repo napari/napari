@@ -131,7 +131,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    prev_point: Tuple[int, ...] = ()
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
@@ -155,7 +154,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         self.__config__.extra = Extra.ignore
 
-        self.prev_point = self.dims.point
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
         settings.appearance.events.layer_tooltip_visibility.connect(
@@ -184,6 +182,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
+        self.dims.events.range.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
             throttled(self._update_status_bar_from_cursor, timeout=50)
@@ -493,16 +492,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
-            ranges = self.layers._ranges
             self.reset_view()
+            ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
-            self.prev_point = self.dims.point
-
-        elif self.prev_point != self.dims.point:
-            ranges = self.layers._ranges
-            self.dims.set_point(range(len(ranges)), self.prev_point)
-            self.prev_point = self.dims.point
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
