@@ -18,6 +18,7 @@ from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
+from napari.layers.points._points_constants import Mode
 
 
 def _make_cycled_properties(values, length):
@@ -2418,3 +2419,36 @@ def test_empty_data_from_tuple():
     layer = Points(name="points")
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
+
+
+def test_new_point_size_editable():
+    layer = Points(name="Points")
+    layer.mode = Mode.ADD
+    layer.add((0,0))
+
+    current_size = layer.current_size
+
+    new_size = current_size + 10
+    layer.current_size = new_size
+    np.testing.assert_allclose(layer.size[0], [new_size, new_size])
+
+def test_new_point_face_color_editable():
+    layer = Points(name="Points")
+    layer.mode = Mode.ADD
+    layer.add((0,0))
+ 
+    new_color = np.asarray([0., 0., 1., 1.])
+    layer.current_face_color = new_color
+
+    np.testing.assert_allclose(layer.face_color[0], new_color)
+
+    
+def test_new_point_edge_color_editable():
+    layer = Points(name="Points")
+    layer.mode = Mode.ADD
+    layer.add((0,0))
+
+    new_color = np.asarray([0., 0., 1., 1.])
+    layer.current_edge_color = new_color
+
+    np.testing.assert_allclose(layer.edge_color[0], new_color)
