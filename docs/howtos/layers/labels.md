@@ -113,6 +113,22 @@ layer button above the layers list. The shape of the new labels layer will match
 the size of any currently existing image layers, allowing you to paint on top of
 them.
 
+## Saving labels layers
+
+When saving a labels layer, file size can be unnecessarily large when compression
+is not used.  By default, when saving a layer through the GUI no file 
+compression is applied.  The following commands will save a labels layer using 
+compression:
+
+```{code-cell} 
+from skimage.io import imsave
+data = viewer.layers['name_of_your_layer'].data
+imsave('path.tif', data, compress=1)
+```
+
+where `name_of_your_layer` represents the name of the layer being saved.  These commands
+can be implemented in a script or entered at an ipython command prompt.
+
 ## Non-editable mode
 
 If you want to disable editing of the labels layer you can set the `editable`
