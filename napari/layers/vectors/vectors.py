@@ -229,7 +229,9 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._data = data
-
+        self._mesh_vertices = None
+        self._mesh_triangles = None
+        self._displayed_stored = None
         self._update_mesh()
 
         self._feature_table = _FeatureTable.from_layer(
