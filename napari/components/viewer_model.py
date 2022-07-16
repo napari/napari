@@ -133,6 +133,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     title: str = 'napari'
 
     # 2-tuple indicating height and width
+    _prev_point: Tuple[int, ...] = ()
     _canvas_size: Tuple[int, int] = (600, 800)
     _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
@@ -182,12 +183,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
-        self.dims.events.range.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
             throttled(self._update_status_bar_from_cursor, timeout=50)
         )
+        self.layers.events.inserting.connect(self._update_point)
         self.layers.events.inserted.connect(self._on_add_layer)
+        self.layers.events.removing.connect(self._update_point)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
@@ -195,6 +197,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+
+    def _update_point(self):
+        self._prev_point = self.dims.point
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -490,12 +495,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
+        self._update_dim_point()
 
-        if len(self.layers) == 1:
+    def _update_dim_point(self):
+        if len(self.layers) == 0:
+            return
+        elif len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
+        elif self._prev_point != self.dims.point:
+            ranges = self.layers._ranges
+            self.dims.set_point(range(len(ranges)), self._prev_point)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -518,6 +530,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         self._on_layers_change()
         self._on_grid_change()
+        if len(self.layers) == 1:
+            self._update_layers(layers=[self.layers[0]])
+        self._update_dim_point()
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
