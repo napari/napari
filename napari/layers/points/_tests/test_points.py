@@ -2427,11 +2427,12 @@ def test_empty_data_from_tuple():
         ("size", [20, 20]),
         ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
         ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_width", np.asarray([0.2]))
     ],
 )
 def test_new_point_size_editable(attribute, new_value):
-    """tests the newly placed points may be edited without re-elescting"""
-    layer = Points(name="Points")
+    """tests the newly placed points may be edited without re-selecting"""
+    layer = Points()
     layer.mode = Mode.ADD
     layer.add((0, 0))
 
