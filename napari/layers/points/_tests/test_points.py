@@ -2420,35 +2420,39 @@ def test_empty_data_from_tuple():
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
 
-
-def test_new_point_size_editable():
+@pytest.mark.parametrize(
+    'attribute, new_value',
+    [
+        ("size", [20, 20]),
+        ("face_color", np.asarray([0., 0., 1., 1.])),
+        ("edge_color", np.asarray([0., 0., 1., 1.]))
+    ]
+)
+def test_new_point_size_editable(attribute, new_value):
     layer = Points(name="Points")
     layer.mode = Mode.ADD
     layer.add((0,0))
 
-    current_size = layer.current_size
+    setattr(layer, f"current_{attribute}", new_value)
+    np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
 
-    new_size = current_size + 10
-    layer.current_size = new_size
-    np.testing.assert_allclose(layer.size[0], [new_size, new_size])
-
-def test_new_point_face_color_editable():
-    layer = Points(name="Points")
-    layer.mode = Mode.ADD
-    layer.add((0,0))
+# def test_new_point_face_color_editable():
+#     layer = Points(name="Points")
+#     layer.mode = Mode.ADD
+#     layer.add((0,0))
  
-    new_color = np.asarray([0., 0., 1., 1.])
-    layer.current_face_color = new_color
+#     new_color = np.asarray([0., 0., 1., 1.])
+#     layer.current_face_color = new_color
 
-    np.testing.assert_allclose(layer.face_color[0], new_color)
+#     np.testing.assert_allclose(layer.face_color[0], new_color)
 
     
-def test_new_point_edge_color_editable():
-    layer = Points(name="Points")
-    layer.mode = Mode.ADD
-    layer.add((0,0))
+# def test_new_point_edge_color_editable():
+#     layer = Points(name="Points")
+#     layer.mode = Mode.ADD
+#     layer.add((0,0))
 
-    new_color = np.asarray([0., 0., 1., 1.])
-    layer.current_edge_color = new_color
+#     new_color = np.asarray([0., 0., 1., 1.])
+#     layer.current_edge_color = new_color
 
-    np.testing.assert_allclose(layer.edge_color[0], new_color)
+#     np.testing.assert_allclose(layer.edge_color[0], new_color)
