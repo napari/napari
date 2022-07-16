@@ -2427,7 +2427,7 @@ def test_empty_data_from_tuple():
         ("size", [20, 20]),
         ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
         ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
-        ("edge_width", np.asarray([0.2]))
+        ("edge_width", np.asarray([0.2])),
     ],
 )
 def test_new_point_size_editable(attribute, new_value):
