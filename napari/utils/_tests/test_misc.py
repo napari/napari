@@ -213,19 +213,23 @@ def test_is_array_type_with_xarray():
     assert not _is_array_type([], 'xarray.DataArray')
     assert not _is_array_type(np.array([]), 'xarray.DataArray')
 
+
 @pytest.mark.parametrize(
     'input, expected',
     [
-        ([ ([1,10], )], [ ([1,10], )]),
-        ([([1,10] , {'name': 'hi'})], [([1,10], {'name': 'hi'})]),
-        ([([1,10] , {'name': 'hi'}, "image")], [([1,10], {'name': 'hi'}, "image")]),
-        ([] , []),
+        ([([1, 10],)], [([1, 10],)]),
+        ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),
+        (
+            [([1, 10], {'name': 'hi'}, "image")],
+            [([1, 10], {'name': 'hi'}, "image")],
+        ),
+        ([], []),
     ],
 )
 def test_ensure_list_of_layer_data_tuple(input, expected):
     """Ensure that when given layer data that a tuple can be generated.
 
     When data with a name is supplied a layer should be created and named.
-    When an empty dataset is supplied no layer is created and no errors are produced. 
+    When an empty dataset is supplied no layer is created and no errors are produced.
     """
     assert ensure_list_of_layer_data_tuple(input) == expected
