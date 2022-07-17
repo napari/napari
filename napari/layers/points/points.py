@@ -12,7 +12,7 @@ from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import project_points_onto_plane, rotate_points
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
@@ -2022,7 +2022,7 @@ class Points(Layer):
             mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
         return mask
 
-    def get_status(
+    def get_status_info(
         self,
         position: Optional[Tuple] = None,
         *,
@@ -2032,26 +2032,26 @@ class Points(Layer):
     ) -> str:
         """Status message of the data at a coordinate position.
 
-        Parameters
-        ----------
-        position : tuple
-            Position in either data or world coordinates.
-        view_direction : Optional[np.ndarray]
-            A unit vector giving the direction of the ray in nD world coordinates.
-            The default value is None.
-        dims_displayed : Optional[List[int]]
-            A list of the dimensions currently being displayed in the viewer.
-            The default value is None.
-        world : bool
-            If True the position is taken to be in world coordinates
-            and converted into data coordinates. False by default.
+        # Parameters
+        # ----------
+        # position : tuple
+        #     Position in either data or world coordinates.
+        # view_direction : Optional[np.ndarray]
+        #     A unit vector giving the direction of the ray in nD world coordinates.
+        #     The default value is None.
+        # dims_displayed : Optional[List[int]]
+        #     A list of the dimensions currently being displayed in the viewer.
+        #     The default value is None.
+        # world : bool
+        #     If True the position is taken to be in world coordinates
+        #     and converted into data coordinates. False by default.
 
-        Returns
-        -------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-
+        # Returns
+        # -------
+        # msg : string
+        #     String containing a message that can be used as a status update.
+        #"""
+        print('status points called')
         if position is not None:
             value = self.get_value(
                 position,
@@ -2062,11 +2062,12 @@ class Points(Layer):
         else:
             value = None
 
-        source_info = self._get_source_str()
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
+        )
 
-        msg = generate_layer_status(source_info, position, value)
-
-        # if this labels layer has properties
+        # if this points layer has properties
         properties = self._get_properties(
             position,
             view_direction=view_direction,
@@ -2074,9 +2075,9 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            msg += "; " + ", ".join(properties)
+            source_info['coordinates'] += "; " + ", ".join(properties)
 
-        return msg
+        return source_info
 
     def _get_tooltip_text(
         self,

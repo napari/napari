@@ -2,7 +2,13 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QStatusBar, QWidget
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QStatusBar,
+    QWidget,
+)
 from superqt import QElidingLabel
 
 from ...utils.translations import trans
@@ -10,8 +16,6 @@ from ..dialogs.qt_activity_dialog import ActivityToggleItem
 
 if TYPE_CHECKING:
     from ..qt_main_window import _QtMainWindow
-
-STATUS_FRACTION_WIDTH = 0.7
 
 
 class ViewerStatusBar(QStatusBar):
@@ -22,27 +26,44 @@ class ViewerStatusBar(QStatusBar):
 
         layout = QHBoxLayout()
 
-        self._layer_base = QElidingLabel(trans._('Ready 1'))
+        self._status = QLabel('Ready')
+        self._status.setMinimumSize(0, 16)
+        self._status.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self._layer_base = QElidingLabel(trans._('layer base'))
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
-        self._plugin_reader = QElidingLabel(trans._('Ready 2'))
-        self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
-        self._source_type = QLabel('ready 3')
-        self._coordinates = QLabel('ready 4')
+        self._layer_base.setMinimumSize(80, 16)
+        self._layer_base.setSizePolicy(
+            QSizePolicy.Minimum, QSizePolicy.Maximum
+        )
 
+        self._plugin_reader = QElidingLabel(trans._('plugin reader'))
+        self._plugin_reader.setMinimumSize(80, 16)
+        self._plugin_reader.setSizePolicy(
+            QSizePolicy.Minimum, QSizePolicy.Maximum
+        )
+
+        self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
+        self._source_type = QLabel('source type')
+        self._source_type.setMinimumSize(50, 16)
+        self._source_type.setSizePolicy(
+            QSizePolicy.Minimum, QSizePolicy.Maximum
+        )
+
+        self._coordinates = QLabel('coordinates')
+        self._coordinates.setMinimumSize(80, 16)
+        self._coordinates.setSizePolicy(
+            QSizePolicy.Minimum, QSizePolicy.Maximum
+        )
+
+        layout.addWidget(self._status)
         layout.addWidget(self._layer_base)
-        layout.addWidget(QLabel('source: '))
-        layout.addWidget(self._plugin_reader)
         layout.addWidget(self._source_type)
+        layout.addWidget(self._plugin_reader)
         layout.addWidget(self._coordinates)
 
         main_widget.setLayout(layout)
 
-        # self.source.reader_plugin
-
-        # self._status_message = QElidingLabel(trans._('Ready'))
-        # self._status_message.setElideMode(Qt.TextElideMode.ElideMiddle)
         self.addWidget(main_widget)
-        # self.addWidget(self._status_message)
         self._help = QLabel('')
         self.addPermanentWidget(self._help)
 
@@ -54,38 +75,50 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
 
-    def setStatusText(self, text: str) -> None:
+    def setStatusText(
+        self,
+        text: str = None,
+        layer_base=None,
+        source_type=None,
+        plugin=None,
+        coordinates=None,
+    ) -> None:
+        # The method used to set a single value as the status and not
+        # all the layer information.
 
-        width = int(self.parent().width() * STATUS_FRACTION_WIDTH)
+        if text:
+            self._status.setText(text)
+        else:
+            self._status.setText(' ')
 
-        idx1 = text.find(':') + 3
-        idx2 = text.find(',') - 1
-        layer_base = text[idx1:idx2]
-        if layer_base != self._layer_base.text():
-            self._layer_base.resize(width, self._layer_base.height())
+        if layer_base:
+            self._layer_base.show()
             self._layer_base.setText(layer_base)
+        else:
+            self._layer_base.hide()
 
-        text = text[idx2 + 3 :]
-        idx1 = text.find(':') + 3
-        idx2 = text.find(',') - 1
-        source_type = text[idx1:idx2]
-        if source_type != self._source_type.text():
-            self._source_type.setText(f'({source_type})')
+        if source_type:
+            self._source_type.show()
+            self._source_type.setText(f'{source_type}: ')
+        else:
+            self._source_type.hide()
 
-        text = text[idx2 + 3 :]
-        idx1 = text.find(':') + 3
-        idx2 = text.find('}') - 1
-        reader = text[idx1:idx2]
-        if reader != self._plugin_reader.text():
-            self._plugin_reader.setText(reader)
+        if plugin:
+            self._plugin_reader.show()
+            self._plugin_reader.setText(plugin)
+        else:
+            self._plugin_reader.hide()
 
-        text = text[idx2 + 3 :]
-        idx1 = text.find('[')
-        coordinates = text[idx1:]
-        self._coordinates.setText(coordinates)
+        if coordinates:
+            self._coordinates.show()
+            self._coordinates.setText(coordinates)
+        else:
+            self._coordinates.hide()
 
     def _toggle_activity_dock(self, visible: bool):
         par: _QtMainWindow = self.parent()

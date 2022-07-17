@@ -23,7 +23,7 @@ from ...utils.geometry import (
 from ...utils.key_bindings import KeymapProvider
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
@@ -1595,52 +1595,49 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
-    def _get_source_str(self):
+    def _get_source_info(self):
         components = {}
-
         if self.source.reader_plugin:
             try:
-                components['layer base'] = os.path.basename(self.source.path)
+                components['layer_base'] = os.path.basename(self.source.path)
             except KeyError:
                 components['layer_base'] = ''
 
-            components['source type'] = 'plugin'
-            components['source'] = self.source.reader_plugin
+            components['source_type'] = 'plugin'
+            components['plugin'] = self.source.reader_plugin
             return components
-            # return trans._(
-            #     '{layer_base},  source: {source} (plugin)',
-            #     layer_base=layer_base,
-            #     source=self.source.reader_plugin,
-            # )
 
         elif self.source.sample:
-            components['layer base'] = self.name
-            components['source type'] = 'sample'
-            components['source'] = self.source.sample[0]
+            components['layer_base'] = self.name
+            components['source_type'] = 'sample'
+            components['plugin'] = self.source.sample[0]
             return components
-            # return trans._(
-            #     '{layer_name}, source: {source} (sample)',
-            #     layer_name=self.name,
-            #     source=self.source.sample[0],
-            # )
-        elif self.source.widget:
-            components['layer base'] = self.name
-            components['source type'] = 'widget'
-            components['source'] = self.source.widget._function.__name__
-            return components
-            # return trans._(
-            #     '{layer_name},  source: {source} (widget)',
-            #     layer_name=self.name,
-            #     source=self.source.widget._function.__name__,
-            # )
-        else:
-            components['layer base'] = self.name
-            components['source type'] = ''
-            components['source'] = ''
-            return components
-            # return self.name
 
-    def get_status(
+        elif self.source.widget:
+            components['layer_base'] = self.name
+            components['source_type'] = 'widget'
+            components['plugin'] = self.source.widget._function.__name__
+            return components
+
+        else:
+            components['layer_base'] = self.name
+            components['source_type'] = ''
+            components['plugin'] = ''
+            return components
+
+    def get_source_str(self):
+
+        source_info = self._get_source_info()
+
+        return (
+            source_info['layer_base']
+            + ', '
+            + source_info['source_type']
+            + ' : '
+            + source_info['plugin']
+        )
+
+    def get_status_info(
         self,
         position: Optional[Tuple] = None,
         *,
@@ -1680,10 +1677,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             value = None
 
-        source_info = self._get_source_str()
-        print(source_info)
-
-        return generate_layer_status(source_info, position, value)
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
+        )
+        return source_info
 
     def _get_tooltip_text(
         self,

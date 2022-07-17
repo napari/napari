@@ -20,7 +20,7 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
@@ -1385,7 +1385,7 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(
+    def get_status_info(
         self,
         position: Optional[Tuple] = None,
         *,
@@ -1395,26 +1395,25 @@ class Labels(_ImageBase):
     ) -> str:
         """Status message of the data at a coordinate position.
 
-        Parameters
-        ----------
-        position : tuple
-            Position in either data or world coordinates.
-        view_direction : Optional[np.ndarray]
-            A unit vector giving the direction of the ray in nD world coordinates.
-            The default value is None.
-        dims_displayed : Optional[List[int]]
-            A list of the dimensions currently being displayed in the viewer.
-            The default value is None.
-        world : bool
-            If True the position is taken to be in world coordinates
-            and converted into data coordinates. False by default.
+        # Parameters
+        # ----------
+        # position : tuple
+        #     Position in either data or world coordinates.
+        # view_direction : Optional[np.ndarray]
+        #     A unit vector giving the direction of the ray in nD world coordinates.
+        #     The default value is None.
+        # dims_displayed : Optional[List[int]]
+        #     A list of the dimensions currently being displayed in the viewer.
+        #     The default value is None.
+        # world : bool
+        #     If True the position is taken to be in world coordinates
+        #     and converted into data coordinates. False by default.
 
-        Returns
-        -------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-
+        # Returns
+        # -------
+        # msg : string
+        #     String containing a message that can be used as a status update.
+        #"""
         if position is not None:
             value = self.get_value(
                 position,
@@ -1425,9 +1424,10 @@ class Labels(_ImageBase):
         else:
             value = None
 
-        name = self._get_source_str()
-
-        msg = generate_layer_status(name, position, value)
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
+        )
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1437,9 +1437,9 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            msg += "; " + ", ".join(properties)
+            source_info['coordinates'] += "; " + ", ".join(properties)
 
-        return msg
+        return source_info
 
     def _get_tooltip_text(
         self,
