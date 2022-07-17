@@ -43,11 +43,7 @@ def score_specificity(pattern):
     """
     pattern = osp.normpath(pattern)
 
-    sep = '/'
-
-    abspath = pattern.startswith(sep)
-
-    segments = pattern.split(sep)
+    segments = pattern.split(osp.sep)
     score = []
     ends_with_star = False
 
@@ -70,7 +66,7 @@ def score_specificity(pattern):
 
         ends_with_star = segment and segment[-1] == '*'
 
-    return not abspath, 1 - len(score), score
+    return not osp.isabs(pattern), 1 - len(score), score
 
 
 def _get_preferred_readers(path):
