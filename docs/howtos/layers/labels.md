@@ -113,18 +113,26 @@ layer button above the layers list. The shape of the new labels layer will match
 the size of any currently existing image layers, allowing you to paint on top of
 them.
 
+```{admonition} Want to save without compression?
+:class: tip
+
+When saving a labels layer, lossless zlib compression is applied by default. 
+ To save with a different level of compression, consider using imageio.imwrite.  
+Adjusting compression can be accomplished by including the apporoiate kwargs 
+as outlined in the following locations for 
+[tiff](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.plugins.tifffile.html#metadata-for-writing) or 
+[png](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html) files. 
+```
+
 ## Saving labels layers
 
-When saving a labels layer, file size can be unnecessarily large when compression
+
+
 is not used.  By default, when saving a layer through the GUI no file 
 compression is applied.  The following commands will save a labels layer using 
 compression:
 
-```{code-cell} 
-from skimage.io import imsave
-data = viewer.layers['name_of_your_layer'].data
-imsave('path.tif', data, compress=1)
-```
+
 
 where `name_of_your_layer` represents the name of the layer being saved.  These commands
 can be implemented in a script or entered at an ipython command prompt.
