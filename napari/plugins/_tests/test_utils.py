@@ -34,7 +34,27 @@ def test_get_preferred_reader_complex_pattern():
     assert reader == 'fake-plugin'
 
 
-def test_get_preferred_reader_higher_specificity():
+def test_get_preferred_reader_match_less_ambiguous():
+    get_settings().plugins.extension2reader = {
+        # generic star so least specificity
+        '*.tif': 'generic-tif-plugin',
+        # specific file so most specificity
+        '*/foo.tif': 'very-specific-plugin',
+        # set so less specificity
+        '*/file_[0-9][0-9].tif': 'set-plugin',
+    }
+
+    reader = get_preferred_reader('/asdf/a.tif')
+    assert reader == 'generic-tif-plugin'
+
+    reader = get_preferred_reader('/asdf/foo.tif')
+    assert reader == 'very-specific-plugin'
+
+    reader = get_preferred_reader('/asdf/file_01.tif')
+    assert reader == 'set-plugin'
+
+
+def test_get_preferred_reader_more_nested():
     get_settings().plugins.extension2reader = {
         # less nested so less specificity
         '*.tif': 'generic-tif-plugin',
@@ -43,6 +63,12 @@ def test_get_preferred_reader_higher_specificity():
         # even more nested so even higher specificity
         '*/my-specific-folder/nested/*.tif': 'very-specific-plugin',
     }
+
+    reader = get_preferred_reader('/asdf/nested/1/2/3/my_file.tif')
+    assert reader == 'generic-tif-plugin'
+
+    reader = get_preferred_reader('/asdf/my-specific-folder/my_file.tif')
+    assert reader == 'fake-plugin'
 
     reader = get_preferred_reader(
         '/asdf/my-specific-folder/nested/my_file.tif'
