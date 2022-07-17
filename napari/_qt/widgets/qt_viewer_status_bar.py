@@ -125,7 +125,9 @@ class ViewerStatusBar(QStatusBar):
         if visible:
             par._activity_dialog.show()
             par._activity_dialog.raise_()
-            self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
+            self._activity_item._activityBtn.setArrowType(
+                Qt.ArrowType.DownArrow
+            )
         else:
             par._activity_dialog.hide()
-            self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
+            self._activity_item._activityBtn.setArrowType(Qt.ArrowType.UpArrow)

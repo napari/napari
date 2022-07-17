@@ -1120,7 +1120,7 @@ def test_get_value_ray_3d_rolled():
 
 def test_get_value_ray_3d_transposed():
     """Test using _get_value_ray to interrogate labels in 3D
-    with the dimensions trasposed.
+    with the dimensions transposed.
     """
     # make a mock mouse event
     mouse_event = MouseEvent(

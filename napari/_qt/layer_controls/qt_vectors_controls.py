@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
@@ -7,6 +9,9 @@ from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtVectorsControls(QtLayerControls):
@@ -21,18 +26,14 @@ class QtVectorsControls(QtLayerControls):
     ----------
     edge_color_label : qtpy.QtWidgets.QLabel
         Label for edgeColorSwatch
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
-        Color swatch showing display color of vectors.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select display color for vectors.
+    edgeColorEdit : QColorSwatchEdit
+        Widget to select display color for vectors.
     color_mode_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
     color_prop_box : qtpy.QtWidgets.QComboBox
         Dropdown widget to select _edge_color_property for the vectors.
     edge_prop_label : qtpy.QtWidgets.QLabel
         Label for color_prop_box
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
@@ -43,6 +44,8 @@ class QtVectorsControls(QtLayerControls):
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
     """
+
+    layer: 'napari.layers.Tracks'
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -201,10 +204,7 @@ class QtVectorsControls(QtLayerControls):
         state : QCheckBox
             Checkbox to indicate whether to render out of slice.
         """
-        if state == Qt.Checked:
-            self.layer.out_of_slice_display = True
-        else:
-            self.layer.out_of_slice_display = False
+        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
@@ -216,7 +216,7 @@ class QtVectorsControls(QtLayerControls):
             The new edge_color mode the GUI needs to be updated for.
             Should be: 'direct', 'cycle', 'colormap'
         """
-        if mode in ('cycle', 'colormap'):
+        if mode in {'cycle', 'colormap'}:
             self.edgeColorEdit.setHidden(True)
             self.edge_color_label.setHidden(True)
             self.color_prop_box.setHidden(False)

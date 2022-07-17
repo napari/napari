@@ -97,7 +97,7 @@ class QtDimSliderWidget(QWidget):
         layout.addWidget(self.totslice_label)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
-        layout.setAlignment(Qt.AlignVCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
 
@@ -127,7 +127,7 @@ class QtDimSliderWidget(QWidget):
         label.setToolTip(trans._('Edit to change axis label'))
         label.setAcceptDrops(False)
         label.setEnabled(True)
-        label.setAlignment(Qt.AlignRight)
+        label.setAlignment(Qt.AlignmentFlag.AlignRight)
         label.setContentsMargins(0, 0, 2, 0)
         label.textChanged.connect(self._update_label)
         label.editingFinished.connect(self._clear_label_focus)
@@ -145,8 +145,8 @@ class QtDimSliderWidget(QWidget):
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        slider = ModifiedScrollBar(Qt.Horizontal)
-        slider.setFocusPolicy(Qt.NoFocus)
+        slider = ModifiedScrollBar(Qt.Orientation.Horizontal)
+        slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)
         slider.setSingleStep(1)
@@ -227,7 +227,7 @@ class QtDimSliderWidget(QWidget):
             self.slider.setPageStep(1)
             self.slider.setValue(self.dims.current_step[self.axis])
             self.totslice_label.setText(str(nsteps))
-            self.totslice_label.setAlignment(Qt.AlignLeft)
+            self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self._update_slice_labels()
 
     def _update_slider(self):
@@ -238,7 +238,7 @@ class QtDimSliderWidget(QWidget):
     def _update_slice_labels(self):
         """Update slice labels to match current dimension slider position."""
         self.curslice_label.setText(str(self.dims.current_step[self.axis]))
-        self.curslice_label.setAlignment(Qt.AlignRight)
+        self.curslice_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
     @property
     def fps(self):
@@ -326,7 +326,7 @@ class QtDimSliderWidget(QWidget):
                 trans._('frame_range value must be a list or tuple')
             )
 
-        if value and not len(value) == 2:
+        if value and len(value) != 2:
             raise ValueError(trans._('frame_range must have a length of 2'))
 
         if value is None:
@@ -444,7 +444,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         value : float
             The value of this custom double spin box.
         """
-        if QApplication.mouseButtons() & Qt.LeftButton:
+        if QApplication.mouseButtons() & Qt.MouseButton.LeftButton:
             self.editingFinished.emit()
 
     def textFromValue(self, value):
@@ -464,7 +464,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QKeyEvent
             Event from the Qt context.
         """
         # this is here to intercept Return/Enter keys when editing the FPS
@@ -472,7 +472,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         # but if the user is editing the FPS spinbox, we simply want to
         # register the change and lose focus on the lineEdit, in case they
         # want to make an additional change (without reopening the popup)
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.editingFinished.emit()
             self.clearFocus()
             return
@@ -505,7 +505,7 @@ class QtPlayButton(QPushButton):
 
         fpsspin = QtCustomDoubleSpinBox(self.popup)
         fpsspin.setObjectName("fpsSpinBox")
-        fpsspin.setAlignment(Qt.AlignCenter)
+        fpsspin.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fpsspin.setValue(self.fps)
         if hasattr(fpsspin, 'setStepType'):
             # this was introduced in Qt 5.12.  Totally optional, just nice.
@@ -539,15 +539,15 @@ class QtPlayButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QMouseEvent
             Event from the qt context.
         """
         # using this instead of self.customContextMenuRequested.connect and
         # clicked.connect because the latter was not sending the
         # rightMouseButton release event.
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.MouseButton.RightButton:
             self.popup.show_above_mouse()
-        elif event.button() == Qt.LeftButton:
+        elif event.button() == Qt.MouseButton.LeftButton:
             self._on_click()
 
     def _on_click(self):

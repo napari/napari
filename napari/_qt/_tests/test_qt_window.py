@@ -48,6 +48,13 @@ def test_current_viewer(make_napari_viewer):
     assert _QtMainWindow.current() is None
 
 
+def test_set_geometry(make_napari_viewer):
+    viewer = make_napari_viewer()
+    values = (70, 70, 1000, 700)
+    viewer.window.set_geometry(*values)
+    assert viewer.window.geometry() == values
+
+
 @patch.object(Window, "_theme_icon_changed")
 @patch.object(Window, "_remove_theme")
 @patch.object(Window, "_add_theme")

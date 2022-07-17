@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
@@ -28,6 +30,10 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
+if TYPE_CHECKING:
+    import napari.layers
+
+
 INT32_MAX = 2**31 - 1
 
 
@@ -50,8 +56,6 @@ class QtLabelsControls(QtLayerControls):
         Checkbox to control if label layer is contiguous.
     fill_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select FILL mode on Labels layer.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : napari.layers.Labels
         An instance of a napari Labels layer.
     ndimSpinBox : qtpy.QtWidgets.QSpinBox
@@ -74,6 +78,8 @@ class QtLabelsControls(QtLayerControls):
         Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, ERASE, or
         FILL.
     """
+
+    layer: 'napari.layers.Labels'
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -102,11 +108,11 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setRange(*dtype_lims)
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
-        self.selectionSpinBox.setAlignment(Qt.AlignCenter)
+        self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_selected_label_change()
 
-        sld = QSlider(Qt.Horizontal)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
@@ -127,7 +133,7 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setMinimum(2)
         ndim_sb.setMaximum(self.layer.ndim)
         ndim_sb.setSingleStep(1)
-        ndim_sb.setAlignment(Qt.AlignCenter)
+        ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
@@ -135,7 +141,7 @@ class QtLabelsControls(QtLayerControls):
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
-        self.contourSpinBox.setAlignment(Qt.AlignCenter)
+        self.contourSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_contour_change()
 
         preserve_labels_cb = QCheckBox()
@@ -155,7 +161,7 @@ class QtLabelsControls(QtLayerControls):
 
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
-            None,
+            layer,
             'shuffle',
             slot=self.changeColor,
             tooltip=trans._('shuffle colors'),
@@ -234,7 +240,7 @@ class QtLabelsControls(QtLayerControls):
         rendering_options = [i.value for i in LabelsRendering]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFixedString
+            self.layer.rendering, Qt.MatchFlag.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
         renderComboBox.activated[str].connect(self.changeRendering)
@@ -303,9 +309,7 @@ class QtLabelsControls(QtLayerControls):
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
-        elif mode == Mode.TRANSFORM:
-            pass
-        else:
+        elif mode != Mode.TRANSFORM:
             raise ValueError(trans._("Mode not recognized"))
 
     def changeRendering(self, text):
@@ -343,10 +347,7 @@ class QtLabelsControls(QtLayerControls):
         self.setFocus()
 
     def toggle_selected_mode(self, state):
-        if state == Qt.Checked:
-            self.layer.show_selected_label = True
-        else:
-            self.layer.show_selected_label = False
+        self.layer.show_selected_label = state == Qt.CheckState.Checked
 
     def changeSize(self, value):
         """Change paint brush size.
@@ -366,10 +367,7 @@ class QtLabelsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if labels are contiguous.
         """
-        if state == Qt.Checked:
-            self.layer.contiguous = True
-        else:
-            self.layer.contiguous = False
+        self.layer.contiguous = state == Qt.CheckState.Checked
 
     def change_n_edit_dim(self, value):
         """Change the number of editable dimensions of label layer.
@@ -403,7 +401,7 @@ class QtLabelsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if overwriting label is enabled.
         """
-        self.layer.preserve_labels = state == Qt.Checked
+        self.layer.preserve_labels = state == Qt.CheckState.Checked
 
     def change_color_mode(self):
         """Change color mode of label layer"""
@@ -480,7 +478,7 @@ class QtLabelsControls(QtLayerControls):
         """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFixedString
+                self.layer.rendering, Qt.MatchFlag.MatchFixedString
             )
             self.renderComboBox.setCurrentIndex(index)
 
@@ -519,7 +517,7 @@ class QtColorBox(QWidget):
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
 
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._height = 24
         self.setFixedWidth(self._height)

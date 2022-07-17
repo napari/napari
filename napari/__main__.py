@@ -12,22 +12,20 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
+from .utils.translations import trans
+
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
+        from npe2 import cli
+
         from napari.utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from .plugins import plugin_manager
-
-        plugin_manager.discover_widgets()
-        if errors := plugin_manager.get_errors():
-            names = {e.plugin_name for e in errors}
-            print("\n!!  Errors were detected in the following plugins:")
-            print("(Run 'napari --plugin-info -v' for more details)")
-            print("\n".join(f"  - {n}" for n in names))
+        print("Plugins:")
+        cli.list(fields="", sort="0", format="compact")
         sys.exit()
 
 
@@ -35,29 +33,13 @@ class PluginInfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
-        from .plugins import plugin_manager
+        from npe2 import cli
 
-        plugin_manager.discover_widgets()
-        print(plugin_manager)
-
-        if errors := plugin_manager.get_errors():
-            print("!!  Some errors occurred:")
-            verbose = '-v' in sys.argv or '--verbose' in sys.argv
-            if not verbose:
-                print("   (use '-v') to show full tracebacks")
-            print("-" * 38)
-
-            for err in errors:
-                print(err.plugin_name)
-                print(f"  error: {err!r}")
-                print(f"  cause: {err.__cause__!r}")
-                if verbose:
-                    print("  traceback:")
-                    import traceback
-                    from textwrap import indent
-
-                    tb = traceback.format_tb(err.__cause__.__traceback__)
-                    print(indent("".join(tb), '   '))
+        cli.list(
+            fields="name,version,npe2,contributions",
+            sort="name",
+            format="table",
+        )
         sys.exit()
 
 
@@ -184,10 +166,14 @@ def parse_sys_argv():
         nargs=0,
         help='show citation information and exit',
     )
+    # Allow multiple --stack options to be provided.
+    # Each stack option will result in its own stack
     parser.add_argument(
         '--stack',
-        action='store_true',
-        help='concatenate multiple input files into a single stack.',
+        action='append',
+        nargs='*',
+        default=[],
+        help='concatenate multiple input files into a single stack. Can be provided multiple times for multiple stacks.',
     )
     parser.add_argument(
         '--plugin',
@@ -308,6 +294,19 @@ def _run():
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
         viewer = Viewer()
+
+        # For backwards compatibility
+        # If the --stack option is provided without additional arguments
+        # just set stack to True similar to the previous store_true action
+        if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
+            warnings.warn(
+                trans._(
+                    "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
+                ),
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            args.stack = True
         viewer._window._qt_viewer._qt_open(
             args.paths,
             stack=args.stack,
@@ -330,7 +329,7 @@ def _run():
             running_as_bundled_app,
         )
 
-        if running_as_bundled_app:
+        if running_as_bundled_app():
             install_certifi_opener()
         run(gui_exceptions=True)
 
