@@ -296,7 +296,7 @@ extent of the contrast limits range slider will be set to those values.
 
 ## Saving without image compression
 
-When saving a labels layer, lossless zlib compression is applied by default. 
+When saving an image layer, lossless zlib compression is applied by default. 
  To save with a different level of compression, consider using 
  [imageio.imwrite](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html).  
 Adjusting compression can be accomplished by including the appropriate kwargs 
