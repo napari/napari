@@ -3,7 +3,7 @@ import re
 from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
-from typing import Dict, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
@@ -20,7 +20,7 @@ class MatchFlag(IntFlag):
 
 
 @lru_cache
-def score_specificity(pattern):
+def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
     """Score an fnmatch pattern, with higher specificities having lower scores.
 
     Absolute paths have highest specificity,
@@ -44,7 +44,7 @@ def score_specificity(pattern):
     pattern = osp.normpath(pattern)
 
     segments = pattern.split(osp.sep)
-    score = []
+    score: List[MatchFlag] = []
     ends_with_star = False
 
     def add(match_flag):
@@ -64,12 +64,12 @@ def score_specificity(pattern):
         if '[' in segment and ']' in segment[segment.index('[') :]:
             add(MatchFlag.SET)
 
-        ends_with_star = segment and segment[-1] == '*'
+        ends_with_star = segment != '' and segment[-1] == '*'
 
     return not osp.isabs(pattern), 1 - len(score), score
 
 
-def _get_preferred_readers(path):
+def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
     """Given filepath, find matching readers from preferences.
 
     Parameters
@@ -87,23 +87,7 @@ def _get_preferred_readers(path):
     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
 
 
-def get_preferred_readers(path):
-    """Given filepath, find matching readers from preferences.
-
-    Parameters
-    ----------
-    path : str
-        Path of the file.
-
-    Returns
-    -------
-    filtered_readers : List[str]
-        Preferred readers which match the given filepath.
-    """
-    return [reader for (pattern, reader) in _get_preferred_readers(path)]
-
-
-def get_preferred_reader(path):
+def get_preferred_reader(path: str) -> Optional[str]:
     """Given filepath, find the best matching reader from the preferences.
 
     Parameters
@@ -113,7 +97,7 @@ def get_preferred_reader(path):
 
     Returns
     -------
-    reader : str
+    reader : str or None
         Best matching reader, if found.
     """
     readers = sorted(
@@ -124,6 +108,8 @@ def get_preferred_reader(path):
         preferred = readers[0]
         _, reader = preferred
         return reader
+
+    return None
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:
