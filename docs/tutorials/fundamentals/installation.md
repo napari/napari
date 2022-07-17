@@ -78,7 +78,7 @@ Choose one of the options below to install napari as a Python package.
 ````{admonition} **1. From pip**
 :class: dropdown
 
-napari can be installed using the commend:
+napari can be installed using the command:
 
 ```sh
 python -m pip install "napari[all]"
