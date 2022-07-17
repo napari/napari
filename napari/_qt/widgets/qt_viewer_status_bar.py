@@ -29,27 +29,27 @@ class ViewerStatusBar(QStatusBar):
         self._status = QLabel('Ready')
         self._status.setMinimumSize(0, 16)
         self._status.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
-        self._layer_base = QElidingLabel(trans._('layer base'))
+        self._layer_base = QElidingLabel(trans._(''))
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
         self._layer_base.setMinimumSize(80, 16)
         self._layer_base.setSizePolicy(
             QSizePolicy.Minimum, QSizePolicy.Maximum
         )
 
-        self._plugin_reader = QElidingLabel(trans._('plugin reader'))
+        self._plugin_reader = QElidingLabel(trans._(''))
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setSizePolicy(
             QSizePolicy.Minimum, QSizePolicy.Maximum
         )
 
         self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
-        self._source_type = QLabel('source type')
+        self._source_type = QLabel('')
         self._source_type.setMinimumSize(50, 16)
         self._source_type.setSizePolicy(
             QSizePolicy.Minimum, QSizePolicy.Maximum
         )
 
-        self._coordinates = QLabel('coordinates')
+        self._coordinates = QLabel('')
         self._coordinates.setMinimumSize(80, 16)
         self._coordinates.setSizePolicy(
             QSizePolicy.Minimum, QSizePolicy.Maximum

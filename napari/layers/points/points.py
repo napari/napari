@@ -2035,7 +2035,6 @@ class Points(Layer):
         # msg : string
         #     String containing a message that can be used as a status update.
         #"""
-        print('status points called')
         if position is not None:
             value = self.get_value(
                 position,
