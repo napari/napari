@@ -8,7 +8,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    Protocol,
     Sequence,
     Set,
     Union,
@@ -131,10 +130,8 @@ class ParametrizedGenericCompliantModelField(ModelField):
 
         origin = get_origin(self.outer_type_) or self.outer_type_
         # anything that's not really a class should not be used for coercion
-        if (
-            not isinstance(origin, type)
-            or origin is Union
-            or issubclass(origin, Protocol)
+        if not isinstance(origin, type) or getattr(
+            origin, '_is_protocol', False
         ):
             return
 
