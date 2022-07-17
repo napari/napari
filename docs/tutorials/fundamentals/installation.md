@@ -35,7 +35,7 @@ interact with the app. It is the best way to install napari and make full use of
 all its features.
 
 It requires:
-- [Python 3.8 or higher](https://www.python.org/downloads/)
+-  [![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
 - the ability to install python packages via [pip](https://pypi.org/project/pip/) OR [conda-forge](https://conda-forge.org/docs/user/introduction.html)
 
 You may also want:
@@ -68,7 +68,7 @@ napari into a clean virtual environment using an environment manager like
 This should be set up *before* you install napari. For example, with `conda`:
 
 ```sh
-conda create -y -n napari-env -c conda-forge python=3.9
+conda create -y -n napari-env -c conda-forge python=3.10
 conda activate napari-env
 ```
 ````
@@ -78,13 +78,12 @@ Choose one of the options below to install napari as a Python package.
 ````{admonition} **1. From pip**
 :class: dropdown
 
-napari can be installed on most macOS, Linux, and Windows systems with Python
-3.7, 3.8, and 3.9 using pip:
+napari can be installed using the commend:
 
 ```sh
 python -m pip install "napari[all]"
 ```
-You can then upgrade napari to a new version using
+You can then upgrade napari to a new version using:
 
 ```sh
 python -m pip install "napari[all]" --upgrade
@@ -106,7 +105,7 @@ conda-forge channel. You can install it with:
 conda install -c conda-forge napari
 ```
 
-You can then upgrade to a new version of napari using 
+You can then upgrade to a new version of napari using:
 
 ```sh
 conda update napari

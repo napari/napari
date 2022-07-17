@@ -23,12 +23,10 @@ Set the `upstream` remote to the base `napari` repository:
 git remote add upstream https://github.com/napari/napari.git
 ```
 
-Napari can be installed on most macOS, Linux, and Windows systems with Python 3.8, 3.9, and 3.10 using pip.  First, 
-create a clean virtual environment:
-```python
-conda create -y -n napari-env -c conda-forge python=3.9
-conda activate napari-env
-```
+Napari can be installed on most macOS, Linux, and Windows systems with 
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org) by
+following the directions on the 
+[instructions page](https://napari.org/tutorials/fundamentals/installation.html#install-as-python-package-recommended).
 
 Install the package in editable mode, along with all of the developer tools:
 ```sh
@@ -214,23 +212,6 @@ git push -u origin your-branch-name
 
 You can then make a
 [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `main` branch.
-
-## Building the docs
-
-Install the documents tools:
-```sh
-pip install -e ".[docs]"  # (quotes only needed for zsh shell)
-```
-
-From the project root:
-```sh
-make docs
-```
-
-The docs will be built at `docs/_build/html`.
-
-Most web browsers will allow you to preview HTML pages.
-Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in your address bar.
 
 ## Code of Conduct
 
