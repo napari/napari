@@ -117,25 +117,13 @@ them.
 :class: tip
 
 When saving a labels layer, lossless zlib compression is applied by default. 
- To save with a different level of compression, consider using imageio.imwrite.  
-Adjusting compression can be accomplished by including the apporoiate kwargs 
+ To save with a different level of compression, consider using [imageio.imwrite]
+(https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html).  
+Adjusting compression can be accomplished by including the appropriate kwargs 
 as outlined in the following locations for 
 [tiff](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.plugins.tifffile.html#metadata-for-writing) or 
-[png](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html) files. 
+[png](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png) files. 
 ```
-
-## Saving labels layers
-
-
-
-is not used.  By default, when saving a layer through the GUI no file 
-compression is applied.  The following commands will save a labels layer using 
-compression:
-
-
-
-where `name_of_your_layer` represents the name of the layer being saved.  These commands
-can be implemented in a script or entered at an ipython command prompt.
 
 ## Non-editable mode
 
