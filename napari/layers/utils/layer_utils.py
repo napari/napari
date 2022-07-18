@@ -501,7 +501,7 @@ def compute_multiscale_level(
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
-    # Find the highest resolution level allowed
+    # Find the highest level (lowest resolution) allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
     if len(locations) > 0:
         level = locations[-1][0]

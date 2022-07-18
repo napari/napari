@@ -434,41 +434,55 @@ def test_multiscale_data_protocol():
     assert isinstance(layer.data[0], np.ndarray)
 
 
-def test_update_draw_with_2d_isotropic_image_level_0_threshold():
+@pytest.mark.parametrize(
+    ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
+    (
+        ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
+        # Multiscale level selection uses > rather than >= so use -1 and 21
+        # instead of 0 and 20 to ensure that the FOV is big enough.
+        ([[-1, -1], [21, 21]], 1, [[0, 0], [10, 10]]),
+        ([[-12, -12], [32, 32]], 2, [[0, 0], [5, 5]]),
+    ),
+)
+def test_update_draw_variable_fov_fixed_canvas_size(
+    corner_pixels_world, exp_level, exp_corner_pixels_data
+):
     shapes = [(20, 20), (10, 10), (5, 5)]
     data = [np.zeros(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    # In world coordinates.
-    corner_pixels_displayed = np.array([[0, 0], [20, 20]])
-    shape_threshold = (16, 16)
+    canvas_size_pixels = (10, 10)
 
     layer._update_draw(
         scale_factor=1,
-        corner_pixels_displayed=corner_pixels_displayed,
-        shape_threshold=shape_threshold,
+        corner_pixels_displayed=np.array(corner_pixels_world),
+        shape_threshold=canvas_size_pixels,
     )
 
-    assert layer.data_level == 0
-    # In data coordinates (wrt data_level).
-    expected_corner_pixels = [[0, 0], [20, 20]]
-    np.testing.assert_equal(layer.corner_pixels, expected_corner_pixels)
+    assert layer.data_level == exp_level
+    np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
 
 
-def test_update_draw_with_2d_isotropic_image_level_1_threshold():
+@pytest.mark.parametrize(
+    ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
+    (
+        ([16, 16], 0, [[0, 0], [20, 20]]),
+        ([8, 8], 1, [[0, 0], [10, 10]]),
+        ([4, 4], 2, [[0, 0], [5, 5]]),
+    ),
+)
+def test_update_draw_variable_canvas_size_fixed_fov(
+    canvas_size_pixels, exp_level, exp_corner_pixels_data
+):
     shapes = [(20, 20), (10, 10), (5, 5)]
     data = [np.zeros(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    # In world coordinates.
-    corner_pixels_displayed = np.array([[0, 0], [20, 20]])
-    shape_threshold = (8, 8)
+    corner_pixels_world = np.array([[0, 0], [20, 20]])
 
     layer._update_draw(
         scale_factor=1,
-        corner_pixels_displayed=corner_pixels_displayed,
-        shape_threshold=shape_threshold,
+        corner_pixels_displayed=corner_pixels_world,
+        shape_threshold=canvas_size_pixels,
     )
 
-    assert layer.data_level == 1
-    # In data coordinates (wrt data_level).
-    expected_corner_pixels = [[0, 0], [10, 10]]
-    np.testing.assert_equal(layer.corner_pixels, expected_corner_pixels)
+    assert layer.data_level == exp_level
+    np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
