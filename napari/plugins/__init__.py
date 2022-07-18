@@ -26,10 +26,16 @@ def _initialize_plugins():
         for p in settings.plugins.disabled_plugins:
             _npe2pm.disable(p)
 
-    _npe2pm.discover(include_npe1=settings.plugins.use_npe2_adaptor)
     _npe2pm.events.enablement_changed.connect(
         _npe2._on_plugin_enablement_change
     )
+    _npe2pm.events.plugins_registered.connect(
+        _npe2._on_plugins_registered
+    )
+    _npe2pm.events.activation_changed.connect(
+        _npe2._on_plugin_activation_change
+    )
+    _npe2pm.discover(include_npe1=settings.plugins.use_npe2_adaptor)
 
     # this is a workaround for the fact that briefcase does not seem to include
     # napari's entry_points.txt in the bundled app, so the builtin plugins

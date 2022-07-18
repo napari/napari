@@ -14,7 +14,7 @@ from typing import (
 
 from npe2 import io_utils
 from npe2 import plugin_manager as pm
-from npe2.manifest.contributions import Submenu
+from npe2.manifest.contributions import Submenu, MenuCommand
 
 from ..utils.translations import trans
 
@@ -272,7 +272,11 @@ def get_sample_data(
 
 
 def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
-    """Callback when any npe2 plugins are enabled or disabled"""
+    """Callback when any npe2 plugins are enabled or disabled.
+
+    'Disabled' means the plugin remains installed, but it cannot be activated,
+    and its contributions will not be indexed
+    """
     from .. import Viewer
     from ..settings import get_settings
 
@@ -285,6 +289,41 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     for v in Viewer._instances:
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
+
+
+def _on_plugin_activation_change(activated: Set[str], deactivated: Set[str]):
+    """Callback when any npe2 plugins are activated or deactivated.
+
+    'Activated' means the plugin has been *imported*, and its
+    `on_activate` function was called.
+    """
+    print(f"{activated} activated, {deactivated} deactivated")
+
+
+def _on_plugins_registered(manifests: Set[PluginManifest]):
+    """Callback when any npe2 plugins are registered.
+
+    'Registered' means that a manifest has been provided or discovered.
+    """
+
+    for mf in manifests:
+        _register_plugin_menus(mf)
+
+
+def _register_plugin_menus(mf: PluginManifest):
+    from .._app import app
+    from app_model.types import MenuItem, SubmenuItem
+
+    to_add = []
+    for menu_id, menu_items in mf.contributions.menus.items():
+        for menu_item in menu_items:
+            if isinstance(menu_item, MenuItem):
+                cmd
+                app_item = MenuItem(when=..., group=..., order=..., command=...)
+                to_add.append((menu_id, app_item))
+            to_add.append((menu_id, menu_item))
+    breakpoint()
+    app.menus.append_menu_items(to_add)
 
 
 def index_npe1_adapters():
