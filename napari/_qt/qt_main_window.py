@@ -143,7 +143,7 @@ class _QtMainWindow(QMainWindow):
         window = cls.current()
         return window._qt_viewer.viewer if window else None
 
-    def event(self, e) -> bool:
+    def event(self, e: QEvent) -> bool:
         if (
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
