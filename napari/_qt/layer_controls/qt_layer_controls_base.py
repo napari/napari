@@ -29,9 +29,7 @@ class QtLayerControls(QFrame):
     Attributes
     ----------
     blendComboBox : qtpy.QtWidgets.QComboBox
-        Drowpdown widget to select blending mode of layer.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
+        Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
     opacitySlider : qtpy.QtWidgets.QSlider
@@ -50,8 +48,8 @@ class QtLayerControls(QFrame):
 
         self.setLayout(LayerFormLayout(self))
 
-        sld = QDoubleSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)

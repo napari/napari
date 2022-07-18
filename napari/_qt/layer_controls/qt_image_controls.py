@@ -39,8 +39,6 @@ class QtImageControls(QtBaseImageControls):
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
         Label for the attenuation slider widget.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     interpComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select the interpolation mode for image display.
     interpLabel : qtpy.QtWidgets.QLabel
@@ -85,7 +83,7 @@ class QtImageControls(QtBaseImageControls):
         rendering_options = [i.value for i in ImageRendering]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFixedString
+            self.layer.rendering, Qt.MatchFlag.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
         renderComboBox.activated[str].connect(self.changeRendering)
@@ -96,7 +94,7 @@ class QtImageControls(QtBaseImageControls):
         depiction_options = [d.value for d in VolumeDepiction]
         self.depictionComboBox.addItems(depiction_options)
         index = self.depictionComboBox.findText(
-            self.layer.depiction, Qt.MatchFixedString
+            self.layer.depiction, Qt.MatchFlag.MatchFixedString
         )
         self.depictionComboBox.setCurrentIndex(index)
         self.depictionComboBox.activated[str].connect(self.changeDepiction)
@@ -122,7 +120,9 @@ class QtImageControls(QtBaseImageControls):
             self.planeNormalButtons.obliqueButton,
         )
 
-        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.planeThicknessSlider = QLabeledDoubleSlider(
+            Qt.Orientation.Horizontal, self
+        )
         self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
         self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
         self.planeThicknessSlider.setMinimum(1)
@@ -132,8 +132,8 @@ class QtImageControls(QtBaseImageControls):
             self.changePlaneThickness
         )
 
-        sld = QSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -142,8 +142,8 @@ class QtImageControls(QtBaseImageControls):
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
 
-        sld = QSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -284,7 +284,7 @@ class QtImageControls(QtBaseImageControls):
         """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFixedString
+                self.layer.rendering, Qt.MatchFlag.MatchFixedString
             )
             self.renderComboBox.setCurrentIndex(index)
             self._toggle_rendering_parameter_visbility()
@@ -293,7 +293,7 @@ class QtImageControls(QtBaseImageControls):
         """Receive layer model depiction change event and update combobox."""
         with self.layer.events.depiction.blocker():
             index = self.depictionComboBox.findText(
-                self.layer.depiction, Qt.MatchFixedString
+                self.layer.depiction, Qt.MatchFlag.MatchFixedString
             )
             self.depictionComboBox.setCurrentIndex(index)
             self._toggle_plane_parameter_visibility()
@@ -345,7 +345,9 @@ class QtImageControls(QtBaseImageControls):
             if self.layer._ndisplay == 2
             else self.layer.interpolation3d
         )
-        index = self.interpComboBox.findText(interp, Qt.MatchFixedString)
+        index = self.interpComboBox.findText(
+            interp, Qt.MatchFlag.MatchFixedString
+        )
         self.interpComboBox.setCurrentIndex(index)
 
     def _on_ndisplay_change(self):

@@ -115,6 +115,8 @@ myst_enable_extensions = [
     'tasklist',
 ]
 
+myst_heading_anchors = 3
+
 nb_output_stderr = 'show'
 
 panels_add_bootstrap_css = False
@@ -133,6 +135,7 @@ exclude_patterns = [
     '.DS_Store',
     '.jupyter_cache',
     'jupyter_execute',
+    'plugins/_*.md',
 ]
 
 napoleon_custom_sections = [('Events', 'params_style')]

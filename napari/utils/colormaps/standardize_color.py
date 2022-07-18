@@ -92,10 +92,6 @@ def _handle_str(color: str) -> np.ndarray:
         )
         return np.zeros((1, 4), dtype=np.float32)
 
-    # This line will stay here until vispy adds a "transparent" key
-    # to their color dictionary. A PR was sent and approved, currently
-    # waiting to be merged.
-    color = color.replace("transparent", "#00000000")
     colorarray = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
     if colorarray.shape[1] == 3:
         colorarray = np.column_stack([colorarray, np.float32(1.0)])

@@ -92,12 +92,7 @@ class QtStar(QFrame):
         star_center_x = width / 2
         star_center_y = height / 2
         # make sure the star equal no matter the size of the qframe
-        if width < height:
-            # not taking it all the way to the edge so the star has room to grow
-            radius_outer = width * 0.35
-        else:
-            radius_outer = height * 0.35
-
+        radius_outer = width * 0.35 if width < height else height * 0.35
         # start at the top point of the star and move counter clockwise to draw the path.
         # every other point is the shorter radius (1/(1+golden_ratio)) of the larger radius
         golden_ratio = (1 + np.sqrt(5)) / 2
@@ -188,7 +183,6 @@ class QtTriangle(QFrame):
         qp : QPainter object
         """
         width = self.rect().width()
-        height = self.rect().height()
 
         col = QColor(135, 206, 235)
         qp.setPen(QPen(col, 1))
@@ -255,8 +249,7 @@ class QtTriangle(QFrame):
             Minimum value of triangle.
         """
         self._min_value = value
-        if self._value < value:
-            self._value = value
+        self._value = max(self._value, value)
 
     def setMaximum(self, value: int):
         """Set maximum value.
@@ -268,8 +261,7 @@ class QtTriangle(QFrame):
         """
         self._max_value = value
 
-        if self._value > value:
-            self._value = value
+        self._value = min(self._value, value)
 
     def drawLine(self, qp, value: int):
         """Draw line on triangle indicating value.
@@ -324,7 +316,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         super().__init__(parent)
 
         self.setGeometry(300, 300, 125, 110)
-        self._value = value if value else self.fontMetrics().height()
+        self._value = value or self.fontMetrics().height()
         self._min_value = min_value
         self._max_value = max_value
 
@@ -332,7 +324,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         self._lineedit = QLineEdit()
         self._description = QLabel(self)
         self._unit = QLabel(self)
-        self._slider = QSlider(Qt.Horizontal)
+        self._slider = QSlider(Qt.Orientation.Horizontal)
         self._triangle = QtTriangle(self)
         self._slider_min_label = QLabel(self)
         self._slider_max_label = QLabel(self)
@@ -344,14 +336,14 @@ class QtHighlightSizePreviewWidget(QWidget):
         self._description.setText(description)
         self._description.setWordWrap(True)
         self._unit.setText(unit)
-        self._unit.setAlignment(Qt.AlignBottom)
+        self._unit.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._lineedit.setValidator(self._validator)
-        self._lineedit.setAlignment(Qt.AlignRight)
-        self._lineedit.setAlignment(Qt.AlignBottom)
+        self._lineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self._lineedit.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._slider_min_label.setText(str(min_value))
-        self._slider_min_label.setAlignment(Qt.AlignBottom)
+        self._slider_min_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._slider_max_label.setText(str(max_value))
-        self._slider_max_label.setAlignment(Qt.AlignBottom)
+        self._slider_max_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._slider.setMinimum(min_value)
         self._slider.setMaximum(max_value)
         self._preview.setValue(value)
@@ -359,8 +351,8 @@ class QtHighlightSizePreviewWidget(QWidget):
         self._triangle.setMinimum(min_value)
         self._triangle.setMaximum(max_value)
         self._preview_label.setText(trans._("Preview"))
-        self._preview_label.setAlignment(Qt.AlignHCenter)
-        self._preview_label.setAlignment(Qt.AlignBottom)
+        self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self._preview_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._preview.setStyleSheet('border: 1px solid white;')
 
         # Signals
@@ -376,33 +368,33 @@ class QtHighlightSizePreviewWidget(QWidget):
         triangle_slider_layout.addLayout(triangle_layout)
         triangle_slider_layout.setContentsMargins(0, 0, 0, 0)
         triangle_slider_layout.addWidget(self._slider)
-        triangle_slider_layout.setAlignment(Qt.AlignVCenter)
+        triangle_slider_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         # Bottom row layout
         lineedit_layout = QHBoxLayout()
         lineedit_layout.addWidget(self._lineedit)
-        lineedit_layout.setAlignment(Qt.AlignBottom)
+        lineedit_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         bottom_left_layout = QHBoxLayout()
         bottom_left_layout.addLayout(lineedit_layout)
         bottom_left_layout.addWidget(self._unit)
         bottom_left_layout.addWidget(self._slider_min_label)
         bottom_left_layout.addLayout(triangle_slider_layout)
         bottom_left_layout.addWidget(self._slider_max_label)
-        bottom_left_layout.setAlignment(Qt.AlignBottom)
+        bottom_left_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
         left_layout = QVBoxLayout()
         left_layout.addWidget(self._description)
         left_layout.addLayout(bottom_left_layout)
-        left_layout.setAlignment(Qt.AlignLeft)
+        left_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         preview_label_layout = QHBoxLayout()
         preview_label_layout.addWidget(self._preview_label)
-        preview_label_layout.setAlignment(Qt.AlignHCenter)
+        preview_label_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         preview_layout = QVBoxLayout()
         preview_layout.addWidget(self._preview)
         preview_layout.addLayout(preview_label_layout)
-        preview_layout.setAlignment(Qt.AlignCenter)
+        preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         layout = QHBoxLayout()
         layout.addLayout(left_layout)
@@ -509,18 +501,7 @@ class QtHighlightSizePreviewWidget(QWidget):
             Minimum highlight value.
         """
         value = int(value)
-        if value < self._max_value:
-            self._min_value = value
-            self._slider_min_label.setText(str(value))
-            self._slider.setMinimum(value)
-            self._triangle.setMinimum(value)
-            self._value = (
-                self._min_value
-                if self._value < self._min_value
-                else self._value
-            )
-            self._refresh()
-        else:
+        if value >= self._max_value:
             raise ValueError(
                 trans._(
                     "Minimum value must be smaller than {max_value}",
@@ -528,6 +509,12 @@ class QtHighlightSizePreviewWidget(QWidget):
                     max_value=self._max_value,
                 )
             )
+        self._min_value = value
+        self._slider_min_label.setText(str(value))
+        self._slider.setMinimum(value)
+        self._triangle.setMinimum(value)
+        self._value = max(self._value, self._min_value)
+        self._refresh()
 
     def minimum(self):
         """Return minimum highlight value.
@@ -548,18 +535,7 @@ class QtHighlightSizePreviewWidget(QWidget):
             Maximum highlight value.
         """
         value = int(value)
-        if value > self._min_value:
-            self._max_value = value
-            self._slider_max_label.setText(str(value))
-            self._slider.setMaximum(value)
-            self._triangle.setMaximum(value)
-            self._value = (
-                self._max_value
-                if self._value > self._max_value
-                else self._value
-            )
-            self._refresh()
-        else:
+        if value <= self._min_value:
             raise ValueError(
                 trans._(
                     "Maximum value must be larger than {min_value}",
@@ -567,6 +543,12 @@ class QtHighlightSizePreviewWidget(QWidget):
                     min_value=self._min_value,
                 )
             )
+        self._max_value = value
+        self._slider_max_label.setText(str(value))
+        self._slider.setMaximum(value)
+        self._triangle.setMaximum(value)
+        self._value = min(self._value, self._max_value)
+        self._refresh()
 
     def maximum(self):
         """Return maximum highlight value.

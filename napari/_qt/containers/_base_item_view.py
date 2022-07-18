@@ -53,7 +53,7 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
         """Delete items with delete key."""
-        if e.key() in (Qt.Key_Backspace, Qt.Key_Delete):
+        if e.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
             self._root.remove_selected()
             return
         return super().keyPressEvent(e)
@@ -123,8 +123,12 @@ class _BaseEventedItemView(Generic[ItemType]):
 
 def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
     """Find the `QModelIndex` for a given object in the model."""
-    fl = Qt.MatchExactly | Qt.MatchRecursive
+    fl = Qt.MatchFlag.MatchExactly | Qt.MatchFlag.MatchRecursive
     hits = model.match(
-        model.index(0, 0, QModelIndex()), Qt.UserRole, obj, hits=1, flags=fl
+        model.index(0, 0, QModelIndex()),
+        Qt.ItemDataRole.UserRole,
+        obj,
+        hits=1,
+        flags=fl,
     )
     return hits[0] if hits else QModelIndex()
