@@ -92,11 +92,19 @@ class PluginAwareCommandsRegistry(CommandsRegistry):
         with contextlib.suppress(KeyError):
             cmd = plugin_manager.get_command(id)
             # FIXME: this will probably not inject properly
-            _RegisteredCommand(id=id, callback=cmd.exec, title=cmd.title)
+            # also, this should be cached somehow
+            return _RegisteredCommand(
+                id=id, callback=cmd.exec, title=cmd.title
+            )
         return super().__getitem__(id)
 
 
 class PluginAwareMenusRegistry(MenusRegistry):
+    def __contains__(self, id: object) -> bool:
+        return any(
+            True for _ in plugin_manager.iter_menu(id)
+        ) or super().__contains__(id)
+
     def get_menu(
         self, menu_id: str, include_plugins: bool = True
     ) -> List[MenuOrSubmenu]:

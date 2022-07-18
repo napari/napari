@@ -5,6 +5,10 @@ from typing import Dict
 
 from app_model import Application
 
+from ._plugin_aware_registries import (
+    PluginAwareCommandsRegistry,
+    PluginAwareMenusRegistry,
+)
 from ._submenus import SUBMENUS
 from .actions._layer_actions import LAYER_ACTIONS
 from .injection._processors import PROCESSORS
@@ -20,7 +24,12 @@ class NapariApplication(Application):
         # exceptions with `.result()`, for now, raising immediately should
         # prevent any unexpected silent errors.  We can turn it off later if we
         # adopt asynchronous command execution.
-        super().__init__('napari', raise_synchronous_exceptions=True)
+        super().__init__(
+            'napari',
+            raise_synchronous_exceptions=True,
+            commands_reg_class=PluginAwareCommandsRegistry,
+            menus_reg_class=PluginAwareMenusRegistry,
+        )
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
         self.injection_store.register(
