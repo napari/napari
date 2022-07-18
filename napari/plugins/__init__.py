@@ -29,9 +29,7 @@ def _initialize_plugins():
     _npe2pm.events.enablement_changed.connect(
         _npe2._on_plugin_enablement_change
     )
-    _npe2pm.events.plugins_registered.connect(
-        _npe2._on_plugins_registered
-    )
+    _npe2pm.events.plugins_registered.connect(_npe2._on_plugins_registered)
     _npe2pm.events.activation_changed.connect(
         _npe2._on_plugin_activation_change
     )
