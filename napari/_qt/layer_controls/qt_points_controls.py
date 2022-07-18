@@ -241,6 +241,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating whether to render out of slice.
         """
+        # needs cast to bool for Qt6
         self.layer.out_of_slice_display = bool(state)
 
     def change_text_visibility(self, state):
@@ -251,6 +252,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
+        # needs cast to bool for Qt6
         self.layer.text.visible = bool(state)
 
     def _on_text_visibility_change(self):
