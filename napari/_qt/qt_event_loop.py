@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy import PYQT5
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from ..resources._icons import _theme_path
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
@@ -19,10 +20,10 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
+from ..utils.theme import _themes
 from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
-from .qt_resources import _register_napari_resources
 from .qthreading import (
     _register_threadworker_processors,
     wait_for_workers_to_quit,
@@ -139,8 +140,12 @@ def get_app(
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
         if PYQT5:
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-            QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
+            )
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
+            )
 
         argv = sys.argv.copy()
         if sys.platform == "darwin" and not argv[0].endswith("napari"):
@@ -195,9 +200,16 @@ def get_app(
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
 
-        # this will register all of our resources (icons) with Qt, so that they
-        # can be used in qss files and elsewhere.
-        _register_napari_resources()
+        # Setup search paths for currently installed themes.
+        for name in _themes:
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        # When a new theme is added, at it to the search path.
+        @_themes.events.changed.connect
+        @_themes.events.added.connect
+        def _(event):
+            name = event.key
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
         _register_threadworker_processors()
 

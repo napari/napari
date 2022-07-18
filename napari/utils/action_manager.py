@@ -329,7 +329,7 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_layer_actions(self, layer):
+    def _get_layer_actions(self, layer) -> dict:
         """
         Get actions filtered by the given layers.
 

@@ -1,3 +1,5 @@
+import typing
+
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QFont, QIntValidator
 from qtpy.QtWidgets import (
@@ -117,7 +119,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         self._lineedit = QLineEdit()
         self._description_label = QLabel(self)
         self._unit_label = QLabel(self)
-        self._slider = QSlider(Qt.Horizontal, self)
+        self._slider = QSlider(Qt.Orientation.Horizontal, self)
         self._slider_min_label = QLabel(self)
         self._slider_max_label = QLabel(self)
         self._preview = QtFontSizePreview(self)
@@ -128,14 +130,14 @@ class QtSizeSliderPreviewWidget(QWidget):
         self._description_label.setText(description)
         self._description_label.setWordWrap(True)
         self._unit_label.setText(unit)
-        self._lineedit.setAlignment(Qt.AlignRight)
+        self._lineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
         self._slider_min_label.setText(str(min_value))
         self._slider_max_label.setText(str(max_value))
         self._slider.setMinimum(min_value)
         self._slider.setMaximum(max_value)
         self._preview.setText(preview_text)
         self._preview_label.setText(trans._("preview"))
-        self._preview_label.setAlignment(Qt.AlignHCenter)
+        self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.setFocusProxy(self._lineedit)
 
         # Layout
@@ -185,7 +187,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         self._lineedit.setMaximumWidth(size)
         self._lineedit.setMinimumWidth(size)
 
-    def _update_value(self, value: int):
+    def _update_value(self, value: typing.Union[int, str]):
         """Update internal value and emit if changed."""
         if value == "":
             value = int(self._value)
@@ -205,7 +207,7 @@ class QtSizeSliderPreviewWidget(QWidget):
 
     def _refresh(self, value: int = None):
         """Refresh the value on all subwidgets."""
-        value = value if value else self._value
+        value = value or self._value
         self.blockSignals(True)
         self._lineedit.setText(str(value))
         self._slider.setValue(value)
@@ -297,25 +299,19 @@ class QtSizeSliderPreviewWidget(QWidget):
         value : int
             The minimum value for the slider.
         """
-        value = int(value)
-        if value < self._max_value:
-            self._min_value = value
-            self._value = (
-                self._min_value
-                if self._value < self._min_value
-                else self._value
-            )
-            self._slider_min_label.setText(str(value))
-            self._slider.setMinimum(value)
-            self._update_validator()
-            self._refresh()
-        else:
+        if value >= self._max_value:
             raise ValueError(
                 trans._(
                     "Minimum value must be smaller than {max_value}",
                     max_value=self._max_value,
                 )
             )
+        self._min_value = value
+        self._value = max(self._value, self._min_value)
+        self._slider_min_label.setText(str(value))
+        self._slider.setMinimum(value)
+        self._update_validator()
+        self._refresh()
 
     def maximum(self) -> int:
         """Return the maximum value for the slider and value in textbox.
@@ -335,26 +331,20 @@ class QtSizeSliderPreviewWidget(QWidget):
         value : int
             The maximum value for the slider.
         """
-        value = int(value)
-        if value > self._min_value:
-            self._max_value = value
-            self._value = (
-                self._max_value
-                if self._value > self._max_value
-                else self._value
-            )
-            self._slider_max_label.setText(str(value))
-            self._slider.setMaximum(value)
-            self._update_validator()
-            self._update_line_width()
-            self._refresh()
-        else:
+        if value <= self._min_value:
             raise ValueError(
                 trans._(
                     "Maximum value must be larger than {min_value}",
                     min_value=self._min_value,
                 )
             )
+        self._max_value = value
+        self._value = min(self._value, self._max_value)
+        self._slider_max_label.setText(str(value))
+        self._slider.setMaximum(value)
+        self._update_validator()
+        self._update_line_width()
+        self._refresh()
 
     def value(self) -> int:
         """Return the current widget value.
