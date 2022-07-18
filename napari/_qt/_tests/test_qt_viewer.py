@@ -10,6 +10,7 @@ import pytest
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
+from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -18,6 +19,7 @@ from napari._tests.utils import (
     skip_on_win_ci,
 )
 from napari._vispy.utils.gl import fix_data_dtype
+from napari.components import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
@@ -657,3 +659,29 @@ def test_insert_layer_ordering(make_napari_viewer):
     pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
+
+
+def test_current_viewer_handling(qtbot, monkeypatch):
+    monkeypatch.setattr(QtViewer, "_process_mouse_event", mock.MagicMock())
+    viewer1 = QtViewer(ViewerModel())
+    viewer2 = QtViewer(ViewerModel())
+    qtbot.addWidget(viewer1)
+    qtbot.addWidget(viewer2)
+    handler1 = mock.MagicMock()
+    monkeypatch.setattr(viewer1, "_key_map_handler", handler1)
+    handler2 = mock.MagicMock()
+    monkeypatch.setattr(viewer2, "_key_map_handler", handler2)
+    viewer1._on_key_press("aaa")
+    handler1.on_key_press.assert_called_once()
+    handler2.on_key_press.assert_not_called()
+    handler1.on_key_press.reset_mock()
+    monkeypatch.setattr(viewer1, "isActiveWindow", lambda: False)
+    monkeypatch.setattr(viewer2, "isActiveWindow", lambda: True)
+    assert QtViewer.current_viewer() is None
+    viewer2.on_mouse_move(None)
+    assert QtViewer.current_viewer() is viewer2
+    viewer1.on_mouse_move(None)
+    assert QtViewer.current_viewer() is viewer2
+    viewer1._on_key_press("aaa")
+    handler2.on_key_press.assert_called_once()
+    handler1.on_key_press.assert_not_called()

@@ -385,15 +385,15 @@ class QtViewer(QSplitter):
 
     def _on_key_press(self, event):
         """Handle key press events."""
-        if self.current_viewer():
-            self.current_viewer()._key_map_handler.on_key_press(event)
+        if viewer := QtViewer.current_viewer():
+            viewer._key_map_handler.on_key_press(event)
         else:
             self._key_map_handler.on_key_press(event)
 
     def _on_key_release(self, event):
         """Handle key release events."""
-        if self.current_viewer():
-            self.current_viewer()._key_map_handler.on_key_release(event)
+        if viewer := QtViewer.current_viewer():
+            viewer._key_map_handler.on_key_release(event)
         else:
             self._key_map_handler.on_key_release(event)
 
