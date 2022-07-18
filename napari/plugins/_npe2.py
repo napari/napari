@@ -272,11 +272,7 @@ def get_sample_data(
 
 
 def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
-    """Callback when any npe2 plugins are enabled or disabled.
-
-    'Disabled' means the plugin remains installed, but it cannot be activated,
-    and its contributions will not be indexed
-    """
+    """Callback when any npe2 plugins are enabled or disabled"""
     from .. import Viewer
     from ..settings import get_settings
 
@@ -289,21 +285,6 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     for v in Viewer._instances:
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
-
-
-def _on_plugin_activation_change(activated: Set[str], deactivated: Set[str]):
-    """Callback when any npe2 plugins are activated or deactivated.
-
-    'Activated' means the plugin has been *imported*, and its
-    `on_activate` function was called.
-    """
-
-
-def _on_plugins_registered(manifests: Set[PluginManifest]):
-    """Callback when any npe2 plugins are registered.
-
-    'Registered' means that a manifest has been provided or discovered.
-    """
 
 
 def index_npe1_adapters():
