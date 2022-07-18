@@ -41,14 +41,14 @@ class ModifiedScrollBar(QScrollBar):
             CC.CC_ScrollBar, opt, SC.SC_ScrollBarSlider, self
         )
         if self.orientation() == Qt.Orientation.Horizontal:
-            pos = event.pos().x()
+            pos = point.x()
             slider_length = sr.width()
             slider_min = gr.x()
             slider_max = gr.right() - slider_length + 1
             if self.layoutDirection() == Qt.LayoutDirection.RightToLeft:
                 opt.upsideDown = not opt.upsideDown
         else:
-            pos = event.pos().y()
+            pos = point.y()
             slider_length = sr.height()
             slider_min = gr.y()
             slider_max = gr.bottom() - slider_length + 1
