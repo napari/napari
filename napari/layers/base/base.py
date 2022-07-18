@@ -1570,13 +1570,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if self._ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
-                data_bbox_clipped,
+                data_bbox_int,
                 shape_threshold,
                 self.downsample_factors[:, displayed_axes],
             )
-            corners = np.zeros((2, self.ndim))
-            corners[:, displayed_axes] = scaled_corners
-            corners = corners.astype(int)
+            corners = np.zeros((2, self.ndim), dtype=int)
+            max_coords = np.array(self._data[level].shape)
+            corners[:, displayed_axes] = np.clip(
+                scaled_corners, 0, max_coords[displayed_axes]
+            )
             display_shape = tuple(
                 corners[1, displayed_axes] - corners[0, displayed_axes]
             )
