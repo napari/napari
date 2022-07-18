@@ -241,7 +241,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating whether to render out of slice.
         """
-        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
+        self.layer.out_of_slice_display = bool(state)
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
@@ -251,7 +251,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        self.layer.text.visible = state == Qt.CheckState.Checked
+        self.layer.text.visible = bool(state)
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""
