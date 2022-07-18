@@ -86,9 +86,9 @@ class NapariQtNotification(QDialog):
         from ..qt_viewer import QtViewer
 
         canvas = None
-        if current_window := _QtMainWindow.current() is not None:
+        if (current_window := _QtMainWindow.current()) is not None:
             canvas = current_window._qt_viewer._canvas_overlay
-        elif current_viewer := QtViewer.current_viewer() is not None:
+        elif (current_viewer := QtViewer.current_viewer()) is not None:
             canvas = current_viewer._canvas_overlay
 
         if canvas is not None:
