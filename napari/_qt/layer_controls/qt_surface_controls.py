@@ -20,8 +20,6 @@ class QtSurfaceControls(QtBaseImageControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : napari.layers.Surface
         An instance of a napari Surface layer.
 
