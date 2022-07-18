@@ -5,7 +5,7 @@ import traceback
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
-from weakref import WeakSet
+from weakref import WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -181,6 +181,8 @@ class QtViewer(QSplitter):
     """
 
     _instances = WeakSet()
+
+    current_viewer = ref(None)
 
     def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
@@ -366,12 +368,8 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_move.connect(self.on_mouse_move)
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
-        self.canvas.events.key_press.connect(
-            self._key_map_handler.on_key_press
-        )
-        self.canvas.events.key_release.connect(
-            self._key_map_handler.on_key_release
-        )
+        self.canvas.events.key_press.connect(self._on_key_press)
+        self.canvas.events.key_release.connect(self._on_key_release)
         self.canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
         self.canvas.events.draw.connect(self.on_draw)
         self.canvas.events.resize.connect(self.on_resize)
@@ -384,6 +382,20 @@ class QtViewer(QSplitter):
         theme.connect(on_theme_change)
 
         self.canvas.destroyed.connect(self._diconnect_theme)
+
+    def _on_key_press(self, event):
+        """Handle key press events."""
+        if self.current_viewer():
+            self.current_viewer()._key_map_handler.on_key_press(event)
+        else:
+            self._key_map_handler.on_key_press(event)
+
+    def _on_key_release(self, event):
+        """Handle key release events."""
+        if self.current_viewer():
+            self.current_viewer()._key_map_handler.on_key_release(event)
+        else:
+            self._key_map_handler.on_key_release(event)
 
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
@@ -1007,6 +1019,7 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self._process_mouse_event(mouse_move_callbacks, event)
+        QtViewer.current_viewer = ref(self)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.

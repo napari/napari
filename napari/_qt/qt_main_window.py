@@ -159,7 +159,8 @@ class _QtMainWindow(QMainWindow):
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
                 inst = _QtMainWindow._instances
-                inst.append(inst.pop(inst.index(self)))
+                inst.pop(inst.index(self))
+            _QtMainWindow._instances.append(self)
         return super().event(e)
 
     def _load_window_settings(self):
