@@ -77,7 +77,7 @@ def generate_colorized_svgs(
     """Helper function to generate colorized SVGs.
 
     This is a generator that yields tuples of ``(alias, icon_xml)`` for every
-    combination (cartesian product) of `svg_path`, `color`, and `opacity`
+    combination (Cartesian product) of `svg_path`, `color`, and `opacity`
     provided. It can be used as input to :func:`_temporary_qrc_file`.
 
     Parameters
