@@ -441,7 +441,7 @@ def test_multiscale_data_protocol():
         # Multiscale level selection uses > rather than >= so use -1 and 21
         # instead of 0 and 20 to ensure that the FOV is big enough.
         ([[-1, -1], [21, 21]], 1, [[0, 0], [10, 10]]),
-        ([[-12, -12], [32, 32]], 2, [[0, 0], [5, 5]]),
+        ([[-11, -11], [31, 31]], 2, [[0, 0], [5, 5]]),
     ),
 )
 def test_update_draw_variable_fov_fixed_canvas_size(

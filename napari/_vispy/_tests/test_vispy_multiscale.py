@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
@@ -159,6 +158,39 @@ def test_image_screenshot_zoomed(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_multiscale_zoomed_out(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/4781"""
+    # Need to show viewer to ensure that pixel_scale and physical_size
+    # get set appropriately.
+    viewer = make_napari_viewer(show=True)
+    shapes = [(3200, 3200), (1600, 1600), (800, 800)]
+    data = [np.empty(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True)
+    qt_viewer = viewer.window._qt_viewer
+    # Canvas size is in screen pixels.
+    qt_viewer.canvas.size = (1600, 1600)
+    # The camera rect is (left, top, width, height) in scene coordinates.
+    # In this case scene coordinates are the same as data/world coordinates
+    # the layer is 2D and data-to-world is identity.
+    # We pick a camera rect size that is slightly bigger than the data extent
+    # to simulate being zoomed out in the viewer.
+    camera_rect_size = 3400
+    camera_rect_center = 1599.5
+    camera_rect_start = camera_rect_center - (camera_rect_size / 2)
+    qt_viewer.view.camera.rect = (
+        camera_rect_start,
+        camera_rect_start,
+        camera_rect_size,
+        camera_rect_size,
+    )
+
+    qt_viewer.on_draw(None)
+
+    assert layer.data_level == 1
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
@@ -207,69 +239,3 @@ def test_multiscale_rotated_image(make_napari_viewer):
     assert np.any(
         screenshot_rgb
     )  # make sure there is at least one white pixel
-
-
-# The smallest canvas size is quite large at 800 because we need to
-# prevent the minimum size of the containing widget making it smaller.
-@skip_on_win_ci
-@skip_local_popups
-@pytest.mark.parametrize(
-    ('canvas_size', 'expected_data_level'), ((2000, 0), (1200, 1), (800, 2))
-)
-def test_multiscale_variable_canvas_size_fixed_fov(
-    make_napari_viewer, canvas_size, expected_data_level
-):
-    # Need to show viewer to ensure that pixel_scale and physical_size
-    # get set appropriately.
-    viewer = make_napari_viewer(show=True)
-    shapes = [(3200, 3200), (1600, 1600), (1000, 1000)]
-    data = [np.empty(s) for s in shapes]
-    layer = viewer.add_image(data, multiscale=True)
-    qt_viewer = viewer.window._qt_viewer
-    # Canvas size is in screen pixels.
-    qt_viewer.canvas.size = (canvas_size, canvas_size)
-    # Vispy camera rect is (left, top, width, height) in scene coordinates.
-    # In this case scene coordinates are the same as data/world coordinates
-    # the layer is 2D and data-to-world is identity.
-    qt_viewer.view.camera.rect = (-0.5, -0.5, 3200, 3200)
-
-    qt_viewer.on_draw(None)
-
-    assert layer.data_level == expected_data_level
-
-
-# Use camera rect size in scene coordinate space to make transforms
-# easier to reason about.
-@skip_on_win_ci
-@skip_local_popups
-@pytest.mark.parametrize(
-    ('camera_size', 'expected_data_level'), ((1600, 0), (3400, 1), (6600, 2))
-)
-def test_multiscale_variable_camera_zoom_fixed_canvas_size(
-    make_napari_viewer, camera_size, expected_data_level
-):
-    # Need to show viewer to ensure that pixel_scale and physical_size
-    # get set appropriately.
-    viewer = make_napari_viewer(show=True)
-    shapes = [(3200, 3200), (1600, 1600), (800, 800)]
-    data = [np.empty(s) for s in shapes]
-    layer = viewer.add_image(data, multiscale=True)
-    qt_viewer = viewer.window._qt_viewer
-    # Canvas size is in screen pixels.
-    qt_viewer.canvas.size = (1600, 1600)
-    # Vispy camera rect is (left, top, width, height) in scene coordinates.
-    # In this case scene coordinates are the same as data/world coordinates
-    # the layer is 2D and data-to-world is identity.
-    camera_center = 1599.5
-    camera_left = camera_center - (camera_size / 2)
-    camera_top = camera_left
-    qt_viewer.view.camera.rect = (
-        camera_left,
-        camera_top,
-        camera_size,
-        camera_size,
-    )
-
-    qt_viewer.on_draw(None)
-
-    assert layer.data_level == expected_data_level
