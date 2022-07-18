@@ -726,10 +726,10 @@ class QtViewer(QSplitter):
         dlg.setHistory(hist)
 
         folder = dlg.getExistingDirectory(
-            parent=self,
-            caption=trans._('Select folder...'),
-            directory=hist[0],  # home dir by default
-            options=(
+            self,
+            trans._('Select folder...'),
+            hist[0],  # home dir by default
+            (
                 QFileDialog.DontUseNativeDialog
                 if in_ipython()
                 else QFileDialog.Options()

@@ -88,7 +88,7 @@ class QtBaseImageControls(QtLayerControls):
             if name in self.layer.colormaps:
                 comboBox.addItem(cm._display_name, name)
 
-        comboBox.activated[str].connect(self.changeColor)
+        comboBox.currentTextChanged.connect(self.changeColor)
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider

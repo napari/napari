@@ -42,7 +42,7 @@ class QtSurfaceControls(QtBaseImageControls):
             SHADING_TRANSLATION[self.layer.shading]
         )
         shading_comboBox.setCurrentIndex(index)
-        shading_comboBox.activated[str].connect(self.changeShading)
+        shading_comboBox.currentTextChanged.connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
 
         self.layout().addRow(trans._('opacity:'), self.opacitySlider)
