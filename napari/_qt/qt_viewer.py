@@ -5,7 +5,7 @@ import traceback
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
-from weakref import WeakSet, ref
+from weakref import ReferenceType, WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -182,7 +182,7 @@ class QtViewer(QSplitter):
 
     _instances = WeakSet()
 
-    current_viewer = ref(None)
+    current_viewer: ReferenceType[QtViewer] = lambda: None
 
     def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
@@ -1019,7 +1019,8 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self._process_mouse_event(mouse_move_callbacks, event)
-        QtViewer.current_viewer = ref(self)
+        if self.isActiveWindow():
+            QtViewer.current_viewer = ref(self)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
