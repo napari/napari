@@ -118,7 +118,7 @@ class LayerDelegate(QStyledItemDelegate):
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
         thumb_rect = option.rect.translated(-2, 2)
-        h = index.data(Qt.SizeHintRole).height() - 4
+        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
         thumb_rect.setWidth(h)
         thumb_rect.setHeight(h)
         image = index.data(ThumbnailRole)
@@ -135,7 +135,9 @@ class LayerDelegate(QStyledItemDelegate):
         self.get_layer_icon(option, index)
         editor = super().createEditor(parent, option, index)
         # make sure editor has same alignment as the display name
-        editor.setAlignment(Qt.Alignment(index.data(Qt.TextAlignmentRole)))
+        editor.setAlignment(
+            Qt.Alignment(index.data(Qt.ItemDataRole.TextAlignmentRole))
+        )
         return editor
 
     def editorEvent(
@@ -151,7 +153,7 @@ class LayerDelegate(QStyledItemDelegate):
         """
         if (
             event.type() == event.MouseButtonRelease
-            and event.button() == Qt.RightButton
+            and event.button() == Qt.MouseButton.RightButton
         ):
             pnt = (
                 event.globalPosition().toPoint()
@@ -171,12 +173,18 @@ class LayerDelegate(QStyledItemDelegate):
                 style.SE_ItemViewItemCheckIndicator, option, option.widget
             )
             if check_rect.contains(event.pos()):
-                cur_state = index.data(Qt.CheckStateRole)
-                if model.flags(index) & Qt.ItemIsUserTristate:
+                cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
+                if model.flags(index) & Qt.ItemFlag.ItemIsUserTristate:
                     state = Qt.CheckState((cur_state + 1) % 3)
                 else:
-                    state = Qt.Unchecked if cur_state else Qt.Checked
-                return model.setData(index, state, Qt.CheckStateRole)
+                    state = (
+                        Qt.CheckState.Unchecked
+                        if cur_state
+                        else Qt.CheckState.Checked
+                    )
+                return model.setData(
+                    index, state, Qt.ItemDataRole.CheckStateRole
+                )
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
 

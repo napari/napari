@@ -457,7 +457,8 @@ def ensure_layer_data_tuple(val):
 
 
 def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
-    if isinstance(val, list) and len(val):
+    # allow empty list to be returned but do nothing in that case
+    if isinstance(val, list):
         with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
     raise TypeError(

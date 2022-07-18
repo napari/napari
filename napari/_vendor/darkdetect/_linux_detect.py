@@ -18,7 +18,7 @@ def theme():
         return 'Light'
     # we have a string, now remove start and end quote
     theme = stdout.lower().strip()[1:-1]
-    if theme.endswith('-dark'):
+    if '-dark' in theme.lower():
         return 'Dark'
     else:
         return 'Light'
@@ -36,4 +36,4 @@ def listener(callback: typing.Callable[[str], None]) -> None:
         universal_newlines=True,
     ) as p:
         for line in p.stdout:
-            callback('Dark' if line.strip().removeprefix("gtk-theme: '").removesuffix("'").endswith('-dark') else 'Light')
+            callback('Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower() else 'Light')

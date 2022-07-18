@@ -1,3 +1,4 @@
+import contextlib
 import re
 from collections import OrderedDict
 
@@ -75,11 +76,11 @@ class ShortcutEditor(QWidget):
 
         # Set up dictionary for layers and associated actions.
         all_actions = action_manager._actions.copy()
-        self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = []
+        self.key_bindings_strs[self.VIEWER_KEYBINDINGS] = {}
 
         for layer in layers:
             if len(layer.class_keymap) == 0:
-                actions = []
+                actions = {}
             else:
                 actions = action_manager._get_layer_actions(layer)
                 for name, action in actions.items():
@@ -165,20 +166,13 @@ class ShortcutEditor(QWidget):
         header_strs[self._shortcut_col] = trans._('Keybinding')
 
         # If no layer_str, then set the page to the viewer keybindings page.
-        if layer_str == '':
+        if not layer_str:
             layer_str = self.VIEWER_KEYBINDINGS
 
         # If rebuilding the table, then need to disconnect the connection made
         # previously as well as clear the table contents.
-        try:
+        with contextlib.suppress(TypeError, RuntimeError):
             self._table.cellChanged.disconnect(self._set_keybinding)
-        except TypeError:
-            # if building the first time, the cells are not yet connected so this would fail.
-            pass
-        except RuntimeError:
-            # Needed to pass some tests.
-            pass
-
         self._table.clearContents()
 
         # Table styling set up.
@@ -216,13 +210,13 @@ class ShortcutEditor(QWidget):
                 shortcuts = action_manager._shortcuts.get(action_name, [])
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
-                item.setFlags(Qt.NoItemFlags)
+                item.setFlags(Qt.ItemFlag.NoItemFlags)
                 self._table.setItem(row, self._action_name_col, item)
 
                 # Create empty item in order to make sure this column is not
                 # selectable/editable.
                 item = QTableWidgetItem("")
-                item.setFlags(Qt.NoItemFlags)
+                item.setFlags(Qt.ItemFlag.NoItemFlags)
                 self._table.setItem(row, self._icon_col, item)
 
                 # Set the shortcuts in table.
@@ -246,7 +240,7 @@ class ShortcutEditor(QWidget):
 
             self._table.setColumnHidden(self._action_col, True)
             item = QTableWidgetItem(trans._('No key bindings'))
-            item.setFlags(Qt.NoItemFlags)
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._table.setItem(0, 0, item)
 
     def _set_keybinding(self, row, col):
@@ -316,7 +310,7 @@ class ShortcutEditor(QWidget):
                         )
                         self._show_warning(new_shortcut, action, row, message)
 
-                        if len(current_shortcuts) > 0:
+                        if current_shortcuts:
                             # If there was a shortcut set originally, then format it and reset the text.
                             format_shortcut = Shortcut(
                                 current_shortcuts[0]
@@ -350,7 +344,7 @@ class ShortcutEditor(QWidget):
 
                 #  Unbind current action from shortcuts in action manager.
                 action_manager.unbind_shortcut(current_action)
-
+                new_value_dict = {}
                 if new_shortcut != "":
                     # Bind the new shortcut.
                     try:
@@ -402,10 +396,9 @@ class ShortcutEditor(QWidget):
                     # Update text to formated shortcut.
                     current_item.setText(format_shortcut)
 
-                else:
+                elif action_manager._shortcuts[current_action]:
                     # There is not a new shortcut to bind.  Keep track of it.
-                    if action_manager._shortcuts[current_action] != "":
-                        new_value_dict = {current_action: [""]}
+                    new_value_dict = {current_action: [""]}
 
                 if new_value_dict:
                     # Emit signal when new value set for shortcut.
@@ -492,9 +485,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for row, (action_name, action) in enumerate(
-            action_manager._actions.items()
-        ):
+        for action_name, action in action_manager._actions.items():
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 
@@ -504,20 +495,22 @@ class ShortcutEditor(QWidget):
 class ShortcutDelegate(QItemDelegate):
     """Delegate that handles when user types in new shortcut."""
 
-    def createEditor(self, QWidget, QStyleOptionViewItem, QModelIndex):
-        self._editor = EditorWidget(QWidget)
+    def createEditor(self, widget, style_option, model_index):
+        self._editor = EditorWidget(widget)
         return self._editor
 
-    def setEditorData(self, widget, QModelIndex):
-        text = QModelIndex.model().data(QModelIndex, Qt.EditRole)
+    def setEditorData(self, widget, model_index):
+        text = model_index.model().data(model_index, Qt.ItemDataRole.EditRole)
         widget.setText(str(text) if text else "")
 
-    def updateEditorGeometry(self, QWidget, QStyleOptionViewItem, QModelIndex):
-        QWidget.setGeometry(QStyleOptionViewItem.rect)
+    def updateEditorGeometry(self, widget, style_option, model_index):
+        widget.setGeometry(style_option.rect)
 
-    def setModelData(self, widget, QAbstractItemModel, QModelIndex):
+    def setModelData(self, widget, abstract_item_model, model_index):
         text = widget.text()
-        QAbstractItemModel.setData(QModelIndex, text, Qt.EditRole)
+        abstract_item_model.setData(
+            model_index, text, Qt.ItemDataRole.EditRole
+        )
 
 
 class EditorWidget(QLineEdit):
@@ -528,10 +521,10 @@ class EditorWidget(QLineEdit):
 
     def event(self, event):
         """Qt method override."""
-        if event.type() == QEvent.ShortcutOverride:
+        if event.type() == QEvent.Type.ShortcutOverride:
             self.keyPressEvent(event)
             return True
-        elif event.type() in [QEvent.KeyPress, QEvent.Shortcut]:
+        elif event.type() in [QEvent.Type.KeyPress, QEvent.Type.Shortcut]:
             return True
         else:
             return super().event(event)
@@ -539,17 +532,17 @@ class EditorWidget(QLineEdit):
     def keyPressEvent(self, event):
         """Qt method override."""
         event_key = event.key()
-        if not event_key or event_key == Qt.Key_unknown:
+        if not event_key or event_key == Qt.Key.Key_unknown:
             return
 
         if event_key in [
-            Qt.Key_Control,
-            Qt.Key_Shift,
-            Qt.Key_Alt,
-            Qt.Key_Meta,
-            Qt.Key_Return,
-            Qt.Key_Tab,
-            Qt.Key_CapsLock,
+            Qt.Key.Key_Control,
+            Qt.Key.Key_Shift,
+            Qt.Key.Key_Alt,
+            Qt.Key.Key_Meta,
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Tab,
+            Qt.Key.Key_CapsLock,
         ]:
             # Do not allow user to set these keys as shortcut.
             return

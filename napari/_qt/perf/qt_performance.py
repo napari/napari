@@ -36,8 +36,8 @@ class TextLog(QTextEdit):
         time_ms : float
             Duration of the timer in milliseconds.
         """
-        self.moveCursor(QTextCursor.End)
-        self.setTextColor(Qt.red)
+        self.moveCursor(QTextCursor.MoveOperation.End)
+        self.setTextColor(Qt.GlobalColor.red)
         self.insertPlainText(
             trans._("{time_ms:5.0f}ms {name}\n", time_ms=time_ms, name=name)
         )
