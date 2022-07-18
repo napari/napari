@@ -110,24 +110,22 @@ class QtPointsControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-        symbol_comboBox = QComboBox()
+        self.symbolComboBox = QComboBox()
         current_index = 0
         for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
             data = data.value
-            symbol_comboBox.addItem(text, data)
+            self.symbolComboBox.addItem(text, data)
 
             if data == self.layer.symbol:
                 current_index = index
 
-        symbol_comboBox.setCurrentIndex(current_index)
-        symbol_comboBox.activated[str].connect(self.changeSymbol)
-        self.symbolComboBox = symbol_comboBox
+        self.symbolComboBox.setCurrentIndex(current_index)
+        self.symbolComboBox.currentTextChanged.connect(self.changeSymbol)
 
-        out_of_slice_cb = QCheckBox()
-        out_of_slice_cb.setToolTip(trans._('Out of slice display'))
-        out_of_slice_cb.setChecked(self.layer.out_of_slice_display)
-        out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
-        self.outOfSliceCheckBox = out_of_slice_cb
+        self.outOfSliceCheckBox = QCheckBox()
+        self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
+        self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
+        self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
 
         self.select_button = QtModeRadioButton(
             layer,
@@ -158,11 +156,10 @@ class QtPointsControls(QtLayerControls):
             'napari:delete_selected_points', self.delete_button
         )
 
-        text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip(trans._('toggle text visibility'))
-        text_disp_cb.setChecked(self.layer.text.visible)
-        text_disp_cb.stateChanged.connect(self.change_text_visibility)
-        self.textDispCheckBox = text_disp_cb
+        self.textDispCheckBox = QCheckBox()
+        self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
+        self.textDispCheckBox.setChecked(self.layer.text.visible)
+        self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -244,7 +241,8 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating whether to render out of slice.
         """
-        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
+        # needs cast to bool for Qt6
+        self.layer.out_of_slice_display = bool(state)
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
@@ -254,7 +252,8 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        self.layer.text.visible = state == Qt.CheckState.Checked
+        # needs cast to bool for Qt6
+        self.layer.text.visible = bool(state)
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""
