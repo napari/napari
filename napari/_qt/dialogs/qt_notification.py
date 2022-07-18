@@ -412,6 +412,7 @@ class NapariQtNotification(QDialog):
     @classmethod
     @ensure_main_thread
     def show_notification(cls, notification: Notification):
+        from ..._qt.qt_main_window import _QtMainWindow
         from ...settings import get_settings
 
         settings = get_settings()
@@ -421,6 +422,7 @@ class NapariQtNotification(QDialog):
         if (
             notification.severity
             >= settings.application.gui_notification_level
+            and _QtMainWindow.current()
         ):
             cls.from_notification(notification).show()
 
