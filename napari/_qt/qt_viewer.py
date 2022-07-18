@@ -332,12 +332,12 @@ class QtViewer(QSplitter):
     def _leave_canvas(self):
         """disable status on canvas leave"""
         self.viewer.status = ""
-        self.viewer._mouse_over_canvas = False
+        self.viewer.mouse_over_canvas = False
 
     def _enter_canvas(self):
         """enable status on canvas enter"""
         self.viewer.status = "Ready"
-        self.viewer._mouse_over_canvas = True
+        self.viewer.mouse_over_canvas = True
 
     def _ensure_connect(self):
         # lazy load console
