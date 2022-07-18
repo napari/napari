@@ -21,6 +21,8 @@ class ModifiedScrollBar(QScrollBar):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
 
+        # pos is for Qt5 e.position().toPoint() is for QT6
+        # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#pos
         point = (
             event.position().toPoint()
             if hasattr(event, "position")

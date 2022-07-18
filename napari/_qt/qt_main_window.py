@@ -148,6 +148,8 @@ class _QtMainWindow(QMainWindow):
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
+            # globalPos is for Qt5 e.globalPosition().toPoint() is for QT6
+            # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
             pnt = (
                 e.globalPosition().toPoint()
                 if hasattr(e, "globalPosition")

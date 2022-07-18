@@ -24,13 +24,8 @@ from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS_DISP = 'napari'
-    BUILTINS_NAME = 'builtins'
-except ImportError:
-    BUILTINS_DISP = BUILTINS_NAME = 'builtins'
+BUILTINS_DISP = 'napari'
+BUILTINS_NAME = 'builtins'
 
 
 def test_qt_viewer(make_napari_viewer):
