@@ -88,7 +88,9 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
-    def get_layer_icon(self, option, index):
+    def get_layer_icon(
+        self, option: QStyleOptionViewItem, index: QtCore.QModelIndex
+    ):
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
         if layer is None:
@@ -104,7 +106,7 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.Background).red()
+        bg = option.palette.color(option.palette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = option.Right  # put icon on the right
@@ -153,9 +155,13 @@ class LayerDelegate(QStyledItemDelegate):
             event.type() == event.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
-            self.show_context_menu(
-                index, model, event.globalPos(), option.widget
+            pnt = (
+                event.globalPosition().toPoint()
+                if hasattr(event, "globalPosition")
+                else event.globalPos()
             )
+
+            self.show_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty
