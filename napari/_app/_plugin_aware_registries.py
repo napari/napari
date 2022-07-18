@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import contextlib
-from typing import List, Optional, Union
+from itertools import chain
+from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
 from app_model.registries import CommandsRegistry, MenusRegistry
 from app_model.registries._commands_reg import _RegisteredCommand  # FIXME
@@ -105,15 +106,28 @@ class PluginAwareMenusRegistry(MenusRegistry):
             True for _ in plugin_manager.iter_menu(id)
         ) or super().__contains__(id)
 
+    def __iter__(self) -> Iterator[Tuple[str, Iterable[MenuOrSubmenu]]]:
+        for menu_id, items in super().__iter__():
+            plugin_items = plugin_manager.iter_menu(menu_id)
+            converted = (_npe2_menu_to_app_model(i) for i in plugin_items)
+            yield (menu_id, chain(items, converted))
+
     def get_menu(
         self, menu_id: str, include_plugins: bool = True
     ) -> List[MenuOrSubmenu]:
-        items = self._menu_items.get(menu_id, [])
+        try:
+            items = super().get_menu(menu_id)
+        except KeyError:
+            items = []
+
+        # TODO: this works, but is not very efficient. add some caching
+        # with cache invalidation on plugin registration events.
         if include_plugins:
             items.extend(
                 _npe2_menu_to_app_model(i)
                 for i in plugin_manager.iter_menu(menu_id)
             )
+
         if not items:
             raise KeyError("No menu found with id: {menu_id}")
         return items
