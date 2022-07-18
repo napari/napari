@@ -79,16 +79,12 @@ class NapariQtNotification(QDialog):
         severity: Union[str, NotificationSeverity] = 'WARNING',
         source: Optional[str] = None,
         actions: ActionSequence = (),
+        parent=None,
     ):
-        super().__init__()
+        super().__init__(parent=parent)
 
-        from ..qt_main_window import _QtMainWindow
-
-        current_window = _QtMainWindow.current()
-        if current_window is not None:
-            canvas = current_window._qt_viewer._canvas_overlay
-            self.setParent(canvas)
-            canvas.resized.connect(self.move_to_bottom_right)
+        if parent and hasattr(parent, 'resized'):
+            parent.resized.connect(self.move_to_bottom_right)
 
         self.setupUi()
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -354,15 +350,15 @@ class NapariQtNotification(QDialog):
 
     @classmethod
     def from_notification(
-        cls, notification: Notification
+        cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
 
         from ...utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
 
-            def show_tb(parent):
-                tbdialog = QDialog(parent=parent.parent())
+            def show_tb(parent_):
+                tbdialog = QDialog(parent=parent_.parent())
                 tbdialog.setModal(True)
                 # this is about the minimum width to not get rewrap
                 # and the minimum height to not have scrollbar
@@ -407,6 +403,7 @@ class NapariQtNotification(QDialog):
             severity=notification.severity,
             source=notification.source,
             actions=actions,
+            parent=parent,
         )
 
     @classmethod
@@ -424,7 +421,8 @@ class NapariQtNotification(QDialog):
             >= settings.application.gui_notification_level
             and _QtMainWindow.current()
         ):
-            cls.from_notification(notification).show()
+            canvas = _QtMainWindow.current()._qt_viewer._canvas_overlay
+            cls.from_notification(notification, canvas).show()
 
 
 def _debug_tb(tb):
