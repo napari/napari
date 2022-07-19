@@ -41,7 +41,6 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
         # see: https://github.com/napari/napari/issues/1347
         from scipy import stats  # noqa: F401
 
-        print("__getattr__", module_name, name)
         if name in submodules:
             return import_module(f'{module_name}.{name}')
         elif name in attr_to_modules:
