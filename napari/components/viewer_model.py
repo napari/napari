@@ -395,8 +395,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
+        if new_point is not None:
+            self.dims.set_point(range(self.dims.ndim), new_point)
         self.events.layers_change()
-        return new_point
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -509,16 +510,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.name.connect(self.layers._update_name)
 
         # Update dims and grid model
-        new_point = self._on_layers_change()
+        self._on_layers_change()
         self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
             self.reset_view()
-
-        if new_point is not None:
-            self.dims.set_point(range(self.dims.ndim), new_point)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -539,11 +537,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        new_point = self._on_layers_change()
+        self._on_layers_change()
         self._on_grid_change()
-
-        if new_point is not None:
-            self.dims.set_point(range(self.dims.ndim), new_point)
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
