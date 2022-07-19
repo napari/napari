@@ -365,7 +365,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = len(ranges)
             self.dims.ndim = ndim
             self.dims.set_range(range(ndim), ranges)
-            is_in_range = any(
+            is_in_range = all(
                 [
                     ranges[idx][0] <= prev_point[idx] < ranges[idx][1]
                     for idx in range(len(prev_point))
