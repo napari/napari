@@ -181,8 +181,17 @@ def test_add_points_layer_with_different_range_updates_all_slices():
 
 def test_last_point_is_visible_in_viewport():
     viewer = ViewerModel()
+
     points = viewer.add_points([[0, 1, 1], [1, 2, 2]])
-    np.testing.assert_array_equal(points._indices_view, [1])
     viewer.dims.set_current_step(0, 1)
+    np.testing.assert_array_equal(points._indices_view, [1])
     points.data = [[0, 1, 1]]
     np.testing.assert_array_equal(points._indices_view, [0])
+    viewer.layers.remove(points)
+
+    points = viewer.add_points([[0, 1, 1], [1, 2, 2]])
+    viewer.dims.set_current_step(0, 0)
+    np.testing.assert_array_equal(points._indices_view, [0])
+    points.data = [[1, 2, 2]]
+    np.testing.assert_array_equal(points._indices_view, [0])
+    viewer.layers.remove(points)

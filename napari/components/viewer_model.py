@@ -360,32 +360,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            prev_point = self.dims.point
             ranges = self.layers._ranges
+            # If the point of an axis is outside of the upper current range,
+            # set it to the layers range max value. dims.set_current_step
+            # accounts for the clamping of the lower limit.
+            prev_point = [
+                range_val[1] - 1 if point_val >= range_val[1] else point_val
+                for point_val, range_val in zip(self.dims.point, ranges)
+            ]
             ndim = len(ranges)
             self.dims.ndim = ndim
             self.dims.set_range(range(ndim), ranges)
-            if len(prev_point) == len(self.dims.point):
-                is_in_range = all(
-                    [
-                        range_vals[0] <= point_vals < range_vals[1]
-                        for point_vals, range_vals in zip(prev_point, ranges)
-                    ]
-                )
-            else:
-                is_in_range = False
 
-            if not is_in_range:
-                new_point = [
-                    self.rounded_division(*_range) for _range in ranges
+            if ndim < len(prev_point):
+                new_point = prev_point[:ndim]
+            elif ndim > len(prev_point):
+                mid_points = [
+                    self.rounded_division(*_range)
+                    for _range in ranges[len(prev_point) :]
                 ]
-
-            elif self.dims.point != prev_point:
-                new_point = (
-                    prev_point[:ndim]
-                    if ndim < len(prev_point)
-                    else np.append(prev_point, (0,) * (ndim - len(prev_point)))
-                )
+                new_point = np.append(prev_point, mid_points)
+            else:
+                new_point = prev_point
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -539,6 +535,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         self._on_layers_change()
         self._on_grid_change()
+
+        if len(self.layers) == 1:
+            self._update_layers(layers=[self.layers[0]])
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
