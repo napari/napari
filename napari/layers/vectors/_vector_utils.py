@@ -185,8 +185,10 @@ def fix_data_vectors(
     if ndim is not None and ndim != data_ndim:
         raise ValueError(
             trans._(
-                "Vectors dimensions must be equal to ndim",
+                "Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})",
                 deferred=True,
+                data_ndim=data_ndim,
+                ndim=ndim,
             )
         )
     ndim = data_ndim

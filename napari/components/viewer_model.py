@@ -137,7 +137,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     _ctx: Context
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
-    _mouse_over_canvas: bool = False
+    mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
@@ -428,7 +428,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         This is generally used as a callback when cursor.position is updated.
         """
         # Update status and help bar based on active layer
-        if not self._mouse_over_canvas:
+        if not self.mouse_over_canvas:
             return
         active = self.layers.selection.active
         if active is not None:
