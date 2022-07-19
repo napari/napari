@@ -284,7 +284,7 @@ Here is a `magicgui` example (but could be easily generalised to native `qt` bas
 ```python
 from magicgui import magicgui
 
-from napari.qt import get_stylesheet
+from napari.qt import get_current_stylesheet
 from napari.settings import get_settings
 
 def sample_add(a: int, b: int) -> int:
@@ -295,7 +295,7 @@ def sample_add(a: int, b: int) -> int:
     return a + b
 
 def change_style():
-    sample_add.native.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
+    sample_add.native.setStyleSheet(get_current_stylesheet())
 
 
 get_settings().appearance.events.theme.connect(change_style)
