@@ -367,12 +367,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.set_range(range(ndim), ranges)
             is_in_range = all(
                 [
-                    ranges[idx][0] <= prev_point[idx] < ranges[idx][1]
-                    for idx in range(len(prev_point))
+                    range_vals[0] <= point_vals < range_vals[1]
+                    for point_vals, range_vals in zip(prev_point, ranges)
                 ]
             )
 
-            if not is_in_range:
+            if not (is_in_range and len(prev_point) == len(self.dims.point)):
                 midpoint = [
                     self.rounded_division(*_range) for _range in ranges
                 ]
