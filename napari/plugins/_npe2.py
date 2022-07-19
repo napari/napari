@@ -15,13 +15,13 @@ from typing import (
 
 from app_model.types import CommandRule, MenuItem, MenuOrSubmenu, SubmenuItem
 from npe2 import io_utils
-from npe2 import plugin_manager
 from npe2 import plugin_manager as pm
 from npe2.manifest import contributions
 
 from ..utils.translations import trans
 
 if TYPE_CHECKING:
+    from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
@@ -310,16 +310,9 @@ def _on_plugins_registered(manifests: Set[PluginManifest]):
     from .._app import app
 
     for mf in manifests:
-        # FIXME: I think this should be app.register_action instead
-        to_add: List[Tuple[str, MenuOrSubmenu]] = []
-        for menu_id, items in mf.contributions.menus.items():
-            for item in items:
-                app_model_item = _npe2_menu_to_app_model(item)
-                to_add.append((menu_id, app_model_item))
-
-        if to_add:
-            dispose = app.menus.append_menu_items(to_add)
-            plugin_manager.get_context(mf.name).register_disposable(dispose)
+        if actions := _npe2_manifest_to_actions(mf):
+            disposable = app.register_actions(actions)
+            pm.get_context(mf.name).register_disposable(disposable)
 
 
 def index_npe1_adapters():
@@ -327,25 +320,45 @@ def index_npe1_adapters():
     pm.index_npe1_adapters()
 
 
-def _partition_group_order(
-    group: Optional[str],
+def _npe2_manifest_to_actions(mf: PluginManifest) -> List[Action]:
+    from app_model.types import Action, MenuRule
+
+    cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
+    submenus: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
+    for menu_id, items in mf.contributions.menus.items():
+        for item in items:
+            rule = MenuRule(id=menu_id, **_when_group_order(item))
+            if isinstance(item, contributions.MenuCommand):
+                cmds[item.command].append(rule)
+            else:
+                submenus[item.submenu].append(rule)
+
+    return [
+        Action(
+            id=cmd.id,
+            title=cmd.title,
+            category=cmd.category,
+            tooltip=cmd.short_title or cmd.title,
+            icon=cmd.icon,
+            enablement=cmd.enablement,
+            callback=cmd.python_name,
+            menus=cmds.get(cmd.id),
+            keybindings=[],
+        )
+        for cmd in mf.contributions.commands or ()
+    ]
+
+
+def _when_group_order(
+    menu_item: contributions.MenuItem,
 ) -> dict[str, Union[str, float, None]]:
-    """Split a npe2 group string into a dict of group and order.
-    Examples
-    --------
-    >>> _partition_group_order("my_group@4")
-    {"group": "my_group", "order": 4}
-    >>> _partition_group_order("my_group")
-    {"group": "my_group", "order": None}
-    >>> _partition_group_order("")
-    {"group": None, "order": None}
-    """
-    group, _, _order = (group or '').partition("@")
+    """Extract when/group/order from an npe2 Submenu or MenuCommand."""
+    group, _, _order = (menu_item.group or '').partition("@")
     try:
         order: Optional[float] = float(_order)
     except ValueError:
         order = None
-    return {'group': group or None, 'order': order}
+    return {'when': menu_item.when, 'group': group or None, 'order': order}
 
 
 def _npe2_command_to_app_model(
@@ -364,13 +377,12 @@ def _npe2_command_to_app_model(
 
 def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
     """Convert a npe2 submenu contribution to an app_model SubmenuItem."""
-    contrib = plugin_manager.get_submenu(subm.submenu)
+    contrib = pm.get_submenu(subm.submenu)
     return SubmenuItem(
         submenu=contrib.id,
         title=contrib.label,
         icon=contrib.icon,
-        when=subm.when,
-        **_partition_group_order(subm.group),
+        **_when_group_order(subm.group),
         # enablement= ??  npe2 doesn't have this, but app_model does
     )
 
@@ -379,11 +391,10 @@ def _npe2_menu_cmd_to_app_model(
     menu_cmd: contributions.MenuCommand,
 ) -> MenuItem:
     """Convert a npe2 menu command contribution to an app_model MenuItem."""
-    contrib = plugin_manager.get_command(menu_cmd.command)
+    contrib = pm.get_command(menu_cmd.command)
     return MenuItem(
         command=_npe2_command_to_app_model(contrib),
-        when=menu_cmd.when,
-        **_partition_group_order(menu_cmd.group),
+        **_when_group_order(menu_cmd.group),
     )
 
 

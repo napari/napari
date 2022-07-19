@@ -33,7 +33,6 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
@@ -1041,6 +1040,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
+
+        from ..plugins.utils import get_potential_readers, get_preferred_reader
 
         readers = get_potential_readers(_path)
         if not readers:
