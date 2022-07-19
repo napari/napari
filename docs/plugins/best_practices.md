@@ -260,13 +260,13 @@ class MyInputDialog(QDialog):
         self.cancel_btn.clicked.connect(self.reject)
         
 class MyWidget(QWidget):
-  def __init__(self, viewer: "napari.Viewer"):
+    def __init__(self, viewer: "napari.Viewer"):
         super().__init__()
         self.viewer = viewer
         self.open_dialog = QPushButton("Open dialog")
         self.open_dialog.clicked.connect(self.open_dialog_clicked)
         
-    def open_dialog(self):
+    def open_dialog_clicked(self):
         # setting parent to self allows the dialog to inherit its 
         # style from the viewer by pass self as argument
         dialog = MyInputDialog(self)  
