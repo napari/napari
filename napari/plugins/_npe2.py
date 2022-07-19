@@ -13,7 +13,7 @@ from typing import (
     Union,
 )
 
-from app_model.types import CommandRule, MenuItem, MenuOrSubmenu, SubmenuItem
+from app_model.types import SubmenuItem
 from npe2 import io_utils
 from npe2 import plugin_manager as pm
 from npe2.manifest import contributions
@@ -279,7 +279,7 @@ def index_npe1_adapters():
     pm.index_npe1_adapters()
 
 
-def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     """Callback when any npe2 plugins are enabled or disabled.
 
     'Disabled' means the plugin remains installed, but it cannot be activated,
@@ -294,43 +294,72 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     to_disable.update(disabled)
     plugin_settings.disabled_plugins = to_disable
 
+    for plugin_name in enabled:
+        # technically, you can enable (i.e. "undisable") a plugin that isn't
+        # currently registered/available.  So we check to make sure this is
+        # actually a registered plugin.
+        if plugin_name in pm.instance():
+            _register_manifest_actions(pm.get_manifest(plugin_name))
+
+    # TODO: after app-model, these QMenus will be evented and self-updating
+    # and we can remove this... but `_register_manifest_actions` will need to
+    # add the actions file and plugins menus (since we don't require plugins to
+    # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
 
 
-def _on_plugin_activation_change(activated: Set[str], deactivated: Set[str]):
-    """Callback when any npe2 plugins are activated or deactivated.
-
-    'Activated' means the plugin has been *imported*, and its
-    `on_activate` function was called.
-    """
-
-
-def _on_plugins_registered(manifests: Set[PluginManifest]):
+def on_plugins_registered(manifests: Set[PluginManifest]):
     """Callback when any npe2 plugins are registered.
 
     'Registered' means that a manifest has been provided or discovered.
     """
+    for mf in manifests:
+        if not pm.is_disabled(mf.name):
+            _register_manifest_actions(mf)
+
+
+def _register_manifest_actions(manifest: PluginManifest) -> None:
+    """Gather and register actions from a manifest.
+
+    This is called when a plugin is registered or enabled and it adds the
+    plugin's menus and submenus to the app model registry.
+    """
     from .._app import app
 
-    for mf in manifests:
-        actions, submenus = _npe2_manifest_to_actions(mf)
-        if actions:
-            disposable = app.register_actions(actions)
-            pm.get_context(mf.name).register_disposable(disposable)
-        if submenus:
-            disposable = app.menus.append_menu_items(submenus)
-            pm.get_context(mf.name).register_disposable(disposable)
+    actions, submenus = _npe2_manifest_to_actions(manifest)
+    if actions:
+        disposable = app.register_actions(actions)
+        pm.get_context(manifest.name).register_disposable(disposable)
+    if submenus:
+        disposable = app.menus.append_menu_items(submenus)
+        pm.get_context(manifest.name).register_disposable(disposable)
 
 
-def _npe2_manifest_to_actions(mf: PluginManifest) -> Tuple[List[Action], List]:
-    """Get actions and submenus (in app_model types) from a npe2 manifest."""
+def _is_menu_contributable(menu_id) -> bool:
+    """Return True if the given menu_id is a menu that plugins can contribute to."""
+    # here is where we can check whether the menu id is "contributable"
+    # or not.  i.e. if they're trying to add to the File menu, we skip it here.
+    from .._app.constants import MenuId
+
+    if menu_id.startswith("napari/"):
+        # emit a warning?
+        return menu_id in {MenuId.LAYERLIST_CONTEXT.value}
+    return True
+
+
+def _npe2_manifest_to_actions(
+    mf: PluginManifest,
+) -> Tuple[List[Action], List[Tuple[str, SubmenuItem]]]:
+    """Gather actions and submenus from a npe2 manifest, export app_model types."""
     from app_model.types import Action, MenuRule
 
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []
     for menu_id, items in mf.contributions.menus.items():
+        if not _is_menu_contributable(menu_id):
+            continue  # pragma: no cover
         for item in items:
             if isinstance(item, contributions.MenuCommand):
                 rule = MenuRule(id=menu_id, **_when_group_order(item))
@@ -367,20 +396,6 @@ def _when_group_order(
     return {'when': menu_item.when, 'group': group or None, 'order': order}
 
 
-def _npe2_command_to_app_model(
-    cmd: contributions.CommandContribution,
-) -> CommandRule:
-    """Convert a npe2 command contribution to an app_model command rule."""
-    return CommandRule(
-        id=cmd.id,
-        title=cmd.title,
-        category=cmd.category,
-        icon=cmd.icon,
-        enablement=cmd.enablement,
-        short_title=cmd.short_title,
-    )
-
-
 def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
     """Convert a npe2 submenu contribution to an app_model SubmenuItem."""
     contrib = pm.get_submenu(subm.submenu)
@@ -391,27 +406,3 @@ def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
         **_when_group_order(subm),
         # enablement= ??  npe2 doesn't have this, but app_model does
     )
-
-
-def _npe2_menu_cmd_to_app_model(
-    menu_cmd: contributions.MenuCommand,
-) -> MenuItem:
-    """Convert a npe2 menu command contribution to an app_model MenuItem."""
-    contrib = pm.get_command(menu_cmd.command)
-    return MenuItem(
-        command=_npe2_command_to_app_model(contrib),
-        **_when_group_order(menu_cmd),
-    )
-
-
-def _npe2_menu_to_app_model(
-    npe2_item: contributions.MenuItem,
-) -> MenuOrSubmenu:
-    """Convert a npe2 MenuItem to an app_model MenuOrSubmenu.
-    just picks the appropriate function given the type of the npe2 item.
-    """
-    if isinstance(npe2_item, contributions.MenuCommand):
-        return _npe2_menu_cmd_to_app_model(npe2_item)
-    elif isinstance(npe2_item, contributions.Submenu):
-        return _npe2_submenu_to_app_model(npe2_item)
-    raise TypeError(f"Unknown npe2 MenuItem type: {type(npe2_item)}")
