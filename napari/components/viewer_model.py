@@ -355,7 +355,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return int(((min_val + max_val) / 2) / precision) * precision
 
     def _on_layers_change(self):
-        is_in_range = True
+        new_point = None
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
@@ -365,18 +365,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = len(ranges)
             self.dims.ndim = ndim
             self.dims.set_range(range(ndim), ranges)
-            is_in_range = all(
-                [
-                    range_vals[0] <= point_vals < range_vals[1]
-                    for point_vals, range_vals in zip(prev_point, ranges)
-                ]
-            )
+            if len(prev_point) == len(self.dims.point):
+                is_in_range = all(
+                    [
+                        range_vals[0] <= point_vals < range_vals[1]
+                        for point_vals, range_vals in zip(prev_point, ranges)
+                    ]
+                )
+            else:
+                is_in_range = False
 
-            if not (is_in_range and len(prev_point) == len(self.dims.point)):
-                midpoint = [
+            if not is_in_range:
+                new_point = [
                     self.rounded_division(*_range) for _range in ranges
                 ]
-                self.dims.set_point(range(len(ranges)), midpoint)
 
             elif self.dims.point != prev_point:
                 new_point = (
@@ -384,7 +386,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     if ndim < len(prev_point)
                     else np.append(prev_point, (0,) * (ndim - len(prev_point)))
                 )
-                self.dims.set_point(range(ndim), new_point)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -395,7 +396,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 list(self.cursor.position) + [0] * dim_diff
             )
         self.events.layers_change()
-        return is_in_range
+        return new_point
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -508,13 +509,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.name.connect(self.layers._update_name)
 
         # Update dims and grid model
-        self._on_layers_change()
+        new_point = self._on_layers_change()
         self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
             self.reset_view()
+
+        if new_point is not None:
+            self.dims.set_point(range(self.dims.ndim), new_point)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -535,11 +539,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        point_unchanged = self._on_layers_change()
+        new_point = self._on_layers_change()
         self._on_grid_change()
 
-        if not point_unchanged:
-            self._update_layers()
+        if new_point is not None:
+            self.dims.set_point(range(self.dims.ndim), new_point)
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
