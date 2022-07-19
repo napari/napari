@@ -158,7 +158,7 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     np.testing.assert_array_equal(later_point._indices_view, [])
     assert viewer.dims.point == (10, 5, 5)
 
-    # Removing the later point should move the dim slider to the later position and update the viewport
+    # Removing the initial point should move the dim slider to the later position and update the viewport
     viewer.layers.remove(initial_point)
     np.testing.assert_array_equal(later_point._indices_view, [0])
     assert viewer.dims.point == (14, 1, 1)
@@ -177,3 +177,12 @@ def test_add_points_layer_with_different_range_updates_all_slices():
     # Removing all points should reset the viewport
     viewer.layers.remove(earlier_point2)
     assert viewer.dims.point == (0, 0)
+
+
+def test_last_point_is_visible_in_viewport():
+    viewer = ViewerModel()
+    points = viewer.add_points([[0, 1, 1], [1, 2, 2]])
+    np.testing.assert_array_equal(points._indices_view, [1])
+    viewer.dims.set_current_step(0, 1)
+    points.data = [[0, 1, 1]]
+    np.testing.assert_array_equal(points._indices_view, [0])
