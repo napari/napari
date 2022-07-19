@@ -274,6 +274,11 @@ def get_sample_data(
     return None, avail
 
 
+def index_npe1_adapters():
+    """Tell npe2 to import and index any discovered npe1 plugins."""
+    pm.index_npe1_adapters()
+
+
 def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     """Callback when any npe2 plugins are enabled or disabled.
 
@@ -310,30 +315,30 @@ def _on_plugins_registered(manifests: Set[PluginManifest]):
     from .._app import app
 
     for mf in manifests:
-        if actions := _npe2_manifest_to_actions(mf):
+        actions, submenus = _npe2_manifest_to_actions(mf)
+        if actions:
             disposable = app.register_actions(actions)
+            pm.get_context(mf.name).register_disposable(disposable)
+        if submenus:
+            disposable = app.menus.append_menu_items(submenus)
             pm.get_context(mf.name).register_disposable(disposable)
 
 
-def index_npe1_adapters():
-    """Tell npe2 to import and index any discovered npe1 plugins."""
-    pm.index_npe1_adapters()
-
-
-def _npe2_manifest_to_actions(mf: PluginManifest) -> List[Action]:
+def _npe2_manifest_to_actions(mf: PluginManifest) -> Tuple[List[Action], List]:
+    """Get actions and submenus (in app_model types) from a npe2 manifest."""
     from app_model.types import Action, MenuRule
 
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
-    submenus: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
+    submenus: List[Tuple[str, SubmenuItem]] = []
     for menu_id, items in mf.contributions.menus.items():
         for item in items:
-            rule = MenuRule(id=menu_id, **_when_group_order(item))
             if isinstance(item, contributions.MenuCommand):
+                rule = MenuRule(id=menu_id, **_when_group_order(item))
                 cmds[item.command].append(rule)
             else:
-                submenus[item.submenu].append(rule)
+                submenus.append((menu_id, _npe2_submenu_to_app_model(item)))
 
-    return [
+    actions = [
         Action(
             id=cmd.id,
             title=cmd.title,
@@ -347,6 +352,7 @@ def _npe2_manifest_to_actions(mf: PluginManifest) -> List[Action]:
         )
         for cmd in mf.contributions.commands or ()
     ]
+    return actions, submenus
 
 
 def _when_group_order(
@@ -382,7 +388,7 @@ def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
         submenu=contrib.id,
         title=contrib.label,
         icon=contrib.icon,
-        **_when_group_order(subm.group),
+        **_when_group_order(subm),
         # enablement= ??  npe2 doesn't have this, but app_model does
     )
 
@@ -394,7 +400,7 @@ def _npe2_menu_cmd_to_app_model(
     contrib = pm.get_command(menu_cmd.command)
     return MenuItem(
         command=_npe2_command_to_app_model(contrib),
-        **_when_group_order(menu_cmd.group),
+        **_when_group_order(menu_cmd),
     )
 
 
