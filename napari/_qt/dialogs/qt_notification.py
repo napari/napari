@@ -91,7 +91,7 @@ class NapariQtNotification(QDialog):
             canvas.resized.connect(self.move_to_bottom_right)
 
         self.setupUi()
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setup_buttons(actions)
         self.setMouseTracking(True)
 
@@ -162,7 +162,7 @@ class NapariQtNotification(QDialog):
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
-            self.timer.timeout.connect(self.close)
+            self.timer.timeout.connect(self.close_with_fade)
             self.timer.start()
 
     def mouseMoveEvent(self, event):
@@ -174,12 +174,29 @@ class NapariQtNotification(QDialog):
         self.toggle_expansion()
 
     def close(self):
+        self.timer.stop()
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+        super().close()
+
+    def close_with_fade(self):
         """Fade out then close."""
+        self.timer.stop()
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+
         self.opacity_anim.setDuration(self.FADE_OUT_RATE)
         self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
-        self.opacity_anim.finished.connect(super().close)
+        self.opacity_anim.finished.connect(self.close)
+
+    def deleteLater(self) -> None:
+        """stop all animations and timers before deleting"""
+        self.opacity_anim.stop()
+        self.geom_anim.stop()
+        self.timer.stop()
+        super().deleteLater()
 
     def toggle_expansion(self):
         """Toggle the expanded state of the notification frame."""
@@ -222,7 +239,7 @@ class NapariQtNotification(QDialog):
 
     def setupUi(self):
         """Set up the UI during initialization."""
-        self.setWindowFlags(Qt.SubWindow)
+        self.setWindowFlags(Qt.WindowType.SubWindow)
         self.setMinimumWidth(self.MIN_WIDTH)
         self.setMaximumWidth(self.MIN_WIDTH)
         self.setMinimumHeight(40)
@@ -240,7 +257,9 @@ class NapariQtNotification(QDialog):
         self.severity_icon.setObjectName("severity_icon")
         self.severity_icon.setMinimumWidth(30)
         self.severity_icon.setMaximumWidth(30)
-        self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
+        self.row1.addWidget(
+            self.severity_icon, alignment=Qt.AlignmentFlag.AlignTop
+        )
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -248,28 +267,34 @@ class NapariQtNotification(QDialog):
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
         )
-        self.row1.addWidget(self.message, alignment=Qt.AlignTop)
+        self.row1.addWidget(self.message, alignment=Qt.AlignmentFlag.AlignTop)
         self.expand_button = QPushButton(self.row1_widget)
         self.expand_button.setObjectName("expand_button")
         self.expand_button.setCursor(Qt.PointingHandCursor)
         self.expand_button.setMaximumWidth(20)
         self.expand_button.setFlat(True)
 
-        self.row1.addWidget(self.expand_button, alignment=Qt.AlignTop)
+        self.row1.addWidget(
+            self.expand_button, alignment=Qt.AlignmentFlag.AlignTop
+        )
         self.close_button = QPushButton(self.row1_widget)
         self.close_button.setObjectName("close_button")
         self.close_button.setCursor(Qt.PointingHandCursor)
         self.close_button.setMaximumWidth(20)
         self.close_button.setFlat(True)
 
-        self.row1.addWidget(self.close_button, alignment=Qt.AlignTop)
+        self.row1.addWidget(
+            self.close_button, alignment=Qt.AlignmentFlag.AlignTop
+        )
         self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
         self.source_label.setObjectName("source_label")
-        self.row2.addWidget(self.source_label, alignment=Qt.AlignBottom)
+        self.row2.addWidget(
+            self.source_label, alignment=Qt.AlignmentFlag.AlignBottom
+        )
         self.row2.addStretch()
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
@@ -312,7 +337,7 @@ class NapariQtNotification(QDialog):
                 return _inner
 
             btn.clicked.connect(call_back_with_self(callback, self))
-            btn.clicked.connect(self.close)
+            btn.clicked.connect(self.close_with_fade)
             self.row2.addWidget(btn)
         if actions:
             self.row2_widget.show()
@@ -333,8 +358,6 @@ class NapariQtNotification(QDialog):
     ) -> NapariQtNotification:
 
         from ...utils.notifications import ErrorNotification
-
-        actions = notification.actions
 
         if isinstance(notification, ErrorNotification):
 
@@ -368,7 +391,9 @@ class NapariQtNotification(QDialog):
 
                 btn.clicked.connect(_enter_debug_mode)
                 tbdialog.layout().addWidget(text)
-                tbdialog.layout().addWidget(btn, 0, Qt.AlignRight)
+                tbdialog.layout().addWidget(
+                    btn, 0, Qt.AlignmentFlag.AlignRight
+                )
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
@@ -387,6 +412,7 @@ class NapariQtNotification(QDialog):
     @classmethod
     @ensure_main_thread
     def show_notification(cls, notification: Notification):
+        from ..._qt.qt_main_window import _QtMainWindow
         from ...settings import get_settings
 
         settings = get_settings()
@@ -396,6 +422,7 @@ class NapariQtNotification(QDialog):
         if (
             notification.severity
             >= settings.application.gui_notification_level
+            and _QtMainWindow.current()
         ):
             cls.from_notification(notification).show()
 
