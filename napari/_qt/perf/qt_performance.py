@@ -36,8 +36,8 @@ class TextLog(QTextEdit):
         time_ms : float
             Duration of the timer in milliseconds.
         """
-        self.moveCursor(QTextCursor.End)
-        self.setTextColor(Qt.red)
+        self.moveCursor(QTextCursor.MoveOperation.End)
+        self.setTextColor(Qt.GlobalColor.red)
         self.insertPlainText(
             trans._("{time_ms:5.0f}ms {name}\n", time_ms=time_ms, name=name)
         )
@@ -95,6 +95,8 @@ class QtPerformance(QWidget):
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()
+        # We log slow events to this window.
+        self.log = TextLog()
 
         # For our "uptime" timer.
         self.start_time = time.time()
@@ -116,7 +118,7 @@ class QtPerformance(QWidget):
         self.thresh_ms = self.THRESH_DEFAULT
         self.thresh_combo = QComboBox()
         self.thresh_combo.addItems(self.THRESH_OPTIONS)
-        self.thresh_combo.activated[str].connect(self._change_thresh)
+        self.thresh_combo.currentTextChanged.connect(self._change_thresh)
         self.thresh_combo.setCurrentText(str(self.thresh_ms))
 
         combo_layout = QHBoxLayout()
@@ -128,8 +130,6 @@ class QtPerformance(QWidget):
         )
         layout.addLayout(combo_layout)
 
-        # We log slow events to this window.
-        self.log = TextLog()
         layout.addWidget(self.log)
 
         # Uptime label. To indicate if the widget is getting updated.

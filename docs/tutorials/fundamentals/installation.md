@@ -49,10 +49,10 @@ This installation method does not have any prerequisites.
 ```{important}
 Note that the bundled app is still
 in active development, and may not be very stable. We strongly recommend 
-[installing as a Python package instead](#choose-which-distribution-to-install).
+[installing as a Python package instead](#install-as-python-package-recommended).
 ```
 
-[Click here](#installing-as-a-bundled-app) to see instructions
+[Click here](#install-as-a-bundled-app) to see instructions
 for installing the bundled app.
 
 ## Install as Python package (recommended)

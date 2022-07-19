@@ -1,6 +1,9 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QScrollBar, QStyle, QStyleOptionSlider
 
+CC = QStyle.ComplexControl
+SC = QStyle.SubControl
+
 
 # https://stackoverflow.com/questions/29710327/how-to-override-qscrollbar-onclick-default-behaviour
 class ModifiedScrollBar(QScrollBar):
@@ -17,50 +20,56 @@ class ModifiedScrollBar(QScrollBar):
     def _move_to_mouse_position(self, event):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
-        control = self.style().hitTestComplexControl(
-            QStyle.CC_ScrollBar, opt, event.pos(), self
+
+        # pos is for Qt5 e.position().toPoint() is for QT6
+        # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#pos
+        point = (
+            event.position().toPoint()
+            if hasattr(event, "position")
+            else event.pos()
         )
-        if (
-            control == QStyle.SC_ScrollBarAddPage
-            or control == QStyle.SC_ScrollBarSubPage
-        ):
-            # scroll here
-            gr = self.style().subControlRect(
-                QStyle.CC_ScrollBar, opt, QStyle.SC_ScrollBarGroove, self
+        control = self.style().hitTestComplexControl(
+            CC.CC_ScrollBar, opt, point, self
+        )
+        if control not in {SC.SC_ScrollBarAddPage, SC.SC_ScrollBarSubPage}:
+            return
+        # scroll here
+        gr = self.style().subControlRect(
+            CC.CC_ScrollBar, opt, SC.SC_ScrollBarGroove, self
+        )
+        sr = self.style().subControlRect(
+            CC.CC_ScrollBar, opt, SC.SC_ScrollBarSlider, self
+        )
+        if self.orientation() == Qt.Orientation.Horizontal:
+            pos = point.x()
+            slider_length = sr.width()
+            slider_min = gr.x()
+            slider_max = gr.right() - slider_length + 1
+            if self.layoutDirection() == Qt.LayoutDirection.RightToLeft:
+                opt.upsideDown = not opt.upsideDown
+        else:
+            pos = point.y()
+            slider_length = sr.height()
+            slider_min = gr.y()
+            slider_max = gr.bottom() - slider_length + 1
+        self.setValue(
+            QStyle.sliderValueFromPosition(
+                self.minimum(),
+                self.maximum(),
+                pos - slider_min - slider_length // 2,
+                slider_max - slider_min,
+                opt.upsideDown,
             )
-            sr = self.style().subControlRect(
-                QStyle.CC_ScrollBar, opt, QStyle.SC_ScrollBarSlider, self
-            )
-            if self.orientation() == Qt.Horizontal:
-                pos = event.pos().x()
-                sliderLength = sr.width()
-                sliderMin = gr.x()
-                sliderMax = gr.right() - sliderLength + 1
-                if self.layoutDirection() == Qt.RightToLeft:
-                    opt.upsideDown = not opt.upsideDown
-            else:
-                pos = event.pos().y()
-                sliderLength = sr.height()
-                sliderMin = gr.y()
-                sliderMax = gr.bottom() - sliderLength + 1
-            self.setValue(
-                QStyle.sliderValueFromPosition(
-                    self.minimum(),
-                    self.maximum(),
-                    pos - sliderMin - sliderLength // 2,
-                    sliderMax - sliderMin,
-                    opt.upsideDown,
-                )
-            )
+        )
 
     def mouseMoveEvent(self, event):
-        if event.buttons() & Qt.LeftButton:
+        if event.buttons() & Qt.MouseButton.LeftButton:
             # dragging with the mouse button down should move the slider
             self._move_to_mouse_position(event)
         return super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # clicking the mouse button should move slider to the clicked point
             self._move_to_mouse_position(event)
         return super().mousePressEvent(event)
