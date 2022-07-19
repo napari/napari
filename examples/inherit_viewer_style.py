@@ -16,6 +16,7 @@ import napari
 from napari.qt import get_stylesheet
 from napari.settings import get_settings
 
+# The magicgui widget shown by selecting the 'Show widget' button of MyWidget
 @magicgui
 def sample_add(a: int, b: int) -> int:
     return a + b
