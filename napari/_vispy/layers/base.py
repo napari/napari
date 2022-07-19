@@ -5,6 +5,7 @@ from vispy.visuals.transforms import MatrixTransform
 
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+from ..visuals.bounding_box import BoundingBox
 
 
 class VispyBaseLayer(ABC):
@@ -48,14 +49,17 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self.bounding_box_2D = BoundingBox(parent=self.node)
+        self.bounding_box_3D = BoundingBox(parent=self.node)
 
         (
             self.MAX_TEXTURE_SIZE_2D,
             self.MAX_TEXTURE_SIZE_3D,
         ) = get_max_texture_sizes()
 
+        self.layer.events._ndisplay.connect(self._reset_bounding_box)
         self.layer.events.refresh.connect(self._on_refresh_change)
-        self.layer.events.set_data.connect(self._on_data_change)
+        self.layer.events.set_data.connect(self.__on_data_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.blending.connect(self._on_blending_change)
@@ -107,6 +111,17 @@ class VispyBaseLayer(ABC):
     @abstractmethod
     def _on_data_change(self):
         raise NotImplementedError()
+
+    def __on_data_change(self):
+        self._on_data_change()
+        self._reset_bounding_box()
+
+    def _reset_bounding_box(self):
+        print(self.layer.data.shape, self.layer._ndisplay, self.node.bounds(0))
+        if self.layer._ndisplay == 3:
+            self.bounding_box_3D.set_bounds(self.node, 3)
+        else:
+            self.bounding_box_2D.set_bounds(self.node, 2)
 
     def _on_refresh_change(self):
         self.node.update()

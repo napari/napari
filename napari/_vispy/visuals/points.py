@@ -1,6 +1,7 @@
-from vispy.scene.visuals import Compound, Line, Markers, Text
+from vispy.scene.visuals import Compound, Line, Text
 
 from ..filters.points_clamp_size import ClampSizeFilter
+from ..visuals.markers import Markers
 from .clipping_planes_mixin import ClippingPlanesMixin
 
 
@@ -60,3 +61,6 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     @spherical.setter
     def spherical(self, value):
         self._subvisuals[0].spherical = value
+
+    def bounds(self, axis, view=None):
+        return self._subvisuals[0]._compute_bounds(axis, self._subvisuals[0])
