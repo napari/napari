@@ -15,6 +15,11 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
+    def __new__(cls, input_array):
+        # see https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
+        obj = np.asarray(input_array).view(cls)
+        return obj
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -77,6 +82,11 @@ class ColorArray(np.ndarray):
     of that field (e.g. on initialization or setting) will automatically
     use the ``validate`` method to coerce a value to an array of colors.
     """
+
+    def __new__(cls, input_array):
+        # see https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
+        obj = np.asarray(input_array).view(cls)
+        return obj
 
     @classmethod
     def __get_validators__(cls):

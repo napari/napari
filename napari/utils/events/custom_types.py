@@ -22,6 +22,11 @@ if TYPE_CHECKING:
 
 
 class Array(np.ndarray):
+    def __new__(cls, input_array):
+        # see https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
+        obj = np.asarray(input_array).view(cls)
+        return obj
+
     def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
 
