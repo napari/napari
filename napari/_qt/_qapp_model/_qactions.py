@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
-from ..._app.constants import CommandId, MenuId
+from ..._app.constants import CommandId, MenuGroup, MenuId
 from ...settings import get_settings
 from ...utils.translations import trans
 
@@ -25,7 +25,11 @@ def _init_qactions():
             id=CommandId.TOGGLE_FULLSCREEN,
             title=CommandId.TOGGLE_FULLSCREEN.title,
             menus=[
-                {'id': MenuId.MENUBAR_VIEW, 'group': 'navigation', 'order': 1}
+                {
+                    'id': MenuId.MENUBAR_VIEW,
+                    'group': MenuGroup.NAVIGATION,
+                    'order': 1,
+                }
             ],
             callback=Window._toggle_fullscreen,
             keybindings=[StandardKeyBinding.FullScreen],
@@ -36,7 +40,7 @@ def _init_qactions():
             menus=[
                 {
                     'id': MenuId.MENUBAR_VIEW,
-                    'group': 'navigation',
+                    'group': MenuGroup.NAVIGATION,
                     'order': 2,
                     'when': 'not is_mac',
                 }
@@ -55,7 +59,11 @@ def _init_qactions():
             id=CommandId.TOGGLE_PLAY,
             title=CommandId.TOGGLE_PLAY.title,
             menus=[
-                {'id': MenuId.MENUBAR_VIEW, 'group': 'navigation', 'order': 3}
+                {
+                    'id': MenuId.MENUBAR_VIEW,
+                    'group': MenuGroup.NAVIGATION,
+                    'order': 3,
+                }
             ],
             callback=Window._toggle_play,
             keybindings=[
