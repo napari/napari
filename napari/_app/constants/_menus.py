@@ -26,8 +26,9 @@ class MenuId(str, Enum):
 
 # XXX: the structure/usage pattern of this class may change in the future
 class MenuGroup:
+    NAVIGATION = 'navigation'  # always the first group in any menu
+
     class LAYERLIST_CONTEXT:
-        NAVIGATION = 'navigation'
         CONVERSION = '1_conversion'
         SPLIT_MERGE = '5_split_merge'
         LINK = '9_link'
