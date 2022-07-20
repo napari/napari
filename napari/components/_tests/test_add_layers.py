@@ -195,3 +195,36 @@ def test_last_point_is_visible_in_viewport():
     points.data = [[1, 2, 2]]
     np.testing.assert_array_equal(points._indices_view, [0])
     viewer.layers.remove(points)
+
+
+def test_dimension_change_is_visible_in_viewport():
+    viewer = ViewerModel()
+
+    # Adding a 4d point leads to a visible 4d point with dims.point
+    # having the same values.
+    point_4d = viewer.add_points([[0] * 4])
+    np.testing.assert_array_equal(point_4d._indices_view, [0])
+    assert viewer.dims.point == tuple([0] * 4)
+
+    # Adding a 5d point with different 4d coordinates does not change the viewport.
+    # Only the first (actual 5th) dimension of the dims.point should change.
+    point_5d = viewer.add_points([[2] * 5])
+    np.testing.assert_array_equal(point_4d._indices_view, [0])
+    np.testing.assert_array_equal(point_5d._indices_view, [])
+    assert viewer.dims.point == tuple([2] + [0] * 4)
+
+    # Removing the 4d point leads to an update of the viewport and dims
+    viewer.layers.remove(point_4d)
+    np.testing.assert_array_equal(point_5d._indices_view, [0])
+    assert viewer.dims.point == tuple([2] * 5)
+
+    # Adding another 4d point does not lead to an update of the viewport
+    point_4d = viewer.add_points([[0] * 4])
+    np.testing.assert_array_equal(point_4d._indices_view, [])
+    np.testing.assert_array_equal(point_5d._indices_view, [0])
+    assert viewer.dims.point == tuple([2] * 5)
+
+    # Removing the 5d point leads to an update of the viewport and dims
+    viewer.layers.remove(point_5d)
+    np.testing.assert_array_equal(point_4d._indices_view, [0])
+    assert viewer.dims.point == tuple([0] * 4)
