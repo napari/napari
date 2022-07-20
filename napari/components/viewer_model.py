@@ -364,10 +364,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # If the point of an axis is outside of the upper current range,
             # set it to the layers range max value. dims.set_current_step
             # accounts for the clamping of the lower limit on the set_point call.
+            # New dimensions are prepended, hence we need to go through the list
+            # from the back to the beginning and invert the order in the end.
+            # To have the correct slices present.
             prev_point = [
                 range_val[1] - 1 if point_val >= range_val[1] else point_val
-                for point_val, range_val in zip(self.dims.point, ranges)
-            ]
+                for point_val, range_val in zip(
+                    reversed(self.dims.point), reversed(ranges)
+                )
+            ][::-1]
             ndim = len(ranges)
             self.dims.ndim = ndim
             self.dims.set_range(range(ndim), ranges)
@@ -384,16 +389,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     self.rounded_division(*_range) for _range in ranges
                 ]
             elif ndim < len(prev_point):
-                # If the dimension has been reduced remove dimensions accordingly
-                new_point = prev_point[:ndim]
+                # If the dimension has been reduced remove dimensions accordingly.
+                # Since new dimensions are prepended we need to take the last points.
+                new_point = prev_point[-ndim:]
             elif ndim > len(prev_point):
                 # If the dimension has been increased add dimensions with their
-                # respective central slice
+                # respective central slice.
+                # Since new dimensions are prepended we prepend the new values.
                 mid_points = [
                     self.rounded_division(*_range)
-                    for _range in ranges[len(prev_point) :]
+                    for _range in ranges[: -len(prev_point)]
                 ]
-                new_point = np.append(prev_point, mid_points)
+                new_point = np.append(mid_points, prev_point)
             else:
                 # If the dimension is unchanged, keep the current slider position
                 new_point = prev_point
