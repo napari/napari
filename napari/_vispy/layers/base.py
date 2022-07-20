@@ -117,7 +117,6 @@ class VispyBaseLayer(ABC):
         self._reset_bounding_box()
 
     def _reset_bounding_box(self):
-        print(self.layer.data.shape, self.layer._ndisplay, self.node.bounds(0))
         if self.layer._ndisplay == 3:
             self.bounding_box_3D.set_bounds(self.node, 3)
         else:
