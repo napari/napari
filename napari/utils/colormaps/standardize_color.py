@@ -62,7 +62,10 @@ def transform_color(colors: Any) -> np.ndarray:
         invalid inputs
     """
     colortype = type(colors)
-    return _color_switch[colortype](colors)
+    for typ, handler in _color_switch.items():
+        if issubclass(colortype, typ):
+            return handler(colors)
+    raise ValueError(f"cannot convert type '{typ}' to a color array.")
 
 
 @functools.lru_cache(maxsize=1024)
