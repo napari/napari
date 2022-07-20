@@ -97,7 +97,7 @@ LAYER_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.LAYERLIST_CONTEXT,
-                'group': MenuGroup.LAYERLIST_CONTEXT.NAVIGATION,
+                'group': MenuGroup.NAVIGATION,
             }
         ],
     ),
