@@ -107,8 +107,6 @@ class QtActionContextMenu(QMenu):
         present in the `ctx` dict, or be builtins*.
         """
         for item in self.actions():
-            if item.menu() is not None:
-                item = item.menu()
             d = item.data()
             if not d:
                 continue
