@@ -55,9 +55,6 @@ class VispyImageLayer(VispyBaseLayer):
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))
 
-        self.bounding_box_2D.parent = self._layer_node._image_node
-        self.bounding_box_3D.parent = self._layer_node._volume_node
-
         self._array_like = True
 
         self.layer.events.rendering.connect(self._on_rendering_change)
@@ -109,6 +106,7 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.parent = parent
         self.node.order = self.order
+        self.bounding_box.parent = self.node
         self.reset()
 
     def _on_data_change(self):

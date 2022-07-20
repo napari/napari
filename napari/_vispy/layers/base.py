@@ -49,8 +49,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
-        self.bounding_box_2D = BoundingBox(parent=self.node)
-        self.bounding_box_3D = BoundingBox(parent=self.node)
+        self.bounding_box = BoundingBox(parent=self.node)
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -117,10 +116,7 @@ class VispyBaseLayer(ABC):
         self._reset_bounding_box()
 
     def _reset_bounding_box(self):
-        if self.layer._ndisplay == 3:
-            self.bounding_box_3D.set_bounds(self.node, 3)
-        else:
-            self.bounding_box_2D.set_bounds(self.node, 2)
+        self.bounding_box.set_bounds(self.node, self.layer._ndisplay)
 
     def _on_refresh_change(self):
         self.node.update()
