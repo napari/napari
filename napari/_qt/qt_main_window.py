@@ -2,6 +2,8 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+
+import contextlib
 import inspect
 import os
 import sys
@@ -16,6 +18,8 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Union,
+    cast,
 )
 from weakref import WeakValueDictionary
 
@@ -46,7 +50,7 @@ from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_resources import get_stylesheet, register_napari_themes
+from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
@@ -58,6 +62,7 @@ from .widgets.qt_viewer_status_bar import ViewerStatusBar
 _sentinel = object()
 
 if TYPE_CHECKING:
+    from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
     from ..viewer import Viewer
@@ -82,7 +87,7 @@ class _QtMainWindow(QMainWindow):
         self._quit_app = False
 
         self.setWindowIcon(QIcon(self._window_icon))
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -138,27 +143,28 @@ class _QtMainWindow(QMainWindow):
         window = cls.current()
         return window._qt_viewer.viewer if window else None
 
-    def event(self, e):
+    def event(self, e: QEvent) -> bool:
         if (
-            e.type() == QEvent.ToolTip
+            e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
-            QToolTip.showText(
-                e.globalPos(), self._qt_viewer.viewer.tooltip.text, self
+            # globalPos is for Qt5 e.globalPosition().toPoint() is for QT6
+            # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
+            pnt = (
+                e.globalPosition().toPoint()
+                if hasattr(e, "globalPosition")
+                else e.globalPos()
             )
-        if e.type() == QEvent.Close:
+            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
+        if e.type() == QEvent.Type.Close:
             # when we close the MainWindow, remove it from the instances list
-            try:
+            with contextlib.suppress(ValueError):
                 _QtMainWindow._instances.remove(self)
-            except ValueError:
-                pass
-        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+        if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
-            try:
+            with contextlib.suppress(ValueError):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
-            except ValueError:
-                pass
         return super().event(e)
 
     def _load_window_settings(self):
@@ -174,7 +180,7 @@ class _QtMainWindow(QMainWindow):
             window_position = (self.x(), self.y())
         else:
             width, height = window_position
-            screen_geo = QApplication.desktop().geometry()
+            screen_geo = QApplication.primaryScreen().geometry()
             if screen_geo.width() < width or screen_geo.height() < height:
                 window_position = (self.x(), self.y())
 
@@ -221,7 +227,7 @@ class _QtMainWindow(QMainWindow):
         Symmetric to the 'get_window_settings' accessor.
         """
         self.setUpdatesEnabled(False)
-        self.setWindowState(Qt.WindowNoState)
+        self.setWindowState(Qt.WindowState.WindowNoState)
 
         if window_position:
             window_position = QPoint(*window_position)
@@ -240,10 +246,10 @@ class _QtMainWindow(QMainWindow):
             self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
-            self.setWindowState(Qt.WindowFullScreen)
+            self.setWindowState(Qt.WindowState.WindowFullScreen)
             self._maximized_flag = window_maximized
         elif window_maximized:
-            self.setWindowState(Qt.WindowMaximized)
+            self.setWindowState(Qt.WindowState.WindowMaximized)
 
         self.setUpdatesEnabled(True)
 
@@ -289,7 +295,7 @@ class _QtMainWindow(QMainWindow):
 
             try:
                 parent = parent.parent()
-            except Exception:
+            except AttributeError:
                 parent = getattr(parent, "_parent", None)
 
     def show(self, block=False):
@@ -301,7 +307,7 @@ class _QtMainWindow(QMainWindow):
 
     def changeEvent(self, event):
         """Handle window state changes."""
-        if event.type() == QEvent.WindowStateChange:
+        if event.type() == QEvent.Type.WindowStateChange:
             # TODO: handle maximization issue. When double clicking on the
             # title bar on Mac the resizeEvent is called an varying amount
             # of times which makes it hard to track the original size before
@@ -349,7 +355,7 @@ class _QtMainWindow(QMainWindow):
 
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
-            if dock.isFloating():
+            if isinstance(dock, QWidget) and dock.isFloating():
                 dock.setFloating(False)
 
         self._save_current_window_settings()
@@ -359,7 +365,7 @@ class _QtMainWindow(QMainWindow):
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self.isFullScreen():
             self.showNormal()
-            for _i in range(5):
+            for _ in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
@@ -402,8 +408,7 @@ class Window:
         Help menu.
     main_menu : qtpy.QtWidgets.QMainWindow.menuBar
         Main menubar.
-    qt_viewer : QtViewer
-        Contained viewer widget.
+
     view_menu : qtpy.QtWidgets.QMenu
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
@@ -426,7 +431,6 @@ class Window:
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
         _themes.events.added.connect(self._add_theme)
-        _themes.events.added.connect(register_napari_themes)
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
@@ -468,7 +472,7 @@ class Window:
                     self._qt_viewer.dockLayerList,
                 ],
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
-                Qt.Vertical,
+                Qt.Orientation.Vertical,
             )
 
     def _setup_existing_themes(self, connect: bool = True):
@@ -497,7 +501,7 @@ class Window:
         theme.events.text.connect(self._update_theme_no_event)
         theme.events.warning.connect(self._update_theme_no_event)
         theme.events.current.connect(self._update_theme_no_event)
-        theme.events.icon.connect(self._theme_icon_changed)
+        theme.events.icon.connect(self._update_theme_no_event)
         theme.events.canvas.connect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -521,7 +525,7 @@ class Window:
         theme.events.text.disconnect(self._update_theme_no_event)
         theme.events.warning.disconnect(self._update_theme_no_event)
         theme.events.current.disconnect(self._update_theme_no_event)
-        theme.events.icon.disconnect(self._theme_icon_changed)
+        theme.events.icon.disconnect(self._update_theme_no_event)
         theme.events.canvas.disconnect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -546,22 +550,6 @@ class Window:
         """Remove theme and disconnect events."""
         theme = event.value
         self._disconnect_theme(theme)
-
-    def _theme_icon_changed(self):
-        """Trigger rebuild of theme and all resources.
-
-        This is really only required whenever there are changes to the `icon`
-        attribute on the `Theme` model. Most other attributes simply update
-        the stylesheet.
-        """
-        from .._qt.qt_resources import (
-            _register_napari_resources,
-            _unregister_napari_resources,
-        )
-
-        _unregister_napari_resources()
-        _register_napari_resources(True, force_rebuild=True)
-        self._update_theme()
 
     @property
     def qt_viewer(self):
@@ -628,22 +616,14 @@ class Window:
         self.main_menu.setVisible(not self.main_menu.isVisible())
         self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
 
-    def _tooltip_visibility_toggle(self, value):
-        get_settings().appearance.layer_tooltip_visibility = value
-
-    def _tooltip_visibility_toggled(self, event):
-        self.tooltip_menu.setChecked(
-            get_settings().appearance.layer_tooltip_visibility
-        )
-
-    def _toggle_fullscreen(self, event=None):
+    def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
             self._qt_window.showNormal()
         else:
             self._qt_window.showFullScreen()
 
-    def _toggle_play(self, state=None):
+    def _toggle_play(self):
         """Toggle play."""
         if self._qt_viewer.dims.is_playing:
             self._qt_viewer.dims.stop()
@@ -676,8 +656,7 @@ class Window:
         Widget = None
         dock_kwargs = {}
 
-        result = _npe2.get_widget_contribution(plugin_name, widget_name)
-        if result:
+        if result := _npe2.get_widget_contribution(plugin_name, widget_name):
             Widget, widget_name = result
 
         if Widget is None:
@@ -697,7 +676,9 @@ class Window:
                 wdg = wdg._magic_widget
             return dock_widget, wdg
 
-        wdg = _instantiate_dock_widget(Widget, self._qt_viewer.viewer)
+        wdg = _instantiate_dock_widget(
+            Widget, cast('Viewer', self._qt_viewer.viewer)
+        )
 
         # Add dock widget
         dock_kwargs.pop('name', None)
@@ -729,7 +710,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: QWidget,
+        widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
         area: str = 'right',
@@ -775,11 +756,8 @@ class Window:
             `dock_widget` that can pass viewer events.
         """
         if not name:
-            try:
+            with contextlib.suppress(AttributeError):
                 name = widget.objectName()
-            except AttributeError:
-                pass
-
             name = name or trans._(
                 "Dock widget {number}",
                 number=self._unnamed_dockwidget_count,
@@ -862,7 +840,9 @@ class Window:
                 _wdg = current_dws_in_area + [dock_widget]
                 # add sizes to push lower widgets up
                 sizes = list(range(1, len(_wdg) * 4, 4))
-                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
+                self._qt_window.resizeDocks(
+                    _wdg, sizes, Qt.Orientation.Vertical
+                )
 
         if menu:
             action = dock_widget.toggleViewAction()
@@ -909,6 +889,7 @@ class Window:
             return
 
         if not isinstance(widget, QDockWidget):
+            dw: QDockWidget
             for dw in self._qt_window.findChildren(QDockWidget):
                 if dw.widget() is widget:
                     _dw: QDockWidget = dw
@@ -1130,21 +1111,19 @@ class Window:
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
-        try:
+        with contextlib.suppress(AttributeError, RuntimeError):
             if event:
                 value = event.value
                 self._qt_viewer.viewer.theme = value
                 settings.appearance.theme = value
             else:
-                if settings.appearance.theme == "system":
-                    value = get_system_theme()
-                else:
-                    value = self._qt_viewer.viewer.theme
+                value = (
+                    get_system_theme()
+                    if settings.appearance.theme == "system"
+                    else self._qt_viewer.viewer.theme
+                )
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
-        except (AttributeError, RuntimeError):
-            # wrapped C/C++ object may have been deleted?
-            pass
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1291,14 +1270,11 @@ class Window:
         """Carry out various teardown tasks such as event disconnection."""
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
-        _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
         self._qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:
-            try:
+            with contextlib.suppress(RuntimeError):
                 menu._destroy()
-            except RuntimeError:
-                pass
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

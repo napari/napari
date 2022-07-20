@@ -95,7 +95,7 @@ def test_notification_manager_via_gui(
             (warnButton, 'warning!'),
         ]:
             notification_manager.records = []
-            qtbot.mouseClick(btt, Qt.LeftButton)
+            qtbot.mouseClick(btt, Qt.MouseButton.LeftButton)
             assert len(notification_manager.records) == 1
             assert notification_manager.records[0].message == expected_message
             notification_manager.records = []
