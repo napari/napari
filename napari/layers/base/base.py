@@ -12,7 +12,11 @@ import magicgui as mgui
 import numpy as np
 
 from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import add_layer_to_viewer, get_layers
+from ...utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
+)
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
@@ -1779,3 +1783,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     layer_type=layer_type,
                 )
             ) from exc
+
+
+mgui.register_type(type_=List[Layer], return_callback=add_layers_to_viewer)
