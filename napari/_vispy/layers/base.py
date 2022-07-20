@@ -56,9 +56,10 @@ class VispyBaseLayer(ABC):
             self.MAX_TEXTURE_SIZE_3D,
         ) = get_max_texture_sizes()
 
-        self.layer.events._ndisplay.connect(self._reset_bounding_box)
+        self.layer.events._ndisplay.connect(self._on_bounding_box_change)
         self.layer.events.refresh.connect(self._on_refresh_change)
-        self.layer.events.set_data.connect(self.__on_data_change)
+        self.layer.events.set_data.connect(self._on_data_change)
+        self.layer.events.set_data.connect(self._on_bounding_box_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.blending.connect(self._on_blending_change)
@@ -111,12 +112,10 @@ class VispyBaseLayer(ABC):
     def _on_data_change(self):
         raise NotImplementedError()
 
-    def __on_data_change(self):
-        self._on_data_change()
-        self._reset_bounding_box()
-
-    def _reset_bounding_box(self):
-        self.bounding_box.set_bounds(self.node, self.layer._ndisplay)
+    def _on_bounding_box_change(self):
+        bounds = self.layer._display_bounding_box(self.layer._dims_displayed)
+        # invert for vispy
+        self.bounding_box.set_bounds(bounds[::-1])
 
     def _on_refresh_change(self):
         self.node.update()
@@ -176,6 +175,7 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
+        self._on_bounding_box_change()
 
     def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.

@@ -76,28 +76,16 @@ class BoundingBox(Compound):
             pos=vertices, face_color='red', edge_width=1, edge_color='black'
         )
 
-    def set_bounds(self, node, ndim=2):
+    def set_bounds(self, bounds):
         """
         Takes another node to generate its bounding box.
         """
-
-        if ndim not in (2, 3):
-            raise ValueError(
-                f'Can only compute 2 or 3-dimensional bounds, not {ndim}'
-            )
-
-        # vispy caches bounds for visuals for some reason; if they change, we won't know,
-        # so we force cache cleaning
-        # this is particularly bad for cases like image layer where we initialize the Volume
-        # with a 1 pixel texture, which makes bounds permanently stuck at (0, 1)
-        node._bounds_changed()
-        bounds = [node.bounds(i, self) for i in range(ndim)]
         vertices = np.array(list(product(*bounds)))
 
         if any(b is None for b in bounds):
             return
 
-        if ndim == 2:
+        if len(bounds) == 2:
             self._set_bounds_2d(vertices)
         else:
             self._set_bounds_3d(vertices)
