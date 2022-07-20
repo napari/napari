@@ -37,30 +37,6 @@ from ._labels_utils import (
     sphere_indices,
 )
 
-_REV_SHAPE_HELP = {
-    trans._('enter paint or fill mode to edit labels'): {
-        Mode.PAN_ZOOM,
-        Mode.TRANSFORM,
-    },
-    trans._('hold <space> to pan/zoom, click to pick a label'): {
-        Mode.PICK,
-        Mode.FILL,
-    },
-    trans._(
-        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
-    ): {Mode.PAINT},
-    trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
-}
-
-# This avoid duplicating the trans._ help messages above
-# as some modes have the same help.
-# while most tooling will recognise identical messages,
-# this can lead to human error.
-_FWD_SHAPE_HELP = {}
-for t, modes in _REV_SHAPE_HELP.items():
-    for m in modes:
-        _FWD_SHAPE_HELP[m] = t
-
 
 class Labels(_ImageBase):
     """Labels (or segmentation) layer.
@@ -324,7 +300,7 @@ class Labels(_ImageBase):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
         self._preserve_labels = False
-        self._help = self._mode_help(Mode.PAN_ZOOM)
+        self._help = self._mode_help(self._mode)
 
         self._reset_history()
 
