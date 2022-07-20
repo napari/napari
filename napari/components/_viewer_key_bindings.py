@@ -108,7 +108,7 @@ def roll_axes(viewer: Viewer):
     ),
 )
 def transpose_axes(viewer: Viewer):
-    viewer.dims._transpose()
+    viewer.dims.transpose()
 
 
 @register_viewer_action(trans._("Toggle grid mode."))
