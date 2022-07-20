@@ -55,6 +55,3 @@ def _initialize_plugins():
         plugin_manager.discover = lambda *a, **k: None
     else:
         plugin_manager._initialize()
-
-
-_initialize_plugins()

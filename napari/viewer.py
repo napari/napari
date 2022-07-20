@@ -56,7 +56,10 @@ class Viewer(ViewerModel):
         )
         # having this import here makes all of Qt imported lazily, upon
         # instantiating the first Viewer.
+        from .plugins import _initialize_plugins
         from .window import Window
+
+        _initialize_plugins()
 
         self._window = Window(self, show=show)
         self._instances.add(self)
