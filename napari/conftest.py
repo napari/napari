@@ -30,6 +30,8 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+from contextlib import suppress
+
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
@@ -98,12 +100,6 @@ def pytest_addoption(parser):
 
     parser.addoption(
         "--async_only",
-        action="store_true",
-        default=False,
-        help="run only asynchronous tests",
-    )
-    parser.addoption(
-        "--skip_examples",
         action="store_true",
         default=False,
         help="run only asynchronous tests",
@@ -471,8 +467,11 @@ def _no_error_reports():
 
 
 @pytest.fixture(autouse=True)
-def _npe2pm(npe2pm):
+def _npe2pm(npe2pm, monkeypatch):
     """Autouse the npe2 mock plugin manager with no registered plugins."""
+    from napari.plugins import NapariPluginManager
+
+    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
     return npe2pm
 
 
@@ -486,6 +485,7 @@ def builtins(_npe2pm: TestPluginManager):
 @pytest.fixture
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
+        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
         yield plugin
 
 
@@ -549,3 +549,23 @@ def pytest_collection_modifyitems(session, config, items):
                 index = i
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.fixture(autouse=True)
+def disable_notification_dismiss_timer(monkeypatch):
+    """
+    This fixture disables starting timer for closing notification
+    by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
+
+    As Qt timer is realised by thread and keep reference to the object,
+    without increase of reference counter object could be garbage collected and
+    cause segmentation fault error when Qt (C++) code try to access it without
+    checking if Python object exists.
+    """
+
+    with suppress(ImportError):
+        from napari._qt.dialogs.qt_notification import NapariQtNotification
+
+        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)

@@ -81,7 +81,7 @@ def test_interaction_box_dim_change(make_napari_viewer):
         bottom_right_corner=[6, 30],
     )
 
-    viewer.dims._transpose()
+    viewer.dims.transpose()
 
     check_corners_of_axis_aligned_interaction_box(
         viewer.overlays.interaction_box._box,
