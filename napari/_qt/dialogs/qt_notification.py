@@ -79,19 +79,15 @@ class NapariQtNotification(QDialog):
         severity: Union[str, NotificationSeverity] = 'WARNING',
         source: Optional[str] = None,
         actions: ActionSequence = (),
+        parent=None,
     ):
-        super().__init__()
+        super().__init__(parent=parent)
 
-        from ..qt_main_window import _QtMainWindow
-
-        current_window = _QtMainWindow.current()
-        if current_window is not None:
-            canvas = current_window._qt_viewer._canvas_overlay
-            self.setParent(canvas)
-            canvas.resized.connect(self.move_to_bottom_right)
+        if parent and hasattr(parent, 'resized'):
+            parent.resized.connect(self.move_to_bottom_right)
 
         self.setupUi()
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setup_buttons(actions)
         self.setMouseTracking(True)
 
@@ -239,7 +235,7 @@ class NapariQtNotification(QDialog):
 
     def setupUi(self):
         """Set up the UI during initialization."""
-        self.setWindowFlags(Qt.SubWindow)
+        self.setWindowFlags(Qt.WindowType.SubWindow)
         self.setMinimumWidth(self.MIN_WIDTH)
         self.setMaximumWidth(self.MIN_WIDTH)
         self.setMinimumHeight(40)
@@ -257,7 +253,9 @@ class NapariQtNotification(QDialog):
         self.severity_icon.setObjectName("severity_icon")
         self.severity_icon.setMinimumWidth(30)
         self.severity_icon.setMaximumWidth(30)
-        self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
+        self.row1.addWidget(
+            self.severity_icon, alignment=Qt.AlignmentFlag.AlignTop
+        )
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
         self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -265,28 +263,34 @@ class NapariQtNotification(QDialog):
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
         )
-        self.row1.addWidget(self.message, alignment=Qt.AlignTop)
+        self.row1.addWidget(self.message, alignment=Qt.AlignmentFlag.AlignTop)
         self.expand_button = QPushButton(self.row1_widget)
         self.expand_button.setObjectName("expand_button")
         self.expand_button.setCursor(Qt.PointingHandCursor)
         self.expand_button.setMaximumWidth(20)
         self.expand_button.setFlat(True)
 
-        self.row1.addWidget(self.expand_button, alignment=Qt.AlignTop)
+        self.row1.addWidget(
+            self.expand_button, alignment=Qt.AlignmentFlag.AlignTop
+        )
         self.close_button = QPushButton(self.row1_widget)
         self.close_button.setObjectName("close_button")
         self.close_button.setCursor(Qt.PointingHandCursor)
         self.close_button.setMaximumWidth(20)
         self.close_button.setFlat(True)
 
-        self.row1.addWidget(self.close_button, alignment=Qt.AlignTop)
+        self.row1.addWidget(
+            self.close_button, alignment=Qt.AlignmentFlag.AlignTop
+        )
         self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
         self.source_label.setObjectName("source_label")
-        self.row2.addWidget(self.source_label, alignment=Qt.AlignBottom)
+        self.row2.addWidget(
+            self.source_label, alignment=Qt.AlignmentFlag.AlignBottom
+        )
         self.row2.addStretch()
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
@@ -346,17 +350,15 @@ class NapariQtNotification(QDialog):
 
     @classmethod
     def from_notification(
-        cls, notification: Notification
+        cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
 
         from ...utils.notifications import ErrorNotification
 
-        actions = notification.actions
-
         if isinstance(notification, ErrorNotification):
 
-            def show_tb(parent):
-                tbdialog = QDialog(parent=parent.parent())
+            def show_tb(parent_):
+                tbdialog = QDialog(parent=parent_.parent())
                 tbdialog.setModal(True)
                 # this is about the minimum width to not get rewrap
                 # and the minimum height to not have scrollbar
@@ -385,7 +387,9 @@ class NapariQtNotification(QDialog):
 
                 btn.clicked.connect(_enter_debug_mode)
                 tbdialog.layout().addWidget(text)
-                tbdialog.layout().addWidget(btn, 0, Qt.AlignRight)
+                tbdialog.layout().addWidget(
+                    btn, 0, Qt.AlignmentFlag.AlignRight
+                )
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
@@ -399,11 +403,13 @@ class NapariQtNotification(QDialog):
             severity=notification.severity,
             source=notification.source,
             actions=actions,
+            parent=parent,
         )
 
     @classmethod
     @ensure_main_thread
     def show_notification(cls, notification: Notification):
+        from ..._qt.qt_main_window import _QtMainWindow
         from ...settings import get_settings
 
         settings = get_settings()
@@ -413,8 +419,10 @@ class NapariQtNotification(QDialog):
         if (
             notification.severity
             >= settings.application.gui_notification_level
+            and _QtMainWindow.current()
         ):
-            cls.from_notification(notification).show()
+            canvas = _QtMainWindow.current()._qt_viewer._canvas_overlay
+            cls.from_notification(notification, canvas).show()
 
 
 def _debug_tb(tb):
