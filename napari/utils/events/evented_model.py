@@ -24,6 +24,7 @@ from pydantic.fields import SHAPE_SET, ModelField, Validator, prep_validators
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
+from .containers import Selection
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -148,6 +149,15 @@ class ParametrizedGenericCompliantModelField(ModelField):
 
         self.post_validators = self.post_validators or []
         self.post_validators.extend(prep_validators([coerce_type]))
+
+    def _validate_sequence_like(self, v, values, loc, cls):
+        validated, errors = super()._validate_sequence_like(
+            v, values, loc, cls
+        )
+        if isinstance(v, Selection):
+            validated = Selection(validated)
+            validated._current = v._current
+        return validated, errors
 
 
 @contextmanager
