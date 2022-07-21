@@ -17,8 +17,7 @@ class ColorValue(np.ndarray):
 
     def __new__(cls, input_array):
         # see https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
-        obj = np.asarray(input_array).view(cls)
-        return obj
+        return cls.validate(input_array)
 
     @classmethod
     def __get_validators__(cls):
@@ -72,7 +71,7 @@ class ColorValue(np.ndarray):
         >>> ColorValue.validate('#ff0000')
         array([1., 0., 0., 1.], dtype=float32)
         """
-        return transform_color(value)[0]
+        return transform_color(value)[0].view(cls)
 
 
 class ColorArray(np.ndarray):
@@ -85,8 +84,7 @@ class ColorArray(np.ndarray):
 
     def __new__(cls, input_array):
         # see https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
-        obj = np.asarray(input_array).view(cls)
-        return obj
+        return cls.validate(input_array)
 
     @classmethod
     def __get_validators__(cls):
@@ -135,4 +133,4 @@ class ColorArray(np.ndarray):
         # warns and returns an array containing a default color in that case.
         if isinstance(value, (np.ndarray, list, tuple)) and len(value) == 0:
             return np.empty((0, 4), np.float32)
-        return transform_color(value)
+        return transform_color(value).view(cls)
