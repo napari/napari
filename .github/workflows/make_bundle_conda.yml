@@ -233,7 +233,7 @@ jobs:
           mkdir -p ${CONDA_BLD_PATH}/noarch
 
       - name: Download local build artifacts (napari)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ${{ needs.conda-build.outputs.artifact-id }}
           path: ${{ env.CONDA_BLD_PATH }}/noarch
@@ -363,7 +363,7 @@ jobs:
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
-        uses: bruceadams/get-release@v1.2.2
+        uses: bruceadams/get-release@v1.2.3
 
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')

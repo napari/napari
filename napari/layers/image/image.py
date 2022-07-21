@@ -417,6 +417,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._slice.image.view
 
     def _calc_data_range(self, mode='data'):
+        """
+        Calculate the range of the data values in the currently viewed slice
+        or full data array
+        """
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
@@ -922,9 +926,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
-        if self._keep_auto_contrast or self._should_calc_clims:
+        if self._should_calc_clims:
+            self.reset_contrast_limits_range()
             self.reset_contrast_limits()
             self._should_calc_clims = False
+        elif self._keep_auto_contrast:
+            self.reset_contrast_limits()
 
     @property
     def _SliceDataClass(self):
