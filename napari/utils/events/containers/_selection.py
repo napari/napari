@@ -131,7 +131,7 @@ class Selection(EventedSet[_T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v, field):
         """Pydantic validator."""
 
         if isinstance(v, dict):
@@ -152,6 +152,13 @@ class Selection(EventedSet[_T]):
                     data=data,
                 )
             )
+
+        if field.sub_fields and current is not None:
+            _, error = field.sub_fields[0].validate(current, {}, loc='current')
+            if error:
+                from pydantic import ValidationError
+
+                raise ValidationError([error], cls)
 
         sel = cls(data)
         sel._current = current
