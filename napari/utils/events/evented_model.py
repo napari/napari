@@ -340,7 +340,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def _validate(self, new_values):
         """
-        validate values against the current model. This differst from pydantic's public
+        validate values against the current model. This differs from pydantic's public
         validate method because it won't return an instance of Self (expensive for evented models)
         """
         # use non-evented version of object or pydantic validation fails
