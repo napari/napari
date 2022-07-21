@@ -91,22 +91,19 @@ class ParametrizedGenericCompliantModelField(ModelField):
 
     def _type_analysis(self):
         super()._type_analysis()
+        origin = get_origin(self.outer_type_)
+
         # if class validators are unset, it means pydantic ignored them, so
         # we add them back in just like pydantic does
         if not self.class_validators:
-            get_validators = getattr(
-                self.outer_type_, '__get_validators__', dict
-            )
+            get_validators = getattr(origin, '__get_validators__', dict)
             self.class_validators.update(
                 {
-                    f'{self.outer_type_.__name__}_{i}': Validator(
-                        validator, pre=True
-                    )
+                    f'{origin.__name__}_{i}': Validator(validator, pre=True)
                     for i, validator in enumerate(get_validators())
                 }
             )
 
-        origin = get_origin(self.outer_type_)
         # since issubclass(collections.abc.Set, typing.Set) == False, and our EventedSet
         # is a collections.abc.Set, we have to tell pydantic to treat it the same as the other sets
         # isinstance(origin, type) is needed for non-class origins (e.g: Literal)
