@@ -131,8 +131,10 @@ class ParametrizedGenericCompliantModelField(ModelField):
 
         origin = get_origin(self.outer_type_) or self.outer_type_
         # anything that's not really a class should not be used for coercion
-        if not isinstance(origin, type) or getattr(
-            origin, '_is_protocol', False
+        if (
+            not isinstance(origin, type)
+            or getattr(origin, '_is_protocol', False)
+            or not getattr(origin, '_coerce_type', True)
         ):
             return
 

@@ -4,7 +4,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Type
 
 from pydantic import BaseModel
-from pydantic.types import ConstrainedInt
 from yaml import SafeDumper, dump_all
 
 from ._fields import Version
@@ -43,10 +42,6 @@ YamlDumper.add_representer(
 )
 YamlDumper.add_representer(
     Version, lambda dumper, data: dumper.represent_str(str(data))
-)
-# yaml dumper is unaware of constrained ints
-YamlDumper.add_multi_representer(
-    ConstrainedInt, lambda dumper, data: dumper.represent_int(int(data))
 )
 
 

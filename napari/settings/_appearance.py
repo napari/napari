@@ -1,9 +1,12 @@
 from pydantic import Field
 
+from ..utils.events.custom_types import conint
 from ..utils.events.evented_model import EventedModel
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._fields import Theme
+
+HighlightThickness = conint(ge=1, le=10)
 
 
 class AppearanceSettings(EventedModel):
@@ -13,14 +16,12 @@ class AppearanceSettings(EventedModel):
         description=trans._("Select the user interface theme."),
         env="napari_theme",
     )
-    highlight_thickness: int = Field(
+    highlight_thickness: HighlightThickness = Field(
         1,
         title=trans._("Highlight thickness"),
         description=trans._(
             "Select the highlight thickness when hovering over shapes/points."
         ),
-        ge=1,
-        le=10,
     )
     layer_tooltip_visibility: bool = Field(
         False,

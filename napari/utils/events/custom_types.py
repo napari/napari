@@ -22,10 +22,7 @@ if TYPE_CHECKING:
 
 
 class Array(np.ndarray):
-    def __new__(cls, input_array):
-        # see https://numpy.org/doc/stable/user/basics.subclassing.html#slightly-more-realistic-example-attribute-added-to-existing-array
-        obj = np.asarray(input_array).view(cls)
-        return obj
+    _coerce_type = False
 
     def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
@@ -112,5 +109,7 @@ def conint(
         le=le,
         multiple_of=multiple_of,
         ne=ne,
+        _coerce_type=False,
     )
+
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
