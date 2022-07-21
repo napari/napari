@@ -44,7 +44,20 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
         if name in submodules:
             return import_module(f'{module_name}.{name}')
         elif name in attr_to_modules:
-            submod = import_module(f'{module_name}.{attr_to_modules[name]}')
+            try:
+                submod = import_module(
+                    f'{module_name}.{attr_to_modules[name]}'
+                )
+            except AttributeError as er:
+                # if we want any useful error message to show
+                # (besides just "cannot import name...") then we need raise anything
+                # BUT an attribute error here, because the __getattr__ protocol will
+                # swallow that error.
+                raise ImportError(
+                    f'Failed to import {attr_to_modules[name]} from {module_name}. '
+                    'See cause above'
+                ) from er
+            # this is where we allow an attribute error to be raised.
             return getattr(submod, name)
         else:
             raise AttributeError(f'No {module_name} attribute {name}')

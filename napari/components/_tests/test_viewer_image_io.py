@@ -33,6 +33,24 @@ def test_add_multi_png_defaults(builtins, two_pngs):
     viewer.open(image_files, stack=False, plugin=builtins.name)
     assert len(viewer.layers) == 3
 
+    viewer.open([], stack=[image_files, image_files], plugin=builtins.name)
+    assert len(viewer.layers) == 5
+    assert viewer.dims.ndim == 3
+    assert isinstance(viewer.layers[3].data, da.Array)
+    assert viewer.layers[3].data.shape == (2, 512, 512)
+    assert viewer.layers[4].data.shape == (2, 512, 512)
+
+    viewer.open(
+        image_files, stack=[image_files, image_files], plugin=builtins.name
+    )
+    assert len(viewer.layers) == 9
+    assert viewer.dims.ndim == 3
+    assert isinstance(viewer.layers[0].data, da.Array)
+    assert viewer.layers[5].data.shape == (512, 512)
+    assert viewer.layers[6].data.shape == (512, 512)
+    assert viewer.layers[7].data.shape == (2, 512, 512)
+    assert viewer.layers[8].data.shape == (2, 512, 512)
+
 
 def test_add_tiff(builtins, single_tiff):
     image_files = single_tiff
