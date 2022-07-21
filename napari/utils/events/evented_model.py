@@ -215,15 +215,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             **dict.fromkeys(field_events + list(self.__property_setters__))
         )
 
-        for name in self.__fields__:
-            child = getattr(self, name)
-            if isinstance(child, (EventedMutable)):
-                # while seemingly redundant, this next line is very important to maintain
-                # correct sources; see https://github.com/napari/napari/pull/4138
-                # we solve it by re-setting the source after initial validation, which allows
-                # us to use `validate_all = True`
-                child.events.source = child
-                child.events.connect(getattr(self.events, name))
+        self._connect_child_events()
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
@@ -280,6 +272,27 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @property
     def events(self) -> EmitterGroup:
         return self._events
+
+    def _connect_child_events(self):
+        """
+        Connect child events to self and reset the event sources of
+        self and all the children to the correct values
+        """
+        # while seemingly redundant, this next line is very important to maintain
+        # correct sources; see https://github.com/napari/napari/pull/4138
+        # events are all messed up due to objects being probably
+        # recreated arbitrarily during validation
+        # we solve it by re-setting the source after initial validation, which allows
+        # us to use `validate_all = True`
+        self.events.source = self
+        for name in self.__fields__:
+            child = getattr(self, name)
+            if isinstance(child, EventedMutable):
+                child._reset_event_source()
+            elif name in self.events.emitters:
+                getattr(self.events, name).source = self
+            # hook up child event source
+            child.events.connect(getattr(self.events, name))
 
     @property
     def _defaults(self):

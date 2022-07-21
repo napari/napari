@@ -2,7 +2,7 @@
 import bisect
 
 import numpy as np
-from vispy.scene.visuals import Line, Text
+from vispy.scene.visuals import Line, Rectangle, Text
 from vispy.visuals.transforms import STTransform
 
 from ...components._viewer_constants import Position
@@ -28,43 +28,57 @@ class VispyScaleBarOverlay:
                 [1, 5, -1],
             ]
         )
-        self._default_color = np.array([1, 0, 1, 1])
         self._target_length = 150
         self._scale = 1
         self._quantity = None
         self._unit_reg = None
 
-        self.node = Line(
+        self.line_node = Line(
             connect='segments', method='gl', parent=parent, width=3
         )
-        self.node.order = order
-        self.node.transform = STTransform()
+        self.line_node.order = order + 1
+        self.line_node.transform = STTransform()
 
-        # In order for the text to always appear centered on the scale bar,
-        # the text node should use the line node as the parent.
-        self.text_node = Text(pos=[0.5, -1], parent=self.node)
-        self.text_node.order = order
+        # In order for the text and box to always appear centered on the scale
+        # bar, the text and rect nodes should use the line node as the parent.
+        self.text_node = Text(pos=[0.5, -1], parent=self.line_node)
+        self.text_node.order = order + 1
         self.text_node.transform = STTransform()
         self.text_node.font_size = 10
         self.text_node.anchors = ("center", "center")
         self.text_node.text = f"{1}px"
 
+        self.rect_node = Rectangle(
+            center=[0.5, 0.5],
+            width=1.1,
+            height=36,
+            color=self._viewer.scale_bar.box_color,
+            parent=self.line_node,
+        )
+        self.rect_node.order = order
+        self.rect_node.transform = STTransform()
+
         # the two canvas are not the same object, better be safe.
-        self.node.canvas._backend.destroyed.connect(self._set_canvas_none)
+        self.rect_node.canvas._backend.destroyed.connect(self._set_canvas_none)
+        self.line_node.canvas._backend.destroyed.connect(self._set_canvas_none)
         self.text_node.canvas._backend.destroyed.connect(self._set_canvas_none)
-        assert self.node.canvas is self.text_node.canvas
+        assert self.rect_node.canvas is self.line_node.canvas
+        assert self.line_node.canvas is self.text_node.canvas
         # End Note
 
         self._viewer.events.theme.connect(self._on_data_change)
         self._viewer.scale_bar.events.visible.connect(self._on_visible_change)
         self._viewer.scale_bar.events.colored.connect(self._on_data_change)
         self._viewer.scale_bar.events.ticks.connect(self._on_data_change)
+        self._viewer.scale_bar.events.box_color.connect(self._on_data_change)
+        self._viewer.scale_bar.events.color.connect(self._on_data_change)
         self._viewer.scale_bar.events.position.connect(
             self._on_position_change
         )
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
         self._viewer.scale_bar.events.font_size.connect(self._on_text_change)
         self._viewer.scale_bar.events.unit.connect(self._on_dimension_change)
+        self._viewer.scale_bar.events.box.connect(self._on_visible_change)
 
         self._on_visible_change()
         self._on_data_change()
@@ -72,7 +86,8 @@ class VispyScaleBarOverlay:
         self._on_position_change()
 
     def _set_canvas_none(self):
-        self.node._set_canvas(None)
+        self.rect_node._set_canvas(None)
+        self.line_node._set_canvas(None)
         self.text_node._set_canvas(None)
 
     @property
@@ -171,34 +186,46 @@ class VispyScaleBarOverlay:
         )
 
         # Update scalebar and text
-        self.node.transform.scale = [sign * scale, 1, 1, 1]
+        self.line_node.transform.scale = [sign * scale, 1, 1, 1]
         self.text_node.text = f'{new_dim:~}'
 
     def _on_data_change(self):
-        """Change color and data of scale bar."""
-        if self._viewer.scale_bar.colored:
-            color = self._default_color
-        else:
-            # the reason for using the `as_hex` here is to avoid
-            # `UserWarning` which is emitted when RGB values are above 1
-            background_color = get_theme(
-                self._viewer.theme, False
-            ).canvas.as_hex()
-            background_color = transform_color(background_color)[0]
-            color = np.subtract(1, background_color)
-            color[-1] = background_color[-1]
+        """Change color and data of scale bar and box."""
+        color = self._viewer.scale_bar.color
+        box_color = self._viewer.scale_bar.box_color
+
+        if not self._viewer.scale_bar.colored:
+            if self._viewer.scale_bar.box:
+                # The box is visible - set the scale bar color to the negative of the
+                # box color.
+                color = 1 - box_color
+                color[-1] = 1
+            else:
+                # set scale color negative of theme background.
+                # the reason for using the `as_hex` here is to avoid
+                # `UserWarning` which is emitted when RGB values are above 1
+                background_color = get_theme(
+                    self._viewer.theme, False
+                ).canvas.as_hex()
+                background_color = transform_color(background_color)[0]
+                color = np.subtract(1, background_color)
+                color[-1] = background_color[-1]
 
         if self._viewer.scale_bar.ticks:
             data = self._data
         else:
             data = self._data[:2]
 
-        self.node.set_data(data, color)
+        self.line_node.set_data(data, color)
         self.text_node.color = color
+        self.rect_node.color = box_color
 
     def _on_visible_change(self):
         """Change visibility of scale bar."""
-        self.node.visible = self._viewer.scale_bar.visible
+        self.rect_node.visible = (
+            self._viewer.scale_bar.visible and self._viewer.scale_bar.box
+        )
+        self.line_node.visible = self._viewer.scale_bar.visible
         self.text_node.visible = self._viewer.scale_bar.visible
 
         # update unit if scale bar is visible and quantity
@@ -220,7 +247,7 @@ class VispyScaleBarOverlay:
         """Change position of scale bar."""
         position = self._viewer.scale_bar.position
         x_bar_offset, y_bar_offset = 10, 30
-        canvas_size = list(self.node.canvas.size)
+        canvas_size = list(self.rect_node.canvas.size)
 
         if position == Position.TOP_LEFT:
             sign = 1
@@ -248,7 +275,8 @@ class VispyScaleBarOverlay:
                 )
             )
 
-        self.node.transform.translate = bar_transform
-        scale = abs(self.node.transform.scale[0])
-        self.node.transform.scale = [sign * scale, 1, 1, 1]
+        self.line_node.transform.translate = bar_transform
+        scale = abs(self.line_node.transform.scale[0])
+        self.line_node.transform.scale = [sign * scale, 1, 1, 1]
+        self.rect_node.transform.translate = (0, 10, 0, 0)
         self.text_node.transform.translate = (0, 20, 0, 0)

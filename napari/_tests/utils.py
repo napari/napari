@@ -1,7 +1,6 @@
 import os
 import sys
 from collections import abc
-from contextlib import contextmanager
 from typing import Any, Dict
 
 import numpy as np
@@ -18,7 +17,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.settings import get_settings
+from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -30,6 +29,12 @@ skip_local_popups = pytest.mark.skipif(
     reason='Tests requiring GUI windows are skipped locally by default.'
     ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
+
+"""
+The default timeout duration in seconds when waiting on tasks running in non-main threads.
+The value was chosen to be consistent with `QtBot.waitSignal` and `QtBot.waitUntil`.
+"""
+DEFAULT_TIMEOUT_SECS: float = 5
 
 
 """
@@ -140,7 +145,8 @@ def are_objects_equal(object1, object2):
         items = [(object1, object2)]
 
     # equal_nan does not exist in array_equal in old numpy
-    if tuple(int(v) for v in np.__version__.split('.')) < (1, 19):
+    npy_major_version = tuple(int(v) for v in np.__version__.split('.')[:2])
+    if npy_major_version < (1, 19):
         fixed = [(np.nan_to_num(a1), np.nan_to_num(a2)) for a1, a2 in items]
         return np.all([np.all(a1 == a2) for a1, a2 in fixed])
 
@@ -263,9 +269,21 @@ def assert_layer_state_equal(
             np.testing.assert_equal(actual_value, expected_value)
 
 
-@contextmanager
-def restore_settings_on_exit():
-    """Context manager restores settings on exit"""
-    original_settings = get_settings().plugins.extension2reader
-    yield
-    get_settings().plugins.extension2reader = original_settings
+def assert_colors_equal(actual, expected):
+    """Asserts that a sequence of colors is equal to an expected one.
+
+    This converts elements in the given sequences from color values
+    recognized by ``transform_color`` to the canonical RGBA array form.
+
+    Examples
+    --------
+    >>> assert_colors_equal([[1, 0, 0, 1], [0, 0, 1, 1]], ['red', 'blue'])
+
+    >>> assert_colors_equal([[1, 0, 0, 1], [0, 0, 1, 1]], ['red', 'green'])
+    Traceback (most recent call last):
+    AssertionError:
+    ...
+    """
+    actual_array = ColorArray.validate(actual)
+    expected_array = ColorArray.validate(expected)
+    np.testing.assert_array_equal(actual_array, expected_array)

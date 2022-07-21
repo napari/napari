@@ -6,13 +6,13 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
-from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
+from .color_encoding import ColorArray, ColorEncoding, ConstantColorEncoding
 from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
@@ -60,9 +60,8 @@ class TextManager(EventedModel):
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-    color : array
-        Font color for the text as an [R, G, B, A] array. Can also be expressed
-        as a string on construction or setting.
+    color : ColorEncoding
+        Defines the color for each text element.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -84,9 +83,9 @@ class TextManager(EventedModel):
         allow_mutation = 1
 
     string: StringEncoding = ConstantStringEncoding(constant='')
+    color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (4,)] = 'cyan'
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
@@ -113,7 +112,7 @@ class TextManager(EventedModel):
             kwargs['string'] = text
         super().__init__(**kwargs)
         self.events.add(values=Event)
-        self.string._apply(features)
+        self.apply(features)
 
     @property
     def values(self):
@@ -134,9 +133,12 @@ class TextManager(EventedModel):
             The features table of a layer.
         """
         self.string._clear()
+        self.color._clear()
         self.string._apply(features)
-        self.events.string()
         self.events.values()
+        self.color._apply(features)
+        # Trigger the main event for vispy layers.
+        self.events(Event(type='refresh'))
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -182,6 +184,8 @@ class TextManager(EventedModel):
         values = self.string(features)
         self.string._append(values)
         self.events.values()
+        colors = self.color(features)
+        self.color._append(colors)
 
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
@@ -195,6 +199,7 @@ class TextManager(EventedModel):
             indices_to_remove = list(indices_to_remove)
         self.string._delete(indices_to_remove)
         self.events.values()
+        self.color._delete(indices_to_remove)
 
     def apply(self, features: Any):
         """Applies any encodings to be the same length as the given features,
@@ -207,15 +212,20 @@ class TextManager(EventedModel):
         """
         self.string._apply(features)
         self.events.values()
+        self.color._apply(features)
 
     def _copy(self, indices: List[int]) -> dict:
         """Copies all encoded values at the given indices."""
-        return {'string': _get_style_values(self.string, indices)}
+        return {
+            'string': _get_style_values(self.string, indices),
+            'color': _get_style_values(self.color, indices),
+        }
 
-    def _paste(self, *, string: StringArray):
+    def _paste(self, *, string: StringArray, color: ColorArray):
         """Pastes encoded values to the end of the existing values."""
         self.string._append(string)
         self.events.values()
+        self.color._append(color)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -263,6 +273,10 @@ class TextManager(EventedModel):
             if values.ndim == 0
             else values
         )
+
+    def _view_color(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        return _get_style_values(self.color, indices_view, value_ndim=1)
 
     @classmethod
     def _from_layer(
@@ -333,10 +347,6 @@ class TextManager(EventedModel):
         # Some of the encodings may have changed, so ensure they encode new
         # values if needed.
         self.apply(features)
-
-    @validator('color', pre=True, always=True)
-    def _check_color(cls, color):
-        return transform_color(color)[0]
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

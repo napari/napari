@@ -12,7 +12,11 @@ import magicgui as mgui
 import numpy as np
 
 from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import add_layer_to_viewer, get_layers
+from ...utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
+)
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
@@ -282,7 +286,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ]
         )
 
-        self._position = (0,) * ndim
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -657,7 +660,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._dims_order = list(
                 reorder_after_dim_reduction(self._dims_order[-ndim:])
             )
-            self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
@@ -665,7 +667,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._dims_order = list(range(ndim - old_ndim)) + [
                 o + ndim - old_ndim for o in self._dims_order
             ]
-            self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._ndim = ndim
         if 'extent' in self.__dict__:
@@ -1782,3 +1783,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     layer_type=layer_type,
                 )
             ) from exc
+
+
+mgui.register_type(type_=List[Layer], return_callback=add_layers_to_viewer)

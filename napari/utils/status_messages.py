@@ -60,9 +60,9 @@ def generate_layer_status(name, position, value):
     msg : string
         String containing a message that can be used as a status update.
     """
-    full_coord = np.round(position).astype(int)
+    full_coord = map(str, np.round(position).astype(int))
 
-    msg = f'{name} {full_coord}'
+    msg = f"{name} [{' '.join(full_coord)}]"
 
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):

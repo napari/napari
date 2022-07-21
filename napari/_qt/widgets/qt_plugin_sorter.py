@@ -43,8 +43,8 @@ def rst2html(text):
         _text, _link = match.groups()[0].split('<')
         return f'<a href="{_link.rstrip(">")}">{_text.strip()}</a>'
 
-    text = re.sub(r'\*\*([^\*]+)\*\*', '<strong>\\1</strong>', text)
-    text = re.sub(r'\*([^\*]+)\*', '<em>\\1</em>', text)
+    text = re.sub(r'\*\*([^*]+)\*\*', '<strong>\\1</strong>', text)
+    text = re.sub(r'\*([^*]+)\*', '<em>\\1</em>', text)
     text = re.sub(r':[a-z]+:`([^`]+)`', ref, text, re.DOTALL)
     text = re.sub(r'`([^`]+)`_', link, text, re.DOTALL)
     text = re.sub(r'``([^`]+)``', '<code>\\1</code>', text)
@@ -146,7 +146,7 @@ class QtHookImplementationListWidget(QListWidget):
     ----------
     parent : QWidget, optional
         Optional parent widget, by default None
-    hook : HookCaller, optional
+    hook_caller : HookCaller, optional
         The ``HookCaller`` for which to show implementations. by default None
         (i.e. no hooks shown)
 
@@ -165,7 +165,7 @@ class QtHookImplementationListWidget(QListWidget):
         hook_caller: Optional[HookCaller] = None,
     ):
         super().__init__(parent)
-        self.setDefaultDropAction(Qt.MoveAction)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragEnabled(True)
         self.setDragDropMode(self.InternalMove)
         self.setSelectionMode(self.SingleSelection)
@@ -207,7 +207,7 @@ class QtHookImplementationListWidget(QListWidget):
         hook_implementation : HookImplementation
             The hook implementation object to add to the list.
         """
-        item = QListWidgetItem(parent=self)
+        item = QListWidgetItem(self)
         item.hook_implementation = hook_implementation
         self.addItem(item)
         widg = ImplementationListItem(item, parent=self)
@@ -228,9 +228,9 @@ class QtHookImplementationListWidget(QListWidget):
         order = [self.item(r).hook_implementation for r in range(self.count())]
         self.order_changed.emit(order)
 
-    def startDrag(self, supportedActions: Qt.DropActions):
+    def startDrag(self, supported_actions):
         drag = drag_with_pixmap(self)
-        drag.exec_(supportedActions, Qt.MoveAction)
+        drag.exec_(supported_actions, Qt.DropAction.MoveAction)
 
     @Slot(list)
     def permute_hook(self, order: List[HookImplementation]):
@@ -305,12 +305,13 @@ class QtPluginSorter(QWidget):
             if not hook_caller.spec:
                 continue
 
-            if firstresult_only:
-                # if the firstresult_only option is set
-                # we only want to include hook_specifications that declare the
-                # "firstresult" option as True.
-                if not hook_caller.spec.opts.get('firstresult', False):
-                    continue
+            # if the firstresult_only option is set
+            # we only want to include hook_specifications that declare the
+            # "firstresult" option as True.
+            if firstresult_only and not hook_caller.spec.opts.get(
+                'firstresult', False
+            ):
+                continue
             self.hook_combo_box.addItem(
                 name.replace("napari_", ""), hook_caller
             )

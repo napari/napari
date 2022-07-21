@@ -1599,6 +1599,12 @@ class Shapes(Layer):
         )
 
     @property
+    def _view_text_color(self) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        self.text.color._apply(self.features)
+        return self.text._view_color(self._indices_view)
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.

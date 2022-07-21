@@ -1,10 +1,10 @@
 from enum import Enum, auto
-from typing import Union
 
 from pydantic import Field
 
+from napari.utils.color import ColorValue
+
 from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
 
 
 class NormalMode(Enum):
@@ -23,9 +23,8 @@ class Normals(EventedModel):
     visible : bool
         Whether the normals are displayed.
     color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
+        The color of the normal lines.
+        See ``ColorValue.validate`` for supported values.
     width : float
         The width of the normal lines.
     length : float
@@ -34,7 +33,7 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
+    color: ColorValue = 'black'
     width: float = 1
     length: float = 5
 

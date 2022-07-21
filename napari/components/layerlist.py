@@ -126,8 +126,31 @@ class LayerList(SelectableEventedList[Layer]):
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
 
+    def _ensure_unique(self, values, allow=()):
+        bad = set(self._list) - set(allow)
+        values = tuple(values) if isinstance(values, Iterable) else (values,)
+        for v in values:
+            if v in bad:
+                raise ValueError(
+                    trans._(
+                        "Layer '{v}' is already present in layer list",
+                        deferred=True,
+                        v=v,
+                    )
+                )
+        return values
+
+    def __setitem__(self, key, value):
+        old = self._list[key]
+        if isinstance(key, slice):
+            value = self._ensure_unique(value, old)
+        elif isinstance(key, int):
+            (value,) = self._ensure_unique((value,), (old,))
+        super().__setitem__(key, value)
+
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
+        (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
@@ -234,20 +257,38 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_step_size(self, layer_extent_list):
         if len(self) == 0:
             return np.ones(self.ndim)
-        else:
-            scales = [extent.step for extent in layer_extent_list]
-            min_scales = self._step_size_from_scales(scales)
-            return min_scales
 
-    @cached_property
-    def extent(self) -> Extent:
-        """Extent of layers in data and world coordinates."""
-        extent_list = [layer.extent for layer in self]
+        scales = [extent.step for extent in layer_extent_list]
+        return self._step_size_from_scales(scales)
+
+    def get_extent(self, layers: Iterable[Layer]) -> Extent:
+        """
+        Return extent for a given layer list.
+        This function is useful for calculating the extent of a subset of layers
+        when preparing and updating some supplementary layers.
+        For example see the cross Vectors layer in the `multiple_viewer_widget` example.
+
+        Parameters
+        ----------
+        layers : list of Layer
+            list of layers for which extent should be calculated
+
+        Returns
+        -------
+        extent : Extent
+             extent for selected layers
+        """
+        extent_list = [layer.extent for layer in layers]
         return Extent(
             data=None,
             world=self._get_extent_world(extent_list),
             step=self._get_step_size(extent_list),
         )
+
+    @cached_property
+    def extent(self) -> Extent:
+        """Extent of layers in data and world coordinates."""
+        return self.get_extent([x for x in self])
 
     @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
@@ -409,7 +450,11 @@ class LayerList(SelectableEventedList[Layer]):
         """
         from ..plugins.io import save_layers
 
-        layers = list(self.selection) if selected else list(self)
+        layers = (
+            [x for x in self if x in self.selection]
+            if selected
+            else list(self)
+        )
 
         if selected:
             msg = trans._("No layers selected", deferred=True)

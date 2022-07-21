@@ -20,6 +20,8 @@ class PluginsMenu(NapariMenu):
 
         from ...plugins import plugin_manager
 
+        _npe2.index_npe1_adapters()
+
         plugin_manager.discover_widgets()
         plugin_manager.events.disabled.connect(
             self._remove_unregistered_widget

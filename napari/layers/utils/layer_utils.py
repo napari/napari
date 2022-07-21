@@ -907,6 +907,15 @@ def _validate_features(
     """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
+    elif isinstance(features, dict):
+        # Convert all array-like objects into a numpy array.
+        # This section was introduced due to an unexpected behavior when using
+        # a pandas Series with mixed indices as input.
+        # This way should handle all array-like objects correctly.
+        # See https://github.com/napari/napari/pull/4755 for more details.
+        features = {
+            key: np.array(value, copy=False) for key, value in features.items()
+        }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 

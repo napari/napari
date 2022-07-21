@@ -12,8 +12,10 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.layers import Points
+from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
+from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
@@ -168,12 +170,12 @@ def test_empty_layer_with_text_properties():
         text=text_kwargs,
     )
     assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
 
 
 def test_empty_layer_with_text_formatted():
@@ -809,7 +811,7 @@ def test_text_from_property_fstring(properties):
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {point_type}',
-        'color': [0, 0, 0, 1],
+        'color': ConstantColorEncoding(constant=[0, 0, 0, 1]),
         'rotation': 10,
         'translation': [5, 5],
         'anchor': Anchor.UPPER_LEFT,
@@ -2345,3 +2347,94 @@ def test_selected_data_with_non_uniform_sizes():
     # should change to that mean.
     layer.selected_data = (0, 2)
     assert layer.current_size == 2
+
+
+def test_shown_view_size_and_view_data_have_the_same_dimension():
+    data = [[0, 0, 0], [1, 1, 1]]
+    # Data with default settings
+    layer = Points(
+        data, out_of_slice_display=False, shown=[True, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [3])
+
+    # shown == [True, False]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[True, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [3])
+
+    # shown == [False, True]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[False, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 0
+    assert np.array_equal(layer._view_size, [])
+
+    # shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=False, shown=[False, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 0
+    assert np.array_equal(layer._view_size, [])
+
+    # Out of slice display == True
+    layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 2
+    assert np.array_equal(layer._view_size, [3, 1])
+
+    # Out of slice display == True && shown == [True, False]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[True, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [3])
+
+    # Out of slice display == True && shown == [False, True]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[False, True], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 1
+    assert np.array_equal(layer._view_size, [1])
+
+    # Out of slice display == True && shown == [False, False]
+    layer = Points(
+        data, out_of_slice_display=True, shown=[False, False], size=3
+    )
+    assert layer._view_size.shape[0] == layer._view_data.shape[0]
+    assert layer._view_size.shape[0] == 0
+    assert np.array_equal(layer._view_size, [])
+
+
+def test_empty_data_from_tuple():
+    """Test that empty data raises an error."""
+    layer = Points(name="points")
+    layer2 = Points.create(*layer.as_layer_data_tuple())
+    assert layer2.data.size == 0
+
+
+@pytest.mark.parametrize(
+    'attribute, new_value',
+    [
+        ("size", [20, 20]),
+        ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_width", np.asarray([0.2])),
+    ],
+)
+def test_new_point_size_editable(attribute, new_value):
+    """tests the newly placed points may be edited without re-selecting"""
+    layer = Points()
+    layer.mode = Mode.ADD
+    layer.add((0, 0))
+
+    setattr(layer, f"current_{attribute}", new_value)
+    np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)

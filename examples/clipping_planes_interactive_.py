@@ -9,15 +9,7 @@ import napari
 import numpy as np
 from skimage import data
 from scipy import ndimage
-
-try:
-    from meshzoo import icosa_sphere
-except ModuleNotFoundError as e:
-    raise ModuleNotFoundError(
-        "This example uses a meshzoo but meshzoo is not installed. "
-        "To install try 'pip install meshzoo'."
-    ) from e
-
+from vispy.geometry import create_sphere
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -51,11 +43,11 @@ points_layer = viewer.add_points(
 )
 
 # SPHERE
-sphere_vert, sphere_faces = icosa_sphere(10)
-sphere_vert *= 20
+mesh = create_sphere(method='ico')
+sphere_vert = mesh.get_vertices() * 20
 sphere_vert += 32
 surface_layer = viewer.add_surface(
-    (sphere_vert, sphere_faces),
+    (sphere_vert, mesh.get_faces()),
     experimental_clipping_planes=[plane_parameters],
 )
 

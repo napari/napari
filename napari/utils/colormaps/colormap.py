@@ -4,11 +4,12 @@ from typing import Optional
 import numpy as np
 from pydantic import PrivateAttr, validator
 
+from napari.utils.color import ColorArray
+
 from ..events import EventedModel
 from ..events.custom_types import Array
 from ..translations import trans
 from .colorbars import make_colorbar
-from .standardize_color import transform_color
 
 
 class ColormapInterpolationMode(str, Enum):
@@ -46,7 +47,7 @@ class Colormap(EventedModel):
     """
 
     # fields
-    colors: Array[float, (-1, 4)]
+    colors: ColorArray
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
@@ -58,11 +59,6 @@ class Colormap(EventedModel):
 
         super().__init__(colors=colors, **data)
         self._display_name = display_name
-
-    # validators
-    @validator('colors', pre=True)
-    def _ensure_color_array(cls, v):
-        return transform_color(v)
 
     # controls validator must be called even if None for correct initialization
     @validator('controls', pre=True, always=True)

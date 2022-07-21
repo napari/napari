@@ -1,11 +1,11 @@
 import sys
 import threading
-import time
 import warnings
 from typing import List
 
 import pytest
 
+from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.utils.notifications import (
     Notification,
     notification_manager,
@@ -41,12 +41,6 @@ def test_notification_manager_no_gui(monkeypatch):
     This does not test the integration with the gui, but test that the
     notification manager itself can receive a info, warning or error.
     """
-    try:
-        from napari._qt.dialogs.qt_notification import NapariQtNotification
-
-        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
-    except ModuleNotFoundError:
-        pass
     previous_exhook = sys.excepthook
     with notification_manager:
         notification_manager.records.clear()
@@ -112,11 +106,9 @@ def test_notification_manager_no_gui_with_threading():
     """
 
     def _warn():
-        time.sleep(0.01)
         warnings.showwarning('this is a warning', UserWarning, '', 0)
 
     def _raise():
-        time.sleep(0.01)
         with pytest.raises(PurposefulException):
             raise PurposefulException("this is an exception")
 
@@ -135,7 +127,7 @@ def test_notification_manager_no_gui_with_threading():
 
         exception_thread = threading.Thread(target=_raise)
         exception_thread.start()
-        time.sleep(0.02)
+        exception_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
         try:
             raise ValueError("a")
@@ -149,16 +141,10 @@ def test_notification_manager_no_gui_with_threading():
         assert warnings.showwarning == notification_manager.receive_warning
         warning_thread = threading.Thread(target=_warn)
         warning_thread.start()
+        warning_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
-        for _ in range(100):
-            time.sleep(0.01)
-            if (
-                len(notification_manager.records) == 2
-                and store[-1].type == 'warning'
-            ):
-                break
-        else:
-            raise AssertionError("Thread notification not received in time")
+        assert len(notification_manager.records) == 2
+        assert store[-1].type == 'warning'
 
     # make sure we've restored the threading except hook
     assert threading.excepthook == previous_threading_exhook

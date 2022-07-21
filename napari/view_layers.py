@@ -109,7 +109,7 @@ def _merge_layer_viewer_sigs_docs(func):
 
 
 _viewer_params = inspect.signature(Viewer).parameters
-_dims_params = inspect.signature(Dims).parameters
+_dims_params = Dims.__fields__
 
 
 def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:

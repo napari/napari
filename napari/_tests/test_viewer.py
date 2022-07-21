@@ -18,25 +18,25 @@ from napari.utils.action_manager import action_manager
 
 def _get_all_keybinding_methods(type_):
     obj_methods = set(super(type_, type_).class_keymap.values())
-    obj_methods.update(type_.class_keymap.values())
-
-    # need to get methods in action_manager
-    am_methods = action_manager._get_layer_actions(type_)
-    for name, action in am_methods.items():
-        obj_methods.add(action.command)
+    obj_methods.update({v.__name__ for v in type_.class_keymap.values()})
+    obj_methods.update(
+        {
+            a.command.__name__
+            for a in action_manager._get_layer_actions(type_).values()
+        }
+    )
     return obj_methods
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 13
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 14
 
 
 def test_len_methods_viewer(make_napari_viewer):
     """
     Make sure we do find all the methods attached to a viewer via keybindings
     """
-
-    viewer = make_napari_viewer()  # noqa: F841
+    _ = make_napari_viewer()
     viewer_methods = _get_all_keybinding_methods(Viewer)
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
 
@@ -85,46 +85,36 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
 
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+    viewer = make_napari_viewer()
+    layer = add_layer_by_type(viewer, layer_class, data, visible=True)
+    check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
+
+    for func in layer.class_keymap.values():
+        func(layer)
+
+
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 8,
+    'Image': 5,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
-    'Points': 8,
+    'Points': 9,
     'Labels': 11,
-    'Shapes': 19,
+    'Shapes': 17,
 }
 
 
-# We unroll the layer data, with the all the methods of the layer that we are
-# going to test, so that if one method fails we know which one, as well as
-# remove potential issues that would be triggered by calling methods after each
-# other.
-
-
-unrolled_layer_data = []
-for layer_class, data, ndim in layer_test_data:
-    methods = _get_all_keybinding_methods(layer_class)
-    for func in methods:
-        unrolled_layer_data.append(
-            (layer_class, data, ndim, func, len(methods))
-        )
-
-
 @pytest.mark.parametrize(
-    'layer_class, data, ndim, func, Nmeth', unrolled_layer_data
+    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_METHODS.items()
 )
-@pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(
-    make_napari_viewer, layer_class, data, ndim, func, Nmeth, visible
-):
-    viewer = make_napari_viewer()
-    layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
-    check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
-
-    func(layer)
-
-    assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
+def test_expected_number_of_layer_methods(cls, expectation):
+    """
+    Make sure we do find all the methods attached to a layer via keybindings
+    """
+    layer_methods = _get_all_keybinding_methods(getattr(layers, cls))
+    assert len(layer_methods) == expectation
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
@@ -207,7 +197,6 @@ def test_changing_theme(make_napari_viewer):
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
-
     viewer = make_napari_viewer()
 
     np.random.seed(0)
@@ -233,7 +222,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
-    viewer.dims._transpose()
+    viewer.dims.transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
@@ -319,6 +308,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     viewer.layers.selection.active = layer
 
     assert layer._value is None
+    viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
     assert layer._value == 1
 
@@ -349,3 +339,21 @@ def test_empty_shapes_dims(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     viewer.add_shapes(None)
     viewer.dims.ndisplay = 3
+
+
+def test_current_viewer(make_napari_viewer):
+    """Test that the viewer made last is the "current_viewer()" until another is activated"""
+    # Make two DIFFERENT viewers
+    viewer1: Viewer = make_napari_viewer()
+    viewer2: Viewer = make_napari_viewer()
+    assert viewer2 is not viewer1
+    # Ensure one is returned by napari.current_viewer()
+    from napari import current_viewer
+
+    assert current_viewer() is viewer2
+    assert current_viewer() is not viewer1
+
+    viewer1.window.activate()
+
+    assert current_viewer() is viewer1
+    assert current_viewer() is not viewer2

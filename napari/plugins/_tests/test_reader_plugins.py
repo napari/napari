@@ -3,13 +3,14 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
+from npe2 import DynamicPlugin
 
 from napari import utils
 from napari.components import ViewerModel
 from napari.plugins import io
 
 
-def test_builtin_reader_plugin():
+def test_builtin_reader_plugin(builtins: DynamicPlugin):
     """Test the builtin reader plugin reads a temporary file."""
 
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
@@ -17,7 +18,7 @@ def test_builtin_reader_plugin():
         utils.io.imsave(tmp.name, data)
         tmp.seek(0)
         layer_data, _ = io.read_data_with_plugins(
-            [tmp.name], 'builtins', stack=False
+            [tmp.name], builtins.name, stack=False
         )
 
         assert layer_data is not None
@@ -27,12 +28,12 @@ def test_builtin_reader_plugin():
         assert np.allclose(data, layer_data[0][0])
 
         viewer = ViewerModel()
-        viewer.open(tmp.name, plugin='builtins')
+        viewer.open(tmp.name, plugin=builtins.name)
 
         assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_npy():
+def test_builtin_reader_plugin_npy(builtins: DynamicPlugin):
     """Test the builtin reader plugin reads a temporary npy file."""
 
     with NamedTemporaryFile(suffix='.npy', delete=False) as tmp:
@@ -40,7 +41,7 @@ def test_builtin_reader_plugin_npy():
         np.save(tmp.name, data)
         tmp.seek(0)
         layer_data, _ = io.read_data_with_plugins(
-            [tmp.name], 'builtins', stack=False
+            [tmp.name], builtins.name, stack=False
         )
 
         assert layer_data is not None
@@ -50,12 +51,12 @@ def test_builtin_reader_plugin_npy():
         assert np.allclose(data, layer_data[0][0])
 
         viewer = ViewerModel()
-        viewer.open(tmp.name, plugin='builtins')
+        viewer.open(tmp.name, plugin=builtins.name)
 
         assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_csv(tmpdir):
+def test_builtin_reader_plugin_csv(tmpdir, builtins: DynamicPlugin):
     """Test the builtin reader plugin reads a temporary file."""
     tmp = os.path.join(tmpdir, 'test.csv')
     column_names = ['index', 'axis-0', 'axis-1']
@@ -63,7 +64,9 @@ def test_builtin_reader_plugin_csv(tmpdir):
     data = table[:, 1:]
     # Write csv file
     utils.io.write_csv(tmp, table, column_names=column_names)
-    layer_data, _ = io.read_data_with_plugins([tmp], 'builtins', stack=False)
+    layer_data, _ = io.read_data_with_plugins(
+        [tmp], builtins.name, stack=False
+    )
 
     assert layer_data is not None
     assert isinstance(layer_data, list)
@@ -73,12 +76,12 @@ def test_builtin_reader_plugin_csv(tmpdir):
     assert np.allclose(data, layer_data[0][0])
 
     viewer = ViewerModel()
-    viewer.open(tmp, plugin='builtins')
+    viewer.open(tmp, plugin=builtins.name)
 
     assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_stacks():
+def test_builtin_reader_plugin_stacks(builtins):
     """Test the builtin reader plugin reads multiple files as a stack."""
     data = np.random.rand(5, 20, 20)
     tmps = []
@@ -93,14 +96,14 @@ def test_builtin_reader_plugin_stacks():
     # pathnames a Path object
     names = [tmp.name for tmp in tmps]
     names[0] = Path(names[0])
-    viewer.open(names, stack=True, plugin='builtins')
+    viewer.open(names, stack=True, plugin=builtins.name)
     assert np.allclose(viewer.layers[0].data, data)
     for tmp in tmps:
         tmp.close()
         os.unlink(tmp.name)
 
 
-def test_builtin_reader_plugin_url():
+def test_builtin_reader_plugin_url(builtins):
     layer_data, _ = io.read_data_with_plugins(
         ['https://samples.fiji.sc/FakeTracks.tif']
     )

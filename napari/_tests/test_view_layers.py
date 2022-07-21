@@ -149,6 +149,8 @@ def test_view_multichannel(qtbot, napari_plugin_manager):
 
 
 def test_kwargs_passed(monkeypatch):
+    import napari.view_layers
+
     viewer_mock = MagicMock(napari.Viewer)
     monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
     napari.view_path(

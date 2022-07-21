@@ -82,16 +82,12 @@ class NotebookScreenshot:
                     'will be stripped altogether without lxml.'
                 )
                 return None
-            alt_text = html.unescape(
-                str(alt_text)
-            )  # cleaner won't recognize unescaped script tags
-            cleaner = Cleaner()
+            # cleaner won't recognize escaped script tags, so always unescape
+            # to be safe
+            alt_text = html.unescape(str(alt_text))
             doc = document_fromstring(alt_text)
-            alt_text = cleaner.clean_html(doc).text_content()
-            # alt_text = html.escape(alt_text)
-            if alt_text == "":
-                alt_text = None
-        return alt_text
+            alt_text = Cleaner().clean_html(doc).text_content()
+        return alt_text or None
 
     def _repr_png_(self):
         """PNG representation of the viewer object for IPython.
@@ -117,13 +113,8 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        if self.alt_text is None:
-            html_output = f'<img src="{url}"></img>'
-        else:
-            html_output = (
-                f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
-            )
-        return html_output
+        _alt = html.escape(self.alt_text) if self.alt_text is not None else ''
+        return f'<img src="{url}" alt="{_alt}"></img>'
 
 
 nbscreenshot = NotebookScreenshot
