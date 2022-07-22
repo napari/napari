@@ -39,6 +39,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         the ``basetype`` is not an evented object.
     """
 
+    _coerce_type = True
+
     events: EmitterGroup
 
     def __init__(

@@ -134,7 +134,7 @@ class ParametrizedGenericCompliantModelField(ModelField):
         if (
             not isinstance(origin, type)
             or getattr(origin, '_is_protocol', False)
-            or not getattr(origin, '_coerce_type', True)
+            or not getattr(origin, '_coerce_type', False)
         ):
             return
 

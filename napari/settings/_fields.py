@@ -12,8 +12,6 @@ class Theme(str):
     Custom theme type to dynamically load all installed themes.
     """
 
-    _coerce_type = False
-
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
 
     @classmethod
@@ -50,8 +48,6 @@ class Language(str):
     """
     Custom theme type to dynamically load all installed language packs.
     """
-
-    _coerce_type = False
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
 

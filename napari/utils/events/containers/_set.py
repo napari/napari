@@ -22,6 +22,8 @@ class EventedSet(MutableSet[_T]):
         and/or removed from the set.
     """
 
+    _coerce_type = True
+
     events: EmitterGroup
 
     def __init__(self, data: Iterable[_T] = ()):

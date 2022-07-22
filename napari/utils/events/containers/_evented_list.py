@@ -72,6 +72,8 @@ class EventedList(TypedMutableSequence[_T]):
         emitted when the list is reordered (eg. moved/reversed).
     """
 
+    _coerce_type = True
+
     events: EmitterGroup
 
     def __init__(
