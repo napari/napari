@@ -1,6 +1,6 @@
 # Napari architecture
 
-The napari codebase can thought to consist of three main components:
+The napari codebase can be thought to consist of three main components:
 
 * python models describing objects - these are able to operate separately from
   the viewer and do not have any dependencies on user interface classes
@@ -16,103 +16,96 @@ The separation of the python models from viewer GUI code allows:
 
 * the python model to be easily run headless without the viewer, for example
   when performing batch analysis
-* analysis plugins are able to be developed without worrying about the GUI
+* analysis plugins to be developed without worrying about the GUI
   aspect
-* napari has the option to move away from the rendering backend currently used
-* tests can easily be run headlessly
+* napari to have the option to move away from the rendering backend currently
+  used
+* tests to be easily run headlessly
 
 ## Python models and events
 
 Commonly, python models in napari are classes that store information about their
 state as an attribute and are the "source of ground truth". When these
 attributes are changed an "event" needs to be emitted such that relevant
-obserers of the model (such as other classes) can take the appropriate
-action. See [An Introduction to the Event Loop in napari](events/event_loop))
-for a little more background on events and the event-loop.
+obsevers of the model (such as other classes) can take the appropriate
+action.
 
-One way this is achieved in napari is via getters and setters:
+One way this is achieved in napari is via getters and setters. Let's take
+for example the `Dims` class with a selected few attributes:
 
 ```python
 from napari.utils.events import EmitterGroup
 
-class Weather:
-    """A simple model to track changes in the weather.
+class Dims:
+    """Dimensions object modeling slicing and displaying.
 
     Parameters
     ----------
-    temperature : float
-        Degrees in Fahrenheit.
-    humidity : float
-        Percent humidity
-    wind : float
-        Wind speed in mph
+    ndim : int
+        Number of dimensions.
+    ndisplay : int
+        Number of displayed dimensions.
+    ...
     """
-    def __init__(self, temperature, humidity=70, wind=0):
-        self._temperature = temperature
-        self._humidity = humidity
-        self._wind = wind
+    def __init__(self, ndim, ndisplay):
+        self._ndim_ = ndim
+        self._ndisplay = ndisplay
 
         # an `EmitterGroup` manages a set of `EventEmitters`
         # we add one emitter for each attribute we'd like to track
-        self.events = EmitterGroup(
-            source=self, temperature=None, humidity=None, wind=None
-        )
+        self.events = EmitterGroup(source=self, ndim=None, ndisplay=None)
 
     # for each attribute, we create a `@property` getter/setter
     # so that we can emit the appropriate event when that attribute
-    # is changed using the syntax: ``weather.attribute = new_value``
+    # is changed using the syntax: ``Dim.attribute = new_value``
     @property
-    def temperature(self):
-        """Degrees in Fahrenheit."""
-        return self._temperature
+    def ndim(self):
+        """Number of dimensions."""
+        return self._ndim
 
-    @temperature.setter
-    def temperature(self, value):
-        self._temperature = value
-        # emit the temperature "changed" event
-        self.events.temperature(value=value)
-
-    @property
-    def humidity(self):
-        """Percent humidity."""
-        return self._humidity
-
-    @humidity.setter
-    def humidity(self, value):
-        self._humidity = value
-        # emit the humidity "changed" event
-        self.events.humidity(value=value)
+    @ndim.setter
+    def ndim(self, value):
+        self._ndim = value
+        # emit the ndim "changed" event
+        self.events.ndim(value=value)
 
     @property
-    def wind(self):
-        """Wind speed in mph."""
-        return self._wind
+    def ndisplay(self):
+        """Number of displayed dimensions."""
+        return self._ndisplay
 
-    @wind.setter
-    def wind(self, value):
-        self._wind = value
-        # emit the wind "changed" event
-        self.events.wind(value=value)
+    @ndisplay.setter
+    def ndisplay(self, value):
+        self._ndisplay = value
+        # emit the ndisplay "changed" event
+        self.events.ndisplay(value=value)
 ```
 
-Another object can then "listen" for changes in our weather model and register
+Another object can then "listen" for changes in our `Dim` model and register
 a callback function with the event emitter of the attribute they would like
 to watch:
 
 ```python
 # create an instance of the model
-weather = Weather(temperature=72, humidity=65, wind=0)
+dims = Dim(ndim=3, ndisplay=2)
 
 # define some callback that should respond to changes in the model
-def hurricane_watch(event):
-    if event.value > 74:
-        print("Hurricane! Evacuate!")
+def _update_display(event):
+    """
+    Updates display for all sliders.
+
+    The event parameter is there just to allow easy connection to signals,
+    without using `lambda event:`
+    """
+    # the code updating display code is quite complex and not relevant for this
+    # example thus has ommited.
+    print("Update number of dimensions displayed")
 
 # register our callback with the model
-weather.events.wind.connect(hurricane_watch)
+dims.events.wind.connect(_update_display)
 
-# now, everytime weather.wind is changed, hurricane_watch is called
-weather.wind = 90  # prints: "Hurricane! Evacuate!"
+# now, everytime dims.ndisplay is changed, _update_display is called
+dim.ndisplay = 3
 ```
 
 This method is very customizable but requires a lot of boilerplate. The
@@ -123,30 +116,29 @@ following features:
 * type validation and coersion on class instantiation and attribute assignment
 * event emission after successful attribute assignment
 
-Using `EventedModel` would reduce the above `weather` class code to:
+Using `EventedModel` would reduce the above `Dim` class code to:
 
 ```python
-class weather(EventedModel):
-    """A simple model to track changes in the weather.
+class Dim(EventedModel):
+    """Dimensions object modeling slicing and displaying.
 
     Parameters
     ----------
-    temperature : float
-        Degrees in Fahrenheit.
-    humidity : float
-        Percent humidity
-    wind : float
+    ndim : int
+        Number of dimensions.
+    ndisplay : int
+        Number of displayed dimensions.
+    ...
     """
-    temperature: float
-    humidity: float
-    wind: float
+    ndim: float
+    ndisplay: float
 ```
 
 Currently most of the models in `napari/components/` are `EventedModels` but
 not the layer models although there is intention to convert these to
 `EventedModels` in the future.
 
-## Qt models
+## Qt classes
 
 Qt classes are responsible for all napari's user interface elements. There is
 generally one to one mapping between Python models and qt models in napari, for
@@ -157,8 +149,50 @@ The Qt classes are also instantiated with a reference to
 the Python model, which gets updated directly when a field is changed via the
 GUI.
 
-## Vispy models
+For example, below is a code snippet showing the `QtDims` class instantiating
+with a reference to the python class `Dims` and registering the callback
+`_update_display`:
+
+```python
+class QtDims(QWidget):
+    """Qt view for the napari Dims model.
+
+    Parameters
+    ----------
+    dims : napari.components.dims.Dims
+        Dims object to be passed to Qt object.
+    ...
+
+    Attributes
+    ----------
+    dims : napari.components.dims.Dims
+        Dimensions object modeling slicing and displaying.
+    ...
+    """
+
+    def __init__(self, dims: Dims):
+
+        self.dims.events.ndisplay.connect(self._update_display)
+```
+
+## Vispy classes
 
 Vispy classes are responsible for drawing the canvas contents, thus need to be
 informed of any changes to Python models. They achieve this by connecting
 callbacks to Python model events just like Qt models.
+
+For example, below is a code snippet showing the `VispyCamera` class connecting
+the function `_on_ndisplay_change`:
+
+```python
+class VispyCamera:
+    """Vipsy camera for both 2D and 3D rendering.
+    """
+
+    def __init__(self):
+        ...
+
+        self._dims.events.ndisplay.connect(
+            self._on_ndisplay_change, position='first'
+        )
+```
