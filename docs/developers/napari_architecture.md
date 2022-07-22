@@ -189,7 +189,8 @@ class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
     """
 
-    def __init__(self):
+    def __init__(self, dims):
+        self._dims = dims
         ...
 
         self._dims.events.ndisplay.connect(
