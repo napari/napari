@@ -47,7 +47,6 @@ from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
-from ..utils.stack_utils import split_channels
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll

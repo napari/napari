@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, List
 
 import numpy as np
 
-from ..layers import Image
-from ..layers.image._image_utils import guess_multiscale
-from .colormaps import CYMRGB, MAGENTA_GREEN, Colormap
-from .misc import ensure_iterable, ensure_sequence_of_iterables
-from .translations import trans
+from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from ...utils.translations import trans
+from .. import Image
+from ..image._image_utils import guess_multiscale
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData
+    from ...types import FullLayerData
 
 
 def slice_from_axis(array, *, axis, element):

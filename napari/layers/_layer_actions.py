@@ -19,11 +19,11 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
-from ..utils import stack_utils
 from ..utils._injection import inject_napari_dependencies
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
 from .base.base import Layer
+from .utils import stack_utils
 from .utils._link_layers import get_linked_layers
 
 if TYPE_CHECKING:
