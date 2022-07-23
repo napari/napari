@@ -4,7 +4,7 @@ import logging
 import traceback
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
 import numpy as np
@@ -163,8 +163,6 @@ class QtViewer(QSplitter):
         Dimension sliders; Qt View for Dims model.
     dockConsole : QtViewerDockWidget
         QWidget wrapped in a QDockWidget with forwarded viewer events.
-    aboutKeybindings : QtAboutKeybindings
-        Key bindings for the 'About' Qt dialog.
     dockLayerControls : QtViewerDockWidget
         QWidget wrapped in a QDockWidget with forwarded viewer events.
     dockLayerList : QtViewerDockWidget
@@ -191,7 +189,7 @@ class QtViewer(QSplitter):
 
         super().__init__()
         self._instances.add(self)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
 
@@ -273,14 +271,14 @@ class QtViewer(QSplitter):
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
-        self.setOrientation(Qt.Vertical)
+        self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
         self._cursors = {
-            'cross': Qt.CrossCursor,
-            'forbidden': Qt.ForbiddenCursor,
-            'pointing': Qt.PointingHandCursor,
-            'standard': QCursor(),
+            'cross': Qt.CursorShape.CrossCursor,
+            'forbidden': Qt.CursorShape.ForbiddenCursor,
+            'pointing': Qt.CursorShape.PointingHandCursor,
+            'standard': Qt.CursorShape.ArrowCursor,
         }
 
         self._on_active_change()
@@ -335,12 +333,12 @@ class QtViewer(QSplitter):
     def _leave_canvas(self):
         """disable status on canvas leave"""
         self.viewer.status = ""
-        self.viewer._mouse_over_canvas = False
+        self.viewer.mouse_over_canvas = False
 
     def _enter_canvas(self):
         """enable status on canvas enter"""
         self.viewer.status = "Ready"
-        self.viewer._mouse_over_canvas = True
+        self.viewer.mouse_over_canvas = True
 
     def _ensure_connect(self):
         # lazy load console
@@ -729,10 +727,10 @@ class QtViewer(QSplitter):
         dlg.setHistory(hist)
 
         folder = dlg.getExistingDirectory(
-            parent=self,
-            caption=trans._('Select folder...'),
-            directory=hist[0],  # home dir by default
-            options=(
+            self,
+            trans._('Select folder...'),
+            hist[0],  # home dir by default
+            (
                 QFileDialog.DontUseNativeDialog
                 if in_ipython()
                 else QFileDialog.Options()
@@ -746,7 +744,7 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: List[str],
-        stack: bool,
+        stack: Union[bool, List[List[str]]],
         plugin: str = None,
         layer_type: str = None,
         **kwargs,
@@ -760,8 +758,9 @@ class QtViewer(QSplitter):
         ----------
         filenames : List[str]
             paths to open
-        stack : bool
-            whether to stack files or not
+        stack : bool or list[list[str]]
+            whether to stack files or not. Can also be a list containing
+            files to stack.
         """
         try:
             self.viewer.open(
@@ -804,12 +803,10 @@ class QtViewer(QSplitter):
             size = self.viewer.cursor.size * self.viewer.camera.zoom
         else:
             size = self.viewer.cursor.size
-
+        size = int(size)
         if cursor == 'square':
             # make sure the square fits within the current canvas
-            if size < 8 or size > (
-                min(*self.viewer.window._qt_viewer.canvas.size) - 4
-            ):
+            if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
@@ -1079,7 +1076,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragEvent
             Event from the Qt context.
         """
         if event.mimeData().hasUrls():
@@ -1098,10 +1095,13 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
-        shift_down = QGuiApplication.keyboardModifiers() & Qt.ShiftModifier
+        shift_down = (
+            QGuiApplication.keyboardModifiers()
+            & Qt.KeyboardModifier.ShiftModifier
+        )
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
@@ -1123,7 +1123,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QCloseEvent
             Event from the Qt context.
         """
         self.layers.close()
