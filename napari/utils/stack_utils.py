@@ -181,6 +181,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
     imagelist: list
         List of Image objects
     """
+    from ..layers import Image
 
     data, meta, _ = stack.as_layer_data_tuple()
 

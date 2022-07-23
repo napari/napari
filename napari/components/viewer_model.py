@@ -34,7 +34,6 @@ from ..layers.image._image_utils import guess_labels
 from ..layers.labels._labels_key_bindings import labels_fun_to_mode
 from ..layers.points._points_key_bindings import points_fun_to_mode
 from ..layers.shapes._shapes_key_bindings import shapes_fun_to_mode
-from ..layers.utils.stack_utils import split_channels
 from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
