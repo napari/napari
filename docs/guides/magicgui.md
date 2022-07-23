@@ -205,6 +205,7 @@ each type is described below:
 - any of the `<LayerType>Data` types from {mod}`napari.types`, such as
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {attr}`napari.types.LayerDataTuple`
+- `List`s of {class}`napari.layers.Layer` or {attr}`napari.types.LayerDataTuple`
 
 ### Returning a `Layer` subclass
 
@@ -250,6 +251,27 @@ nbscreenshot(viewer, alt_text="A magicgui widget using an image layer return ann
 With this method, a new layer will be added to the layer list each time the
 function is called.  To update an existing layer, you must use the
 `LayerDataTuple` approach described below
+```
+
+### Returning `List[napari.layers.Layer]`
+
+You can create multiple layers by returning a list of
+{class}`~napari.layers.Layer`.
+
+```python
+from typing import List
+
+@magicgui
+def make_points(...) -> List[napari.layers.Layer]:
+  ...
+```
+
+```{note}
+Note: the `List[]` syntax here is optional from the perspective of `napari`.  You
+can return either a single Layer or a list of Layers and they will all be added
+to the viewer as long as you use either `List[napari.layers.Layer]` or 
+`napari.layers.Layer`.  If you want your code to be properly typed, however,
+your return type must match your return annotation.
 ```
 
 (returning-napari-types-data)=
