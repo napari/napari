@@ -47,6 +47,7 @@ from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
+from ..utils.stack_utils import split_channels
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -810,6 +811,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return layer
         else:
+            warnings.warn(
+                trans._(
+                    "\nThe 'channel_axis' argument is deprecated and will be removed in v0.5.1.\nTo achieve the same behavior, you may use 'napari.utils.split_channels':\n\n```\nfrom napari.utils import split_channels\n\nfor (ch, kw, _) in split_channels(data, channel_axis, **kwargs):\n    viewer.add_image(ch, **kw)\n```\n",
+                    deferred=True,
+                ),
+                category=DeprecationWarning,
+                stacklevel=3,
+            )
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
