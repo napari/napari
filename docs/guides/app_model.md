@@ -70,7 +70,7 @@ A user/plugin provides a function
 
 ```python
 # some *well-annotated* user provided function
-# declares a need for an Image
+# declares a need for Points
 def process_points(points: 'Points'):
     # do something with points
     print(points.name)
