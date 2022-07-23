@@ -1,4 +1,5 @@
-FROM --platform=linux/amd64 ubuntu:20.04 AS napari
+FROM --platform=linux/amd64 ubuntu:22.04 AS napari
+
 
 # below env var required to install libglib2.0-0 non-interactively
 ENV TZ=America/Los_Angeles
@@ -8,7 +9,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -qqy  \
         build-essential \
-        python3.8 \
+        python3.9 \
         python3-pip \
         git \
         mesa-utils \
@@ -27,10 +28,13 @@ RUN apt-get update && \
         libxcb-xinerama0 \
         libxcb-xinput0 \
         libxcb-xfixes0 \
-        libxcb-shape0
+        libxcb-shape0 \
+        && apt-get clean
 
 # install napari release version
 RUN pip3 install napari[all]
+
+# copy examples
 COPY examples /tmp/examples
 
 ENTRYPOINT ["python3", "-m", "napari"]
