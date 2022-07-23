@@ -40,7 +40,6 @@ except ModuleNotFoundError:
 import os
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -344,8 +343,7 @@ def _npe2pm(npe2pm, monkeypatch):
 
 @pytest.fixture
 def builtins(_npe2pm: TestPluginManager):
-    mf_path = str(Path(__file__).parent / 'builtins.yaml')
-    with _npe2pm.tmp_plugin(manifest=mf_path) as plugin:
+    with _npe2pm.tmp_plugin(package='napari') as plugin:
         yield plugin
 
 
