@@ -300,7 +300,7 @@ class Labels(_ImageBase):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
         self._preserve_labels = False
-        self._help = self._mode_help(self._mode)
+        self._help = self._mode_help_string(self._mode)
 
         self._reset_history()
 
@@ -711,7 +711,11 @@ class Labels(_ImageBase):
     }
 
     @staticmethod
-    def _mode_help(mode):
+    def _mode_help_string(mode: Mode) -> str:
+        """
+        Return string informing about shortcuts
+        that will enable alternative layer mode
+        """
         from . import _labels_key_bindings as kb
 
         help_li = []
@@ -743,7 +747,7 @@ class Labels(_ImageBase):
         if not changed:
             return
 
-        self.help = self._mode_help(mode)
+        self.help = self._mode_help_string(mode)
 
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()

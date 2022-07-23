@@ -1585,7 +1585,11 @@ class Shapes(Layer):
         return str(self._mode)
 
     @staticmethod
-    def _mode_help(mode):
+    def _mode_help_string(mode: Mode) -> str:
+        """
+        Return string informing about shortcuts
+        that will enable alternative layer mode
+        """
         from . import _shapes_key_bindings as kb
 
         help_li = []
@@ -1632,7 +1636,7 @@ class Shapes(Layer):
         old_mode = self._mode
         self._mode = mode
 
-        self.help = self._mode_help(mode)
+        self.help = self._mode_help_string(mode)
 
         draw_modes = {
             Mode.SELECT,

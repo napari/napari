@@ -103,7 +103,7 @@ class Points(Layer):
     n_dimensional : bool
         This property will soon be deprecated in favor of 'out_of_slice_display'.
         Use that instead.
-    name : str
+    name : str`
         Name of the layer.
     metadata : dict
         Layer metadata.
@@ -397,7 +397,7 @@ class Points(Layer):
         self._value = None
         self._value_stored = None
         self._mode = Mode.PAN_ZOOM
-        self._help = self._mode_help(self._mode)
+        self._help = self._mode_help_string(self._mode)
         self._status = self.mode
         self._highlight_index = []
         self._highlight_box = None
@@ -1275,7 +1275,11 @@ class Points(Layer):
     }
 
     @staticmethod
-    def _mode_help(mode):
+    def _mode_help_string(mode: Mode) -> str:
+        """
+        Return string informing about shortcuts
+        that will enable alternative layer mode
+        """
         from . import _points_key_bindings as kb
 
         help_li = []
@@ -1316,7 +1320,7 @@ class Points(Layer):
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
 
-        self.help = self._mode_help(mode)
+        self.help = self._mode_help_string(mode)
 
         self._set_highlight()
         self.events.mode(mode=mode)
