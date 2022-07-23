@@ -67,8 +67,8 @@ def test_plugin_widgets_menus(some_widgets, qtbot):
 
     # Expect a submenu ("Test plugin1") with particular entries.
     tp1 = next(m for m in actions if m.text() == 'TestP1')
-    assert tp1.menu()
-    assert [a.text() for a in tp1.menu().actions()] == ['Widg1', 'Widg2']
+    assert tp1.parent()
+    assert [a.text() for a in tp1.parent().actions()] == ['Widg1', 'Widg2']
 
 
 def test_making_plugin_dock_widgets(some_widgets, make_napari_viewer):
@@ -96,7 +96,7 @@ def test_making_plugin_dock_widgets(some_widgets, make_napari_viewer):
 
     # trigger the 'TestP1 > Widg2' action (it's in a submenu)
     tp2 = next(m for m in actions if m.text().startswith('TestP1'))
-    action = tp2.menu().actions()[1]
+    action = tp2.parent().actions()[1]
     assert action.text() == 'Widg2'
     action.trigger()
     # make sure that a dock widget was created

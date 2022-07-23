@@ -229,15 +229,10 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._data = data
-
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._mesh_vertices = None
+        self._mesh_triangles = None
+        self._displayed_stored = None
+        self._update_mesh()
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -281,14 +276,7 @@ class Vectors(Layer):
         self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._update_mesh()
 
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
@@ -451,14 +439,7 @@ class Vectors(Layer):
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self._edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._update_mesh()
 
         self.events.edge_width()
         self.refresh()
@@ -472,14 +453,7 @@ class Vectors(Layer):
     def length(self, length: Union[int, float]):
         self._length = float(length)
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self._length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._update_mesh()
 
         self.events.length()
         self.refresh()
@@ -683,14 +657,7 @@ class Vectors(Layer):
 
         indices, alphas = self._slice_data(self._slice_indices)
         if not self._dims_displayed == self._displayed_stored:
-            vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims_displayed)],
-                self.edge_width,
-                self.length,
-            )
-            self._mesh_vertices = vertices
-            self._mesh_triangles = triangles
-            self._displayed_stored = copy(self._dims_displayed)
+            self._update_mesh()
 
         vertices = self._mesh_vertices
         disp = list(self._dims_displayed)
@@ -791,3 +758,16 @@ class Vectors(Layer):
             Value of the data at the coord.
         """
         return None
+
+    def _update_mesh(self):
+        """Generate a new vector mesh and update the stored vertices and
+        trianges for the mesh.
+        """
+        vertices, triangles = generate_vector_meshes(
+            self.data[:, :, list(self._dims_displayed)],
+            self.edge_width,
+            self.length,
+        )
+        self._mesh_vertices = vertices
+        self._mesh_triangles = triangles
+        self._displayed_stored = copy(self._dims_displayed)

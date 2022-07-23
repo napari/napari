@@ -165,10 +165,11 @@ class Installer(QObject):
         if exit_code != 0:
             self._exit_code = 0
 
-        process_to_terminate = []
-        for pkg_list, proc in self._processes.items():
-            if proc == process:
-                process_to_terminate.append(pkg_list)
+        process_to_terminate = [
+            pkg_list
+            for pkg_list, proc in self._processes.items()
+            if proc == process
+        ]
 
         for pkg_list in process_to_terminate:
             process = self._processes.pop(pkg_list)
@@ -200,10 +201,10 @@ class Installer(QObject):
         installer = installer or self._installer_type
         self._queue.insert(
             0,
-            [
+            (
                 tuple(pkg_list),
                 lambda: self._install(pkg_list, installer, channels),
-            ],
+            ),
         )
         self._handle_action()
 
@@ -254,10 +255,10 @@ class Installer(QObject):
         installer = installer or self._installer_type
         self._queue.insert(
             0,
-            [
+            (
                 tuple(pkg_list),
                 lambda: self._uninstall(pkg_list, installer, channels),
-            ],
+            ),
         )
         self._handle_action()
 
@@ -323,16 +324,12 @@ class Installer(QObject):
         if conda_meta_path.is_dir():
             for file in conda_meta_path.iterdir():
                 fname = file.parts[-1]
-                if fname.startswith(napari_version_string) and fname.endswith(
-                    ".json"
-                ):
+                if (
+                    fname.startswith(napari_version_string)
+                    or fname.startswith(qt_version_string)
+                ) and fname.endswith(".json"):
                     return True
-                elif fname.startswith(qt_version_string) and fname.endswith(
-                    ".json"
-                ):
-                    return True
-            else:
-                return False
+        return False
 
 
 class PluginListItem(QFrame):
@@ -453,7 +450,9 @@ class PluginListItem(QFrame):
 
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+            Qt.AlignmentFlag.AlignRight
+            | Qt.AlignmentFlag.AlignTrailing
+            | Qt.AlignmentFlag.AlignVCenter
         )
         self.row1.addWidget(self.package_name)
 
@@ -483,7 +482,7 @@ class PluginListItem(QFrame):
         self.row2 = QHBoxLayout()
         self.error_indicator = QPushButton()
         self.error_indicator.setObjectName("warning_icon")
-        self.error_indicator.setCursor(Qt.PointingHandCursor)
+        self.error_indicator.setCursor(Qt.CursorShape.PointingHandCursor)
         self.error_indicator.hide()
         self.row2.addWidget(self.error_indicator)
         self.row2.setContentsMargins(-1, 4, 0, -1)
@@ -555,7 +554,10 @@ class QPluginList(QListWidget):
     ):
         pkg_name = project_info.name
         # don't add duplicates
-        if self.findItems(pkg_name, Qt.MatchFixedString) and not plugin_name:
+        if (
+            self.findItems(pkg_name, Qt.MatchFlag.MatchFixedString)
+            and not plugin_name
+        ):
             return
 
         # including summary here for sake of filtering below.
@@ -604,7 +606,7 @@ class QPluginList(QListWidget):
 
     def handle_action(self, item, pkg_name, action_name, update=False):
         widget = item.widget
-        item.setText("0-" + item.text())
+        item.setText(f"0-{item.text()}")
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
         self._warn_dialog = None
@@ -654,7 +656,9 @@ class QPluginList(QListWidget):
         if not is_available:
             return
 
-        for item in self.findItems(project_info.name, Qt.MatchStartsWith):
+        for item in self.findItems(
+            project_info.name, Qt.MatchFlag.MatchStartsWith
+        ):
             current = item.version
             latest = project_info.version
             if parse_version(current) >= parse_version(latest):
@@ -678,7 +682,9 @@ class QPluginList(QListWidget):
         This will disable the item and the install button and add a warning
         icon with a hover tooltip.
         """
-        for item in self.findItems(project_info.name, Qt.MatchStartsWith):
+        for item in self.findItems(
+            project_info.name, Qt.MatchFlag.MatchStartsWith
+        ):
             widget = self.itemWidget(item)
             widget.show_warning(
                 trans._(
@@ -696,7 +702,10 @@ class QPluginList(QListWidget):
         if text:
             # PySide has some issues, so we compare using id
             # See: https://bugreports.qt.io/browse/PYSIDE-74
-            shown = [id(it) for it in self.findItems(text, Qt.MatchContains)]
+            shown = [
+                id(it)
+                for it in self.findItems(text, Qt.MatchFlag.MatchContains)
+            ]
             for i in range(self.count()):
                 item = self.item(i)
                 item.setHidden(id(item) not in shown)
@@ -830,9 +839,9 @@ class QtPluginDialog(QDialog):
         vlay_1 = QVBoxLayout(self)
         self.h_splitter = QSplitter(self)
         vlay_1.addWidget(self.h_splitter)
-        self.h_splitter.setOrientation(Qt.Horizontal)
+        self.h_splitter.setOrientation(Qt.Orientation.Horizontal)
         self.v_splitter = QSplitter(self.h_splitter)
-        self.v_splitter.setOrientation(Qt.Vertical)
+        self.v_splitter.setOrientation(Qt.Orientation.Vertical)
         self.v_splitter.setMinimumWidth(500)
 
         installed = QWidget(self.v_splitter)
