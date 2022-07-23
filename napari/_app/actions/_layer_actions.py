@@ -18,7 +18,8 @@ from ..context import LayerListContextKeys as LLCK
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
 
-
+# The following dicts define groups to which menu items in the layer list context menu can belong
+# see https://app-model.readthedocs.io/en/latest/types/#app_model.types.MenuRule for details
 LAYERCTX_SPLITMERGE: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
