@@ -16,7 +16,7 @@ as we develop it.
 
 ## App-model
 
-The top level application model is `napari._app.app`.  It is an instance of
+The global application singleton can be retrieved with `napari._app_model.get_app()`.  It is an instance of
 [`app_model.Application`](https://app-model.readthedocs.io/en/latest/application/).
 `app-model` is a Python package that provides a declarative schema for an
 application.  It is an abstraction developed by napari developers, with the
@@ -34,7 +34,7 @@ have a corresponding representation somewhere in the GUI (such as a button, a
 menu item, or a keybinding).
 
 All commands have a string id (e.g. '`napari:layer:duplicate'`), which should be
-declared as a member of the `napari._app.constants.CommandId` enum.  Internally,
+declared as a member of the `napari._app_model.constants.CommandId` enum.  Internally,
 an instance of this enum should be used instead of the string literal when
 referring to a command, as it is easier to refactor and test.
 
@@ -70,17 +70,17 @@ A user/plugin provides a function
 
 ```python
 # some *well-annotated* user provided function
-# declares a need for an Image
+# declares a need for Points
 def process_points(points: 'Points'):
     # do something with points
     print(points.name)
 ```
 
 Internally, napari registers a set of "provider" and "processor" functions in
-the `app.injection_store`
+the `get_app().injection_store`
 
 ```python
-from napari._app import app
+from napari._app_model import get_app
 
 # return annotation indicates what this provider provides
 def provide_points() -> Optional['Points']:
@@ -94,7 +94,7 @@ def provide_points() -> Optional['Points']:
             None
         )
 
-app.injection_store.register_provider(provide_points)
+get_app().injection_store.register_provider(provide_points)
 ```
 
 This allows both internal and external functions to be injected with these
@@ -103,7 +103,7 @@ This is particularly important in a GUI context, where a user can't always be
 providing arguments:
 
 ```python
->>> injected_func = app.injection_store.inject(process_points)
+>>> injected_func = get_app().injection_store.inject(process_points)
 ```
 
 Note: injection doesn't *inherently* mean that it's always safe to call an
@@ -136,7 +136,7 @@ plugins/users may use to request dependencies.
 
 All napari menus will also have a string id (e.g. `'napari/file'`, or
 `'napari/layers/context'`), which should be declared as a member of the
-`napari._app.constants.MenuId` enum.  Internally, an instance of this enum
+`napari._app_model.constants.MenuId` enum.  Internally, an instance of this enum
 should be used instead of the string literal when referring to a menu.
 
 Menus are not limited to the visible menus in the application mene bar, they can
@@ -150,7 +150,7 @@ Menu objects become simple to construct:
 
 ```python
 >>> from app_model.backends.qt import QModelMenu
->>> from napari._app.constants import MenuId
+>>> from napari._app_model.constants import MenuId
 
 # create a QMenu with all of the commands registered in the
 # layerlist context menu
@@ -221,9 +221,9 @@ maintenance much easier (and provides autocompletion in an IDE!)
 
 ```python
 from app_model.types import Action, KeyMod, KeyCode
-from napari._app.constants import CommandId, MenuId, MenuGroup
-from napari._app.context import LayerListContextKeys as LLCK
-from napari._app import app
+from napari._app_model.constants import CommandId, MenuId, MenuGroup
+from napari._app_model.context import LayerListContextKeys as LLCK
+from napari._app_model import get_app
 
 
 # `layers` will be injected layer when this action is invoked
@@ -245,7 +245,7 @@ action = Action(
     keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyT }]
 )
 
-app.register_action(action)
+get_app().register_action(action)
 ```
 
 ````{note}
@@ -256,7 +256,7 @@ when executing the above code:
 ValueError: Command 'napari:layer:split_rgb' already registered
 ```
 
-This is because command id's may currently only be registered once, and associated with a single callback (and napari's internal app already used the `CommandId.LAYER_SPLIT_RGB` id). This MAY change in the future if an applciation arises.
+This is because command id's may currently only be registered once, and associated with a single callback (and napari's internal app already used the `CommandId.LAYER_SPLIT_RGB` id). This MAY change in the future if a need arises.
 ````
 
 ## Motivation & Future Vision
@@ -267,4 +267,3 @@ While it's certainly possible that there will be cases where this abstraction pr
 1. It's easier to test: `app-model` can take care of making sure that commands, menus, keybindings, and actions are rendered, updated, and triggered correctly, and napari can focus on testing the napari-specific logic.
 1. It's becomes **much** easier to add & remove contributions from plugins if our internal representation of a command, menu, keybinding is similar to the schema that plugins use. The previous procedural approach made this marriage much more cumbersome.
 1. **The Dream**: The unification of napari commands and plugin commands into a registry that can execute commands in response to user input provides an excellent base for "recording" a user workflow.  If all GUI user interactions go through dependency-injected commands, then it becomes much easier to export a script that reproduces a set of interactions.
-

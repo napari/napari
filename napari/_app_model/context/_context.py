@@ -68,6 +68,7 @@ class SettingsAwareContext(Context):
         return super().__setitem__(k, v)
 
     def __bool__(self):
+        # settings mappings are always populated, so we can always return True
         return True
 
 

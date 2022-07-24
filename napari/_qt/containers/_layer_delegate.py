@@ -41,8 +41,8 @@ from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from ..._app.constants import MenuId
-from ..._app.context import get_context
+from ..._app_model.constants import MenuId
+from ..._app_model.context import get_context
 from .._qapp_model import build_qmodel_menu
 from ..qt_resources import QColoredSVGIcon
 from ._base_item_model import ItemRole

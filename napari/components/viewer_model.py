@@ -141,7 +141,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
-        from .._app.context import create_context
+        from .._app_model.context import create_context
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.

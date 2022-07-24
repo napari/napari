@@ -1,4 +1,4 @@
-from napari._app.constants import _commands
+from napari._app_model.constants import _commands
 
 
 def test_command_titles():

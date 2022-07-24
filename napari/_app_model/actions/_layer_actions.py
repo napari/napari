@@ -18,7 +18,8 @@ from ..context import LayerListContextKeys as LLCK
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
 
-
+# The following dicts define groups to which menu items in the layer list context menu can belong
+# see https://app-model.readthedocs.io/en/latest/types/#app_model.types.MenuRule for details
 LAYERCTX_SPLITMERGE: MenuRuleDict = {
     'id': MenuId.LAYERLIST_CONTEXT,
     'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
@@ -32,7 +33,9 @@ LAYERCTX_LINK: MenuRuleDict = {
     'group': MenuGroup.LAYERLIST_CONTEXT.LINK,
 }
 
-_only_labels = LLCK.num_selected_labels_layers == LLCK.num_selected_layers
+_ONLY_LABELS = LLCK.num_selected_labels_layers == LLCK.num_selected_layers
+_IMAGE_IS_3D = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
+
 
 # sourcery skip: for-append-to-extend
 LAYER_ACTIONS: List[Action] = [
@@ -143,12 +146,11 @@ for _dtype in (
             id=cmd,
             title=cmd.title,
             callback=partial(_layer_actions._convert_dtype, mode=_dtype),
-            enablement=(_only_labels & (LLCK.active_layer_dtype != _dtype)),
+            enablement=(_ONLY_LABELS & (LLCK.active_layer_dtype != _dtype)),
             menus=[{'id': MenuId.LAYERS_CONVERT_DTYPE}],
         )
     )
 
-_image_is_3d = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
 for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
     cmd: CommandId = getattr(CommandId, f'LAYER_PROJECT_{mode.upper()}')
     LAYER_ACTIONS.append(
@@ -156,7 +158,7 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             id=cmd,
             title=cmd.title,
             callback=partial(_layer_actions._project, mode=mode),
-            enablement=_image_is_3d,
+            enablement=_IMAGE_IS_3D,
             menus=[{'id': MenuId.LAYERS_PROJECT}],
         )
     )
