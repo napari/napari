@@ -332,7 +332,7 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(manifest)
-    context = pm.get_context(cast(PluginName, manifest.name))
+    context = pm.get_context(cast('PluginName', manifest.name))
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
