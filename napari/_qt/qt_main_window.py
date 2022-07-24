@@ -36,7 +36,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .._app.constants import MenuId
+from .._app_model.constants import MenuId
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings

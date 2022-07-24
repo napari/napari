@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
-from ..._app.constants import CommandId, MenuGroup, MenuId
+from ..._app_model.constants import CommandId, MenuGroup, MenuId
 from ...settings import get_settings
 from ...utils.translations import trans
 
@@ -15,7 +15,7 @@ def _tooltip_visibility_toggle():
 
 @lru_cache  # only call once
 def _init_qactions():
-    from napari._app import app
+    from napari._app_model import get_app
 
     from ..qt_main_window import Window, _QtMainWindow
     from ..qt_viewer import QtViewer
@@ -104,6 +104,8 @@ def _init_qactions():
         ),
     ]
 
+    app = get_app()
+
     for action in VIEW_ACTIONS:
         app.register_action(action)
 
@@ -111,7 +113,6 @@ def _init_qactions():
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._window
 
-    ns = app.injection_store.namespace
-    ns.update({'Window': Window})
-    app.injection_store.namespace = ns
-    app.injection_store.register_provider(_provide_window)
+    store = app.injection_store
+    store.namespace = {**store.namespace, 'Window': Window}
+    store.register_provider(_provide_window)

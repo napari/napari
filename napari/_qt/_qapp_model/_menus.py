@@ -12,7 +12,7 @@ def build_qmodel_menu(
     Parameters
     ----------
     menu_id : str
-        ID of a menu registered with napari._app.app.menus
+        ID of a menu registered with napari._app_model.get_app().menus
     title : str
         Title of the menu
     parent : QObject
