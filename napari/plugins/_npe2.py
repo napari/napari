@@ -11,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from app_model.types import SubmenuItem
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
+    from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
@@ -326,27 +328,15 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
     This is called when a plugin is registered or enabled and it adds the
     plugin's menus and submenus to the app model registry.
     """
-    from .._app import app
+    from .._app_model import get_app
 
+    app = get_app()
     actions, submenus = _npe2_manifest_to_actions(manifest)
+    context = pm.get_context(cast(PluginName, manifest.name))
     if actions:
-        disposable = app.register_actions(actions)
-        pm.get_context(manifest.name).register_disposable(disposable)
+        context.register_disposable(app.register_actions(actions))
     if submenus:
-        disposable = app.menus.append_menu_items(submenus)
-        pm.get_context(manifest.name).register_disposable(disposable)
-
-
-def _is_menu_contributable(menu_id) -> bool:
-    """Return True if the given menu_id is a menu that plugins can contribute to."""
-    # here is where we can check whether the menu id is "contributable"
-    # or not.  i.e. if they're trying to add to the File menu, we skip it here.
-    from .._app.constants import MenuId
-
-    if menu_id.startswith("napari/"):
-        # emit a warning?
-        return menu_id in {MenuId.LAYERLIST_CONTEXT.value}
-    return True
+        context.register_disposable(app.menus.append_menu_items(submenus))
 
 
 def _npe2_manifest_to_actions(
@@ -355,17 +345,19 @@ def _npe2_manifest_to_actions(
     """Gather actions and submenus from a npe2 manifest, export app_model types."""
     from app_model.types import Action, MenuRule
 
+    from .._app_model.constants._menus import is_menu_contributable
+
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []
     for menu_id, items in mf.contributions.menus.items():
-        if not _is_menu_contributable(menu_id):
-            continue  # pragma: no cover
-        for item in items:
-            if isinstance(item, contributions.MenuCommand):
-                rule = MenuRule(id=menu_id, **_when_group_order(item))
-                cmds[item.command].append(rule)
-            else:
-                submenus.append((menu_id, _npe2_submenu_to_app_model(item)))
+        if is_menu_contributable(menu_id):
+            for item in items:
+                if isinstance(item, contributions.MenuCommand):
+                    rule = MenuRule(id=menu_id, **_when_group_order(item))
+                    cmds[item.command].append(rule)
+                else:
+                    subitem = _npe2_submenu_to_app_model(item)
+                    submenus.append((menu_id, subitem))
 
     actions = [
         Action(
