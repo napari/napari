@@ -26,6 +26,10 @@ def _initialize_plugins():
         for p in settings.plugins.disabled_plugins:
             _npe2pm.disable(p)
 
+    # just in case anything has already been registered before we initialized
+    _npe2.on_plugins_registered(set(_npe2pm.iter_manifests()))
+
+    # connect enablement/registration events to listeners
     _npe2pm.events.enablement_changed.connect(
         _npe2.on_plugin_enablement_change
     )

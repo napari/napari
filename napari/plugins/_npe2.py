@@ -367,7 +367,7 @@ def _npe2_manifest_to_actions(
             tooltip=cmd.short_title or cmd.title,
             icon=cmd.icon,
             enablement=cmd.enablement,
-            callback=cmd.python_name,
+            callback=cmd.python_name or '',
             menus=cmds.get(cmd.id),
             keybindings=[],
         )
