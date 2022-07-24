@@ -12,6 +12,8 @@ from .actions._view_actions import VIEW_ACTIONS
 from .injection._processors import PROCESSORS
 from .injection._providers import PROVIDERS
 
+APP_NAME = 'napari'
+
 
 class NapariApplication(Application):
     def __init__(self) -> None:
@@ -22,7 +24,7 @@ class NapariApplication(Application):
         # exceptions with `.result()`, for now, raising immediately should
         # prevent any unexpected silent errors.  We can turn it off later if we
         # adopt asynchronous command execution.
-        super().__init__('napari', raise_synchronous_exceptions=True)
+        super().__init__(APP_NAME, raise_synchronous_exceptions=True)
 
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
         self.injection_store.register(
@@ -33,6 +35,10 @@ class NapariApplication(Application):
             self.register_action(action)
 
         self.menus.append_menu_items(SUBMENUS)
+
+    @classmethod
+    def get_app(cls) -> NapariApplication:
+        return Application.get_app(APP_NAME) or cls()
 
 
 @lru_cache(maxsize=1)
@@ -58,4 +64,6 @@ def _napari_names() -> Dict[str, object]:
     }
 
 
-app = NapariApplication()
+def get_app() -> NapariApplication:
+    """Get the Napari Application singleton."""
+    return NapariApplication.get_app()

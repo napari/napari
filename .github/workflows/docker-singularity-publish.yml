@@ -86,16 +86,13 @@ jobs:
           file: "dockerfile"
           target: ${{ matrix.target }}
 
-      - name: Check out code for the container build
-        uses: actions/checkout@v2
-
-  # ----
+# ----
 
   build2:
     needs: build1
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/truatpasteurdotfr/docker-c7-singularity-builder:main
+      image: quay.io/singularity/docker2singularity:v3.10.0
       options: --privileged
     permissions:
       contents: read
