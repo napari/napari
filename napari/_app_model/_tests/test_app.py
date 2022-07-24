@@ -24,4 +24,5 @@ def test_app_injection():
         return p
 
     with app.injection_store.register(providers=[(provide_points,)]):
-        assert app.injection_store.inject(use_points)() is p
+        injected = app.injection_store.inject(use_points)
+        assert injected() is p
