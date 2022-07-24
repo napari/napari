@@ -7,11 +7,13 @@ def build_qmodel_menu(menu_id: str) -> QModelMenu:
     Parameters
     ----------
     menu_id : str
-        ID of a menu registered with napari._app_model.app.menus
+        ID of a menu registered with napari._app_model.get_app().menus
 
     Returns
     -------
     QModelMenu
         QMenu subclass populated with all items in `menu_id` menu.
     """
-    return QModelMenu(menu_id=menu_id, app='napari')
+    from ..._app_model import get_app
+
+    return QModelMenu(menu_id=menu_id, app=get_app())

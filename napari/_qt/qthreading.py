@@ -340,21 +340,23 @@ def _add_worker_data_from_tuple(
     )
 
 
-def _register_threadworker_processors():
+def register_threadworker_processors():
     from functools import partial
 
-    import in_n_out as ino
     import magicgui
 
     from .. import layers, types
+    from .._app_model import get_app
     from ..types import LayerDataTuple
     from ..utils import _magicgui as _mgui
+
+    app = get_app()
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
         t = FunctionWorker[_type]
         magicgui.register_type(t, return_callback=_mgui.add_worker_data)
-        ino.register(
-            processors={t: _add_worker_data_from_tuple}, store='napari'
+        app.injection_store.register(
+            processors={t: _add_worker_data_from_tuple}
         )
     for layer_name in layers.NAMES:
         _type = getattr(types, f'{layer_name.title()}Data')
@@ -363,4 +365,4 @@ def _register_threadworker_processors():
             t,
             return_callback=partial(_mgui.add_worker_data, _from_tuple=False),
         )
-        ino.register(processors={t: _add_worker_data}, store='napari')
+        app.injection_store.register(processors={t: _add_worker_data})
