@@ -31,7 +31,7 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_AXES_DASHED = 'napari:window:view:toggle_viewer_axesdashed'
     TOGGLE_VIEWER_AXES_ARROWS = 'napari:window:view:toggle_viewer_axes_arrows'
     TOGGLE_VIEWER_SCALE_BAR = 'napari:window:view:toggle_viewer_scale_bar'
-    TOGGLE_VIEWER_SCALE_BAR_COLORED = 'window:view:toggle_viewer_scale_bar_colored'
+    TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
     LAYER_DUPLICATE = 'napari:layer:duplicate'
