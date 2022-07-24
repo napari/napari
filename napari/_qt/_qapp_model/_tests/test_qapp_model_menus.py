@@ -1,6 +1,6 @@
 import pytest
 
-from napari._app import app, constants
+from napari._app_model import app, constants
 from napari._qt._qapp_model import build_qmodel_menu
 
 

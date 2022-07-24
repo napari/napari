@@ -321,7 +321,7 @@ _new_worker_qthread = _qthreading.new_worker_qthread
 
 
 def _add_worker_data(worker: FunctionWorker, return_type, source=None):
-    from .._app.injection import _processors
+    from .._app_model.injection import _processors
 
     cb = _processors._add_layer_data_to_viewer
     worker.signals.returned.connect(
@@ -332,7 +332,7 @@ def _add_worker_data(worker: FunctionWorker, return_type, source=None):
 def _add_worker_data_from_tuple(
     worker: FunctionWorker, return_type, source=None
 ):
-    from .._app.injection import _processors
+    from .._app_model.injection import _processors
 
     cb = _processors._add_layer_data_tuples_to_viewer
     worker.signals.returned.connect(

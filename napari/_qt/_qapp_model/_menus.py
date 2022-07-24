@@ -7,7 +7,7 @@ def build_qmodel_menu(menu_id: str) -> QModelMenu:
     Parameters
     ----------
     menu_id : str
-        ID of a menu registered with napari._app.app.menus
+        ID of a menu registered with napari._app_model.app.menus
 
     Returns
     -------

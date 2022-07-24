@@ -58,7 +58,7 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: Type):
     ...     return np.random.rand(256, 256)
 
     """
-    from .._app.injection._processors import _add_layer_data_to_viewer
+    from .._app_model.injection._processors import _add_layer_data_to_viewer
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
         _add_layer_data_to_viewer(
@@ -102,7 +102,9 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-    from .._app.injection._processors import _add_layer_data_tuples_to_viewer
+    from .._app_model.injection._processors import (
+        _add_layer_data_tuples_to_viewer,
+    )
 
     if viewer := find_viewer_ancestor(gui):
         _add_layer_data_tuples_to_viewer(
@@ -186,7 +188,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
     """
-    from .._app.injection._processors import _add_future_data
+    from .._app_model.injection._processors import _add_future_data
 
     if viewer := find_viewer_ancestor(gui):
         _add_future_data(
@@ -383,7 +385,7 @@ def add_layers_to_viewer(gui, result: Any, return_type: List[Layer]) -> None:
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
-    from .._app.injection._processors import _add_layer_to_viewer
+    from .._app_model.injection._processors import _add_layer_to_viewer
 
     viewer = find_viewer_ancestor(gui)
     if not viewer:

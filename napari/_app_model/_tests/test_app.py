@@ -1,4 +1,4 @@
-from napari._app import app
+from napari._app_model import app
 from napari.layers import Points
 
 

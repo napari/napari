@@ -67,8 +67,10 @@ class LayerList(SelectableEventedList[Layer]):
         # Ideally, the app should be aware of the layerlist, but not vice versa.
         # This could probably be done by having the layerlist emit events when a
         # and the actual `_ctx` object here would live on the app, (not here)
-        from .._app.context import create_context
-        from .._app.context._layerlist_context import LayerListContextKeys
+        from .._app_model.context import create_context
+        from .._app_model.context._layerlist_context import (
+            LayerListContextKeys,
+        )
 
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation

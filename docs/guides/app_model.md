@@ -16,7 +16,7 @@ as we develop it.
 
 ## App-model
 
-The top level application model is `napari._app.app`.  It is an instance of
+The top level application model is `napari._app_model.app`.  It is an instance of
 [`app_model.Application`](https://app-model.readthedocs.io/en/latest/application/).
 `app-model` is a Python package that provides a declarative schema for an
 application.  It is an abstraction developed by napari developers, with the
@@ -34,7 +34,7 @@ have a corresponding representation somewhere in the GUI (such as a button, a
 menu item, or a keybinding).
 
 All commands have a string id (e.g. '`napari:layer:duplicate'`), which should be
-declared as a member of the `napari._app.constants.CommandId` enum.  Internally,
+declared as a member of the `napari._app_model.constants.CommandId` enum.  Internally,
 an instance of this enum should be used instead of the string literal when
 referring to a command, as it is easier to refactor and test.
 
@@ -80,7 +80,7 @@ Internally, napari registers a set of "provider" and "processor" functions in
 the `app.injection_store`
 
 ```python
-from napari._app import app
+from napari._app_model import app
 
 # return annotation indicates what this provider provides
 def provide_points() -> Optional['Points']:
@@ -136,7 +136,7 @@ plugins/users may use to request dependencies.
 
 All napari menus will also have a string id (e.g. `'napari/file'`, or
 `'napari/layers/context'`), which should be declared as a member of the
-`napari._app.constants.MenuId` enum.  Internally, an instance of this enum
+`napari._app_model.constants.MenuId` enum.  Internally, an instance of this enum
 should be used instead of the string literal when referring to a menu.
 
 Menus are not limited to the visible menus in the application mene bar, they can
@@ -150,7 +150,7 @@ Menu objects become simple to construct:
 
 ```python
 >>> from app_model.backends.qt import QModelMenu
->>> from napari._app.constants import MenuId
+>>> from napari._app_model.constants import MenuId
 
 # create a QMenu with all of the commands registered in the
 # layerlist context menu
@@ -221,9 +221,9 @@ maintenance much easier (and provides autocompletion in an IDE!)
 
 ```python
 from app_model.types import Action, KeyMod, KeyCode
-from napari._app.constants import CommandId, MenuId, MenuGroup
-from napari._app.context import LayerListContextKeys as LLCK
-from napari._app import app
+from napari._app_model.constants import CommandId, MenuId, MenuGroup
+from napari._app_model.context import LayerListContextKeys as LLCK
+from napari._app_model import app
 
 
 # `layers` will be injected layer when this action is invoked
