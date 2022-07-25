@@ -3,8 +3,8 @@ from __future__ import annotations
 from napari.utils.notifications import show_info
 
 from ...layers.utils.layer_utils import (
-    register_label_attr_action,
     register_layer_action,
+    register_layer_attr_action,
 )
 from ...utils.translations import trans
 from ._points_constants import Mode
@@ -16,7 +16,7 @@ def register_points_action(description):
 
 
 def register_label_mode_action(description):
-    return register_label_attr_action(Points, description, 'mode')
+    return register_layer_attr_action(Points, description, 'mode')
 
 
 @Points.bind_key('Space')

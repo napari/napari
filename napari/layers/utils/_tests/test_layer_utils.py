@@ -13,7 +13,7 @@ from napari.layers.utils.layer_utils import (
     dims_displayed_world_to_layer,
     get_current_properties,
     prepare_properties,
-    register_label_attr_action,
+    register_layer_attr_action,
     segment_normal,
 )
 from napari.utils.key_bindings import KeymapHandler, KeymapProvider
@@ -498,7 +498,7 @@ def test_register_label_attr_action(monkeypatch):
     handler = KeymapHandler()
     handler.keymap_providers = [foo]
 
-    @register_label_attr_action(Foo, "value desc", "value", "K")
+    @register_layer_attr_action(Foo, "value desc", "value", "K")
     def set_value_1(x):
         x.value = 1
 

@@ -1,8 +1,8 @@
 import numpy as np
 
 from ...layers.utils.layer_utils import (
-    register_label_attr_action,
     register_layer_action,
+    register_layer_attr_action,
 )
 from ...utils.translations import trans
 from ._labels_constants import Mode
@@ -28,7 +28,7 @@ def register_label_action(description):
 
 
 def register_label_mode_action(description):
-    return register_label_attr_action(Labels, description, 'mode')
+    return register_layer_attr_action(Labels, description, 'mode')
 
 
 @register_label_mode_action(trans._("Activate the paint brush"))

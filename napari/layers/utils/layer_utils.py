@@ -63,7 +63,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     return _inner
 
 
-def register_label_attr_action(
+def register_layer_attr_action(
     keymapprovider,
     description: str,
     attribute_name: str,
