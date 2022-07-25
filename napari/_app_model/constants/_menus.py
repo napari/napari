@@ -7,7 +7,6 @@ menus for plugins to contribute commands and submenu items to.
 """
 
 from enum import Enum
-from typing import Set
 
 
 class MenuId(str, Enum):
@@ -20,13 +19,6 @@ class MenuId(str, Enum):
     def __str__(self) -> str:
         return self.value
 
-    @classmethod
-    @property
-    def _contributables(cls) -> Set[str]:
-        """Set of all menu ids that can be contributed to by plugins."""
-        # TODO: add these to docs, with a lookup for what each menu is/does.
-        return {MenuId.LAYERLIST_CONTEXT.value}
-
 
 # XXX: the structure/usage pattern of this class may change in the future
 class MenuGroup:
@@ -38,8 +30,13 @@ class MenuGroup:
         LINK = '9_link'
 
 
+# TODO: add these to docs, with a lookup for what each menu is/does.
+_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
+"""Set of all menu ids that can be contributed to by plugins."""
+
+
 def is_menu_contributable(menu_id: str) -> bool:
     """Return True if the given menu_id is a menu that plugins can contribute to."""
-    if menu_id.startswith("napari/"):
-        return menu_id in MenuId._contributables  # type: ignore # (class property)
-    return True
+    return (
+        menu_id in _CONTRIBUTABLES if menu_id.startswith("napari/") else True
+    )
