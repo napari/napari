@@ -43,15 +43,17 @@ def hub_plugin_info(
             info = json.loads(resp.read().decode())
     except error.HTTPError:
         return None, False
-    
+
     # If the napari hub returns an empty info dict,
     # simply return None, False like the above except
-    if info == {'conda': [],
-                'display_name': '',
-                'plugin_types': [],
-                'reader_file_extensions': [],
-                'writer_file_extensions': [],
-                'writer_save_layers': []}:
+    if info == {
+        'conda': [],
+        'display_name': '',
+        'plugin_types': [],
+        'reader_file_extensions': [],
+        'writer_file_extensions': [],
+        'writer_save_layers': [],
+    }:
         return None, False
 
     version = info["version"]
