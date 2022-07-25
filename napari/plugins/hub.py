@@ -44,7 +44,7 @@ def hub_plugin_info(
     except error.HTTPError:
         return None, False
 
-    # If the napari hub returns an empty info dict,
+    # If the napari hub returns an info dict missing the required keys,
     # simply return None, False like the above except
     if not {'name', 'version', 'authors', 'summary', 'license'} <= info.keys():
         return None, False
