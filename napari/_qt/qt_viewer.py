@@ -283,7 +283,7 @@ class QtViewer(QSplitter):
         }
 
         # Respond when new slices are ready.
-        self.viewer._layer_slicer.ready.connect(self._on_slice_ready)
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
@@ -335,7 +335,8 @@ class QtViewer(QSplitter):
         self._bind_shortcuts()
 
     @ensure_main_thread
-    def _on_slice_ready(self, responses: _ViewerSliceResponse):
+    def _on_slice_ready(self, event):
+        responses: _ViewerSliceResponse = event.value
         for layer, response in responses.items():
             if visual := self.layer_to_visual[layer]:
                 visual._set_slice(response)

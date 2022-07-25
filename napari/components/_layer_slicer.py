@@ -1,21 +1,19 @@
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from typing import Iterable, Optional
 
-from psygnal import Signal
-
 from napari.layers.base.base import Layer
+from napari.utils.events.event import EmitterGroup, Event
 
 from . import Dims
 
+# Type annotations cause a cyclic dependency, so omit for now.
 _ViewerSliceRequest = dict  # [Layer, _LayerSliceRequest]
 _ViewerSliceResponse = dict  # [Layer, _LayerSliceResponse]
 
 
 class _LayerSlicer:
-
-    ready = Signal(_ViewerSliceResponse)
-
     def __init__(self):
+        self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._task: Optional[Future[_ViewerSliceResponse]] = None
 
@@ -41,4 +39,4 @@ class _LayerSlicer:
         if task.cancelled():
             return
         result = task.result()
-        self.ready.emit(result)
+        self.events.ready(Event('ready', value=result))
