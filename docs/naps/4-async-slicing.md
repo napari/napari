@@ -469,7 +469,7 @@ The main goal of this project is to perform slicing asynchronously, so it's natu
 
 Many napari behaviors depend on the existing slice input and output state on the layer instances. In this proposal, we decide not to remove this state from the layer yet to prevent breaking other functionality that relies on it. As slice output is generated asynchronously, we must ensure that this state is read and written atomically to mutually exclude the main and slicing thread from reading and/or writing inconsistent parts of that state.
 
-In order to do this, we encapsulate the input and output state of each state into private dataclasses. There are no API changes, but this forces any read/write access of this state to acquire an associated lock.
+In order to do this, we plan to encapsulate the input and output state of each state into private dataclasses. There are no API changes, but this forces any read/write access of this state to acquire an associated lock.
 
 
 ## Future work
@@ -480,10 +480,10 @@ In this proposal, the slicing thread waits for slices of all layers to be ready 
 
 1. We only use one slicing thread to keep behavior simple and to avoid GIL contention.
 2. It's closer to the existing behavior of napari
-3. shouldn't introduce any new potential bugs (e.g. (#2862[https://github.com/napari/napari/issues/2862])).
+3. Shouldn't introduce any new potential bugs (e.g. (#2862)[https://github.com/napari/napari/issues/2862]).
 4. It doesn't need any UX design work to decide what should be shown while we are waiting for slices to be ready.
 
-In some cases, rendering slices as soon as possible will provide a better user experience, especially when some layers are substantially slower than others. Therefore, this should be high priority future work. One reason the proposed design is very private is to allow us to follow up with work like this.
+In some cases, rendering slices as soon as possible will provide a better user experience, especially when some layers are substantially slower than others. Therefore, this should be high priority future work. One way to implement this behavior is to emit a `slice_ready` signal per layer that only contains that layer's slice response.
 
 
 ## Alternatives
@@ -498,7 +498,7 @@ In some cases, rendering slices as soon as possible will provide a better user e
     - Targets main cause of unresponsiveness (i.e. reading data).
     - No events are emitted on the non-main thread.
     - Less lazy when cancelling is possible (i.e. we do more work on the main thread before submitting the async task).
-    - Splits up slicing logic, making program flow harder to follow.
+    - Splits up slicing logic into pre/post data reading, making program flow harder to follow.
     - Does not address goal 2.
     
 - Use `QThread` and similar utilities instead of `concurrent.futures`
@@ -510,7 +510,7 @@ In some cases, rendering slices as soon as possible will provide a better user e
     
 - Use `asyncio` package instead of `concurrent.futures`
     - Mostly syntactic sugar on top of `concurrent.futures`.
-    - Likely need an `asyncio` main event loop distinct from Qt's main event loop, which could cause issues.
+    - Likely need an `asyncio` event loop distinct from Qt's main event loop, which could be confusing and cause issues.
 
 
 ## Discussion
@@ -520,6 +520,31 @@ In some cases, rendering slices as soon as possible will provide a better user e
 - [Problems with `NAPARI_ASYNC=1`](https://forum.image.sc/t/even-with-napari-async-1-data-loading-is-blocking-the-ui-thread/68097/4)
 - [Removing slice state from layer](https://github.com/napari/napari/issues/4682)
     
+### Open questions
+
+- Should we invert design and submit async task with in vispy layer?
+    - Is there a way to wait for all layers to be sliced?
+        - Maybe if we're slicing via `QtViewer` because that way we could wait for all futures to be done (on another non-main thread) before actually updating the vispy nodes. But that is a little complicated.
+        - Probably need to have a design solution for showing slices ASAP to pursue this.
+    - I think this design implies that slice state should not live in the model in the future.
+        - This might cause issues with selection and other things.
+    - Cleans up request/response typing because no need to refer to any base class.
+    - Can probably use `@ensure_main_thread` in vispy layer (i.e. for done callback to push data to vispy nodes) because it's private and I think we only intend to support Qt backends for vispy.
+
+- Should we pursue a simpler design first with fewer changes?
+    - Slicing accesses pretty much all layer state, so basically need to lock all of that.
+        - May introduce long lock contentions, which may cause undesirable behavior.
+    - Also need to consider refresh there.
+
+- Can we incrementally implement this design?
+    - E.g. one layer type at a time.
+    - Yes. We can separate sync layers from async layers in `_LayerSlicer`.
+        - This also gives us a long term way to support forcing sync slicing in some cases.
+
+- Should `Dims.current_step` represent the last slice position request or the last slice response?
+    - With sync slicing, there is no distinction.
+    - If it represents the last slice response, then what should we connect the sliders to?
+    - Similar question for `corner_pixels` and others.
 
 ## References and footnotes
 
