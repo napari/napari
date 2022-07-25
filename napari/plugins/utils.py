@@ -64,7 +64,7 @@ def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
         if '[' in segment and ']' in segment[segment.index('[') :]:
             add(MatchFlag.SET)
 
-        ends_with_star = segment != '' and segment[-1] == '*'
+        ends_with_star = segment.endswith('*')
 
     return not osp.isabs(pattern), 1 - len(score), score
 
