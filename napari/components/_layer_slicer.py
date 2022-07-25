@@ -1,9 +1,11 @@
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from typing import Optional
+from typing import Iterable, Optional
 
 from psygnal import Signal
 
-from . import Dims, LayerList
+from napari.layers.base.base import Layer
+
+from . import Dims
 
 _ViewerSliceRequest = dict  # [Layer, _LayerSliceRequest]
 _ViewerSliceResponse = dict  # [Layer, _LayerSliceResponse]
@@ -17,7 +19,7 @@ class _LayerSlicer:
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._task: Optional[Future[_ViewerSliceResponse]] = None
 
-    def slice_layers_async(self, layers: LayerList, dims: Dims) -> None:
+    def slice_layers_async(self, layers: Iterable[Layer], dims: Dims) -> None:
         """This should only be called from the main thread."""
         if self._task is not None:
             self._task.cancel()

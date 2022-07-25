@@ -349,6 +349,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _slice_layers_async(self) -> None:
         self._layer_slicer.slice_layers_async(self.layers, self.dims)
 
+    def _slice_layer_async(self, event) -> None:
+        self._layer_slicer.slice_layers_async([event.layer], self.dims)
+
     def _on_layer_set_view_slice(self, event) -> None:
         layer = event.layer
         LOGGER.debug('ViewerModel._on_layer_set_view_slice: %s', layer)
@@ -502,6 +505,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+
+        layer.events.reslice.connect(self._slice_layer_async)
 
         # Update dims and grid model
         self._on_layers_change()

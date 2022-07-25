@@ -357,6 +357,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events = EmitterGroup(
             source=self,
             refresh=Event,
+            reslice=Event,
             set_data=Event,
             blending=Event,
             opacity=Event,
@@ -1326,6 +1327,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
+        LOGGER.debug('Layer.refresh')
         if self.visible:
             self.set_view_slice()
             self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
@@ -1742,7 +1744,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.events.reslice(Event('reslice', layer=self))
 
         else:
             corners = np.zeros((2, self.ndim), dtype=int)
