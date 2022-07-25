@@ -1,7 +1,7 @@
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from typing import Iterable, Optional
 
-from napari.layers.base.base import Layer
+from napari.layers import Image, Layer, Points
 from napari.utils.events.event import EmitterGroup, Event
 
 from . import Dims
@@ -21,7 +21,16 @@ class _LayerSlicer:
         """This should only be called from the main thread."""
         if self._task is not None:
             self._task.cancel()
-        requests = {layer: layer._make_slice_request(dims) for layer in layers}
+        # Not all layer types will initially be asynchronously sliceable.
+        # The following logic gives us a way to handle those in the short
+        # term as we develop, and also in the long term if there are cases
+        # when we want to perform sync slicing anyway.
+        requests = {}
+        for layer in layers:
+            if _is_async(layer):
+                requests[layer] = layer._make_slice_request(dims)
+            else:
+                layer._slice_dims(dims.point, dims.ndisplay, dims.order)
         self._task = self._executor.submit(self.slice_layers, requests)
         self._task.add_done_callback(self._on_slice_done)
 
@@ -40,3 +49,7 @@ class _LayerSlicer:
             return
         result = task.result()
         self.events.ready(Event('ready', value=result))
+
+
+def _is_async(layer: Layer) -> bool:
+    return isinstance(layer, (Image, Points))

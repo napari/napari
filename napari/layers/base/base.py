@@ -1050,7 +1050,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
 
     @staticmethod
-    @abstractmethod
+    # @abstractmethod # temporarily allow layers that don't implement this yet.
     def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
         raise NotImplementedError()
 

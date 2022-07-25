@@ -114,7 +114,7 @@ class VispyBaseLayer(ABC):
     def _on_refresh_change(self):
         self.node.update()
 
-    # @abstractmethod
+    # @abstractmethod # temporarily allow layers that don't implement this yet.
     def _set_slice(self, request: _LayerSliceResponse) -> None:
         raise NotImplementedError()
 
