@@ -103,7 +103,7 @@ class Points(Layer):
     n_dimensional : bool
         This property will soon be deprecated in favor of 'out_of_slice_display'.
         Use that instead.
-    name : str`
+    name : str
         Name of the layer.
     metadata : dict
         Layer metadata.
