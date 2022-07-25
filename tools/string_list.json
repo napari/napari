@@ -29,7 +29,30 @@
       "plugins.io",
       "utils.notifications",
       "view_layers",
-      "viewer"
+      "viewer",
+      "__version__",
+      "components",
+      "experimental",
+      "layers",
+      "qt",
+      "types",
+      "utils",
+      "gui_qt",
+      "run",
+      "save_layers",
+      "utils",
+      "sys_info",
+      "notification_manager",
+      "view_image",
+      "view_labels",
+      "view_path",
+      "view_points",
+      "view_shapes",
+      "view_surface",
+      "view_tracks",
+      "view_vectors",
+      "Viewer",
+      "current_viewer"
     ],
     "napari/_event_loop.py": [],
     "napari/_qt/__init__.py": [
@@ -40,7 +63,26 @@
       "plugins"
     ],
     "napari/_qt/_constants.py": [],
-    "napari/_qt/containers/__init__.py": [],
+    "napari/_qt/code_syntax_highlight.py": [
+      "monospace",
+      "color",
+      "#{style['color']}",
+      "bgcolor",
+      "bgcolor",
+      "bold",
+      "italic",
+      "underline"
+    ],
+    "napari/_qt/containers/__init__.py": [
+      "create_model",
+      "create_view",
+      "QtLayerList",
+      "QtLayerListModel",
+      "QtListModel",
+      "QtListView",
+      "QtNodeTreeModel",
+      "QtNodeTreeView"
+    ],
     "napari/_qt/containers/_base_item_model.py": [
       "ItemType",
       "_root"
@@ -152,7 +194,11 @@
       "icon",
       "info",
       "none",
-      "warning"
+      "warning",
+      "opacity",
+      "geometry",
+      "QPushButton{padding: 4px 12px 4px 12px; font-size: 11px;min-height: 18px; border-radius: 0;}",
+      "python"
     ],
     "napari/_qt/dialogs/qt_plugin_dialog.py": [
       "-c",
@@ -198,14 +244,39 @@
       "uninstall",
       "url",
       "version",
-      "warning_icon"
+      "warning_icon",
+      "CONDA_PINNED_PACKAGES",
+      "&{env.value('CONDA_PINNED_PACKAGES')}",
+      "CONDA_PINNED_PACKAGES",
+      "napari={napari_version}{system_pins}",
+      "nt",
+      "TEMP",
+      "TMP",
+      "TEMP",
+      "USERPROFILE",
+      "HOME",
+      "~",
+      "USERPROFILE",
+      "~",
+      "shim",
+      "shim",
+      "warning",
+      "#E3B617",
+      "{pkg_name} {project_info.summary}",
+      "latest_version",
+      "=={item.latest_version}",
+      "1.0",
+      "shim",
+      "napari_hub"
     ],
     "napari/_qt/dialogs/qt_plugin_report.py": [
       "QtCopyToClipboardButton",
       "github.com",
       "pluginInfo",
       "url",
-      "{meta.get(\"url\")}/issues/new?&body={err}"
+      "{meta.get(\"url\")}/issues/new?&body={err}",
+      "python",
+      "NoColor"
     ],
     "napari/_qt/dialogs/qt_reader_dialog.py": [
       "Choose reader",
@@ -709,7 +780,6 @@
       "_QtMainWindow"
     ],
     "napari/_qt/widgets/qt_welcome.py": [
-      "Ctrl+Alt+/",
       "Ctrl+O",
       "QEvent",
       "drag",
@@ -964,8 +1034,6 @@
     "napari/benchmarks/benchmark_qt_viewer.py": [],
     "napari/benchmarks/benchmark_qt_viewer_image.py": [],
     "napari/benchmarks/benchmark_qt_viewer_labels.py": [
-      "Event",
-      "is_dragging",
       "paint"
     ],
     "napari/benchmarks/benchmark_shapes_layer.py": [
@@ -1016,9 +1084,7 @@
       "bottom_center",
       "crosshair"
     ],
-    "napari/components/_viewer_key_bindings.py": [
-      "napari:"
-    ],
+    "napari/components/_viewer_key_bindings.py": [],
     "napari/components/_viewer_mouse_bindings.py": [
       "Control"
     ],
@@ -1939,7 +2005,6 @@
       "builtins",
       "index",
       "name",
-      "napari_write_{layer_type}",
       "properties",
       "rectangle",
       "shape-type",
@@ -1960,7 +2025,6 @@
     "napari/plugins/_plugin_manager.py": [
       "`napari_experimental_provide_dock_widget`",
       "`napari_experimental_provide_function`",
-      "builtins",
       "data",
       "display_name",
       "dock",
@@ -1972,8 +2036,6 @@
       "napari.plugin",
       "napari_provide_sample_data",
       "plugin",
-      "scikit-image",
-      "skimage",
       ".{extension}",
       ".{ext}",
       "_extension2{type_}",
@@ -2076,7 +2138,6 @@
       "{url}{page}"
     ],
     "napari/plugins/utils.py": [
-      "builtins",
       "napari_get_reader"
     ],
     "napari/qt/__init__.py": [],
@@ -2180,7 +2241,6 @@
       "VectorsData",
       "dask.array.Array",
       "zarr.Array",
-      "{layer_name.title()}Data",
       "_DType_co"
     ],
     "napari/utils/__init__.py": [],
@@ -2206,8 +2266,6 @@
     ],
     "napari/utils/_magicgui.py": [
       "Data",
-      "add_{layer_type}",
-      "name",
       "native",
       "parent",
       "_qt_viewer",
@@ -2783,7 +2841,6 @@
     ],
     "napari/utils/notebook_display.py": [
       "png",
-      "<img src=\"{url}\"></img>",
       "data:image/png;base64,",
       "utf-8"
     ],
@@ -2917,7 +2974,6 @@
       ": {status_format(value[0])}",
       "[",
       "]",
-      "{name} {full_coord}",
       "{value:0.3g}"
     ],
     "napari/utils/theme.py": [
