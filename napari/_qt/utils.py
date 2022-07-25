@@ -105,7 +105,7 @@ def QImg2array(img) -> np.ndarray:
     # As vispy doesn't use qtpy we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if qtpy.API_NAME == 'PySide2':
+    if qtpy.API_NAME.startswith('PySide'):
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)

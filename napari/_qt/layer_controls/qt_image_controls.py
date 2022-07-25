@@ -19,6 +19,7 @@ from ...layers.image._image_constants import (
 )
 from ...utils.action_manager import action_manager
 from ...utils.translations import trans
+from ..utils import qt_signals_blocked
 from .qt_image_controls_base import QtBaseImageControls
 
 if TYPE_CHECKING:
@@ -76,7 +77,9 @@ class QtImageControls(QtBaseImageControls):
         )
 
         self.interpComboBox = QComboBox(self)
-        self.interpComboBox.activated[str].connect(self.changeInterpolation)
+        self.interpComboBox.currentTextChanged.connect(
+            self.changeInterpolation
+        )
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
@@ -86,7 +89,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.rendering, Qt.MatchFlag.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(self.changeRendering)
+        renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 
@@ -97,7 +100,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.depiction, Qt.MatchFlag.MatchFixedString
         )
         self.depictionComboBox.setCurrentIndex(index)
-        self.depictionComboBox.activated[str].connect(self.changeDepiction)
+        self.depictionComboBox.currentTextChanged.connect(self.changeDepiction)
         self.depictionLabel = QLabel(trans._('depiction:'))
 
         # plane controls
@@ -333,22 +336,20 @@ class QtImageControls(QtBaseImageControls):
             self.planeThicknessLabel.show()
 
     def _update_interpolation_combo(self):
-        self.interpComboBox.clear()
         interp_names = (
             Interpolation3D.keys()
             if self.layer._ndisplay == 3
             else [i.value for i in Interpolation.view_subset()]
         )
-        self.interpComboBox.addItems(interp_names)
         interp = (
             self.layer.interpolation2d
             if self.layer._ndisplay == 2
             else self.layer.interpolation3d
         )
-        index = self.interpComboBox.findText(
-            interp, Qt.MatchFlag.MatchFixedString
-        )
-        self.interpComboBox.setCurrentIndex(index)
+        with qt_signals_blocked(self.interpComboBox):
+            self.interpComboBox.clear()
+            self.interpComboBox.addItems(interp_names)
+            self.interpComboBox.setCurrentText(interp)
 
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""
