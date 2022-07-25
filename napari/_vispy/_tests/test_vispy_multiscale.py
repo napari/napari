@@ -172,9 +172,9 @@ def test_multiscale_zoomed_out(make_napari_viewer):
     # The camera rect is (left, top, width, height) in scene coordinates.
     # In this case scene coordinates are the same as data/world coordinates
     # the layer is 2D and data-to-world is identity.
-    # We pick a camera rect size that is slightly bigger than the data extent
+    # We pick a camera rect size that is much bigger than the data extent
     # to simulate being zoomed out in the viewer.
-    camera_rect_size = 3400
+    camera_rect_size = 34000
     camera_rect_center = 1599.5
     camera_rect_start = camera_rect_center - (camera_rect_size / 2)
     qt_viewer.view.camera.rect = (
@@ -186,7 +186,7 @@ def test_multiscale_zoomed_out(make_napari_viewer):
 
     qt_viewer.on_draw(None)
 
-    assert layer.data_level == 1
+    assert layer.data_level == 2
 
 
 @skip_on_win_ci
