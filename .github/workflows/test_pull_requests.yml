@@ -168,7 +168,8 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: |
-            python -m pytest --pyargs napari --pyargs napari_builtins --color=yes
+            python -m pytest --pyargs napari --color=yes
+            python -m pytest --pyargs napari_builtins --color=yes
 
   test_examples:
     name: test examples
