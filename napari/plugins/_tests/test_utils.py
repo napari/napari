@@ -95,87 +95,59 @@ def test_get_preferred_reader_abs_path():
 
 
 def test_score_specificity_simple():
-    relpath, nested, score = score_specificity('')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.NONE]
-
-    relpath, nested, score = score_specificity('a')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.NONE]
-
-    relpath, nested, score = score_specificity('ab*c')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.STAR]
-
-    relpath, nested, score = score_specificity('a?c')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.ANY]
-
-    relpath, nested, score = score_specificity('a[a-zA-Z]c')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.SET]
-
-    relpath, nested, score = score_specificity('*[a-zA-Z]*a?c')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.STAR | MatchFlag.ANY | MatchFlag.SET]
+    assert score_specificity('') == (True, 0, [MatchFlag.NONE])
+    assert score_specificity('a') == (True, 0, [MatchFlag.NONE])
+    assert score_specificity('ab*c') == (True, 0, [MatchFlag.STAR])
+    assert score_specificity('a?c') == (True, 0, [MatchFlag.ANY])
+    assert score_specificity('a[a-zA-Z]c') == (True, 0, [MatchFlag.SET])
+    assert score_specificity('*[a-zA-Z]*a?c') == (
+        True,
+        0,
+        [MatchFlag.STAR | MatchFlag.ANY | MatchFlag.SET],
+    )
 
 
 def test_score_specificity_complex():
-    relpath, nested, score = score_specificity(
-        '*/my-specific-folder/[nested]/*?.tif'
+    assert score_specificity('*/my-specific-folder/[nested]/*?.tif') == (
+        True,
+        -3,
+        [
+            MatchFlag.STAR,
+            MatchFlag.NONE,
+            MatchFlag.SET,
+            MatchFlag.STAR | MatchFlag.ANY,
+        ],
     )
-    assert relpath is True
-    assert nested == -3
-    assert score == [
-        MatchFlag.STAR,
-        MatchFlag.NONE,
-        MatchFlag.SET,
-        MatchFlag.STAR | MatchFlag.ANY,
-    ]
 
-    relpath, nested, score = score_specificity(
-        '/my-specific-folder/[nested]/*?.tif'
+    assert score_specificity('/my-specific-folder/[nested]/*?.tif') == (
+        False,
+        -2,
+        [
+            MatchFlag.NONE,
+            MatchFlag.SET,
+            MatchFlag.STAR | MatchFlag.ANY,
+        ],
     )
-    assert relpath is False
-    assert nested == -2
-    assert score == [
-        MatchFlag.NONE,
-        MatchFlag.SET,
-        MatchFlag.STAR | MatchFlag.ANY,
-    ]
 
 
 def test_score_specificity_collapse_star():
-    relpath, nested, score = score_specificity('*/*/?*.tif')
-    assert relpath is True
-    assert nested == -1
-    assert score == [MatchFlag.STAR, MatchFlag.STAR | MatchFlag.ANY]
-
-    relpath, nested, score = score_specificity('*/*/*a?c.tif')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.STAR | MatchFlag.ANY]
-
-    relpath, nested, score = score_specificity('*/*/*.tif')
-    assert relpath is True
-    assert nested == 0
-    assert score == [MatchFlag.STAR]
-
-    relpath, nested, score = score_specificity('*/abc*/*.tif')
-    assert relpath is True
-    assert nested == -1
-    assert score == [MatchFlag.STAR, MatchFlag.STAR]
-
-    relpath, nested, score = score_specificity('/abc*/*.tif')
-    assert relpath is False
-    assert nested == 0
-    assert score == [MatchFlag.STAR]
+    assert score_specificity('*/*/?*.tif') == (
+        True,
+        -1,
+        [MatchFlag.STAR, MatchFlag.STAR | MatchFlag.ANY],
+    )
+    assert score_specificity('*/*/*a?c.tif') == (
+        True,
+        0,
+        [MatchFlag.STAR | MatchFlag.ANY],
+    )
+    assert score_specificity('*/*/*.tif') == (True, 0, [MatchFlag.STAR])
+    assert score_specificity('*/abc*/*.tif') == (
+        True,
+        -1,
+        [MatchFlag.STAR, MatchFlag.STAR],
+    )
+    assert score_specificity('/abc*/*.tif') == (False, 0, [MatchFlag.STAR])
 
 
 def test_score_specificity_range():
