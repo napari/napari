@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-from napari.layers.base.base import _LayerSliceResponse
+from napari.layers.points.points import _PointsSliceResponse
 
 from ...settings import get_settings
 from ...utils.colormaps.standardize_color import transform_color
@@ -44,7 +44,10 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self._on_data_change()
 
-    def _set_slice(self, response: _LayerSliceResponse) -> None:
+    # We upgrade the parameter type of this overridden method, which is
+    # problematic for anything with a reference typed with the base Layer.
+    # This is a code smell that should make us reconsider this design.
+    def _set_slice(self, response: _PointsSliceResponse) -> None:
         LOGGER.debug('VispyPointsLayer._set_slice : %s', response.request)
         data = response.data[:, ::-1]
 

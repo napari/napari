@@ -6,14 +6,14 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
 
-from ...utils._dask_utils import configure_dask
+from ...utils._dask_utils import DaskIndexer, configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
@@ -62,23 +62,19 @@ class _LayerSliceRequest:
     point: Tuple[float, ...]
     dims_displayed: Tuple[int, ...]
     dims_not_displayed: Tuple[int, ...] = field(repr=False)
-    multiscale: bool = field(repr=False)  # image specific
-    rgb: bool = field(repr=False)  # image specific
-    data_level: int = field(
-        repr=False
-    )  # image specific, should be computed when slicing
-    corner_pixels: np.ndarray = field(
-        repr=False
-    )  # image specific, 2xD where D=ndim, int
-    round_index: bool = field(
-        repr=False
-    )  # used in Layer, True for points only
-    out_of_slice_display: bool = field(repr=False)  # for points, vectors
-    size: Optional[np.ndarray] = field(repr=False)  # for points
-    face_color: Optional[np.ndarray] = field(repr=False)  # for points
-    edge_color: Optional[np.ndarray] = field(repr=False)  # for points
-    edge_width: Optional[np.ndarray] = field(repr=False)  # for points
-    edge_width_is_relative: bool = field(repr=False)  # for points
+    multiscale: bool = field(repr=False)
+    corner_pixels: np.ndarray = field(repr=False)
+    round_index: bool = field(repr=False)
+    dask_config: DaskIndexer = field(repr=False)
+
+    def asdict(self) -> dict:
+        """Shallow copy of the request as a dict.
+
+        From the official Python docs: https://docs.python.org/3/library/dataclasses.html#dataclasses.asdict
+        """
+        return {
+            field.name: getattr(self, field.name) for field in fields(self)
+        }
 
 
 @dataclass(frozen=True)
@@ -86,19 +82,6 @@ class _LayerSliceResponse:
     request: _LayerSliceRequest
     data: Any = field(repr=False)
     data_to_world: Affine = field(repr=False)
-    size: Optional[np.ndarray] = field(default=None, repr=False)  # for points
-    face_color: Optional[np.ndarray] = field(
-        default=None, repr=False
-    )  # for points
-    edge_color: Optional[np.ndarray] = field(
-        default=None, repr=False
-    )  # for points
-    edge_width: Optional[np.ndarray] = field(
-        default=None, repr=False
-    )  # for points
-    edge_width_is_relative: bool = field(
-        default=False, repr=False
-    )  # for points
 
 
 def no_op(layer: Layer, event: Event) -> None:
@@ -1001,18 +984,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             dims_displayed=self_order[-dims.ndisplay :],
             dims_not_displayed=self_order[: -dims.ndisplay],
             multiscale=self.multiscale,
-            rgb=getattr(self, 'rgb', False),
-            data_level=getattr(self, 'data_level', 0),
             corner_pixels=self.corner_pixels,
             round_index=getattr(self, '_round_index', True),
-            out_of_slice_display=getattr(self, 'out_of_slice_display', False),
-            size=getattr(self, 'size', None),
-            face_color=getattr(self, 'face_color', None),
-            edge_color=getattr(self, 'edge_color', None),
-            edge_width=getattr(self, 'edge_width', None),
-            edge_width_is_relative=getattr(
-                self, 'edge_width_is_relative', False
-            ),
+            dask_config=self.dask_optimized_slicing,
         )
 
     @staticmethod

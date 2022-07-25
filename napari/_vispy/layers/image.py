@@ -5,7 +5,7 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
-from napari.layers.base.base import _LayerSliceResponse
+from napari.layers.image.image import _ImageSliceResponse
 
 from ...utils.translations import trans
 from ..utils.gl import fix_data_dtype, get_gl_extensions
@@ -92,7 +92,10 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _set_slice(self, response: _LayerSliceResponse) -> None:
+    # We upgrade the parameter type of this overridden method, which is
+    # problematic for anything with a reference typed with the base Layer.
+    # This is a code smell that should make us reconsider this design.
+    def _set_slice(self, response: _ImageSliceResponse) -> None:
         # Copied from set_node_data without downsampling (TODO).
         LOGGER.debug('VispyImageLayer._set_slice : %s', response.request)
 

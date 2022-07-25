@@ -1,6 +1,7 @@
 import logging
 import warnings
 from copy import copy, deepcopy
+from dataclasses import dataclass, field
 from itertools import cycle
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -8,6 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
+from napari.components.dims import Dims
 from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
 
 from ...utils.colormaps import Colormap, ValidColormapArg
@@ -37,6 +39,25 @@ from ._points_utils import (
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 LOGGER = logging.getLogger("napari.layers.points")
+
+
+@dataclass(frozen=True)
+class _PointsSliceRequest(_LayerSliceRequest):
+    out_of_slice_display: bool = field(repr=False)
+    size: np.ndarray = field(repr=False)
+    face_color: np.ndarray = field(repr=False)
+    edge_color: np.ndarray = field(repr=False)
+    edge_width: np.ndarray = field(repr=False)
+    edge_width_is_relative: bool = field(repr=False)
+
+
+@dataclass(frozen=True)
+class _PointsSliceResponse(_LayerSliceResponse):
+    size: np.ndarray = field(repr=False)
+    face_color: np.ndarray = field(repr=False)
+    edge_color: np.ndarray = field(repr=False)
+    edge_width: np.ndarray = field(repr=False)
+    edge_width_is_relative: bool = field(repr=False)
 
 
 class Points(Layer):
@@ -1672,8 +1693,24 @@ class Points(Layer):
         )
         return start_point, end_point
 
+    def _make_slice_request(self, dims: Dims) -> _PointsSliceRequest:
+        LOGGER.debug('Points._make_slice_request: %s', dims)
+        base_request = super()._make_slice_request(dims)
+        return _PointsSliceRequest(
+            out_of_slice_display=self.out_of_slice_display,
+            size=self.size,
+            face_color=self.face_color,
+            edge_color=self.edge_color,
+            edge_width=self.edge_width,
+            edge_width_is_relative=self.edge_width_is_relative,
+            **(base_request.asdict()),
+        )
+
+    # We upgrade the parameter type of this overridden method, which is
+    # problematic for anything with a reference typed with the base Layer.
+    # This is a code smell that should make us reconsider this design.
     @staticmethod
-    def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
+    def _get_slice(request: _PointsSliceRequest) -> _PointsSliceResponse:
         LOGGER.debug('Points._get_slice : %s', request)
         slice_indices = Layer._get_slice_indices(request)
         indices, scale = Points._get_slice_data(
@@ -1693,7 +1730,7 @@ class Points(Layer):
         # TODO: do we need shown here?
         size = scale * request.size[data_index].mean(axis=1)
 
-        return _LayerSliceResponse(
+        return _PointsSliceResponse(
             request=request,
             data=data,
             data_to_world=transform,

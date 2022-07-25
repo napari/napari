@@ -5,11 +5,13 @@ from __future__ import annotations
 import logging
 import types
 import warnings
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Sequence, Union
 
 import numpy as np
 from scipy import ndimage as ndi
 
+from napari.components.dims import Dims
 from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
 from napari.utils.transforms.transforms import Affine
 
@@ -48,6 +50,17 @@ if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
 
 LOGGER = logging.getLogger("napari.layers.image")
+
+
+@dataclass(frozen=True)
+class _ImageSliceRequest(_LayerSliceRequest):
+    rgb: bool = field(repr=False)
+    data_level: int = field(repr=False)
+
+
+@dataclass(frozen=True)
+class _ImageSliceResponse(_LayerSliceResponse):
+    pass
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -718,8 +731,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
+    def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
+        LOGGER.debug('Image._make_slice_request: %s', dims)
+        base_request = super()._make_slice_request(dims)
+        return _ImageSliceRequest(
+            rgb=self.rgb,
+            data_level=self.data_level,
+            **(base_request.asdict()),
+        )
+
+    # We upgrade the parameter type of this overridden method, which is
+    # problematic for anything with a reference typed with the base Layer.
+    # This is a code smell that should make us reconsider this design.
     @staticmethod
-    def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
+    def _get_slice(request: _ImageSliceRequest) -> _ImageSliceResponse:
         LOGGER.debug('Image._get_slice : %s', request)
 
         slice_indices = Layer._get_slice_indices(request)
@@ -740,7 +765,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # TODO: downsample data if it exceeds GL texture max size.
 
-        return _LayerSliceResponse(
+        return _ImageSliceResponse(
             request=request,
             data=data,
             data_to_world=transform,
@@ -748,13 +773,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @staticmethod
     def _get_slice_data(
-        slice_indices, request: _LayerSliceRequest
+        slice_indices,
+        request: _ImageSliceRequest,
     ) -> np.ndarray:
-        return np.asarray(request.data[slice_indices])
+        with request.dask_config():
+            return np.asarray(request.data[slice_indices])
 
     @staticmethod
     def _get_slice_data_multi_scale(
-        slice_indices, request: _LayerSliceRequest
+        slice_indices, request: _ImageSliceRequest
     ) -> tuple[np.ndarray, Affine]:
         if request.ndisplay == 3:
             warnings.warn(
@@ -799,7 +826,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 request.corner_pixels[0] * tile_to_data.scale
             )
 
-        data = np.asarray(request.data[level][tuple(indices)])
+        with request.dask_config():
+            data = np.asarray(request.data[level][tuple(indices)])
 
         return data, tile_to_data
 
