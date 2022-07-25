@@ -57,47 +57,47 @@ def register_shapes_action(description):
     return register_layer_action(Shapes, description)
 
 
-def register_label_mode_action(description):
+def register_shape_mode_action(description):
     return register_layer_attr_action(Shapes, description, 'mode')
 
 
-@register_label_mode_action(trans._('Add rectangles'))
+@register_shape_mode_action(trans._('Add rectangles'))
 def activate_add_rectangle_mode(layer: Shapes):
     """Activate add rectangle tool."""
     layer.mode = Mode.ADD_RECTANGLE
 
 
-@register_label_mode_action(trans._('Add ellipses'))
+@register_shape_mode_action(trans._('Add ellipses'))
 def activate_add_ellipse_mode(layer: Shapes):
     """Activate add ellipse tool."""
     layer.mode = Mode.ADD_ELLIPSE
 
 
-@register_label_mode_action(trans._('Add lines'))
+@register_shape_mode_action(trans._('Add lines'))
 def activate_add_line_mode(layer: Shapes):
     """Activate add line tool."""
     layer.mode = Mode.ADD_LINE
 
 
-@register_label_mode_action(trans._('Add path'))
+@register_shape_mode_action(trans._('Add path'))
 def activate_add_path_mode(layer: Shapes):
     """Activate add path tool."""
     layer.mode = Mode.ADD_PATH
 
 
-@register_label_mode_action(trans._('Add polygons'))
+@register_shape_mode_action(trans._('Add polygons'))
 def activate_add_polygon_mode(layer: Shapes):
     """Activate add polygon tool."""
     layer.mode = Mode.ADD_POLYGON
 
 
-@register_label_mode_action(trans._('Select vertices'))
+@register_shape_mode_action(trans._('Select vertices'))
 def activate_direct_mode(layer: Shapes):
     """Activate vertex selection tool."""
     layer.mode = Mode.DIRECT
 
 
-@register_label_mode_action(trans._('Select shapes'))
+@register_shape_mode_action(trans._('Select shapes'))
 def activate_select_mode(layer: Shapes):
     """Activate shape selection tool."""
     layer.mode = Mode.SELECT
