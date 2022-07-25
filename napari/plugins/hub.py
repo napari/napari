@@ -46,7 +46,7 @@ def hub_plugin_info(
 
     # If the napari hub returns an info dict missing the required keys,
     # simply return None, False like the above except
-    if not {'name', 'version', 'authors', 'summary', 'license'} <= info.keys():
+    if not {'name', 'version', 'authors', 'summary', 'license', 'project_site'} <= info.keys():
         return None, False
 
     version = info["version"]
