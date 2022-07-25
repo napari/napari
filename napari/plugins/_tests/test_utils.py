@@ -157,6 +157,11 @@ def test_score_specificity_collapse_star():
     assert nested == -1
     assert score == [MatchFlag.STAR, MatchFlag.STAR | MatchFlag.ANY]
 
+    relpath, nested, score = score_specificity('*/*/*a?c.tif')
+    assert relpath is True
+    assert nested == 0
+    assert score == [MatchFlag.STAR | MatchFlag.ANY]
+
     relpath, nested, score = score_specificity('*/*/*.tif')
     assert relpath is True
     assert nested == 0
