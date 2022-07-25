@@ -358,7 +358,37 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
+    add_layers_to_viewer(gui, [result], List[return_type])
+
+
+def add_layers_to_viewer(gui, result: Any, return_type: List[Layer]) -> None:
+    """Show a magicgui result in the viewer.
+
+    Parameters
+    ----------
+    gui : MagicGui or QWidget
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    result : Any
+        The result of the function call.
+    return_type : type
+        The return annotation that was used in the decorated function.
+
+    Examples
+    --------
+    This allows the user to do this, and add the resulting layer to the viewer.
+
+    >>> @magicgui
+    ... def make_layer() -> List[napari.layers.Layer]:
+    ...     return napari.layers.Image(np.random.rand(64, 64))
+
+    """
     from ..utils._injection._processors import _add_layer_to_viewer
 
-    if result is not None and (viewer := find_viewer_ancestor(gui)):
-        _add_layer_to_viewer(result, viewer=viewer, source={'widget': gui})
+    viewer = find_viewer_ancestor(gui)
+    if not viewer:
+        return
+
+    for item in result:
+        if item is not None:
+            _add_layer_to_viewer(item, viewer=viewer, source={'widget': gui})
