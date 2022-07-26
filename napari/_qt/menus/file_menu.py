@@ -1,21 +1,13 @@
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSize
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QAction, QMessageBox
+from qtpy.QtWidgets import QAction
 
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari.errors.reader_errors import MultipleReaderError
 
 from ...components._viewer_key_bindings import register_viewer_action
-from ...settings import get_settings
-from ...utils.history import get_save_history, update_save_history
-from ...utils.misc import running_as_bundled_app
 from ...utils.translations import trans
-from ..dialogs.preferences_dialog import PreferencesDialog
-from ..dialogs.screenshot_dialog import ScreenshotDialog
-from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ... import Viewer
@@ -26,8 +18,6 @@ class FileMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        ]
-        populate_menu(self, ACTIONS)
 
         self._pref_dialog = None
 
@@ -39,7 +29,6 @@ class FileMenu(NapariMenu):
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
         self._rebuild_samples_menu()
         self.update()
-
 
     def _rebuild_samples_menu(self):
         from ...plugins import _npe2, menu_item_template, plugin_manager
