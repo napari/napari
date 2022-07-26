@@ -49,7 +49,7 @@ from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
 from ._qapp_model import build_qmodel_menu
-from ._qapp_model._qactions import _init_qactions
+from ._qapp_model.qactions import init_qactions
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -137,7 +137,7 @@ class _QtMainWindow(QMainWindow):
                 self._qt_viewer.canvas._backend.screen_changed
             )
 
-        _init_qactions()
+        init_qactions()
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
