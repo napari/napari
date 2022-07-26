@@ -196,7 +196,7 @@ class InteractionBoxMouseBindings:
 
         layer_affine_transform = event.value.compose(
             self._initial_transform_inverse
-        )
+        ) if self._initial_transform_inverse is not None else event.value
 
         active_layer.affine = active_layer.affine.replace_slice(
             layer_dims_displayed, layer_affine_transform

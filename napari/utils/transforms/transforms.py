@@ -57,7 +57,7 @@ class Transform:
 
     def compose(self, transform: Optional['Transform']) -> 'Transform':
         """Return the composite of this transform and the provided one."""
-        return self if transform is None else TransformChain([self, transform])
+        return TransformChain([self, transform])
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
