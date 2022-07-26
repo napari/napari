@@ -191,7 +191,7 @@ class InteractionBoxMouseBindings:
         layer_dims_displayed = dims_displayed_world_to_layer(
             list(self._ref_viewer().dims.displayed),
             viewer.dims.ndim,
-            active_layer.ndim if active_layer is not None else 2,
+            active_layer.ndim,
         )
 
         layer_affine_transform = event.value.compose(

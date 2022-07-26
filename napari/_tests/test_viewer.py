@@ -366,7 +366,7 @@ def test_reset_empty(make_napari_viewer):
 
 
 def test_reset_non_empty(make_napari_viewer):
-    """Test that resetting an empty viewer doesn't crash"""
+    """Test that resetting a non-empty viewer doesn't crash"""
     viewer = make_napari_viewer()
     viewer.add_points([(0, 1), (2, 3)])
     viewer.reset()
