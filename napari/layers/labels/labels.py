@@ -9,10 +9,8 @@ from scipy import ndimage as ndi
 
 from napari.utils.misc import _is_array_type
 
-from ...settings import get_settings
 from ...utils import config
 from ...utils._dtype import normalize_dtype
-from ...utils.action_manager import action_manager
 from ...utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
@@ -300,7 +298,6 @@ class Labels(_ImageBase):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
         self._preserve_labels = False
-        self._help = self._mode_help_string(self._mode)
 
         self._reset_history()
 
@@ -710,44 +707,11 @@ class Labels(_ImageBase):
         Mode.ERASE: 'circle',
     }
 
-    @staticmethod
-    def _mode_help_string(mode: Mode) -> str:
-        """
-        Return string informing about shortcuts
-        that will enable alternative layer mode
-        """
-        from . import _labels_key_bindings as kb
-
-        help_li = []
-        shortcuts = get_settings().shortcuts.shortcuts
-
-        for func, mode_ in (
-            (kb.activate_label_erase_mode, Mode.ERASE),
-            (kb.activate_paint_mode, Mode.PAINT),
-            (kb.activate_fill_mode, Mode.FILL),
-            (kb.activate_label_picker_mode, Mode.PICK),
-            (kb.activate_label_pan_zoom_mode, Mode.PAN_ZOOM),
-        ):
-            if mode == mode_:
-                continue
-            action_name = f"napari:{func.__name__}"
-            desc = action_manager._actions[action_name].description.lower()
-            help_li.append(
-                trans._(
-                    "use <{shortcut}> for {desc}",
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
-            )
-        return ", ".join(help_li)
-
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
-
-        self.help = self._mode_help_string(mode)
 
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()

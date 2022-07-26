@@ -57,6 +57,15 @@ def activate_label_erase_mode(layer: Labels):
     layer.mode = Mode.ERASE
 
 
+labels_fun_to_mode = [
+    (activate_label_erase_mode, Mode.ERASE),
+    (activate_paint_mode, Mode.PAINT),
+    (activate_fill_mode, Mode.FILL),
+    (activate_label_picker_mode, Mode.PICK),
+    (activate_label_pan_zoom_mode, Mode.PAN_ZOOM),
+]
+
+
 @register_label_action(
     trans._(
         "Set the currently selected label to the largest used label plus one."

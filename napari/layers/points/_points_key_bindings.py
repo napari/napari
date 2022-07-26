@@ -51,6 +51,13 @@ def activate_points_pan_zoom_mode(layer: Points):
     layer.mode = Mode.PAN_ZOOM
 
 
+points_fun_to_mode = [
+    (activate_points_add_mode, Mode.ADD),
+    (activate_points_select_mode, Mode.SELECT),
+    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
+]
+
+
 @Points.bind_key('Control-C')
 def copy(layer: Points):
     """Copy any selected points."""

@@ -28,13 +28,17 @@ from ..errors import (
     NoAvailableReaderError,
     ReaderPluginError,
 )
-from ..layers import Image, Layer
+from ..layers import Image, Labels, Layer, Points, Shapes
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
+from ..layers.labels._labels_key_bindings import labels_fun_to_mode
+from ..layers.points._points_key_bindings import points_fun_to_mode
+from ..layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from ..layers.utils.stack_utils import split_channels
 from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
+from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
 from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -483,6 +487,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+        layer.events.mode.connect(self._on_layer_mode_change)
+        self._layer_help_from_mode(layer)
 
         # Update dims and grid model
         self._on_layers_change()
@@ -495,6 +501,40 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
+
+    @staticmethod
+    def _layer_help_from_mode(layer: Layer):
+        """
+        Update layer help text base on layer mode.
+        """
+        layer_to_func_and_mode = {
+            Points: points_fun_to_mode,
+            Labels: labels_fun_to_mode,
+            Shapes: shapes_fun_to_mode,
+        }
+
+        help_li = []
+        shortcuts = get_settings().shortcuts.shortcuts
+
+        for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
+            if mode_ == layer.mode:
+                continue
+            action_name = f"napari:{fun.__name__}"
+            desc = action_manager._actions[action_name].description.lower()
+            help_li.append(
+                trans._(
+                    "use <{shortcut}> for {desc}",
+                    shortcut=shortcuts[action_name][0],
+                    desc=desc,
+                )
+            )
+
+        layer.help = ", ".join(help_li)
+
+    def _on_layer_mode_change(self, event):
+        self._layer_help_from_mode(event.source)
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.

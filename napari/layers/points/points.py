@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-from ...settings import get_settings
-from ...utils.action_manager import action_manager
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
@@ -397,7 +395,6 @@ class Points(Layer):
         self._value = None
         self._value_stored = None
         self._mode = Mode.PAN_ZOOM
-        self._help = self._mode_help_string(self._mode)
         self._status = self.mode
         self._highlight_index = []
         self._highlight_box = None
@@ -1274,35 +1271,6 @@ class Points(Layer):
         Mode.TRANSFORM: 'standard',
     }
 
-    @staticmethod
-    def _mode_help_string(mode: Mode) -> str:
-        """
-        Return string informing about shortcuts
-        that will enable alternative layer mode
-        """
-        from . import _points_key_bindings as kb
-
-        help_li = []
-        shortcuts = get_settings().shortcuts.shortcuts
-
-        for func, mode_ in (
-            (kb.activate_points_add_mode, Mode.ADD),
-            (kb.activate_points_select_mode, Mode.SELECT),
-            (kb.activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
-        ):
-            if mode == mode_:
-                continue
-            action_name = f"napari:{func.__name__}"
-            desc = action_manager._actions[action_name].description.lower()
-            help_li.append(
-                trans._(
-                    "use <{shortcut}> for {desc}",
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
-            )
-        return ", ".join(help_li)
-
     @mode.setter
     def mode(self, mode):
         old_mode = self._mode
@@ -1319,8 +1287,6 @@ class Points(Layer):
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
-
-        self.help = self._mode_help_string(mode)
 
         self._set_highlight()
         self.events.mode(mode=mode)

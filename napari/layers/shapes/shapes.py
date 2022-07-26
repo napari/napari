@@ -8,8 +8,6 @@ import numpy as np
 import pandas as pd
 from vispy.color import get_color_names
 
-from ...settings import get_settings
-from ...utils.action_manager import action_manager
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
@@ -1584,42 +1582,6 @@ class Shapes(Layer):
         """
         return str(self._mode)
 
-    @staticmethod
-    def _mode_help_string(mode: Mode) -> str:
-        """
-        Return string informing about shortcuts
-        that will enable alternative layer mode
-        """
-        from . import _shapes_key_bindings as kb
-
-        help_li = []
-        shortcuts = get_settings().shortcuts.shortcuts
-
-        for func, mode_ in (
-            (kb.activate_add_rectangle_mode, Mode.ADD_RECTANGLE),
-            (kb.activate_add_ellipse_mode, Mode.ADD_ELLIPSE),
-            (kb.activate_add_line_mode, Mode.ADD_LINE),
-            (kb.activate_add_path_mode, Mode.ADD_PATH),
-            (kb.activate_add_polygon_mode, Mode.ADD_POLYGON),
-            (kb.activate_direct_mode, Mode.DIRECT),
-            (kb.activate_select_mode, Mode.SELECT),
-            (kb.activate_shape_pan_zoom_mode, Mode.PAN_ZOOM),
-            (kb.activate_vertex_insert_mode, Mode.VERTEX_INSERT),
-            (kb.activate_vertex_remove_mode, Mode.VERTEX_REMOVE),
-        ):
-            if mode == mode_:
-                continue
-            action_name = f"napari:{func.__name__}"
-            desc = action_manager._actions[action_name].description.lower()
-            help_li.append(
-                trans._(
-                    "use <{shortcut}> for {desc}",
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
-            )
-        return ", ".join(help_li)
-
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
         mode, changed = self._mode_setter_helper(mode, Mode)
@@ -1635,8 +1597,6 @@ class Shapes(Layer):
 
         old_mode = self._mode
         self._mode = mode
-
-        self.help = self._mode_help_string(mode)
 
         draw_modes = {
             Mode.SELECT,
