@@ -17,6 +17,17 @@ from ...utils.translations import trans
 class CommandId(str, Enum):
     """Id representing a napari command."""
 
+    DLG_OPEN_FILES = 'napari:file:open_files_dialog'
+    DLG_OPEN_FILES_AS_STACK = 'napari:file:open_files_as_stack_dialog'
+    DLG_OPEN_FOLDER = 'napari:file:open_folder_dialog'
+    DLG_SHOW_PREFERENCES = 'napari:file:show_preferences_dialog'
+    DLG_SAVE_LAYERS = 'napari:file:save_layers_dialog'
+    DLG_SAVE_SCREENSHOT = 'napari:file:save_screenshot_dialog'
+    COPY_SCREENSHOT_TO_CLIPBOARD = 'napari:file:copy_screenshot_to_clipboard'
+    DLG_CLOSE = 'napari:window:close_dialog'
+    DLG_QUIT = 'napari:quit_dialog'
+    RESTART = 'napari:restart'
+
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
@@ -62,6 +73,17 @@ class _ci(NamedTuple):
 
 # fmt: off
 _COMMAND_INFO = {
+    CommandId.DLG_OPEN_FILES: _ci(trans._('Open File(s)...')),
+    CommandId.DLG_OPEN_FILES_AS_STACK: _ci(trans._('Open Files as Stack...')),
+    CommandId.DLG_OPEN_FOLDER: _ci(trans._('Open Folder...')),
+    CommandId.DLG_SHOW_PREFERENCES: _ci(trans._('Preferences')),
+    CommandId.DLG_SAVE_LAYERS: _ci(trans._('Save Layer(s)...')),
+    CommandId.DLG_SAVE_SCREENSHOT: _ci(trans._('Save Screenshot...')),
+    CommandId.COPY_SCREENSHOT_TO_CLIPBOARD: _ci(trans._('Copy Screenshot to Clipboard')),
+    CommandId.DLG_CLOSE: _ci(trans._('Close Window')),
+    CommandId.DLG_QUIT: _ci(trans._('Exit')),
+    CommandId.RESTART: _ci(trans._('Restart')),
+
     CommandId.LAYER_DUPLICATE: _ci(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _ci(trans._('Split Stack'),),
     CommandId.LAYER_SPLIT_RGB: _ci(trans._('Split RGB'),),

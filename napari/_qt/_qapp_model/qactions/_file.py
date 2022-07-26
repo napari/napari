@@ -1,31 +1,35 @@
 from typing import List
 
-from app_model.types import Action, KeyCode, KeyMod
+from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
 from ...._app_model.constants import CommandId, MenuGroup, MenuId
-from ....utils.translations import trans
-from ...qt_main_window import Window
+
+# from ....utils.translations import trans
+# from ...qt_main_window import Window
+from ...qt_viewer import QtViewer
 
 FILE_ACTIONS: List[Action] = [
     Action(
-        id=CommandId.TOGGLE_MENUBAR,
-        title=CommandId.TOGGLE_MENUBAR.title,
-        menus=[
-            {
-                'id': MenuId.MENUBAR_VIEW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 2,
-                'when': 'not is_mac',
-            }
-        ],
-        callback=Window._toggle_menubar_visible,
+        id=CommandId.DLG_OPEN_FILES,
+        title=CommandId.DLG_OPEN_FILES.title,
+        callback=QtViewer._open_files_dialog,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        keybindings=[StandardKeyBinding.Open],
+    ),
+    Action(
+        id=CommandId.DLG_OPEN_FILES_AS_STACK,
+        title=CommandId.DLG_OPEN_FILES_AS_STACK.title,
+        callback=QtViewer._open_files_dialog_as_stack_dialog,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
+    ),
+    Action(
+        id=CommandId.DLG_OPEN_FOLDER,
+        title=CommandId.DLG_OPEN_FOLDER.title,
+        callback=QtViewer._open_files_dialog,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[
-            {
-                'win': KeyMod.CtrlCmd | KeyCode.KeyM,
-                'linux': KeyMod.CtrlCmd | KeyCode.KeyM,
-            }
+            {'primary': KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyO}
         ],
-        enablement='not is_mac',
-        status_tip=trans._('Show/Hide Menubar'),
     ),
 ]

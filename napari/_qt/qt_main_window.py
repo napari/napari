@@ -468,7 +468,7 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-        viewer.layers.events.connect(self.file_menu.update)
+        # viewer.layers.events.connect(self.file_menu.update)
 
         if show:
             self.show()
@@ -599,7 +599,7 @@ class Window:
         )
 
         self.file_menu = build_qmodel_menu(
-            MenuId.MENUBAR_File, title=trans._('File'), parent=self._qt_window
+            MenuId.MENUBAR_FILE, title=trans._('File'), parent=self._qt_window
         )
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = menus.ViewMenu(self)

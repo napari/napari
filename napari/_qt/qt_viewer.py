@@ -676,7 +676,7 @@ class QtViewer(QSplitter):
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _open_files_dialog(self):
+    def _open_files_dialog(self, stack=False):
         """Add files from the menubar."""
         dlg = QFileDialog()
         hist = get_open_history()
@@ -695,29 +695,12 @@ class QtViewer(QSplitter):
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
-                self._qt_open([filename], stack=False)
+                self._qt_open([filename], stack=stack)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self):
         """Add files as a stack, from the menubar."""
-        dlg = QFileDialog()
-        hist = get_open_history()
-        dlg.setHistory(hist)
-
-        filenames, _ = dlg.getOpenFileNames(
-            parent=self,
-            caption=trans._('Select files...'),
-            directory=hist[0],  # home dir by default
-            options=(
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
-        )
-
-        if (filenames != []) and (filenames is not None):
-            self._qt_open(filenames, stack=True)
-            update_open_history(filenames[0])
+        return self._open_files_dialog(stack=True)
 
     def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
