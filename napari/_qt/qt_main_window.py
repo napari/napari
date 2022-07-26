@@ -36,6 +36,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .._app_model.constants import MenuId
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
@@ -47,6 +48,8 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from ._qapp_model import build_qmodel_menu
+from ._qapp_model.qactions import init_qactions
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -80,9 +83,12 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(self, viewer: 'Viewer', parent=None) -> None:
+    def __init__(
+        self, viewer: 'Viewer', window: 'Window', parent=None
+    ) -> None:
         super().__init__(parent)
         self._ev = None
+        self._window = window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -130,6 +136,8 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        init_qactions()
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -418,7 +426,6 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
-
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
             str, QtViewerDockWidget
@@ -426,7 +433,7 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer)
+        self._qt_window = _QtMainWindow(viewer, self)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -591,7 +598,9 @@ class Window:
             self._toggle_menubar_visible
         )
 
-        self.file_menu = menus.FileMenu(self)
+        self.file_menu = build_qmodel_menu(
+            MenuId.MENUBAR_File, title=trans._('File'), parent=self._qt_window
+        )
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = menus.ViewMenu(self)
         self.main_menu.addMenu(self.view_menu)
