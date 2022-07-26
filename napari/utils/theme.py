@@ -164,7 +164,7 @@ def template(css: str, **theme):
     return css
 
 
-def get_system_theme():
+def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
         name = darkdetect.theme().lower()
