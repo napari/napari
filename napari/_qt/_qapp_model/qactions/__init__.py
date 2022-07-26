@@ -1,6 +1,10 @@
 from functools import lru_cache
 from typing import Optional
 
+# Submodules should be able to import from most modules, so to
+# avoid circular imports, don't import submodules at the top level here,
+# import them inside the init_qactions function.
+
 
 @lru_cache  # only call once
 def init_qactions():
