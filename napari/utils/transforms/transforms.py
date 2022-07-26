@@ -55,7 +55,7 @@ class Transform:
                 trans._('Inverse function was not provided.', deferred=True)
             )
 
-    def compose(self, transform: Optional['Transform']) -> 'Transform':
+    def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
         return TransformChain([self, transform])
 
