@@ -183,20 +183,23 @@ class InteractionBoxMouseBindings:
     def _on_transform_change(self, event):
         """Gets called when the interaction box is transformed to update transform of the layer"""
 
+        viewer = self._ref_viewer()
+        active_layer = viewer.layers.selection.active
+        if active_layer is None:
+            return
+
         layer_dims_displayed = dims_displayed_world_to_layer(
             list(self._ref_viewer().dims.displayed),
-            self._ref_viewer().dims.ndim,
-            self._ref_viewer().layers.selection.active.ndim,
+            viewer.dims.ndim,
+            active_layer.ndim if active_layer is not None else 2,
         )
 
         layer_affine_transform = event.value.compose(
             self._initial_transform_inverse
         )
 
-        self._ref_viewer().layers.selection.active.affine = (
-            self._ref_viewer().layers.selection.active.affine.replace_slice(
-                layer_dims_displayed, layer_affine_transform
-            )
+        active_layer.affine = active_layer.affine.replace_slice(
+            layer_dims_displayed, layer_affine_transform
         )
 
     def initialize_key_events(self, viewer):

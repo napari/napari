@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 import toolz as tz
@@ -55,9 +55,9 @@ class Transform:
                 trans._('Inverse function was not provided.', deferred=True)
             )
 
-    def compose(self, transform: 'Transform') -> 'Transform':
+    def compose(self, transform: Optional['Transform']) -> 'Transform':
         """Return the composite of this transform and the provided one."""
-        return TransformChain([self, transform])
+        return self if transform is None else TransformChain([self, transform])
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
