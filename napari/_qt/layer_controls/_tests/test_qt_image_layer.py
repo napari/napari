@@ -11,7 +11,7 @@ def test_interpolation_combobox(qtbot):
     qtbot.addWidget(qtctrl)
     combo = qtctrl.interpComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
-    assert opts == {'bicubic', 'bilinear', 'kaiser', 'nearest', 'spline36'}
+    assert opts == {'bicubic', 'linear', 'kaiser', 'nearest', 'spline36'}
     # programmatically adding approved interpolation works
     layer.interpolation2d = 'lanczos'
     assert combo.findText('lanczos') == 5

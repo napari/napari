@@ -26,7 +26,6 @@ from ..utils.plane import SlicingPlane
 from ._image_constants import (
     ImageRendering,
     Interpolation,
-    Interpolation3D,
     Mode,
     VolumeDepiction,
 )
@@ -367,7 +366,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
-        self._interpolation3d = Interpolation3D.NEAREST
+        self._interpolation3d = Interpolation.NEAREST
         self.interpolation2d = interpolation2d
         self.interpolation3d = interpolation3d
         self.rendering = rendering
@@ -529,7 +528,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -572,6 +571,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation2d.setter
     def interpolation2d(self, value):
+        if value == 'bilinear':
+            value = 'linear'
+            warnings.warn(
+                trans._(
+                    "'bilinear' interpolation is deprecated. Please use 'linear' instead",
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
@@ -582,7 +590,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
-        self._interpolation3d = Interpolation3D(value)
+        self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
 
