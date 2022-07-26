@@ -487,7 +487,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
-        layer.events.mode.connect(self._on_layer_mode_change)
+        if hasattr(layer.events, "mode"):
+            layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
 
         # Update dims and grid model
