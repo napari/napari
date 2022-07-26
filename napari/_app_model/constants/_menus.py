@@ -17,6 +17,7 @@ class MenuId(str, Enum):
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
+    SAMPLES = 'napari/file/samples'
 
     def __str__(self) -> str:
         return self.value

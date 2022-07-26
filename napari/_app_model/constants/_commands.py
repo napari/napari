@@ -22,8 +22,10 @@ class CommandId(str, Enum):
     DLG_OPEN_FOLDER = 'napari:file:open_folder_dialog'
     DLG_SHOW_PREFERENCES = 'napari:file:show_preferences_dialog'
     DLG_SAVE_LAYERS = 'napari:file:save_layers_dialog'
-    DLG_SAVE_SCREENSHOT = 'napari:file:save_screenshot_dialog'
-    COPY_SCREENSHOT_TO_CLIPBOARD = 'napari:file:copy_screenshot_to_clipboard'
+    DLG_SAVE_CANVAS_SCREENSHOT = 'napari:file:save_canvas_screenshot_dialog'
+    DLG_SAVE_VIEWER_SCREENSHOT = 'napari:file:save_viewer_screenshot_dialog'
+    COPY_CANVAS_SCREENSHOT = 'napari:file:copy_canvas_screenshot'
+    COPY_VIEWER_SCREENSHOT = 'napari:file:copy_viewer_screenshot'
     DLG_CLOSE = 'napari:window:close_dialog'
     DLG_QUIT = 'napari:quit_dialog'
     RESTART = 'napari:restart'
@@ -77,9 +79,11 @@ _COMMAND_INFO = {
     CommandId.DLG_OPEN_FILES_AS_STACK: _ci(trans._('Open Files as Stack...')),
     CommandId.DLG_OPEN_FOLDER: _ci(trans._('Open Folder...')),
     CommandId.DLG_SHOW_PREFERENCES: _ci(trans._('Preferences')),
-    CommandId.DLG_SAVE_LAYERS: _ci(trans._('Save Layer(s)...')),
-    CommandId.DLG_SAVE_SCREENSHOT: _ci(trans._('Save Screenshot...')),
-    CommandId.COPY_SCREENSHOT_TO_CLIPBOARD: _ci(trans._('Copy Screenshot to Clipboard')),
+    CommandId.DLG_SAVE_LAYERS: _ci(trans._('Save Selected Layer(s)...')),
+    CommandId.DLG_SAVE_CANVAS_SCREENSHOT: _ci(trans._('Save Screenshot...')),
+    CommandId.DLG_SAVE_VIEWER_SCREENSHOT: _ci(trans._('Save Screenshot with Viewer...')),
+    CommandId.COPY_CANVAS_SCREENSHOT: _ci(trans._('Copy Screenshot to Clipboard')),
+    CommandId.COPY_VIEWER_SCREENSHOT: _ci(trans._('Copy Screenshot with Viewer to Clipboard')),
     CommandId.DLG_CLOSE: _ci(trans._('Close Window')),
     CommandId.DLG_QUIT: _ci(trans._('Exit')),
     CommandId.RESTART: _ci(trans._('Restart')),

@@ -1295,6 +1295,94 @@ class Window:
             self._qt_window.close()
             del self._qt_window
 
+    def _open_preferences_dialog(self):
+        """Edit preferences from the menubar."""
+        from .dialogs.preferences_dialog import PreferencesDialog
+
+        if getattr(self, '_pref_dialog', None) is None:
+            win = PreferencesDialog(parent=self._qt_window)
+            self._pref_dialog = win
+
+            app_pref = get_settings().application
+            if app_pref.preferences_size:
+                win.resize(*app_pref.preferences_size)
+
+            @win.resized.connect
+            def _save_size(sz: QSize):
+                app_pref.preferences_size = (sz.width(), sz.height())
+
+            def _clean_pref_dialog():
+                self._pref_dialog = None
+
+            win.finished.connect(_clean_pref_dialog)
+            win.show()
+        else:
+            self._pref_dialog.raise_()
+
+    def _screenshot_dialog(self):
+        """Save screenshot of current display with viewer, default .png"""
+        from ..utils.history import get_save_history, update_save_history
+        from .dialogs.screenshot_dialog import ScreenshotDialog
+
+        hist = get_save_history()
+        dial = ScreenshotDialog(
+            self.screenshot, self._qt_viewer, hist[0], hist
+        )
+        if dial.exec_():
+            update_save_history(dial.selectedFiles()[0])
+
+    def _close_dialog(self):
+        from qtpy.QtGui import QKeySequence
+        from qtpy.QtWidgets import QMessageBox
+
+        if not get_settings().application.confirm_close_window:
+            self._qt_window.close(quit_app=False)
+            return
+
+        shortcut = QKeySequence('Ctrl+W')
+        message = QMessageBox(
+            QMessageBox.Icon.Question,
+            trans._("Close window?"),
+            trans._(
+                "Confirm to close window (or press '{shortcut}')",
+                shortcut=shortcut.toString(
+                    QKeySequence.SequenceFormat.NativeText
+                ),
+            ),
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            self._qt_window,
+        )
+        close_btn = message.button(QMessageBox.StandardButton.Ok)
+        close_btn.setShortcut(shortcut)
+        if message.exec_() == QMessageBox.StandardButton.Ok:
+            self._qt_window.close(quit_app=False)
+
+    def _quit_dialog(self):
+        from qtpy.QtGui import QKeySequence
+        from qtpy.QtWidgets import QMessageBox
+
+        if not get_settings().application.confirm_close_window:
+            self._qt_window.close(quit_app=True)
+            return
+
+        shortcut = QKeySequence('Ctrl+Q')
+        message = QMessageBox(
+            QMessageBox.Icon.Warning,
+            trans._("Close application?"),
+            trans._(
+                "Do you want to close the application? ('{shortcut}' to confirm). This will close all Qt Windows in this process",
+                shortcut=shortcut.toString(
+                    QKeySequence.SequenceFormat.NativeText
+                ),
+            ),
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            self._qt_window,
+        )
+        close_btn = message.button(QMessageBox.StandardButton.Ok)
+        close_btn.setShortcut(shortcut)
+        if message.exec_() == QMessageBox.StandardButton.Ok:
+            self._qt_window.close(quit_app=True)
+
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.

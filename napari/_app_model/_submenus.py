@@ -22,4 +22,13 @@ SUBMENUS = [
             order=None,
         ),
     ),
+    (
+        MenuId.MENUBAR_FILE,
+        SubmenuItem(
+            submenu=MenuId.SAMPLES,
+            title=trans._('Open Sample'),
+            group=MenuGroup.NAVIGATION,
+            order=100,
+        ),
+    ),
 ]
