@@ -1,5 +1,5 @@
 from functools import wraps
-from inspect import isgeneratorfunction, signature
+from inspect import isgeneratorfunction, signature, unwrap
 from typing import Any, Callable, Dict, Optional, TypeVar
 
 from typing_extensions import get_type_hints
@@ -72,7 +72,7 @@ def inject_napari_dependencies(func: Callable[..., T]) -> Callable[..., T]:
     Callable
         A function with napari dependencies injected
     """
-    if not func.__code__.co_argcount and 'return' not in getattr(
+    if not unwrap(func).__code__.co_argcount and 'return' not in getattr(
         func, '__annotations__', {}
     ):
         return func

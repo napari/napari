@@ -1012,7 +1012,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_value(
         self,
-        position,
+        position: Tuple[float],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1024,7 +1024,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        position : tuple
+        position : tuple of float
             Position in either data or world coordinates.
         view_direction : Optional[np.ndarray]
             A unit vector giving the direction of the ray in nD world coordinates.
@@ -1604,7 +1604,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_status(
         self,
-        position: np.ndarray,
+        position: Tuple[float],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1615,7 +1615,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        position : tuple
+        position : tuple of float
             Position in either data or world coordinates.
         view_direction : Optional[np.ndarray]
             A unit vector giving the direction of the ray in nD world coordinates.
