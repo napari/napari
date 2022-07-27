@@ -60,7 +60,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         name: Install Python
         with:
           python-version: "3.9"
@@ -124,6 +124,20 @@ jobs:
           if grep "Traceback \|failed\|PERFORMANCE DECREASED" asv_continuous.log > /dev/null ; then
               exit 1
           fi
+
+      - name: Report Failures
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLATFORM: ${{ matrix.runs-on }}
+          PYTHON: "3.9"
+          BACKEND: ${{ matrix.benchmark-name }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: "[test-bot] Benchmark tests failing"
+        with:
+          filename: .github/TEST_FAIL_TEMPLATE.md
+          update_existing: true
 
       - name: Add more info to artifact
         if: always()

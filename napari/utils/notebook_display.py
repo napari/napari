@@ -82,7 +82,8 @@ class NotebookScreenshot:
                     'will be stripped altogether without lxml.'
                 )
                 return None
-            # cleaner won't recognize unescaped script tags
+            # cleaner won't recognize escaped script tags, so always unescape
+            # to be safe
             alt_text = html.unescape(str(alt_text))
             doc = document_fromstring(alt_text)
             alt_text = Cleaner().clean_html(doc).text_content()

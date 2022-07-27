@@ -18,14 +18,14 @@ jobs:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.8]
-        backend: [pyqt, pyside]
+        python: [3.9]
+        backend: [pyqt5, pyside2]
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
 

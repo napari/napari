@@ -29,7 +29,30 @@
       "plugins.io",
       "utils.notifications",
       "view_layers",
-      "viewer"
+      "viewer",
+      "__version__",
+      "components",
+      "experimental",
+      "layers",
+      "qt",
+      "types",
+      "utils",
+      "gui_qt",
+      "run",
+      "save_layers",
+      "utils",
+      "sys_info",
+      "notification_manager",
+      "view_image",
+      "view_labels",
+      "view_path",
+      "view_points",
+      "view_shapes",
+      "view_surface",
+      "view_tracks",
+      "view_vectors",
+      "Viewer",
+      "current_viewer"
     ],
     "napari/_event_loop.py": [],
     "napari/_qt/__init__.py": [
@@ -40,10 +63,26 @@
       "plugins"
     ],
     "napari/_qt/_constants.py": [],
-    "napari/_qt/qt_event_filters.py": [
-      "<qt>{html.escape(tooltip)}</qt>"
+    "napari/_qt/code_syntax_highlight.py": [
+      "monospace",
+      "color",
+      "#{style['color']}",
+      "bgcolor",
+      "bgcolor",
+      "bold",
+      "italic",
+      "underline"
     ],
-    "napari/_qt/containers/__init__.py": [],
+    "napari/_qt/containers/__init__.py": [
+      "create_model",
+      "create_view",
+      "QtLayerList",
+      "QtLayerListModel",
+      "QtListModel",
+      "QtListView",
+      "QtNodeTreeModel",
+      "QtNodeTreeView"
+    ],
     "napari/_qt/containers/_base_item_model.py": [
       "ItemType",
       "_root"
@@ -90,13 +129,6 @@
       "NodeType"
     ],
     "napari/_qt/dialogs/__init__.py": [],
-    "napari/_qt/dialogs/qt_reader_dialog.py": [
-      "Choose reader",
-      "persist_checkbox",
-      "{display_name}",
-      "Remember this choice for files with a {extension} extension",
-      "{error_message}Choose reader for {self._current_file}:"
-    ],
     "napari/_qt/dialogs/preferences_dialog.py": [
       "0",
       "BaseModel",
@@ -149,14 +181,10 @@
     "napari/_qt/dialogs/qt_notification.py": [
       "\nDebugging finished.  Napari active again.",
       "Entering debugger. Type 'q' to return to napari.\n",
-      "QPushButton{",
       "WARNING",
       "close_button",
       "expand_button",
       "expanded",
-      "font-size: 11px;",
-      "min-height: 18px; border-radius: 0;}",
-      "padding: 4px 12px 4px 12px; ",
       "severity_icon",
       "source_label",
       "#D85E38",
@@ -166,7 +194,11 @@
       "icon",
       "info",
       "none",
-      "warning"
+      "warning",
+      "opacity",
+      "geometry",
+      "QPushButton{padding: 4px 12px 4px 12px; font-size: 11px;min-height: 18px; border-radius: 0;}",
+      "python"
     ],
     "napari/_qt/dialogs/qt_plugin_dialog.py": [
       "-c",
@@ -175,7 +207,6 @@
       "bin",
       "cancel",
       "close_button",
-      "conda",
       "conda-forge",
       "conda-meta",
       "darwin",
@@ -195,7 +226,6 @@
       "--upgrade",
       "-m",
       "-y",
-      "PATH",
       "PYTHONPATH",
       "UNKNOWN",
       "__main__",
@@ -214,19 +244,45 @@
       "uninstall",
       "url",
       "version",
-      "warning_icon"
+      "warning_icon",
+      "CONDA_PINNED_PACKAGES",
+      "&{env.value('CONDA_PINNED_PACKAGES')}",
+      "CONDA_PINNED_PACKAGES",
+      "napari={napari_version}{system_pins}",
+      "nt",
+      "TEMP",
+      "TMP",
+      "TEMP",
+      "USERPROFILE",
+      "HOME",
+      "~",
+      "USERPROFILE",
+      "~",
+      "shim",
+      "shim",
+      "warning",
+      "#E3B617",
+      "{pkg_name} {project_info.summary}",
+      "latest_version",
+      "=={item.latest_version}",
+      "1.0",
+      "shim",
+      "napari_hub"
     ],
     "napari/_qt/dialogs/qt_plugin_report.py": [
-      "\n\n```\n{err}\n```\n</details>",
-      "<!--Provide detail on the error here-->\n\n\n\n",
-      "</span><a href=\"{url}\" style=\"color:#999\">{url}</a>",
-      "<details>\n<summary>Traceback from napari</summary>",
-      "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;",
       "QtCopyToClipboardButton",
       "github.com",
       "pluginInfo",
       "url",
-      "{meta.get(\"url\")}/issues/new?&body={err}"
+      "{meta.get(\"url\")}/issues/new?&body={err}",
+      "python",
+      "NoColor"
+    ],
+    "napari/_qt/dialogs/qt_reader_dialog.py": [
+      "Choose reader",
+      "persist_checkbox",
+      "{display_name}",
+      "{error_message}Choose reader for {self._current_file}:"
     ],
     "napari/_qt/dialogs/screenshot_dialog.py": [
       ".png"
@@ -251,7 +307,6 @@
       "reset",
       "reset_clims_button",
       "top",
-      "_keep_autoscale",
       "gamma",
       "reset_contrast_limits"
     ],
@@ -463,6 +518,9 @@
       "self",
       "gui"
     ],
+    "napari/_qt/qt_event_filters.py": [
+      "<qt>{html.escape(tooltip)}</qt>"
+    ],
     "napari/_qt/qt_event_loop.py": [
       "..",
       "IPython",
@@ -516,9 +574,6 @@
       "system"
     ],
     "napari/_qt/qt_viewer.py": [
-      "\nor use \"Save all layers...\"",
-      " \"pip install napari_console\"",
-      "Please select one or more layers to save,",
       "bottom",
       "circle",
       "cross",
@@ -526,7 +581,6 @@
       "forbidden",
       "layerList",
       "left",
-      "napari-console not found. It can be installed with",
       "pointing",
       "right",
       "square",
@@ -538,44 +592,9 @@
       "napari",
       "points",
       "*{val}",
-      "QFileDialog - filename: {filename or None} ",
       "Saved {saved}",
       "crosshair",
-      "ignore",
-      "selected_filter: {selected_filter or None}",
-      "Can't find {display_name} plugin associated with {extension} files.\n",
-      "Tried to open file with {display_name}, but reading failed ({e}).\n"
-    ],
-    "napari/_qt/widgets/qt_dims_sorter.py": [
-      "Viewer",
-      "help_label"
-    ],
-    "napari/_qt/widgets/qt_extension2reader.py": [
-      "Remove this extension to reader association",
-      "border-bottom: 2px solid white;",
-      "margin: 4px;",
-      "x",
-      "{extension}"
-    ],
-    "napari/_qt/widgets/qt_message_popup.py": [
-      "background-color: rgba(0, 0, 0, 0);",
-      "x"
-    ],
-    "napari/plugins/_npe2.py": [
-      "*",
-      "*.*",
-      ";;",
-      "data",
-      "display_name",
-      "dock",
-      "{name} ({_fmt_exts(exts)})",
-      "submenu",
-      "{name} {writer.display_name}",
-      "No readers returned data"
-    ],
-    "napari/plugins/utils.py": [
-      "builtins",
-      "napari_get_reader"
+      "ignore"
     ],
     "napari/_qt/qthreading.py": [
       "_connect",
@@ -590,10 +609,6 @@
       "desc",
       "total",
       "{layer_name.title()}Data"
-    ],
-    "napari/qt/progress.py": [
-      "progrange",
-      "progress"
     ],
     "napari/_qt/utils.py": [
       "!QBYTE_",
@@ -626,9 +641,7 @@
       "transparent"
     ],
     "napari/_qt/widgets/qt_dict_table.py": [
-      "\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
       "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
-      "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}",
       "mailto:{text}"
     ],
     "napari/_qt/widgets/qt_dims.py": [
@@ -653,6 +666,14 @@
       "fps",
       "loop_mode"
     ],
+    "napari/_qt/widgets/qt_dims_sorter.py": [
+      "Viewer",
+      "help_label"
+    ],
+    "napari/_qt/widgets/qt_extension2reader.py": [
+      "border-bottom: 2px solid white;",
+      "margin: 4px;"
+    ],
     "napari/_qt/widgets/qt_highlight_preview.py": [
       "border: 1px solid white;",
       "px",
@@ -668,6 +689,10 @@
     ],
     "napari/_qt/widgets/qt_large_int_spinbox.py": [
       "horizontalAdvance"
+    ],
+    "napari/_qt/widgets/qt_message_popup.py": [
+      "background-color: rgba(0, 0, 0, 0);",
+      "x"
     ],
     "napari/_qt/widgets/qt_mode_buttons.py": [
       "mode"
@@ -706,9 +731,6 @@
       "horizontalAdvance"
     ],
     "napari/_qt/widgets/qt_splash_screen.py": [],
-    "napari/_qt/widgets/qt_viewer_status_bar.py": [
-      "_QtMainWindow"
-    ],
     "napari/_qt/widgets/qt_viewer_buttons.py": [
       "viewer",
       "napari:roll_axes",
@@ -754,8 +776,10 @@
       "{shortcut}",
       "ReferenceType[QtViewer]"
     ],
+    "napari/_qt/widgets/qt_viewer_status_bar.py": [
+      "_QtMainWindow"
+    ],
     "napari/_qt/widgets/qt_welcome.py": [
-      "Ctrl+Alt+/",
       "Ctrl+O",
       "QEvent",
       "drag",
@@ -807,6 +831,12 @@
       "napari.octree.visual",
       "tiles: %d -> %d create: %d delete: %d time: %.3fms"
     ],
+    "napari/_vispy/filters/points_clamp_size.py": [
+      "\n        void clamp_size() {\n            if ($active == 1) {\n                gl_PointSize = clamp(gl_PointSize, $min, $max);\n            }\n        }\n    ",
+      "active",
+      "max",
+      "min"
+    ],
     "napari/_vispy/filters/tracks.py": [
       "\n        varying vec4 v_track_color;\n        void apply_track_shading() {\n\n            // if the alpha is below the threshold, discard the fragment\n            if( v_track_color.a <= 0.0 ) {\n                discard;\n            }\n\n            // interpolate\n            gl_FragColor.a = clamp(v_track_color.a * gl_FragColor.a, 0.0, 1.0);\n        }\n    ",
       "\n        varying vec4 v_track_color;\n        void apply_track_shading() {\n\n            float alpha;\n\n            if ($a_vertex_time > $current_time + $head_length) {\n                // this is a hack to minimize the frag shader rendering ahead\n                // of the current time point due to interpolation\n                if ($a_vertex_time <= $current_time + 1){\n                    alpha = -100.;\n                } else {\n                    alpha = 0.;\n                }\n            } else {\n                // fade the track into the temporal distance, scaled by the\n                // maximum tail and head length from the gui\n                float fade = ($head_length + $current_time - $a_vertex_time) / ($tail_length + $head_length);\n                alpha = clamp(1.0-fade, 0.0, 1.0);\n            }\n\n            // when use_fade is disabled, the entire track is visible\n            if ($use_fade == 0) {\n                alpha = 1.0;\n            }\n\n            // set the vertex alpha according to the fade\n            v_track_color.a = alpha;\n        }\n    ",
@@ -822,27 +852,17 @@
     ],
     "napari/_vispy/layers/image.py": [
       "auto",
-      "plane",
       "tile2data",
-      "volume",
       "texture_float"
     ],
     "napari/_vispy/layers/points.py": [
       "blending",
-      "center",
       "transparent",
       "spherical",
       "translucent_no_depth"
     ],
-    "napari/_vispy/filters/points_clamp_size.py": [
-      "\n        void clamp_size() {\n            if ($active == 1) {\n                gl_PointSize = clamp(gl_PointSize, $min, $max);\n            }\n        }\n    ",
-      "active",
-      "max",
-      "min"
-    ],
     "napari/_vispy/layers/shapes.py": [
       "blending",
-      "center",
       "constant",
       "square"
     ],
@@ -859,8 +879,10 @@
     "napari/_vispy/layers/vectors.py": [
       "constant"
     ],
+    "napari/_vispy/markers.py": [
+      "a_position"
+    ],
     "napari/_vispy/overlays/axes.py": [
-      "1",
       "center",
       "gl",
       "segments"
@@ -871,7 +893,6 @@
       "disc"
     ],
     "napari/_vispy/overlays/scale_bar.py": [
-      "1px",
       "center",
       "gl",
       "segments",
@@ -884,22 +905,6 @@
       "right",
       "top"
     ],
-    "napari/_vispy/visuals/surface.py": [
-      "face",
-      "vertex"
-    ],
-    "napari/_vispy/visuals/volume.py": [
-      "\n        // check if value is different from the background value\n        if ( floatNotEqual(val, categorical_bg_value) ) {\n            // Take the last interval in smaller steps\n            vec3 iloc = loc - step;\n            for (int i=0; i<10; i++) {\n                color = $sample(u_volumetex, iloc);\n                if (floatNotEqual(color.g, categorical_bg_value) ) {\n                    // when the non-background value is reached\n                    // calculate the color (apply lighting effects)\n                    color = applyColormap(color.g);\n                    color = calculateCategoricalColor(color, iloc, dstep);\n                    gl_FragColor = color;\n\n                    // set the variables for the depth buffer\n                    surface_point = iloc * u_shape;\n                    surface_found = true;\n\n                    iter = nsteps;\n                    break;\n                }\n                iloc += step * 0.1;\n            }\n        }\n        ",
-      "\n        if (surface_found == false) {\n            discard;\n        }\n        ",
-      "\n        vec4 color3 = vec4(0.0);  // final color\n        vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader\n        gl_FragColor = vec4(0.0);\n        ",
-      "\n// the tolerance for testing equality of floats with floatEqual and floatNotEqual\nconst float equality_tolerance = 1e-8;\n\nbool floatNotEqual(float val1, float val2)\n{\n    // check if val1 and val2 are not equal\n    bool not_equal = abs(val1 - val2) > equality_tolerance;\n\n    return not_equal;\n}\n\nbool floatEqual(float val1, float val2)\n{\n    // check if val1 and val2 are equal\n    bool equal = abs(val1 - val2) < equality_tolerance;\n\n    return equal;\n}\n\n\n// the background value for the iso_categorical shader\nconst float categorical_bg_value = 0;\n\nint detectAdjacentBackground(float val_neg, float val_pos)\n{\n    // determine if the adjacent voxels along an axis are both background\n    int adjacent_bg = int( floatEqual(val_neg, categorical_bg_value) );\n    adjacent_bg = adjacent_bg * int( floatEqual(val_pos, categorical_bg_value) );\n    return adjacent_bg;\n}\n\nvec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)\n{\n    // Calculate color by incorporating ambient and diffuse lighting\n    vec4 color0 = $sample(u_volumetex, loc);\n    vec4 color1;\n    vec4 color2;\n    float val0 = colorToVal(color0);\n    float val1 = 0;\n    float val2 = 0;\n    int n_bg_borders = 0;\n\n    // View direction\n    vec3 V = normalize(view_ray);\n\n    // calculate normal vector from gradient\n    vec3 N; // normal\n    color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );\n    color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[0] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );\n    color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[1] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );\n    color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[2] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    // Normalize and flip normal so it points towards viewer\n    N = normalize(N);\n    float Nselect = float(dot(N,V) > 0.0);\n    N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;\n\n    // Init colors\n    vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 final_color;\n\n    // todo: allow multiple light, define lights on viewvox or subscene\n    int nlights = 1;\n    for (int i=0; i<nlights; i++)\n    {\n        // Get light direction (make sure to prevent zero devision)\n        vec3 L = normalize(view_ray);  //lightDirs[i];\n        float lightEnabled = float( length(L) > 0.0 );\n        L = normalize(L+(1.0-lightEnabled));\n\n        // Calculate lighting properties\n        float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );\n        if (n_bg_borders > 0) {\n            // to fix dim pixels due to poor normal estimation,\n            // we give a default lambda to pixels surrounded by background\n            lambertTerm = 0.5;\n        }\n\n        // Calculate mask\n        float mask1 = lightEnabled;\n\n        // Calculate colors\n        ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;\n        diffuse_color +=  mask1 * lambertTerm;\n    }\n\n    // Calculate final color by componing different components\n    final_color = betterColor * ( ambient_color + diffuse_color);\n    final_color.a = betterColor.a;\n\n    // Done\n    return final_color;\n}\n",
-      "fragment",
-      "iso_categorical",
-      "void main()"
-    ],
-    "napari/_vispy/markers.py": [
-      "a_position"
-    ],
     "napari/_vispy/quaternion.py": [],
     "napari/_vispy/utils.py": [],
     "napari/_vispy/utils/gl.py": [
@@ -911,15 +916,6 @@
       "translucent",
       "translucent_no_depth",
       "zero"
-    ],
-    "napari/_vispy/visuals/clipping_planes_mixin.py": [
-      "_PVisual"
-    ],
-    "napari/_vispy/visuals/markers.py": [
-      "a_position"
-    ],
-    "napari/_vispy/visuals/tracks.py": [
-      "white"
     ],
     "napari/_vispy/vispy_axes_visual.py": [
       "1",
@@ -989,6 +985,25 @@
       "primary",
       "resources"
     ],
+    "napari/_vispy/visuals/clipping_planes_mixin.py": [
+      "_PVisual"
+    ],
+    "napari/_vispy/visuals/markers.py": [
+      "a_position"
+    ],
+    "napari/_vispy/visuals/surface.py": [
+      "face",
+      "vertex"
+    ],
+    "napari/_vispy/visuals/tracks.py": [
+      "white"
+    ],
+    "napari/_vispy/visuals/volume.py": [
+      "\n// the tolerance for testing equality of floats with floatEqual and floatNotEqual\nconst float equality_tolerance = 1e-8;\n\nbool floatNotEqual(float val1, float val2)\n{\n    // check if val1 and val2 are not equal\n    bool not_equal = abs(val1 - val2) > equality_tolerance;\n\n    return not_equal;\n}\n\nbool floatEqual(float val1, float val2)\n{\n    // check if val1 and val2 are equal\n    bool equal = abs(val1 - val2) < equality_tolerance;\n\n    return equal;\n}\n\n\n// the background value for the iso_categorical shader\nconst float categorical_bg_value = 0;\n\nint detectAdjacentBackground(float val_neg, float val_pos)\n{\n    // determine if the adjacent voxels along an axis are both background\n    int adjacent_bg = int( floatEqual(val_neg, categorical_bg_value) );\n    adjacent_bg = adjacent_bg * int( floatEqual(val_pos, categorical_bg_value) );\n    return adjacent_bg;\n}\n\nvec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)\n{\n    // Calculate color by incorporating ambient and diffuse lighting\n    vec4 color0 = $sample(u_volumetex, loc);\n    vec4 color1;\n    vec4 color2;\n    float val0 = colorToVal(color0);\n    float val1 = 0;\n    float val2 = 0;\n    int n_bg_borders = 0;\n\n    // View direction\n    vec3 V = normalize(view_ray);\n\n    // calculate normal vector from gradient\n    vec3 N; // normal\n    color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );\n    color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[0] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );\n    color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[1] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );\n    color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[2] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    // Normalize and flip normal so it points towards viewer\n    N = normalize(N);\n    float Nselect = float(dot(N,V) > 0.0);\n    N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;\n\n    // Init colors\n    vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 final_color;\n\n    // todo: allow multiple light, define lights on viewvox or subscene\n    int nlights = 1;\n    for (int i=0; i<nlights; i++)\n    {\n        // Get light direction (make sure to prevent zero devision)\n        vec3 L = normalize(view_ray);  //lightDirs[i];\n        float lightEnabled = float( length(L) > 0.0 );\n        L = normalize(L+(1.0-lightEnabled));\n\n        // Calculate lighting properties\n        float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );\n        if (n_bg_borders > 0) {\n            // to fix dim pixels due to poor normal estimation,\n            // we give a default lambda to pixels surrounded by background\n            lambertTerm = 0.5;\n        }\n\n        // Calculate mask\n        float mask1 = lightEnabled;\n\n        // Calculate colors\n        ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;\n        diffuse_color +=  mask1 * lambertTerm;\n    }\n\n    // Calculate final color by componing different components\n    final_color = betterColor * ( ambient_color + diffuse_color);\n    final_color.a = betterColor.a;\n\n    // Done\n    return final_color;\n}\n",
+      "fragment",
+      "iso_categorical",
+      "void main()"
+    ],
     "napari/_vispy/volume.py": [
       "\n        // Apply colormap on mean value\n        gl_FragColor = applyColormap(meanval);\n        ",
       "\n        // Incremental mean value used for numerical stability\n        n += 1; // Increment the counter\n        prev_mean = meanval; // Update the mean for previous iteration\n        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean\n        ",
@@ -1019,19 +1034,7 @@
     "napari/benchmarks/benchmark_qt_viewer.py": [],
     "napari/benchmarks/benchmark_qt_viewer_image.py": [],
     "napari/benchmarks/benchmark_qt_viewer_labels.py": [
-      "Event",
-      "is_dragging",
       "paint"
-    ],
-    "napari/benchmarks/benchmark_text_manager.py": [
-      "car",
-      "cat",
-      "constant",
-      "float_property",
-      "n",
-      "string_property",
-      "text",
-      "{string_property}: {float_property:.2f}"
     ],
     "napari/benchmarks/benchmark_shapes_layer.py": [
       "Event",
@@ -1046,6 +1049,15 @@
       "type"
     ],
     "napari/benchmarks/benchmark_surface_layer.py": [],
+    "napari/benchmarks/benchmark_text_manager.py": [
+      "car",
+      "cat",
+      "constant",
+      "float_property",
+      "n",
+      "string_property",
+      "{string_property}: {float_property:.2f}"
+    ],
     "napari/benchmarks/benchmark_vectors_layer.py": [],
     "napari/components/__init__.py": [],
     "napari/components/_interaction_box_mouse_bindings.py": [
@@ -1072,27 +1084,9 @@
       "bottom_center",
       "crosshair"
     ],
-    "napari/components/_viewer_key_bindings.py": [
-      "napari:"
-    ],
+    "napari/components/_viewer_key_bindings.py": [],
     "napari/components/_viewer_mouse_bindings.py": [
       "Control"
-    ],
-    "napari/layers/_data_protocols.py": [
-      "...",
-      "Missing methods: {missing!r}",
-      "Object of type {type(obj).__name__!r} does not implement ",
-      "__annotations__",
-      "__dict__",
-      "__weakref__",
-      "{protocol.__name__!r} Protocol.\n"
-    ],
-    "napari/layers/_multiscale_data.py": [
-      "<MultiScaleData at {hex(id(self))}. ",
-      "{len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
-    ],
-    "napari/layers/image/_image_key_bindings.py": [
-      "Space"
     ],
     "napari/components/axes.py": [],
     "napari/components/camera.py": [
@@ -1373,7 +1367,6 @@
       "standard",
       "theme",
       "translate",
-      "translucent",
       "unexpected keyword argument",
       "visible",
       "ViewerModel",
@@ -1384,8 +1377,11 @@
     ],
     "napari/experimental/__init__.py": [],
     "napari/layers/__init__.py": [],
-    "napari/layers/_source.py": [
-      "_LAYER_SOURCE"
+    "napari/layers/_data_protocols.py": [
+      "...",
+      "__annotations__",
+      "__dict__",
+      "__weakref__"
     ],
     "napari/layers/_layer_actions.py": [
       " copy",
@@ -1442,6 +1438,10 @@
       "uint8",
       "{layer} {mode}-proj"
     ],
+    "napari/layers/_multiscale_data.py": [],
+    "napari/layers/_source.py": [
+      "_LAYER_SOURCE"
+    ],
     "napari/layers/base/__init__.py": [],
     "napari/layers/base/_base_constants.py": [],
     "napari/layers/base/base.py": [
@@ -1478,6 +1478,9 @@
       "unexpected keyword argument"
     ],
     "napari/layers/image/__init__.py": [],
+    "napari/layers/image/_image_key_bindings.py": [
+      "Space"
+    ],
     "napari/layers/image/_image_loader.py": [],
     "napari/layers/image/_image_slice.py": [
       "ImageSlice.__init__",
@@ -1724,7 +1727,6 @@
     "napari/layers/shapes/_shape_list.py": [
       "edge",
       "face",
-      "update_{attribute}_color",
       "int"
     ],
     "napari/layers/shapes/_shapes_constants.py": [
@@ -1772,7 +1774,6 @@
       "rectangle"
     ],
     "napari/layers/shapes/_shapes_utils.py": [
-      "int",
       "polygon"
     ],
     "napari/layers/shapes/shapes.py": [
@@ -1824,6 +1825,11 @@
       "features"
     ],
     "napari/layers/surface/__init__.py": [],
+    "napari/layers/surface/normals.py": [
+      "black",
+      "blue",
+      "orange"
+    ],
     "napari/layers/surface/surface.py": [
       "colormap",
       "contrast_limits",
@@ -1836,11 +1842,6 @@
       "shading",
       "normals",
       "wireframe"
-    ],
-    "napari/layers/surface/normals.py": [
-      "black",
-      "blue",
-      "orange"
     ],
     "napari/layers/surface/wireframe.py": [
       "black"
@@ -1884,15 +1885,11 @@
     ],
     "napari/layers/utils/_text_constants.py": [],
     "napari/layers/utils/_text_utils.py": [
-      ":",
       "bottom",
       "center",
       "left",
       "right",
-      "top",
-      "{",
-      "{(.*?)}",
-      "}"
+      "top"
     ],
     "napari/layers/utils/color_manager.py": [
       "categorical_colormap",
@@ -1969,12 +1966,8 @@
     "napari/layers/utils/text_manager.py": [
       "TextManager",
       "blending",
-      "center",
       "color",
       "cyan",
-      "n_text",
-      "properties",
-      "text",
       "values"
     ],
     "napari/layers/vectors/__init__.py": [],
@@ -2012,7 +2005,6 @@
       "builtins",
       "index",
       "name",
-      "napari_write_{layer_type}",
       "properties",
       "rectangle",
       "shape-type",
@@ -2020,10 +2012,19 @@
       "vertex-index",
       ".npy"
     ],
+    "napari/plugins/_npe2.py": [
+      "*.*",
+      ";;",
+      "data",
+      "display_name",
+      "dock",
+      "{name} ({_fmt_exts(exts)})",
+      "{name} {writer.display_name}",
+      "No readers returned data"
+    ],
     "napari/plugins/_plugin_manager.py": [
       "`napari_experimental_provide_dock_widget`",
       "`napari_experimental_provide_function`",
-      "builtins",
       "data",
       "display_name",
       "dock",
@@ -2035,8 +2036,6 @@
       "napari.plugin",
       "napari_provide_sample_data",
       "plugin",
-      "scikit-image",
-      "skimage",
       ".{extension}",
       ".{ext}",
       "_extension2{type_}",
@@ -2118,13 +2117,10 @@
       "Writing to {path}.  Hook caller: {hook_caller}"
     ],
     "napari/plugins/pypi.py": [
-      "-",
       "<a href=\"/simple/(.+)\">({prefix}.*)</a>",
       ">{name}-(.+).tar",
-      "Development Status :: 1",
       "Framework :: napari",
       "UNKNOWN",
-      "[-_.]+",
       "author",
       "class=\"package-snippet__name\">(.+)</span>",
       "classifiers",
@@ -2137,12 +2133,18 @@
       "license",
       "name",
       "napari-plugin-engine",
-      "setup\\s?\\(.*name\\s?=\\s?['\\\"]([^'\\\"]+)['\\\"]",
       "summary",
       "version",
       "{url}{page}"
     ],
+    "napari/plugins/utils.py": [
+      "napari_get_reader"
+    ],
     "napari/qt/__init__.py": [],
+    "napari/qt/progress.py": [
+      "progrange",
+      "progress"
+    ],
     "napari/qt/threading.py": [],
     "napari/resources/__init__.py": [],
     "napari/resources/_icons.py": [
@@ -2199,27 +2201,23 @@
       "{env_name}_{subf.name}",
       "{field}{event._type}"
     ],
-    "napari/settings/_plugins.py": [
-      "disabled_plugins",
-      "extension2writer",
-      "schema_version"
-    ],
     "napari/settings/_experimental.py": [
       "boolean",
       "napari_async",
       "schema_version"
     ],
-    "napari/settings/_fields.py": [
-      "\"{self._value}\"",
-      "SchemaVersion(\"{self._value}\")"
-    ],
+    "napari/settings/_fields.py": [],
     "napari/settings/_napari_settings.py": [
-      "----------------------------------\n",
       "NAPARI_CONFIG",
       "NapariSettings (defaults excluded)\n",
       "__main__",
       "napari.schema.json",
       "napari_"
+    ],
+    "napari/settings/_plugins.py": [
+      "disabled_plugins",
+      "extension2writer",
+      "schema_version"
     ],
     "napari/settings/_shortcuts.py": [
       "schema_version"
@@ -2243,7 +2241,6 @@
       "VectorsData",
       "dask.array.Array",
       "zarr.Array",
-      "{layer_name.title()}Data",
       "_DType_co"
     ],
     "napari/utils/__init__.py": [],
@@ -2254,20 +2251,7 @@
       "napari",
       "nt",
       "plugins",
-      "site-packages",
-      "python3.9"
-    ],
-    "napari/utils/_injection.py": [
-      "Layer",
-      "T"
-    ],
-    "napari/utils/_proxies.py": [
-      "PublicOnlyProxy",
-      "^_[^_]",
-      "_T",
-      "__module__",
-      "__wrapped__",
-      "_getframe"
+      "site-packages"
     ],
     "napari/utils/_base.py": [
       "Napari",
@@ -2277,10 +2261,11 @@
     "napari/utils/_dask_utils.py": [
       "optimization.fuse.active"
     ],
+    "napari/utils/_injection.py": [
+      "T"
+    ],
     "napari/utils/_magicgui.py": [
       "Data",
-      "add_{layer_type}",
-      "name",
       "native",
       "parent",
       "_qt_viewer",
@@ -2303,6 +2288,14 @@
       "tile_size",
       "use_processes"
     ],
+    "napari/utils/_proxies.py": [
+      "PublicOnlyProxy",
+      "^_[^_]",
+      "_T",
+      "__module__",
+      "__wrapped__",
+      "_getframe"
+    ],
     "napari/utils/_register.py": [
       "\n\tThe newly-created {cls_name.lower()} layer.",
       "\n\nParameters\n----------\n",
@@ -2319,27 +2312,19 @@
       "exec"
     ],
     "napari/utils/_tracebacks.py": [
-      "\u001b\\[",
       "&nbsp;",
       "(<tr><td><small.*</tr>)",
-      "([\\d;]*)",
-      "([a-zA-z])",
       ";",
       "; ",
       "</span>",
       "<br>",
       "<br>\n",
-      "<br><br><font color=\"#51B432\">During handling of the ",
-      "<br><br><font color=\"#51B432\">The above exception was ",
       "<br>\\1<br>",
-      "<p>A problem occurred in a Python script.  ",
       "<span style=\"%s\">",
       "<span style='font-family: monaco,courier,monospace;'>",
       "Format exception with cgitb.html.",
-      "Here is the sequence of",
       "Neutral",
       "Recurse through exception stack and chain cgitb_html calls.",
-      "above exception, another exception occurred:</font><br>",
       "bgcolor=\"#.*\"",
       "black",
       "blink",
@@ -2349,10 +2334,8 @@
       "cyan",
       "face=\"helvetica, arial\"",
       "font_weight",
-      "function calls leading up to the error, ",
       "green",
       "hidden",
-      "in the order they occurred.</p>",
       "italic",
       "lighter",
       "line-through",
@@ -2360,7 +2343,6 @@
       "magenta",
       "red",
       "text_decoration",
-      "the direct cause of the following exception:</font><br>",
       "underline",
       "visibility",
       "white",
@@ -2421,7 +2403,6 @@
       "\"{cm}\""
     ],
     "napari/utils/colormaps/standardize_color.py": [
-      "#%02x%02x%02x%02x",
       "#00000000",
       "O",
       "U",
@@ -2431,6 +2412,14 @@
       "u",
       "{v.lower()}ff",
       "|U9"
+    ],
+    "napari/utils/config.py": [
+      "\nExperimental Features\n\nAsync Loading\n-------------\nImage layers will use the ChunkLoader to load data instead of loading\nthe data directly. Image layers will not call np.asarray() in the GUI\nthread. The ChunkLoader will call np.asarray() in a worker thread. That\nmeans any IO or computation done as part of the load will not block the\nGUI thread.\n\nSet NAPARI_ASYNC=1 to turn on async loading with default settings.\n\nOctree Rendering\n----------------\nImage layers use an octree for rendering. The octree organizes the image\ninto chunks/tiles. Only a subset of those chunks/tiles are loaded and\ndrawn at a time. Octree rendering is a work in progress.\n\nEnabled one of two ways:\n\n1) Set NAPARI_OCTREE=1 to enabled octree rendering with defaults.\n\n2) Set NAPARI_OCTREE=/tmp/config.json use a config file.\n\nSee napari/utils/_octree.py for the config file format.\n\nShared Memory Server\n--------------------\nExperimental shared memory service. Only enabled if NAPARI_MON is set to\nthe path of a config file. See this PR for more info:\nhttps://github.com/napari/napari/pull/1909.\n",
+      "\nOther Config Options\n",
+      "0",
+      "NAPARI_MON",
+      "enabled",
+      "octree"
     ],
     "napari/utils/context/_context.py": [
       "__new__",
@@ -2475,12 +2464,8 @@
       ">=",
       ">>",
       "@",
-      "Bytes",
       "Expr",
-      "NameConstant",
-      "Num",
       "PassedType",
-      "Str",
       "T",
       "T2",
       "V",
@@ -2491,12 +2476,9 @@
       "in",
       "is",
       "is not",
-      "n",
       "not",
       "not in",
       "or",
-      "s",
-      "value",
       "~",
       "{expr!r}"
     ],
@@ -2509,34 +2491,6 @@
       "shape",
       "shapes"
     ],
-    "napari/utils/events/debugging.py": [
-      "  \"{fname}\", line {frame.lineno}, in {obj}{frame.function}",
-      "  was triggered by {trigger}, via:",
-      ",",
-      ".../python",
-      ".../site-packages",
-      ".env",
-      "Context",
-      "Event",
-      "TransformChain",
-      "__module__",
-      "event_debug_",
-      "position",
-      "self",
-      "status",
-      "{k}={v}",
-      "{obj_type.__name__}.{f.function}()",
-      "{source}.events.{event.type}({vals})",
-      "\u2500"
-    ],
-    "napari/utils/config.py": [
-      "\nExperimental Features\n\nAsync Loading\n-------------\nImage layers will use the ChunkLoader to load data instead of loading\nthe data directly. Image layers will not call np.asarray() in the GUI\nthread. The ChunkLoader will call np.asarray() in a worker thread. That\nmeans any IO or computation done as part of the load will not block the\nGUI thread.\n\nSet NAPARI_ASYNC=1 to turn on async loading with default settings.\n\nOctree Rendering\n----------------\nImage layers use an octree for rendering. The octree organizes the image\ninto chunks/tiles. Only a subset of those chunks/tiles are loaded and\ndrawn at a time. Octree rendering is a work in progress.\n\nEnabled one of two ways:\n\n1) Set NAPARI_OCTREE=1 to enabled octree rendering with defaults.\n\n2) Set NAPARI_OCTREE=/tmp/config.json use a config file.\n\nSee napari/utils/_octree.py for the config file format.\n\nShared Memory Server\n--------------------\nExperimental shared memory service. Only enabled if NAPARI_MON is set to\nthe path of a config file. See this PR for more info:\nhttps://github.com/napari/napari/pull/1909.\n",
-      "\nOther Config Options\n",
-      "0",
-      "NAPARI_MON",
-      "enabled",
-      "octree"
-    ],
     "napari/utils/events/__init__.py": [],
     "napari/utils/events/containers/__init__.py": [],
     "napari/utils/events/containers/_dict.py": [
@@ -2544,6 +2498,17 @@
       "TypedMutableMapping[_T]",
       "_K",
       "_T"
+    ],
+    "napari/utils/events/containers/_evented_dict.py": [
+      "added",
+      "adding",
+      "changed",
+      "changing",
+      "events",
+      "key",
+      "removed",
+      "removing",
+      "updated"
     ],
     "napari/utils/events/containers/_evented_list.py": [
       "EventedList[_T]",
@@ -2591,17 +2556,6 @@
       "_L",
       "_T"
     ],
-    "napari/utils/events/containers/_evented_dict.py": [
-      "added",
-      "adding",
-      "changed",
-      "changing",
-      "events",
-      "key",
-      "removed",
-      "removing",
-      "updated"
-    ],
     "napari/utils/events/custom_types.py": [
       "Array",
       "__dtype__",
@@ -2613,6 +2567,26 @@
       "enum",
       "not",
       "number.not_eq"
+    ],
+    "napari/utils/events/debugging.py": [
+      "  \"{fname}\", line {frame.lineno}, in {obj}{frame.function}",
+      "  was triggered by {trigger}, via:",
+      ",",
+      ".../python",
+      ".../site-packages",
+      ".env",
+      "Context",
+      "Event",
+      "TransformChain",
+      "__module__",
+      "event_debug_",
+      "position",
+      "self",
+      "status",
+      "{k}={v}",
+      "{obj_type.__name__}.{f.function}()",
+      "{source}.events.{event.type}({vals})",
+      "\u2500"
     ],
     "napari/utils/events/event.py": [
       "<...>",
@@ -2647,12 +2621,18 @@
       "events",
       "use_enum_values",
       "EventedModel",
-      "Fields with dependencies must be property.setters. ",
       "Unrecognized field dependency: {field}",
-      "dependencies",
-      "{prop!r} is not."
+      "dependencies"
     ],
     "napari/utils/events/types.py": [],
+    "napari/utils/geometry.py": [
+      "x_neg",
+      "x_pos",
+      "y_neg",
+      "y_pos",
+      "z_neg",
+      "z_pos"
+    ],
     "napari/utils/history.py": [],
     "napari/utils/info.py": [
       "  - failed to load screen information {e}",
@@ -2671,13 +2651,9 @@
       ": {version}",
       "</b>",
       "<b>",
-      "<b>Platform</b>: {platform.platform()}<br>",
       "<b>Python</b>: {sys_version}<br>",
       "<b>Qt</b>: Import failed ({e})<br>",
-      "<b>Qt</b>: {QtCore.__version__}<br>",
       "<b>System</b>: {__sys_name}<br>",
-      "<b>napari</b>: {napari.__version__}<br>",
-      "<b>{API_NAME}</b>: {API_VERSION}<br>",
       "<b>{name}</b>: Import failed ({e})<br>",
       "<b>{name}</b>: {loaded[module].__version__}<br>",
       "<br>",
@@ -2700,14 +2676,10 @@
       "VERSION_ID",
       "VisPy",
       "builtins",
-      "c",
       "darwin",
       "dask",
-      "doi:10.5281/zenodo.3555620",
       "linux",
       "lsb_release",
-      "multi-dimensional image viewer for python. ",
-      "napari contributors (2019). napari: a ",
       "numpy",
       "plugin_name",
       "scipy",
@@ -2723,11 +2695,8 @@
       "+",
       "-",
       "</table>",
-      "<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>",
       "<span style='color: {col}'><b>{k}</b></span>",
       "<table border=\"0\" width=\"100%\">",
-      "<td style='text-align: left; padding: 4px; color: #CCC;'>",
-      "<tr><td width='80' style='text-align: right; padding: 4px;'>",
       "Alt",
       "Backspace",
       "Control",
@@ -2766,16 +2735,7 @@
       "\u23ce",
       "-(?=.+)",
       "Space",
-      "\u2423",
-      "{keymap[key]}</td></tr>"
-    ],
-    "napari/utils/geometry.py": [
-      "x_neg",
-      "x_pos",
-      "y_neg",
-      "y_pos",
-      "z_neg",
-      "z_pos"
+      "\u2423"
     ],
     "napari/utils/io.py": [
       "\"",
@@ -2850,7 +2810,6 @@
       "Ctrl"
     ],
     "napari/utils/misc.py": [
-      " \\1",
       "((?<=[a-z])[A-Z]|(?<!\\A)[A-R,T-Z](?=[a-z]))",
       "(.)([A-Z][a-z]+)",
       "*",
@@ -2859,7 +2818,6 @@
       "T",
       "TerminalInteractiveShell",
       "ZMQInteractiveShell",
-      "\\1_\\2",
       "__main__",
       "app_packages",
       "bin",
@@ -2883,7 +2841,6 @@
     ],
     "napari/utils/notebook_display.py": [
       "png",
-      "<img src=\"{url}\"></img>",
       "data:image/png;base64,",
       "utf-8"
     ],
@@ -2908,11 +2865,8 @@
       "\u26a0\ufe0f",
       "\ud83d\udc1b",
       "0",
-      "An error occurred while trying to format an error and show it in console.\n",
-      "And/or report a bug to napari",
       "False",
       "NAPARI_CATCH_ERRORS",
-      "You can try to uninstall IPython to disable rich traceback formatting\n",
       "{str(self.severity).upper()}: {self.message}"
     ],
     "napari/utils/perf/__init__.py": [
@@ -3020,7 +2974,6 @@
       ": {status_format(value[0])}",
       "[",
       "]",
-      "{name} {full_coord}",
       "{value:0.3g}"
     ],
     "napari/utils/temporary_file.py": [],
@@ -3045,7 +2998,6 @@
       "qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, ",
       "qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, ",
       "rgb(",
-      "rgb(0, 0, 0)",
       "rgb(0, 122, 204)",
       "rgb(106, 115, 128)",
       "rgb(107, 105, 103)",
@@ -3103,11 +3055,7 @@
       "napari",
       "napari.languagepack",
       "nativeName",
-      "{locale}.UTF-8",
-      "The `language` setting defined in the napari ",
-      "configuration file could not be read.\n\n",
-      "The default language will be used.\n\n",
-      "Error:\n{err}"
+      "{locale}.UTF-8"
     ],
     "napari/utils/tree/__init__.py": [],
     "napari/utils/tree/group.py": [

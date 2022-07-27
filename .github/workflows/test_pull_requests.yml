@@ -14,31 +14,25 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-      - name: Install dependencies
+          python-version: "3.x"
+      - name: Check Manifest
         run: |
           pip install --upgrade pip
           pip install check-manifest
-      - name: Check Manifest
-        run: check-manifest
+          check-manifest
 
   localization_syntax:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
+          python-version: "3.x"
       - name: Check localization formatting
         run: |
           pip install --upgrade pip semgrep
@@ -54,37 +48,51 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
           # Windows py38
           - python: 3.8
             platform: windows-latest
-            backend: pyqt
+            backend: pyqt5
           - python: 3.8
             platform: windows-latest
-            backend: pyside
+            backend: pyside2
           - python: 3.9
-            platform: macos-11
-            backend: pyqt # (only testing pyqt on mac in the interest of speed)
+            platform: macos-latest
+            backend: pyqt5
           # minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
+            backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-pyqt-py38-linux
+            toxenv: async-pyqt5-py38-linux
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -108,23 +116,7 @@ jobs:
           # it is a no-op if MIN_REQ is not set
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
-      # The two following steps try to cache and speedup tox env creation on linux.
-      # in the first one we produce the date as value we can refer to,
-      # in order to change cache key every ~24h.
-      # in the second we restore cache from previous run.
-      # a step later on cull the files in the directory we cache to avoid
-      # going over the GitHub 5G limit.
-      - name: Get current date to flush cache every day
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: Cache tox Virtualenv
-        uses: actions/cache@v2
-        if: runner.os == 'Linux'
-        env:
-          cache-name: cache-tox-${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ steps.date.outputs.date }}
-        with:
-          path: /tmp/.tox/
-          key: ${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ hashFiles('setup.cfg') }}-${{ hashFiles('tox.ini') }}-${{ steps.date.outputs.date }}
+
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
@@ -147,38 +139,23 @@ jobs:
           name: upload pytest timing reports as json
           path: |
             ./report-*.json
-      # this steps display the cached folder size for debug and
-      # remove the biggest contenders.
-      - name: Display Cache size, and remove largest files from cache.
-        if: runner.os == 'Linux'
-        run: |
-          echo "Biggest files in site-packages"
-          du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
-          echo "Biggest files in tox cache"
-          du -hs /tmp/.tox/*
-          echo "Cleaning a few of the biggest cache"
-          rm -rf /tmp/.tox/*py*/lib/py*/site-packages/semgrep
-          rm -rf /tmp/.tox/*py*/lib/py*/site-packages/torch
-          find /tmp/.tox/*py*/lib/* -name '*.pyc' -delete
-          echo "List of biggest folder after clearing"
-          du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
-          du -hs /tmp/.tox/*
+
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -191,3 +168,22 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
+
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples

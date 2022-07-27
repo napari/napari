@@ -471,13 +471,15 @@ def find_issues(
 
 # --- Fixture
 # ----------------------------------------------------------------------------
-def checks():
+def _checks():
     paths = find_files(NAPARI_MODULE, SKIP_FOLDERS, SKIP_FILES)
     issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
     return issues, outdated_strings, trans_errors
 
 
-_checks = pytest.fixture(scope="module")(checks)
+@pytest.fixture(scope="module")
+def checks():
+    return _checks()
 
 
 # --- Tests
@@ -555,19 +557,63 @@ def test_translation_errors(checks):
     assert no_trans_errors
 
 
+def getch():
+    import sys
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
 if __name__ == '__main__':
 
-    issues, outdated_strings, trans_errors = checks()
+    issues, outdated_strings, trans_errors = _checks()
     import json
     import pathlib
 
     pth = pathlib.Path(__file__).parent / 'string_list.json'
     data = json.loads(pth.read_text())
     for file, items in outdated_strings.items():
-        data['SKIP_WORDS'][file] = list(
-            sorted(set(data['SKIP_WORDS'][file]) - set(items))
-        )
+        for to_remove in set(items):
+            # we don't use set logic to keep the order the same as in the target
+            # files.
+            data['SKIP_WORDS'][file].remove(to_remove)
+
+    break_ = False
+    for file, missing in issues.items():
+        code = Path(file).read_text().splitlines()
+        if break_:
+            break
+        for line, text in missing:
+            print()
+            print("i : ignore –  add to ignored localised strings")
+            print("q : quit –  quit w/o saving")
+            print("s : save and quit")
+            print()
+            print(f"{file}:{line}", repr(text))
+            print()
+            for lt in code[line - 3 : line - 1]:
+                print(' ', lt)
+            print('>', code[line - 1])
+            for lt in code[line : line + 3]:
+                print(' ', lt)
+            val = getch()
+            if val == 'i':
+                data['SKIP_WORDS'].setdefault(file, []).append(text)
+            elif val == 'q':
+                import sys
+
+                sys.exit(0)
+            elif val == 's':
+                break_ = True
+                break
 
     pth.write_text(json.dumps(data, indent=2, sort_keys=True))
-
     # test_outdated_string_skips(issues, outdated_strings, trans_errors)

@@ -11,6 +11,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+concurrency:
+  group: comprehensive-test
+
 jobs:
   manifest:
     name: Check Manifest
@@ -18,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -36,34 +39,39 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
         python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
-          # test big sur on 3.9.0
           - python: 3.9
-            platform: macos-11
-            toxenv: py39-macos-pyqt
+            platform: macos-latest
+            backend: pyqt5
           # test with minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
+            backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-py38-linux-pyqt
+            toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
-          - python: "3.10"
-            platform: ubuntu-latest
-            toxenv: py310-linux-pyside
+
 
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+
       - uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -95,14 +103,14 @@ jobs:
           run: python -m tox
         env:
           PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
           TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
       - name: Report Failures
         if: ${{ failure() }}
@@ -127,9 +135,10 @@ jobs:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache: "pip"
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -143,38 +152,21 @@ jobs:
         with:
           run: python -m pytest --pyargs napari --color=yes
 
-  asv-checks:
-    name: asv checks
-    runs-on:
-      macos-latest
-      # We use a macOS runner to avoid having to deal with Xvfb
-      # derived problems on Ubuntu. Xvfb allows us to run the Qt
-      # benchmarks, but causes segfaults in some cases! :shrug:
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
     steps:
-      # We need the full repo to avoid this issue
-      # https://github.com/actions/checkout/issues/23
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v3
-        name: Install Python
-        with:
-          python-version: "3.9"
-
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
       - name: Install this commit
         run: |
           pip install --upgrade pip
-          pip install ".[all,testing]" asv
+          pip install setuptools tox tox-gh-actions
 
-      - name: Register machine
-        run: asv machine --yes
-
-      - name: Check asv config is correct
-        run: asv check -v -E existing
-
-      - name: Ensure benchmarking tests can run
-        # this does NOT run the benchmarks properly
-        # it only runs each function once to ensure the code is correct
-        # but there's no statistical meaning to it
-        run: asv dev
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples
