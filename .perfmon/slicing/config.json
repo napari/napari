@@ -1,0 +1,12 @@
+{
+    "trace_qt_events": false,
+    "trace_file_on_start": ".perfmon/slicing/traces.json",
+    "trace_callables": [
+        "slicing"
+    ],
+    "callable_lists": {
+        "slicing": [
+            "napari._qt.widgets.qt_dims_slider.QtDimSliderWidget._value_changed"
+        ]
+    }
+}
