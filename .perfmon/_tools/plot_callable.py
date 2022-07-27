@@ -1,29 +1,38 @@
-import argparse
 import json
+import logging
 import pathlib
+from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 
-parser = argparse.ArgumentParser(
-    description='Plot the durations of a callable measured by perfmon.'
+logging.basicConfig(
+    format='%(levelname)s : %(asctime)s : %(message)s',
+    level=logging.INFO,
+)
+
+parser = ArgumentParser(
+    description='Plot the durations of a callable measured by perfmon.',
 )
 parser.add_argument(
-    'subdir',
-    type=str,
-    help='The name of the perfmon sub-directory that contains the traces (e.g. slicing)',
+    'config',
+    help='The name of the sub-directory that contains the perfmon traces (e.g. slicing)',
 )
 parser.add_argument(
     'callable',
-    type=str,
-    help='The name of the callable to plot excluding the module.',
+    help='The name of the callable to plot excluding the module (e.g. QtDimSliderWidget._value_changed).',
 )
 args = parser.parse_args()
 
+logging.info(
+    f'''Running plot_callable.py with the following arguments.
+{args}'''
+)
+
 perfmon_dir = pathlib.Path(__file__).parent.parent.resolve(strict=True)
 
-traces_file_path = perfmon_dir / args.subdir / 'traces.json'
+traces_path = perfmon_dir / args.config / 'traces.json'
 
-with open(traces_file_path) as traces_file:
+with open(traces_path) as traces_file:
     traces = json.load(traces_file)
 
 durations_ms = [
@@ -32,7 +41,7 @@ durations_ms = [
 
 plt.violinplot(durations_ms, vert=False, showmeans=True, showmedians=True)
 
-plt.title(f'{args.subdir}: {args.callable}')
+plt.title(f'{args.config}: {args.callable}')
 plt.xlabel('Duration (ms)')
 plt.yticks([])
 
