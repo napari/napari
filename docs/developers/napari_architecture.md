@@ -90,7 +90,7 @@ to watch:
 dims = Dim(ndim=3, ndisplay=2)
 
 # define some callback that should respond to changes in the model
-def _update_display(event):
+def _update_display(self):
     """
     Updates display for all sliders.
 
@@ -99,7 +99,8 @@ def _update_display(event):
     """
     # the code updating display code is quite complex and not relevant for this
     # example thus has ommited.
-    print("Update number of dimensions displayed")
+    nsteps = self.dims.nsteps
+    print(f"Update number of dimensions displayed to {nsteps}")
 
 # register our callback with the model
 dims.events.wind.connect(_update_display)
