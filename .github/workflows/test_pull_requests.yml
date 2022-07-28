@@ -73,6 +73,12 @@ jobs:
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs

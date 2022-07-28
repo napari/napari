@@ -32,13 +32,18 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
+
+import contextlib
 import inspect
 import re
+import time
 import types
+import typing
 from collections import ChainMap
 
 from vispy.util import keys
 
+from ..settings import get_settings
 from ..utils.translations import trans
 
 SPECIAL_KEYS = [
@@ -439,16 +444,22 @@ class KeymapHandler:
                 )
             )
 
-        gen = func()
+        generator_or_callback = func()
 
         if inspect.isgeneratorfunction(func):
             try:
-                next(gen)  # call function
+                next(generator_or_callback)  # call function
             except StopIteration:  # only one statement
                 pass
             else:
                 key, _ = parse_key_combo(key_combo)
-                self._key_release_generators[key] = gen
+                self._key_release_generators[key] = generator_or_callback
+        if isinstance(generator_or_callback, typing.Callable):
+            key, _ = parse_key_combo(key_combo)
+            self._key_release_generators[key] = (
+                generator_or_callback,
+                time.time(),
+            )
 
     def release_key(self, key_combo):
         """Simulate a key release for a keybinding.
@@ -459,10 +470,20 @@ class KeymapHandler:
             Key combination.
         """
         key, _ = parse_key_combo(key_combo)
-        try:
-            next(self._key_release_generators[key])  # call function
-        except (KeyError, StopIteration):
-            pass
+        with contextlib.suppress(KeyError, StopIteration):
+            val = self._key_release_generators[key]
+            # val could be callback function with time to check
+            # if it should be called or generator that need to make
+            # additional step on key release
+            if isinstance(val, tuple):
+                callback, start = val
+                if (
+                    time.time() - start
+                    > get_settings().application.hold_button_delay
+                ):
+                    callback()
+            else:
+                next(val)  # call function
 
     def on_key_press(self, event):
         """Callback that whenever key pressed in canvas.
