@@ -625,16 +625,9 @@ class Vectors(Layer):
             Otherwise, vectors originating in the current slice are assigned a value of 1,
             while vectors passing through the current slice are assigned progressively lower
             values, based on how far from the current slice they originate.
-
-        [:, 0, :] - anchor positions
-        [:, 1, :] - vectors
-        [:, :, x] - dimensionality of the vector (3d here)
-
         """
         # ensure dims not displayed is a list
         dims_not_displayed = list(self._dims_not_displayed)
-        # dims_indices more like a plane or a bounding box
-        # dims_indices could be [64.6, : , : ]
 
         # We want a numpy array so we can use fancy indexing with the non-displayed
         # indices, but as dims_indices can (and often/always does) contain slice
@@ -656,9 +649,7 @@ class Vectors(Layer):
                     self.data[:, 1, dims_not_displayed] * self.length
                 )
                 # find where the distance to plane is less than the scaled vector
-                matches = np.all(
-                    distances <= projected_lengths, axis=1
-                )  # bool array of length n
+                matches = np.all(distances <= projected_lengths, axis=1)
                 alpha_match = projected_lengths[matches]
                 alpha_match[alpha_match == 0] = 1
                 alpha_per_dim = (
@@ -666,11 +657,9 @@ class Vectors(Layer):
                 ) / alpha_match
                 alpha_per_dim[alpha_match == 0] = 1
                 alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-            #
             else:
                 matches = np.all(distances <= 0.5, axis=1)
                 alpha = 1.0
-            # these are real indices
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices, alpha
         else:
