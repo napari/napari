@@ -125,15 +125,16 @@ To help clarify the scope, we also define some things that were are not explicit
 	- Useful, but can be done independently of this work.
 - Improve slicing functionality.
 	- Useful, but can be done independently of this work.
-- Toggle the async setting on or off, so that I have control over the way my data loads.
+- Make async a toggleable setting (i.e. async is always on).
     - May complicate the program flow of slicing.
+    - May still automatically infer that slicing can be synchronously.
 - When a slice doesn’t immediately load, show a low level of detail version of it, so that I can preview what is upcoming.
 	- Requires a low level of detail version to exist.
 	- Should be part of a to-be-defined multi-scale project.
 - Store multiple slices associated with each layer, so that I can easily implement a multi-canvas mode for napari.
 	- Should be part of a to-be-defined multi-canvas project.
 	- Solutions for goal (2) should not block this in the future.
-- Open/save layers asynchronously.
+- Open, save, or process layers asynchronously.
     - More related to plugin execution.
 - Lazily load parts of data based on the canvas' current field of view.
     - An optimization that is dependent on specific data formats.
@@ -145,6 +146,7 @@ To help clarify the scope, we also define some things that were are not explicit
 	- Solutions for goal (2) should not block this in the future.
 - Keep the experimental async fork working.
 	- Nice to have, but should not put too much effort into this.
+    - May want to remove it to avoid confusion.
 
     
 ## Related work
@@ -285,6 +287,8 @@ class LayerSliceRequest:
 At a minimum, this request must contain the data to be sliced, the point at
 which we are slicing in napari's shared world coordinate system, and a way to
 transform world coordinates to a layer's data coordinate system.
+In the future, the point may become a bounding box that includes the current
+field of view.
 Given our understanding about the existing slice input state, each layer type
 should extend this request type to capture the input it needs for slicing, such
 as `Points.face_color`.
