@@ -356,13 +356,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _slice_layer_async(self, event) -> None:
         self._layer_slicer.slice_layers_async([event.layer], self.dims)
 
-    def _on_layer_set_view_slice(self, event) -> None:
-        layer = event.layer
-        LOGGER.debug('ViewerModel._on_layer_set_view_slice: %s', layer)
-        self._layer_slicer.slice_layers(
-            {layer: layer._make_slice_request(self.dims)}
-        )
-
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
         active_layer = event.value
