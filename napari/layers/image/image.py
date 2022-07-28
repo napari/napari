@@ -6,7 +6,7 @@ import logging
 import types
 import warnings
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, List, Sequence, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -59,7 +59,7 @@ class _ImageSliceRequest(_LayerSliceRequest):
 
 @dataclass(frozen=True)
 class _ImageSliceResponse(_LayerSliceResponse):
-    pass
+    thumbnail: Any = field(repr=False)
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -748,6 +748,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             **(base_request.asdict()),
         )
 
+    def _set_slice(self, response: _ImageSliceResponse) -> None:
+        self._new_empty_slice()
+        # Don't have indices here. Could easily get them, but don't need them?
+        slice_data = ImageSliceData(
+            layer=self,
+            indices=(None,),
+            image=response.data,
+            thumbnail_source=response.thumbnail,
+        )
+        self._slice.on_loaded(slice_data)
+
     # We upgrade the parameter type of this overridden method, which is
     # problematic for anything with a reference typed with the base Layer.
     # This is a code smell that should make us reconsider this design.
@@ -759,12 +770,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         full_transform = request.data_to_world
         if request.multiscale:
-            data, tile_to_data = Image._get_slice_data_multi_scale(
+            data, thumbnail, tile_to_data = Image._get_slice_data_multi_scale(
                 slice_indices, request
             )
             full_transform = tile_to_data.compose(full_transform)
         else:
             data = Image._get_slice_data(slice_indices, request)
+            thumbnail = data
 
         dims_displayed = list(request.dims_displayed)
         transform = full_transform.set_slice(dims_displayed)
@@ -777,6 +789,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             request=request,
             data=data,
             data_to_world=transform,
+            thumbnail=thumbnail,
         )
 
     @staticmethod
@@ -790,7 +803,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @staticmethod
     def _get_slice_data_multi_scale(
         slice_indices, request: _ImageSliceRequest
-    ) -> tuple[np.ndarray, Affine]:
+    ) -> tuple[np.ndarray, np.ndarray, Affine]:
         if request.ndisplay == 3:
             warnings.warn(
                 trans._(
@@ -836,8 +849,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         with request.dask_config():
             data = np.asarray(request.data[level][tuple(indices)])
+            thumbnail = np.asarray(request.data[-1])
 
-        return data, tile_to_data
+        return data, thumbnail, tile_to_data
 
     @staticmethod
     def _get_downsampled_indices(

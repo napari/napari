@@ -340,6 +340,8 @@ class QtViewer(QSplitter):
         for layer, response in responses.items():
             if visual := self.layer_to_visual[layer]:
                 visual._set_slice(response)
+            layer._set_slice(response)
+            layer._update_thumbnail()
 
     def _leave_canvas(self):
         """disable status on canvas leave"""

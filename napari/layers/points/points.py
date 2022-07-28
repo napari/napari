@@ -53,6 +53,7 @@ class _PointsSliceRequest(_LayerSliceRequest):
 
 @dataclass(frozen=True)
 class _PointsSliceResponse(_LayerSliceResponse):
+    indices: np.ndarray = field(repr=False)
     size: np.ndarray = field(repr=False)
     face_color: np.ndarray = field(repr=False)
     edge_color: np.ndarray = field(repr=False)
@@ -1702,6 +1703,9 @@ class Points(Layer):
             **(base_request.asdict()),
         )
 
+    def _set_slice(self, response: _PointsSliceResponse) -> None:
+        self._indices_view = response.indices
+
     # We upgrade the parameter type of this overridden method, which is
     # problematic for anything with a reference typed with the base Layer.
     # This is a code smell that should make us reconsider this design.
@@ -1730,6 +1734,7 @@ class Points(Layer):
             request=request,
             data=data,
             data_to_world=transform,
+            indices=indices,
             face_color=request.face_color[indices],
             edge_color=request.edge_color[indices],
             edge_width=request.edge_width[indices],

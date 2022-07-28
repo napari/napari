@@ -1054,6 +1054,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
         raise NotImplementedError()
 
+    # @abstractmethod # temporarily allow layers that don't implement this yet.
+    def _set_slice(self, response: _LayerSliceResponse) -> None:
+        """Deprecated support for setting slice state after slicing is done.
+
+        We need this because other operations are dependent on this state.
+        This should only be called from the main thread.
+        """
+        raise NotImplementedError()
+
     def set_view_slice(self):
         with self.dask_optimized_slicing():
             self._set_view_slice()
