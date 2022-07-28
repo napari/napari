@@ -669,4 +669,8 @@ def test_create_non_empty_viewer_model(qtbot):
 
     viewer.close()
     viewer.deleteLater()
+    # try to del local reference for gc.
+    del viewer_model
+    del viewer
     qtbot.wait(50)
+    gc.collect()
