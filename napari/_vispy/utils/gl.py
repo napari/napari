@@ -119,6 +119,7 @@ BLENDING_MODES = {
         cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation='func_add',
     ),
     'additive': dict(preset='additive'),
     'minimum': dict(
