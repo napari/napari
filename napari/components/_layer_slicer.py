@@ -17,7 +17,9 @@ class _LayerSlicer:
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._task: Optional[Future[_ViewerSliceResponse]] = None
 
-    def slice_layers_async(self, layers: Iterable[Layer], dims: Dims) -> None:
+    def slice_layers_async(
+        self, layers: Iterable[Layer], dims: Dims
+    ) -> Future[_ViewerSliceResponse]:
         """This should only be called from the main thread."""
         if self._task is not None:
             self._task.cancel()
@@ -31,10 +33,11 @@ class _LayerSlicer:
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
-        self._task = self._executor.submit(self.slice_layers, requests)
+        self._task = self._executor.submit(self._slice_layers, requests)
         self._task.add_done_callback(self._on_slice_done)
+        return self._task
 
-    def slice_layers(
+    def _slice_layers(
         self, requests: _ViewerSliceRequest
     ) -> _ViewerSliceResponse:
         """This can be called from the main or slicing thread."""
