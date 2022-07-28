@@ -307,6 +307,9 @@ def test_blending():
     layer.blending = 'opaque'
     assert layer.blending == 'opaque'
 
+    layer.blending = 'minimum'
+    assert layer.blending == 'minimum'
+
 
 def test_interpolation():
     """Test setting image interpolation mode."""
