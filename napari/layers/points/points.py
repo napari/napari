@@ -1308,12 +1308,8 @@ class Points(Layer):
         if mode == Mode.ADD:
             self.selected_data = set()
             self.interactive = True
-
-        if mode == Mode.PAN_ZOOM:
-            self.help = ''
+        elif mode == Mode.PAN_ZOOM:
             self.interactive = True
-        else:
-            self.help = trans._('hold <space> to pan/zoom')
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()

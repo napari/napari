@@ -1142,7 +1142,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_value(
         self,
-        position,
+        position: Tuple[float],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1154,7 +1154,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        position : tuple
+        position : tuple of float
             Position in either data or world coordinates.
         view_direction : Optional[np.ndarray]
             A unit vector giving the direction of the ray in nD world coordinates.
@@ -1690,28 +1690,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
         # find the maximal data-axis-aligned bounding box containing all four
-        # canvas corners
+        # canvas corners and round them to ints
         data_bbox = np.stack(
             [np.min(data_corners, axis=0), np.max(data_corners, axis=0)]
         )
-        # round and clip the bounding box values
         data_bbox_int = np.stack(
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
-        displayed_extent = self.extent.data[:, displayed_axes]
-        data_bbox_clipped = np.clip(
-            data_bbox_int, displayed_extent[0], displayed_extent[1]
-        )
 
         if self._ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
-                data_bbox_clipped,
+                data_bbox_int,
                 shape_threshold,
                 self.downsample_factors[:, displayed_axes],
             )
-            corners = np.zeros((2, self.ndim))
-            corners[:, displayed_axes] = scaled_corners
-            corners = corners.astype(int)
+            corners = np.zeros((2, self.ndim), dtype=int)
+            # The corner_pixels attribute stores corners in the data
+            # space of the selected level. Using the level's data
+            # shape only works for images, but that's the only case we
+            # handle now and downsample_factors is also only on image layers.
+            max_coords = np.take(self.data[level].shape, displayed_axes)
+            corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
             display_shape = tuple(
                 corners[1, displayed_axes] - corners[0, displayed_axes]
             )
@@ -1725,13 +1724,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.events.reslice(Event('reslice', layer=self))
 
         else:
+            # The stored corner_pixels attribute must contain valid indices.
+            displayed_extent = self.extent.data[:, displayed_axes]
+            data_bbox_clipped = np.clip(
+                data_bbox_int, displayed_extent[0], displayed_extent[1]
+            )
             corners = np.zeros((2, self.ndim), dtype=int)
             corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
     def get_status(
         self,
-        position: np.ndarray,
+        position: Tuple[float],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1742,7 +1746,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        position : tuple
+        position : tuple of float
             Position in either data or world coordinates.
         view_direction : Optional[np.ndarray]
             A unit vector giving the direction of the ray in nD world coordinates.
