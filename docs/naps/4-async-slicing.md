@@ -108,7 +108,7 @@ current form, but are captured here to prevent any regression caused by this wor
  	- E.g. 2D slice of a 3D image layer where all data fits in RAM, but not VRAM.
 - P0. Define representative examples that currently cause *undesirable* behavior in napari, so that I can check that async slicing improves those.
 	- E.g. 2D slice of a 3D points layer where all data fits in RAM, but not VRAM.
-	- E.g. 2D slice of a 3D image layer where all data does not on local storage.
+	- E.g. 2D slice of a 3D image layer where all data is not on local storage.
 - P0. Define slicing benchmarks, so that I can understand if my changes impact overall timing or memory usage.
 	- E.g. Do not increase the latency of generating a single slice more than 10%.
 	- E.g. Decrease the latency of dealing with 25 slice requests over 1 second by 50%.
