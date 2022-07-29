@@ -160,14 +160,15 @@ jobs:
           - os: macos-latest
             python-version: "3.9"
             target-platform: "osx-64"
-          #- os: macos-latest
-          #  python-version: "3.9"
-          #  target-platform: "osx-arm64"
+          - os: macos-latest
+            python-version: "3.9"
+            target-platform: "osx-arm64"
           - os: windows-latest
             python-version: "3.8"
             target-platform: "win-64"
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      CONDA_NUMBER_CHANNEL_NOTICES: "0"
       DISPLAY: ":99.0"
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}
