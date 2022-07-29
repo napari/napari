@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QApplication
 
 import napari
 
+
 class QtViewerViewVectorSuite:
     """Benchmarks for viewing vectors in the viewer."""
 
