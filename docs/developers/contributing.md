@@ -24,7 +24,7 @@ git remote add upstream https://github.com/napari/napari.git
 ```
 
 Napari can be installed on most macOS, Linux, and Windows systems with 
-[![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org) by
+![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)] by
 following the directions on the 
 [instructions page](https://napari.org/tutorials/fundamentals/installation.html#install-as-python-package-recommended).
 

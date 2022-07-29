@@ -35,7 +35,7 @@ interact with the app. It is the best way to install napari and make full use of
 all its features.
 
 It requires:
--  [![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
+-  ![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)
 - the ability to install python packages via [pip](https://pypi.org/project/pip/) OR [conda-forge](https://conda-forge.org/docs/user/introduction.html)
 
 You may also want:

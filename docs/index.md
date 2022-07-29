@@ -93,7 +93,7 @@ you can install via pip, conda-forge, or from source.
 ### From pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with
- [![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org) by
+ ![Supported Python versions](https://img.shields.io/pypi/pyversions/napari.svg) by
  using pip:
 
 ```sh
