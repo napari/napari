@@ -1101,6 +1101,10 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.ShiftModifier
         )
+        alt_down = (
+            QGuiApplication.keyboardModifiers()
+            & Qt.KeyboardModifier.AltModifier
+        )
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
@@ -1109,13 +1113,11 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        # if trying to open as a stack, open with any available reader
-        if shift_down:
-            self._qt_open(filenames, stack=bool(shift_down))
+        if alt_down:
+            handle_gui_reading(filenames, self, stack=bool(shift_down))
             return
 
-        for filename in filenames:
-            self._qt_open([filename], stack=bool(shift_down))
+        self._qt_open(filenames, bool(shift_down))
 
     def closeEvent(self, event):
         """Cleanup and close.
