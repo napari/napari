@@ -1,7 +1,11 @@
-"""This module contains actions (functions) that operate on layers.
+"""This module defines actions (functions) that operate on layers.
 
 Among other potential uses, these will populate the menu when you right-click
 on a layer in the LayerList.
+
+The Actions in LAYER_ACTIONS are registered with the application when it is
+created in `_app_model._app`.  Modifying this list at runtime will have no
+effect.  Use `app.register_action` to register new actions at runtime.
 """
 
 from __future__ import annotations
@@ -37,7 +41,8 @@ _ONLY_LABELS = LLCK.num_selected_labels_layers == LLCK.num_selected_layers
 _IMAGE_IS_3D = (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
 
 
-# sourcery skip: for-append-to-extend
+# Statically defined Layer actions.
+# modifying this list at runtime has no effect.
 LAYER_ACTIONS: List[Action] = [
     Action(
         id=CommandId.LAYER_DUPLICATE,

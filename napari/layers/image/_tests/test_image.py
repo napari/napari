@@ -323,10 +323,10 @@ def test_interpolation():
     with pytest.deprecated_call():
         assert layer.interpolation == 'bicubic'
 
-    layer.interpolation2d = 'bilinear'
-    assert layer.interpolation2d == 'bilinear'
+    layer.interpolation2d = 'linear'
+    assert layer.interpolation2d == 'linear'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bilinear'
+        assert layer.interpolation == 'linear'
 
 
 def test_colormaps():
