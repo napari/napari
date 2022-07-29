@@ -15,7 +15,8 @@ def _provide_active_layer_list() -> Optional[components.LayerList]:
     return v.layers if (v := _provide_viewer()) else None
 
 
-# TODO: fix syntax for this upstream
+# syntax could be simplified after
+# https://github.com/tlambert03/in-n-out/issues/31
 PROVIDERS = [
     (_provide_viewer,),
     (_provide_active_layer,),

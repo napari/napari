@@ -295,9 +295,6 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        for layer in self.viewer.layers:
-            self._add_layer(layer)
-
         self.view = self.canvas.central_widget.add_view(border_width=0)
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
@@ -328,6 +325,9 @@ class QtViewer(QSplitter):
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
+
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
 
     def _leave_canvas(self):
         """disable status on canvas leave"""

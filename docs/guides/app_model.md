@@ -51,87 +51,6 @@ be a "pure python" way to import a napari object and call it.  Commands mostly
 serve as a way to reference some functionality that needs to be exposed in the
 GUI.
 
-### Dependency Injection
-
-A key component of the command infrastructure is "dependency injection",
-currently provided by the package
-[`in-n-out`](https://github.com/tlambert03/in-n-out) (which spun out of an
-internal napari module).  
-
-```{tip}
-Dependency injection is just a fancy word for "giving a function or class something it needs to perform its task".
-```
-
-In practice, dependency injection will be performed *internally* by napari (i.e.
-napari will inject dependencies into some internally or externally provided
-function), and the pattern will look something like this:
-
-A user/plugin provides a function
-
-```python
-# some *well-annotated* user provided function
-# declares a need for Points
-def process_points(points: 'Points'):
-    # do something with points
-    print(points.name)
-```
-
-Internally, napari registers a set of "provider" and "processor" functions in
-the `get_app().injection_store`
-
-```python
-from napari._app_model import get_app
-
-# return annotation indicates what this provider provides
-def provide_points() -> Optional['Points']:
-    import napari.viewer
-    from napari.layers import Points
-
-    viewer = napari.viewer.current_viewer()
-    if viewer is not None:
-        return next(
-            (i for i in viewer.layers if isinstance(i, Points)), 
-            None
-        )
-
-get_app().injection_store.register_provider(provide_points)
-```
-
-This allows both internal and external functions to be injected with these
-provided objects, and therefore called *without* parameters in certain cases.
-This is particularly important in a GUI context, where a user can't always be
-providing arguments:
-
-```python
->>> injected_func = get_app().injection_store.inject(process_points)
-```
-
-Note: injection doesn't *inherently* mean that it's always safe to call an
-injected function without parameters. In this case, we have no viewer and no
-points:
-
-```python
->>> injected_func()
-
-TypeError: After injecting dependencies for NO arguments,
-process_points() missing 1 required positional argument: 'points'
-```
-
-Our provider was context dependent... Once we have an active viewer with a
-points layer, it can provide it:
-
-```python
->>> viewer = napari.view_points(name='Some Points')
-
->>> injected_func()
-Some Points
-```
-
-The fact that `injected_func` may now be called without parameters allows it to
-be used easily as a command in a menu, or bound to a keybinding.  It is up to
-`napari` to determine what providers it will make available, and what type hints
-plugins/users may use to request dependencies.
-
 ## Menus
 
 All napari menus will also have a string id (e.g. `'napari/file'`, or
@@ -258,6 +177,91 @@ ValueError: Command 'napari:layer:split_rgb' already registered
 
 This is because command id's may currently only be registered once, and associated with a single callback (and napari's internal app already used the `CommandId.LAYER_SPLIT_RGB` id). This MAY change in the future if a need arises.
 ````
+
+## Dependency Injection
+
+A key component of the command infrastructure is "dependency injection",
+currently provided by the package
+[`in-n-out`](https://github.com/tlambert03/in-n-out) (which spun out of an
+internal napari module).  `app-model` uses `in-n-out` to inject dependencies into all commands in the `CommandsRegistry`.
+
+```{tip}
+Dependency injection is just a fancy word for "giving a function or class something it needs to perform its task".
+```
+
+In practice, dependency injection will be performed *internally* by napari (i.e.
+napari will inject dependencies into some internally or externally provided
+function, plugins/users don't use the `@inject` decorator themselves), and the pattern will look something like this:
+
+A user/plugin provides a function
+
+```python
+# some user provided function declares a need 
+# for Points by using type annotations.
+def process_points(points: 'Points'):
+    # do something with points
+    print(points.name)
+```
+
+Internally, napari registers a set of "provider" and "processor" functions in
+the `get_app().injection_store`
+
+```python
+from napari._app_model import get_app
+
+# return annotation indicates what this provider provides
+def provide_points() -> Optional['Points']:
+    import napari.viewer
+    from napari.layers import Points
+
+    viewer = napari.viewer.current_viewer()
+    if viewer is not None:
+        return next(
+            (i for i in viewer.layers if isinstance(i, Points)), 
+            None
+        )
+
+get_app().injection_store.register_provider(provide_points)
+```
+
+This allows both internal and external functions to be injected with these
+provided objects, and therefore called *without* parameters in certain cases.
+This is particularly important in a GUI context, where a user can't always be
+providing arguments:
+
+```python
+>>> injected_func = get_app().injection_store.inject(process_points)
+```
+
+```{tip}
+The primary place that this injection occurs is *in* `app-model`: in the `run_injected` property of all registered commands in the `CommandsRegistry`. 
+```
+
+Note: injection doesn't *inherently* mean that it's always safe to call an
+injected function without parameters. In this case, we have no viewer and no
+points:
+
+```python
+>>> injected_func()
+
+TypeError: After injecting dependencies for NO arguments,
+process_points() missing 1 required positional argument: 'points'
+```
+
+Our provider was context dependent... Once we have an active viewer with a
+points layer, it can provide it:
+
+```python
+>>> viewer = napari.view_points(name='Some Points')
+
+>>> injected_func()
+Some Points
+```
+
+The fact that `injected_func` may now be called without parameters allows it to
+be used easily as a command in a menu, or bound to a keybinding.  It is up to
+`napari` to determine what providers it will make available, and what type hints
+plugins/users may use to request dependencies.
 
 ## Motivation & Future Vision
 

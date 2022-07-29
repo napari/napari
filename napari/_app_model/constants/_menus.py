@@ -1,4 +1,9 @@
-"""All Menus that are available in the napari GUI are defined here.
+"""All Menus that are available anywhere in the napari GUI are defined here.
+
+These might be menubar menus, context menus, or other menus.  They could
+even be "toolbars", such as the set of mode buttons on the layer list.
+A "menu" needn't just be a literal QMenu (though it usually is): it is better
+thought of as a set of related commands.
 
 Internally, prefer using the `MenuId` enum instead of the string literal.
 

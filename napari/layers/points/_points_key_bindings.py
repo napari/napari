@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from napari.utils.notifications import show_info
 
-from ...layers.utils.layer_utils import register_layer_action
+from ...layers.utils.layer_utils import (
+    register_layer_action,
+    register_layer_attr_action,
+)
 from ...utils.translations import trans
 from ._points_constants import Mode
 from .points import Points
@@ -10,6 +13,10 @@ from .points import Points
 
 def register_points_action(description):
     return register_layer_action(Points, description)
+
+
+def register_points_mode_action(description):
+    return register_layer_attr_action(Points, description, 'mode')
 
 
 @Points.bind_key('Space')
@@ -29,19 +36,26 @@ def hold_to_pan_zoom(layer: Points):
         layer._set_highlight()
 
 
-@register_points_action(trans._('Add points'))
+@register_points_mode_action(trans._('Add points'))
 def activate_points_add_mode(layer: Points):
     layer.mode = Mode.ADD
 
 
-@register_points_action(trans._('Select points'))
+@register_points_mode_action(trans._('Select points'))
 def activate_points_select_mode(layer: Points):
     layer.mode = Mode.SELECT
 
 
-@register_points_action(trans._('Pan/zoom'))
+@register_points_mode_action(trans._('Pan/zoom'))
 def activate_points_pan_zoom_mode(layer: Points):
     layer.mode = Mode.PAN_ZOOM
+
+
+points_fun_to_mode = [
+    (activate_points_add_mode, Mode.ADD),
+    (activate_points_select_mode, Mode.SELECT),
+    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
+]
 
 
 @Points.bind_key('Control-C')

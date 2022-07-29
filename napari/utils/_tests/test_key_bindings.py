@@ -1,4 +1,5 @@
 import inspect
+import time
 import types
 
 import pytest
@@ -352,3 +353,40 @@ def test_bind_key_doc():
     doc = doc.split('Notes\n-----\n')[-1]
 
     assert doc == inspect.getdoc(key_bindings)
+
+
+def test_key_release_callback(monkeypatch):
+    called = False
+    called2 = False
+    monkeypatch.setattr(time, "time", lambda: 1)
+
+    class Foo(KeymapProvider):
+        ...
+
+    foo = Foo()
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [foo]
+
+    def _call():
+        nonlocal called2
+        called2 = True
+
+    @Foo.bind_key("K")
+    def callback(x):
+        nonlocal called
+        called = True
+        return _call
+
+    handler.press_key("K")
+    assert called
+    assert not called2
+    handler.release_key("K")
+    assert not called2
+
+    handler.press_key("K")
+    assert called
+    assert not called2
+    monkeypatch.setattr(time, "time", lambda: 2)
+    handler.release_key("K")
+    assert called2

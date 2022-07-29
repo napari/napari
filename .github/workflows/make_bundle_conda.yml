@@ -168,6 +168,7 @@ jobs:
             target-platform: "win-64"
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      CONDA_NUMBER_CHANNEL_NOTICES: "0"
       DISPLAY: ":99.0"
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}

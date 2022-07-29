@@ -11,7 +11,7 @@ A = TypeVar("A")
 class ContextNamespace(_ContextNamespace, Generic[A]):
     """A collection of related keys in a context
 
-    meant to be subclassed, with `ContextKeys` as class attributes.
+    meant to be subclassed, with class attributes that are `ContextKeys`.
     """
 
     def update(self, event: 'Event') -> None:
