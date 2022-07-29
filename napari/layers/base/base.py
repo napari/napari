@@ -978,6 +978,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ndim_other = dims.ndim - self.ndim
         self_order = [i - ndim_other for i in dims.order if i >= ndim_other]
 
+        # Pad the corner pixels for images so that we grab slightly more data than we need.
+        corner_pixels = np.copy(self.corner_pixels)
+        # if hasattr(self, 'data_level') and hasattr(self, 'level_shapes'):
+        #    corner_size = corner_pixels[1] - corner_pixels[0] + 1
+        #    pad_factor = 0.25
+        #    corner_pixels[0] -= (pad_factor * corner_size).astype(int)
+        #    corner_pixels[1] += (pad_factor * corner_size).astype(int)
+        #    corner_pixels = np.clip(corner_pixels, 0, self.level_shapes[self.data_level], dtype=int)
+
         return _LayerSliceRequest(
             data=self.data,
             # This is the composition of two affine transforms so is
@@ -990,7 +999,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             dims_displayed=self_order[-dims.ndisplay :],
             dims_not_displayed=self_order[: -dims.ndisplay],
             multiscale=self.multiscale,
-            corner_pixels=self.corner_pixels,
+            corner_pixels=corner_pixels,
             round_index=getattr(self, '_round_index', True),
             dask_config=self.dask_optimized_slicing,
         )
