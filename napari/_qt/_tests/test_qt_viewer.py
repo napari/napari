@@ -10,6 +10,7 @@ import pytest
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
+from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -18,6 +19,7 @@ from napari._tests.utils import (
     skip_on_win_ci,
 )
 from napari._vispy.utils.gl import fix_data_dtype
+from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
@@ -657,3 +659,18 @@ def test_insert_layer_ordering(make_napari_viewer):
     pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
+
+
+def test_create_non_empty_viewer_model(qtbot):
+    viewer_model = ViewerModel()
+    viewer_model.add_points([(1, 2), (2, 3)])
+
+    viewer = QtViewer(viewer=viewer_model)
+
+    viewer.close()
+    viewer.deleteLater()
+    # try to del local reference for gc.
+    del viewer_model
+    del viewer
+    qtbot.wait(50)
+    gc.collect()
