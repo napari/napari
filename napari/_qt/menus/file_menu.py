@@ -43,6 +43,29 @@ class FileMenu(NapariMenu):
                 'slot': window._qt_viewer._open_folder_dialog,
                 'shortcut': 'Ctrl+Shift+O',
             },
+            {
+                'menu': trans._('Open with Plugin'),
+                'items': [
+                    {
+                        'text': 'Open File(s)...',
+                        'slot': lambda: window._qt_viewer._open_files_dialog(
+                            choose_plugin=True
+                        ),
+                    },
+                    {
+                        'text': 'Open Files as Stack...',
+                        'slot': lambda: window._qt_viewer._open_files_dialog_as_stack_dialog(
+                            choose_plugin=True
+                        ),
+                    },
+                    {
+                        'text': 'Open Folder...',
+                        'slot': lambda: window._qt_viewer._open_folder_dialog(
+                            choose_plugin=True
+                        ),
+                    },
+                ],
+            },
             {'menu': self.open_sample_menu},
             {},
             {
