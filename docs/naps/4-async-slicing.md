@@ -11,23 +11,20 @@
 
 ## Abstract
 
-Slicing a layer in napari generates a partial view of the layer's data.
-Slicing is used to define what should be rendered in napari's canvas based on
-the dimension slider positions and the current field of view.
+Slicing a layer in napari generates a partial view of the layer's data based
+on the dimension slider positions and the current field of view.
 
-This project has two major aims.
+This project has two major goals.
 
-1. Slice layers asynchronously.
-2. Improve the architecture of slicing layers.
+1. Slice layers asynchronously to keep napari responsive while allowing for slow slicing.
+2. Improve the logic of slicing layers to help developers better understand how it works.
 
-We considered addressing these two aims in two separate projects, especially
-as (2) is likely a prerequisite for many acceptable implementations of (1).
-However, we believe that pursuing a behavioral goal like (1) should help
-prevent over-engineering of (2), while simultaneously providing important and
-tangible benefits to napari's users.
-
-Ideally this project covers all napari Layer types, though initial progress
-may be scoped to image and points layers.
+We propose a lock-free asynchronous solution that uses Python's built-in
+`concurrent.futures` module and exploits napari's main event loop.
+For each slice, an immutable shallow copy of all the required input to slicing is
+collected on the main thread and this is processed on a single-threaded executor.
+When the slice task is finished, we notify vispy and Qt objects back on the main thread
+so they can be safely updated.
 
 
 ## Motivation and scope
