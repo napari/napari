@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Any, Dict, Optional, SupportsInt, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ..utils.theme import available_themes
 from ..utils.translations import _load_language, get_language_packs, trans
@@ -98,9 +98,9 @@ class Version:
     https://github.com/python-semver/python-semver/
     """
 
-    major: SupportsInt
-    minor: SupportsInt = 0
-    patch: SupportsInt = 0
+    major: int
+    minor: int = 0
+    patch: int = 0
     prerelease: Union[bytes, str, int, None] = None
     build: Union[bytes, str, int, None] = None
 
