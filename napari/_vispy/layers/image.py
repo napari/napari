@@ -113,6 +113,9 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.set_data(data)
 
+        # TODO: maybe this should be in the slice request + response?
+        self.node.visible = self.layer.visible
+
         # TODO: need to include world2grid from layer too.
         self._master_transform.matrix = _prepare_transform(
             response.data_to_world

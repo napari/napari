@@ -49,12 +49,14 @@ class _PointsSliceRequest(_LayerSliceRequest):
     edge_color: np.ndarray = field(repr=False)
     edge_width: np.ndarray = field(repr=False)
     edge_width_is_relative: bool = field(repr=False)
+    shown: np.ndarray = field(repr=False)
 
 
 @dataclass(frozen=True)
 class _PointsSliceResponse(_LayerSliceResponse):
     indices: np.ndarray = field(repr=False)
     size: np.ndarray = field(repr=False)
+    view_size_scale: Union[int, np.ndarray] = field(repr=False)
     face_color: np.ndarray = field(repr=False)
     edge_color: np.ndarray = field(repr=False)
     edge_width: np.ndarray = field(repr=False)
@@ -1690,12 +1692,16 @@ class Points(Layer):
         )
         return start_point, end_point
 
+    def _is_async(self) -> bool:
+        return True
+
     def _make_slice_request(self, dims: Dims) -> _PointsSliceRequest:
         LOGGER.debug('Points._make_slice_request: %s', dims)
         base_request = super()._make_slice_request(dims)
         return _PointsSliceRequest(
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
+            shown=self.shown,
             face_color=self.face_color,
             edge_color=self.edge_color,
             edge_width=self.edge_width,
@@ -1704,7 +1710,16 @@ class Points(Layer):
         )
 
     def _set_slice(self, response: _PointsSliceResponse) -> None:
+        super()._set_slice(response)
         self._indices_view = response.indices
+        self._selected_view = list(
+            np.intersect1d(
+                np.array(list(self._selected_data)),
+                self._indices_view,
+                return_indices=True,
+            )[2]
+        )
+        self._view_size_scale = response.view_size_scale
 
     # We upgrade the parameter type of this overridden method, which is
     # problematic for anything with a reference typed with the base Layer.
@@ -1727,6 +1742,14 @@ class Points(Layer):
             list(request.dims_displayed)
         )
 
+        # TODO: would be great to not need this.
+        if not isinstance(scale, np.ndarray):
+            view_size_scale = scale
+        elif len(request.shown) == 0:
+            view_size_scale = np.empty(0, int)
+        else:
+            view_size_scale = scale[request.shown[indices]]
+
         # TODO: do we need shown here?
         size = scale * request.size[data_index].mean(axis=1)
 
@@ -1740,6 +1763,7 @@ class Points(Layer):
             edge_width=request.edge_width[indices],
             edge_width_is_relative=request.edge_width_is_relative,
             size=size,
+            view_size_scale=view_size_scale,
         )
 
     def _set_view_slice(self):

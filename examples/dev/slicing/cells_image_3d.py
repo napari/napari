@@ -1,6 +1,5 @@
 import numpy as np
 import napari
-from time import sleep
 from skimage.data import cells3d
 
 data = np.squeeze(cells3d()[:, 1, :, :])

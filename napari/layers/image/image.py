@@ -739,6 +739,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
+    def _is_async(self) -> bool:
+        return True
+
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         LOGGER.debug('Image._make_slice_request: %s', dims)
         base_request = super()._make_slice_request(dims)
@@ -749,6 +752,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
     def _set_slice(self, response: _ImageSliceResponse) -> None:
+        super()._set_slice(response)
         self._new_empty_slice()
         # Don't have indices here. Could easily get them, but don't need them?
         slice_data = ImageSliceData(
@@ -757,6 +761,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             image=response.data,
             thumbnail_source=response.thumbnail,
         )
+        self._empty = False
         self._slice.on_loaded(slice_data)
 
     # We upgrade the parameter type of this overridden method, which is

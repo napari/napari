@@ -64,7 +64,8 @@ class _LayerSliceRequest:
     ndim: int
     ndisplay: int
     point: Tuple[float, ...]
-    dims_displayed: Tuple[int, ...]
+    dims_order: Tuple[int, ...]
+    dims_displayed: Tuple[int, ...] = field(repr=False)
     dims_not_displayed: Tuple[int, ...] = field(repr=False)
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray = field(repr=False)
@@ -985,6 +986,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ndim=self.ndim,
             ndisplay=dims.ndisplay,
             point=dims.point[ndim_other:],
+            dims_order=self_order,
             dims_displayed=self_order[-dims.ndisplay :],
             dims_not_displayed=self_order[: -dims.ndisplay],
             multiscale=self.multiscale,
@@ -1049,19 +1051,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 category=UserWarning,
             )
 
+    def _is_async(self) -> bool:
+        return False
+
     @staticmethod
     # @abstractmethod # temporarily allow layers that don't implement this yet.
     def _get_slice(request: _LayerSliceRequest) -> _LayerSliceResponse:
         raise NotImplementedError()
 
-    # @abstractmethod # temporarily allow layers that don't implement this yet.
     def _set_slice(self, response: _LayerSliceResponse) -> None:
         """Deprecated support for setting slice state after slicing is done.
 
         We need this because other operations are dependent on this state.
         This should only be called from the main thread.
         """
-        raise NotImplementedError()
+        self._dims_point = response.request.point
+        self._dims_order = response.request.dims_order
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():
@@ -1315,7 +1320,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
         LOGGER.debug('Layer.refresh')
-        if self.visible:
+        if not self.visible:
+            return
+        if self._is_async():
+            self.events.reslice(Event('reslice', layer=self))
+        else:
             self.set_view_slice()
             self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
             self._update_thumbnail()

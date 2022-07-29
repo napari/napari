@@ -338,10 +338,16 @@ class QtViewer(QSplitter):
     def _on_slice_ready(self, event):
         responses: _ViewerSliceResponse = event.value
         for layer, response in responses.items():
+            # This is to temporarily support behavior that depends on
+            # layer slice state.
+            layer._set_slice(response)
             if visual := self.layer_to_visual[layer]:
                 visual._set_slice(response)
-            layer._set_slice(response)
+            # These came from the previous implementation of Layer.refresh.
+            # Some of these should probably be removed in the future.
+            layer.events.set_data()
             layer._update_thumbnail()
+            layer._set_highlight(force=True)
 
     def _leave_canvas(self):
         """disable status on canvas leave"""

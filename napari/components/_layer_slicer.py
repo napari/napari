@@ -1,7 +1,7 @@
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from typing import Iterable, Optional
 
-from napari.layers import Image, Layer, Points
+from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
 
 from . import Dims
@@ -29,7 +29,7 @@ class _LayerSlicer:
         # when we want to perform sync slicing anyway.
         requests = {}
         for layer in layers:
-            if _is_async(layer):
+            if layer._is_async():
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
@@ -52,7 +52,3 @@ class _LayerSlicer:
             return
         result = task.result()
         self.events.ready(Event('ready', value=result))
-
-
-def _is_async(layer: Layer) -> bool:
-    return isinstance(layer, (Image, Points))
