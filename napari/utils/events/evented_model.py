@@ -5,7 +5,8 @@ from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
-from pydantic import BaseModel, PrivateAttr, main, utils
+from pydantic import PrivateAttr, main, utils
+from pydantic_generics import BaseModel, ModelMetaclass
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
@@ -63,7 +64,7 @@ def no_class_attributes():
         main.ClassAttribute = utils.ClassAttribute
 
 
-class EventedMetaclass(main.ModelMetaclass):
+class EventedMetaclass(ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
     A metaclass is the thing that "constructs" a class, and ``ModelMetaclass``
@@ -367,7 +368,7 @@ def get_defaults(obj: BaseModel):
     dflt = {}
     for k, v in obj.__fields__.items():
         d = v.get_default()
-        if d is None and isinstance(v.type_, main.ModelMetaclass):
+        if d is None and isinstance(v.type_, ModelMetaclass):
             d = get_defaults(v.type_)
         dflt[k] = d
     return dflt

@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 
 
 class Array(np.ndarray):
+    def __new__(cls, input_array):
+        return np.asarray(input_array)
+
     def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
 

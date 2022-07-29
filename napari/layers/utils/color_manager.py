@@ -25,7 +25,7 @@ from .color_transformations import (
 )
 
 
-@dataclass
+@dataclass(eq=False, order=False)
 class ColorProperties:
     """The property values that are used for setting colors in ColorMode.COLORMAP
     and ColorMode.CYCLE.

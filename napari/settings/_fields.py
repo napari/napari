@@ -14,6 +14,10 @@ class Theme(str):
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
 
+    def __new__(cls, v):
+        # leave as builtin string instead of coercing
+        return v
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -51,6 +55,10 @@ class Language(str):
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
 
+    def __new__(cls, v):
+        # leave as builtin string instead of coercing
+        return v
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -82,7 +90,7 @@ class Language(str):
 
 
 @total_ordering
-@dataclass
+@dataclass(eq=False, order=False)
 class Version:
     """A semver compatible version class.
 

@@ -15,6 +15,9 @@ class ColorValue(np.ndarray):
     use the ``validate`` method to coerce a value to a single color.
     """
 
+    def __new__(cls, input_array):
+        return cls.validate(input_array)
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -67,7 +70,7 @@ class ColorValue(np.ndarray):
         >>> ColorValue.validate('#ff0000')
         array([1., 0., 0., 1.], dtype=float32)
         """
-        return transform_color(value)[0]
+        return transform_color(value)[0].view(cls)
 
 
 class ColorArray(np.ndarray):
@@ -77,6 +80,9 @@ class ColorArray(np.ndarray):
     of that field (e.g. on initialization or setting) will automatically
     use the ``validate`` method to coerce a value to an array of colors.
     """
+
+    def __new__(cls, input_array):
+        return cls.validate(input_array)
 
     @classmethod
     def __get_validators__(cls):
@@ -125,4 +131,4 @@ class ColorArray(np.ndarray):
         # warns and returns an array containing a default color in that case.
         if isinstance(value, (np.ndarray, list, tuple)) and len(value) == 0:
             return np.empty((0, 4), np.float32)
-        return transform_color(value)
+        return transform_color(value).view(cls)
