@@ -55,36 +55,38 @@ class CommandId(str, Enum):
         return _COMMAND_INFO[self].description
 
 
-class _ci(NamedTuple):
+class _i(NamedTuple):
+    """simple utility tuple for defining items in _COMMAND_INFO."""
+
     title: str
     description: Optional[str] = None
 
 
 # fmt: off
 _COMMAND_INFO = {
-    CommandId.LAYER_DUPLICATE: _ci(trans._('Duplicate Layer'),),
-    CommandId.LAYER_SPLIT_STACK: _ci(trans._('Split Stack'),),
-    CommandId.LAYER_SPLIT_RGB: _ci(trans._('Split RGB'),),
-    CommandId.LAYER_MERGE_STACK: _ci(trans._('Merge to Stack'),),
-    CommandId.LAYER_TOGGLE_VISIBILITY: _ci(trans._('Toggle visibility'),),
-    CommandId.LAYER_LINK_SELECTED: _ci(trans._('Link Layers'),),
-    CommandId.LAYER_UNLINK_SELECTED: _ci(trans._('Unlink Layers'),),
-    CommandId.LAYER_SELECT_LINKED: _ci(trans._('Select Linked Layers'),),
-    CommandId.LAYER_CONVERT_TO_LABELS: _ci(trans._('Convert to Labels'),),
-    CommandId.LAYER_CONVERT_TO_IMAGE: _ci(trans._('Convert to Image'),),
-    CommandId.LAYER_CONVERT_TO_INT8: _ci(trans._('Convert to int8'),),
-    CommandId.LAYER_CONVERT_TO_INT16: _ci(trans._('Convert to int16'),),
-    CommandId.LAYER_CONVERT_TO_INT32: _ci(trans._('Convert to int32'),),
-    CommandId.LAYER_CONVERT_TO_INT64: _ci(trans._('Convert to int64'),),
-    CommandId.LAYER_CONVERT_TO_UINT8: _ci(trans._('Convert to uint8'),),
-    CommandId.LAYER_CONVERT_TO_UINT16: _ci(trans._('Convert to uint16'),),
-    CommandId.LAYER_CONVERT_TO_UINT32: _ci(trans._('Convert to uint32'),),
-    CommandId.LAYER_CONVERT_TO_UINT64: _ci(trans._('Convert to uint64'),),
-    CommandId.LAYER_PROJECT_MAX: _ci(trans._('Max projection'),),
-    CommandId.LAYER_PROJECT_MIN: _ci(trans._('Min projection'),),
-    CommandId.LAYER_PROJECT_STD: _ci(trans._('Std projection'),),
-    CommandId.LAYER_PROJECT_SUM: _ci(trans._('Sum projection'),),
-    CommandId.LAYER_PROJECT_MEAN: _ci(trans._('Mean projection'),),
-    CommandId.LAYER_PROJECT_MEDIAN: _ci(trans._('Median projection'),),
+    CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
+    CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
+    CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
+    CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack'),),
+    CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility'),),
+    CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers'),),
+    CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers'),),
+    CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers'),),
+    CommandId.LAYER_CONVERT_TO_LABELS: _i(trans._('Convert to Labels'),),
+    CommandId.LAYER_CONVERT_TO_IMAGE: _i(trans._('Convert to Image'),),
+    CommandId.LAYER_CONVERT_TO_INT8: _i(trans._('Convert to int8'),),
+    CommandId.LAYER_CONVERT_TO_INT16: _i(trans._('Convert to int16'),),
+    CommandId.LAYER_CONVERT_TO_INT32: _i(trans._('Convert to int32'),),
+    CommandId.LAYER_CONVERT_TO_INT64: _i(trans._('Convert to int64'),),
+    CommandId.LAYER_CONVERT_TO_UINT8: _i(trans._('Convert to uint8'),),
+    CommandId.LAYER_CONVERT_TO_UINT16: _i(trans._('Convert to uint16'),),
+    CommandId.LAYER_CONVERT_TO_UINT32: _i(trans._('Convert to uint32'),),
+    CommandId.LAYER_CONVERT_TO_UINT64: _i(trans._('Convert to uint64'),),
+    CommandId.LAYER_PROJECT_MAX: _i(trans._('Max projection'),),
+    CommandId.LAYER_PROJECT_MIN: _i(trans._('Min projection'),),
+    CommandId.LAYER_PROJECT_STD: _i(trans._('Std projection'),),
+    CommandId.LAYER_PROJECT_SUM: _i(trans._('Sum projection'),),
+    CommandId.LAYER_PROJECT_MEAN: _i(trans._('Mean projection'),),
+    CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection'),),
 }
 # fmt: on
