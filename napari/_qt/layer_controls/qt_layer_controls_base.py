@@ -66,6 +66,11 @@ class QtLayerControls(QFrame):
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
+        # GL minimum blending does not support changing alpha
+        if self.blendComboBox.currentData() == 'minimum':
+            self.opacitySlider.setVisible(False)
+        else:
+            self.opacitySlider.setVisible(True)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -88,6 +93,11 @@ class QtLayerControls(QFrame):
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
         self.layer.blending = self.blendComboBox.currentData()
+        # GL minimum blending does not support changing alpha
+        if self.layer.blending == 'minimum':
+            self.opacitySlider.setVisible(False)
+        else:
+            self.opacitySlider.setVisible(True)
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
