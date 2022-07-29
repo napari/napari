@@ -14,7 +14,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import fix_data_vectors, generate_vector_meshes
+from ._vector_utils import fix_data_vectors
 
 
 class Vectors(Layer):
@@ -135,21 +135,10 @@ class Vectors(Layer):
         colors for the M in view vectors
     _view_indices : (1, M) array
         indices for the M in view vectors
-    _view_vertices : (4M, 2) or (8M, 2) np.ndarray
-        the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
-    _view_faces : (2M, 3) or (4M, 3) np.ndarray
-        indices of the _mesh_vertices that form the faces of the M in view vectors.
-        Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _view_alphas : (M,) or float
         relative opacity for the M in view vectors
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
-    _mesh_vertices : (4N, 2) array
-        The four corner points for the mesh representation of each vector as as
-        rectangle in the slice that it starts in.
-    _mesh_triangles : (2N, 3) array
-        The integer indices of the `_mesh_vertices` that form the two triangles
-        for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
         The maximum number of vectors that will ever be used to render the
         thumbnail. If more vectors are present then they are randomly
@@ -229,10 +218,7 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._data = data
-        self._mesh_vertices = None
-        self._mesh_triangles = None
         self._displayed_stored = None
-        self._update_mesh()
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -255,8 +241,6 @@ class Vectors(Layer):
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
         self._displayed_stored = []
-        self._view_vertices = []
-        self._view_faces = []
         self._view_indices = []
         self._view_alphas = []
 
@@ -275,8 +259,6 @@ class Vectors(Layer):
 
         self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
-
-        self._update_mesh()
 
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
@@ -439,8 +421,6 @@ class Vectors(Layer):
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
 
-        self._update_mesh()
-
         self.events.edge_width()
         self.refresh()
 
@@ -452,8 +432,6 @@ class Vectors(Layer):
     @length.setter
     def length(self, length: Union[int, float]):
         self._length = float(length)
-
-        self._update_mesh()
 
         self.events.length()
         self.refresh()
@@ -656,14 +634,10 @@ class Vectors(Layer):
         """Sets the view given the indices to slice with."""
 
         indices, alphas = self._slice_data(self._slice_indices)
-        if not self._dims_displayed == self._displayed_stored:
-            self._update_mesh()
 
-        vertices = self._mesh_vertices
         disp = list(self._dims_displayed)
 
         if len(self.data) == 0:
-            faces = []
             self._view_data = np.empty((0, 2, 2))
             self._view_indices = []
         elif self.ndim > 2:
@@ -671,32 +645,10 @@ class Vectors(Layer):
             self._view_indices = indices
             self._view_alphas = alphas
             self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
-            if len(indices) == 0:
-                faces = []
-            else:
-                keep_inds = np.repeat(2 * indices, 2)
-                keep_inds[1::2] = keep_inds[1::2] + 1
-                if self._ndisplay == 3:
-                    keep_inds = np.concatenate(
-                        [
-                            keep_inds,
-                            len(self._mesh_triangles) // 2 + keep_inds,
-                        ],
-                        axis=0,
-                    )
-                faces = self._mesh_triangles[keep_inds]
         else:
-            faces = self._mesh_triangles
             self._view_data = self.data[:, :, disp]
             self._view_indices = np.arange(self.data.shape[0])
             self._view_alphas = 1.0
-
-        if len(faces) == 0:
-            self._view_vertices = []
-            self._view_faces = []
-        else:
-            self._view_vertices = vertices
-            self._view_faces = faces
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
@@ -758,16 +710,3 @@ class Vectors(Layer):
             Value of the data at the coord.
         """
         return None
-
-    def _update_mesh(self):
-        """Generate a new vector mesh and update the stored vertices and
-        trianges for the mesh.
-        """
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
