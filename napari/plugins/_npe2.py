@@ -359,7 +359,7 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    actions = [
+    actions: List[Action] = [
         Action(
             id=cmd.id,
             title=cmd.title,
