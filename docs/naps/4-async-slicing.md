@@ -11,23 +11,22 @@
 
 ## Abstract
 
-Slicing a layer in napari generates a partial view of the layer's data.
-Slicing is used to define what should be rendered in napari's canvas based on
-the dimension slider positions and the current field of view.
+Slicing a layer in napari generates a partial view of the layer's data based
+on the dimension slider positions and the current field of view.
 
-This project has two major aims.
+This project has two major goals.
 
-1. Slice layers asynchronously.
-2. Improve the architecture of slicing layers.
+1. Slice layers asynchronously to keep napari responsive while allowing for slow slicing.
+2. Improve the logic of slicing layers to help developers better understand how it works.
 
-We considered addressing these two aims in two separate projects, especially
-as (2) is likely a prerequisite for many acceptable implementations of (1).
-However, we believe that pursuing a behavioral goal like (1) should help
-prevent over-engineering of (2), while simultaneously providing important and
-tangible benefits to napari's users.
-
-Ideally this project covers all napari Layer types, though initial progress
-may be scoped to image and points layers.
+We propose a lock-free asynchronous solution that uses Python's built-in
+`concurrent.futures` module and exploits napari's main event loop.
+For each slice, an immutable shallow copy of all the required input to slicing is
+collected on the main thread and is then processed on a separate single-threaded executor.
+When the slice task is finished, we notify vispy and Qt objects back on the main thread
+so they can be safely updated.
+This approach allows us to gradually introduce asynchronous slicing to napari
+layer by layer without breaking other functionality that relies on existing layer slice state.
 
 
 ## Motivation and scope
@@ -35,10 +34,10 @@ may be scoped to image and points layers.
 Currently, all slicing in napari is performed synchronously.
 For example, if a dimension slider is moved, napari waits to slice a layer
 before updating the canvas. When slicing layers is slow, this blocking behavior
-makes interacting with data difficult and napari may be reported as non-responsive
+makes interacting with data difficult and napari may be reported as not responding
 by the host operating system.
 
-![The napari viewer displaying a 2D slice of 10 million random 3D points. Dragging the slider changes the 2D slice, but the slider position and canvas updates are slow and make napari non-responsive.](https://i.imgur.com/CSGQbrA.gif)
+![The napari viewer displaying a 2D slice of a 3D multi-resolution electron microscopy image stored remotely. Dragging the slider changes the 2D slice, but the slider position and canvas updates are slow and napari stops responding.](https://i.imgur.com/cAJxkLq.gif)
 
 There are two main reasons why slicing can be slow.
 
@@ -49,17 +48,16 @@ By slicing asynchronously, we can keep napari responsive while allowing for slow
 slicing operations. We could also consider optimizing napari to make (1) less of
 a problem, but that is outside the scope of this project.
 
-
-### Slicing architecture
-
-There are a number of existing problems with the technical design of slicing in napari.
+Introducing asynchrony to software often complicates program flow and logic.
+However, the existing technical design of slicing is already complicated and
+often causes issues for developers.
 
 - Layers have too much state [^issue-792] [^issue-1353] [^issue-1775].
 - The logic is hard to understand and debug [^issue-2156].
 - The names of the classes are not self-explanatory [^issue-1574].
 
-Some of these problems and complexity were caused by a previous effort around
-asynchronous slicing in an effort to keep it isolated from the core code base.
+Some of these issues were caused by a previous effort around asynchronous slicing
+in an effort to keep it isolated from the core code base.
 By contrast, our approach in this project is to redesign slicing in napari to
 provide a solid foundation for asychronous slicing and related future work like
 multi-canvas and multi-scale slicing.
@@ -72,9 +70,9 @@ and P2 is a could-have. Some of these goals may already be achieved by napari in
 current form, but are captured here to prevent any regression caused by this work.
 
 
-#### 1. Remain responsive when slicing slow data
+#### 1. Keep responding when slicing slow data
 
-- P0. When moving a dimension slider, the slider remains responsive so that I can navigate to the desired location.
+- P0. When moving a dimension slider, the slider can still be controlled so that I can navigate to the desired location.
 	- Slider can be moved when data is in the middle of loading.
 	- Slider location does not return to position of last loaded slice after it was moved to a different position.
 - P0. When the slider is dragged, only slice at some positions so that I don’t wait for unwanted intermediate slicing positions.
