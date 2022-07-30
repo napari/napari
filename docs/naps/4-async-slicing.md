@@ -37,7 +37,7 @@ before updating the canvas. When slicing layers is slow, this blocking behavior
 makes interacting with data difficult and napari may be reported as not responding
 by the host operating system.
 
-![The napari viewer displaying a 2D slice of 10 million random 3D points. Dragging the slider changes the 2D slice, but the slider position and canvas updates are slow and make napari non-responsive.](https://i.imgur.com/CSGQbrA.gif)
+![The napari viewer displaying a 2D slice of a 3D multi-resolution electron microscopy image stored remotely. Dragging the slider changes the 2D slice, but the slider position and canvas updates are slow and napari stops responding.](https://i.imgur.com/cAJxkLq.gif)
 
 There are two main reasons why slicing can be slow.
 
