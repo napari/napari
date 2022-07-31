@@ -195,7 +195,9 @@ class Dims(EventedModel):
             Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
         ],
         *,
-        restore_point=None,
+        restore_point: Union[
+            Union[int, float], Sequence[Union[int, float]]
+        ] = None,
     ):
         """Sets ranges (min, max, step) for the given dimensions.
 
@@ -206,6 +208,8 @@ class Dims(EventedModel):
         _range : tuple or sequence of tuple
             Range specified as (min, max, step) or a sequence of these range
             tuples.
+        restore_point : tuple or None
+            Point to set after the range changes. If None, no point is restored.
         """
         if isinstance(axis, Integral):
             axis = assert_axis_in_bounds(axis, self.ndim)  # type: ignore
@@ -228,16 +232,32 @@ class Dims(EventedModel):
                     full_range[ax] = r
                 self.range = full_range
         if restore_point is not None:
-            self.set_point_in_range(restore_point)
+            new_point = self._get_point_in_ndim(restore_point)
+            self.set_point(range(self.ndim), new_point)
 
     @staticmethod
     def rounded_division(min_val, max_val, precision):
         return int(((min_val + max_val) / 2) / precision) * precision
 
-    def set_point_in_range(
+    def _get_point_in_ndim(
         self,
-        point: Tuple[int],
+        point: Union[Union[int, float], Sequence[Union[int, float]]],
     ):
+        """Get the point within the current dimensions of dimensions.
+        Coordinates outside the current dim are removed.
+        If new dimensions need to be added the midpoint of the respective range
+        is chosen for the dimensions point value.
+
+        Parameters
+        ----------
+        point : tuple
+            Point check if it is within the current range.
+
+        Returns
+        ---------
+        point: tuple
+            Tuple within the current dimension
+        """
         # This logic block defines the behavior when layers are added or
         # removed. Its goal is it to keep the currently selected view
         # selected by the user.
@@ -257,7 +277,7 @@ class Dims(EventedModel):
         else:
             # If the dimension is unchanged, keep the current slider position
             new_point = point
-        self.set_point(range(self.ndim), new_point)
+        return tuple(new_point)
 
     def set_point(
         self,
