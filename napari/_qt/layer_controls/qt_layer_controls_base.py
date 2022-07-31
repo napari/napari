@@ -91,10 +91,7 @@ class QtLayerControls(QFrame):
         """
         self.layer.blending = self.blendComboBox.currentData()
         # GL minimum blending does not support changing alpha
-        if self.layer.blending == 'minimum':
-            self.opacitySlider.setVisible(False)
-        else:
-            self.opacitySlider.setVisible(True)
+        self.opacitySlider.setVisible(self.layer.blending != 'minimum')
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
