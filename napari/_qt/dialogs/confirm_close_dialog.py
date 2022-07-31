@@ -62,6 +62,11 @@ class ConfirmCloseDialog(QDialog):
         layout.addLayout(layout4)
         self.setLayout(layout)
 
+        # for test purposes because of problem with shortcut testing:
+        # https://github.com/pytest-dev/pytest-qt/issues/254
+        self.close_btn = close_btn
+        self.cancel_btn = cancel_btn
+
     def accept(self):
         if self.do_not_ask.isChecked():
             get_settings().application.confirm_close_window = False
