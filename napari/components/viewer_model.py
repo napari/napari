@@ -358,56 +358,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def rounded_division(min_val, max_val, precision):
         return int(((min_val + max_val) / 2) / precision) * precision
 
-    def _on_layers_change(self, *, add_layer=False):
-        new_point = None
+    def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            # If the point of an axis is outside of the upper current range,
-            # set it to the layers range max value. dims.set_current_step
-            # accounts for the clamping of the lower limit on the set_point call.
-            # New dimensions are prepended, hence we need to go through the list
-            # from the back to the beginning and invert the order in the end.
-            # To have the correct slices present.
-            prev_point = [
-                range_val[1] - 1 if point_val >= range_val[1] else point_val
-                for point_val, range_val in zip(
-                    reversed(self.dims.point), reversed(ranges)
-                )
-            ][::-1]
+            prev_point = self.dims.point
             ndim = len(ranges)
             self.dims.ndim = ndim
-            self.dims.set_range(range(ndim), ranges)
-
-            # This logic block defines the behavior when layers are added or
-            # removed. Its goal is it to keep the currently selected view
-            # selected by the user.
-            if add_layer and len(self.layers) == 1:
-                # Special case going from 0 to 1 layer leads to the central
-                # slice being selected.
-                # Move the logic from _on_add_layer here to avoid double set
-                # and double update of the layers.
-                new_point = [
-                    self.rounded_division(*_range) for _range in ranges
-                ]
-            elif ndim < len(prev_point):
-                # If the dimension has been reduced remove dimensions accordingly.
-                # Since new dimensions are prepended we need to take the last points.
-                new_point = prev_point[-ndim:]
-            elif ndim > len(prev_point):
-                # If the dimension has been increased add dimensions with their
-                # respective central slice.
-                # Since new dimensions are prepended we prepend the new values.
-                mid_points = [
-                    self.rounded_division(*_range)
-                    for _range in ranges[: -len(prev_point)]
-                ]
-                new_point = np.append(mid_points, prev_point)
-            else:
-                # If the dimension is unchanged, keep the current slider position
-                new_point = prev_point
+            self.dims.set_range(range(ndim), ranges, restore_point=prev_point)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -417,8 +377,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
-        if new_point is not None:
-            self.dims.set_point(range(self.dims.ndim), new_point)
         self.events.layers_change()
 
     def _update_interactive(self, event):
@@ -535,13 +493,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._layer_help_from_mode(layer)
 
         # Update dims and grid model
-        self._on_layers_change(add_layer=True)
+        self._on_layers_change()
         self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
             self.reset_view()
+            new_point = [
+                self.rounded_division(*_range) for _range in self.dims.range
+            ]
+            self.dims.set_point(range(self.dims.ndim), new_point)
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
@@ -599,8 +561,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._on_layers_change()
         self._on_grid_change()
 
-        if len(self.layers) == 1:
-            self._update_layers(layers=[self.layers[0]])
+        self._update_layers()
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.

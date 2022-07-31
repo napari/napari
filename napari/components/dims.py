@@ -194,6 +194,8 @@ class Dims(EventedModel):
         _range: Union[
             Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
         ],
+        *,
+        restore_point=None,
     ):
         """Sets ranges (min, max, step) for the given dimensions.
 
@@ -225,6 +227,37 @@ class Dims(EventedModel):
                     ax = assert_axis_in_bounds(int(ax), self.ndim)
                     full_range[ax] = r
                 self.range = full_range
+        if restore_point is not None:
+            self.set_point_in_range(restore_point)
+
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        return int(((min_val + max_val) / 2) / precision) * precision
+
+    def set_point_in_range(
+        self,
+        point: Tuple[int],
+    ):
+        # This logic block defines the behavior when layers are added or
+        # removed. Its goal is it to keep the currently selected view
+        # selected by the user.
+        if self.ndim < len(point):
+            # If the dimension has been reduced remove dimensions accordingly.
+            # Since new dimensions are prepended we need to take the last points.
+            new_point = point[-self.ndim :]
+        elif self.ndim > len(point):
+            # If the dimension has been increased add dimensions with their
+            # respective central slice.
+            # Since new dimensions are prepended we prepend the new values.
+            mid_points = [
+                self.rounded_division(*_range)
+                for _range in self.range[: -len(point)]
+            ]
+            new_point = np.append(mid_points, point)
+        else:
+            # If the dimension is unchanged, keep the current slider position
+            new_point = point
+        self.set_point(range(self.ndim), new_point)
 
     def set_point(
         self,
@@ -295,13 +328,17 @@ class Dims(EventedModel):
                 raise ValueError(
                     trans._("axis and value sequences must have equal length")
                 )
-            if value != full_current_step:
-                # (computed) nsteps property outside of the loop for efficiency
-                nsteps = self.nsteps
-                for ax, val in zip(axis, value):
-                    ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    step = round(min(max(val, 0), nsteps[ax] - 1))
+            # (computed) nsteps property outside of the loop for efficiency
+            nsteps = self.nsteps
+            needs_update = False
+            for ax, val in zip(axis, value):
+                ax = assert_axis_in_bounds(int(ax), self.ndim)
+                step = round(min(max(val, 0), nsteps[ax] - 1))
+                if full_current_step[ax] != step:
                     full_current_step[ax] = step
+                    needs_update = True
+
+            if value != full_current_step or needs_update:
                 self.current_step = full_current_step
 
     def set_axis_label(
