@@ -13,8 +13,10 @@ from napari.layers.utils.layer_utils import (
     dims_displayed_world_to_layer,
     get_current_properties,
     prepare_properties,
+    register_layer_attr_action,
     segment_normal,
 )
+from napari.utils.key_bindings import KeymapHandler, KeymapProvider
 
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
@@ -481,3 +483,33 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
     feature_table = _FeatureTable.from_layer(features=features, num_data=2)
     expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
     pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+def test_register_label_attr_action(monkeypatch):
+    monkeypatch.setattr(time, "time", lambda: 1)
+
+    class Foo(KeymapProvider):
+        def __init__(self):
+            super().__init__()
+            self.value = 0
+
+    foo = Foo()
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [foo]
+
+    @register_layer_attr_action(Foo, "value desc", "value", "K")
+    def set_value_1(x):
+        x.value = 1
+
+    handler.press_key("K")
+    assert foo.value == 1
+    handler.release_key("K")
+    assert foo.value == 1
+
+    foo.value = 0
+    handler.press_key("K")
+    assert foo.value == 1
+    monkeypatch.setattr(time, "time", lambda: 2)
+    handler.release_key("K")
+    assert foo.value == 0
