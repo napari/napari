@@ -121,7 +121,7 @@ keybindings in namespaced way that avoids usage of strings:
 
 ## Actions
 
-The "complete" representation of a command, along with it's optional placement
+The "complete" representation of a command, along with its optional placement
 in menus and/or keybinding associations is defined by the
 [`app_model.types.Action`](https://app-model.readthedocs.io/en/latest/types/#app_model.types.Action)
 type.  It composes an
