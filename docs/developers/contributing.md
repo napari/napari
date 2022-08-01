@@ -79,7 +79,7 @@ Icons are typically used inside of one of our `stylesheet.qss` files, with the
 
 ```css
 QtDeleteButton {
-   image: url(":/themes/{{ folder }}/delete.svg");
+   image: url("theme_{{ name }}:/delete.svg");
 }
 ```
 

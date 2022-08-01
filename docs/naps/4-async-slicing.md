@@ -385,7 +385,9 @@ class LayerSlicer:
 
     _executor: Executor = ThreadPoolExecutor(max_workers=1)
     _task: Optional[Future[ViewerSliceResponse]] = None
-    ready = Signal(ViewerSliceResponse)
+
+    def __init__(self, ...):
+        self.events = EmitterGroup(source=self, slice_ready=Event)
 
     def slice_layers_async(self, layers: LayerList, dims: Dims) -> None:
         if self._task is not None:
@@ -403,10 +405,10 @@ class LayerSlicer:
     def _on_slice_done(self, task: Future[ViewerSliceResponse]) -> None:
         if task.cancelled():
             return
-        self.ready.emit(task.result())
+        self.events.slice_ready(task.result())
 ```
 
-For this class to be useful, there should be at least one connection to the `ready` signal.
+For this class to be useful, there should be at least one connection to the `slice_ready` event.
 In napari, we expect the `QtViewer` to marshall the slice response that this signal carries
 to the vispy layers so that the canvas can be updated.
 
@@ -446,7 +448,7 @@ class QtViewer:
 
     def __init__(self, ...):
         ...
-        self.viewer._slicer.ready.connect(self._on_slice_ready)
+        self.viewer._slicer.events.slice_ready.connect(self._on_slice_ready)
 
     @ensure_main_thread
     def _on_slice_ready(self, responses: ViewerSliceResponse):
@@ -483,7 +485,7 @@ functionality should work.
 The main goal of this project is to perform slicing asynchronously, so it's
 natural that we might break anyone that was depending on slicing being synchronous.
 At a minimum, we must provide a public way to achieve the same fundamental goals,
-such as connecting to the `slice_ready` signal. 
+such as connecting to the `slice_ready` event.
 
 ### Store existing slice state on layer
 
@@ -504,7 +506,7 @@ this state to acquire an associated lock.
 ### Render each slice as soon as it is ready
 
 In this proposal, the slicing thread waits for slices of all layers to be ready before
-it emits the `slice_ready` signal. There are a few reasons for that.
+it emits the `slice_ready` event. There are a few reasons for that.
 
 1. We only use one slicing thread to keep behavior simple and to avoid GIL contention.
 2. It's closer to the existing behavior of napari
@@ -514,7 +516,7 @@ it emits the `slice_ready` signal. There are a few reasons for that.
 In some cases, rendering slices as soon as possible will provide a better user experience,
 especially when some layers are substantially slower than others. Therefore, this should be
 high priority future work. One way to implement this behavior is to emit a `slice_ready`
-signal per layer that only contains that layer's slice response.
+event per layer that only contains that layer's slice response.
 
 
 ## Alternatives
