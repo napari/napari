@@ -24,7 +24,11 @@ class QtViewerViewVectorSuite:
         self.viewer.window.close()
 
     def time_vectors_refresh(self, n):
-        """Time to view a vector."""
+        """Time to refresh a vector."""
+        self.viewer.layers[0].refresh()
+
+    def time_vectors_multi_refresh(self, n):
+        """Time to refresh a vector multiple times."""
         self.viewer.layers[0].refresh()
         self.viewer.layers[0].refresh()
         self.viewer.layers[0].refresh()
