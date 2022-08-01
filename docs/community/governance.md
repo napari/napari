@@ -83,7 +83,7 @@ outcome is always possible, and a preference for five members to ensure a
 diversity of voices. All deadlocked votes of the SC will be postponed until
 there is an odd number of members and another vote can be held. A majority of the
 SC will not be employed by the same entity. One seat on the SC is reserved
-for a member elected by the [Institutional and Funding Partner Advisory Council](institutional-and-funding-partners),
+for a member elected by the [Institutional and Funding Partner Advisory Council](#institutional-and-funding-partners),
 as detailed below. This member need not be an existing core developer.
 
 The SC membership, including the Institutional and Funding Partner (IFP) seat, is revisited every January.

@@ -59,7 +59,12 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(
             self._on_contrast_limits_change
@@ -145,7 +150,11 @@ class VispyImageLayer(VispyBaseLayer):
         node.update()
 
     def _on_interpolation_change(self):
-        self.node.interpolation = self.layer.interpolation
+        self.node.interpolation = (
+            self.layer.interpolation2d
+            if self.layer._ndisplay == 2
+            else self.layer.interpolation3d
+        )
 
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):

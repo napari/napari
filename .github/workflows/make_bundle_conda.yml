@@ -168,6 +168,7 @@ jobs:
             target-platform: "win-64"
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      CONDA_NUMBER_CHANNEL_NOTICES: "0"
       DISPLAY: ":99.0"
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}
@@ -233,7 +234,7 @@ jobs:
           mkdir -p ${CONDA_BLD_PATH}/noarch
 
       - name: Download local build artifacts (napari)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ${{ needs.conda-build.outputs.artifact-id }}
           path: ${{ env.CONDA_BLD_PATH }}/noarch
@@ -363,7 +364,7 @@ jobs:
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
-        uses: bruceadams/get-release@v1.2.2
+        uses: bruceadams/get-release@v1.2.3
 
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')

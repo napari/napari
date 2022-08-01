@@ -182,3 +182,18 @@ def test_tracks_float_time_index():
     track_id[50:] = 1
     data = np.concatenate((track_id, time, coords), axis=1)
     Tracks(data)
+
+
+def test_tracks_length_change():
+    """Test changing length properties of tracks"""
+    track_length = 1000
+    data = np.zeros((track_length, 4))
+    layer = Tracks(data)
+    layer.tail_length = track_length
+    assert layer.tail_length == track_length
+    assert layer._max_length == track_length
+
+    layer = Tracks(data)
+    layer.head_length = track_length
+    assert layer.head_length == track_length
+    assert layer._max_length == track_length

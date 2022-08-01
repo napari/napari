@@ -35,30 +35,6 @@ from ._labels_utils import (
     sphere_indices,
 )
 
-_REV_SHAPE_HELP = {
-    trans._('enter paint or fill mode to edit labels'): {
-        Mode.PAN_ZOOM,
-        Mode.TRANSFORM,
-    },
-    trans._('hold <space> to pan/zoom, click to pick a label'): {
-        Mode.PICK,
-        Mode.FILL,
-    },
-    trans._(
-        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
-    ): {Mode.PAINT},
-    trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
-}
-
-# This avoid duplicating the trans._ help messages above
-# as some modes have the same help.
-# while most tooling will recognise identical messages,
-# this can lead to human error.
-_FWD_SHAPE_HELP = {}
-for t, modes in _REV_SHAPE_HELP.items():
-    for m in modes:
-        _FWD_SHAPE_HELP[m] = t
-
 
 class Labels(_ImageBase):
     """Labels (or segmentation) layer.
@@ -271,7 +247,8 @@ class Labels(_ImageBase):
             rgb=False,
             colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
-            interpolation='nearest',
+            interpolation2d='nearest',
+            interpolation3d='nearest',
             rendering=rendering,
             depiction=depiction,
             iso_threshold=0,
@@ -321,7 +298,6 @@ class Labels(_ImageBase):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
         self._preserve_labels = False
-        self._help = trans._('enter paint or fill mode to edit labels')
 
         self._reset_history()
 
@@ -737,9 +713,7 @@ class Labels(_ImageBase):
         if not changed:
             return
 
-        self.help = _FWD_SHAPE_HELP[mode]
-
-        if mode in (Mode.PAINT, Mode.ERASE):
+        if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
         self.events.mode(mode=mode)
@@ -778,10 +752,7 @@ class Labels(_ImageBase):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale:
-                self.editable = False
-            else:
-                self.editable = True
+            self.editable = not self.multiscale
 
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
