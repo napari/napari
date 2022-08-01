@@ -786,3 +786,20 @@ QtLayerList::indicator:unchecked {
 QtLayerList::indicator:checked {
   image: url("theme_{{ name }}:/visibility.svg");
 }
+
+
+#warning_icon_btn {
+  qproperty-icon: url(":/themes/{{ name }}/warning.svg");
+}
+
+#warning_icon_element {
+  image: url(":/themes/{{ name }}/warning.svg");
+  min-height: 36px;
+  min-width: 36px;
+}
+
+#error_icon_element {
+  image: url(":/themes/{{ name }}/error.svg");
+  min-height: 36px;
+  min-width: 36px;
+}
