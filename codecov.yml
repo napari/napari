@@ -20,7 +20,7 @@ coverage:
       utils:
         target: auto
         paths: [ 'napari/utils/.*', '!.*/_tests/.*' ]
-        threshold: 1%
+        threshold: 2%
       tests:
         target: auto
         paths: ['.*/_tests/.*']
