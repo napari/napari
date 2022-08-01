@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.layers import Points
+from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -2418,3 +2420,41 @@ def test_empty_data_from_tuple():
     layer = Points(name="points")
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
+
+
+@pytest.mark.parametrize(
+    'attribute, new_value',
+    [
+        ("size", [20, 20]),
+        ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_width", np.asarray([0.2])),
+    ],
+)
+def test_new_point_size_editable(attribute, new_value):
+    """tests the newly placed points may be edited without re-selecting"""
+    layer = Points()
+    layer.mode = Mode.ADD
+    layer.add((0, 0))
+
+    setattr(layer, f"current_{attribute}", new_value)
+    np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
+
+
+def test_antialiasing_setting_and_event_emission():
+    """Antialiasing changing should cause event emission."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    layer.events.antialiasing = Mock()
+    layer.antialiasing = 5
+    assert layer.antialiasing == 5
+    layer.events.antialiasing.assert_called_once()
+
+
+def test_antialiasing_value_clipping():
+    """Antialiasing can only be set to positive values."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    with pytest.warns(RuntimeWarning):
+        layer.antialiasing = -1
+    assert layer.antialiasing == 0

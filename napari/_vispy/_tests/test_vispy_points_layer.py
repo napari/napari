@@ -107,3 +107,12 @@ def test_text_with_non_empty_constant_string():
     # automatically broadcasts, so explicitly check length.
     assert len(text_node.text) == 3
     np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+
+
+def test_change_antialiasing():
+    """Changing antialiasing on the layer should change it on the vispy node."""
+    points = np.random.rand(3, 2)
+    layer = Points(points)
+    vispy_layer = VispyPointsLayer(layer)
+    layer.antialiasing = 5
+    assert vispy_layer.node.antialias == layer.antialiasing
