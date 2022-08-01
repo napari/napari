@@ -47,6 +47,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -276,10 +277,17 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def close(self, quit_app=False):
+    def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        self._quit_app = quit_app
-        return super().close()
+        if not quit_app and not self._qt_viewer.viewer.layers:
+            return super().close()
+        if (
+            not confirm_need
+            or not get_settings().application.confirm_close_window
+            or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
+        ):
+            self._quit_app = quit_app
+            return super().close()
 
     def close_window(self):
         """Close active dialog or active window."""
@@ -350,6 +358,15 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if (
+            event.spontaneous()
+            and get_settings().application.confirm_close_window
+            and self._qt_viewer.viewer.layers
+            and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
+        ):
+            event.ignore()
+            return
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
