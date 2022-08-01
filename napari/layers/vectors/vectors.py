@@ -633,7 +633,7 @@ class Vectors(Layer):
         # indices, but as dims_indices can (and often/always does) contain slice
         # objects, the array has dtype=object which is then very slow for the
         # arithmetic below.
-        # promote slicing plane to arry so we can index into it, project as type float
+        # promote slicing plane to array so we can index into it, project as type float
         not_disp_indices = np.array(dims_indices)[dims_not_displayed].astype(
             float
         )
