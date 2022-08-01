@@ -143,7 +143,7 @@ class Points(Layer):
         * 'spherical'
           Shading and depth buffer are changed to give a 3D spherical look to the points
     antialiasing: float
-        Amount of antialiasing in pixels.
+        Amount of antialiasing in canvas pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -244,7 +244,7 @@ class Points(Layer):
     shading : Shading
         Shading mode.
     antialiasing: float
-        Amount of antialiasing in pixels.
+        Amount of antialiasing in canvas pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -758,12 +758,12 @@ class Points(Layer):
 
     @property
     def antialiasing(self) -> float:
-        """Amount of antialiasing in pixels."""
+        """Amount of antialiasing in canvas pixels."""
         return self._antialiasing
 
     @antialiasing.setter
     def antialiasing(self, value: float):
-        """Set the amount of antialiasing in pixels.
+        """Set the amount of antialiasing in canvas pixels.
 
         Values can only be positive.
         """
