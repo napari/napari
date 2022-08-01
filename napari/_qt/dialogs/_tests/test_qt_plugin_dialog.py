@@ -52,7 +52,7 @@ def plugin_dialog(qtbot, monkeypatch):
 
     widget = qt_plugin_dialog.QtPluginDialog()
     widget.show()
-    qtbot.waitForWindowShown(widget)
+    qtbot.wait(300)
     qtbot.add_widget(widget)
     return widget
 
@@ -78,7 +78,7 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
     )
     widget = qt_plugin_dialog.QtPluginDialog()
     widget.show()
-    qtbot.waitForWindowShown(widget)
+    qtbot.wait(300)
     qtbot.add_widget(widget)
     return widget
 
