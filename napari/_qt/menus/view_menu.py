@@ -64,14 +64,14 @@ class ViewMenu(NapariMenu):
                     _toggle_dict(trans._('Arrows'), 'axes', 'arrows'),
                 ],
             },
-            {
-                'menu': 'Scale Bar',
-                'items': [
-                    _toggle_dict(trans._('Visible'), 'scale_bar', 'visible'),
-                    _toggle_dict(trans._('Colored'), 'scale_bar', 'colored'),
-                    _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
-                ],
-            },
+            # {
+            #     'menu': 'Scale Bar',
+            #     'items': [
+            #         _toggle_dict(trans._('Visible'), 'scale_bar', 'visible'),
+            #         _toggle_dict(trans._('Colored'), 'scale_bar', 'colored'),
+            #         _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
+            #     ],
+            # },
             {
                 'text': trans._('Layer Tooltip visibility'),
                 'slot': self._tooltip_visibility_toggle,

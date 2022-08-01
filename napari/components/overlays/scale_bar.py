@@ -1,13 +1,11 @@
 """Scale bar model."""
 from typing import Optional
 
-from napari.utils.color import ColorValue
-
-from ..utils.events import EventedModel
-from ._viewer_constants import Position
+from ...utils.color import ColorValue
+from .base import CanvasOverlay
 
 
-class ScaleBar(EventedModel):
+class ScaleBar(CanvasOverlay):
     """Scale bar indicating size in world coordinates.
 
     Attributes
@@ -43,12 +41,11 @@ class ScaleBar(EventedModel):
         to `None` to display no units.
     """
 
-    visible: bool = False
     colored: bool = False
     color: ColorValue = [1, 0, 1, 1]
     ticks: bool = True
-    position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     box: bool = False
     box_color: ColorValue = [0, 0, 0, 0.6]
     unit: Optional[str] = None
+    zoom: float = 1

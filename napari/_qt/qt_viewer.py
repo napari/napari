@@ -12,11 +12,11 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from ..components._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..components.overlays._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
@@ -56,10 +56,10 @@ from .._vispy import (  # isort:skip
     VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
-    VispyScaleBarOverlay,
     VispyInteractionBox,
     VispyTextOverlay,
-    create_vispy_visual,
+    create_vispy_layer,
+    create_vispy_overlay,
 )
 
 
@@ -252,6 +252,7 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
+        self.overlay_to_visual = {}
 
         self._create_canvas()
 
@@ -328,6 +329,8 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+        for overlay in self.viewer.overlays.values():
+            self._add_overlay(overlay)
 
     def _leave_canvas(self):
         """disable status on canvas leave"""
@@ -388,6 +391,14 @@ class QtViewer(QSplitter):
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
+    def _add_overlay(self, overlay):
+        vispy_overlay = create_vispy_overlay(overlay)
+
+        vispy_overlay.node.parent = self.view.scene
+        self.overlay_to_visual[overlay] = vispy_overlay
+        # TODO split canvas and world overlays so this works
+        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
+
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
@@ -396,12 +407,6 @@ class QtViewer(QSplitter):
             parent=self.view.scene,
             order=1e6,
         )
-        self.scale_bar = VispyScaleBarOverlay(
-            self.viewer,
-            parent=self.view,
-            order=1e6 + 1,
-        )
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
         self.text_overlay = VispyTextOverlay(
             self.viewer,
             parent=self.view,
@@ -495,7 +500,7 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_visual(layer)
+        vispy_layer = create_vispy_layer(layer)
 
         # QtPoll is experimental.
         if self._qt_poll is not None:

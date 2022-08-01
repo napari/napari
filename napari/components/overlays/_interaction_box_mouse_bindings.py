@@ -3,10 +3,10 @@ from weakref import ref
 
 import numpy as np
 
-from ..layers.utils.layer_utils import dims_displayed_world_to_layer
-from ..utils.action_manager import action_manager
-from ..utils.transforms import Affine
-from ..utils.translations import trans
+from ...layers.utils.layer_utils import dims_displayed_world_to_layer
+from ...utils.action_manager import action_manager
+from ...utils.transforms import Affine
+from ...utils.translations import trans
 from ._interaction_box_constants import Box
 
 
@@ -53,7 +53,7 @@ class InteractionBoxMouseBindings:
         self._initial_transform = None
         self._initial_transform_inverse = None
         self._ref_viewer = ref(viewer)
-        self._interaction_box_model = viewer.overlays.interaction_box
+        self._interaction_box_model = viewer.overlays_.interaction_box
         self._ref_interaction_box_visual = ref(interaction_box_visual)
         viewer.layers.events.inserted.connect(self._on_add_layer)
         viewer.layers.events.removed.connect(self._on_remove_layer)
@@ -112,7 +112,7 @@ class InteractionBoxMouseBindings:
         )
         # The -0.5 is necessary because the pixel at (0,0) actually extends to (-0.5,0.5) (in case of the image layer)
 
-        viewer.overlays.interaction_box.points = (
+        viewer.overlays_.interaction_box.points = (
             active_layer.extent.data[:, layer_dims] - 0.5
         )
         self._initial_transform = Affine(
@@ -123,7 +123,7 @@ class InteractionBoxMouseBindings:
         ).set_slice(layer_dims)
         self._initial_transform_inverse = self._initial_transform.inverse
 
-        viewer.overlays.interaction_box.transform = (
+        viewer.overlays_.interaction_box.transform = (
             active_layer.affine.set_slice(layer_dims).compose(
                 self._initial_transform
             )
@@ -169,16 +169,16 @@ class InteractionBoxMouseBindings:
                 return
             viewer.layers.selection.active = event.source
             self._couple_interaction_box_to_active()
-            viewer.overlays.interaction_box.show_vertices = True
-            viewer.overlays.interaction_box.show_handle = True
-            viewer.overlays.interaction_box.allow_new_selection = False
-            viewer.overlays.interaction_box.show = True
+            viewer.overlays_.interaction_box.show_vertices = True
+            viewer.overlays_.interaction_box.show_handle = True
+            viewer.overlays_.interaction_box.allow_new_selection = False
+            viewer.overlays_.interaction_box.show = True
             self._layer_affine_event_helper(event.source)
 
         else:
-            viewer.overlays.interaction_box.show = False
-            viewer.overlays.interaction_box.points = None
-            viewer.overlays.interaction_box.transform = Affine()
+            viewer.overlays_.interaction_box.show = False
+            viewer.overlays_.interaction_box.points = None
+            viewer.overlays_.interaction_box.transform = Affine()
 
     def _on_transform_change(self, event):
         """Gets called when the interaction box is transformed to update transform of the layer"""

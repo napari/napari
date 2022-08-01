@@ -41,7 +41,7 @@ from ..utils._register import create_func as create_add_method
 from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
 from ..utils.context import Context, create_context
-from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events import Event, EventedDict, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
@@ -50,14 +50,14 @@ from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
-from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
-from .overlays import Overlays
-from .scale_bar import ScaleBar
+from .overlays import Overlay, Overlays
+from .overlays.axes import Axes
+from .overlays.scale_bar import ScaleBar
 from .text_overlay import TextOverlay
 from .tooltip import Tooltip
 
@@ -84,6 +84,9 @@ __all__ = ['ViewerModel', 'valid_add_kwargs']
 
 def _current_theme() -> str:
     return get_settings().appearance.theme
+
+
+DEFAULT_OVERLAYS = {'scale_bar': ScaleBar()}
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -124,11 +127,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
+    overlays: EventedDict[str, Overlay] = Field(
+        default=DEFAULT_OVERLAYS, allow_mutation=False
+    )
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
-    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
+    overlays_: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
     status: str = 'Ready'

@@ -19,4 +19,4 @@ from .overlays.interaction_box import VispyInteractionBox
 from .overlays.scale_bar import VispyScaleBarOverlay
 from .overlays.text import VispyTextOverlay
 from .utils.quaternion import quaternion2euler
-from .utils.visual import create_vispy_visual
+from .utils.visual import create_vispy_layer, create_vispy_overlay

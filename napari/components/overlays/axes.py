@@ -1,4 +1,4 @@
-from ..utils.events import EventedModel
+from ...utils.events import EventedModel
 
 
 class Axes(EventedModel):

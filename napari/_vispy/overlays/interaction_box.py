@@ -2,14 +2,14 @@ import numpy as np
 from vispy.color.color_array import ColorArray
 from vispy.scene.visuals import Compound, Line, Markers
 
-from ...components._interaction_box_constants import Box
+from ...components.overlays._interaction_box_constants import Box
 
 
 class VispyInteractionBox:
     def __init__(self, viewer, parent=None, order=0):
 
         self._viewer = viewer
-        self._interaction_box = viewer.overlays.interaction_box
+        self._interaction_box = viewer.overlays_.interaction_box
         self.node = Compound([Line(), Markers(), Markers()], parent=parent)
         self.node.order = order
         self._on_interaction_box_change()

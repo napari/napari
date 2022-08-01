@@ -1,4 +1,4 @@
-from napari.components.scale_bar import ScaleBar
+from napari.components.overlays.scale_bar import ScaleBar
 
 
 def test_scale_bar():
