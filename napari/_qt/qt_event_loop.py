@@ -11,7 +11,7 @@ from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .. import __version__
+from .. import Viewer, __version__
 from ..resources._icons import _theme_path
 from ..settings import get_settings
 from ..utils import config, perf
@@ -221,6 +221,8 @@ def get_app(
 
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
+    for v in list(Viewer._instances):
+        v.close()
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
     if (
