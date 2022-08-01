@@ -568,6 +568,8 @@ event per layer that only contains that layer's slice response.
 - [Remove slice state from layer](https://github.com/napari/napari/issues/4682)
     - Feature request to remove slice/render state from the layer types.
     - Motivated by creating multiple slices of the same layers for multiple canvases.
+- [Draft PR on andy-sweet's fork](https://github.com/andy-sweet/napari/pull/16)
+    - Initial feedback before sharing more widely.
     
 ### Open questions
 
