@@ -626,18 +626,19 @@ class Vectors(Layer):
             while vectors passing through the current slice are assigned progressively lower
             values, based on how far from the current slice they originate.
         """
-        # ensure dims not displayed is a list
-        dims_not_displayed = list(self._dims_not_displayed)
 
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below.
-        # promote slicing plane to array so we can index into it, project as type float
-        not_disp_indices = np.array(dims_indices)[dims_not_displayed].astype(
-            float
-        )
         if len(self.data) > 0:
+            # ensure dims not displayed is a list
+            dims_not_displayed = list(self._dims_not_displayed)
+
+            # We want a numpy array so we can use fancy indexing with the non-displayed
+            # indices, but as dims_indices can (and often/always does) contain slice
+            # objects, the array has dtype=object which is then very slow for the
+            # arithmetic below.
+            # promote slicing plane to array so we can index into it, project as type float
+            not_disp_indices = np.array(dims_indices)[
+                dims_not_displayed
+            ].astype(float)
             # get the anchor points (starting positions) of the vector layers in not displayed dims
             data = self.data[:, 0, dims_not_displayed]
             # calculate distances from anchor points to the slicing plane
