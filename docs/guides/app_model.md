@@ -108,7 +108,7 @@ as `Cmd+K` *followed by* `Cmd+M`).
 
 We don't yet use them internally, but they will provide independence from
 vispy's key codes, and have a nice `IntEnum` api that allows for declaration of
-keybindings in namespaced way that avoids usage of strings:
+keybindings in a namespaced way that avoids usage of strings:
 
 ```python
 >>> from app_model.types import KeyCode, KeyMod
@@ -121,7 +121,7 @@ keybindings in namespaced way that avoids usage of strings:
 
 ## Actions
 
-The "complete" representation of a command, along with it's optional placement
+The "complete" representation of a command, along with its optional placement
 in menus and/or keybinding associations is defined by the
 [`app_model.types.Action`](https://app-model.readthedocs.io/en/latest/types/#app_model.types.Action)
 type.  It composes an
