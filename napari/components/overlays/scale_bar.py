@@ -5,7 +5,7 @@ from ...utils.color import ColorValue
 from .base import CanvasOverlay
 
 
-class ScaleBar(CanvasOverlay):
+class ScaleBarOverlay(CanvasOverlay):
     """Scale bar indicating size in world coordinates.
 
     Attributes

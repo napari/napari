@@ -57,7 +57,6 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyInteractionBox,
-    VispyTextOverlay,
     create_vispy_layer,
     create_vispy_overlay,
 )
@@ -404,14 +403,6 @@ class QtViewer(QSplitter):
             self.viewer,
             parent=self.view.scene,
             order=1e6,
-        )
-        self.text_overlay = VispyTextOverlay(
-            self.viewer,
-            parent=self.view,
-            order=1e6 + 2,
-        )
-        self.canvas.events.resize.connect(
-            self.text_overlay._on_position_change
         )
         self.interaction_box_visual = VispyInteractionBox(
             self.viewer, parent=self.view.scene, order=1e6 + 3

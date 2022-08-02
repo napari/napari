@@ -1,89 +1,52 @@
 from vispy.scene.visuals import Text
-from vispy.visuals.transforms import STTransform
 
 from ...components._viewer_constants import CanvasPosition
-from ...utils.translations import trans
+from .base import VispyCanvasOverlay
 
 
-class VispyTextOverlay:
+class VispyTextOverlay(VispyCanvasOverlay):
     """Text overlay."""
 
-    def __init__(self, viewer, parent=None, order=1e6):
-        self._viewer = viewer
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, node=Text(pos=(0, 0)), **kwargs)
 
-        self.node = Text(pos=(0, 0), parent=parent)
-        self.node.order = order
-        self.node.transform = STTransform()
-        self.node.font_size = self._viewer.text_overlay.font_size
-        self.node.anchors = ("center", "center")
+        self.node.font_size = self.overlay.font_size
+        self.node.anchors = ("left", "top")
 
-        self._viewer.text_overlay.events.visible.connect(
-            self._on_visible_change
-        )
-        self._viewer.text_overlay.events.text.connect(self._on_data_change)
-        self._viewer.text_overlay.events.color.connect(self._on_text_change)
-        self._viewer.text_overlay.events.font_size.connect(
-            self._on_text_change
-        )
-        self._viewer.text_overlay.events.position.connect(
-            self._on_position_change
-        )
-        self._viewer.camera.events.zoom.connect(self._on_position_change)
+        self.overlay.events.text.connect(self._on_text_change)
+        self.overlay.events.color.connect(self._on_color_change)
+        self.overlay.events.font_size.connect(self._on_color_change)
 
         self._on_visible_change()
-        self._on_data_change()
         self._on_text_change()
+        self._on_color_change()
+        self._on_font_size_change()
         self._on_position_change()
 
-    def _on_visible_change(self):
-        """Change text visibility."""
-        self.node.visible = self._viewer.text_overlay.visible
-
-    def _on_data_change(self):
-        """Change text value."""
-        self.node.text = self._viewer.text_overlay.text
-
     def _on_text_change(self):
-        """Update text size and color."""
-        self.node.font_size = self._viewer.text_overlay.font_size
-        self.node.color = self._viewer.text_overlay.color
+        self.node.text = self.overlay.text
 
-    def _on_position_change(self, _event=None):
-        """Change position of text visual."""
-        position = self._viewer.text_overlay.position
-        x_offset, y_offset = 10, 5
-        canvas_size = list(self.node.canvas.size)
+    def _on_color_change(self):
+        self.node.color = self.overlay.color
+
+    def _on_font_size_change(self):
+        self.node.font_size = self.overlay.font_size
+
+    def _on_position_change(self):
+        super()._on_position_change()
+        position = self.overlay.position
 
         if position == CanvasPosition.TOP_LEFT:
-            transform = [x_offset, y_offset, 0, 0]
             anchors = ("left", "bottom")
         elif position == CanvasPosition.TOP_RIGHT:
-            transform = [canvas_size[0] - x_offset, y_offset, 0, 0]
             anchors = ("right", "bottom")
         elif position == CanvasPosition.TOP_CENTER:
-            transform = [canvas_size[0] // 2, y_offset, 0, 0]
             anchors = ("center", "bottom")
         elif position == CanvasPosition.BOTTOM_RIGHT:
-            transform = [
-                canvas_size[0] - x_offset,
-                canvas_size[1] - y_offset,
-                0,
-                0,
-            ]
             anchors = ("right", "top")
         elif position == CanvasPosition.BOTTOM_LEFT:
-            transform = [x_offset, canvas_size[1] - y_offset, 0, 0]
             anchors = ("left", "top")
         elif position == CanvasPosition.BOTTOM_CENTER:
-            transform = [canvas_size[0] // 2, canvas_size[1] - y_offset, 0, 0]
             anchors = ("center", "top")
-        else:
-            raise ValueError(
-                trans._(
-                    "Position {position} is not recognized.", position=position
-                )
-            )
 
-        self.node.transform.translate = transform
-        if self.node.anchors != anchors:
-            self.node.anchors = anchors
+        self.node.anchors = anchors

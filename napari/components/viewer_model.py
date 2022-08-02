@@ -55,10 +55,7 @@ from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
-from .overlays import Overlay, Overlays
-from .overlays.axes import Axes
-from .overlays.scale_bar import ScaleBar
-from .text_overlay import TextOverlay
+from .overlays import Axes, Overlay, Overlays, ScaleBarOverlay, TextOverlay
 from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
@@ -86,7 +83,7 @@ def _current_theme() -> str:
     return get_settings().appearance.theme
 
 
-DEFAULT_OVERLAYS = {'scale_bar': ScaleBar()}
+DEFAULT_OVERLAYS = {'scale_bar': ScaleBarOverlay(), 'text': TextOverlay()}
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -129,9 +126,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     )  # Need to create custom JSON encoder for layer!
     overlays: EventedDict[str, Overlay] = Field(
         default=DEFAULT_OVERLAYS, allow_mutation=False
-    )
-    text_overlay: TextOverlay = Field(
-        default_factory=TextOverlay, allow_mutation=False
     )
     overlays_: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
