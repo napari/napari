@@ -22,13 +22,13 @@ parser.add_argument(
     help='The name of the callable to plot excluding the module (e.g. QtDimSliderWidget._value_changed).',
 )
 parser.add_argument(
-    'before',
-    default='before',
+    'baseline',
+    default='baseline',
     help='The name added to output traces file for the baseline measurement.',
 )
 parser.add_argument(
-    'after',
-    default='after',
+    'test',
+    default='test',
     help='The name added to output traces file for the test measurement.',
 )
 args = parser.parse_args()
@@ -53,18 +53,16 @@ def _get_durations_ms(output_name: str) -> list[float]:
     ]
 
 
-before_durations_ms = _get_durations_ms(args.before)
-after_durations_ms = _get_durations_ms(args.after)
+baseline_durations_ms = _get_durations_ms(args.baseline)
+test_durations_ms = _get_durations_ms(args.test)
 
 plt.violinplot(
-    [before_durations_ms, after_durations_ms],
+    [baseline_durations_ms, test_durations_ms],
     vert=False,
-    showmeans=True,
-    showmedians=True,
 )
 
-plt.title(f'{args.config} ({args.before} vs. {args.after}): {args.callable}')
+plt.title(f'{args.config}: {args.callable} ({args.baseline} vs. {args.test})')
 plt.xlabel('Duration (ms)')
-plt.yticks([1, 2], [args.before, args.after])
+plt.yticks([1, 2], [args.baseline, args.test])
 
 plt.show()
