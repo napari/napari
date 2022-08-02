@@ -14,11 +14,15 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, node=ScaleBar(), **kwargs)
-
         self._target_length = 150
         self._scale = 1
         self._unit = None
+
+        super().__init__(*args, node=ScaleBar(), **kwargs)
+        self.x_size = 150  # will be updated on zoom anyways
+        # need to change from defaults because the anchor is in the center
+        self.y_offset = 20
+        self.y_size = 5
 
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
@@ -102,6 +106,7 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
         self.node.text.text = f'{new_dim:~}'
+        self.x_size = scale  # needed to offset properly
         self._on_position_change()
 
     def _on_data_change(self):

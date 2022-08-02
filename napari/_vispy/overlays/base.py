@@ -36,8 +36,8 @@ class VispyBaseOverlay:
 class VispyCanvasOverlay(VispyBaseOverlay):
     def __init__(self, overlay, viewer, node):
         super().__init__(overlay, viewer, node)
-        self.x_offset = 0
-        self.y_offset = 0
+        self.x_offset = 10
+        self.y_offset = 10
         self.x_size = 0
         self.y_size = 0
         self.node.transform = STTransform()
@@ -52,25 +52,35 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         if position == CanvasPosition.TOP_LEFT:
             transform = [self.x_offset, self.y_offset, 0, 0]
         elif position == CanvasPosition.TOP_CENTER:
+            transform = [x_max / 2 - self.x_size / 2, self.y_offset, 0, 0]
+        elif position == CanvasPosition.TOP_RIGHT:
             transform = [
-                x_max / 2 - self.x_size / 2 + self.x_offset,
+                x_max - self.x_size - self.x_offset,
                 self.y_offset,
                 0,
                 0,
             ]
-        elif position == CanvasPosition.TOP_RIGHT:
-            transform = [x_max - self.x_offset, self.y_offset, 0, 0]
-        elif position == CanvasPosition.BOTTOM_RIGHT:
+        elif position == CanvasPosition.BOTTOM_LEFT:
             transform = [
-                x_max - self.x_offset,
-                y_max - self.y_offset,
+                self.x_offset,
+                y_max - self.y_size - self.y_offset,
                 0,
                 0,
             ]
         elif position == CanvasPosition.BOTTOM_CENTER:
-            transform = [x_max // 2, y_max - self.y_offset, 0, 0]
-        elif position == CanvasPosition.BOTTOM_LEFT:
-            transform = [self.x_offset, y_max - self.y_offset, 0, 0]
+            transform = [
+                x_max / 2 - self.x_size / 2,
+                y_max - self.y_size - self.y_offset,
+                0,
+                0,
+            ]
+        elif position == CanvasPosition.BOTTOM_RIGHT:
+            transform = [
+                x_max - self.x_size - self.x_offset,
+                y_max - self.y_size - self.y_offset,
+                0,
+                0,
+            ]
         else:
             raise ValueError(
                 trans._(
