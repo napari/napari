@@ -82,8 +82,12 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
     filtered_preferences : Iterable[Tuple[str, str]]
         Filtered patterns and their corresponding readers.
     """
-    reader_settings = get_settings().plugins.extension2reader
 
+    if osp.isdir(path):
+        path = osp.basename(path)
+        if not path.endswith('/'):
+            path = path + '/'
+    reader_settings = get_settings().plugins.extension2reader
     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
 
 
@@ -103,7 +107,6 @@ def get_preferred_reader(path: str) -> Optional[str]:
     readers = sorted(
         _get_preferred_readers(path), key=lambda kv: score_specificity(kv[0])
     )
-
     if readers:
         preferred = readers[0]
         _, reader = preferred

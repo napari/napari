@@ -56,7 +56,7 @@ class Extension2ReaderTable(QWidget):
                 'Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts.'
             )
             + trans._(
-                '\n\nPreference saving for folder readers is not supported, so these readers are not shown.'
+                '\n\nYou can save a preference for a specific folder by listing the folder name with a "/" at the end (for example, "test_images/").'
             )
             + trans._(
                 '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
@@ -175,7 +175,6 @@ class Extension2ReaderTable(QWidget):
 
         readers = self._npe2_readers.copy()
         to_delete = []
-
         compatible_readers = get_potential_readers(new_pattern)
         for plugin_name, display_name in readers.items():
             if plugin_name not in compatible_readers:
@@ -183,6 +182,7 @@ class Extension2ReaderTable(QWidget):
 
         for reader in to_delete:
             del readers[reader]
+
         readers.update(self._npe1_readers)
 
         if not readers:
