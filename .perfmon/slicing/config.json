@@ -6,6 +6,8 @@
     ],
     "callable_lists": {
         "slicing": [
+            "napari.components.dims.Dims.set_current_step",
+            "napari.layers.base.base.Layer.refresh",
             "napari._qt.widgets.qt_dims_slider.QtDimSliderWidget._value_changed"
         ]
     }
