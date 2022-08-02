@@ -14,6 +14,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..components.overlays import CanvasOverlay, SceneOverlay
 from ..components.overlays._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
@@ -53,7 +54,6 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
-    VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
     VispyInteractionBox,
@@ -393,17 +393,16 @@ class QtViewer(QSplitter):
     def _add_overlay(self, overlay):
         vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
 
-        vispy_overlay.node.parent = self.view
+        if isinstance(overlay, CanvasOverlay):
+            vispy_overlay.node.parent = self.view
+        elif isinstance(overlay, SceneOverlay):
+            vispy_overlay.node.parent = self.view.scene
+
         self.overlay_to_visual[overlay] = vispy_overlay
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
-        self.axes = VispyAxesOverlay(
-            self.viewer,
-            parent=self.view.scene,
-            order=1e6,
-        )
         self.interaction_box_visual = VispyInteractionBox(
             self.viewer, parent=self.view.scene, order=1e6 + 3
         )

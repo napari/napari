@@ -1,5 +1,4 @@
 from ...utils.events import EventedModel
-from ...utils.transforms import Transform
 from .._viewer_constants import CanvasPosition
 
 
@@ -17,7 +16,8 @@ class CanvasOverlay(Overlay):
 
 
 class SceneOverlay(Overlay):
-    transform: Transform
+    # TODO: should transform live here?
+    pass
 
 
 class LayerOverlay(SceneOverlay):

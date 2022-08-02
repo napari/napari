@@ -1,7 +1,7 @@
-from ...utils.events import EventedModel
+from .base import SceneOverlay
 
 
-class Axes(EventedModel):
+class AxesOverlay(SceneOverlay):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes
@@ -24,8 +24,6 @@ class Axes(EventedModel):
         If axes have arrowheads or not.
     """
 
-    # fields
-    visible: bool = False
     labels: bool = True
     colored: bool = True
     dashed: bool = False

@@ -2,7 +2,6 @@ import bisect
 
 import numpy as np
 
-from ...settings import get_settings
 from ...utils._units import PREFERRED_VALUES, get_unit_registry
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.theme import get_theme
@@ -32,7 +31,7 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         self.overlay.events.ticks.connect(self._on_data_change)
         self.overlay.events.unit.connect(self._on_unit_change)
 
-        get_settings().appearance.events.theme.connect(self._on_data_change)
+        self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
 
         self._on_visible_change()
@@ -125,7 +124,7 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
                 background_color = get_theme(
-                    get_settings().appearance.theme, False
+                    self.viewer.theme, False
                 ).canvas.as_hex()
                 background_color = transform_color(background_color)[0]
                 color = np.subtract(1, background_color)

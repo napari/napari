@@ -55,7 +55,13 @@ from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
-from .overlays import Axes, Overlay, Overlays, ScaleBarOverlay, TextOverlay
+from .overlays import (
+    AxesOverlay,
+    Overlay,
+    Overlays,
+    ScaleBarOverlay,
+    TextOverlay,
+)
 from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
@@ -83,7 +89,11 @@ def _current_theme() -> str:
     return get_settings().appearance.theme
 
 
-DEFAULT_OVERLAYS = {'scale_bar': ScaleBarOverlay(), 'text': TextOverlay()}
+DEFAULT_OVERLAYS = {
+    'scale_bar': ScaleBarOverlay(),
+    'text': TextOverlay(),
+    'axes': AxesOverlay(),
+}
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -116,7 +126,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)

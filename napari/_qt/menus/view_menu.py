@@ -54,16 +54,16 @@ class ViewMenu(NapariMenu):
                 'slot': window._qt_viewer._toggle_chunk_outlines,
                 'shortcut': 'Ctrl+Alt+O',
             },
-            {
-                'menu': 'Axes',
-                'items': [
-                    _toggle_dict(trans._('Visible'), 'axes', 'visible'),
-                    _toggle_dict(trans._('Colored'), 'axes', 'colored'),
-                    _toggle_dict(trans._('Labels'), 'axes', 'labels'),
-                    _toggle_dict(trans._('Dashed'), 'axes', 'dashed'),
-                    _toggle_dict(trans._('Arrows'), 'axes', 'arrows'),
-                ],
-            },
+            # {
+            #     'menu': 'Axes',
+            #     'items': [
+            #         _toggle_dict(trans._('Visible'), 'axes', 'visible'),
+            #         _toggle_dict(trans._('Colored'), 'axes', 'colored'),
+            #         _toggle_dict(trans._('Labels'), 'axes', 'labels'),
+            #         _toggle_dict(trans._('Dashed'), 'axes', 'dashed'),
+            #         _toggle_dict(trans._('Arrows'), 'axes', 'arrows'),
+            #     ],
+            # },
             # {
             #     'menu': 'Scale Bar',
             #     'items': [

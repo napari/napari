@@ -1,4 +1,3 @@
-import numpy as np
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from ...components._viewer_constants import CanvasPosition
@@ -99,35 +98,36 @@ class VispySceneOverlay(VispyBaseOverlay):
     def __init__(self, overlay, viewer, node):
         super().__init__(overlay, viewer, node)
         self.node.transform = MatrixTransform()
-        self.overlay.events.transform.connect(self._on_matrix_change)
 
-    def _on_matrix_change(self, event=None):
-        transform = self.layer._transforms.simplified.set_slice(
-            self.layer._dims_displayed
-        )
-        # convert NumPy axis ordering to VisPy axis ordering
-        # by reversing the axes order and flipping the linear
-        # matrix
-        translate = transform.translate[::-1]
-        matrix = transform.linear_matrix[::-1, ::-1].T
 
-        # Embed in the top left corner of a 4x4 affine matrix
-        affine_matrix = np.eye(4)
-        affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
-        affine_matrix[-1, : len(translate)] = translate
-
-        if self._array_like and self.layer._ndisplay == 2:
-            # Perform pixel offset to shift origin from top left corner
-            # of pixel to center of pixel.
-            # Note this offset is only required for array like data in
-            # 2D.
-            offset_matrix = self.layer._data_to_world.set_slice(
-                self.layer._dims_displayed
-            ).linear_matrix
-            offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
-            # Convert NumPy axis ordering to VisPy axis ordering
-            # and embed in full affine matrix
-            affine_offset = np.eye(4)
-            affine_offset[-1, : len(offset)] = offset[::-1]
-            affine_matrix = affine_matrix @ affine_offset
-        self._master_transform.matrix = affine_matrix
+#
+#    def _on_matrix_change(self, event=None):
+#        transform = self.layer._transforms.simplified.set_slice(
+#            self.layer._dims_displayed
+#        )
+#        # convert NumPy axis ordering to VisPy axis ordering
+#        # by reversing the axes order and flipping the linear
+#        # matrix
+#        translate = transform.translate[::-1]
+#        matrix = transform.linear_matrix[::-1, ::-1].T
+#
+#        # Embed in the top left corner of a 4x4 affine matrix
+#        affine_matrix = np.eye(4)
+#        affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
+#        affine_matrix[-1, : len(translate)] = translate
+#
+#        if self._array_like and self.layer._ndisplay == 2:
+#            # Perform pixel offset to shift origin from top left corner
+#            # of pixel to center of pixel.
+#            # Note this offset is only required for array like data in
+#            # 2D.
+#            offset_matrix = self.layer._data_to_world.set_slice(
+#                self.layer._dims_displayed
+#            ).linear_matrix
+#            offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
+#            # Convert NumPy axis ordering to VisPy axis ordering
+#            # and embed in full affine matrix
+#            affine_offset = np.eye(4)
+#            affine_offset[-1, : len(offset)] = offset[::-1]
+#            affine_matrix = affine_matrix @ affine_offset
+#        self._master_transform.matrix = affine_matrix

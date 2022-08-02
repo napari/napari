@@ -5,7 +5,12 @@ from typing import List, Tuple
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
-from ...components.overlays import Overlay, ScaleBarOverlay, TextOverlay
+from ...components.overlays import (
+    AxesOverlay,
+    Overlay,
+    ScaleBarOverlay,
+    TextOverlay,
+)
 from ...layers import (
     Image,
     Labels,
@@ -26,6 +31,7 @@ from ..layers.shapes import VispyShapesLayer
 from ..layers.surface import VispySurfaceLayer
 from ..layers.tracks import VispyTracksLayer
 from ..layers.vectors import VispyVectorsLayer
+from ..overlays.axes import VispyAxesOverlay
 from ..overlays.base import VispyBaseOverlay
 from ..overlays.scale_bar import VispyScaleBarOverlay
 from ..overlays.text import VispyTextOverlay
@@ -44,6 +50,7 @@ layer_to_visual = {
 overlay_to_visual = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
+    AxesOverlay: VispyAxesOverlay,
 }
 
 if async_octree:
