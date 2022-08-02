@@ -5,40 +5,58 @@ that match the plugin naming convention, and retrieving related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, Iterator, List, Tuple, TypedDict
 from urllib import request
 
 from npe2 import PackageMetadata
+from pyparsing import Optional
 
 from .utils import normalized_name
 
+PyPIname = str
+
+
+class SummaryDict(TypedDict):
+    """Objects returned at https://npe2api.vercel.app/api/summary ."""
+
+    name: PyPIname
+    version: str
+    display_name: str
+    summary: str
+    author: str
+    license: str
+    home_page: str
+
 
 @lru_cache
-def pypi_plugin_summaries() -> List[Dict]:
+def pypi_plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
     with request.urlopen("https://npe2api.vercel.app/api/summary") as response:
         return json.load(response)
 
 
 @lru_cache
-def conda_map() -> List[Dict]:
-    """Return PackageMetadata object for all known napari plugins."""
+def conda_map() -> Dict[PyPIname, Optional[str]]:
+    """Return map of PyPI package name to conda_channel/package_name ()."""
     with request.urlopen("https://npe2api.vercel.app/api/conda") as response:
         return json.load(response)
 
 
 def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
-    """Return a generator that yields ProjectInfo of available napari plugins."""
+    """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
         data = executor.submit(pypi_plugin_summaries)
-        at_conda = executor.submit(conda_map)
+        conda = executor.submit(conda_map)
 
-    at_conda = at_conda.result()
+    conda = conda.result()
     for info in data.result():
         # TODO: use this better.
-        # this would require changing the api that qt_plugin_dialog expects to receive
-        # (and it doesn't currently receive this from the hub API)
-        info.pop("display_name", None)  # TODO, use this
+        # this would require changing the api that qt_plugin_dialog expects to
+        # receive (and it doesn't currently receive this from the hub API)
+        info.pop("display_name", None)
+
+        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
+        # parity with the hub api.  change this later.
         name = info.pop("name")
         meta = PackageMetadata(name=normalized_name(name), **info)
-        yield meta, name in at_conda
+        yield meta, (name in conda)
