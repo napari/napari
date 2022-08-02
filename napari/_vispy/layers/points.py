@@ -32,7 +32,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.text.events.connect(self._on_text_change)
         self.layer.events.shading.connect(self._on_shading_change)
         self.layer.events.antialiasing.connect(self._on_antialiasing_change)
-        self.layer.events.experimental_canvas_size_limits.connect(
+        self.layer.events.canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
 
@@ -174,9 +174,7 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node.spherical = False
 
     def _on_canvas_size_limits_change(self):
-        self.node.canvas_size_limits = (
-            self.layer.experimental_canvas_size_limits
-        )
+        self.node.canvas_size_limits = self.layer.canvas_size_limits
 
     def reset(self):
         super().reset()

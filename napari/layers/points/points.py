@@ -144,7 +144,7 @@ class Points(Layer):
           Shading and depth buffer are changed to give a 3D spherical look to the points
     antialiasing: float
         Amount of antialiasing in canvas pixels.
-    experimental_canvas_size_limits : tuple of float
+    canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether to show each point.
@@ -245,7 +245,7 @@ class Points(Layer):
         Shading mode.
     antialiasing: float
         Amount of antialiasing in canvas pixels.
-    experimental_canvas_size_limits : tuple of float
+    canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
         Whether each point is shown.
@@ -314,7 +314,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
-        experimental_canvas_size_limits=(5, 100),
+        canvas_size_limits=(5, 100),
         antialiasing=1,
         shown=True,
     ):
@@ -357,7 +357,7 @@ class Points(Layer):
             highlight=Event,
             shading=Event,
             antialiasing=Event,
-            experimental_canvas_size_limits=Event,
+            canvas_size_limits=Event,
             features=Event,
             feature_defaults=Event,
         )
@@ -448,7 +448,7 @@ class Points(Layer):
         self.edge_width = edge_width
         self.edge_width_is_relative = edge_width_is_relative
 
-        self.experimental_canvas_size_limits = experimental_canvas_size_limits
+        self.canvas_size_limits = canvas_size_limits
         self.shading = shading
         self.antialiasing = antialiasing
 
@@ -786,16 +786,14 @@ class Points(Layer):
         self.events.shading()
 
     @property
-    def experimental_canvas_size_limits(self) -> Tuple[float, float]:
+    def canvas_size_limits(self) -> Tuple[float, float]:
         """Limit the canvas size of points"""
-        return self._experimental_canvas_size_limits
+        return self._canvas_size_limits
 
-    @experimental_canvas_size_limits.setter
-    def experimental_canvas_size_limits(self, value):
-        self._experimental_canvas_size_limits = float(value[0]), float(
-            value[1]
-        )
-        self.events.experimental_canvas_size_limits()
+    @canvas_size_limits.setter
+    def canvas_size_limits(self, value):
+        self._canvas_size_limits = float(value[0]), float(value[1])
+        self.events.canvas_size_limits()
 
     @property
     def shown(self):
@@ -1157,7 +1155,7 @@ class Points(Layer):
                 'features': self.features,
                 'shading': self.shading,
                 'antialiasing': self.antialiasing,
-                'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
+                'canvas_size_limits': self.canvas_size_limits,
                 'shown': self.shown,
             }
         )
