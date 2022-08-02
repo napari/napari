@@ -21,6 +21,9 @@ parser.add_argument(
     'callable',
     help='The name of the callable to plot excluding the module (e.g. QtDimSliderWidget._value_changed).',
 )
+parser.add_argument(
+    '--output', default='latest', help='The name added to output traces file.'
+)
 args = parser.parse_args()
 
 logging.info(
@@ -30,7 +33,7 @@ logging.info(
 
 perfmon_dir = pathlib.Path(__file__).parent.parent.resolve(strict=True)
 
-traces_path = perfmon_dir / args.config / 'traces.json'
+traces_path = perfmon_dir / args.config / f'traces-{args.output}.json'
 
 with open(traces_path) as traces_file:
     traces = json.load(traces_file)
@@ -41,7 +44,7 @@ durations_ms = [
 
 plt.violinplot(durations_ms, vert=False, showmeans=True, showmedians=True)
 
-plt.title(f'{args.config}: {args.callable}')
+plt.title(f'{args.config} ({args.output}): {args.callable}')
 plt.xlabel('Duration (ms)')
 plt.yticks([])
 
