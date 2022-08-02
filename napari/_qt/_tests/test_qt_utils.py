@@ -22,6 +22,7 @@ class Emitter(QObject):
 
 def test_signal_blocker(qtbot):
     """make sure context manager signal blocker works"""
+    import pytestqt.exceptions
 
     obj = Emitter()
 
@@ -30,13 +31,10 @@ def test_signal_blocker(qtbot):
         obj.go()
 
     # make sure blocker works
-    def err():
-        raise AssertionError('a signal was emitted')
-
-    obj.test_signal.connect(err)
     with qt_signals_blocked(obj):
-        obj.go()
-        qtbot.wait(750)
+        with pytest.raises(pytestqt.exceptions.TimeoutError):
+            with qtbot.waitSignal(obj.test_signal, timeout=500):
+                obj.go()
 
 
 def test_is_qbyte_valid():
