@@ -28,7 +28,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 logging.info(
-    f'''Running napari_with_perfmon.py with the following arguments.
+    f'''Running run.py with the following arguments.
 {args}'''
 )
 
