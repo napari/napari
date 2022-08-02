@@ -1,34 +1,35 @@
-"""Scale Bar overlay."""
 import bisect
 
 import numpy as np
 
-from ...components._viewer_constants import Position
 from ...settings import get_settings
 from ...utils._units import PREFERRED_VALUES, get_unit_registry
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.theme import get_theme
 from ..visuals.scale_bar import ScaleBar
-from .base import VispyBaseOverlay
+from .base import VispyCanvasOverlay
 
 
-class VispyScaleBarOverlay(VispyBaseOverlay):
+class VispyScaleBarOverlay(VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, overlay):
-        node = ScaleBar()
-        super().__init__(overlay, node)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, node=ScaleBar(), **kwargs)
 
-        self.overlay.events.colored.connect(self._on_data_change)
-        self.overlay.events.ticks.connect(self._on_data_change)
+        self._target_length = 150
+        self._scale = 1
+        self._unit = None
+
+        self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_data_change)
         self.overlay.events.color.connect(self._on_data_change)
-        self.overlay.events.zoom.connect(self._on_zoom_change)
+        self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.font_size.connect(self._on_text_change)
+        self.overlay.events.ticks.connect(self._on_data_change)
         self.overlay.events.unit.connect(self._on_unit_change)
-        self.overlay.events.box.connect(self._on_box_change)
 
         get_settings().appearance.events.theme.connect(self._on_data_change)
+        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
 
         self._on_visible_change()
         self._on_data_change()
@@ -36,8 +37,7 @@ class VispyScaleBarOverlay(VispyBaseOverlay):
         self._on_position_change()
 
     def _on_unit_change(self):
-        unit = self.overlay.unit
-        self._quantity = get_unit_registry()(unit)
+        self._unit = get_unit_registry()(self.overlay.unit)
         self._on_zoom_change(force=True)
 
     def _calculate_best_length(self, desired_length: float):
@@ -56,7 +56,7 @@ class VispyScaleBarOverlay(VispyBaseOverlay):
         new_quantity : pint.Quantity
             New quantity with abbreviated base unit.
         """
-        current_quantity = self._quantity * desired_length
+        current_quantity = self._unit * desired_length
         # convert the value to compact representation
         new_quantity = current_quantity.to_compact()
         # calculate the scaling factor taking into account any conversion
@@ -72,9 +72,7 @@ class VispyScaleBarOverlay(VispyBaseOverlay):
         new_value = PREFERRED_VALUES[index]
 
         # get the new pixel length utilizing the user-specified units
-        new_length = (
-            (new_value * factor) / self._quantity.magnitude
-        ).magnitude
+        new_length = ((new_value * factor) / self._unit.magnitude).magnitude
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
@@ -82,7 +80,7 @@ class VispyScaleBarOverlay(VispyBaseOverlay):
         """Update axes length based on zoom scale."""
 
         # If scale has not changed, do not redraw
-        scale = 1 / self.overlay.zoom
+        scale = 1 / self.viewer.camera.zoom
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
             return
         self._scale = scale
@@ -101,16 +99,10 @@ class VispyScaleBarOverlay(VispyBaseOverlay):
         )
         scale = target_canvas_pixels_rounded
 
-        sign = (
-            -1
-            if self.overlay.position
-            in [Position.TOP_RIGHT, Position.BOTTOM_RIGHT]
-            else 1
-        )
-
         # Update scalebar and text
-        self.node.line.transform.scale = [sign * scale, 1, 1, 1]
+        self.node.transform.scale = [scale, 1, 1, 1]
         self.node.text.text = f'{new_dim:~}'
+        self._on_position_change()
 
     def _on_data_change(self):
         """Change color and data of scale bar and box."""
@@ -134,11 +126,8 @@ class VispyScaleBarOverlay(VispyBaseOverlay):
                 color = np.subtract(1, background_color)
                 color[-1] = background_color[-1]
 
-        self.node.set_data(color, box_color, self.overlay.ticks)
-
-    def _on_visible_change(self):
-        """Change visibility of scale bar."""
-        self.node.visible = self.overlay.visible
+        self.node.set_data(color, self.overlay.ticks)
+        self.node.box.color = box_color
 
     def _on_box_change(self):
         self.node.text.visible = self.overlay.box

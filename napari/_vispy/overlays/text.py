@@ -1,7 +1,7 @@
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
-from ...components._viewer_constants import TextOverlayPosition
+from ...components._viewer_constants import CanvasPosition
 from ...utils.translations import trans
 
 
@@ -54,16 +54,16 @@ class VispyTextOverlay:
         x_offset, y_offset = 10, 5
         canvas_size = list(self.node.canvas.size)
 
-        if position == TextOverlayPosition.TOP_LEFT:
+        if position == CanvasPosition.TOP_LEFT:
             transform = [x_offset, y_offset, 0, 0]
             anchors = ("left", "bottom")
-        elif position == TextOverlayPosition.TOP_RIGHT:
+        elif position == CanvasPosition.TOP_RIGHT:
             transform = [canvas_size[0] - x_offset, y_offset, 0, 0]
             anchors = ("right", "bottom")
-        elif position == TextOverlayPosition.TOP_CENTER:
+        elif position == CanvasPosition.TOP_CENTER:
             transform = [canvas_size[0] // 2, y_offset, 0, 0]
             anchors = ("center", "bottom")
-        elif position == TextOverlayPosition.BOTTOM_RIGHT:
+        elif position == CanvasPosition.BOTTOM_RIGHT:
             transform = [
                 canvas_size[0] - x_offset,
                 canvas_size[1] - y_offset,
@@ -71,10 +71,10 @@ class VispyTextOverlay:
                 0,
             ]
             anchors = ("right", "top")
-        elif position == TextOverlayPosition.BOTTOM_LEFT:
+        elif position == CanvasPosition.BOTTOM_LEFT:
             transform = [x_offset, canvas_size[1] - y_offset, 0, 0]
             anchors = ("left", "top")
-        elif position == TextOverlayPosition.BOTTOM_CENTER:
+        elif position == CanvasPosition.BOTTOM_CENTER:
             transform = [canvas_size[0] // 2, canvas_size[1] - y_offset, 0, 0]
             anchors = ("center", "top")
         else:

@@ -1,15 +1,16 @@
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
-from ...components._viewer_constants import Position
+from ...components._viewer_constants import CanvasPosition
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 
 
 class VispyBaseOverlay:
-    def __init__(self, overlay, node):
+    def __init__(self, overlay, viewer, node):
         super().__init__()
         self.overlay = overlay
+        self.viewer = viewer
 
         self.node = node
         self.node.order = self.overlay.order
@@ -18,9 +19,7 @@ class VispyBaseOverlay:
         self.overlay.events.opacity.connect(self._on_opacity_change)
 
     def _on_visible_change(self):
-        self.node.visible = (
-            self.viewer.overlays.visible and self.overlay.visible
-        )
+        self.node.visible = self.overlay.visible
 
     def _on_opacity_change(self):
         self.node.opacity = self.overlay.opacity
@@ -34,57 +33,65 @@ class VispyBaseOverlay:
         self.node.parent = None
 
 
-class VispyCanvasOverlay:
-    def __init__(self, overlay, node):
-        super().__init__(overlay, node)
+class VispyCanvasOverlay(VispyBaseOverlay):
+    def __init__(self, overlay, viewer, node):
+        super().__init__(overlay, viewer, node)
+        self.x_offset = 0
+        self.y_offset = 0
+        self.x_size = 0
+        self.y_size = 0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
 
-    def _on_position_change(self):
+    def _on_position_change(self, event=None):
+        if self.node.canvas is None:
+            return
+        x_max, y_max = list(self.node.canvas.size)
         position = self.overlay.position
-        x_bar_offset, y_bar_offset = 10, 30
-        canvas_size = list(self.rect_node.canvas.size)
 
-        if position == Position.TOP_LEFT:
-            sign = 1
-            bar_transform = [x_bar_offset, 10, 0, 0]
-        elif position == Position.TOP_RIGHT:
-            sign = -1
-            bar_transform = [canvas_size[0] - x_bar_offset, 10, 0, 0]
-        elif position == Position.BOTTOM_RIGHT:
-            sign = -1
-            bar_transform = [
-                canvas_size[0] - x_bar_offset,
-                canvas_size[1] - y_bar_offset,
+        if position == CanvasPosition.TOP_LEFT:
+            transform = [self.x_offset, self.y_offset, 0, 0]
+        elif position == CanvasPosition.TOP_CENTER:
+            transform = [
+                x_max / 2 - self.x_size / 2 + self.x_offset,
+                self.y_offset,
                 0,
                 0,
             ]
-        elif position == Position.BOTTOM_LEFT:
-            sign = 1
-            bar_transform = [x_bar_offset, canvas_size[1] - 30, 0, 0]
+        elif position == CanvasPosition.TOP_RIGHT:
+            transform = [x_max - self.x_offset, self.y_offset, 0, 0]
+        elif position == CanvasPosition.BOTTOM_RIGHT:
+            transform = [
+                x_max - self.x_offset,
+                y_max - self.y_offset,
+                0,
+                0,
+            ]
+        elif position == CanvasPosition.BOTTOM_CENTER:
+            transform = [x_max // 2, y_max - self.y_offset, 0, 0]
+        elif position == CanvasPosition.BOTTOM_LEFT:
+            transform = [self.x_offset, y_max - self.y_offset, 0, 0]
         else:
             raise ValueError(
                 trans._(
                     'Position {position} not recognized.',
                     deferred=True,
-                    position=self.scale_bar.position,
+                    position=position,
                 )
             )
 
-        self.line_node.transform.translate = bar_transform
-        scale = abs(self.line_node.transform.scale[0])
-        self.line_node.transform.scale = [sign * scale, 1, 1, 1]
-        self.rect_node.transform.translate = (0, 10, 0, 0)
-        self.text_node.transform.translate = (0, 20, 0, 0)
+        self.node.transform.translate = transform
+        scale = abs(self.node.transform.scale[0])
+        self.node.transform.scale = [scale, 1, 1, 1]
 
 
-class VispySceneOverlay:
-    def __init__(self, overlay, node):
-        super().__init__(overlay, node)
+class VispySceneOverlay(VispyBaseOverlay):
+    def __init__(self, overlay, viewer, node):
+        super().__init__(overlay, viewer, node)
         self.node.transform = MatrixTransform()
         self.overlay.events.transform.connect(self._on_matrix_change)
 
-    def _on_matrix_change(self):
+    def _on_matrix_change(self, event=None):
         transform = self.layer._transforms.simplified.set_slice(
             self.layer._dims_displayed
         )

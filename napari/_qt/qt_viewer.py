@@ -392,12 +392,10 @@ class QtViewer(QSplitter):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
     def _add_overlay(self, overlay):
-        vispy_overlay = create_vispy_overlay(overlay)
+        vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
 
-        vispy_overlay.node.parent = self.view.scene
+        vispy_overlay.node.parent = self.view
         self.overlay_to_visual[overlay] = vispy_overlay
-        # TODO split canvas and world overlays so this works
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""

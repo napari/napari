@@ -16,11 +16,6 @@ class ScaleBar(Line):
             ]
         )
 
-        self._ticks = False
-        self._target_length = 150
-        self._scale = 1
-        self._quantity = None
-
         self.text = Text(pos=[0.5, -1])
         self.box = Rectangle(center=[0.5, 0.5], width=1.1, height=36)
 
@@ -28,20 +23,16 @@ class ScaleBar(Line):
 
         self.text.parent = self
         self.text.order = 0
-        self.text.transform = STTransform()
+        self.text.transform = STTransform(translate=(0, 10, 0, 0))
         self.text.font_size = 10
         self.text.anchors = ("center", "center")
         self.text.text = "1px"
 
         self.box.parent = self
         self.box.order = 1
-        self.box.transform = STTransform()
+        self.box.transform = STTransform(translate=(0, 20, 0, 0))
 
-    def set_data(self, color, box_color, ticks):
+    def set_data(self, color, ticks):
         data = self._data if ticks else self._data[:2]
         super().set_data(data, color)
         self.text.color = color
-        self.box.color = box_color
-
-    def set_unit(self, unit):
-        pass

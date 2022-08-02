@@ -48,4 +48,3 @@ class ScaleBar(CanvasOverlay):
     box: bool = False
     box_color: ColorValue = [0, 0, 0, 0.6]
     unit: Optional[str] = None
-    zoom: float = 1

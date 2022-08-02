@@ -1,6 +1,6 @@
 from ...utils.events import EventedModel
 from ...utils.transforms import Transform
-from .._viewer_constants import Position
+from .._viewer_constants import CanvasPosition
 
 
 class Overlay(EventedModel):
@@ -8,9 +8,12 @@ class Overlay(EventedModel):
     opacity: float = 1
     order: int = 1e6
 
+    def __hash__(self):
+        return id(self)
+
 
 class CanvasOverlay(Overlay):
-    position: Position = Position.BOTTOM_RIGHT
+    position: CanvasPosition = CanvasPosition.BOTTOM_RIGHT
 
 
 class SceneOverlay(Overlay):

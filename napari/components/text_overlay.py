@@ -2,7 +2,7 @@
 from napari.utils.color import ColorValue
 
 from ..utils.events import EventedModel
-from ._viewer_constants import TextOverlayPosition
+from ._viewer_constants import CanvasPosition
 
 
 class TextOverlay(EventedModel):
@@ -29,5 +29,5 @@ class TextOverlay(EventedModel):
     visible: bool = False
     color: ColorValue = (0.5, 0.5, 0.5, 1.0)
     font_size: float = 10
-    position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
+    position: CanvasPosition = CanvasPosition.TOP_LEFT
     text: str = ""

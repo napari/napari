@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from pint import UndefinedUnitError
 
-from napari.components._viewer_constants import Position
+from napari.components._viewer_constants import CanvasPosition
 
 
 def test_vispy_text_visual(make_napari_viewer):
@@ -49,7 +49,7 @@ def test_vispy_text_visual(make_napari_viewer):
     assert qt_widget.scale_bar.line_node.visible == viewer.scale_bar.visible
 
     # check position attribute
-    for position in list(Position):
+    for position in list(CanvasPosition):
         viewer.scale_bar.position = position
         assert viewer.scale_bar.position == position
     with pytest.raises(ValueError):
