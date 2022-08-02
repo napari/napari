@@ -184,7 +184,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.events.add(
             layers_change=WarningEmitter(
                 "This event will be removed in 0.5.0. "
-                "Please use viewer.layers.events instead"
+                "Please use viewer.layers.events instead",
+                type="layers_change",
             ),
             reset_view=Event,
         )
