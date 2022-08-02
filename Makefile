@@ -15,7 +15,7 @@ typestubs:
 # dmypy run -- ...
 # https://mypy.readthedocs.io/en/stable/mypy_daemon.html
 typecheck:
-	mypy napari/settings napari/types.py napari/plugins napari/utils/context
+	mypy napari/settings napari/types.py napari/plugins
 
 dist:
 	pip install -U check-manifest build

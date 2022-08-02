@@ -11,6 +11,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -40,7 +41,6 @@ from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
-from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedDict, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
@@ -146,13 +146,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
-    _ctx: Context
+    _ctx: Mapping
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
+        from .._app_model.context import create_context
+
+        # FIXME: just like the LayerList, this object should ideally be created
+        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow

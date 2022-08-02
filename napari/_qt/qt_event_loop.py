@@ -11,7 +11,7 @@ from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .. import __version__
+from .. import Viewer, __version__
 from ..resources._icons import _theme_path
 from ..settings import get_settings
 from ..utils import config, perf
@@ -24,7 +24,10 @@ from ..utils.theme import _themes
 from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
-from .qthreading import wait_for_workers_to_quit
+from .qthreading import (
+    register_threadworker_processors,
+    wait_for_workers_to_quit,
+)
 from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
@@ -206,6 +209,8 @@ def get_app(
             name = event.key
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
 
+        register_threadworker_processors()
+
     _app_ref = app  # prevent garbage collection
 
     # Add the dispatcher attribute to the application to be able to dispatch
@@ -216,6 +221,8 @@ def get_app(
 
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
+    for v in list(Viewer._instances):
+        v.close()
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
     if (
