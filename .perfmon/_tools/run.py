@@ -14,11 +14,10 @@ parser = ArgumentParser(
 )
 parser.add_argument(
     'config',
-    help='The name of the sub-directory that contains the perfmon configuration file (e.g. slicing)',
+    help='The name of the sub-directory that contains the perfmon configuration file (e.g. slicing).',
 )
 parser.add_argument(
-    'napari_args',
-    nargs='*',
+    'napari_args', nargs="*", help='The arguments to pass to napari.'
 )
 args = parser.parse_args()
 
@@ -34,7 +33,7 @@ env = os.environ.copy()
 env['NAPARI_PERFMON'] = config_path
 
 subprocess.check_call(
-    f'napari {args.napari_args[0]}',
+    'napari ' + ' '.join(args.napari_args),
     env=env,
     shell=True,
 )
