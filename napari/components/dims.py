@@ -255,23 +255,11 @@ class Dims(EventedModel):
         point: tuple
             Tuple within the current dimension
         """
-        if self.ndim < len(point):
-            # If the dimension has been reduced remove dimensions accordingly.
-            # Since new dimensions are prepended we need to take the last points.
-            new_point = point[-self.ndim :]
-        elif self.ndim > len(point):
-            # If the dimension has been increased add dimensions with their
-            # respective central slice.
-            # Since new dimensions are prepended we prepend the new values.
-            mid_points = [
-                rounded_division(*_range)
-                for _range in self.range[: -len(point)]
-            ]
-            new_point = np.append(mid_points, point)
-        else:
-            # If the dimension is unchanged, keep the current slider position
-            new_point = point
-        return tuple(new_point)
+        point = tuple(point)
+        mid_points = tuple(
+            rounded_division(*_range) for _range in self.range[: -len(point)]
+        )
+        return mid_points + point[-self.ndim :]
 
     def set_point(
         self,
