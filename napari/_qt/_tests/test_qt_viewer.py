@@ -7,6 +7,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
@@ -23,7 +24,6 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
-from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
 BUILTINS_DISP = 'napari'
