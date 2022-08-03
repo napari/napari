@@ -355,6 +355,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.interactive = active_layer.interactive
 
     def _on_layers_change(self):
+        """
+        Update the dimension and range of the dims property as well as the cursor position.
+        When changing the dims property the currently selected view of the
+        viewer is tried to be maintained.
+        """
         ranges = None
         if len(self.layers) == 0:
             self.dims.ndim = 2

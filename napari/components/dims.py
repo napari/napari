@@ -1,5 +1,5 @@
 from numbers import Integral
-from typing import Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -196,9 +196,7 @@ class Dims(EventedModel):
             Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
         ],
         *,
-        restore_point: Union[
-            Union[int, float], Sequence[Union[int, float]]
-        ] = None,
+        restore_point: Optional[Sequence[float]] = None,
     ):
         """Sets ranges (min, max, step) for the given dimensions.
 
