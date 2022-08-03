@@ -30,14 +30,13 @@ class VispyAxesOverlay(VispySceneOverlay):
             self._on_labels_text_change
         )
 
-        self._on_visible_change()
         self._on_data_change()
+        self._on_visible_change()
+        self._on_labels_visible_change()
+        self._on_labels_text_change()
+        self._on_zoom_change()
 
     def _on_data_change(self):
-        """Change style of axes."""
-        if not self.overlay.visible:
-            return
-
         # Determine which axes are displayed
         axes = self.viewer.dims.displayed[::-1]
 
@@ -64,18 +63,13 @@ class VispyAxesOverlay(VispySceneOverlay):
         self.node.text.text = axes_labels
 
     def _on_zoom_change(self):
-        """Update axes length based on zoom scale."""
-        if not self.overlay.visible:
-            return
-
         scale = 1 / self.viewer.camera.zoom
 
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
             return
         self._scale = scale
-        scale_canvas2world = self._scale
-        target_canvas_pixels = self._target_length
-        scale = target_canvas_pixels * scale_canvas2world
+        scale = self._target_length * self._scale
         # Update axes scale
+        self.node.transform.reset()
         self.node.transform.scale([scale, scale, scale, 1])
