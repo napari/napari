@@ -36,8 +36,7 @@ def _initialize_plugins():
     # don't get detected.  So we just register it manually.  This could
     # potentially be removed when we move to a different bundle strategy
     if 'napari' not in _npe2pm._manifests:
-        mf_file = Path(__file__).parent.parent / 'builtins.yaml'
-        mf = PluginManifest.from_file(mf_file)
+        mf = PluginManifest.from_distribution('napari_builtins')
         mf.package_metadata = PackageMetadata.for_package('napari')
         _npe2pm.register(mf)
 

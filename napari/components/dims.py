@@ -155,7 +155,7 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[int, ...]:
         """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
-            int((max_val - min_val) // step_size)
+            int((max_val - min_val) / step_size)
             for min_val, max_val, step_size in self.range
         )
 
