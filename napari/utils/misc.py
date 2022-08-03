@@ -695,3 +695,7 @@ def install_certifi_opener():
     https_handler = request.HTTPSHandler(context=context)
     opener = request.build_opener(https_handler)
     request.install_opener(opener)
+
+
+def rounded_division(min_val, max_val, precision):
+    return int(((min_val + max_val) / 2) / precision) * precision

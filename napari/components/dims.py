@@ -6,6 +6,7 @@ from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
 from ..utils.events import EventedModel
+from ..utils.misc import rounded_division
 from ..utils.translations import trans
 
 
@@ -235,16 +236,14 @@ class Dims(EventedModel):
             new_point = self._get_point_in_ndim(restore_point)
             self.set_point(range(self.ndim), new_point)
 
-    @staticmethod
-    def rounded_division(min_val, max_val, precision):
-        return int(((min_val + max_val) / 2) / precision) * precision
-
     def _get_point_in_ndim(
         self,
-        point: Union[Union[int, float], Sequence[Union[int, float]]],
+        point: Sequence[float],
     ):
-        """Get the point within the current dimensions of dimensions.
-        Coordinates outside the current dim are removed.
+
+        """Get a point in the current dimensionality.
+
+        Coordinates outside the current dimensionality are removed.
         If new dimensions need to be added the midpoint of the respective range
         is chosen for the dimensions point value.
 
@@ -258,9 +257,6 @@ class Dims(EventedModel):
         point: tuple
             Tuple within the current dimension
         """
-        # This logic block defines the behavior when layers are added or
-        # removed. Its goal is it to keep the currently selected view
-        # selected by the user.
         if self.ndim < len(point):
             # If the dimension has been reduced remove dimensions accordingly.
             # Since new dimensions are prepended we need to take the last points.
@@ -270,7 +266,7 @@ class Dims(EventedModel):
             # respective central slice.
             # Since new dimensions are prepended we prepend the new values.
             mid_points = [
-                self.rounded_division(*_range)
+                rounded_division(*_range)
                 for _range in self.range[: -len(point)]
             ]
             new_point = np.append(mid_points, point)
@@ -350,15 +346,12 @@ class Dims(EventedModel):
                 )
             # (computed) nsteps property outside of the loop for efficiency
             nsteps = self.nsteps
-            needs_update = False
             for ax, val in zip(axis, value):
                 ax = assert_axis_in_bounds(int(ax), self.ndim)
                 step = round(min(max(val, 0), nsteps[ax] - 1))
-                if full_current_step[ax] != step:
-                    full_current_step[ax] = step
-                    needs_update = True
+                full_current_step[ax] = step
 
-            if value != full_current_step or needs_update:
+            if not np.array_equal(self.current_step, full_current_step):
                 self.current_step = full_current_step
 
     def set_axis_label(

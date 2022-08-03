@@ -44,7 +44,7 @@ from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
-from ..utils.misc import is_sequence
+from ..utils.misc import is_sequence, rounded_division
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
 from ..utils.theme import available_themes
@@ -354,10 +354,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
-    @staticmethod
-    def rounded_division(min_val, max_val, precision):
-        return int(((min_val + max_val) / 2) / precision) * precision
-
     def _on_layers_change(self):
         ranges = None
         if len(self.layers) == 0:
@@ -503,7 +499,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             new_point = [
-                self.rounded_division(*_range) for _range in self.dims.range
+                rounded_division(*_range) for _range in self.dims.range
             ]
             self.dims.set_point(range(self.dims.ndim), new_point)
 
