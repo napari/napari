@@ -358,19 +358,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def rounded_division(min_val, max_val, precision):
         return int(((min_val + max_val) / 2) / precision) * precision
 
-    def _on_layers_change(self, *, add_layer=False):
+    def _on_layers_change(self):
+        ranges = None
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            if add_layer and len(self.layers) == 1:
-                prev_point = None
-            else:
-                prev_point = self.dims.point
+            prev_point = self.dims.point
             ndim = len(ranges)
             self.dims.ndim = ndim
-            self.dims.set_range(range(ndim), ranges, restore_point=prev_point)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -380,6 +377,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
+        if ranges is not None:
+            self.dims.set_range(range(ndim), ranges, restore_point=prev_point)
         self.events.layers_change()
 
     def _update_interactive(self, event):
@@ -496,7 +495,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._layer_help_from_mode(layer)
 
         # Update dims and grid model
-        self._on_layers_change(add_layer=True)
+        self._on_layers_change()
         self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
