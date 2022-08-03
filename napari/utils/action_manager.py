@@ -46,9 +46,9 @@ class Action:
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
-        from ._injection import inject_napari_dependencies
+        from .._app_model import get_app
 
-        return inject_napari_dependencies(self.command)
+        return get_app().injection_store.inject(self.command)
 
 
 class ActionManager:

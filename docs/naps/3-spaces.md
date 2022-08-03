@@ -10,14 +10,14 @@
 ``` 
 
 
-# Abstract
+## Abstract
 
 `napari` is currently limited to holding (and rendering) data belonging to a single, universal space (which we often refer to as *world space*). However, it is often useful to have quick and easy access to different parts of a dataset that do not belong to the same coordinate system. In these cases, forcing data to live in the same world not only makes no sense, but it can make navigating the data and interacting with the viewer slower and less intuitive.
 
 This NAP discusses the reasons why a native napari approach would be better than the currently available workarounds. It then proposes the introduction of `spaces` as a way to manage different coordinate spaces in the same viewer.
 
 
-# Motivation and scope
+## Motivation and scope
 
 This NAP aims to address a few problems that arise (especially with big datasets), when working with many layers that do not necessarily belong to the same *absolute* coordinate space. For example, there is no reason to relate between the *absolute* coordinates of `image 1` and `image 2` from the same microscopy data collection, but it might be useful to quickly switch between the two to -- for example -- compare the effectiveness of a processing step on different images, or to visually inspect qualitative differences.
 
@@ -38,16 +38,16 @@ The above workarounds have the following issues:
 
 Additionally, while this was not the main goal of this NAP, people have sometimes asked for "workspaces", where different workflows can be tested in parallel [^workspaces]; `spaces` would also implicitly allow this by letting users re-use a layer in multiple spaces.
 
-## Non-goals
+### Non-goals
 
 - *window state*: in [#4227](https://github.com/napari/napari/issues/4227), a proposal was advanced for managing window state and layout, with the ability to re-use and restore them. While this could be conceivably be dealt with here, it is probably better to keep separate the state of the window from the representation and the data.
 - *rendering/data separation*: while necessary for some of the future benefits of spaces (i.e: [](nap-3:multicanvas)), the separation of rendering and data from the currently unified `Layer` object is not in the scope of this NAP. This means that (just like now), layer won't be shareable between `Viewer`s. However, they should be shareable between `Space`s, as long as the spaces are not *rendered* at the same time (i.e: in separate `Viewer`s).
 
-# Implementation proposal
+## Implementation proposal
 
 There are a few ways to tackle this issue (see [](nap-3:alternatives)), with different upsides and downsides; the current "main" proposal is aiming to solve the issue by avoiding breaking or major api changes (which are instead required for the alternatives).
 
-## API
+### API
 
 `ViewerModel.spaces` would be a (selectable) `EventedList` or similar evented collection, each containing a `Space` object, with the following attributes:
 - `layers`: a `layerlist` (or top-level `layergroup`, in the future)
@@ -80,12 +80,12 @@ In the end, all `spaces` would do is effectively provide a quick way to swap som
 At the level of `ViewerModel` itself, we would have an `active_space` attribute: similar to how a layer in a `layerlist` can be active, a `Space` in the `spaces` can be active (with the important distinction that only *one* space can be active); this will determine which space is loaded into the layerlist and used to populate the canvas.
     - in a future with multi-canvas (or multi-viewer), this could be on a per-canvas (or per-viewer) basis.
 
-## GUI
+### GUI
 
 The GUI could expose this as a (searchable) dropdown menu above the layerlist, and provide shortcuts to navigate easility through spaces, such as `page-up`, `page-down`.
 
 (nap-3:plugins)=
-## Plugins
+### Plugins
 
 Reader/writer plugins should be able to provide/consume spaces. If unspecified, they should act on the active `Space`, which would be backwards compatible.
 
@@ -93,9 +93,9 @@ Widget plugins would be backwards compatible, as they simply act on the active `
 
 
 (nap-3:alternatives)=
-# Alternatives
+## Alternatives
 
-## Naming
+### Naming
 
 Instead of `Space`, we could use a different name:
 
@@ -103,7 +103,7 @@ Instead of `Space`, we could use a different name:
 - `State`: better conveys that non only layerlist state is retained. A bit generic.
 
 (nap-3:multiple-viewers)=
-## Multiple viewers, `app` interface
+### Multiple viewers, `app` interface
 
 These problems could be also solved by allowing multiple `Viewer` objects, each with its own `ViewerModel`, by separating out the `QtViewer` logic to an `Application` level [^application].
 
@@ -121,7 +121,7 @@ Additionally, there are no benefits to keeping multiple `ViewerModel` objects al
 
 Finally, this alternative would further complicate our ability to support multiple *actual* `Viewers` with their own window, separate from each other [^multiple-viewers]. In that case, the `viewer.app.viewers` seems like a better fit and wouldn't add too much overhead to basic operations.
 
-## Spaces, `app` interface
+### Spaces, `app` interface
 
 Alternatively, the `app` interface can be used in conjunction with the `spaces` approach, distinguishing between `Space` and `Viewer`:
 
@@ -135,29 +135,29 @@ This improves on the [](nap-3:multiple-viewers) approach ont the clarity of sepa
 
 A downside is that we lose the single point of truth for the `Spaces`. If a space is loaded in two viewers, we would need to connect events so that if something about the state is changed (such as the `Dims`) it should update the state of all the other Viewers attached to the state. This is not necessary for the layerlist and the layers, since those would *be* the same objects; in fact, this is a point in favour of using `ViewerModel` themselves to encode the state, as proposed in [](nap-3:multiple-viewers), or to at least *split out* from the `ViewerModel` the fields that would be instead held by `Spaces`.
 
-# Backward compatibility
+## Backward compatibility
 
 These changes should be backwards compatible, since they would only expand the `ViewerModel` API by adding spaces.
 
 
-# Future work
+## Future work
 
-## Tabbed access
+### Tabbed access
 
 As part of the "multiple viewers" proposals in the past, the idea of accessing them through tabs in the GUI was often floated [^multiple-viewers-tabbed]. The same idea can be applied to `spaces`. This is not necessarily mutually exclusive with the searchable dropdown approach: a space could be "pinned", allowing easier access through the GUI. However, the primary access should not be tabs, which would the defeat one of the goals of `spaces`: de-cluttering the GUI.
 
 (nap-3:multicanvas)=
-## Multicanvas
+### Multicanvas
 
 While multicanvas is still some ways off, this NAP can provide the basis for that functionality. For example, a future multicanvas-capable viewer could associate each `Canvas` to a `Space`; this way, we already have the machinery for multiple layer lists, as well as the ability to re-use the same layer in multiple canvases, while having a different `Camera` and `Dims` setup for the different copies (note that this would rely on the current efforts in separating the slicing logic from the `Layer` object).
 
 
-# References
+## References
 
 For the original discussion, see [napari/napari#4419](https://github.com/napari/napari/issues/4419).
 
 
-# Copyright
+## Copyright
 
 This document is dedicated to the public domain with the Creative Commons CC0
 license [^cc0]. Attribution to this source is encouraged where appropriate, as per

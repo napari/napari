@@ -590,8 +590,8 @@ class Vectors(Layer):
 
         Parameters
         ----------
-        dims_indices : sequence of int or slice
-            Indices to slice with.
+        dims_indices : sequence of int, float or slice objects
+            Indices of the slicing plane
 
         Returns
         -------
@@ -604,15 +604,30 @@ class Vectors(Layer):
             while vectors passing through the current slice are assigned progressively lower
             values, based on how far from the current slice they originate.
         """
-        not_disp = list(self._dims_not_displayed)
-        indices = np.array(dims_indices)
+
         if len(self.data) > 0:
-            data = self.data[:, 0, not_disp]
-            distances = abs(data - indices[not_disp])
+            # ensure dims not displayed is a list
+            dims_not_displayed = list(self._dims_not_displayed)
+
+            # We want a numpy array so we can use fancy indexing with the non-displayed
+            # indices, but as dims_indices can (and often/always does) contain slice
+            # objects, the array has dtype=object which is then very slow for the
+            # arithmetic below.
+            # promote slicing plane to array so we can index into it, project as type float
+            not_disp_indices = np.array(dims_indices)[
+                dims_not_displayed
+            ].astype(float)
+            # get the anchor points (starting positions) of the vector layers in not displayed dims
+            data = self.data[:, 0, dims_not_displayed]
+            # calculate distances from anchor points to the slicing plane
+            distances = abs(data - not_disp_indices)
+            # if we need to include vectors that are out of this slice
             if self.out_of_slice_display is True:
+                # get the scaled projected vectors
                 projected_lengths = abs(
-                    self.data[:, 1, not_disp] * self.length
+                    self.data[:, 1, dims_not_displayed] * self.length
                 )
+                # find where the distance to plane is less than the scaled vector
                 matches = np.all(distances <= projected_lengths, axis=1)
                 alpha_match = projected_lengths[matches]
                 alpha_match[alpha_match == 0] = 1
@@ -624,7 +639,6 @@ class Vectors(Layer):
             else:
                 matches = np.all(distances <= 0.5, axis=1)
                 alpha = 1.0
-
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices, alpha
         else:

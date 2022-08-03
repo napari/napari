@@ -5,7 +5,6 @@
 #-----------------------------------------------------------------------------
 
 import subprocess
-import typing
 
 def theme():
     # Here we just triage to GTK settings for now
@@ -29,7 +28,8 @@ def isDark():
 def isLight():
     return theme() == 'Light'
 
-def listener(callback: typing.Callable[[str], None]) -> None:
+# def listener(callback: typing.Callable[[str], None]) -> None:
+def listener(callback):
     with subprocess.Popen(
         ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
         stdout=subprocess.PIPE,

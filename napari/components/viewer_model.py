@@ -11,6 +11,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -28,15 +29,18 @@ from ..errors import (
     NoAvailableReaderError,
     ReaderPluginError,
 )
-from ..layers import Image, Layer
+from ..layers import Image, Labels, Layer, Points, Shapes
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
+from ..layers.labels._labels_key_bindings import labels_fun_to_mode
+from ..layers.points._points_key_bindings import points_fun_to_mode
+from ..layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from ..layers.utils.stack_utils import split_channels
 from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
+from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
-from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
@@ -134,13 +138,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
-    _ctx: Context
+    _ctx: Mapping
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
+        from .._app_model.context import create_context
+
+        # FIXME: just like the LayerList, this object should ideally be created
+        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
@@ -483,6 +491,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+        if hasattr(layer.events, "mode"):
+            layer.events.mode.connect(self._on_layer_mode_change)
+        self._layer_help_from_mode(layer)
 
         # Update dims and grid model
         self._on_layers_change()
@@ -495,6 +506,40 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
+
+    @staticmethod
+    def _layer_help_from_mode(layer: Layer):
+        """
+        Update layer help text base on layer mode.
+        """
+        layer_to_func_and_mode = {
+            Points: points_fun_to_mode,
+            Labels: labels_fun_to_mode,
+            Shapes: shapes_fun_to_mode,
+        }
+
+        help_li = []
+        shortcuts = get_settings().shortcuts.shortcuts
+
+        for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
+            if mode_ == layer.mode:
+                continue
+            action_name = f"napari:{fun.__name__}"
+            desc = action_manager._actions[action_name].description.lower()
+            help_li.append(
+                trans._(
+                    "use <{shortcut}> for {desc}",
+                    shortcut=shortcuts[action_name][0],
+                    desc=desc,
+                )
+            )
+
+        layer.help = ", ".join(help_li)
+
+    def _on_layer_mode_change(self, event):
+        self._layer_help_from_mode(event.source)
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.

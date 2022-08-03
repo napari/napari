@@ -51,4 +51,5 @@ jobs:
           external_repository: napari/napari.github.io
           publish_dir: docs/_build
           publish_branch: gh-pages
+          destination_dir: dev
           cname: napari.org
