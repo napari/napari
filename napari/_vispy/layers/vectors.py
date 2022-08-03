@@ -2,6 +2,7 @@ from copy import copy
 
 import numpy as np
 
+from ...layers.utils.layer_utils import segment_normal
 from ..visuals.vectors import VectorsVisual
 from .base import VispyBaseLayer
 
@@ -64,9 +65,9 @@ def generate_vector_meshes(vectors, width, length):
 
     Returns
     -------
-    vertices : (4N, D) array
+    vertices : (4N, 2) array for 2D and (8N, 2) array for 3D
         Vertices of all triangles for the lines
-    triangles : (2N, 3) array
+    triangles : (2N, 3) array for 2D or (4N, 3) array for 3D
         Vertex indices that form the mesh triangles
     """
     ndim = vectors.shape[2]
@@ -129,45 +130,3 @@ def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
     ).astype(np.uint32)
 
     return vertices, triangles
-
-
-def segment_normal(a, b, p=(0, 0, 1)):
-    """Determines the unit normal of the vector from a to b.
-
-    Parameters
-    ----------
-    a : np.ndarray
-        Length 2 array of first point or Nx2 array of points
-    b : np.ndarray
-        Length 2 array of second point or Nx2 array of points
-    p : 3-tuple, optional
-        orthogonal vector for segment calculation in 3D.
-
-    Returns
-    -------
-    unit_norm : np.ndarray
-        Length the unit normal of the vector from a to b. If a == b,
-        then returns [0, 0] or Nx2 array of vectors
-    """
-    d = b - a
-
-    if d.ndim == 1:
-        if len(d) == 2:
-            normal = np.array([d[1], -d[0]])
-        else:
-            normal = np.cross(d, p)
-        norm = np.linalg.norm(normal)
-        if norm == 0:
-            norm = 1
-    else:
-        if d.shape[1] == 2:
-            normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
-        else:
-            normal = np.cross(d, p)
-
-        norm = np.linalg.norm(normal, axis=1, keepdims=True)
-        ind = norm == 0
-        norm[ind] = 1
-    unit_norm = normal / norm
-
-    return unit_norm
