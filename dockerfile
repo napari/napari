@@ -48,7 +48,7 @@ FROM napari AS napari-xpra
 # Install Xpra and dependencies
 RUN apt-get install -y wget gnupg2 apt-transport-https && \
     wget -O - https://xpra.org/gpg.asc | apt-key add - && \
-    echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
+    echo "deb https://xpra.org/ jammy main" > /etc/apt/sources.list.d/xpra.list
 
 RUN apt-get update && \
     apt-get install -yqq \
