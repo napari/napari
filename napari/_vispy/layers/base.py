@@ -49,6 +49,17 @@ class VispyBaseLayer(ABC):
         self._array_like = False
         self.node = node
 
+        # avoid circular import; TODO: fix?
+        from ..utils.visual import create_vispy_overlay
+
+        self.overlays = {
+            name: create_vispy_overlay(overlay, layer=layer)
+            for name, overlay in layer.overlays.items()
+        }
+        for overlay in self.overlays.values():
+            overlay.node.parent = self.node
+            overlay.reset()
+
         (
             self.MAX_TEXTURE_SIZE_2D,
             self.MAX_TEXTURE_SIZE_3D,
@@ -67,6 +78,7 @@ class VispyBaseLayer(ABC):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
+        self.layer.events.overlays.connect(self._on_overlays_change)
 
     @property
     def _master_transform(self):
@@ -159,6 +171,10 @@ class VispyBaseLayer(ABC):
                 # invert axes because vispy uses xyz but napari zyx
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
+
+    def _on_overlays_change(self):
+        # TODO add overlay after init?
+        pass
 
     def reset(self):
         self._on_visible_change()

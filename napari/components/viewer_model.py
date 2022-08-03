@@ -90,9 +90,9 @@ def _current_theme() -> str:
 
 
 DEFAULT_OVERLAYS = {
-    'scale_bar': ScaleBarOverlay(),
-    'text': TextOverlay(),
-    'axes': AxesOverlay(),
+    'scale_bar': ScaleBarOverlay,
+    'text': TextOverlay,
+    'axes': AxesOverlay,
 }
 
 
@@ -134,7 +134,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     overlays: EventedDict[str, Overlay] = Field(
-        default=DEFAULT_OVERLAYS, allow_mutation=False
+        default_factory=lambda: {k: v() for k, v in DEFAULT_OVERLAYS.items()},
+        allow_mutation=False,
     )
     overlays_: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 

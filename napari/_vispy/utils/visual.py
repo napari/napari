@@ -7,6 +7,7 @@ from vispy.scene.widgets.viewbox import ViewBox
 
 from ...components.overlays import (
     AxesOverlay,
+    BoundingBoxOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
@@ -33,6 +34,7 @@ from ..layers.tracks import VispyTracksLayer
 from ..layers.vectors import VispyVectorsLayer
 from ..overlays.axes import VispyAxesOverlay
 from ..overlays.base import VispyBaseOverlay
+from ..overlays.bounding_box import VispyBoundingBoxOverlay
 from ..overlays.scale_bar import VispyScaleBarOverlay
 from ..overlays.text import VispyTextOverlay
 
@@ -51,6 +53,7 @@ overlay_to_visual = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
     AxesOverlay: VispyAxesOverlay,
+    BoundingBoxOverlay: VispyBoundingBoxOverlay,
 }
 
 if async_octree:

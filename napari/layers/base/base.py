@@ -11,13 +11,14 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
+from ...components.overlays import BoundingBoxOverlay
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import (
     add_layer_to_viewer,
     add_layers_to_viewer,
     get_layers,
 )
-from ...utils.events import EmitterGroup, Event
+from ...utils.events import EmitterGroup, Event, EventedDict
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
     find_front_back_face,
@@ -64,6 +65,11 @@ def no_op(layer: Layer, event: Event) -> None:
 
     """
     return None
+
+
+DEFAULT_OVERLAYS = {
+    'bounding_box': BoundingBoxOverlay,
+}
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -297,6 +303,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
+        self._overlays = EventedDict(
+            {k: v() for k, v in DEFAULT_OVERLAYS.items()}
+        )
+
         self.events = EmitterGroup(
             source=self,
             refresh=Event,
@@ -320,6 +330,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             _ndisplay=Event,
+            overlays=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
@@ -336,6 +347,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ),
         )
         self.name = name
+
+        self.overlays.events.connect(self.events.overlays)
 
     def __str__(self):
         """Return self.name."""
@@ -923,6 +936,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             plane = ClippingPlane()
             plane.update(new_plane)
             self._experimental_clipping_planes.append(plane)
+
+    @property
+    def overlays(self):
+        return self._overlays
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():
