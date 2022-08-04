@@ -127,4 +127,4 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
 
 def test_zero_scale_layer():
     with pytest.raises(ValueError, match='scale values of 0'):
-        Image(np.random.rand(64, 64), scale=(0, 1))
+        Image(np.zeros((64, 64)), scale=(0, 1))
