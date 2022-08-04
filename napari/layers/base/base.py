@@ -230,7 +230,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if name is None and data is not None:
             name = magic_name(data)
 
-        if scale and 0 in scale:
+        if scale is not None and not np.all(scale):
             raise Exception(
                 f'Layer "{name}" is invalid because it has scale values of 0. The layer\'s scale is currently "{scale}"'
             )
