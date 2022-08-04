@@ -230,6 +230,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if name is None and data is not None:
             name = magic_name(data)
 
+        if 0 in scale:
+            raise Exception(
+                f'Layer "{name}" is invalid because it has scale values of 0. The layer\'s scale is currently "{scale}"'
+            )
+
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
