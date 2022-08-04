@@ -6,13 +6,42 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
-from urllib import request
+from urllib.request import Request, urlopen
 
 from npe2 import PackageMetadata
 
 from .utils import normalized_name
 
 PyPIname = str
+
+
+@lru_cache
+def _user_agent() -> str:
+    """Return a user agent string for use in http requests."""
+    import platform
+
+    from napari import __version__
+
+    from ..utils import misc
+
+    if misc.running_as_bundled_app():
+        env = 'briefcase'
+    elif misc.running_as_constructor_app():
+        env = 'constructor'
+    elif misc.in_jupyter():
+        env = 'jupyter'
+    elif misc.in_ipython():
+        env = 'ipython'
+    else:
+        env = 'python'
+
+    parts = [
+        ('napari', __version__),
+        ('runtime', env),
+        (platform.python_implementation(), platform.python_version()),
+        (platform.system(), platform.release()),
+    ]
+    return ' '.join(f'{k}/{v}' for k, v in parts)
 
 
 class SummaryDict(TypedDict):
@@ -30,15 +59,17 @@ class SummaryDict(TypedDict):
 @lru_cache
 def pypi_plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
-    with request.urlopen("https://npe2api.vercel.app/api/summary") as response:
-        return json.load(response)
+    url = "https://npe2api.vercel.app/api/summary"
+    with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
+        return json.load(resp)
 
 
 @lru_cache
 def conda_map() -> Dict[PyPIname, Optional[str]]:
     """Return map of PyPI package name to conda_channel/package_name ()."""
-    with request.urlopen("https://npe2api.vercel.app/api/conda") as response:
-        return json.load(response)
+    url = "https://npe2api.vercel.app/api/conda"
+    with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
+        return json.load(resp)
 
 
 def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
