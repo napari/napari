@@ -376,16 +376,3 @@ def test_reset_non_empty(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.add_points([(0, 1), (2, 3)])
     viewer.reset()
-
-
-def test_zero_scale_layer(make_napari_viewer):
-    """
-    Test that creating a layers with scale 0 for any
-    dimension throws an exception
-    https://github.com/napari/napari/issues/2569
-    """
-    viewer = make_napari_viewer()
-    try:
-        viewer.add_image(np.random.rand(64, 64), scale=(0, 1))
-    except Exception as e:
-        assert 'scale values of 0' in str(e)
