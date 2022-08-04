@@ -30,11 +30,7 @@ class VispyAxesOverlay(VispySceneOverlay):
             self._on_labels_text_change
         )
 
-        self._on_data_change()
-        self._on_visible_change()
-        self._on_labels_visible_change()
-        self._on_labels_text_change()
-        self._on_zoom_change()
+        self.reset()
 
     def _on_data_change(self):
         # Determine which axes are displayed
@@ -73,3 +69,10 @@ class VispyAxesOverlay(VispySceneOverlay):
         # Update axes scale
         self.node.transform.reset()
         self.node.transform.scale([scale, scale, scale, 1])
+
+    def reset(self):
+        super().reset()
+        self._on_data_change()
+        self._on_labels_visible_change()
+        self._on_labels_text_change()
+        self._on_zoom_change()

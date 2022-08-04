@@ -15,13 +15,9 @@ class VispyTextOverlay(VispyCanvasOverlay):
 
         self.overlay.events.text.connect(self._on_text_change)
         self.overlay.events.color.connect(self._on_color_change)
-        self.overlay.events.font_size.connect(self._on_color_change)
+        self.overlay.events.font_size.connect(self._on_font_size_change)
 
-        self._on_visible_change()
-        self._on_text_change()
-        self._on_color_change()
-        self._on_font_size_change()
-        self._on_position_change()
+        self.reset()
 
     def _on_text_change(self):
         self.node.text = self.overlay.text
@@ -50,3 +46,9 @@ class VispyTextOverlay(VispyCanvasOverlay):
             anchors = ("center", "top")
 
         self.node.anchors = anchors
+
+    def reset(self):
+        super().reset()
+        self._on_text_change()
+        self._on_color_change()
+        self._on_font_size_change()
