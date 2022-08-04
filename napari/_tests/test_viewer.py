@@ -357,3 +357,22 @@ def test_current_viewer(make_napari_viewer):
 
     assert current_viewer() is viewer1
     assert current_viewer() is not viewer2
+
+
+def test_reset_empty(make_napari_viewer):
+    """
+    Test that resetting an empty viewer doesn't crash
+    https://github.com/napari/napari/issues/4867
+    """
+    viewer = make_napari_viewer()
+    viewer.reset()
+
+
+def test_reset_non_empty(make_napari_viewer):
+    """
+    Test that resetting a non-empty viewer doesn't crash
+    https://github.com/napari/napari/issues/4867
+    """
+    viewer = make_napari_viewer()
+    viewer.add_points([(0, 1), (2, 3)])
+    viewer.reset()
