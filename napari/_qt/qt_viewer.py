@@ -771,7 +771,9 @@ class QtViewer(QSplitter):
             layer type for opened layers
         """
         if choose_plugin:
-            handle_gui_reading(filenames, self, stack, **kwargs)
+            handle_gui_reading(
+                filenames, self, stack, plugin_override=choose_plugin, **kwargs
+            )
             return
 
         try:
