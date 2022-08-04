@@ -35,13 +35,16 @@ class QtReaderDialog(QDialog):
         self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
 
+        self._extension = os.path.splitext(pth)[1]
+        self._persist_text = f'Remember this choice for files with a {self._extension} extension'
+
         if os.path.isdir(pth):
             self._extension = os.path.basename(pth)
-            if not self._extension.endswith('/'):
+            if not self._extension.endswith(
+                '.zarr'
+            ) and not self._extension.endswith('/'):
                 self._extension = self._extension + '/'
-
-        else:
-            self._extension = '*' + os.path.splitext(pth)[1]
+                self._persist_text = f'Remember this choice for folders labeled as {self._extension}.'
 
         self._reader_buttons = []
         self.setup_ui(error_message, readers, persist_checked)
@@ -72,26 +75,29 @@ class QtReaderDialog(QDialog):
 
         # checkbox to remember the choice 
 
-        existing_pref = get_settings().plugins.extension2reader.get(
-            '*' + self._extension
-        )
+        if os.path.isdir(self._current_file):
+            existing_pref = get_settings().plugins.extension2reader.get(self._extension)
+        else:
+            existing_pref = get_settings().plugins.extension2reader.get(
+            '*' + self._extension)
+
         if existing_pref:
-            warn_message = trans._(
+            self._persist_text = trans._(
                 'Override existing preference for files with a {extension} extension: {pref}',
                 extension=self._extension,
                 pref=existing_pref,
             )
         else:
-            warn_message = trans._(
+            self._persist_text = trans._(
                 'Remember this choice for files with a {extension} extension',
                 extension=self._extension,
             )
 
-        self.persist_checkbox = QCheckBox(warn_message)
+        self.persist_checkbox = QCheckBox(self._persist_text)
         self.persist_checkbox.toggle()
         self.persist_checkbox.setChecked(persist_checked)
         layout.addWidget(self.persist_checkbox)
-
+        
         layout.addWidget(self.btn_box)
         self.setLayout(layout)
 
@@ -275,5 +281,5 @@ def open_with_dialog_choices(
     if persist:
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            f'{extension}': plugin_name,
+            f'*{extension}': plugin_name,
         }
