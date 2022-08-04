@@ -14,11 +14,11 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari_builtins.io import imsave_extensions
 
-from ..components._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..components.overlays._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
