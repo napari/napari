@@ -62,7 +62,7 @@ from .._vispy import (  # isort:skip
     VispyScaleBarOverlay,
     VispyInteractionBox,
     VispyTextOverlay,
-    create_vispy_visual,
+    create_vispy_layer,
 )
 
 
@@ -392,21 +392,22 @@ class QtViewer(QSplitter):
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
+        # will become Overlay models
         self.axes = VispyAxesOverlay(
-            self.viewer,
+            overlay=self.viewer.axes,
+            viewer=self.viewer,
             parent=self.view.scene,
-            order=1e6,
         )
         self.scale_bar = VispyScaleBarOverlay(
-            self.viewer,
+            overlay=self.viewer.scale_bar,
+            viewer=self.viewer,
             parent=self.view,
-            order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
         self.text_overlay = VispyTextOverlay(
-            self.viewer,
+            overlay=self.viewer.text_overlay,
+            viewer=self.viewer,
             parent=self.view,
-            order=1e6 + 2,
         )
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
@@ -496,7 +497,7 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_visual(layer)
+        vispy_layer = create_vispy_layer(layer)
 
         # QtPoll is experimental.
         if self._qt_poll is not None:
