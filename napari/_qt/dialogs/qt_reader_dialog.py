@@ -7,7 +7,6 @@ from qtpy.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QLabel,
-    QMessageBox,
     QRadioButton,
     QVBoxLayout,
     QWidget,
@@ -68,9 +67,18 @@ class QtReaderDialog(QDialog):
 
         # checkbox to remember the choice (doesn't pop up for folders with no extension)
         if self._extension:
-            self.persist_checkbox = QCheckBox(
-                f'Remember this choice for files with a {self._extension} extension'
-            )
+            if (
+                '*' + self._extension
+                in get_settings().plugins.extension2reader.keys()
+            ):
+                pref = get_settings().plugins.extension2reader[
+                    '*' + self._extension
+                ]
+                warn_message = f'Override existing preference for *{self._extension}, "{pref}"'
+            else:
+                warn_message = f'Remember this choice for files with a {self._extension} extension'
+
+            self.persist_checkbox = QCheckBox(warn_message)
             self.persist_checkbox.toggle()
             layout.addWidget(self.persist_checkbox)
 
@@ -95,21 +103,6 @@ class QtReaderDialog(QDialog):
         return (
             hasattr(self, 'persist_checkbox')
             and self.persist_checkbox.isChecked()
-        )
-
-    def _show_persist_warning_dialog(self, plugin_name: str = None):
-        """Dialog that will warn the user they are about to overwrite the
-        plugin reader preference."""
-        return QMessageBox().warning(
-            self,
-            trans._("Confirm overwrite"),
-            trans._(
-                "{extension} already has a plugin reader preference saved ({plugin}). Do you want to overwrite it?",
-                extension=self._extension,
-                plugin=plugin_name,
-            ),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
         )
 
     def get_user_choices(self) -> Tuple[str, bool]:
@@ -266,17 +259,6 @@ def open_with_dialog_choices(
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
     if persist:
-        if (
-            extension
-            or '*.' + extension
-            in get_settings().plugins.extension2reader.keys()
-        ):
-            res = qt_viewer.children()[2]._show_persist_warning_dialog(
-                plugin_name=plugin_name
-            )
-            if res == QMessageBox.No:
-                return
-
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             f'*{extension}': plugin_name,
