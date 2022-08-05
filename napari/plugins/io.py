@@ -242,12 +242,12 @@ def save_layers(
                 )
             )
         elif plugin or _writer:
-            name = (
-                plugin
-                or npe2.plugin_manager.get_manifest(
+            name = plugin
+            if _writer:
+                name = npe2.plugin_manager.get_manifest(
                     _writer.command
                 ).display_name
-            )
+
             warnings.warn(
                 trans._(
                     f"Plugin \'{name}\' was selected but did not return any written paths.",
