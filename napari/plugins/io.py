@@ -6,6 +6,7 @@ import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
+import npe2
 from napari_plugin_engine import HookImplementation, PluginCallError
 
 from ..layers import Layer
@@ -216,6 +217,7 @@ def save_layers(
     list of str
         File paths of any files that were written.
     """
+
     if len(layers) > 1:
         written = _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin, _writer=_writer
@@ -228,18 +230,40 @@ def save_layers(
     else:
         written = []
 
+    # If written is empty, something went wrong.
+    # Generate a warning to tell the user what it was.
     if not written:
-        # if written is empty, it means no plugin could write the
-        # path/layers combination
-        # we just want to provide some useful feedback
-        warnings.warn(
-            trans._(
-                'No data written! Either the attempt failed or a plugin could not be found to write these {length} layers to {path}.',
-                deferred=True,
-                length=len(layers),
-                path=path,
+        if len(layers) == 0:
+            warnings.warn(
+                trans._(
+                    f"No layers were provided for the request to write to {path}",
+                    deferred=True,
+                    path=path,
+                )
             )
-        )
+        elif plugin or _writer:
+            name = (
+                plugin
+                or npe2.plugin_manager.get_manifest(
+                    _writer.command
+                ).display_name
+            )
+            warnings.warn(
+                trans._(
+                    f"Plugin \'{name}\' was selected but did not return any written paths.",
+                    deferred=True,
+                    name=name,
+                )
+            )
+        else:
+            warnings.warn(
+                trans._(
+                    'No data written! A plugin could not be found to write these {length} layers to {path}.',
+                    deferred=True,
+                    length=len(layers),
+                    path=path,
+                )
+            )
 
     return written
 

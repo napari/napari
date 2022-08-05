@@ -1129,7 +1129,7 @@ class QtViewer(QSplitter):
         self.layers.close()
 
         # if the viewer.QtDims object is playing an axis, we need to terminate
-        # the AnimationThread before close, otherwise it will cauyse a segFault
+        # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
         self.dims.stop()
