@@ -234,7 +234,7 @@ def save_layers(
         # we just want to provide some useful feedback
         warnings.warn(
             trans._(
-                'No data written! There may be no plugins capable of writing these {length} layers to {path}.',
+                'No data written! Either the attempt failed or a plugin could not be found to write these {length} layers to {path}.',
                 deferred=True,
                 length=len(layers),
                 path=path,
