@@ -1026,7 +1026,7 @@ class QtPluginDialog(QDialog):
 
         self.filter()
 
-    def filter(self, text: str = None) -> None:
+    def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""
         if text is None:
             text = self.packages_filter.text()
