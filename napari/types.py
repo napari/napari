@@ -29,9 +29,7 @@ try:
 except ImportError:
     # Anything that can be coerced into numpy.dtype.
     # Reference: https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
-    from typing import TypeVar
-
-    from typing import Protocol
+    from typing import Protocol, TypeVar
 
     _DType_co = TypeVar("_DType_co", covariant=True, bound=np.dtype)
 

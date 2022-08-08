@@ -1,6 +1,5 @@
-from typing import List, Optional
+from typing import List, Optional, Protocol
 
-from typing import Protocol
 from vispy.visuals.filters import Filter
 from vispy.visuals.filters.clipping_planes import PlanesClipper
 

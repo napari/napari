@@ -4,9 +4,7 @@ import weakref
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Callable
-
-    from typing import Protocol
+    from typing import Callable, Protocol
 
     class Emitter(Protocol):
         def connect(self, callback: Callable):

@@ -60,6 +60,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -67,7 +68,6 @@ from typing import (
     cast,
 )
 
-from typing import Literal
 from vispy.util.logs import _handle_exception
 
 from ..translations import trans
