@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, List, TypeVar, Union
 
 import numpy as np
-from typing_extensions import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from ...utils.events import EventedModel
 from ...utils.translations import trans

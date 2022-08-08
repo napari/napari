@@ -9,7 +9,7 @@ import pytest
 from dask import delayed
 from dask.delayed import Delayed
 from pydantic import Field
-from typing_extensions import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array

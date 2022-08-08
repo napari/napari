@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Callable
 
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     class Emitter(Protocol):
         def connect(self, callback: Callable):

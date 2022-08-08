@@ -3,7 +3,7 @@ from typing import Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
-from typing_extensions import Literal  # Added to typing in 3.8
+from typing import Literal  # Added to typing in 3.8
 
 from ..utils.events import EventedModel
 from ..utils.translations import trans

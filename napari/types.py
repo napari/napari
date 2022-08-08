@@ -31,7 +31,7 @@ except ImportError:
     # Reference: https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
     from typing import TypeVar
 
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     _DType_co = TypeVar("_DType_co", covariant=True, bound=np.dtype)
 

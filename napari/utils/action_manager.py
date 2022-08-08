@@ -12,7 +12,7 @@ from .interactions import Shortcut
 from .translations import trans
 
 if TYPE_CHECKING:
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     from .key_bindings import KeymapProvider
 

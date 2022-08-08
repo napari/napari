@@ -37,7 +37,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QElidingLabel
-from typing_extensions import Literal
+from typing import Literal
 
 import napari.resources
 

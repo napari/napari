@@ -2,7 +2,7 @@ from typing import Any, Literal, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import Field, parse_obj_as, validator
-from typing_extensions import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from napari.utils.color import ColorArray, ColorValue
 

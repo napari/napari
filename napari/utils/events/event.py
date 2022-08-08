@@ -67,7 +67,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Literal
+from typing import Literal
 from vispy.util.logs import _handle_exception
 
 from ..translations import trans
