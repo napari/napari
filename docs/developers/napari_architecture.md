@@ -9,7 +9,7 @@ The napari codebase can be thought to consist of three main components:
 * qt classes that handle the interactive GUI aspect of the napari viewer
     * the private qt code lives in `napari/_qt` and the smaller public qt
       interface code lives in `napari/qt`
-* vispy classes that handles rendering
+* vispy classes that handle rendering
     * the code for this is private and lives in `napari/_vispy`
 
 The separation of the python models from viewer GUI code allows:
@@ -27,7 +27,7 @@ The separation of the python models from viewer GUI code allows:
 Commonly, python models in napari are classes that store information about their
 state as an attribute and are the "source of ground truth". When these
 attributes are changed an "event" needs to be emitted such that relevant
-obsevers of the model (such as other classes) can take the appropriate
+observers of the model (such as other classes) can take the appropriate
 action.
 
 One way this is achieved in napari is via getters and setters. Let's take
@@ -135,6 +135,32 @@ class Dim(EventedModel):
     ndisplay: float
 ```
 
+This `Dim` class will automatically emit an event when one of its attributes
+changes. Other classes interested in the `Dim` class can register a callback
+function that will be executed when an attribute changes.
+
+```python
+class DimsDependentClass():
+    """A class that needs to 'do something' when Dims attributes change.
+
+    Parameters
+    ----------
+    dims : napari.components.dims.Dims
+        Dims object.
+    ...
+
+    Attributes
+    ----------
+    dims : napari.components.dims.Dims
+        Dimensions object modeling slicing and displaying.
+    ...
+    """
+
+    def __init__(self, dims: Dims):
+        self.dims = dims
+        self.dims.events.ndisplay.connect(self._update_display)
+```
+
 Currently most of the models in `napari/components/` are `EventedModels` but
 not the layer models although there is intention to convert these to
 `EventedModels` in the future.
@@ -172,7 +198,7 @@ class QtDims(QWidget):
     """
 
     def __init__(self, dims: Dims):
-
+        self.dims = dims
         self.dims.events.ndisplay.connect(self._update_display)
 ```
 
