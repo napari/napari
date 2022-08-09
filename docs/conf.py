@@ -161,6 +161,7 @@ napoleon_custom_sections = [('Events', 'params_style')]
 # or organization)
 issues_github_path = "napari/napari"
 
+
 def reset_napari_theme(gallery_conf, fname):
     from napari.settings import get_settings
 
