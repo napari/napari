@@ -74,9 +74,16 @@ class QtReaderDialog(QDialog):
                 pref = get_settings().plugins.extension2reader[
                     '*' + self._extension
                 ]
-                warn_message = f'Override existing preference for *{self._extension}, "{pref}"'
+                warn_message = trans._(
+                    'Override existing preference for *{extension}, "{pref}"',
+                    extension=self._extension,
+                    pref=pref,
+                )
             else:
-                warn_message = f'Remember this choice for files with a {self._extension} extension'
+                warn_message = trans._(
+                    'Remember this choice for files with a {extension} extension',
+                    extension=self._extension,
+                )
 
             self.persist_checkbox = QCheckBox(warn_message)
             self.persist_checkbox.toggle()
