@@ -8,3 +8,4 @@ sphinx-external-toc
 sphinx-gallery
 matplotlib
 qtgallery
+sphinx-issues

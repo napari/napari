@@ -56,10 +56,10 @@ extensions = [
     "sphinx_external_toc",
     "sphinx_tabs.tabs",
     'myst_nb',
-    #    "sphinx_comments",
     "sphinx_panels",
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
+    "sphinx_issues",
 ]
 
 external_toc_path = "_toc.yml"
@@ -157,6 +157,9 @@ exclude_patterns = [
 
 napoleon_custom_sections = [('Events', 'params_style')]
 
+# Path to GitHub repo {group}/{project}  (note that `group` is the GitHub user
+# or organization)
+issues_github_path = "napari/napari"
 
 def reset_napari_theme(gallery_conf, fname):
     from napari.settings import get_settings

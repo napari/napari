@@ -17,7 +17,7 @@ https://github.com/napari/napari
 
 ## Pull Requests
 
-- Add shapes (#100)
+- Add shapes ({pr}`100`)
 - Vectors Layer (#129)
 - setup css basics (#167)
 - Update shields on README (#169)
