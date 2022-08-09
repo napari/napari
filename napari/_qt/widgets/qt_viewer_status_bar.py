@@ -31,7 +31,7 @@ class ViewerStatusBar(QStatusBar):
         self._status.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self._layer_base = QElidingLabel(trans._(''))
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
-        self._layer_base.setMinimumSize(80, 16)
+        self._layer_base.setMinimumSize(120, 16)
         self._layer_base.setSizePolicy(
             QSizePolicy.Minimum, QSizePolicy.Maximum
         )
@@ -60,6 +60,7 @@ class ViewerStatusBar(QStatusBar):
         layout.addWidget(self._source_type)
         layout.addWidget(self._plugin_reader)
         layout.addWidget(self._coordinates)
+        layout.addStretch(0)
 
         main_widget.setLayout(layout)
 
