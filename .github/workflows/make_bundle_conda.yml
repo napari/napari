@@ -9,7 +9,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'docs/**'
+      - "docs/**"
   schedule:
     - cron: "0 0 * * *"
   # Allows you to run this workflow manually from the Actions tab
@@ -168,6 +168,7 @@ jobs:
             target-platform: "win-64"
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      CONDA_NUMBER_CHANNEL_NOTICES: "0"
       DISPLAY: ":99.0"
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}
@@ -287,6 +288,13 @@ jobs:
 
           echo "CONSTRUCTOR_SIGNING_IDENTITY=${signing_identity}" >> $GITHUB_ENV
           echo "CONSTRUCTOR_NOTARIZATION_IDENTITY=${notarization_identity}" >> $GITHUB_ENV
+
+          # The conda environment might contain a totally different codesign
+          # which would clobber the Apple's codesign (the one we need)
+          _codesign=$(which codesign)
+          if [[ $_codesign =~ ${CONDA_PREFIX}.* ]]; then
+            mv "${_codesign}" "${_codesign}.in_conda_env"
+          fi
 
       - name: Load signing certificate (Windows)
         # We only sign pushes to main, nightlies, RCs and final releases

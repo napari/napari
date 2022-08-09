@@ -35,7 +35,7 @@ int detectAdjacentBackground(float val_neg, float val_pos)
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating ambient and diffuse lighting
-    vec4 color0 = $sample(u_volumetex, loc);
+    vec4 color0 = $get_data(loc);
     vec4 color1;
     vec4 color2;
     float val0 = colorToVal(color0);
@@ -48,22 +48,22 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 
     // calculate normal vector from gradient
     vec3 N; // normal
-    color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
-    color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );
+    color1 = $get_data(loc+vec3(-step[0],0.0,0.0));
+    color2 = $get_data(loc+vec3(step[0],0.0,0.0));
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
     N[0] = val1 - val2;
     n_bg_borders += detectAdjacentBackground(val1, val2);
 
-    color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );
-    color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );
+    color1 = $get_data(loc+vec3(0.0,-step[1],0.0));
+    color2 = $get_data(loc+vec3(0.0,step[1],0.0));
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
     N[1] = val1 - val2;
     n_bg_borders += detectAdjacentBackground(val1, val2);
 
-    color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );
-    color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );
+    color1 = $get_data(loc+vec3(0.0,0.0,-step[2]));
+    color2 = $get_data(loc+vec3(0.0,0.0,step[2]));
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
     N[2] = val1 - val2;

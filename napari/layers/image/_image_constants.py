@@ -16,7 +16,7 @@ class Interpolation(StringEnum):
 
     BESSEL = auto()
     BICUBIC = auto()
-    BILINEAR = auto()
+    LINEAR = auto()
     BLACKMAN = auto()
     CATROM = auto()
     GAUSSIAN = auto()
@@ -34,18 +34,11 @@ class Interpolation(StringEnum):
     def view_subset(cls):
         return (
             cls.BICUBIC,
-            cls.BILINEAR,
+            cls.LINEAR,
             cls.KAISER,
             cls.NEAREST,
             cls.SPLINE36,
         )
-
-
-class Interpolation3D(StringEnum):
-    """INTERPOLATION: Vispy interpolation mode for volume rendering."""
-
-    LINEAR = auto()
-    NEAREST = auto()
 
 
 class Mode(StringEnum):

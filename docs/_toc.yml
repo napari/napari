@@ -65,6 +65,7 @@ subtrees:
           - file: guides/performance
           - file: guides/preferences
           - file: guides/contexts_expressions
+          - file: guides/app_model
           - file: guides/events_reference
       - file: further-resources/glossary
       - file: gallery
@@ -106,6 +107,7 @@ subtrees:
               - file: naps/1-institutional-funding-partners
               - file: naps/2-conda-based-packaging
               - file: naps/3-spaces
+              - file: naps/4-async-slicing
           - file: developers/documentation/index
             subtrees:
             - entries:
