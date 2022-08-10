@@ -15,7 +15,7 @@ def build_qmodel_menu(
         ID of a menu registered with napari._app_model.get_app().menus
     title : str
         Title of the menu
-    parent : QObject
+    parent : QWidget
         Parent of the menu
 
     Returns
