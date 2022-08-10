@@ -54,9 +54,12 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        # we delay initialization of plugin system to the first instantiation
+        # of a viewer... rather than just on import of plugins module
+        from .plugins import _initialize_plugins
+
         # having this import here makes all of Qt imported lazily, upon
         # instantiating the first Viewer.
-        from .plugins import _initialize_plugins
         from .window import Window
 
         _initialize_plugins()
