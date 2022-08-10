@@ -42,6 +42,7 @@ from ..utils._register import create_func as create_add_method
 from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
@@ -180,7 +181,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Add extra events - ideally these will be removed too!
-        self.events.add(layers_change=Event, reset_view=Event)
+        self.events.add(
+            layers_change=WarningEmitter(
+                "This event will be removed in 0.5.0. "
+                "Please use viewer.layers.events instead",
+                type="layers_change",
+            ),
+            reset_view=Event,
+        )
 
         # Connect events
         self.grid.events.connect(self.reset_view)
