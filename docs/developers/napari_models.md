@@ -1,4 +1,4 @@
-# Napari architecture
+# Napari models and events
 
 The napari codebase can be thought to consist of three main components:
 
