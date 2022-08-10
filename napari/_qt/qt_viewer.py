@@ -1130,7 +1130,6 @@ class QtViewer(QSplitter):
 
         self._qt_open(
             filenames,
-            self,
             stack=bool(shift_down),
             choose_plugin=bool(alt_down),
         )
