@@ -23,18 +23,3 @@ jobs:
     secrets: inherit
     with:
       event_name: ${{ github.event_name }}
-      event_payload: ${{ github.event }}
-
-  emit_event:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - name: Emit event
-        if: env.SETUP_CFG_MODIFIED
-        run: |
-          curl \
-          -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: token ${{ github.token }}" \
-          https://api.github.com/repos/napari/packaging/dispatches \
-          -d '{"event_type":"setup_cfg_modified","client_payload":{}}'
