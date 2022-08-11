@@ -37,14 +37,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QPoint, QSize, Qt, QTimer
+from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from ...layers._layer_actions import _LAYER_ACTIONS
-from ...utils.context import get_context
+from ..._app_model.constants import MenuId
+from ..._app_model.context import get_context
+from .._qapp_model import build_qmodel_menu
 from ..qt_resources import QColoredSVGIcon
-from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
 from .qt_layer_model import ThumbnailRole
 
@@ -88,7 +88,9 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
-    def get_layer_icon(self, option, index):
+    def get_layer_icon(
+        self, option: QStyleOptionViewItem, index: QtCore.QModelIndex
+    ):
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
         if layer is None:
@@ -104,7 +106,7 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.Background).red()
+        bg = option.palette.color(option.palette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = option.Right  # put icon on the right
@@ -153,9 +155,13 @@ class LayerDelegate(QStyledItemDelegate):
             event.type() == event.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
-            self.show_context_menu(
-                index, model, event.globalPos(), option.widget
+            pnt = (
+                event.globalPosition().toPoint()
+                if hasattr(event, "globalPosition")
+                else event.globalPos()
             )
+
+            self.show_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty
@@ -184,16 +190,11 @@ class LayerDelegate(QStyledItemDelegate):
 
     def show_context_menu(self, index, model, pos: QPoint, parent):
         """Show the layerlist context menu.
-
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
         if not hasattr(self, '_context_menu'):
-            self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
+            self._context_menu = build_qmodel_menu(MenuId.LAYERLIST_CONTEXT)
 
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(get_context(layer_list))
-        action = self._context_menu.exec_(pos)
-        if action is not None and isinstance(action.data(), dict):
-            # action.data will be a callable that accepts a layer_list instance
-            if action := action.data().get('action'):
-                QTimer.singleShot(0, action)
+        self._context_menu.exec_(pos)

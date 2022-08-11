@@ -161,6 +161,25 @@ def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     assert viewer.layers[0].source.widget == add_layer
 
 
+def test_magicgui_add_layer_list(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    @magicgui
+    def add_layer() -> List[Layer]:
+        a = Image(data=np.random.randint(0, 10, size=(10, 10)))
+        b = Labels(data=np.random.randint(0, 10, size=(10, 10)))
+        return [a, b]
+
+    viewer.window.add_dock_widget(add_layer)
+    add_layer()
+    assert len(viewer.layers) == 2
+    assert isinstance(viewer.layers[0], Image)
+    assert isinstance(viewer.layers[1], Labels)
+
+    assert viewer.layers[0].source.widget == add_layer
+    assert viewer.layers[1].source.widget == add_layer
+
+
 def test_magicgui_add_layer_data_tuple(make_napari_viewer):
     viewer = make_napari_viewer()
 

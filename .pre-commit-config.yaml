@@ -5,13 +5,13 @@ repos:
     - id: isort
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
     - id: black
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+    rev: 5.0.4
     hooks:
     - id: flake8
       additional_dependencies: [flake8-typing-imports]
@@ -19,7 +19,7 @@ repos:
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.34.0
+    rev: v2.37.3
     hooks:
     - id: pyupgrade
       args: ["--py38-plus", "--keep-runtime-typing"]
