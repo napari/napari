@@ -37,3 +37,15 @@ class MenuGroup:
         CONVERSION = '1_conversion'
         SPLIT_MERGE = '5_split_merge'
         LINK = '9_link'
+
+
+# TODO: add these to docs, with a lookup for what each menu is/does.
+_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
+"""Set of all menu ids that can be contributed to by plugins."""
+
+
+def is_menu_contributable(menu_id: str) -> bool:
+    """Return True if the given menu_id is a menu that plugins can contribute to."""
+    return (
+        menu_id in _CONTRIBUTABLES if menu_id.startswith("napari/") else True
+    )

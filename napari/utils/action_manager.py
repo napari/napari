@@ -13,8 +13,7 @@ from .translations import trans
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
-
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     from .key_bindings import KeymapProvider
 
