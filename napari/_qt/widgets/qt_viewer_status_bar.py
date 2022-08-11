@@ -95,7 +95,7 @@ class ViewerStatusBar(QStatusBar):
         if text:
             self._status.setText(text)
         else:
-            self._status.setText(' ')
+            self._status.setText('')
 
         if layer_base:
             self._layer_base.show()
