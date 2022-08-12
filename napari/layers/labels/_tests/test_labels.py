@@ -914,16 +914,6 @@ def test_ndim_paint():
     )
 
 
-def test_switching_display_func():
-    label_data = np.random.randint(2**25, 2**25 + 5, size=(50, 50))
-    layer = Labels(label_data)
-    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
-
-    label_data = np.random.randint(0, 5, size=(50, 50))
-    layer = Labels(label_data)
-    assert layer._color_lookup_func == layer._lookup_with_index
-
-
 def test_cursor_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
     layer.mode = 'paint'
