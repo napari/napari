@@ -239,13 +239,12 @@ def test_seed():
     layer = Labels(data, seed=0.7)
     assert layer.seed == 0.7
 
-    # ensure setting seed triggers
-    # recalculation of _all_vals
-    _all_vals_07 = layer._all_vals.copy()
+    # ensure setting seed updates the random colormap
+    mapped_07 = layer._random_colormap.map(layer.data)
     layer.seed = 0.4
-    _all_vals_04 = layer._all_vals.copy()
+    mapped_04 = layer._random_colormap.map(layer.data)
     assert_raises(
-        AssertionError, assert_array_almost_equal, _all_vals_04, _all_vals_07
+        AssertionError, assert_array_almost_equal, mapped_07, mapped_04
     )
 
 
