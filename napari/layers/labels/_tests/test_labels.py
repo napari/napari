@@ -18,7 +18,6 @@ from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
-from napari.utils.colormaps import low_discrepancy_image
 
 
 def test_random_labels():
@@ -529,7 +528,8 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(input_data), layer._data_view
+        layer._raw_to_displayed(input_data.astype(np.float32)),
+        layer._data_view,
     )
     data_view_before_contour = layer._data_view.copy()
 
@@ -544,7 +544,7 @@ def test_contour(input_data, expected_data_view):
         layer._data_view,
         np.where(
             expected_data_view > 0,
-            low_discrepancy_image(expected_data_view),
+            expected_data_view,
             0,
         ),
     )
