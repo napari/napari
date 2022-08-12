@@ -29,6 +29,7 @@ __all__ = [
     'view_surface',
     'view_tracks',
     'view_vectors',
+    'imshow',
 ]
 
 _doc_template = """Create a viewer and add a{n} {layer_string} layer.
@@ -128,6 +129,29 @@ def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
     return viewer
 
 
+def _make_viewer_and_layer_via(add_method: str, args, kwargs) -> Viewer:
+    """Utility function that creates a viewer, adds a layer, returns viewer."""
+    vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
+    # separate dims kwargs because we want to set those after adding data
+    dims_kwargs = {
+        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
+    }
+    # channel_axis
+    if 'multichannel' in kwargs:
+        vkwargs['multichannel'] = kwargs['multichannel']
+
+    if 'viewer' in kwargs:
+        viewer = kwargs['viewer']
+    else:
+        viewer = Viewer(**vkwargs)
+
+    kwargs.update(kwargs.pop("kwargs", {}))
+    method = getattr(viewer, add_method)
+    layer = method(*args, **kwargs)
+    for arg_name, arg_val in dims_kwargs.items():
+        setattr(viewer.dims, arg_name, arg_val)
+    return viewer, layer
+
 # Each of the following functions will have this pattern:
 #
 # def view_image(*args, **kwargs):
@@ -175,3 +199,38 @@ def view_vectors(*args, **kwargs):
 @_merge_layer_viewer_sigs_docs
 def view_path(*args, **kwargs):
     return _make_viewer_then('open', args, kwargs)
+
+
+def imshow(data, viewer=None, channel_axis=None, multiscale=False, **kwargs):
+
+    # viewer, layers = napari.imshow(data, multichannel=False,  viewer=None, **kwargs)
+    # return _make_viewer_and_layer_via('add_image', args, kwargs)
+
+    vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
+    # separate dims kwargs because we want to set those after adding data
+    dims_kwargs = {
+        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
+    }
+
+    if channel_axis:
+        vkwargs['channel_axis'] = channel_axis
+
+    if multiscale:
+        vkwargs['multiscale'] = multiscale
+
+    # create a viewer if one is not provided
+    if not viewer:
+        viewer = Viewer(**vkwargs)
+
+    # create the new layer in the viewer
+    layer = viewer.add_image(data, **kwargs)
+
+    # TODO: I don't know why this was necessary in _make_viewer_then
+    # kwargs.update(kwargs.pop("kwargs", {}))
+
+    # set viewer dims (TODO not sure why this is needed)
+    for arg_name, arg_val in dims_kwargs.items():
+        setattr(viewer.dims, arg_name, arg_val)
+
+    return viewer, layer
+
