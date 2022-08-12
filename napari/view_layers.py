@@ -129,29 +129,6 @@ def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
     return viewer
 
 
-def _make_viewer_and_layer_via(add_method: str, args, kwargs) -> Viewer:
-    """Utility function that creates a viewer, adds a layer, returns viewer."""
-    vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
-    # separate dims kwargs because we want to set those after adding data
-    dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
-    }
-    # channel_axis
-    if 'multichannel' in kwargs:
-        vkwargs['multichannel'] = kwargs['multichannel']
-
-    if 'viewer' in kwargs:
-        viewer = kwargs['viewer']
-    else:
-        viewer = Viewer(**vkwargs)
-
-    kwargs.update(kwargs.pop("kwargs", {}))
-    method = getattr(viewer, add_method)
-    layer = method(*args, **kwargs)
-    for arg_name, arg_val in dims_kwargs.items():
-        setattr(viewer.dims, arg_name, arg_val)
-    return viewer, layer
-
 # Each of the following functions will have this pattern:
 #
 # def view_image(*args, **kwargs):
@@ -202,10 +179,18 @@ def view_path(*args, **kwargs):
 
 
 def imshow(data, viewer=None, channel_axis=None, multiscale=False, **kwargs):
+    """Add image to viewer and return the layer and the viewer itself
 
-    # viewer, layers = napari.imshow(data, multichannel=False,  viewer=None, **kwargs)
-    # return _make_viewer_and_layer_via('add_image', args, kwargs)
+    Args:
+        data (_type_): _description_
+        viewer (_type_, optional): _description_. Defaults to None.
+        channel_axis (_type_, optional): _description_. Defaults to None.
+        multiscale (bool, optional): _description_. Defaults to False.
 
+    Returns:
+        Viewer: napari.Viewer instance of the viewer
+        list: List of newly created layers in Viewer
+    """
     vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
@@ -222,6 +207,7 @@ def imshow(data, viewer=None, channel_axis=None, multiscale=False, **kwargs):
     if not viewer:
         viewer = Viewer(**vkwargs)
 
+    # TODO handle multiple layers being created...
     # create the new layer in the viewer
     layer = viewer.add_image(data, **kwargs)
 
