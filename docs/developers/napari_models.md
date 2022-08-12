@@ -22,9 +22,6 @@ The separation of the python models from viewer GUI code allows:
 
 * the python model to be easily run headless (without opening the napari GUI
   interface), for example when performing batch analysis
-
-
-
 * analysis plugins to be developed without worrying about the GUI
   aspect
 * napari to have the option to move away from the rendering backend currently
