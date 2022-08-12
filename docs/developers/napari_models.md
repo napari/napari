@@ -1,21 +1,30 @@
 # Napari models and events
 
-The napari codebase can be thought to consist of three main components:
+This document explains the links between the three main components of napari:
+python models, Qt classes and vispy classes, with code examples. This knowledge
+is not necessary to use napari and is more aimed at developers interested in
+understanding the inner workings of napari. This document assumes you're
+familiar with basic usage of napari.
 
-* python models describing objects - these are able to operate separately from
-  the viewer and do not have any dependencies on user interface classes
+The three main components:
+
+* python models describing objects - these are able to operate without the GUI
+  interface and do not have any dependencies on user interface classes
     * this code lives in `napari/components` (utility objects) and
      `napari/layers` (objects that contain data)
-* qt classes that handle the interactive GUI aspect of the napari viewer
-    * the private qt code lives in `napari/_qt` and the smaller public qt
+* Qt classes that handle the interactive GUI aspect of the napari viewer
+    * the private Qt code lives in `napari/_qt` and the smaller public Qt
       interface code lives in `napari/qt`
 * vispy classes that handle rendering
     * the code for this is private and lives in `napari/_vispy`
 
 The separation of the python models from viewer GUI code allows:
 
-* the python model to be easily run headless without the viewer, for example
-  when performing batch analysis
+* the python model to be easily run headless (without opening the napari GUI
+  interface), for example when performing batch analysis
+
+
+
 * analysis plugins to be developed without worrying about the GUI
   aspect
 * napari to have the option to move away from the rendering backend currently
@@ -81,29 +90,26 @@ class Dims:
         self.events.ndisplay(value=value)
 ```
 
-Another object can then "listen" for changes in our `Dim` model and register
+Another object can then "listen" for changes in our `Dims` model and register
 a callback function with the event emitter of the attribute they would like
 to watch:
 
 ```python
 # create an instance of the model
-dims = Dim(ndim=3, ndisplay=2)
+dims = Dims(ndim=3, ndisplay=2)
 
 # define some callback that should respond to changes in the model
 def _update_display(self):
     """
     Updates display for all sliders.
-
-    The event parameter is there just to allow easy connection to signals,
-    without using `lambda event:`
     """
-    # the code updating display code is quite complex and not relevant for this
-    # example thus has ommited.
+    # the code updating the display code is not relevant for this
+    # example thus has been ommited.
     nsteps = self.dims.nsteps
     print(f"Update number of dimensions displayed to {nsteps}")
 
 # register our callback with the model
-dims.events.wind.connect(_update_display)
+dims.events.ndisplay.connect(_update_display)
 
 # now, everytime dims.ndisplay is changed, _update_display is called
 dim.ndisplay = 3
@@ -114,7 +120,7 @@ generic base model `EventedModel` was added to reduce this and
 "standardize" this change/emit pattern. The `EventedModel` provides the
 following features:
 
-* type validation and coersion on class instantiation and attribute assignment
+* type validation and coercion on class instantiation and attribute assignment
 * event emission after successful attribute assignment
 
 Using `EventedModel` would reduce the above `Dim` class code to:
@@ -168,7 +174,7 @@ not the layer models although there is intention to convert these to
 ## Qt classes
 
 Qt classes are responsible for all napari's user interface elements. There is
-generally one to one mapping between Python models and qt models in napari, for
+generally one to one mapping between Python models and Qt models in napari, for
 example Python model `Dims` and Qt model `QtDims`.
 The Qt class can register callbacks such that when an attribute of the
 corresponding Python model changes, the appropriate actions are taken.
@@ -216,7 +222,7 @@ class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
     """
 
-    def __init__(self, dims):
+    def __init__(self, dims: Dims):
         self._dims = dims
         ...
 
