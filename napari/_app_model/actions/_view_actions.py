@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from app_model.types import Action
+from app_model.types import Action, ToggleRule
 
 from ..constants import CommandId, MenuId
 
@@ -8,13 +8,34 @@ if TYPE_CHECKING:
     from ...viewer import Viewer
 
 
-def _toggler(viewer_attribute: str, property: str):
-    def _callback(viewer: 'Viewer'):
-        sub_model = getattr(viewer, viewer_attribute)
-        current = getattr(sub_model, property)
-        setattr(sub_model, property, not current)
+class ViewerToggleAction(Action):
+    def __init__(
+        self,
+        viewer_attribute: str,
+        property: str,
+        **kwargs,
+    ):
+        def toggle(viewer: 'Viewer'):
+            attr = getattr(viewer, viewer_attribute)
+            current = getattr(attr, property)
+            setattr(attr, property, not current)
 
-    return _callback
+        def initialize(viewer: 'Viewer'):
+            attr = getattr(viewer, viewer_attribute)
+            return getattr(attr, property)
+
+        def connect(action, viewer: 'Viewer'):
+            attr = getattr(viewer, viewer_attribute)
+            emitter = getattr(attr.events, property)
+
+            @emitter.connect
+            def _setchecked(e):
+                action.setChecked(e.value if hasattr(e, 'value') else e)
+
+            action.destroyed.connect(lambda: emitter.disconnect(_setchecked))
+
+        rule = ToggleRule(initialize=initialize, connect=connect)
+        super().__init__(toggled=rule, callback=toggle, **kwargs)
 
 
 VIEW_ACTIONS: List[Action] = []
@@ -31,15 +52,11 @@ for cmd, viewer_attr, prop in (
 ):
     menu = MenuId.VIEW_AXES if viewer_attr == 'axes' else MenuId.VIEW_SCALEBAR
     VIEW_ACTIONS.append(
-        Action(
+        ViewerToggleAction(
             id=cmd,
             title=cmd.title,
-            callback=_toggler(viewer_attr, prop),
+            viewer_attribute=viewer_attr,
+            property=prop,
             menus=[{'id': menu}],
-            # FIXME: this is a hack that will work if it is only toggled via
-            # the menu, but not if it is controlled programmatically. It will
-            # also be wrong if the attribute starts out toggled.
-            # we need a proper context key for this.
-            toggled='True',
         )
     )
