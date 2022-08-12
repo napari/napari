@@ -164,3 +164,40 @@ def test_kwargs_passed(monkeypatch):
         call(title='my viewer'),
         call().open(path='some/path', name='img name', scale=(1, 2, 3)),
     ]
+
+
+# plugin_manager fixture is added to prevent errors due to installed plugins
+def test_imshow(qtbot, napari_plugin_manager):
+    shape = (10, 15)
+    ndim = len(shape)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    viewer, layer = napari.imshow(data, show=False)
+    view = viewer.window._qt_viewer
+    check_viewer_functioning(viewer, view, data, ndim)
+    viewer.close()
+
+
+# plugin_manager fixture is added to prevent errors due to installed plugins
+def test_imshow_multichannel(qtbot, napari_plugin_manager):
+    """Test adding image."""
+    np.random.seed(0)
+    data = np.random.random((15, 10, 5))
+    viewer, layers = napari.imshow(data, channel_axis=-1, show=False)
+    assert len(layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert np.all(layers[i].data == data.take(i, axis=-1))
+    viewer.close()
+
+
+# plugin_manager fixture is added to prevent errors due to installed plugins
+def test_imshow_with_viewer(qtbot, napari_plugin_manager, make_napari_viewer):
+    shape = (10, 15)
+    ndim = len(shape)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    viewer = make_napari_viewer()
+    viewer, layer = napari.imshow(data, viewer=viewer, show=False)
+    view = viewer.window._qt_viewer
+    check_viewer_functioning(viewer, view, data, ndim)
+    viewer.close()

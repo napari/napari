@@ -198,10 +198,10 @@ def imshow(data, viewer=None, channel_axis=None, multiscale=False, **kwargs):
     }
 
     if channel_axis:
-        vkwargs['channel_axis'] = channel_axis
+        kwargs['channel_axis'] = channel_axis
 
     if multiscale:
-        vkwargs['multiscale'] = multiscale
+        kwargs['multiscale'] = multiscale
 
     # create a viewer if one is not provided
     if not viewer:
@@ -219,4 +219,3 @@ def imshow(data, viewer=None, channel_axis=None, multiscale=False, **kwargs):
         setattr(viewer.dims, arg_name, arg_val)
 
     return viewer, layer
-
