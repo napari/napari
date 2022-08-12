@@ -143,7 +143,7 @@ def handle_gui_reading(
         name of plugin already tried, if any
     error : ReaderPluginError | None
         previous error raised in the process of opening
-    plugin_override: bool | None
+    plugin_override: bool
         True when user is forcing a plugin choice, otherwise False.
         Dictates whether checkbox to remember choice is unchecked by default
     """
