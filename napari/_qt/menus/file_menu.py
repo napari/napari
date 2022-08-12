@@ -48,21 +48,15 @@ class FileMenu(NapariMenu):
                 'items': [
                     {
                         'text': 'Open File(s)...',
-                        'slot': lambda: window._qt_viewer._open_files_dialog(
-                            choose_plugin=True
-                        ),
+                        'slot': self._open_files_w_plugin,
                     },
                     {
                         'text': 'Open Files as Stack...',
-                        'slot': lambda: window._qt_viewer._open_files_dialog_as_stack_dialog(
-                            choose_plugin=True
-                        ),
+                        'slot': self._open_files_as_stack_w_plugin,
                     },
                     {
                         'text': 'Open Folder...',
-                        'slot': lambda: window._qt_viewer._open_folder_dialog(
-                            choose_plugin=True
-                        ),
+                        'slot': self._open_folder_w_plugin,
                     },
                 ],
             },
@@ -270,6 +264,20 @@ class FileMenu(NapariMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
+
+    def _open_files_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog(choose_plugin=True)
+
+    def _open_files_as_stack_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog_as_stack_dialog(
+            choose_plugin=True
+        )
+
+    def _open_folder_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
 @register_viewer_action(trans._("Show all key bindings"))
