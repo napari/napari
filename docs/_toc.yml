@@ -58,6 +58,7 @@ subtrees:
         - entries:
           - file: guides/magicgui
           - file: guides/event_loop
+          - file: guides/napari_models
           - file: guides/threading
           - file: guides/3D_interactivity
           - file: guides/rendering-explanation
