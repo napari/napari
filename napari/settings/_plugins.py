@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Dict, List, Set
 
 from pydantic import Field
@@ -19,11 +18,6 @@ class PluginHookOption(TypedDict):
 CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
-class PluginAPI(str, Enum):
-    napari_hub = 'napari hub'
-    pypi = 'PyPI'
-
-
 class PluginsSettings(EventedSettings):
     use_npe2_adaptor: bool = Field(
         False,
@@ -33,12 +27,10 @@ class PluginsSettings(EventedSettings):
         ),
         requires_restart=True,
     )
-    plugin_api: PluginAPI = Field(
-        PluginAPI.pypi,
+    plugin_api: str = Field(
+        'pypi',
         title=trans._("Plugin API"),
-        description=trans._(
-            "Use the following API for querying plugin information.",
-        ),
+        description=trans._("(Deprecated)."),
     )
     call_order: CallOrderDict = Field(
         default_factory=dict,
