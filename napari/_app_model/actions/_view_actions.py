@@ -1,58 +1,13 @@
-from typing import TYPE_CHECKING, List
+from typing import List
 
-from app_model.types import Action, ToggleRule
+from app_model.types import Action
 
 from ..constants import CommandId, MenuId
-
-if TYPE_CHECKING:
-    from qtpy.QtWidgets import QAction
-
-    from ...utils.events import EventEmitter
-    from ...viewer import Viewer
-
-
-class ViewerToggleAction(Action):
-    def __init__(
-        self,
-        *,
-        id: CommandId,
-        title: str,
-        viewer_attribute: str,
-        sub_attribute: str,
-        **kwargs,
-    ):
-        def toggle(viewer: 'Viewer'):
-            attr = getattr(viewer, viewer_attribute)
-            current = getattr(attr, sub_attribute)
-            setattr(attr, sub_attribute, not current)
-
-        def initialize(viewer: 'Viewer'):
-            attr = getattr(viewer, viewer_attribute)
-            return getattr(attr, sub_attribute)
-
-        def connect(action: 'QAction', viewer: 'Viewer'):
-            attr = getattr(viewer, viewer_attribute)
-            emitter: EventEmitter = getattr(attr.events, sub_attribute)
-
-            @emitter.connect
-            def _setchecked(e):
-                action.setChecked(e.value if hasattr(e, 'value') else e)
-
-            action.destroyed.connect(lambda: emitter.disconnect(_setchecked))
-
-        rule = ToggleRule(initialize=initialize, experimental_connect=connect)
-        super().__init__(
-            id=id,
-            title=title,
-            toggled=rule,
-            callback=toggle,
-            **kwargs,
-        )
-
+from ._toggle_action import ViewerToggleAction
 
 VIEW_ACTIONS: List[Action] = []
 
-for cmd, viewer_attr, prop in (
+for cmd, viewer_attr, sub_attr in (
     (CommandId.TOGGLE_VIEWER_AXES, 'axes', 'visible'),
     (CommandId.TOGGLE_VIEWER_AXES_COLORED, 'axes', 'colored'),
     (CommandId.TOGGLE_VIEWER_AXES_LABELS, 'axes', 'labels'),
@@ -68,7 +23,7 @@ for cmd, viewer_attr, prop in (
             id=cmd,
             title=cmd.title,
             viewer_attribute=viewer_attr,
-            sub_attribute=prop,
+            sub_attribute=sub_attr,
             menus=[{'id': menu}],
         )
     )
