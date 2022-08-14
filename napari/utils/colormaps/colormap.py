@@ -146,9 +146,13 @@ class LabelColormap(Colormap):
     Attributes
     ----------
     seed : float
+    use_selection : bool
+    selection : float
     """
 
     seed: float = 0.5
+    use_selection: bool = False
+    selection: float = 0.0
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
 
     def map(self, values):

@@ -44,7 +44,14 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
         float phi_mod = 0.6180339887498948482;  // phi - 1
         float value = 0.0;
 
+        bool use_selection = $use_selection;
+        float selection = $selection;
+
         if (t == 0) {
+            return vec4(0.0,0.0,0.0,0.0);
+        }
+
+        if ((use_selection) && (selection != t)) {
             return vec4(0.0,0.0,0.0,0.0);
         }
 
@@ -60,15 +67,29 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
 
 
 class LabelVispyColormap(VispyColormap):
-    def __init__(self, colors, controls=None, seed=0.5):
+    def __init__(
+        self,
+        colors,
+        controls=None,
+        seed=0.5,
+        use_selection=False,
+        selection=0.0,
+    ):
         super().__init__(colors, controls, interpolation='zero')
         self.seed = seed
+        self.use_selection = use_selection
+        self.selection = selection
         self.update_shader()
 
     def update_shader(self):
-        self.glsl_map = _glsl_label_step(
-            self._controls, self.colors, self.texture_map_data
-        ).replace('$seed', str(self.seed))
+        self.glsl_map = (
+            _glsl_label_step(
+                self._controls, self.colors, self.texture_map_data
+            )
+            .replace('$seed', str(self.seed))
+            .replace('$use_selection', str(self.use_selection).lower())
+            .replace('$selection', str(self.selection))
+        )
 
     def map(self, x):
         tp = np.where(x == 0, 0, low_discrepancy_image(x, self.seed))
@@ -89,10 +110,13 @@ class VispyLabelsLayer(VispyImageLayer):
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
         colormap = self.layer.colormap
+
         self.node.cmap = LabelVispyColormap(
             colors=colormap.colors,
             controls=colormap.controls,
             seed=colormap.seed,
+            use_selection=colormap.use_selection,
+            selection=colormap.selection,
         )
 
 

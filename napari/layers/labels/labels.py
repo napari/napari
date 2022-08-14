@@ -240,7 +240,6 @@ class Labels(_ImageBase):
         self._contour = 0
 
         data = self._ensure_int_labels(data)
-        self._color_lookup_func = None
 
         super().__init__(
             data,
@@ -607,6 +606,8 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
+        self.colormap.selection = self._selected_label
+
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
         if self.show_selected_label:
@@ -653,6 +654,7 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter):
         self._show_selected_label = filter
+        self.colormap.use_selection = self._show_selected_label
         self.refresh()
 
     @property
@@ -766,75 +768,6 @@ class Labels(_ImageBase):
             image = np.where(im != 0, low_discrepancy_image(im, self._seed), 0)
         return image
 
-    def _lookup_with_index(self, im, selected_label=None):
-        """Returns display version of im using color lookup array by index
-
-        Parameters
-        ----------
-        im : array or int
-            Raw integer input image.
-        selected_label : int, optional
-            Value of selected label to color, by default None
-        """
-        if selected_label:
-            if selected_label > len(self._all_vals):
-                self._color_lookup_func = self._get_color_lookup_func(
-                    im,
-                    min(np.min(im), selected_label),
-                    max(np.max(im), selected_label),
-                )
-            if (
-                self._color_lookup_func
-                == self._lookup_with_low_discrepancy_image
-            ):
-                image = self._color_lookup_func(im, selected_label)
-            else:
-                colors = np.zeros_like(self._all_vals)
-                colors[selected_label] = low_discrepancy_image(
-                    selected_label, self._seed
-                )
-                image = colors[im]
-        else:
-            try:
-                image = self._all_vals[im]
-            except IndexError:
-                self._color_lookup_func = self._get_color_lookup_func(
-                    im, np.min(im), np.max(im)
-                )
-                if (
-                    self._color_lookup_func
-                    == self._lookup_with_low_discrepancy_image
-                ):
-                    # revert to "classic" mode converting all pixels since we
-                    # encountered a large value in the raw labels image
-                    image = self._color_lookup_func(im, selected_label)
-                else:
-                    image = self._all_vals[im]
-        return image
-
-    def _get_color_lookup_func(self, data, min_label_val, max_label_val):
-        """Returns function used for mapping label values to colors
-
-        If array of [0..max(data)] would be larger than data,
-        returns lookup_with_low_discrepancy_image, otherwise returns
-        lookup_with_index
-
-        Parameters
-        ----------
-        data : array
-            labels data
-        min_label_val : int
-            minimum label value in data
-        max_label_val : int
-            maximum label value in data
-
-        Returns
-        -------
-        lookup_func : function
-            function to use for mapping label values to colors
-        """
-        return self._as_type
-
     def _as_type(self, data, selected_label=None):
         return data.astype(np.float32)
 
@@ -854,6 +787,8 @@ class Labels(_ImageBase):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+
+        # lookup function -> self._as_type
 
         raw_modified = raw
         if self.contour > 0:
@@ -875,10 +810,6 @@ class Labels(_ImageBase):
                         deferred=True,
                     )
                 )
-        if self._color_lookup_func is None:
-            self._color_lookup_func = self._get_color_lookup_func(
-                raw_modified, np.min(raw_modified), np.max(raw_modified)
-            )
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -892,16 +823,10 @@ class Labels(_ImageBase):
                     for x in u
                 ]
             )[inv].reshape(raw_modified.shape)
-        elif (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            image = self._color_lookup_func(raw_modified)
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            image = self._color_lookup_func(raw_modified, self._selected_label)
+        elif self._color_mode == LabelColorMode.AUTO:
+            # TODO: Trigger _selected_label mode in shader
+            # TODO: Check not self.show_selected_label?
+            image = self._as_type(raw_modified)
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
