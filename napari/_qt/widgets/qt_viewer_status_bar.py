@@ -27,33 +27,26 @@ class ViewerStatusBar(QStatusBar):
         layout = QHBoxLayout()
 
         self._status = QLabel('Ready')
-        self._status.setMinimumSize(0, 16)
-        self._status.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self._status.setContentsMargins(0, 0, 0, 0)
+
         self._layer_base = QElidingLabel(trans._(''))
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
-        self._layer_base.setMinimumSize(120, 16)
+        self._layer_base.setMinimumSize(100, 16)
+        self._layer_base.setContentsMargins(0, 0, 0, 0)
         self._layer_base.setSizePolicy(
             QSizePolicy.Minimum, QSizePolicy.Maximum
         )
 
         self._plugin_reader = QElidingLabel(trans._(''))
         self._plugin_reader.setMinimumSize(80, 16)
-        self._plugin_reader.setSizePolicy(
-            QSizePolicy.Minimum, QSizePolicy.Maximum
-        )
-
+        self._plugin_reader.setContentsMargins(0, 0, 0, 0)
         self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
+
         self._source_type = QLabel('')
-        self._source_type.setMinimumSize(50, 16)
-        self._source_type.setSizePolicy(
-            QSizePolicy.Minimum, QSizePolicy.Maximum
-        )
+        self._source_type.setContentsMargins(0, 0, 0, 0)
 
         self._coordinates = QLabel('')
-        self._coordinates.setMinimumSize(80, 16)
-        self._coordinates.setSizePolicy(
-            QSizePolicy.Minimum, QSizePolicy.Maximum
-        )
+        self._coordinates.setContentsMargins(0, 0, 0, 0)
 
         layout.addWidget(self._status)
         layout.addWidget(self._layer_base)
@@ -61,6 +54,8 @@ class ViewerStatusBar(QStatusBar):
         layout.addWidget(self._plugin_reader)
         layout.addWidget(self._coordinates)
         layout.addStretch(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         main_widget.setLayout(layout)
 
@@ -75,8 +70,6 @@ class ViewerStatusBar(QStatusBar):
         # FIXME: feels weird to set this here.
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
-
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
