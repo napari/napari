@@ -13,6 +13,7 @@ of the layer types, like "image", "points", etc...):
         return viewer
 """
 import inspect
+from typing import Any, Tuple
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
@@ -113,20 +114,23 @@ _viewer_params = inspect.signature(Viewer).parameters
 _dims_params = Dims.__fields__
 
 
-def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
+def _make_viewer_then(
+    add_method: str, args, kwargs, viewer=None
+) -> Tuple[Viewer, Any]:
     """Utility function that creates a viewer, adds a layer, returns viewer."""
     vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
     }
-    viewer = Viewer(**vkwargs)
+    if viewer is None:
+        viewer = Viewer(**vkwargs)
     kwargs.update(kwargs.pop("kwargs", {}))
     method = getattr(viewer, add_method)
-    method(*args, **kwargs)
+    added = method(*args, **kwargs)
     for arg_name, arg_val in dims_kwargs.items():
         setattr(viewer.dims, arg_name, arg_val)
-    return viewer
+    return viewer, added
 
 
 # Each of the following functions will have this pattern:
@@ -140,82 +144,43 @@ def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
 
 @_merge_layer_viewer_sigs_docs
 def view_image(*args, **kwargs):
-    return _make_viewer_then('add_image', args, kwargs)
+    return _make_viewer_then('add_image', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_labels(*args, **kwargs):
-    return _make_viewer_then('add_labels', args, kwargs)
+    return _make_viewer_then('add_labels', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_points(*args, **kwargs):
-    return _make_viewer_then('add_points', args, kwargs)
+    return _make_viewer_then('add_points', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_shapes(*args, **kwargs):
-    return _make_viewer_then('add_shapes', args, kwargs)
+    return _make_viewer_then('add_shapes', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_surface(*args, **kwargs):
-    return _make_viewer_then('add_surface', args, kwargs)
+    return _make_viewer_then('add_surface', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_tracks(*args, **kwargs):
-    return _make_viewer_then('add_tracks', args, kwargs)
+    return _make_viewer_then('add_tracks', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_vectors(*args, **kwargs):
-    return _make_viewer_then('add_vectors', args, kwargs)
+    return _make_viewer_then('add_vectors', args, kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_path(*args, **kwargs):
-    return _make_viewer_then('open', args, kwargs)
+    return _make_viewer_then('open', args, kwargs)[0]
 
 
-def imshow(data, viewer=None, channel_axis=None, multiscale=False, **kwargs):
-    """Add image to viewer and return the layer and the viewer itself
-
-    Args:
-        data (_type_): _description_
-        viewer (_type_, optional): _description_. Defaults to None.
-        channel_axis (_type_, optional): _description_. Defaults to None.
-        multiscale (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        Viewer: napari.Viewer instance of the viewer
-        list: List of newly created layers in Viewer
-    """
-    vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
-    # separate dims kwargs because we want to set those after adding data
-    dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
-    }
-
-    if channel_axis:
-        kwargs['channel_axis'] = channel_axis
-
-    if multiscale:
-        kwargs['multiscale'] = multiscale
-
-    # create a viewer if one is not provided
-    if not viewer:
-        viewer = Viewer(**vkwargs)
-
-    # TODO handle multiple layers being created...
-    # create the new layer in the viewer
-    layer = viewer.add_image(data, **kwargs)
-
-    # TODO: I don't know why this was necessary in _make_viewer_then
-    # kwargs.update(kwargs.pop("kwargs", {}))
-
-    # set viewer dims (TODO not sure why this is needed)
-    for arg_name, arg_val in dims_kwargs.items():
-        setattr(viewer.dims, arg_name, arg_val)
-
-    return viewer, layer
+def imshow(*args, viewer=None, **kwargs):
+    return _make_viewer_then('add_image', args, kwargs, viewer=viewer)
