@@ -254,7 +254,7 @@ def color_dict_to_colormap(colors):
     label_color_index : dict of int
         Mapping of Label to color control point within colormap
     """
-    control_small_delta = 0.000001
+    control_small_delta = 0.0000001
     control_colors = np.unique(list(colors.values()), axis=0)
 
     colormap = Colormap(
@@ -267,10 +267,9 @@ def color_dict_to_colormap(colors):
     }
 
     label_color_index = {
-        label: control2index[tuple(color)] + control_small_delta
+        label: np.float32(control2index[tuple(color)] + control_small_delta)
         for label, color in colors.items()
     }
-
     return colormap, label_color_index
 
 
