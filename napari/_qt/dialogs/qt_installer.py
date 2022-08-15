@@ -1,10 +1,11 @@
 import contextlib
+import os
 import shutil
 import sys
 from pathlib import Path
 from typing import Deque, Optional, Sequence, Tuple
 
-from qtpy.QtCore import QObject, QProcess, QProcessEnvironment
+from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
@@ -12,14 +13,34 @@ from ...utils.misc import running_as_bundled_app
 JobId = int
 
 
-class InstallerProcess(QProcess):
+class Installer:
+    def install(self, pkg_list: Sequence[str]):
+        ...
+
+    def uninstall(self, pkg_list: Sequence[str]):
+        ...
+
+    def cancel(self, pkg_list: Optional[Sequence[str]] = None):
+        ...
+
+
+class AbstractInstaller(QProcess):
+    allFinished = Signal()
+
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
-        self.setProcessChannelMode(QProcess.MergedChannels)
-        env = QProcessEnvironment.systemEnvironment()
-        self.setProcessEnvironment(env)
         self._queue: Deque[Tuple[str, ...]] = Deque()
+        self.setProcessChannelMode(QProcess.MergedChannels)
+
+        env = QProcessEnvironment.systemEnvironment()
+        self._modify_env(env)
+        self.setProcessEnvironment(env)
+
         self.finished.connect(self._on_process_finished)
+
+    # abstract method
+    def _modify_env(self, env: QProcessEnvironment):
+        raise NotImplementedError()
 
     def install(
         self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
@@ -36,32 +57,37 @@ class InstallerProcess(QProcess):
         self._process_queue()
         return hash(args)
 
-    def cancel(self, job_id: JobId):
+    def cancel(self, job_id: Optional[JobId] = None):
+        if job_id is None:
+            # cancel all jobs
+            self._queue.clear()
+            self.terminate()
+            return
+
         for i, args in enumerate(self._queue):
             if hash(args) == job_id:
                 self.terminate() if i == 0 else self._queue.remove(args)
                 return
         raise ValueError(f"No job with id {job_id}")
 
-    def cancelAll(self):
-        self._queue.clear()
-        self.terminate()
-
     def hasJobs(self) -> bool:
         return bool(self._queue)
 
+    # abstract method
     def _get_install_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
-        return tuple(pkg_list)
+        raise NotImplementedError()
 
+    # abstract method
     def _get_uninstall_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
-        return tuple(pkg_list)
+        raise NotImplementedError()
 
     def _process_queue(self):
         if not self._queue:
+            self.allFinished.emit()
             return
         self.setArguments(list(self._queue[0]))
         self.start()
@@ -78,12 +104,22 @@ class InstallerProcess(QProcess):
             super().waitForFinished(msecs)
 
 
-class PipInstaller(InstallerProcess):
+class PipInstaller(AbstractInstaller):
     def __init__(
         self, parent: Optional[QObject] = None, python_interpreter: str = ''
     ) -> None:
         super().__init__(parent)
         self.setProgram(str(python_interpreter or _get_python_exe()))
+
+    def _modify_env(self, env: QProcessEnvironment):
+        # patch process path
+        combined_paths = os.pathsep.join(
+            [
+                user_site_packages(),
+                env.systemEnvironment().value("PYTHONPATH"),
+            ]
+        )
+        env.insert("PYTHONPATH", combined_paths)
 
     def _get_install_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
@@ -92,7 +128,9 @@ class PipInstaller(InstallerProcess):
         if prefix is not None:
             cmd.extend(['--prefix', str(prefix)])
         if running_as_bundled_app() and sys.platform.startswith('linux'):
-            cmd += ['--no-warn-script-location', '--prefix', user_plugin_dir()]
+            cmd.extend(
+                ['--no-warn-script-location', '--prefix', user_plugin_dir()]
+            )
         return tuple(cmd + list(pkg_list))
 
     def _get_uninstall_args(
@@ -101,40 +139,66 @@ class PipInstaller(InstallerProcess):
         return tuple(['-m', 'pip', 'uninstall', '-y'] + list(pkg_list))
 
 
-class CondaInstaller(InstallerProcess):
+class CondaInstaller(AbstractInstaller):
     def __init__(
         self, parent: Optional[QObject] = None, use_mamba: bool = True
     ) -> None:
+        self._bin = 'mamba' if use_mamba and shutil.which('mamba') else 'conda'
         super().__init__(parent)
-        program = 'mamba' if use_mamba and shutil.which('mamba') else 'conda'
-        self.setProgram(program)
+        self.setProgram(self._bin)
+        # TODO: make configurable per install once plugins can request it
         self.channels = ('conda-forge',)
         self._default_prefix = (
             sys.prefix if (Path(sys.prefix) / "conda-meta").is_dir() else None
         )
 
+    def _modify_env(self, env: QProcessEnvironment):
+        if self._bin != 'mamba':
+            return
+        from tempfile import gettempdir
+
+        from ..._version import version_tuple
+
+        napari_version = ".".join(str(v) for v in version_tuple[:3])
+        if env.contains("CONDA_PINNED_PACKAGES"):
+            system_pins = f"&{env.value('CONDA_PINNED_PACKAGES')}"
+        else:
+            system_pins = ""
+        env.insert(
+            "CONDA_PINNED_PACKAGES", f"napari={napari_version}{system_pins}"
+        )
+        if os.name == "nt":
+            if not env.contains("TEMP"):
+                temp = gettempdir()
+                env.insert("TMP", temp)
+                env.insert("TEMP", temp)
+            if not env.contains("USERPROFILE"):
+                env.insert("HOME", os.path.expanduser("~"))
+                env.insert("USERPROFILE", os.path.expanduser("~"))
+
     def _get_install_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
-        return self._get_args('install', prefix, pkg_list)
+        return self._get_args('install', pkg_list, prefix)
 
     def _get_uninstall_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
-        return self._get_args('remove', prefix, pkg_list)
+        return self._get_args('remove', pkg_list, prefix)
 
     # TODO Rename this here and in `_get_install_args` and `_get_uninstall_args`
-    def _get_args(self, arg0, prefix, pkg_list):
+    def _get_args(self, arg0, pkg_list: Sequence[str], prefix: Optional[str]):
         cmd = [arg0, '-y']
-        prefix = prefix or self._default_prefix
-        if prefix is not None:
-            cmd.extend(['--prefix', str(prefix)])
+        if prefix := str(prefix or self._default_prefix):
+            cmd.extend(['--prefix', prefix])
         for channel in self.channels:
             cmd.extend(["-c", channel])
         return tuple(cmd + list(pkg_list))
 
 
 def _get_python_exe():
+    # Note: is_bundled_app() returns False even if using a Briefcase bundle...
+    # Workaround: see if sys.executable is set to something something napari on Mac
     if sys.executable.endswith("napari") and sys.platform == 'darwin':
         # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
         if (python := Path(sys.prefix) / "bin" / "python3").is_file():
@@ -144,6 +208,6 @@ def _get_python_exe():
 
 if __name__ == '__main__':
 
-    i = InstallerProcess()
+    i = AbstractInstaller()
     i.setProgram(sys.executable)
     i.readyReadStandardOutput.connect(lambda: print(i.readAllStandardOutput()))

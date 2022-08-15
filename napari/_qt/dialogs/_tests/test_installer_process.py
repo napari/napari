@@ -37,17 +37,13 @@ def tmp_conda_env(tmp_path):
 
 def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
     installer = PipInstaller(python_interpreter=tmp_virtualenv.creator.exe)
-    with qtbot.waitSignals(
-        [installer.finished, installer.finished],
-        timeout=20000,
-    ):
+    with qtbot.waitSignal(installer.allFinished, timeout=20000):
         installer.install(['pip-install-test'])
         installer.install(['typing-extensions'])
         job_id = installer.install(['requests'])
         assert isinstance(job_id, int)
         installer.cancel(job_id)
 
-    installer.waitForFinished()
     assert not installer.hasJobs()
 
     pkgs = 0
@@ -62,7 +58,7 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
     if pkgs < 2:
         raise AssertionError('package was not installed')
 
-    with qtbot.waitSignal(installer.finished, timeout=10000):
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):
         job_id = installer.uninstall(['pip-install-test'])
 
     for pth in tmp_virtualenv.creator.libs:
@@ -74,13 +70,13 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = CondaInstaller()
-    with qtbot.waitSignal(installer.finished, timeout=10000):
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
         installer.waitForFinished()
 
     assert not installer.hasJobs()
 
-    with qtbot.waitSignal(installer.finished, timeout=10000):
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.uninstall(['typing-extensions'], prefix=tmp_conda_env)
         installer.waitForFinished()
 
