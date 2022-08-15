@@ -2,15 +2,17 @@
 Add image transformed
 =====================
 
-Display one image using the add_image API.
+Display one image and transform it using the :meth:`add_image` API.
 """
 
 from skimage import data
 import napari
 
 
-# create the viewer with an image
-viewer = napari.view_image(data.astronaut(), rgb=True, rotate=45)
+# create a viewer
+viewer = napari.Viewer()
+# add and transform image
+viewer.add_image(data.astronaut(), rgb=True, rotate=45)
 
 if __name__ == '__main__':
     napari.run()
