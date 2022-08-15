@@ -13,17 +13,6 @@ from ...utils.misc import running_as_bundled_app
 JobId = int
 
 
-class Installer:
-    def install(self, pkg_list: Sequence[str]):
-        ...
-
-    def uninstall(self, pkg_list: Sequence[str]):
-        ...
-
-    def cancel(self, pkg_list: Optional[Sequence[str]] = None):
-        ...
-
-
 class AbstractInstaller(QProcess):
     allFinished = Signal()
 
@@ -68,7 +57,7 @@ class AbstractInstaller(QProcess):
             if hash(args) == job_id:
                 self.terminate() if i == 0 else self._queue.remove(args)
                 return
-        raise ValueError(f"No job with id {job_id}")
+        raise ValueError(f"No job with id {job_id}")  # pragma: no cover
 
     def hasJobs(self) -> bool:
         return bool(self._queue)
@@ -204,10 +193,3 @@ def _get_python_exe():
         if (python := Path(sys.prefix) / "bin" / "python3").is_file():
             return str(python)
     return sys.executable
-
-
-if __name__ == '__main__':
-
-    i = AbstractInstaller()
-    i.setProgram(sys.executable)
-    i.readyReadStandardOutput.connect(lambda: print(i.readAllStandardOutput()))
