@@ -224,7 +224,6 @@ class CondaInstaller(AbstractInstaller):
     ) -> Tuple[str, ...]:
         return self._get_args('remove', pkg_list, prefix)
 
-    # TODO Rename this here and in `_get_install_args` and `_get_uninstall_args`
     def _get_args(self, arg0, pkg_list: Sequence[str], prefix: Optional[str]):
         cmd = [arg0, '-y']
         if prefix := str(prefix or self._default_prefix):
