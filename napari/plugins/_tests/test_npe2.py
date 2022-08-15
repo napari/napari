@@ -1,83 +1,31 @@
+from pathlib import Path
 from types import MethodType
-from unittest.mock import MagicMock, patch
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-import yaml
-from npe2 import PluginManager, PluginManifest
+from npe2 import PluginManifest
+
+if TYPE_CHECKING:
+    from npe2._pytest_plugin import TestPluginManager
 
 from napari.layers import Image, Points
 from napari.plugins import _npe2
 
-PLUGIN_NAME = 'my-plugin'
-YAML = """
-name: {0}
-display_name: My Plugin
-contributions:
-  commands:
-    - id: {0}.hello_world
-      title: Hello World
-    - id: {0}.some_reader
-      title: Some Reader
-    - id: {0}.my_writer
-      title: Image Writer
-    - id: {0}.generate_random_data
-      title: Generate uniform random data
-    - id: {0}.some_widget
-      title: Create my widget
-  readers:
-    - command: {0}.some_reader
-      filename_patterns: ["*.fzy", "*.fzzy"]
-      accepts_directories: true
-  writers:
-    - command: {0}.my_writer
-      filename_extensions: ["*.tif", "*.tiff"]
-      layer_types: ["image"]
-  widgets:
-    - command: {0}.some_widget
-      display_name: My Widget
-  menus:
-    /napari/layer_context:
-      - submenu: mysubmenu
-      - command: {0}.hello_world
-    mysubmenu:
-      - command: {0}.hello_world
-  submenus:
-    - id: mysubmenu
-      label: My SubMenu
-  themes:
-    - label: "SampleTheme"
-      id: "sample_theme"
-      type: "dark"
-      colors:
-        background: "#272822"
-        foreground: "#75715e"
-  sample_data:
-    - display_name: Some Random Data (512 x 512)
-      key: random_data
-      command: {0}.generate_random_data
-    - display_name: Random internet image
-      key: internet_image
-      uri: https://picsum.photos/1024
-"""
+PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
+MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
 @pytest.fixture
-def sample_plugin():
-    return PluginManifest(**yaml.safe_load(YAML.format(PLUGIN_NAME)))
-
-
-@pytest.fixture
-def mock_pm(sample_plugin):
+def mock_pm(npe2pm: 'TestPluginManager'):
     mock_reg = MagicMock()
-    with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager(reg=mock_reg)
-    _pm.register(sample_plugin)
-    with patch('npe2.PluginManager.instance', return_value=_pm):
-        yield _pm
+    npe2pm._command_registry = mock_reg
+    with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
+        yield npe2pm
 
 
-def test_read(mock_pm):
+def test_read(mock_pm: 'TestPluginManager'):
     _, hookimpl = _npe2.read(["some.fzzy"], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     assert hookimpl.plugin_name == PLUGIN_NAME
@@ -91,7 +39,7 @@ def test_read(mock_pm):
     mock_pm.commands.get.assert_not_called()
 
 
-def test_write(mock_pm: PluginManager):
+def test_write(mock_pm: 'TestPluginManager'):
     # saving an image without a writer goes straight to npe2.write
     # it will use our plugin writer
     image = Image(np.random.rand(20, 20), name='ex_img')
@@ -117,7 +65,7 @@ def test_write(mock_pm: PluginManager):
     assert writer.exec.call_args_list[0].kwargs['args'][0] == 'some_file.tif'
 
 
-def test_get_widget_contribution(mock_pm):
+def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
     # calling with plugin alone
     (_, display_name) = _npe2.get_widget_contribution(PLUGIN_NAME)
     mock_pm.commands.get.assert_called_once_with('my-plugin.some_widget')
@@ -137,14 +85,14 @@ def test_get_widget_contribution(mock_pm):
     mock_pm.commands.get.assert_not_called()
 
 
-def test_populate_qmenu(mock_pm):
+def test_populate_qmenu(mock_pm: 'TestPluginManager'):
     menu = MagicMock()
     _npe2.populate_qmenu(menu, '/napari/layer_context')
     assert menu.addMenu.called_once_with('My SubMenu')
     assert menu.addAction.called_once_with('Hello World')
 
 
-def test_file_extensions_string_for_layers(mock_pm):
+def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
     layers = [Image(np.random.rand(20, 20), name='ex_img')]
     label, writers = _npe2.file_extensions_string_for_layers(layers)
     assert label == 'My Plugin (*.tif *.tiff)'
@@ -192,4 +140,35 @@ def test_sample_iterator(mock_pm):
 
 def test_widget_iterator(mock_pm):
     wdgs = list(_npe2.widget_iterator())
-    assert wdgs == [('dock', ('my-plugin', ['My Widget']))]
+    assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
+
+
+def test_plugin_actions(mock_pm: 'TestPluginManager'):
+    from napari._app_model import get_app
+    from napari.plugins import _initialize_plugins
+
+    app = get_app()
+    menus_items1 = list(app.menus.get_menu('napari/layers/context'))
+    assert 'my-plugin.hello_world' not in app.commands
+
+    _initialize_plugins()  # connect registration callbacks and populate registries
+    # the _sample_manifest should have added two items to menus
+
+    menus_items2 = list(app.menus.get_menu('napari/layers/context'))
+    assert 'my-plugin.hello_world' in app.commands
+
+    assert len(menus_items2) == len(menus_items1) + 2
+
+    # then disable and re-enable the plugin
+
+    mock_pm.disable(PLUGIN_NAME)
+
+    menus_items3 = list(app.menus.get_menu('napari/layers/context'))
+    assert len(menus_items3) == len(menus_items1)
+    assert 'my-plugin.hello_world' not in app.commands
+
+    mock_pm.enable(PLUGIN_NAME)
+
+    menus_items4 = list(app.menus.get_menu('napari/layers/context'))
+    assert len(menus_items4) == len(menus_items2)
+    assert 'my-plugin.hello_world' in app.commands
