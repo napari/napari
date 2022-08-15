@@ -11,7 +11,7 @@ on:
 
 jobs:
   packaging:
-    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@always-pyside
+    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@main
     secrets: inherit
     with:
       event_name: ${{ github.event_name }}
