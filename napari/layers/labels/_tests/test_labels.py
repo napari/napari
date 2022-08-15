@@ -12,6 +12,7 @@ import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
+from vispy.color import Colormap as VispyColormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
@@ -407,6 +408,36 @@ def test_custom_color_dict():
     # should not initialize as white since we are using random.seed
     layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
+def test_large_custom_color_dict():
+    """Confirm that the napari & vispy colormaps behave the same."""
+
+    label_count = 897
+    colors = {
+        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
+        for color in range(label_count)
+    }
+    data, _ = np.meshgrid(range(label_count), range(5))
+    layer = Labels(data, color=colors)
+
+    # Get color list using layer interface & napari.utils.colormap.ColorMap
+    label_color = layer.get_color(list(range(label_count)))
+
+    # Get the color by converting to control points with the layer and passing that to a vispy.color.colormap.Colormap
+    vispy_colormap = VispyColormap(
+        colors=layer.colormap.colors,
+        controls=layer.colormap.controls,
+        interpolation='zero',
+    )
+    label_color_controls = [
+        layer._label_color_index[x] for x in range(label_count)
+    ]
+    vispy_colors = vispy_colormap.map(
+        np.array([x for x in label_color_controls])
+    )
+
+    assert (label_color == vispy_colors).all()
 
 
 def test_add_colors():
