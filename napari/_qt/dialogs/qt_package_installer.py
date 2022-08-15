@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
@@ -16,6 +17,8 @@ JobId = int
 class AbstractInstaller(QProcess):
     """Abstract base class for package installers (pip, conda, etc)."""
 
+    # emitted when all jobs are finished
+    # not to be confused with finished, which is emitted when each job is finished
     allFinished = Signal()
 
     # abstract method
@@ -193,18 +196,15 @@ class CondaInstaller(AbstractInstaller):
     def _modify_env(self, env: QProcessEnvironment):
         if self._bin != 'mamba':
             return
-        from tempfile import gettempdir
 
         from ..._version import version_tuple
 
         napari_version = ".".join(str(v) for v in version_tuple[:3])
-        if env.contains("CONDA_PINNED_PACKAGES"):
-            system_pins = f"&{env.value('CONDA_PINNED_PACKAGES')}"
-        else:
-            system_pins = ""
-        env.insert(
-            "CONDA_PINNED_PACKAGES", f"napari={napari_version}{system_pins}"
-        )
+
+        PINNED = 'CONDA_PINNED_PACKAGES'
+        system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
+        env.insert(PINNED, f"napari={napari_version}{system_pins}")
+
         if os.name == "nt":
             if not env.contains("TEMP"):
                 temp = gettempdir()
