@@ -388,9 +388,17 @@ def test_custom_color_dict():
     # test with custom color dict
     assert type(layer.get_color(2)) == np.ndarray
     assert type(layer.get_color(1)) == np.ndarray
+
     assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
+
+    # Test to see if the label mapped control points match
+    local_controls = np.array(
+        sorted(np.unique(list(layer._label_color_index.values()) + [1.0]))
+    )
+    colormap_controls = np.array(layer._colormap.controls)
+    assert np.max(local_controls - colormap_controls) < 0.0001
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
