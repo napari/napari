@@ -117,7 +117,8 @@ _dims_params = Dims.__fields__
 def _make_viewer_then(
     add_method: str, args, kwargs, viewer=None
 ) -> Tuple[Viewer, Any]:
-    """Utility function that creates a viewer, adds a layer, returns viewer."""
+    """Utility function that creates a viewer, adds a layer, returns viewer
+    and layer."""
     vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
