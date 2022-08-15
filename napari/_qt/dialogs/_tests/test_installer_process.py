@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from napari._qt.dialogs.qt_installer import CondaInstaller, PipInstaller
+from napari._qt.dialogs.qt_package_installer import (
+    CondaInstaller,
+    PipInstaller,
+)
 
 if TYPE_CHECKING:
     from virtualenv.run import Session
