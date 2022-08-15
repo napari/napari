@@ -2013,15 +2013,15 @@ class Points(Layer):
             mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
         return mask
 
-    def get_status_info(
+    def get_status(
         self,
         position: Optional[Tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ) -> str:
-        """Status message of the data at a coordinate position.
+    ) -> dict:
+        """Status message information of the data at a coordinate position.
 
         # Parameters
         # ----------
@@ -2039,8 +2039,8 @@ class Points(Layer):
 
         # Returns
         # -------
-        # msg : string
-        #     String containing a message that can be used as a status update.
+        # source_info : dict
+        #     Dict containing information that can be used in a status update.
         #"""
         if position is not None:
             value = self.get_value(

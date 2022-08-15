@@ -425,7 +425,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return
         active = self.layers.selection.active
         if active is not None:
-            self.status = active.get_status_info(
+            self.status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
