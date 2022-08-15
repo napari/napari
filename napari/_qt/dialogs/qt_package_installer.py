@@ -14,53 +14,13 @@ JobId = int
 
 
 class AbstractInstaller(QProcess):
+    """Abstract base class for package installers (pip, conda, etc)."""
+
     allFinished = Signal()
-
-    def __init__(self, parent: Optional[QObject] = None) -> None:
-        super().__init__(parent)
-        self._queue: Deque[Tuple[str, ...]] = Deque()
-        self.setProcessChannelMode(QProcess.MergedChannels)
-
-        env = QProcessEnvironment.systemEnvironment()
-        self._modify_env(env)
-        self.setProcessEnvironment(env)
-
-        self.finished.connect(self._on_process_finished)
 
     # abstract method
     def _modify_env(self, env: QProcessEnvironment):
         raise NotImplementedError()
-
-    def install(
-        self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
-    ) -> JobId:
-        return self._queue_args(self._get_install_args(pkg_list, prefix))
-
-    def uninstall(
-        self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
-    ) -> JobId:
-        return self._queue_args(self._get_uninstall_args(pkg_list))
-
-    def _queue_args(self, args) -> JobId:
-        self._queue.append(args)
-        self._process_queue()
-        return hash(args)
-
-    def cancel(self, job_id: Optional[JobId] = None):
-        if job_id is None:
-            # cancel all jobs
-            self._queue.clear()
-            self.terminate()
-            return
-
-        for i, args in enumerate(self._queue):
-            if hash(args) == job_id:
-                self.terminate() if i == 0 else self._queue.remove(args)
-                return
-        raise ValueError(f"No job with id {job_id}")  # pragma: no cover
-
-    def hasJobs(self) -> bool:
-        return bool(self._queue)
 
     # abstract method
     def _get_install_args(
@@ -73,6 +33,99 @@ class AbstractInstaller(QProcess):
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
         raise NotImplementedError()
+
+    def __init__(self, parent: Optional[QObject] = None) -> None:
+        super().__init__(parent)
+        self._queue: Deque[Tuple[str, ...]] = Deque()
+        self.setProcessChannelMode(QProcess.MergedChannels)
+
+        env = QProcessEnvironment.systemEnvironment()
+        self._modify_env(env)
+        self.setProcessEnvironment(env)
+
+        self.finished.connect(self._on_process_finished)
+
+    # -------------------------- Public API ------------------------------
+    def install(
+        self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
+    ) -> JobId:
+        """Install packages in `pkg_list` into `prefix`.
+
+        Parameters
+        ----------
+        pkg_list : Sequence[str]
+            List of packages to install.
+        prefix : Optional[str], optional
+            Optional prefix to install packages into.
+
+        Returns
+        -------
+        JobId : int
+            ID that can be used to cancel the process.
+        """
+        return self._queue_args(self._get_install_args(pkg_list, prefix))
+
+    def uninstall(
+        self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
+    ) -> JobId:
+        """Uninstall packages in `pkg_list` from `prefix`.
+
+        Parameters
+        ----------
+        pkg_list : Sequence[str]
+            List of packages to uninstall.
+        prefix : Optional[str], optional
+            Optional prefix from which to uninstall packages.
+
+        Returns
+        -------
+        JobId : int
+            ID that can be used to cancel the process.
+        """
+        return self._queue_args(self._get_uninstall_args(pkg_list))
+
+    def cancel(self, job_id: Optional[JobId] = None):
+        """Cancel `job_id` if it is running.
+
+        Parameters
+        ----------
+        job_id : Optional[JobId], optional
+            Job ID to cancel.  If not provided, cancel all jobs.
+        """
+        if job_id is None:
+            # cancel all jobs
+            self._queue.clear()
+            self.terminate()
+            return
+
+        for i, args in enumerate(self._queue):
+            if hash(args) == job_id:
+                self.terminate() if i == 0 else self._queue.remove(args)
+                return
+        raise ValueError(f"No job with id {job_id}")  # pragma: no cover
+
+    def waitForFinished(self, msecs: int = 10000) -> bool:
+        """Block and wait for all jobs to finish.
+
+        Parameters
+        ----------
+        msecs : int, optional
+            Time to wait, by default 10000
+        """
+        while self.hasJobs():
+            super().waitForFinished(msecs)
+        return True
+
+    def hasJobs(self) -> bool:
+        """True if there are jobs remaining in the queue."""
+        return bool(self._queue)
+
+    # -------------------------- Private methods ------------------------------
+
+    def _queue_args(self, args) -> JobId:
+        self._queue.append(args)
+        self._process_queue()
+        return hash(args)
 
     def _process_queue(self):
         if not self._queue:
@@ -87,10 +140,6 @@ class AbstractInstaller(QProcess):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
         self._process_queue()
-
-    def waitForFinished(self, msecs: int = 10000) -> bool:
-        while self.hasJobs():
-            super().waitForFinished(msecs)
 
 
 class PipInstaller(AbstractInstaller):
