@@ -1094,9 +1094,16 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         if event.mimeData().hasUrls():
+            self._set_drag_status()
             event.accept()
         else:
             event.ignore()
+
+    def _set_drag_status(self):
+        """Set dedicated status message when dragging files into viewer"""
+        self.viewer.status = trans._(
+            'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+        )
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
