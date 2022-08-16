@@ -111,13 +111,16 @@ class VispyLabelsLayer(VispyImageLayer):
         # in our constructor, we have access to the texture data we need
         colormap = self.layer.colormap
 
-        self.node.cmap = LabelVispyColormap(
-            colors=colormap.colors,
-            controls=colormap.controls,
-            seed=colormap.seed,
-            use_selection=colormap.use_selection,
-            selection=colormap.selection,
-        )
+        if isinstance(colormap, LabelVispyColormap):
+            self.node.cmap = LabelVispyColormap(
+                colors=colormap.colors,
+                controls=colormap.controls,
+                seed=colormap.seed,
+                use_selection=colormap.use_selection,
+                selection=colormap.selection,
+            )
+        else:
+            self.node.cmap = VispyColormap(*colormap)
 
 
 class LabelVisual(ImageVisual):
@@ -146,7 +149,6 @@ class LabelLayerNode(ImageLayerNode):
             texture_format=texture_format,
         )
 
-        # TODO
         self._volume_node = VolumeNode(
             np.zeros((1, 1, 1), dtype=np.float32),
             clim=[0, 1],
