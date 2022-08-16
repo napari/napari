@@ -305,6 +305,13 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
 
 
 def get_user_keymap():
+    """Retrieve the current user keymap. The user keymap is global and takes precedent over all other keymaps.
+
+    Returns
+    -------
+    user_keymap : dict of str: callable
+        User keymap.
+    """
     return USER_KEYMAP
 
 
