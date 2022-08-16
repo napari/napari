@@ -158,6 +158,12 @@ class LabelColormap(Colormap):
     def map(self, values):
         from .colormap_utils import low_discrepancy_image
 
+        values = np.atleast_1d(values)
+
+        # If using selected, disable all others
+        if self.use_selection:
+            values[values != self.selection] = 0
+
         values_low_discr = low_discrepancy_image(values, seed=self.seed)
         mapped = super().map(values_low_discr)
         return mapped

@@ -235,6 +235,9 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
     )
+
+    # Clear zero (background) values, matching the shader behavior in _glsl_label_step
+    image_out[image == 0] = 0.0
     return image_out
 
 

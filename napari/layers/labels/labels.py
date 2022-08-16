@@ -655,6 +655,7 @@ class Labels(_ImageBase):
     def show_selected_label(self, filter):
         self._show_selected_label = filter
         self.colormap.use_selection = self._show_selected_label
+        self.colormap.selection = self._selected_label
         self.refresh()
 
     @property
