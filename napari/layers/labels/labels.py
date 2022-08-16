@@ -606,12 +606,11 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
-        self.colormap.selection = self._selected_label
+        if self._color_mode == LabelColorMode.AUTO:
+            self.colormap.selection = self._selected_label
 
-        # note: self.color_mode returns a string and this comparison fails,
-        # so use self._color_mode
-        if self.show_selected_label:
-            self.refresh()
+            if self.show_selected_label:
+                self.refresh()
 
     @property
     def color_mode(self):
@@ -654,8 +653,9 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter):
         self._show_selected_label = filter
-        self.colormap.use_selection = self._show_selected_label
-        self.colormap.selection = self._selected_label
+        if self._color_mode == LabelColorMode.AUTO:
+            self.colormap.use_selection = self._show_selected_label
+            self.colormap.selection = self._selected_label
         self.refresh()
 
     @property
