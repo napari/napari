@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color.colormap import LUT_len
 
 from ..translations import trans
 from .bop_colors import bopd
@@ -255,8 +256,20 @@ def color_dict_to_colormap(colors):
         Mapping of Label to color control point within colormap
     """
 
+    MAX_DISTINCT_COLORS = LUT_len
+
     control_colors = np.unique(list(colors.values()), axis=0)
-    control_small_delta = 0.5 / len(control_colors)
+
+    if len(control_colors) >= 1023:
+        warnings.warn(
+            trans._(
+                'Label layers with more than {max_distinct_colors} distinct colors will not render correctly. This layer has {distinct_colors}.',
+                deferred=True,
+                distinct_colors=str(len(control_colors)),
+                max_distinct_colors=str(MAX_DISTINCT_COLORS),
+            ),
+            category=UserWarning,
+        )
 
     colormap = Colormap(
         colors=control_colors, interpolation=ColormapInterpolationMode.ZERO
@@ -267,6 +280,7 @@ def color_dict_to_colormap(colors):
         for color, control_point in zip(colormap.colors, colormap.controls)
     }
 
+    control_small_delta = 0.5 / len(control_colors)
     label_color_index = {
         label: np.float32(control2index[tuple(color)] + control_small_delta)
         for label, color in colors.items()

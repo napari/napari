@@ -440,6 +440,18 @@ def test_large_custom_color_dict():
     assert (label_color == vispy_colors).all()
 
 
+def test_warning_too_many_colors():
+    label_count = 1500
+    colors = {
+        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
+        for color in range(label_count)
+    }
+    data, _ = np.meshgrid(range(label_count), range(5))
+    with pytest.warns(UserWarning):
+        # Expect a warning for 1500 colors > 1024 in LUT
+        Labels(data, color=colors)
+
+
 def test_add_colors():
     """Test adding new colors"""
     data = np.random.randint(20, size=(40, 40))
