@@ -1652,7 +1652,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def get_status(
         self,
-        position: Optional[Tuple[float]] = None,
+        position: Optional[Tuple[float, ...]] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
