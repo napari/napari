@@ -10,7 +10,9 @@ from ..key_bindings import (
     KeymapProvider,
     _bind_keymap,
     bind_key,
+    bind_user_key,
     components_to_key_combo,
+    get_user_keymap,
     normalize_key_combo,
     parse_key_combo,
 )
@@ -180,6 +182,7 @@ def test_handle_single_keymap_provider():
     handler.keymap_providers = [foo]
 
     assert handler.keymap_chain.maps == [
+        get_user_keymap(),
         _bind_keymap(foo.keymap, foo),
         _bind_keymap(foo.class_keymap, foo),
     ]
@@ -218,6 +221,35 @@ def test_handle_single_keymap_provider():
     assert not hasattr(foo, 'C')
 
 
+def test_bind_user_key():
+    foo = Foo()
+    bar = Bar()
+    handler = KeymapHandler()
+    handler.keymap_providers = [bar, foo]
+
+    x = 0
+
+    @bind_user_key('D')
+    def abc():
+        nonlocal x
+        x = 42
+
+    print(handler.keymap_chain)
+
+    assert handler.active_keymap == {
+        'A': types.MethodType(foo.class_keymap['A'], foo),
+        'B': types.MethodType(foo.keymap['B'], foo),
+        'D': abc,
+        'E': types.MethodType(bar.class_keymap['E'], bar),
+    }
+
+    handler.press_key('D')
+
+    get_user_keymap().clear()
+
+    assert x == 42
+
+
 def test_handle_multiple_keymap_providers():
     foo = Foo()
     bar = Bar()
@@ -225,6 +257,7 @@ def test_handle_multiple_keymap_providers():
     handler.keymap_providers = [bar, foo]
 
     assert handler.keymap_chain.maps == [
+        get_user_keymap(),
         _bind_keymap(bar.keymap, bar),
         _bind_keymap(bar.class_keymap, bar),
         _bind_keymap(foo.keymap, foo),
@@ -277,6 +310,7 @@ def test_inherited_keymap():
     handler.keymap_providers = [baz]
 
     assert handler.keymap_chain.maps == [
+        get_user_keymap(),
         _bind_keymap(baz.keymap, baz),
         _bind_keymap(baz.class_keymap, baz),
         _bind_keymap(Bar.class_keymap, baz),
