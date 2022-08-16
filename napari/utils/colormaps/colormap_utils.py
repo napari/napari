@@ -260,7 +260,7 @@ def color_dict_to_colormap(colors):
 
     control_colors = np.unique(list(colors.values()), axis=0)
 
-    if len(control_colors) >= 1023:
+    if len(control_colors) >= MAX_DISTINCT_COLORS:
         warnings.warn(
             trans._(
                 'Label layers with more than {max_distinct_colors} distinct colors will not render correctly. This layer has {distinct_colors}.',

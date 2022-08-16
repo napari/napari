@@ -389,7 +389,6 @@ def test_custom_color_dict():
     # test with custom color dict
     assert type(layer.get_color(2)) == np.ndarray
     assert type(layer.get_color(1)) == np.ndarray
-
     assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
@@ -424,7 +423,8 @@ def test_large_custom_color_dict():
     # Get color list using layer interface & napari.utils.colormap.ColorMap
     label_color = layer.get_color(list(range(label_count)))
 
-    # Get the color by converting to control points with the layer and passing that to a vispy.color.colormap.Colormap
+    # Get the color by converting to control points with the layer and passing
+    # that to a vispy.color.colormap.Colormap
     vispy_colormap = VispyColormap(
         colors=layer.colormap.colors,
         controls=layer.colormap.controls,
