@@ -7,6 +7,7 @@ from vispy.visuals.image import ImageVisual
 from vispy.visuals.shaders import Function, FunctionChain
 
 from ...utils.colormaps import low_discrepancy_image
+from ...utils.colormaps.colormap import LabelColormap
 from ..visuals.volume import Volume as VolumeNode
 from .image import ImageLayerNode, VispyImageLayer
 
@@ -111,7 +112,7 @@ class VispyLabelsLayer(VispyImageLayer):
         # in our constructor, we have access to the texture data we need
         colormap = self.layer.colormap
 
-        if isinstance(colormap, LabelVispyColormap):
+        if isinstance(colormap, LabelColormap):
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 controls=colormap.controls,

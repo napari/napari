@@ -211,7 +211,6 @@ class VispyImageLayer(VispyBaseLayer):
 
     def reset(self, event=None):
         super().reset()
-
         self._on_interpolation_change()
         self._on_colormap_change()
         self._on_contrast_limits_change()
