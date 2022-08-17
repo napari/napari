@@ -266,7 +266,7 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import _npe2, plugin_manager, _initialize_plugins
+            from .plugins import _initialize_plugins, _npe2, plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
