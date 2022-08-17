@@ -277,7 +277,7 @@ class QtPointsControls(QtLayerControls):
         with self.layer.events.size.blocker():
             value = self.layer.current_size
             if value < self.sizeSlider.minimum():
-                self.sizeSlider.setMinimum(int(value))
+                self.sizeSlider.setMinimum(int(value - 1))
             if value > self.sizeSlider.maximum():
                 self.sizeSlider.setMaximum(int(value + 1))
             self.sizeSlider.setValue(int(value))
