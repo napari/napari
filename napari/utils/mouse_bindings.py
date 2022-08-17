@@ -1,4 +1,4 @@
-from typing import List
+from typing import Callable, List
 
 
 class MousemapProvider:
@@ -16,10 +16,10 @@ class MousemapProvider:
         Callbacks from when mouse wheel is scrolled.
     """
 
-    mouse_move_callbacks: List[callable]
-    mouse_wheel_callbacks: List[callable]
-    mouse_drag_callbacks: List[callable]
-    mouse_double_click_callbacks: List[callable]
+    mouse_move_callbacks: List[Callable]
+    mouse_wheel_callbacks: List[Callable]
+    mouse_drag_callbacks: List[Callable]
+    mouse_double_click_callbacks: List[Callable]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

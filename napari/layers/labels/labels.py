@@ -654,6 +654,32 @@ class Labels(_ImageBase):
         self._show_selected_label = filter
         self.refresh()
 
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+        Mode.PICK: pick,
+        Mode.PAINT: draw,
+        Mode.FILL: draw,
+        Mode.ERASE: draw,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
+        Mode.PICK: 'cross',
+        Mode.PAINT: 'circle',
+        Mode.FILL: 'cross',
+        Mode.ERASE: 'circle',
+    }
+
     @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -680,32 +706,6 @@ class Labels(_ImageBase):
         paint with background label, which effectively removes the label.
         """
         return str(self._mode)
-
-    _drag_modes = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-        Mode.PICK: pick,
-        Mode.PAINT: draw,
-        Mode.FILL: draw,
-        Mode.ERASE: draw,
-    }
-
-    _move_modes = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-        Mode.PICK: no_op,
-        Mode.PAINT: no_op,
-        Mode.FILL: no_op,
-        Mode.ERASE: no_op,
-    }
-    _cursor_modes = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.PICK: 'cross',
-        Mode.PAINT: 'circle',
-        Mode.FILL: 'cross',
-        Mode.ERASE: 'circle',
-    }
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
@@ -1483,7 +1483,7 @@ class Labels(_ImageBase):
 if config.async_octree:
     from ..image.experimental.octree_image import _OctreeImageBase
 
-    class Labels(Labels, _OctreeImageBase):
+    class Labels(Labels, _OctreeImageBase):  # type: ignore
         pass
 
 

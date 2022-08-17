@@ -357,6 +357,7 @@ class TranslationBundle:
                 import importlib
 
                 mod = importlib.import_module(data[locale])
+                assert isinstance(mod.__file__, str)
                 localedir = Path(mod.__file__).parent / LOCALE_DIR
 
         gettext.bindtextdomain(self._domain, localedir=localedir)
@@ -673,9 +674,9 @@ def _load_language(
     str
         The language locale set by napari.
     """
-    default_config_path = Path(default_config_path)
-    if default_config_path.exists():
-        with open(default_config_path) as fh:
+    _default_config_path = Path(default_config_path)
+    if _default_config_path.exists():
+        with open(_default_config_path) as fh:
             try:
                 data = safe_load(fh) or {}
             except Exception as err:

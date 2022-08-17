@@ -1247,21 +1247,6 @@ class Points(Layer):
             return create_box(data)
         return None
 
-    @property
-    def mode(self) -> str:
-        """str: Interactive mode
-
-        Interactive mode. The normal, default mode is PAN_ZOOM, which
-        allows for normal interactivity with the canvas.
-
-        In ADD mode clicks of the cursor add points at the clicked location.
-
-        In SELECT mode the cursor can select points by clicking on them or
-        by dragging a box around them. Once selected points can be moved,
-        have their properties edited, or be deleted.
-        """
-        return str(self._mode)
-
     _drag_modes = {
         Mode.ADD: add,
         Mode.SELECT: select,
@@ -1281,6 +1266,21 @@ class Points(Layer):
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
     }
+
+    @property
+    def mode(self) -> str:
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In ADD mode clicks of the cursor add points at the clicked location.
+
+        In SELECT mode the cursor can select points by clicking on them or
+        by dragging a box around them. Once selected points can be moved,
+        have their properties edited, or be deleted.
+        """
+        return str(self._mode)
 
     @mode.setter
     def mode(self, mode):
