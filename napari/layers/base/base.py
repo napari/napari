@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+from npe2 import plugin_manager as pm
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import (
@@ -1611,19 +1612,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_source_info(self):
         components = {}
         if self.source.reader_plugin:
-            try:
-                components['layer_base'] = os.path.basename(self.source.path)
-            except KeyError:
-                components['layer_base'] = ''
-
+            components['layer_base'] = os.path.basename(self.source.path or '')
             components['source_type'] = 'plugin'
-            components['plugin'] = self.source.reader_plugin
+            try:
+                components['plugin'] = pm.get_manifest(
+                    self.source.reader_plugin
+                ).display_name
+            except KeyError:
+                components['plugin'] = self.source.reader_plugin
             return components
 
         elif self.source.sample:
             components['layer_base'] = self.name
             components['source_type'] = 'sample'
-            components['plugin'] = self.source.sample[0]
+            try:
+                components['plugin'] = pm.get_manifest(
+                    self.source.sample[0]
+                ).display_name
+            except KeyError:
+                components['plugin'] = self.source.sample[0]
             return components
 
         elif self.source.widget:
