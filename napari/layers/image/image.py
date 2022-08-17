@@ -854,7 +854,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         with request.dask_config():
             data = np.asarray(request.data[level][tuple(indices)])
-            thumbnail = np.asarray(request.data[-1])
+            thumbnail = np.asarray(request.data[-1][slice_indices])
 
         return data, thumbnail, tile_to_data
 
