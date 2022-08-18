@@ -15,7 +15,7 @@ def test_plugin_discovery_is_delayed():
         sys.executable,
         '-c',
         'import sys; from napari.plugins import plugin_manager; '
-        'sys.exit(len(plugin_manager.plugins) != 2)',  # we have 2 'builtins'
+        'sys.exit(len(plugin_manager.plugins) > 2)',  # we have 2 'builtins'
     ]
     # will fail if plugin discovery happened at import
     proc = subprocess.run(cmd, capture_output=True)

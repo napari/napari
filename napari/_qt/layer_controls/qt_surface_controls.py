@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QComboBox, QHBoxLayout
 
 from ...layers.surface._surface_constants import SHADING_TRANSLATION
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtSurfaceControls(QtBaseImageControls):
@@ -15,12 +20,12 @@ class QtSurfaceControls(QtBaseImageControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : napari.layers.Surface
         An instance of a napari Surface layer.
 
     """
+
+    layer: 'napari.layers.Surface'
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -37,7 +42,7 @@ class QtSurfaceControls(QtBaseImageControls):
             SHADING_TRANSLATION[self.layer.shading]
         )
         shading_comboBox.setCurrentIndex(index)
-        shading_comboBox.activated[str].connect(self.changeShading)
+        shading_comboBox.currentTextChanged.connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
 
         self.layout().addRow(trans._('opacity:'), self.opacitySlider)

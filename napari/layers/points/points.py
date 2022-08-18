@@ -8,11 +8,7 @@ import pandas as pd
 from scipy.stats import gmean
 
 from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.colormaps.standardize_color import (
-    get_color_namelist,
-    hex_to_name,
-    rgb_to_hex,
-)
+from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import project_points_onto_plane, rotate_points
@@ -146,6 +142,8 @@ class Points(Layer):
           No shading is added to the points.
         * 'spherical'
           Shading and depth buffer are changed to give a 3D spherical look to the points
+    antialiasing: float
+        Amount of antialiasing in canvas pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -245,6 +243,8 @@ class Points(Layer):
         COLORMAP allows color to be set via a color map over an attribute
     shading : Shading
         Shading mode.
+    antialiasing: float
+        Amount of antialiasing in canvas pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -270,8 +270,6 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
-    _antialias : float
-        The amount of antialiasing pixels for both the marker and marker edge.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -316,6 +314,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
+        antialiasing=1,
         experimental_canvas_size_limits=(0, 10000),
         shown=True,
     ):
@@ -357,13 +356,11 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
             shading=Event,
-            _antialias=Event,
+            antialiasing=Event,
             experimental_canvas_size_limits=Event,
             features=Event,
             feature_defaults=Event,
         )
-
-        self._colors = get_color_namelist()
 
         # Save the point coordinates
         self._data = np.asarray(data)
@@ -453,7 +450,7 @@ class Points(Layer):
 
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
-        self._antialias = True
+        self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -629,11 +626,7 @@ class Points(Layer):
     @current_properties.setter
     def current_properties(self, current_properties):
         update_indices = None
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
+        if self._update_properties and len(self.selected_data) > 0:
             update_indices = list(self.selected_data)
         self._feature_table.set_currents(
             current_properties, update_indices=update_indices
@@ -757,27 +750,30 @@ class Points(Layer):
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
         self._current_size = size
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
+        if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
 
     @property
-    def _antialias(self):
-        """float: amount in pixels of antialiasing"""
-        return self.__antialias
+    def antialiasing(self) -> float:
+        """Amount of antialiasing in canvas pixels."""
+        return self._antialiasing
 
-    @_antialias.setter
-    def _antialias(self, value) -> Union[int, float]:
+    @antialiasing.setter
+    def antialiasing(self, value: float):
+        """Set the amount of antialiasing in canvas pixels.
+
+        Values can only be positive.
+        """
         if value < 0:
-            value = 0
-        self.__antialias = float(value)
-        self.events._antialias()
+            warnings.warn(
+                message='antialiasing value must be positive, value will be set to 0.',
+                category=RuntimeWarning,
+            )
+        self._antialiasing = max(0, value)
+        self.events.antialiasing(value=self._antialiasing)
 
     @property
     def shading(self) -> Shading:
@@ -862,11 +858,7 @@ class Points(Layer):
     @current_edge_width.setter
     def current_edge_width(self, edge_width: Union[None, float]) -> None:
         self._current_edge_width = edge_width
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
+        if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
             self.refresh()
@@ -934,11 +926,7 @@ class Points(Layer):
 
     @current_edge_color.setter
     def current_edge_color(self, edge_color: ColorType) -> None:
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
+        if self._update_properties and len(self.selected_data) > 0:
             update_indices = list(self.selected_data)
         else:
             update_indices = []
@@ -1026,11 +1014,7 @@ class Points(Layer):
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
 
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
+        if self._update_properties and len(self.selected_data) > 0:
             update_indices = list(self.selected_data)
         else:
             update_indices = []
@@ -1150,11 +1134,15 @@ class Points(Layer):
                 'symbol': self.symbol,
                 'edge_width': self.edge_width,
                 'edge_width_is_relative': self.edge_width_is_relative,
-                'face_color': self.face_color,
+                'face_color': self.face_color
+                if self.data.size
+                else [self.current_face_color],
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self.edge_color,
+                'edge_color': self.edge_color
+                if self.data.size
+                else [self.current_edge_color],
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
@@ -1168,6 +1156,7 @@ class Points(Layer):
                 'data': self.data,
                 'features': self.features,
                 'shading': self.shading,
+                'antialiasing': self.antialiasing,
                 'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
                 'shown': self.shown,
             }
@@ -1295,21 +1284,17 @@ class Points(Layer):
 
     @mode.setter
     def mode(self, mode):
+        old_mode = self._mode
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
         assert mode is not None, mode
-        old_mode = self._mode
 
         if mode == Mode.ADD:
             self.selected_data = set()
             self.interactive = True
-
-        if mode == Mode.PAN_ZOOM:
-            self.help = ''
+        elif mode == Mode.PAN_ZOOM:
             self.interactive = True
-        else:
-            self.help = trans._('hold <space> to pan/zoom')
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
@@ -1373,6 +1358,12 @@ class Points(Layer):
             The vispy text anchor for the y axis
         """
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
+
+    @property
+    def _view_text_color(self) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        self.text.color._apply(self.features)
+        return self.text._view_color(self._indices_view)
 
     @property
     def _view_size(self) -> np.ndarray:
@@ -1465,10 +1456,15 @@ class Points(Layer):
         """
         # Get a list of the data for the points in this slice
         not_disp = list(self._dims_not_displayed)
-        indices = np.array(dims_indices)
+        # We want a numpy array so we can use fancy indexing with the non-displayed
+        # indices, but as dims_indices can (and often/always does) contain slice
+        # objects, the array has dtype=object which is then very slow for the
+        # arithmetic below. As Points._round_index is always False, we can safely
+        # convert to float to get a major performance improvement.
+        not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
         if len(self.data) > 0:
             if self.out_of_slice_display is True and self.ndim > 2:
-                distances = abs(self.data[:, not_disp] - indices[not_disp])
+                distances = abs(self.data[:, not_disp] - not_disp_indices)
                 sizes = self.size[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
                 size_match = sizes[matches]
@@ -1480,7 +1476,7 @@ class Points(Layer):
                 return slice_indices, scale
             else:
                 data = self.data[:, not_disp]
-                distances = np.abs(data - indices[not_disp])
+                distances = np.abs(data - not_disp_indices)
                 matches = np.all(distances <= 0.5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
@@ -1663,7 +1659,18 @@ class Points(Layer):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
-        self._view_size_scale = scale
+
+        # Update the _view_size_scale in accordance to the self._indices_view setter.
+        # If out_of_slice_display is False, scale is a number and not an array.
+        # Therefore we have an additional if statement checking for
+        # self._view_size_scale being an integer.
+        if not isinstance(scale, np.ndarray):
+            self._view_size_scale = scale
+        elif len(self._shown) == 0:
+            self._view_size_scale = np.empty(0, int)
+        else:
+            self._view_size_scale = scale[self.shown[indices]]
+
         self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(

@@ -65,13 +65,9 @@ ignore = [
   "tox.ini",
   "napari/_qt/qt_resources/_qt_resources_*.py",
   "*.pyi",  # added by make typestubs
-  "binder/Desktop/napari.desktop",
-  "binder/apt.txt",
-  "binder/environment.yml",
-  "binder/postBuild",
-  "binder/xfce4-panel.xml",
-  "binder/xsettings.xml",
+  "binder/*",
   ".env_sample",
+  ".devcontainer/*",
 ]
 
 [tool.isort]
@@ -110,6 +106,7 @@ filterwarnings = [
 markers = [
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously",
+    "examples: Test of examples"
 ]
 
 [tool.mypy]

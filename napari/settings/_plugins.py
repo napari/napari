@@ -4,9 +4,9 @@ from typing import Dict, List, Set
 from pydantic import Field
 from typing_extensions import TypedDict
 
-from ..utils.events.evented_model import EventedModel
 from ..utils.misc import running_as_bundled_app, running_as_constructor_app
 from ..utils.translations import trans
+from ._base import EventedSettings
 
 
 class PluginHookOption(TypedDict):
@@ -24,9 +24,17 @@ class PluginAPI(str, Enum):
     pypi = 'PyPI'
 
 
-class PluginsSettings(EventedModel):
+class PluginsSettings(EventedSettings):
+    use_npe2_adaptor: bool = Field(
+        False,
+        title=trans._("Use npe2 adaptor"),
+        description=trans._(
+            "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
+        ),
+        requires_restart=True,
+    )
     plugin_api: PluginAPI = Field(
-        PluginAPI.napari_hub,
+        PluginAPI.pypi,
         title=trans._("Plugin API"),
         description=trans._(
             "Use the following API for querying plugin information.",

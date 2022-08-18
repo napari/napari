@@ -1,6 +1,6 @@
 import inspect
 from enum import auto
-from typing import ClassVar, List, Sequence, Union
+from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -9,7 +9,6 @@ import pytest
 from dask import delayed
 from dask.delayed import Delayed
 from pydantic import Field
-from typing_extensions import Protocol, runtime_checkable
 
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array

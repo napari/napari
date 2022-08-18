@@ -1,9 +1,16 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, TypeVar, Union
+from typing import (
+    Any,
+    Generic,
+    List,
+    Protocol,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
-from typing_extensions import Protocol, runtime_checkable
 
 from ...utils.events import EventedModel
 from ...utils.translations import trans
@@ -273,11 +280,13 @@ class _DerivedStyleEncoding(
 
 
 def _get_style_values(
-    encoding: StyleEncoding[StyleValue, StyleArray], indices: IndicesType
+    encoding: StyleEncoding[StyleValue, StyleArray],
+    indices: IndicesType,
+    value_ndim: int = 0,
 ):
     """Returns a scalar style value or indexes non-scalar style values."""
     values = encoding._values
-    return values if values.ndim == 0 else values[indices]
+    return values if values.ndim == value_ndim else values[indices]
 
 
 def _empty_array_like(value: StyleValue) -> StyleArray:

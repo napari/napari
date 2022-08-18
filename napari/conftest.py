@@ -1,50 +1,59 @@
+"""
+
+Notes for using the plugin-related fixtures here:
+
+1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+   manager instance with a discovery-deficient plugin manager.  No plugins should be
+   discovered in tests without explicit registration.
+2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
+   added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
+   global mock npe2 plugin manager)
+3. wherever *additional* plugins or contributions need to be added, use the `tmp_plugin`
+   fixture, and add additional contributions _within_ the test (not in the fixture):
+    ```python
+    def test_something(tmp_plugin):
+        @tmp_plugin.contribute.reader(filname_patterns=["*.ext"])
+        def f(path): ...
+
+        # the plugin name can be accessed at:
+        tmp_plugin.name
+    ```
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create
+   another one.
+   ```python
+   new_plugin = tmp_plugin.spawn(register=True)
+
+   @new_plugin.contribute.reader(filename_patterns=["*.tiff"])
+   def get_reader(path):
+       ...
+   ```
+"""
+from __future__ import annotations
+
+from contextlib import suppress
+
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
     pass
 
 import os
-from functools import partial
 from itertools import chain
 from multiprocessing.pool import ThreadPool
-from unittest.mock import MagicMock, patch
+from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
-import pooch
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import DynamicPlugin, PluginManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.plugins._builtins import (
-    napari_write_image,
-    napari_write_labels,
-    napari_write_points,
-    napari_write_shapes,
-)
-from napari.utils import io
 from napari.utils.config import async_loading
 
-if not hasattr(pooch.utils, 'file_hash'):
-    setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
-
-try:
-    from skimage.data import image_fetcher
-except ImportError:
-    from skimage.data import data_dir
-
-    class image_fetcher:
-        def fetch(data_name):
-            if data_name.startswith("data/"):
-                data_name = data_name[5:]
-            path = os.path.join(data_dir, data_name)
-            if not os.path.exists(path):
-                raise ValueError(
-                    f"Legacy skimage image_fetcher cannot find file: {path}"
-                )
-            return path
+if TYPE_CHECKING:
+    from npe2._pytest_plugin import TestPluginManager
 
 
 def pytest_addoption(parser):
@@ -65,85 +74,6 @@ def pytest_addoption(parser):
         default=False,
         help="run only asynchronous tests",
     )
-
-
-@pytest.fixture(
-    params=['image', 'labels', 'points', 'points-with-properties', 'shapes']
-)
-def layer_writer_and_data(request):
-    """Fixture that supplies layer io utilities for tests.
-
-    Parameters
-    ----------
-    request : _pytest.fixtures.SubRequest
-        The pytest request object
-
-    Returns
-    -------
-    tuple
-        ``(writer, layer_data, extension, reader, Layer)``
-
-        - writer: a function that can write layerdata to a path
-        - layer_data: the layerdata tuple for this layer
-        - extension: an appropriate extension for this layer type
-        - reader: a function that can read this layer type from a path and
-                  returns a ``(data, meta)`` tuple.
-        - Layer: the Layer class
-    """
-    if request.param == 'image':
-        data = np.random.rand(20, 20)
-        Layer = Image
-        layer = Image(data)
-        writer = napari_write_image
-        extension = '.tif'
-
-        def reader(path):
-            return (io.imread(path), {}, 'image')  # metadata
-
-    elif request.param == 'labels':
-        data = np.random.randint(0, 16000, (32, 32), 'uint64')
-        Layer = Labels
-        layer = Labels(data)
-        writer = napari_write_labels
-        extension = '.tif'
-
-        def reader(path):
-            return (io.imread(path), {}, 'labels')  # metadata
-
-    elif request.param == 'points':
-        data = np.random.rand(20, 2)
-        Layer = Points
-        layer = Points(data)
-        writer = napari_write_points
-        extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='points')
-    elif request.param == 'points-with-properties':
-        data = np.random.rand(20, 2)
-        Layer = Points
-        layer = Points(data, properties={'values': np.random.rand(20)})
-        writer = napari_write_points
-        extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='points')
-    elif request.param == 'shapes':
-        np.random.seed(0)
-        data = [
-            np.random.rand(2, 2),
-            np.random.rand(2, 2),
-            np.random.rand(6, 2),
-            np.random.rand(6, 2),
-            np.random.rand(2, 2),
-        ]
-        shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
-        Layer = Shapes
-        layer = Shapes(data, shape_type=shape_type)
-        writer = napari_write_shapes
-        extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='shapes')
-    else:
-        return None, None, None, None, None
-
-    layer_data = layer.as_layer_data_tuple()
-    return writer, layer_data, extension, reader, Layer
 
 
 @pytest.fixture
@@ -248,31 +178,6 @@ def layers():
     return LayerList(list_of_layers)
 
 
-@pytest.fixture
-def two_pngs():
-    return [image_fetcher.fetch(f'data/{n}.png') for n in ('moon', 'camera')]
-
-
-@pytest.fixture
-def rgb_png():
-    return [image_fetcher.fetch('data/astronaut.png')]
-
-
-@pytest.fixture
-def single_png():
-    return [image_fetcher.fetch('data/camera.png')]
-
-
-@pytest.fixture
-def irregular_images():
-    return [image_fetcher.fetch(f'data/{n}.png') for n in ('camera', 'coins')]
-
-
-@pytest.fixture
-def single_tiff():
-    return [image_fetcher.fetch('data/multipage.tif')]
-
-
 # Currently we cannot run async and async in the invocation of pytest
 # because we get a segfault for unknown reasons. So for now:
 # "pytest" runs sync_only
@@ -323,6 +228,15 @@ def skip_async_only(request):
         pytest.skip("not running with --async_only")
 
 
+@pytest.fixture(autouse=True)
+def skip_examples(request):
+    """Skip examples test if ."""
+    if request.node.get_closest_marker(
+        'examples'
+    ) and request.config.getoption("--skip_examples"):
+        pytest.skip("running with --skip_examples")
+
+
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
@@ -339,6 +253,11 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
 
 @pytest.fixture(autouse=True)
 def fresh_settings(monkeypatch):
+    """This fixture ensures that default settings are used for every test.
+
+    and ensures that changes to settings in a test are reverted, and never
+    saved to disk.
+    """
     from napari import settings
     from napari.settings import NapariSettings
 
@@ -413,54 +332,26 @@ def _no_error_reports():
         yield
 
 
-@pytest.fixture
-def tmp_reader():
-    """Return a temporary reader registered with the given plugin manager."""
+@pytest.fixture(autouse=True)
+def _npe2pm(npe2pm, monkeypatch):
+    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    from napari.plugins import NapariPluginManager
 
-    def make_plugin(
-        pm, name, filename_patterns=['*.fake'], accepts_directories=False
-    ):
-        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
-
-        @reader_plugin.contribute.reader(
-            filename_patterns=filename_patterns,
-            accepts_directories=accepts_directories,
-        )
-        def read_func(pth):
-            ...
-
-        reader_plugin.register()
-        return reader_plugin
-
-    return make_plugin
+    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
+    return npe2pm
 
 
 @pytest.fixture
-def mock_npe2_pm():
-    """Mock plugin manager with no registered plugins."""
-    mock_reg = MagicMock()
-    with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager(reg=mock_reg)
-    with patch('npe2.PluginManager.instance', return_value=_pm):
-        yield _pm
+def builtins(_npe2pm: TestPluginManager):
+    with _npe2pm.tmp_plugin(package='napari') as plugin:
+        yield plugin
 
 
-def event_check():
-    """Return a function to check if events are defined by all properties."""
-
-    def _check(instance, skip):
-        klass = instance.__class__
-        for name, value in klass.__dict__.items():
-            if (
-                isinstance(value, property)
-                and name[0] != '_'
-                and name not in skip
-            ):
-                assert hasattr(
-                    instance.events, name
-                ), f"event {name} not defined"
-
-    return _check
+@pytest.fixture
+def tmp_plugin(_npe2pm: TestPluginManager):
+    with _npe2pm.tmp_plugin() as plugin:
+        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        yield plugin
 
 
 def _event_check(instance):
@@ -503,23 +394,43 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(session, config, items):
     test_order_prefix = [
-        "napari/utils",
-        "napari/layers",
-        "napari/components",
-        "napari/settings",
-        "napari/plugins",
-        "napari/_vispy",
-        "napari/_qt",
-        "napari/qt",
-        "napari/_tests",
+        os.path.join("napari", "utils"),
+        os.path.join("napari", "layers"),
+        os.path.join("napari", "components"),
+        os.path.join("napari", "settings"),
+        os.path.join("napari", "plugins"),
+        os.path.join("napari", "_vispy"),
+        os.path.join("napari", "_qt"),
+        os.path.join("napari", "qt"),
+        os.path.join("napari", "_tests"),
+        os.path.join("napari", "_tests", "test_examples.py"),
     ]
     test_order = [[] for _ in test_order_prefix]
     test_order.append([])  # for not matching tests
     for item in items:
+        index = -1
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
-                test_order[i].append(item)
-                break
-        else:
-            test_order[-1].append(item)
+                index = i
+        test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.fixture(autouse=True)
+def disable_notification_dismiss_timer(monkeypatch):
+    """
+    This fixture disables starting timer for closing notification
+    by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
+
+    As Qt timer is realised by thread and keep reference to the object,
+    without increase of reference counter object could be garbage collected and
+    cause segmentation fault error when Qt (C++) code try to access it without
+    checking if Python object exists.
+    """
+
+    with suppress(ImportError):
+        from napari._qt.dialogs.qt_notification import NapariQtNotification
+
+        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)

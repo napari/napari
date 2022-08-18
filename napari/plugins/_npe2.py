@@ -10,17 +10,22 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
+    cast,
 )
 
-import npe2
-from npe2.io_utils import read_get_reader
-from npe2.manifest import PluginManifest
-from npe2.manifest.contributions import Submenu
+from app_model.types import SubmenuItem
+from npe2 import io_utils
+from npe2 import plugin_manager as pm
+from npe2.manifest import contributions
 
 from ..utils.translations import trans
 
 if TYPE_CHECKING:
+    from app_model import Action
+    from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
+    from npe2.plugin_manager import PluginName
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
@@ -47,7 +52,9 @@ def read(
         assert len(paths) == 1
         npe1_path = paths[0]
     try:
-        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
+        layer_data, reader = io_utils.read_get_reader(
+            npe1_path, plugin_name=plugin
+        )
         return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
@@ -88,7 +95,7 @@ def write_layers(
 
     if writer is None:
         try:
-            return npe2.write(
+            return io_utils.write(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
         except ValueError:
@@ -108,7 +115,7 @@ def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
 ) -> Optional[Tuple[WidgetCreator, str]]:
     widgets_seen = set()
-    for contrib in npe2.PluginManager.instance().iter_widgets():
+    for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
             if not widget_name or contrib.display_name == widget_name:
                 return contrib.get_callable(), contrib.display_name
@@ -128,9 +135,8 @@ def get_widget_contribution(
 def populate_qmenu(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
-    pm = npe2.PluginManager.instance()
     for item in pm.iter_menu(menu_key):
-        if isinstance(item, Submenu):
+        if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
             populate_qmenu(subm, subm_contrib.id)
@@ -159,7 +165,6 @@ def file_extensions_string_for_layers(
     entry in the extension string.
     """
 
-    pm = npe2.PluginManager.instance()
     layer_types = [layer._type_string for layer in layers]
     writers = list(pm.iter_compatible_writers(layer_types))
 
@@ -203,39 +208,33 @@ def get_readers(path: Optional[str] = None) -> Dict[str, str]:
     Dict[str, str]
         Dictionary of plugin_name to display name
     """
-    pm = npe2.PluginManager.instance()
-    if not path:
-        all_readers = [reader[1] for reader in pm._contrib._readers]
-    else:
-        all_readers = list(pm.iter_compatible_readers([path]))
-
+    if path:
+        return {
+            reader.plugin_name: pm.get_manifest(reader.command).display_name
+            for reader in pm.iter_compatible_readers([path])
+        }
     return {
-        reader.plugin_name: pm.get_manifest(reader.command).display_name
-        for reader in all_readers
+        mf.name: mf.display_name
+        for mf in pm.iter_manifests()
+        if mf.contributions.readers
     }
 
 
 def iter_manifests(
     disabled: Optional[bool] = None,
 ) -> Iterator[PluginManifest]:
-    pm = npe2.PluginManager.instance()
-    if hasattr(pm, 'iter_manifests'):
-        yield from pm.iter_manifests(disabled=disabled)
-    else:  # pragma: no cover
-        # npe < v0.1.3
-        yield from pm._manifests.values()
+    yield from pm.iter_manifests(disabled=disabled)
 
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
-    for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
+    for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
 
 
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
-    pm = npe2.PluginManager.instance()
     return (
         (
             plugin_name,
@@ -268,8 +267,7 @@ def get_sample_data(
         - second item is a list of available samples (plugin_name, sample_name)
           if no data opener is found.
     """
-    avail = []
-    pm = npe2.PluginManager.instance()
+    avail: List[Tuple[str, str]] = []
     for plugin_name, contribs in pm.iter_sample_data():
         for contrib in contribs:
             if plugin_name == plugin and contrib.key == sample:
@@ -278,8 +276,17 @@ def get_sample_data(
     return None, avail
 
 
-def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
-    """Callback when any npe2 plugins are enabled or disabled"""
+def index_npe1_adapters():
+    """Tell npe2 to import and index any discovered npe1 plugins."""
+    pm.index_npe1_adapters()
+
+
+def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+    """Callback when any npe2 plugins are enabled or disabled.
+
+    'Disabled' means the plugin remains installed, but it cannot be activated,
+    and its contributions will not be indexed
+    """
     from .. import Viewer
     from ..settings import get_settings
 
@@ -289,6 +296,105 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     to_disable.update(disabled)
     plugin_settings.disabled_plugins = to_disable
 
+    for plugin_name in enabled:
+        # technically, you can enable (i.e. "undisable") a plugin that isn't
+        # currently registered/available.  So we check to make sure this is
+        # actually a registered plugin.
+        if plugin_name in pm.instance():
+            _register_manifest_actions(pm.get_manifest(plugin_name))
+
+    # TODO: after app-model, these QMenus will be evented and self-updating
+    # and we can remove this... but `_register_manifest_actions` will need to
+    # add the actions file and plugins menus (since we don't require plugins to
+    # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
+
+
+def on_plugins_registered(manifests: Set[PluginManifest]):
+    """Callback when any npe2 plugins are registered.
+
+    'Registered' means that a manifest has been provided or discovered.
+    """
+    for mf in manifests:
+        if not pm.is_disabled(mf.name):
+            _register_manifest_actions(mf)
+
+
+def _register_manifest_actions(manifest: PluginManifest) -> None:
+    """Gather and register actions from a manifest.
+
+    This is called when a plugin is registered or enabled and it adds the
+    plugin's menus and submenus to the app model registry.
+    """
+    from .._app_model import get_app
+
+    app = get_app()
+    actions, submenus = _npe2_manifest_to_actions(manifest)
+    context = pm.get_context(cast('PluginName', manifest.name))
+    if actions:
+        context.register_disposable(app.register_actions(actions))
+    if submenus:
+        context.register_disposable(app.menus.append_menu_items(submenus))
+
+
+def _npe2_manifest_to_actions(
+    mf: PluginManifest,
+) -> Tuple[List[Action], List[Tuple[str, SubmenuItem]]]:
+    """Gather actions and submenus from a npe2 manifest, export app_model types."""
+    from app_model.types import Action, MenuRule
+
+    from .._app_model.constants._menus import is_menu_contributable
+
+    cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
+    submenus: List[Tuple[str, SubmenuItem]] = []
+    for menu_id, items in mf.contributions.menus.items():
+        if is_menu_contributable(menu_id):
+            for item in items:
+                if isinstance(item, contributions.MenuCommand):
+                    rule = MenuRule(id=menu_id, **_when_group_order(item))
+                    cmds[item.command].append(rule)
+                else:
+                    subitem = _npe2_submenu_to_app_model(item)
+                    submenus.append((menu_id, subitem))
+
+    actions: List[Action] = [
+        Action(
+            id=cmd.id,
+            title=cmd.title,
+            category=cmd.category,
+            tooltip=cmd.short_title or cmd.title,
+            icon=cmd.icon,
+            enablement=cmd.enablement,
+            callback=cmd.python_name or '',
+            menus=cmds.get(cmd.id),
+            keybindings=[],
+        )
+        for cmd in mf.contributions.commands or ()
+    ]
+    return actions, submenus
+
+
+def _when_group_order(
+    menu_item: contributions.MenuItem,
+) -> dict[str, Union[str, float, None]]:
+    """Extract when/group/order from an npe2 Submenu or MenuCommand."""
+    group, _, _order = (menu_item.group or '').partition("@")
+    try:
+        order: Optional[float] = float(_order)
+    except ValueError:
+        order = None
+    return {'when': menu_item.when, 'group': group or None, 'order': order}
+
+
+def _npe2_submenu_to_app_model(subm: contributions.Submenu) -> SubmenuItem:
+    """Convert a npe2 submenu contribution to an app_model SubmenuItem."""
+    contrib = pm.get_submenu(subm.submenu)
+    return SubmenuItem(
+        submenu=contrib.id,
+        title=contrib.label,
+        icon=contrib.icon,
+        **_when_group_order(subm),
+        # enablement= ??  npe2 doesn't have this, but app_model does
+    )

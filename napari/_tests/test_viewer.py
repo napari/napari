@@ -96,13 +96,13 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
 
 
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 8,
+    'Image': 5,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
-    'Points': 8,
+    'Points': 9,
     'Labels': 11,
-    'Shapes': 19,
+    'Shapes': 17,
 }
 
 
@@ -222,7 +222,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
-    viewer.dims._transpose()
+    viewer.dims.transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
@@ -308,7 +308,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     viewer.layers.selection.active = layer
 
     assert layer._value is None
-    viewer._mouse_over_canvas = True
+    viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
     assert layer._value == 1
 
@@ -339,3 +339,40 @@ def test_empty_shapes_dims(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     viewer.add_shapes(None)
     viewer.dims.ndisplay = 3
+
+
+def test_current_viewer(make_napari_viewer):
+    """Test that the viewer made last is the "current_viewer()" until another is activated"""
+    # Make two DIFFERENT viewers
+    viewer1: Viewer = make_napari_viewer()
+    viewer2: Viewer = make_napari_viewer()
+    assert viewer2 is not viewer1
+    # Ensure one is returned by napari.current_viewer()
+    from napari import current_viewer
+
+    assert current_viewer() is viewer2
+    assert current_viewer() is not viewer1
+
+    viewer1.window.activate()
+
+    assert current_viewer() is viewer1
+    assert current_viewer() is not viewer2
+
+
+def test_reset_empty(make_napari_viewer):
+    """
+    Test that resetting an empty viewer doesn't crash
+    https://github.com/napari/napari/issues/4867
+    """
+    viewer = make_napari_viewer()
+    viewer.reset()
+
+
+def test_reset_non_empty(make_napari_viewer):
+    """
+    Test that resetting a non-empty viewer doesn't crash
+    https://github.com/napari/napari/issues/4867
+    """
+    viewer = make_napari_viewer()
+    viewer.add_points([(0, 1), (2, 3)])
+    viewer.reset()

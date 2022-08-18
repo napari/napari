@@ -87,7 +87,7 @@ class FileMenu(NapariMenu):
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
                 'slot': window._qt_viewer.clipboard,
-                'shortcut': 'Alt+Shift+S',
+                'shortcut': 'Alt+C',
                 'statusTip': trans._(
                     'Copy screenshot of current display to the clipboard'
                 ),
@@ -95,7 +95,7 @@ class FileMenu(NapariMenu):
             {
                 'text': trans._('Copy Screenshot with Viewer to Clipboard'),
                 'slot': window.clipboard,
-                'shortcut': 'Alt+Shift+S',
+                'shortcut': 'Alt+Shift+C',
                 'statusTip': trans._(
                     'Copy screenshot of current display with the viewer to the clipboard'
                 ),
@@ -103,7 +103,7 @@ class FileMenu(NapariMenu):
             {},
             {
                 'text': trans._('Close Window'),
-                'slot': window._qt_window.close_window,
+                'slot': self._close_window,
                 'shortcut': 'Ctrl+W',
             },
             {
@@ -115,7 +115,7 @@ class FileMenu(NapariMenu):
             # This quits the entire QApplication and closes all windows.
             {
                 'text': trans._('Exit'),
-                'slot': lambda: window._qt_window.close(quit_app=True),
+                'slot': self._close_app,
                 'shortcut': 'Ctrl+Q',
                 'menuRole': QAction.QuitRole,
             },
@@ -132,6 +132,12 @@ class FileMenu(NapariMenu):
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
         self._rebuild_samples_menu()
         self.update()
+
+    def _close_app(self):
+        self._win._qt_window.close(quit_app=True, confirm_need=True)
+
+    def _close_window(self):
+        self._win._qt_window.close(quit_app=False, confirm_need=True)
 
     def _layer_count(self, event=None):
         return len(self._win._qt_viewer.viewer.layers)

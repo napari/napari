@@ -1,6 +1,9 @@
+import os.path as osp
 import re
+from enum import IntFlag
 from fnmatch import fnmatch
-from typing import Dict, Set, Tuple, Union
+from functools import lru_cache
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
@@ -9,14 +12,104 @@ from napari.settings import get_settings
 from . import _npe2, plugin_manager
 
 
-def get_preferred_reader(_path):
-    """Return preferred reader for _path from settings, if one exists."""
+class MatchFlag(IntFlag):
+    NONE = 0
+    SET = 1
+    ANY = 2
+    STAR = 4
+
+
+@lru_cache
+def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
+    """Score an fnmatch pattern, with higher specificities having lower scores.
+
+    Absolute paths have highest specificity,
+    followed by paths with the most nesting,
+    then by path segments with the least ambiguity.
+
+    Parameters
+    ----------
+    pattern : str
+        Pattern to score.
+
+    Returns
+    -------
+    relpath : boolean
+        Whether the path is relative or absolute.
+    nestedness : negative int
+        Level of nestedness of the path, lower is deeper.
+    score : List[MatchFlag]
+        Path segments scored by ambiguity, higher score is higher ambiguity.
+    """
+    pattern = osp.normpath(pattern)
+
+    segments = pattern.split(osp.sep)
+    score: List[MatchFlag] = []
+    ends_with_star = False
+
+    def add(match_flag):
+        score[-1] |= match_flag
+
+    # built-in fnmatch does not allow you to escape meta-characters
+    # so we don't need to handle them :)
+    for segment in segments:
+        # collapse foo/*/*/*.bar or foo*/*.bar but not foo*bar/*.baz
+        if segment and not (ends_with_star and segment.startswith('*')):
+            score.append(MatchFlag.NONE)
+
+        if '*' in segment:
+            add(MatchFlag.STAR)
+        if '?' in segment:
+            add(MatchFlag.ANY)
+        if '[' in segment and ']' in segment[segment.index('[') :]:
+            add(MatchFlag.SET)
+
+        ends_with_star = segment.endswith('*')
+
+    return not osp.isabs(pattern), 1 - len(score), score
+
+
+def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
+    """Given filepath, find matching readers from preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    filtered_preferences : Iterable[Tuple[str, str]]
+        Filtered patterns and their corresponding readers.
+    """
     reader_settings = get_settings().plugins.extension2reader
-    for pattern, reader in reader_settings.items():
-        # TODO: we return the first one we find - more work should be done here
-        # in case other patterns would match - do we return the most specific?
-        if fnmatch(_path, pattern):
-            return reader
+
+    return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
+
+
+def get_preferred_reader(path: str) -> Optional[str]:
+    """Given filepath, find the best matching reader from the preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    reader : str or None
+        Best matching reader, if found.
+    """
+    readers = sorted(
+        _get_preferred_readers(path), key=lambda kv: score_specificity(kv[0])
+    )
+
+    if readers:
+        preferred = readers[0]
+        _, reader = preferred
+        return reader
+
+    return None
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:
@@ -31,27 +124,13 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     Dict[str, str]
         dictionary of registered name to display_name
     """
-    readers = _npe2.get_readers(filename)
-    npe1_readers = {}
-    for spec, hook_caller in plugin_manager.hooks.items():
-        if spec == 'napari_get_reader':
-            potential_readers = hook_caller.get_hookimpls()
-            for get_reader in potential_readers:
-                reader = hook_caller._call_plugin(
-                    get_reader.plugin_name, path=filename
-                )
-                if callable(reader):
-                    npe1_readers[
-                        get_reader.plugin_name
-                    ] = get_reader.plugin_name
-    readers.update(npe1_readers)
-
-    # if npe1 and npe2 builtins are present, disambiguate
-    if 'napari' in readers:
-        readers['napari'] = 'napari (npe2)'
-    if 'builtins' in readers:
-        readers['builtins'] = 'builtins (npe1)'
-
+    readers = {}
+    hook_caller = plugin_manager.hook.napari_get_reader
+    for impl in hook_caller.get_hookimpls():
+        reader = hook_caller._call_plugin(impl.plugin_name, path=filename)
+        if callable(reader):
+            readers[impl.plugin_name] = impl.plugin_name
+    readers.update(_npe2.get_readers(filename))
     return readers
 
 
@@ -70,12 +149,6 @@ def get_all_readers() -> Tuple[Dict[str, str], Dict[str, str]]:
             potential_readers = hook_caller.get_hookimpls()
             for get_reader in potential_readers:
                 npe1_readers[get_reader.plugin_name] = get_reader.plugin_name
-
-    # if npe1 and npe2 builtins are present, disambiguate
-    if 'napari' in npe2_readers:
-        npe2_readers['napari'] = 'napari (npe2)'
-    if 'builtins' in npe1_readers:
-        npe1_readers['builtins'] = 'builtins (npe1)'
 
     return npe2_readers, npe1_readers
 

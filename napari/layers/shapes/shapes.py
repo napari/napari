@@ -30,14 +30,7 @@ from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
 from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
-from ._shapes_constants import (
-    BACKSPACE,
-    Box,
-    ColorMode,
-    Mode,
-    ShapeType,
-    shape_classes,
-)
+from ._shapes_constants import Box, ColorMode, Mode, ShapeType, shape_classes
 from ._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
@@ -60,41 +53,6 @@ from ._shapes_utils import (
 )
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
-
-
-_REV_SHAPE_HELP = {
-    trans._('hold <space> to pan/zoom'): {
-        Mode.VERTEX_INSERT,
-        Mode.VERTEX_REMOVE,
-        Mode.ADD_RECTANGLE,
-        Mode.ADD_ELLIPSE,
-        Mode.ADD_LINE,
-        Mode.TRANSFORM,
-    },
-    trans._(
-        'hold <space> to pan/zoom, press <esc>, or double click to finish drawing'
-    ): {
-        Mode.ADD_PATH,
-        Mode.ADD_POLYGON,
-    },
-    trans._(
-        'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
-        BACKSPACE=BACKSPACE,
-    ): {Mode.SELECT, Mode.DIRECT},
-    trans._('enter a selection mode to edit shape properties'): {
-        Mode.PAN_ZOOM
-    },
-}
-
-
-# This avoid duplicating the trans._ help messages above
-# as some modes have the same help.
-# while most tooling will recognise identical messages,
-# this can lead to human error.
-_FWD_SHAPE_HELP = {}
-for t, modes in _REV_SHAPE_HELP.items():
-    for m in modes:
-        _FWD_SHAPE_HELP[m] = t
 
 
 class Shapes(Layer):
@@ -1599,6 +1557,12 @@ class Shapes(Layer):
         )
 
     @property
+    def _view_text_color(self) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        self.text.color._apply(self.features)
+        return self.text._view_color(self._indices_view)
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1620,7 +1584,6 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        old_mode = self._mode
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
@@ -1634,8 +1597,6 @@ class Shapes(Layer):
 
         old_mode = self._mode
         self._mode = mode
-
-        self.help = _FWD_SHAPE_HELP[mode]
 
         draw_modes = {
             Mode.SELECT,

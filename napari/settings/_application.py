@@ -155,6 +155,20 @@ class ApplicationSettings(EventedModel):
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
     )
+    confirm_close_window: bool = Field(
+        default=True,
+        title=trans._("Confirm window or application closing"),
+        description=trans._(
+            "Ask for confirmation before closing a napari window or application (all napari windows).",
+        ),
+    )
+    hold_button_delay: float = Field(
+        default=0.5,
+        title=trans._("Delay to treat button as hold in seconds"),
+        description=trans._(
+            "This affects certain actions where a short press and a long press have different behaviors, such as changing the mode of a layer permanently or only during the long press."
+        ),
+    )
 
     @validator('window_state')
     def _validate_qbtye(cls, v):

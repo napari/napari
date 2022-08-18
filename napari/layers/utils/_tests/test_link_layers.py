@@ -20,7 +20,7 @@ BASE_ATTRS = {
 IM_ATTRS = {
     'rendering': 'translucent',
     'iso_threshold': 0.34,
-    'interpolation': 'bilinear',
+    'interpolation2d': 'linear',
     'contrast_limits': [0.25, 0.75],
     'gamma': 0.5,
 }

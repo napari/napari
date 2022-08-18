@@ -1,7 +1,9 @@
 """Miscellaneous utility functions.
 """
+
 import builtins
 import collections.abc
+import contextlib
 import importlib.metadata
 import inspect
 import itertools
@@ -19,6 +21,7 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -438,23 +441,26 @@ def ensure_n_tuple(val, n, fill=0):
 
 
 def ensure_layer_data_tuple(val):
-    if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
-        raise TypeError(
-            trans._(
-                'Not a valid layer data tuple: {value!r}',
-                deferred=True,
-                value=val,
-            )
-        )
+    msg = trans._(
+        'Not a valid layer data tuple: {value!r}',
+        deferred=True,
+        value=val,
+    )
+    if not isinstance(val, tuple) and val:
+        raise TypeError(msg)
+    if len(val) > 1:
+        if not isinstance(val[1], dict):
+            raise TypeError(msg)
+        if len(val) > 2 and not isinstance(val[2], str):
+            raise TypeError(msg)
     return val
 
 
-def ensure_list_of_layer_data_tuple(val):
-    if isinstance(val, list) and len(val):
-        try:
+def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
+    # allow empty list to be returned but do nothing in that case
+    if isinstance(val, list):
+        with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
-        except TypeError:
-            pass
     raise TypeError(
         trans._('Not a valid list of layer data tuples!', deferred=True)
     )

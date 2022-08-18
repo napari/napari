@@ -1,10 +1,11 @@
+import contextlib
 import os
 import sys
 from enum import Enum, auto
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import (
@@ -36,7 +37,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QElidingLabel
-from typing_extensions import Literal
 
 import napari.resources
 
@@ -164,10 +164,11 @@ class Installer(QObject):
         if exit_code != 0:
             self._exit_code = 0
 
-        process_to_terminate = []
-        for pkg_list, proc in self._processes.items():
-            if proc == process:
-                process_to_terminate.append(pkg_list)
+        process_to_terminate = [
+            pkg_list
+            for pkg_list, proc in self._processes.items()
+            if proc == process
+        ]
 
         for pkg_list in process_to_terminate:
             process = self._processes.pop(pkg_list)
@@ -203,10 +204,10 @@ class Installer(QObject):
         installer = installer or self._installer_type
         self._queue.insert(
             0,
-            [
+            (
                 tuple(pkg_list),
                 lambda: self._install(pkg_list, installer, channels),
-            ],
+            ),
         )
         self._handle_action()
 
@@ -257,10 +258,10 @@ class Installer(QObject):
         installer = installer or self._installer_type
         self._queue.insert(
             0,
-            [
+            (
                 tuple(pkg_list),
                 lambda: self._uninstall(pkg_list, installer, channels),
-            ],
+            ),
         )
         self._handle_action()
 
@@ -306,11 +307,9 @@ class Installer(QObject):
 
             self._processes = {}
         else:
-            try:
+            with contextlib.suppress(KeyError):
                 process = self._processes.pop(tuple(pkg_list))
                 process.terminate()
-            except KeyError:
-                pass
 
     @staticmethod
     def _is_installed_with_conda():
@@ -328,16 +327,12 @@ class Installer(QObject):
         if conda_meta_path.is_dir():
             for file in conda_meta_path.iterdir():
                 fname = file.parts[-1]
-                if fname.startswith(napari_version_string) and fname.endswith(
-                    ".json"
-                ):
+                if (
+                    fname.startswith(napari_version_string)
+                    or fname.startswith(qt_version_string)
+                ) and fname.endswith(".json"):
                     return True
-                elif fname.startswith(qt_version_string) and fname.endswith(
-                    ".json"
-                ):
-                    return True
-            else:
-                return False
+        return False
 
 
 class PluginListItem(QFrame):
@@ -366,8 +361,7 @@ class PluginListItem(QFrame):
 
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
-        if npe_version != 1:
-            self._handle_npe2_plugin()
+        self._handle_npe2_plugin(npe_version)
 
         if installed:
             self.enabled_checkbox.show()
@@ -378,11 +372,17 @@ class PluginListItem(QFrame):
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
 
-    def _handle_npe2_plugin(self):
+    def _handle_npe2_plugin(self, npe_version):
+        if npe_version == 1:
+            return
+        opacity = 0.4 if npe_version == 'shim' else 1
+        lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
         npe2_icon = QLabel(self)
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
-        npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
-        self.row1.insertWidget(2, QLabel('npe2'))
+        npe2_icon.setPixmap(
+            icon.colored(color='#33F0FF', opacity=opacity).pixmap(20, 20)
+        )
+        self.row1.insertWidget(2, QLabel(lbl))
         self.row1.insertWidget(2, npe2_icon)
 
     def _get_dialog(self) -> QDialog:
@@ -453,7 +453,9 @@ class PluginListItem(QFrame):
 
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+            Qt.AlignmentFlag.AlignRight
+            | Qt.AlignmentFlag.AlignTrailing
+            | Qt.AlignmentFlag.AlignVCenter
         )
         self.row1.addWidget(self.package_name)
 
@@ -483,7 +485,7 @@ class PluginListItem(QFrame):
         self.row2 = QHBoxLayout()
         self.error_indicator = QPushButton()
         self.error_indicator.setObjectName("warning_icon")
-        self.error_indicator.setCursor(Qt.PointingHandCursor)
+        self.error_indicator.setCursor(Qt.CursorShape.PointingHandCursor)
         self.error_indicator.hide()
         self.row2.addWidget(self.error_indicator)
         self.row2.setContentsMargins(-1, 4, 0, -1)
@@ -521,7 +523,7 @@ class PluginListItem(QFrame):
             return
 
         for npe1_name, _, distname in plugin_manager.iter_available():
-            if distname and (distname == plugin_name):
+            if distname and (normalized_name(distname) == plugin_name):
                 plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
@@ -562,12 +564,15 @@ class QPluginList(QListWidget):
     ):
         pkg_name = project_info.name
         # don't add duplicates
-        if self.findItems(pkg_name, Qt.MatchFixedString) and not plugin_name:
+        if (
+            self.findItems(pkg_name, Qt.MatchFlag.MatchFixedString)
+            and not plugin_name
+        ):
             return
 
         # including summary here for sake of filtering below.
-        searchable_text = pkg_name + " " + project_info.summary
-        item = QListWidgetItem(searchable_text, parent=self)
+        searchable_text = f"{pkg_name} {project_info.summary}"
+        item = QListWidgetItem(searchable_text, self)
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(
@@ -611,7 +616,7 @@ class QPluginList(QListWidget):
 
     def handle_action(self, item, pkg_name, action_name, update=False):
         widget = item.widget
-        item.setText("0-" + item.text())
+        item.setText(f"0-{item.text()}")
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
         self._warn_dialog = None
@@ -661,7 +666,9 @@ class QPluginList(QListWidget):
         if not is_available:
             return
 
-        for item in self.findItems(project_info.name, Qt.MatchStartsWith):
+        for item in self.findItems(
+            project_info.name, Qt.MatchFlag.MatchStartsWith
+        ):
             current = item.version
             latest = project_info.version
             if parse_version(current) >= parse_version(latest):
@@ -685,7 +692,9 @@ class QPluginList(QListWidget):
         This will disable the item and the install button and add a warning
         icon with a hover tooltip.
         """
-        for item in self.findItems(project_info.name, Qt.MatchStartsWith):
+        for item in self.findItems(
+            project_info.name, Qt.MatchFlag.MatchStartsWith
+        ):
             widget = self.itemWidget(item)
             widget.show_warning(
                 trans._(
@@ -703,7 +712,10 @@ class QPluginList(QListWidget):
         if text:
             # PySide has some issues, so we compare using id
             # See: https://bugreports.qt.io/browse/PYSIDE-74
-            shown = [id(it) for it in self.findItems(text, Qt.MatchContains)]
+            shown = [
+                id(it)
+                for it in self.findItems(text, Qt.MatchFlag.MatchContains)
+            ]
             for i in range(self.count()):
                 item = self.item(i)
                 item.setHidden(id(item) not in shown)
@@ -808,7 +820,9 @@ class QtPluginDialog(QDialog):
             if distname in self.already_installed or distname == 'napari':
                 continue
             enabled = not pm2.is_disabled(manifest.name)
-            _add_to_installed(distname, enabled, npe_version=2)
+            # if it's an Npe1 adaptor, call it v1
+            npev = 'shim' if manifest.npe1_shim else 2
+            _add_to_installed(distname, enabled, npe_version=npev)
 
         for (
             plugin_name,
@@ -818,7 +832,7 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
-            if distname in self.already_installed:
+            if normalized_name(distname or '') in self.already_installed:
                 continue
             _add_to_installed(
                 distname, not plugin_manager.is_blocked(plugin_name)
@@ -857,9 +871,9 @@ class QtPluginDialog(QDialog):
         vlay_1 = QVBoxLayout(self)
         self.h_splitter = QSplitter(self)
         vlay_1.addWidget(self.h_splitter)
-        self.h_splitter.setOrientation(Qt.Horizontal)
+        self.h_splitter.setOrientation(Qt.Orientation.Horizontal)
         self.v_splitter = QSplitter(self.h_splitter)
-        self.v_splitter.setOrientation(Qt.Vertical)
+        self.v_splitter.setOrientation(Qt.Orientation.Vertical)
         self.v_splitter.setMinimumWidth(500)
 
         installed = QWidget(self.v_splitter)
@@ -1011,7 +1025,7 @@ class QtPluginDialog(QDialog):
 
         self.filter()
 
-    def filter(self, text: str = None) -> None:
+    def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""
         if text is None:
             text = self.packages_filter.text()
