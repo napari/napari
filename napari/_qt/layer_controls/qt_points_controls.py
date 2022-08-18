@@ -92,7 +92,7 @@ class QtPointsControls(QtLayerControls):
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        sld.setMaximum(100)
+        sld.setMaximum(max(100, int(np.max(self.layer.size)) + 1))
         sld.setSingleStep(1)
         value = self.layer.current_size
         sld.setValue(int(value))

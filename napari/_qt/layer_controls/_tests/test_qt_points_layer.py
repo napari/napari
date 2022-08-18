@@ -78,3 +78,24 @@ def test_current_size_display_in_range(qtbot):
     assert slider.minimum() == 1
     assert slider.value() == 200
     assert layer.current_size == [20, 20]
+
+
+def test_current_size_slider_properly_initialized(qtbot):
+    """Changing the model attribute should update the view"""
+    layer = Points(np.random.rand(10, 2), size=np.linspace(-2, 200, 10))
+    qtctrl = QtPointsControls(layer)
+    qtbot.addWidget(qtctrl)
+    slider = qtctrl.sizeSlider
+    assert slider.maximum() == 201
+    assert slider.minimum() == 1
+    assert slider.value() == 10
+    assert layer.current_size == 10
+
+    layer = Points(np.random.rand(10, 2), size=np.linspace(-2, 50, 10))
+    qtctrl = QtPointsControls(layer)
+    qtbot.addWidget(qtctrl)
+    slider = qtctrl.sizeSlider
+    assert slider.maximum() == 100
+    assert slider.minimum() == 1
+    assert slider.value() == 10
+    assert layer.current_size == 10
