@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -8,6 +9,8 @@ from napari.utils.transforms.transforms import Affine
 
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+
+LOGGER = logging.getLogger("napari._vispy.layers.base")
 
 
 class VispyBaseLayer(ABC):
@@ -131,6 +134,7 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_matrix_change(self):
+        LOGGER.debug('VispyBaseLayer._on_matrix_change')
         transform = self.layer._transforms.simplified.set_slice(
             self.layer._dims_displayed
         )

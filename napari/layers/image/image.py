@@ -836,7 +836,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         scale = np.ones(request.ndim)
         for d in request.dims_displayed:
-            scale[d] = downsample_factors[request.data_level][d]
+            scale[d] = downsample_factors[level][d]
 
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.
