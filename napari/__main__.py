@@ -140,7 +140,8 @@ def parse_sys_argv():
         help=(
             "open napari with dock widget from specified plugin name."
             "(If plugin provides multiple dock widgets, widget name must also "
-            "be provided)"
+            "be provided). Use __all__ to open all dock widgets of a "
+            "specified plugin."
         ),
     )
     parser.add_argument(
