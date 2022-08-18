@@ -105,10 +105,6 @@ html_css_files = [
     'custom.css',
 ]
 
-html_js_files = [
-    'redirects.js',
-]
-
 intersphinx_mapping = {
     'python': ['https://docs.python.org/3', None],
     'numpy': ['https://numpy.org/doc/stable/', None],
