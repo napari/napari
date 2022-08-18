@@ -136,6 +136,8 @@ def parse_sys_argv():
         '--with',
         dest='with_',
         nargs='+',
+        action='append',
+        default=[],
         metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
         help=(
             "open napari with dock widget from specified plugin name."
@@ -279,22 +281,23 @@ def _run():
             # if the requested plugin/widget is not available.
             _initialize_plugins()
             plugin_manager.discover_widgets()
-            pname, *wnames = args.with_
-            if '__all__' in wnames:
-                for name, (_pname, _wnames) in _npe2.widget_iterator():
-                    if name != 'dock' and pname != _pname:
-                        continue
-                    wnames = _wnames
+            for plugin in args.with_:
+                pname, *wnames = plugin
+                if '__all__' in wnames:
+                    for name, (_pname, _wnames) in _npe2.widget_iterator():
+                        if name != 'dock' or pname != _pname:
+                            continue
+                        wnames = _wnames
 
-            if wnames:
-                for wname in wnames:
+                if wnames:
+                    for wname in wnames:
+                        _npe2.get_widget_contribution(
+                            pname, wname
+                        ) or plugin_manager.get_widget(pname, wname)
+                else:
                     _npe2.get_widget_contribution(
-                        pname, wname
-                    ) or plugin_manager.get_widget(pname, wname)
-            else:
-                _npe2.get_widget_contribution(
-                    pname
-                ) or plugin_manager.get_widget(pname)
+                        pname
+                    ) or plugin_manager.get_widget(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -330,20 +333,21 @@ def _run():
         )
 
         if args.with_:
-            pname, *wnames = args.with_
-            if '__all__' in wnames:
-                for name, (_pname, _wnames) in _npe2.widget_iterator():
-                    if name != 'dock' and pname != _pname:
-                        continue
-                    wnames = _wnames
+            for plugin in args.with_:
+                pname, *wnames = plugin
+                if '__all__' in wnames:
+                    for name, (_pname, _wnames) in _npe2.widget_iterator():
+                        if name != 'dock' or pname != _pname:
+                            continue
+                        wnames = _wnames
 
-            if wnames:
-                for wname in wnames:
-                    viewer.window.add_plugin_dock_widget(
-                        pname, wname, args.tabify_
-                    )
-            else:
-                viewer.window.add_plugin_dock_widget(pname, args.tabify_)
+                if wnames:
+                    for wname in wnames:
+                        viewer.window.add_plugin_dock_widget(
+                            pname, wname, args.tabify_
+                        )
+                else:
+                    viewer.window.add_plugin_dock_widget(pname, args.tabify_)
 
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
