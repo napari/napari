@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari.layers import Points
@@ -28,6 +29,7 @@ def test_current_size_display_in_range(qtbot):
     assert slider.maximum() == 100
     assert slider.minimum() == 1
     assert slider.value() == 10
+    assert layer.current_size == 10
 
     # Size event needs to be triggered manually, because no points are selected.
     layer.current_size = 5
@@ -35,6 +37,7 @@ def test_current_size_display_in_range(qtbot):
     assert slider.maximum() == 100
     assert slider.minimum() == 1
     assert slider.value() == 5
+    assert layer.current_size == 5
 
     # Size event needs to be triggered manually, because no points are selected.
     layer.current_size = 100
@@ -42,6 +45,7 @@ def test_current_size_display_in_range(qtbot):
     assert slider.maximum() == 100
     assert slider.minimum() == 1
     assert slider.value() == 100
+    assert layer.current_size == 100
 
     # Size event needs to be triggered manually, because no points are selected.
     layer.current_size = 200
@@ -49,10 +53,28 @@ def test_current_size_display_in_range(qtbot):
     assert slider.maximum() == 201
     assert slider.minimum() == 1
     assert slider.value() == 200
+    assert layer.current_size == 200
 
     # Size event needs to be triggered manually, because no points are selected.
-    layer.current_size = -1000
+    with pytest.warns(RuntimeWarning):
+        layer.current_size = -1000
     layer.events.size()
     assert slider.maximum() == 201
-    assert slider.minimum() == -1001
-    assert slider.value() == -1000
+    assert slider.minimum() == 1
+    assert slider.value() == 200
+    assert layer.current_size == 200
+
+    layer.current_size = [20, 20]
+    layer.events.size()
+    assert slider.maximum() == 201
+    assert slider.minimum() == 1
+    assert slider.value() == 200
+    assert layer.current_size == [20, 20]
+
+    with pytest.warns(RuntimeWarning):
+        layer.current_size = [20, -20]
+    layer.events.size()
+    assert slider.maximum() == 201
+    assert slider.minimum() == 1
+    assert slider.value() == 200
+    assert layer.current_size == [20, 20]

@@ -276,11 +276,16 @@ class QtPointsControls(QtLayerControls):
         """Receive layer model size change event and update point size slider."""
         with self.layer.events.size.blocker():
             value = self.layer.current_size
-            if value < self.sizeSlider.minimum():
-                self.sizeSlider.setMinimum(int(value - 1))
-            if value > self.sizeSlider.maximum():
-                self.sizeSlider.setMaximum(int(value + 1))
-            self.sizeSlider.setValue(int(value))
+            min_val = min(value) if isinstance(value, list) else value
+            max_val = max(value) if isinstance(value, list) else value
+            if min_val < self.sizeSlider.minimum():
+                self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
+            if max_val > self.sizeSlider.maximum():
+                self.sizeSlider.setMaximum(int(max_val + 1))
+            try:
+                self.sizeSlider.setValue(int(value))
+            except TypeError:
+                pass
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):
