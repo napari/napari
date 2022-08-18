@@ -2,17 +2,15 @@
 Add image
 =========
 
-Display one image using the :meth:`add_image` API.
+Display one image using the :func:`view_image` API.
 """
 
 from skimage import data
 import napari
 
 
-# create a viewer
-viewer = napari.Viewer()
-# add image
-viewer.add_image(data.astronaut(), rgb=True)
+# create the viewer with an image
+viewer = napari.view_image(data.astronaut(), rgb=True)
 
 if __name__ == '__main__':
     napari.run()
