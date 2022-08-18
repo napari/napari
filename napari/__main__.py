@@ -144,6 +144,13 @@ def parse_sys_argv():
         ),
     )
     parser.add_argument(
+        '-t',
+        '--tabify',
+        dest='tabify_',
+        action='store_true',
+        help='When multiple dock widgets are loaded start them as tabs.',
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f'napari version {__version__}',
@@ -273,6 +280,12 @@ def _run():
             _initialize_plugins()
             plugin_manager.discover_widgets()
             pname, *wnames = args.with_
+            if '__all__' in wnames:
+                for name, (_pname, _wnames) in _npe2.widget_iterator():
+                    if name != 'dock' and pname != _pname:
+                        continue
+                    wnames = _wnames
+
             if wnames:
                 for wname in wnames:
                     _npe2.get_widget_contribution(
@@ -318,11 +331,19 @@ def _run():
 
         if args.with_:
             pname, *wnames = args.with_
+            if '__all__' in wnames:
+                for name, (_pname, _wnames) in _npe2.widget_iterator():
+                    if name != 'dock' and pname != _pname:
+                        continue
+                    wnames = _wnames
+
             if wnames:
                 for wname in wnames:
-                    viewer.window.add_plugin_dock_widget(pname, wname)
+                    viewer.window.add_plugin_dock_widget(
+                        pname, wname, args.tabify_
+                    )
             else:
-                viewer.window.add_plugin_dock_widget(pname)
+                viewer.window.add_plugin_dock_widget(pname, args.tabify_)
 
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
