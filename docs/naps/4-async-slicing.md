@@ -598,10 +598,12 @@ class VispyImageLayer:
         ...
 ```
 
-Most of the internal guts of slicing, such as the implementation of `_get_slice` and `_make_slice_request`, are unchanged from the approach proposed here.
+Most of the internal guts of slicing, such as the implementation of `_get_slice` and
+`_make_slice_request`, are unchanged from the approach proposed here.
 
-The main advantage of this approach is that the main consumer of the slice response (i.e. vispy) is the one driving slicing, which allows us to
-better define input and output types and avoid unnecessary type inheritance.
+The main advantage of this approach is that the main consumer of the slice response (i.e. vispy)
+is the one driving slicing, which allows us to better define input and output types and
+avoid unnecessary type inheritance.
 
 One disadvantage is that it becomes harder to control the execution of multiple layers being sliced.
 For example, with the above implementation we can no longer wait for all layers to be sliced before
