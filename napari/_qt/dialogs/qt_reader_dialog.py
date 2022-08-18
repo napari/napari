@@ -67,17 +67,15 @@ class QtReaderDialog(QDialog):
 
         # checkbox to remember the choice (doesn't pop up for folders with no extension)
         if self._extension:
-            if (
+
+            existing_pref = get_settings().plugins.extension2reader.get(
                 '*' + self._extension
-                in get_settings().plugins.extension2reader.keys()
-            ):
-                pref = get_settings().plugins.extension2reader[
-                    '*' + self._extension
-                ]
+            )
+            if existing_pref:
                 warn_message = trans._(
-                    'Override existing preference for *{extension}, "{pref}"',
+                    'Override existing preference for files with a {extension} extension: {pref}',
                     extension=self._extension,
-                    pref=pref,
+                    pref=existing_pref,
                 )
             else:
                 warn_message = trans._(
@@ -161,7 +159,6 @@ def handle_gui_reading(
     _path = paths[0]
     readers = prepare_remaining_readers(paths, plugin_name, error)
     error_message = str(error) if error else ''
-
     readerDialog = QtReaderDialog(
         parent=qt_viewer,
         pth=_path,
