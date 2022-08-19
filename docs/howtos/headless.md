@@ -14,7 +14,7 @@ viewer_model = napari.components.ViewerModel()
 Currently, using `napari.Viewer(show=False)` will *not* prevent
 Qt from being imported. This can crash the napari application as on creation
 of QApplication, if Qt cannot connect to display it will abort the application.
-One around this is to ensure that QtPy and any of the Qt components is not
+One way around this is to ensure that QtPy or any of the Qt backends are not
 installed. Another option is to set the environment variable:
-`QT_QPA_PLATFORM=offscreen in the environment`. This tells Qt backend that
+`QT_QPA_PLATFORM=offscreen` in the environment. This tells Qt backend that
 rendering should be done offscreen.
