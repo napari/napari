@@ -25,24 +25,8 @@ The separation of the python models from viewer GUI code allows:
 * napari to have the option to move away from the rendering backend currently
   used
 * tests to be easily run headlessly
-
-There is also intention to allow the python model to be run headlessly (without
-opening a napari GUI interface), which may be useful for example when performing
-batch analysis.
-
-Headless mode can be achieved by not showing the viewer:
-
-```python
-viewer = napari.Viewer(show=False)
-# or
-viewer_model = napari.components.ViewerModel()
-```
-
-Note that currently using `napari.Viewer(show=False)` will *not* prevent
-Qt to be imported *unless* QtPy or any of the Qt components is uninstalled.
-
-Alternatively, any of the lower level components such as `LayerList` and
-`Layer` could be directly used (without starting a napari viewer).
+* the python models to be run headlessly (see
+  [Running napari headlessly](../howtos/headless.md) for more)
 
 ## Python models and events
 
