@@ -44,7 +44,7 @@ class QtReaderDialog(QDialog):
                 '.zarr'
             ) and not self._extension.endswith('/'):
                 self._extension = self._extension + '/'
-                self._persist_text = f'Remember this choice for folders labeled as {self._extension}.'
+                self._persist_text = f'Remember this choice for folders named {self._extension}.'
 
         self._reader_buttons = []
         self.setup_ui(error_message, readers, persist_checked)
