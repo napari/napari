@@ -138,7 +138,7 @@ subtrees:
 
 Once you've added your document to the `docs` folder and updated the `_toc.yml`, you can preview the website
  locally by running `make docs` from the root of
-the `napari` repository (assuming you've installed the [docs prerequisites](prerequisites)).
+the `napari` repository (assuming you've installed the [docs prerequisites](#prerequisites)).
 
 ```bash
 make docs
@@ -150,8 +150,8 @@ into a browser to preview the website with your new document.
 Napari continuous integration includes a GitHub action that builds the
 documentation and saves the artifact for you to download. This is another way
 to check that your built documentation looks as you expect. To download the
-built documentation, in your PR scroll down to the continuous integration
-tests then:
+built documentation, go to your PR, scroll down to the continuous integration
+tests, then:
 
 1. click on 'details' next to 'Build Docs / Build & Upload Artifact (pull_request)'
 
