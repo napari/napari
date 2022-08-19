@@ -159,11 +159,11 @@ tests then:
 
 2. click on 'summary' on the top left corner
 
-![doc-continuous-integration-1](images/doc-ci-1.png)
+![doc-continuous-integration-1](images/doc-ci-2.png)
 
 3. scroll down to 'artifacts' and click on 'docs' to download the built documentation
 
-![doc-continuous-integration-1](images/doc-ci-1.png)
+![doc-continuous-integration-1](images/doc-ci-3.png)
 
 ## 5. Submit your pull request
 
