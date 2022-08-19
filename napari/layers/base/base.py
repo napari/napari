@@ -68,7 +68,7 @@ class _LayerSliceRequest:
     dims_displayed: Tuple[int, ...] = field(repr=False)
     dims_not_displayed: Tuple[int, ...] = field(repr=False)
     multiscale: bool = field(repr=False)
-    corner_pixels: np.ndarray = field(repr=False)
+    corner_pixels: np.ndarray
     round_index: bool = field(repr=False)
     dask_config: DaskIndexer = field(repr=False)
 

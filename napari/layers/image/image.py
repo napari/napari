@@ -852,9 +852,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 request.corner_pixels[0] * tile_to_data.scale
             )
 
+        thumbnail_indices = Image._get_downsampled_indices(
+            downsample_factors,
+            level_shapes,
+            slice_indices,
+            list(request.dims_not_displayed),
+            -1,
+        )
+
         with request.dask_config():
             data = np.asarray(request.data[level][tuple(indices)])
-            thumbnail = np.asarray(request.data[-1][slice_indices])
+            thumbnail = np.asarray(request.data[-1][tuple(thumbnail_indices)])
 
         return data, thumbnail, tile_to_data
 
