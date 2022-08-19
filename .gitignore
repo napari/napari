@@ -165,4 +165,4 @@ report*.json
 napari/resources/icons/_themes/
 
 # perfmon
-.perfmon/*/traces-*.json
+tools/perfmon/*/traces-*.json

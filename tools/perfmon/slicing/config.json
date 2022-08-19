@@ -1,6 +1,6 @@
 {
     "trace_qt_events": false,
-    "trace_file_on_start": ".perfmon/slicing/traces-latest.json",
+    "trace_file_on_start": "tools/perfmon/slicing/traces-latest.json",
     "trace_callables": [
         "slicing"
     ],
