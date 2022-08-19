@@ -778,7 +778,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             data, thumbnail, tile_to_data = Image._get_slice_data_multi_scale(
                 slice_indices, request
             )
-            full_transform = tile_to_data.compose(full_transform)
+            full_transform = full_transform.compose(tile_to_data)
         else:
             data = Image._get_slice_data(slice_indices, request)
             thumbnail = data
