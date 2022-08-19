@@ -32,7 +32,7 @@ logging.info(
 {args}'''
 )
 
-perfmon_dir = pathlib.Path(__file__).parent.parent.resolve(strict=True)
+perfmon_dir = pathlib.Path(__file__).parent.resolve(strict=True)
 config_dir = perfmon_dir / args.config
 config_path = str(config_dir / 'config.json')
 
