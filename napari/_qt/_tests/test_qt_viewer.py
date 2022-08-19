@@ -7,6 +7,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
@@ -23,7 +24,6 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
-from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
 BUILTINS_DISP = 'napari'
@@ -505,7 +505,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     viewer.layers.clear()
     qtbot.wait(100)
     gc.collect()
-    assert not gc.collect()
+    gc.collect()
     assert not lr()
     assert not dr()
 
@@ -520,7 +520,7 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     viewer.layers.clear()
     qtbot.wait(100)
     gc.collect()
-    assert not gc.collect()
+    gc.collect()
     assert not lr()
     assert not dr()
 

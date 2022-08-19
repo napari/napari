@@ -148,7 +148,9 @@ class Labels(_ImageBase):
         to background.
     color : dict of int to str or array
         Custom label to color mapping. Values must be valid color names or RGBA
-        arrays.
+        arrays. While there is no limit to the number of custom labels, the
+        the layer will render incorrectly if they map to more than 1024 distinct
+        colors.
     seed : float
         Seed for colormap random generator.
     opacity : float
