@@ -18,3 +18,6 @@ One way around this is to ensure that QtPy or any of the Qt backends are not
 installed. Another option is to set the environment variable:
 `QT_QPA_PLATFORM=offscreen` in the environment. This tells Qt backend that
 rendering should be done offscreen.
+
+Alternatively, any of the lower level napari components such as `LayerList` and
+`Layer` could be directly used, which would not start a napari viewer.
