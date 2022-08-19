@@ -87,11 +87,6 @@ class QtReaderDialog(QDialog):
                 extension=self._extension,
                 pref=existing_pref,
             )
-        else:
-            self._persist_text = trans._(
-                'Remember this choice for files with a {extension} extension',
-                extension=self._extension,
-            )
 
         self.persist_checkbox = QCheckBox(self._persist_text)
         self.persist_checkbox.toggle()
