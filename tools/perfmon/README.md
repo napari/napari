@@ -16,5 +16,5 @@ From the root of the napari repo:
 
 For example, to measure slicing performance on an image:
 ```shell
-% python tools/perfmon/run.py slicing 
+% python tools/perfmon/run.py slicing docs/images/multichannel_cells.png
 ```
