@@ -1,13 +1,11 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from app_model.types import Action, ToggleRule
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QAction
-
-    from ...utils.events import EventEmitter
     from ...viewer import Viewer
-    from ..constants import CommandId
 
 
 class ViewerToggleAction(Action):
@@ -39,40 +37,26 @@ class ViewerToggleAction(Action):
     def __init__(
         self,
         *,
-        id: CommandId,
+        id: str,
         title: str,
         viewer_attribute: str,
         sub_attribute: str,
         **kwargs,
     ):
-        def toggle(viewer: 'Viewer'):
-            """will be called to toggle the attribute when the action is triggered"""
-            attr = getattr(viewer, viewer_attribute)
-            current = getattr(attr, sub_attribute)
-            setattr(attr, sub_attribute, not current)
-
-        def initialize(viewer: 'Viewer'):
-            """will be called to initialize value of the action on creation"""
+        def get_current(viewer: Viewer):
+            """return the current value of the viewer attribute"""
             attr = getattr(viewer, viewer_attribute)
             return getattr(attr, sub_attribute)
 
-        def connect(action: 'QAction', viewer: 'Viewer'):
-            """will be called upon action creation, we connect to events here."""
+        def toggle(viewer: Viewer):
+            """toggle the viewer attribute"""
             attr = getattr(viewer, viewer_attribute)
-            emitter: EventEmitter = getattr(attr.events, sub_attribute)
-
-            @emitter.connect
-            def _setchecked(e):
-                action.setChecked(e.value if hasattr(e, 'value') else e)
-
-            action.destroyed.connect(lambda: emitter.disconnect(_setchecked))
+            setattr(attr, sub_attribute, not getattr(attr, sub_attribute))
 
         super().__init__(
             id=id,
             title=title,
-            toggled=ToggleRule(
-                initialize=initialize, experimental_connect=connect
-            ),
+            toggled=ToggleRule(get_current=get_current),
             callback=toggle,
             **kwargs,
         )
