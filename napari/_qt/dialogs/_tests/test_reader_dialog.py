@@ -55,6 +55,16 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
     )
 
 
+def test_reader_dir(tmpdir, reader_dialog):
+
+    dir = tmpdir.mkdir('my_dir')
+    widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
+    assert (
+        widg._persist_text
+        == 'Remember this choice for folders labeled as ' + str(dir) + '/.'
+    )
+
+
 def test_get_plugin_choice(tmpdir, reader_dialog):
     file_pth = tmpdir.join('my_file.tif')
     widg = reader_dialog(pth=file_pth, readers={'p1': 'p1', 'p2': 'p2'})
