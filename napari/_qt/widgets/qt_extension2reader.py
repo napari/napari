@@ -56,7 +56,7 @@ class Extension2ReaderTable(QWidget):
                 'Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts.'
             )
             + trans._(
-                '\n\nYou can save a preference for a specific folder by listing the folder name with a "/" at the end (for example, "test_images/").'
+                '\n\nYou can save a preference for a specific folder by listing the folder name with a "/" at the end (for example, "/test_images/").'
             )
             + trans._(
                 '\n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
@@ -235,6 +235,8 @@ class Extension2ReaderTable(QWidget):
 
         self._table.insertRow(last_row)
         item = QTableWidgetItem(fn_pattern)
+        if fn_pattern.endswith('/'):
+            item.setTextAlignment(Qt.AlignLeft)
         item.setFlags(Qt.ItemFlag.NoItemFlags)
         self._table.setItem(last_row, self._fn_pattern_col, item)
 

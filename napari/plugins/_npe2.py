@@ -207,17 +207,8 @@ def get_readers(path: Optional[str] = None) -> Dict[str, str]:
     Dict[str, str]
         Dictionary of plugin_name to display name
     """
-    readers = {}
 
     if path:
-        if path.endswith('/'):
-            for manifest in pm.iter_manifests():
-                if manifest.contributions.readers:
-                    for reader in manifest.contributions.readers:
-                        if reader.accepts_directories:
-                            readers[manifest.name] = manifest.display_name
-                            break
-            return readers
         return {
             reader.plugin_name: pm.get_manifest(reader.command).display_name
             for reader in pm.iter_compatible_readers([path])

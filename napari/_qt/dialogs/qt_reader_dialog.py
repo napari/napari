@@ -39,13 +39,15 @@ class QtReaderDialog(QDialog):
         self._persist_text = f'Remember this choice for files with a {self._extension} extension'
 
         if os.path.isdir(pth):
-            self._extension = os.path.basename(pth)
+            self._extension = os.path.realpath(pth)
             if not self._extension.endswith(
                 '.zarr'
             ) and not self._extension.endswith('/'):
-                self._extension = self._extension + '/'
-                self._persist_text = f'Remember this choice for folders named {self._extension}.'
+                self._extension = self._extension + os.sep
+                self._persist_text = f'Remember this choice for folders labeled as {self._extension}.'
 
+        else:
+            self._extension = '*' + self._extension
         self._reader_buttons = []
         self.setup_ui(error_message, readers, persist_checked)
 
@@ -74,7 +76,6 @@ class QtReaderDialog(QDialog):
         self.btn_box.rejected.connect(self.reject)
 
         # checkbox to remember the choice 
-
         if os.path.isdir(self._current_file):
             existing_pref = get_settings().plugins.extension2reader.get(self._extension)
         else:
@@ -276,5 +277,5 @@ def open_with_dialog_choices(
     if persist:
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            f'*{extension}': plugin_name,
+            f'{extension}': plugin_name,
         }
