@@ -10,6 +10,10 @@ You can find more videos of talks, tutorials and demos on the
 
 *Workshops are listed from newest to oldest.*
 
+* July 2022, SciPy 2022
+  * [watch it here](https://www.youtube.com/watch?v=vismuuc4y1I&list=PLYx7XA2nY5Gfxu98P_HL1MnFb_BSkpxLV&index=10)
+  * [Workshop materials available here](https://alisterburt.github.io/napari-workshops/SciPy-0722/intro.html) 
+
 * January to May 2022, [accelerator grantee plugin workshop](https://chanzuckerberg.github.io/napari-plugin-accel-workshops/)
 
 * May 2022, I2K napari workshop
