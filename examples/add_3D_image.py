@@ -1,8 +1,8 @@
 """
-Add volume
-==========
+Add 3D image
+============
 
-Display one 3-D volume layer using the add_volume API
+Display a 3D image layer using the :meth:`add_image` API.
 """
 
 from skimage import data
