@@ -665,7 +665,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             If a list then must be same length as the axis that is being
             expanded as channels.
         interpolation : str or list
-            Interpolation mode used by vispy. Must be one of our supported
+            Deprecated, to be removed in 0.6.0
+        interpolation2d : str or list
+            Interpolation mode used by vispy in D2. Must be one of our supported
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        interpolation3d : str or list
+            Interpolation mode used by vispy in D2. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
         rendering : str or list
