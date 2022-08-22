@@ -60,10 +60,15 @@ extensions = [
     "sphinx_panels",
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
+    "sphinx_tags",
 ]
 
 external_toc_path = "_toc.yml"
 external_toc_exclude_missing = False
+
+tags_create_tags = True
+tags_output_dir = "_tags"
+tags_extension = ["md", "rst"]
 
 # -- Options for HTML output -------------------------------------------------
 

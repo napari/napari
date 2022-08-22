@@ -70,6 +70,9 @@ subtrees:
           - file: guides/events_reference
       - file: further-resources/glossary
       - file: gallery
+        subtrees:
+        - entries:
+          - file: _tags/tagsindex
   - file: plugins/index
     subtrees:
     - entries:

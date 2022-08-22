@@ -2,6 +2,7 @@
 Action manager
 ==============
 
+.. tags:: gui
 """
 from random import shuffle
 
