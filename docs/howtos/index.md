@@ -20,4 +20,4 @@ and ImageJ simultaneously.
 - [napari in Docker](./docker): Learn about using napari in docker.
 - [Performance monitoring](./perfmon): Learn about how to monitor napari
 performance and diagnose potential problems.
-- [napari headless](./headless.md): Tips on how to run napari headlessly.
+- [napari headless](./headless): Tips on how to run napari headlessly.
