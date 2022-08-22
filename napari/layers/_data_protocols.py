@@ -2,9 +2,14 @@
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Tuple, Union
-
-from typing_extensions import Protocol, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})

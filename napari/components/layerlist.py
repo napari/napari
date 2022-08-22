@@ -8,8 +8,6 @@ import numpy as np
 
 from ..layers import Layer
 from ..layers.image.image import _ImageBase
-from ..utils.context import create_context
-from ..utils.context._layerlist_context import LayerListContextKeys
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
@@ -64,6 +62,16 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+
+        # TODO: figure out how to move this context creation bit.
+        # Ideally, the app should be aware of the layerlist, but not vice versa.
+        # This could probably be done by having the layerlist emit events that the app
+        # connects to, then the `_ctx` object would live on the app, (not here)
+        from .._app_model.context import create_context
+        from .._app_model.context._layerlist_context import (
+            LayerListContextKeys,
+        )
+
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
             self._ctx_keys = LayerListContextKeys(self._ctx)

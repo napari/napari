@@ -266,10 +266,11 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import _npe2, plugin_manager
+            from .plugins import _initialize_plugins, _npe2, plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
+            _initialize_plugins()
             plugin_manager.discover_widgets()
             pname, *wnames = args.with_
             if wnames:

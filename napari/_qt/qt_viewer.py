@@ -12,6 +12,8 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from napari_builtins.io import imsave_extensions
+
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
@@ -20,6 +22,7 @@ from ..components.layerlist import LayerList
 from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
@@ -64,11 +67,9 @@ from .._vispy import (  # isort:skip
 
 
 if TYPE_CHECKING:
-    from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
 
-from ..settings import get_settings
-from ..utils.io import imsave_extensions
+    from ..components import ViewerModel
 
 
 def _npe2_decode_selected_filter(
@@ -295,9 +296,6 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        for layer in self.viewer.layers:
-            self._add_layer(layer)
-
         self.view = self.canvas.central_widget.add_view(border_width=0)
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
@@ -328,6 +326,9 @@ class QtViewer(QSplitter):
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
+
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
 
     def _leave_canvas(self):
         """disable status on canvas leave"""

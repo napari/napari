@@ -7,7 +7,7 @@ from napari._qt.dialogs import qt_plugin_dialog
 
 
 def _iter_napari_hub_or_pypi_plugin_info(
-    conda_forge: bool,
+    conda_forge: bool = True,
 ) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
     """Mock the hub and pypi methods to collect available plugins.
 
