@@ -683,6 +683,7 @@ class Window:
             Widget, dock_kwargs = plugin_manager.get_widget(
                 plugin_name, widget_name
             )
+
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.

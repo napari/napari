@@ -8,7 +8,7 @@ import runpy
 import sys
 import warnings
 from ast import literal_eval
-from itertools import chain
+from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
@@ -283,15 +283,33 @@ def _run():
             # if the requested plugin/widget is not available.
             _initialize_plugins()
             plugin_manager.discover_widgets()
+
+            plugin_manager_plugins = []
+            npe2_plugins = []
             for plugin in args.with_:
                 pname, *wnames = plugin
-                if '__all__' in wnames:
-                    for name, (_pname, _wnames) in chain(
-                        _npe2.widget_iterator(), plugin_manager.iter_widgets()
-                    ):
-                        if name == 'dock' and pname == _pname:
+                for _name, (_pname, _wnames) in _npe2.widget_iterator():
+                    if _name == 'dock' and pname == _pname:
+                        npe2_plugins.append(plugin)
+                        if '__all__' in wnames:
                             wnames = _wnames
-                            break
+                        break
+
+                for _name, (_pname, _wnames) in plugin_manager.iter_widgets():
+                    if _name == 'dock' and pname == _pname:
+                        plugin_manager_plugins.append(plugin)
+                        if '__all__' in wnames:
+                            # Plugin_manager iter_widgets return wnames as dict keys
+                            wnames = list(_wnames.keys())
+                        if args.tabify_:
+                            print(
+                                trans._(
+                                    'Non-npe2 plugin {pname} in combination with -t/--tabify detected. Disable tabify for this plugin.',
+                                    deferred=True,
+                                    pname=pname,
+                                )
+                            )
+                        break
 
                 if wnames:
                     for wname in wnames:
@@ -337,23 +355,32 @@ def _run():
         )
 
         if args.with_:
-            for plugin in args.with_:
+            # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.
+            # Therefore, read npe2 plugins first and do not tabify for non-npe2 plugins.
+            for plugin, tabify in chain(
+                zip(npe2_plugins, repeat(args.tabify_)),
+                zip(plugin_manager_plugins, repeat(False)),
+            ):
                 pname, *wnames = plugin
                 if '__all__' in wnames:
                     for name, (_pname, _wnames) in chain(
                         _npe2.widget_iterator(), plugin_manager.iter_widgets()
                     ):
                         if name == 'dock' and pname == _pname:
-                            wnames = _wnames
+                            if isinstance(_wnames, dict):
+                                # Plugin_manager iter_widgets return wnames as dict keys
+                                wnames = list(_wnames.keys())
+                            else:
+                                wnames = _wnames
                             break
 
                 if wnames:
                     for wname in wnames:
                         viewer.window.add_plugin_dock_widget(
-                            pname, wname, args.tabify_
+                            pname, wname, tabify=tabify
                         )
                 else:
-                    viewer.window.add_plugin_dock_widget(pname, args.tabify_)
+                    viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
 
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
