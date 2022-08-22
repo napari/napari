@@ -8,6 +8,7 @@ import runpy
 import sys
 import warnings
 from ast import literal_eval
+from itertools import chain
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
@@ -285,10 +286,12 @@ def _run():
             for plugin in args.with_:
                 pname, *wnames = plugin
                 if '__all__' in wnames:
-                    for name, (_pname, _wnames) in _npe2.widget_iterator():
-                        if name != 'dock' or pname != _pname:
-                            continue
-                        wnames = _wnames
+                    for name, (_pname, _wnames) in chain(
+                        _npe2.widget_iterator(), plugin_manager.iter_widgets()
+                    ):
+                        if name == 'dock' and pname == _pname:
+                            wnames = _wnames
+                            break
 
                 if wnames:
                     for wname in wnames:
@@ -337,10 +340,12 @@ def _run():
             for plugin in args.with_:
                 pname, *wnames = plugin
                 if '__all__' in wnames:
-                    for name, (_pname, _wnames) in _npe2.widget_iterator():
-                        if name != 'dock' or pname != _pname:
-                            continue
-                        wnames = _wnames
+                    for name, (_pname, _wnames) in chain(
+                        _npe2.widget_iterator(), plugin_manager.iter_widgets()
+                    ):
+                        if name == 'dock' and pname == _pname:
+                            wnames = _wnames
+                            break
 
                 if wnames:
                     for wname in wnames:
