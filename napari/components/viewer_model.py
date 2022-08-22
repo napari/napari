@@ -358,6 +358,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._layer_slicer.slice_layers_async(self.layers, self.dims)
 
     def _slice_layer_async(self, event) -> None:
+        # self._layer_slicer.slice_layers_async(self.layers, self.dims)
         self._layer_slicer.slice_layers_async([event.layer], self.dims)
 
     def _on_active_layer(self, event):

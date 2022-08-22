@@ -342,7 +342,7 @@ class QtViewer(QSplitter):
             # This is to temporarily support behavior that depends on
             # layer slice state.
             layer._set_slice(response)
-            if visual := self.layer_to_visual[layer]:
+            if visual := self.layer_to_visual.get(layer):
                 visual._set_slice(response)
             # These came from the previous implementation of Layer.refresh.
             # Some of these should probably be removed in the future.

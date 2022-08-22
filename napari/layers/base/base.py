@@ -1698,6 +1698,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
+        LOGGER.debug('_update_draw')
         self.scale_factor = scale_factor
 
         displayed_axes = self._displayed_axes
