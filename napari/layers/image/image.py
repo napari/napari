@@ -785,8 +785,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         dims_displayed = list(request.dims_displayed)
         transform = full_transform.set_slice(dims_displayed)
-        if request.ndisplay == 2:
-            transform = Image._offset_2d_image_transform(transform)
+
+        # TODO: fix offset, as it should not include the tile-to-data transform
+        # Removing the small offset is preferred in the prototype for less
+        # visually disruptive behavior.
+        # if request.ndisplay == 2:
+        #    transform = Image._offset_2d_image_transform(request.data_to_world)
 
         # TODO: downsample data if it exceeds GL texture max size.
 

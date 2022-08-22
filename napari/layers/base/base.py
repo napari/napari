@@ -978,7 +978,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ndim_other = dims.ndim - self.ndim
         self_order = [i - ndim_other for i in dims.order if i >= ndim_other]
 
-        # Pad the corner pixels for images so that we grab slightly more data than we need.
+        # TODO: pad the corner pixels for images so that we grab slightly more data than we need.
+        # Disable for now as this is just experimental.
         corner_pixels = np.copy(self.corner_pixels)
         # if hasattr(self, 'data_level') and hasattr(self, 'level_shapes'):
         #    corner_size = corner_pixels[1] - corner_pixels[0] + 1
