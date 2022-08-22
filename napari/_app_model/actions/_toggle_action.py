@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from app_model.types import Action, ToggleRule
 
@@ -43,19 +43,13 @@ class ViewerToggleAction(Action):
         sub_attribute: str,
         **kwargs,
     ):
-        # these functions take an optional viewer, since they may be called
-        # during tests in the absence of a Viewer window (in which case Viewer is None)
-        def get_current(viewer: Optional[Viewer] = None) -> bool:
+        def get_current(viewer: Viewer):
             """return the current value of the viewer attribute"""
-            if viewer is None:
-                return False
             attr = getattr(viewer, viewer_attribute)
             return getattr(attr, sub_attribute)
 
-        def toggle(viewer: Optional[Viewer] = None) -> None:
+        def toggle(viewer: Viewer):
             """toggle the viewer attribute"""
-            if viewer is None:
-                return
             attr = getattr(viewer, viewer_attribute)
             setattr(attr, sub_attribute, not getattr(attr, sub_attribute))
 
