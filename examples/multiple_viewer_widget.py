@@ -1,4 +1,7 @@
 """
+Multiple viewer widget
+======================
+
 This is an example on how to have more than one viewer in the same napari window.
 Additional viewers state will be synchronized with the main viewer.
 Switching to 3D display will only impact the main viewer.
