@@ -14,7 +14,6 @@ from superqt import QLabeledDoubleSlider
 from ...layers.image._image_constants import (
     ImageRendering,
     Interpolation,
-    Interpolation3D,
     VolumeDepiction,
 )
 from ...utils.action_manager import action_manager
@@ -192,7 +191,7 @@ class QtImageControls(QtBaseImageControls):
         text : str
             Interpolation mode used by vispy. Must be one of our supported
             modes:
-            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+            'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
         """
@@ -336,11 +335,7 @@ class QtImageControls(QtBaseImageControls):
             self.planeThicknessLabel.show()
 
     def _update_interpolation_combo(self):
-        interp_names = (
-            Interpolation3D.keys()
-            if self.layer._ndisplay == 3
-            else [i.value for i in Interpolation.view_subset()]
-        )
+        interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
             self.layer.interpolation2d
             if self.layer._ndisplay == 2

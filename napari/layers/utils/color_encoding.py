@@ -1,8 +1,15 @@
-from typing import Any, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
 from pydantic import Field, parse_obj_as, validator
-from typing_extensions import Protocol, runtime_checkable
 
 from napari.utils.color import ColorArray, ColorValue
 

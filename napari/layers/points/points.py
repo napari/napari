@@ -142,6 +142,8 @@ class Points(Layer):
           No shading is added to the points.
         * 'spherical'
           Shading and depth buffer are changed to give a 3D spherical look to the points
+    antialiasing: float
+        Amount of antialiasing in canvas pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -241,6 +243,8 @@ class Points(Layer):
         COLORMAP allows color to be set via a color map over an attribute
     shading : Shading
         Shading mode.
+    antialiasing: float
+        Amount of antialiasing in canvas pixels.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
     shown : 1-D array of bool
@@ -266,8 +270,6 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
-    _antialias : float
-        The amount of antialiasing pixels for both the marker and marker edge.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -312,6 +314,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
+        antialiasing=1,
         experimental_canvas_size_limits=(0, 10000),
         shown=True,
     ):
@@ -353,7 +356,7 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
             shading=Event,
-            _antialias=Event,
+            antialiasing=Event,
             experimental_canvas_size_limits=Event,
             features=Event,
             feature_defaults=Event,
@@ -447,7 +450,7 @@ class Points(Layer):
 
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
-        self._antialias = True
+        self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -754,16 +757,23 @@ class Points(Layer):
             self.events.size()
 
     @property
-    def _antialias(self):
-        """float: amount in pixels of antialiasing"""
-        return self.__antialias
+    def antialiasing(self) -> float:
+        """Amount of antialiasing in canvas pixels."""
+        return self._antialiasing
 
-    @_antialias.setter
-    def _antialias(self, value) -> Union[int, float]:
+    @antialiasing.setter
+    def antialiasing(self, value: float):
+        """Set the amount of antialiasing in canvas pixels.
+
+        Values can only be positive.
+        """
         if value < 0:
-            value = 0
-        self.__antialias = float(value)
-        self.events._antialias()
+            warnings.warn(
+                message='antialiasing value must be positive, value will be set to 0.',
+                category=RuntimeWarning,
+            )
+        self._antialiasing = max(0, value)
+        self.events.antialiasing(value=self._antialiasing)
 
     @property
     def shading(self) -> Shading:
@@ -1146,6 +1156,7 @@ class Points(Layer):
                 'data': self.data,
                 'features': self.features,
                 'shading': self.shading,
+                'antialiasing': self.antialiasing,
                 'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
                 'shown': self.shown,
             }
@@ -1282,12 +1293,8 @@ class Points(Layer):
         if mode == Mode.ADD:
             self.selected_data = set()
             self.interactive = True
-
-        if mode == Mode.PAN_ZOOM:
-            self.help = ''
+        elif mode == Mode.PAN_ZOOM:
             self.interactive = True
-        else:
-            self.help = trans._('hold <space> to pan/zoom')
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()

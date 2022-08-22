@@ -1,4 +1,7 @@
-FROM --platform=linux/amd64 ubuntu:20.04 AS napari
+FROM --platform=linux/amd64 ubuntu:22.04 AS napari
+# if you change the Ubuntu version, remember to update
+# the APT definitions for Xpra below so it reflects the
+# new codename (e.g. 20.04 was focal, 22.04 had jammy)
 
 # below env var required to install libglib2.0-0 non-interactively
 ENV TZ=America/Los_Angeles
@@ -8,7 +11,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -qqy  \
         build-essential \
-        python3.8 \
+        python3.9 \
         python3-pip \
         git \
         mesa-utils \
@@ -27,10 +30,13 @@ RUN apt-get update && \
         libxcb-xinerama0 \
         libxcb-xinput0 \
         libxcb-xfixes0 \
-        libxcb-shape0
+        libxcb-shape0 \
+        && apt-get clean
 
 # install napari release version
 RUN pip3 install napari[all]
+
+# copy examples
 COPY examples /tmp/examples
 
 ENTRYPOINT ["python3", "-m", "napari"]
@@ -44,7 +50,7 @@ FROM napari AS napari-xpra
 # Install Xpra and dependencies
 RUN apt-get install -y wget gnupg2 apt-transport-https && \
     wget -O - https://xpra.org/gpg.asc | apt-key add - && \
-    echo "deb https://xpra.org/ focal main" > /etc/apt/sources.list.d/xpra.list
+    echo "deb https://xpra.org/ jammy main" > /etc/apt/sources.list.d/xpra.list
 
 RUN apt-get update && \
     apt-get install -yqq \
