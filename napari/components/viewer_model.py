@@ -132,7 +132,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
-    status: str = 'Ready'
+    status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -431,6 +431,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
@@ -439,6 +440,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
+        else:
+            self.status = 'Ready'
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
