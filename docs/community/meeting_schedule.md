@@ -5,7 +5,7 @@ We hold regular meetings, the timings of which are available on our [public cale
 ```{calendar}
 ---
 show-filters: true
-calendar-id: c_35r93ec6vtp8smhm7dv5uot0v4%40group.calendar.google.com
+calendar-id: c_35r93ec6vtp8smhm7dv5uot0v4@group.calendar.google.com
 ---
 ```
 

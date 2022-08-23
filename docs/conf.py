@@ -118,9 +118,6 @@ intersphinx_mapping = {
     ],
 }
 
-jupyter_cache = ''
-jupyter_execute_notebooks = 'auto'
-
 myst_enable_extensions = [
     'colon_fence',
     'dollarmath',
