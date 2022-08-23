@@ -42,12 +42,10 @@ class QtReaderDialog(QDialog):
             self._extension = os.path.realpath(pth)
             if not self._extension.endswith(
                 '.zarr'
-            ) and not self._extension.endswith('/'):
+            ) and not self._extension.endswith(os.sep):
                 self._extension = self._extension + os.sep
                 self._persist_text = f'Remember this choice for folders labeled as {self._extension}.'
 
-        else:
-            self._extension = '*' + self._extension
         self._reader_buttons = []
         self.setup_ui(error_message, readers, persist_checked)
 
@@ -275,6 +273,8 @@ def open_with_dialog_choices(
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
     if persist:
+        if not os.path.isdir(extension):
+            extension = '*' + extension
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             f'{extension}': plugin_name,
