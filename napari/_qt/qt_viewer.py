@@ -4,7 +4,7 @@ import logging
 import traceback
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Sequence
 from weakref import WeakSet
 
 import numpy as np
@@ -70,11 +70,12 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
 
     from ..components import ViewerModel
+    from .layer_controls import QtLayerControlsContainer
 
 
 def _npe2_decode_selected_filter(
     ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
-) -> Optional[WriterContribution]:
+) -> WriterContribution | None:
     """Determine the writer that should be invoked to save data.
 
     When npe2 can be imported, resolves a selected file extension
@@ -94,7 +95,7 @@ def _npe2_decode_selected_filter(
 
 def _extension_string_for_layers(
     layers: Sequence[Layer],
-) -> Tuple[str, List[WriterContribution]]:
+) -> tuple[str, list[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
     The extension string is a ";;" delimeted string of entries. Each entry
@@ -290,7 +291,7 @@ class QtViewer(QSplitter):
             self._add_layer(layer)
 
     @property
-    def controls(self):
+    def controls(self) -> QtLayerControlsContainer:
         if self._controls is None:
             # Avoid circular import.
             from .layer_controls import QtLayerControlsContainer
@@ -299,25 +300,25 @@ class QtViewer(QSplitter):
         return self._controls
 
     @property
-    def layers(self):
+    def layers(self) -> QtLayerList:
         if self._layers is None:
             self._layers = QtLayerList(self.viewer.layers)
         return self._layers
 
     @property
-    def layerButtons(self):
+    def layerButtons(self) -> QtLayerButtons:
         if self._layersButtons is None:
             self._layersButtons = QtLayerButtons(self.viewer)
         return self._layersButtons
 
     @property
-    def viewerButtons(self):
+    def viewerButtons(self) -> QtViewerButtons:
         if self._viewerButtons is None:
             self._viewerButtons = QtViewerButtons(self.viewer)
         return self._viewerButtons
 
     @property
-    def dockLayerList(self):
+    def dockLayerList(self) -> QtViewerDockWidget:
         if self._dockLayerList is None:
             layerList = QWidget()
             layerList.setObjectName('layerList')
@@ -339,7 +340,7 @@ class QtViewer(QSplitter):
         return self._dockLayerList
 
     @property
-    def dockLayerControls(self):
+    def dockLayerControls(self) -> QtViewerDockWidget:
         if self._dockLayerControls is None:
             self._dockLayerControls = QtViewerDockWidget(
                 self,
@@ -353,7 +354,7 @@ class QtViewer(QSplitter):
         return self._dockLayerControls
 
     @property
-    def dockConsole(self):
+    def dockConsole(self) -> QtViewerDockWidget:
         if self._dockConsole is None:
             self._dockConsole = QtViewerDockWidget(
                 self,
@@ -369,7 +370,7 @@ class QtViewer(QSplitter):
         return self._dockConsole
 
     @property
-    def dockPerformance(self):
+    def dockPerformance(self) -> QtViewerDockWidget:
         if self._dockPerformance is None:
             self._dockPerformance = self._create_performance_dock_widget()
         return self._dockPerformance
@@ -787,8 +788,8 @@ class QtViewer(QSplitter):
 
     def _qt_open(
         self,
-        filenames: List[str],
-        stack: Union[bool, List[List[str]]],
+        filenames: list[str],
+        stack: bool | list[list[str]],
         plugin: str = None,
         layer_type: str = None,
         **kwargs,
@@ -1189,7 +1190,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
+def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -1224,9 +1225,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     return qt_poll
 
 
-def _create_remote_manager(
-    layers: LayerList, qt_poll
-) -> Optional[RemoteManager]:
+def _create_remote_manager(layers: LayerList, qt_poll) -> RemoteManager | None:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters
