@@ -34,7 +34,7 @@ class PluginsSettings(EventedSettings):
         requires_restart=True,
     )
     plugin_api: PluginAPI = Field(
-        PluginAPI.napari_hub,
+        PluginAPI.pypi,
         title=trans._("Plugin API"),
         description=trans._(
             "Use the following API for querying plugin information.",

@@ -286,7 +286,6 @@ def test_play_button(qtbot):
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
         qtbot.mouseClick(button, Qt.LeftButton)
 
-    qtbot.wait(100)
     assert not view.is_playing
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:

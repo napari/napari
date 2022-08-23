@@ -12,7 +12,7 @@ from .interactions import Shortcut
 from .translations import trans
 
 if TYPE_CHECKING:
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     from .key_bindings import KeymapProvider
 
@@ -46,9 +46,9 @@ class Action:
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
-        from ._injection import inject_napari_dependencies
+        from .._app_model import get_app
 
-        return inject_napari_dependencies(self.command)
+        return get_app().injection_store.inject(self.command)
 
 
 class ActionManager:
@@ -327,7 +327,7 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_layer_actions(self, layer):
+    def _get_layer_actions(self, layer) -> dict:
         """
         Get actions filtered by the given layers.
 

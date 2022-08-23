@@ -2,7 +2,6 @@ from winreg import HKEY_CURRENT_USER as hkey, QueryValueEx as getSubkeyValue, Op
 
 import ctypes
 import ctypes.wintypes
-import typing
 
 advapi32 = ctypes.windll.advapi32
 
@@ -79,7 +78,8 @@ def isLight():
     if theme() is not None:
         return theme() == 'Light'
 
-def listener(callback: typing.Callable[[str], None]) -> None:
+#def listener(callback: typing.Callable[[str], None]) -> None:
+def listener(callback):
     hKey = ctypes.wintypes.HKEY()
     advapi32.RegOpenKeyExA(
         ctypes.wintypes.HKEY(0x80000001), # HKEY_CURRENT_USER
