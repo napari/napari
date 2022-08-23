@@ -605,6 +605,10 @@ The main advantage of this approach is that the main consumer of the slice respo
 is the one driving slicing, which allows us to better define input and output types and
 avoid unnecessary type inheritance.
 
+In the example code above, we avoid a tight dependency on `Qt` using `@ensure_main_thread`.
+But another advantage of this general approach is that we could rely on tighter dependencies
+between vispy and Qt, which may simplify the implementation and offer some performance benefits.
+
 One disadvantage is that it becomes harder to control the execution of multiple layers being sliced.
 For example, with the above implementation we can no longer wait for all layers to be sliced before
 updating all the vispy layers.
