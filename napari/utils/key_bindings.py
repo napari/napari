@@ -361,7 +361,7 @@ def _bind_user_key(key, func=UNDEFINED, *, overwrite=False):
     but can be denoted to work on release too by separating the function
     into two statements with the yield keyword::
 
-        @bind_user_key('Space')
+        @_bind_user_key('Space')
         def hello_world():
             # on key press
             print('hello world!')
@@ -371,7 +371,7 @@ def _bind_user_key(key, func=UNDEFINED, *, overwrite=False):
             # on key release
             print('goodbye world :(')
 
-    To create a keymap that will block others, ``bind_user_key(..., ...)```.
+    To create a keymap that will block others, ``_bind_user_key(..., ...)```.
     """
     keymap = _get_user_keymap()
 
