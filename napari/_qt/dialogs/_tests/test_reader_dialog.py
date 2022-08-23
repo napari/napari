@@ -61,7 +61,7 @@ def test_reader_dir(tmpdir, reader_dialog):
     widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
     assert (
         widg._persist_text
-        == 'Remember this choice for folders labeled as ' + str(dir) + '/.'
+        == f'Remember this choice for folders labeled as {dir}/.'
     )
 
 
