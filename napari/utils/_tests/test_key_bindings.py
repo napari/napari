@@ -234,8 +234,6 @@ def test_bind_user_key():
         nonlocal x
         x = 42
 
-    print(handler.keymap_chain)
-
     assert handler.active_keymap == {
         'A': types.MethodType(foo.class_keymap['A'], foo),
         'B': types.MethodType(foo.keymap['B'], foo),
