@@ -86,7 +86,7 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
 
     if osp.isdir(path):
         path = osp.basename(path)
-        if not path.endswith('/'):
+        if not path.endswith(os.sep):
             path = path + os.sep
     reader_settings = get_settings().plugins.extension2reader
     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
