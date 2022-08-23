@@ -1,9 +1,9 @@
 """
-Volume plane rendering
-======================
+3D image plane rendering
+========================
 
-Display one 3-D volume layer using the add_volume API and display it as a plane
-with a simple widget for modifying plane parameters
+Display one 3D image layer and display it as a plane
+with a simple widget for modifying plane parameters.
 """
 import napari
 import numpy as np
@@ -12,15 +12,15 @@ from skimage import data
 
 viewer = napari.Viewer(ndisplay=3)
 
-# add a volume
+# add a 3D image
 blobs = data.binary_blobs(
     length=64, volume_fraction=0.1, n_dim=3
 ).astype(np.float32)
-volume_layer = viewer.add_image(
+image_layer = viewer.add_image(
     blobs, rendering='mip', name='volume', blending='additive', opacity=0.25
 )
 
-# add the same volume and render as plane
+# add the same 3D image and render as plane
 # plane should be in 'additive' blending mode or depth looks all wrong
 plane_parameters = {
     'position': (32, 32, 32),

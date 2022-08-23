@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import os.path
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
@@ -10,6 +11,7 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+from npe2 import plugin_manager as pm
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import (
@@ -26,7 +28,7 @@ from ...utils.geometry import (
 from ...utils.key_bindings import KeymapProvider
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
@@ -1607,16 +1609,64 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
+    def _get_source_info(self):
+        components = {}
+        if self.source.reader_plugin:
+            components['layer_base'] = os.path.basename(self.source.path or '')
+            components['source_type'] = 'plugin'
+            try:
+                components['plugin'] = pm.get_manifest(
+                    self.source.reader_plugin
+                ).display_name
+            except KeyError:
+                components['plugin'] = self.source.reader_plugin
+            return components
+
+        elif self.source.sample:
+            components['layer_base'] = self.name
+            components['source_type'] = 'sample'
+            try:
+                components['plugin'] = pm.get_manifest(
+                    self.source.sample[0]
+                ).display_name
+            except KeyError:
+                components['plugin'] = self.source.sample[0]
+            return components
+
+        elif self.source.widget:
+            components['layer_base'] = self.name
+            components['source_type'] = 'widget'
+            components['plugin'] = self.source.widget._function.__name__
+            return components
+
+        else:
+            components['layer_base'] = self.name
+            components['source_type'] = ''
+            components['plugin'] = ''
+            return components
+
+    def get_source_str(self):
+
+        source_info = self._get_source_info()
+
+        return (
+            source_info['layer_base']
+            + ', '
+            + source_info['source_type']
+            + ' : '
+            + source_info['plugin']
+        )
+
     def get_status(
         self,
-        position: Tuple[float],
+        position: Optional[Tuple[float, ...]] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world=False,
     ):
         """
-        Status message of the data at a coordinate position.
+        Status message information of the data at a coordinate position.
 
         Parameters
         ----------
@@ -1634,16 +1684,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        msg : string
-            String containing a message that can be used as a status update.
+        source_info : dict
+            Dictionary containing a information that can be used as a status update.
         """
-        value = self.get_value(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
+        if position is not None:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        else:
+            value = None
+
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
         )
-        return generate_layer_status(self.name, position, value)
+        return source_info
 
     def _get_tooltip_text(
         self,
