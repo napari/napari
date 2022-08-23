@@ -108,11 +108,9 @@ def get_preferred_reader(path: str) -> Optional[str]:
     readers = sorted(
         _get_preferred_readers(path), key=lambda kv: score_specificity(kv[0])
     )
-    print('readers', readers)
     if readers:
         preferred = readers[0]
         _, reader = preferred
-        print(reader)
         return reader
 
     return None
