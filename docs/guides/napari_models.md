@@ -26,7 +26,7 @@ The separation of the python models from viewer GUI code allows:
   used
 * tests to be easily run headlessly
 * the python models to be run headlessly (see
-  [Running napari headlessly](../howtos/headless.md) for more)
+  [Running napari headlessly](../howtos/headless) for more)
 
 ## Python models and events
 
@@ -47,34 +47,20 @@ class Dims:
 
     Parameters
     ----------
-    ndim : int
-        Number of dimensions.
     ndisplay : int
         Number of displayed dimensions.
     ...
     """
-    def __init__(self, ndim, ndisplay):
-        self._ndim_ = ndim
+    def __init__(self, ndisplay):
         self._ndisplay = ndisplay
 
         # an `EmitterGroup` manages a set of `EventEmitters`
         # we add one emitter for each attribute we'd like to track
-        self.events = EmitterGroup(source=self, ndim=None, ndisplay=None)
+        self.events = EmitterGroup(source=self, ndisplay=None)
 
     # for each attribute, we create a `@property` getter/setter
     # so that we can emit the appropriate event when that attribute
     # is changed using the syntax: ``Dim.attribute = new_value``
-    @property
-    def ndim(self):
-        """Number of dimensions."""
-        return self._ndim
-
-    @ndim.setter
-    def ndim(self, value):
-        self._ndim = value
-        # emit the ndim "changed" event
-        self.events.ndim(value=value)
-
     @property
     def ndisplay(self):
         """Number of displayed dimensions."""
@@ -93,17 +79,27 @@ to watch:
 
 ```python
 # create an instance of the model
-dims = Dims(ndim=3, ndisplay=2)
+dims = Dims(ndisplay=2)
 
 # define some callback that should respond to changes in the model
-def _update_display(self):
+# if the function takes a single parameter it will receive the event
+# as first value.
+def _update_display(event):
     """
     Updates display for all sliders.
     """
     # the code updating the display code is not relevant for this
-    # example thus has been ommited.
-    nsteps = self.dims.nsteps
-    print(f"Update number of dimensions displayed to {nsteps}")
+    # example thus has been omitted.
+
+    # we can get the source object of the event
+    assert event.source == dims
+
+    # ... and query any attributes
+    ndisplay = event.source.ndisplay
+
+    # ... or directly get the new value for this specific event:
+    assert ndisplay == event.value
+    print(f"Update number of dimensions displayed to {ndisplay}")
 
 # register our callback with the model
 dims.events.ndisplay.connect(_update_display)
@@ -128,13 +124,10 @@ class Dim(EventedModel):
 
     Parameters
     ----------
-    ndim : int
-        Number of dimensions.
     ndisplay : int
         Number of displayed dimensions.
     ...
     """
-    ndim: float
     ndisplay: float
 ```
 
