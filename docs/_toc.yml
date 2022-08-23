@@ -53,6 +53,7 @@ subtrees:
           - file: howtos/napari_imageJ
           - file: howtos/docker
           - file: howtos/perfmon
+          - file: howtos/headless
       - file: guides/index
         subtrees:
         - entries:
