@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -2438,3 +2439,22 @@ def test_new_point_size_editable(attribute, new_value):
 
     setattr(layer, f"current_{attribute}", new_value)
     np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
+
+
+def test_antialiasing_setting_and_event_emission():
+    """Antialiasing changing should cause event emission."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    layer.events.antialiasing = Mock()
+    layer.antialiasing = 5
+    assert layer.antialiasing == 5
+    layer.events.antialiasing.assert_called_once()
+
+
+def test_antialiasing_value_clipping():
+    """Antialiasing can only be set to positive values."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    with pytest.warns(RuntimeWarning):
+        layer.antialiasing = -1
+    assert layer.antialiasing == 0
