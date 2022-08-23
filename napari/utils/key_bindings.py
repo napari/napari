@@ -304,7 +304,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     return unbound
 
 
-def get_user_keymap():
+def _get_user_keymap():
     """Retrieve the current user keymap. The user keymap is global and takes precedent over all other keymaps.
 
     Returns
@@ -315,7 +315,7 @@ def get_user_keymap():
     return USER_KEYMAP
 
 
-def bind_user_key(key, func=UNDEFINED, *, overwrite=False):
+def _bind_user_key(key, func=UNDEFINED, *, overwrite=False):
     """Bind a key combination to the user keymap.
 
     Parameters
@@ -373,7 +373,7 @@ def bind_user_key(key, func=UNDEFINED, *, overwrite=False):
 
     To create a keymap that will block others, ``bind_user_key(..., ...)```.
     """
-    keymap = get_user_keymap()
+    keymap = _get_user_keymap()
 
     if func is UNDEFINED:
 
@@ -493,7 +493,7 @@ class KeymapHandler:
     @property
     def keymap_chain(self):
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = [get_user_keymap()]
+        maps = [_get_user_keymap()]
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
