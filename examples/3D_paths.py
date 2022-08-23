@@ -7,7 +7,7 @@ layers is 3D and "sliced" with a different set of vectors appearing on
 different 3D slices. Another is 2D and "broadcast" with the same vectors
 appearing on each slice.
 
-.. tags:: layers, visualization-nD
+.. tags:: visualization-advanced, layers
 """
 
 import numpy as np

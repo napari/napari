@@ -4,6 +4,7 @@ New theme
 
 Displays an image and sets the theme to new custom theme.
 
+.. tags:: experimental
 """
 
 from skimage import data

@@ -5,7 +5,7 @@
 Display one 3D image layer and display it as a plane
 with a simple widget for modifying plane parameters.
 
-.. tags:: layers, visualization-nD, gui
+.. tags:: visualization-advanced, gui, layers
 """
 import napari
 import numpy as np

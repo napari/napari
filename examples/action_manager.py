@@ -2,7 +2,7 @@
 Action manager
 ==============
 
-.. tags:: gui
+.. tags:: gui, experimental
 """
 from random import shuffle
 

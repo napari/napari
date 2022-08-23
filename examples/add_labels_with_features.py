@@ -4,7 +4,7 @@ Add labels with features
 
 Display a labels layer with various features
 
-.. tags:: layers, visualization-advanced
+.. tags:: layers, analysis
 """
 
 

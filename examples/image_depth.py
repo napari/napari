@@ -2,6 +2,7 @@
 Image depth
 ===========
 
+.. tags:: visualization-basic
 """
 
 import napari
