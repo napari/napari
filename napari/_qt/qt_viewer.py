@@ -4,7 +4,7 @@ import logging
 import traceback
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
 import numpy as np
@@ -75,7 +75,7 @@ if TYPE_CHECKING:
 
 def _npe2_decode_selected_filter(
     ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
-) -> WriterContribution | None:
+) -> Optional[WriterContribution]:
     """Determine the writer that should be invoked to save data.
 
     When npe2 can be imported, resolves a selected file extension
@@ -95,7 +95,7 @@ def _npe2_decode_selected_filter(
 
 def _extension_string_for_layers(
     layers: Sequence[Layer],
-) -> tuple[str, list[WriterContribution]]:
+) -> Tuple[str, List[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
     The extension string is a ";;" delimeted string of entries. Each entry
@@ -788,8 +788,8 @@ class QtViewer(QSplitter):
 
     def _qt_open(
         self,
-        filenames: list[str],
-        stack: bool | list[list[str]],
+        filenames: List[str],
+        stack: Union[bool, List[List[str]]],
         plugin: str = None,
         layer_type: str = None,
         **kwargs,
@@ -1190,7 +1190,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
+def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -1225,7 +1225,9 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
     return qt_poll
 
 
-def _create_remote_manager(layers: LayerList, qt_poll) -> RemoteManager | None:
+def _create_remote_manager(
+    layers: LayerList, qt_poll
+) -> Optional[RemoteManager]:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters
