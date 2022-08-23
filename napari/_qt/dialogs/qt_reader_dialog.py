@@ -275,6 +275,7 @@ def open_with_dialog_choices(
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
     if persist:
+        print(extension)
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
             f'{extension}': plugin_name,

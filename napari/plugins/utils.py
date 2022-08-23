@@ -85,10 +85,17 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
     """
 
     if osp.isdir(path):
-        path = osp.basename(path)
         if not path.endswith(os.sep):
             path = path + os.sep
+
     reader_settings = get_settings().plugins.extension2reader
+    print('reader settings', reader_settings)
+    print(
+        'result',
+        str(filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())),
+    )
+    for kv in reader_settings.items():
+        print('matching', path, kv, fnmatch(path, kv[0]))
     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
 
 
@@ -108,9 +115,11 @@ def get_preferred_reader(path: str) -> Optional[str]:
     readers = sorted(
         _get_preferred_readers(path), key=lambda kv: score_specificity(kv[0])
     )
+    print('readers', readers)
     if readers:
         preferred = readers[0]
         _, reader = preferred
+        print(reader)
         return reader
 
     return None
