@@ -1,3 +1,4 @@
+import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
@@ -749,6 +750,18 @@ class Points(Layer):
 
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
+        if (isinstance(size, numbers.Number) and size < 0) or (
+            isinstance(size, list) and min(size) < 0
+        ):
+            warnings.warn(
+                message=trans._(
+                    'current_size value must be positive, value will be left at {value}.',
+                    deferred=True,
+                    value=self.current_size,
+                ),
+                category=RuntimeWarning,
+            )
+            size = self.current_size
         self._current_size = size
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:

@@ -25,7 +25,7 @@ repos:
       args: ["--py38-plus", "--keep-runtime-typing"]
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/seddonym/import-linter
-    rev: v1.2.7
+    rev: v1.3.0
     hooks:
     - id: import-linter
       stages: [manual]
