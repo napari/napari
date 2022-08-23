@@ -1,6 +1,7 @@
 import inspect
 import time
 import types
+from unittest.mock import patch
 
 import pytest
 
@@ -221,7 +222,8 @@ def test_handle_single_keymap_provider():
     assert not hasattr(foo, 'C')
 
 
-def test_bind_user_key():
+@patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
+def test_bind_user_key(keymap_mock):
     foo = Foo()
     bar = Bar()
     handler = KeymapHandler()
@@ -242,8 +244,6 @@ def test_bind_user_key():
     }
 
     handler.press_key('D')
-
-    _get_user_keymap().clear()
 
     assert x == 42
 
