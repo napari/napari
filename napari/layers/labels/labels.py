@@ -304,7 +304,7 @@ class Labels(_ImageBase):
         self._reset_history()
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
         self._set_editable()
 
     @property

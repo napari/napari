@@ -199,7 +199,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying verictes, faces, and optionally vertex values, instead got length {length}.',
+                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
                     deferred=True,
                     length=len(data),
                 )
@@ -227,6 +227,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._view_vertex_values = []
 
         # Trigger generation of view slice and thumbnail
+        # Need _update_dims instead of refresh here because ndim is
+        # dependent on vertex_values as well as vertices.
         self._update_dims()
 
         # Shading mode
@@ -279,7 +281,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertices = vertices
 
         self._update_dims()
-        self.refresh()
         self.events.data(value=self.data)
         self._set_editable()
 

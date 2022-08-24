@@ -326,6 +326,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            extent=Event,
             _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
@@ -522,7 +523,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._update_dims()
+        self._clear_extent()
         self.events.scale()
 
     @property
@@ -533,7 +534,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._update_dims()
+        self._clear_extent()
         self.events.translate()
 
     @property
@@ -544,7 +545,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._update_dims()
+        self._clear_extent()
         self.events.rotate()
 
     @property
@@ -555,7 +556,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._update_dims()
+        self._clear_extent()
         self.events.shear()
 
     @property
@@ -571,7 +572,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._update_dims()
+        self._clear_extent()
         self.events.affine()
 
     @property
@@ -676,10 +677,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ]
 
         self._ndim = ndim
-        if 'extent' in self.__dict__:
-            del self.extent
 
-        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
+        self._clear_extent()
 
     @property
     @abstractmethod
@@ -729,6 +728,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             world=extent_world,
             step=abs(data_to_world.scale),
         )
+
+    def _clear_extent(self):
+        """Clears the cached extent.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before events get emitted.
+        """
+        if 'extent' in self.__dict__:
+            del self.extent
+
+        # TODO: emit event to indicate the extent has changed instead of using set_data.
+        # self.events.extent()
+
+        # A new extent means that we must refresh the slice, which will also clear
+        # the cached extent of the LayerList.
+        self.refresh()
 
     @property
     def _slice_indices(self):
@@ -994,7 +1009,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # Update the point values
         self._dims_point = point[offset:]
-        self._update_dims()
+        self.refresh()
         self._set_editable()
 
     @abstractmethod
@@ -1184,7 +1199,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
+            self.events.set_data()  # This event should be connected to the LayerList to cause it to recalculate its extent across all layers.
             self._update_thumbnail()
             self._set_highlight(force=True)
 

@@ -454,7 +454,7 @@ class Points(Layer):
         self.antialiasing = antialiasing
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     @property
     def data(self) -> np.ndarray:

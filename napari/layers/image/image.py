@@ -375,7 +375,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.plane = plane
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
