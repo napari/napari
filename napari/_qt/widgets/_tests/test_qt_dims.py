@@ -314,6 +314,34 @@ def test_slice_labels(qtbot):
     assert dims.point[0] == 8
 
 
+def test_not_playing_after_ndim_changes(qtbot):
+    """See https://github.com/napari/napari/issues/3998"""
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    # Loop to prevent finishing before the assertions in this test.
+    view.play(loop_mode='loop')
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    dims.ndim = 2
+
+    qtbot.waitUntil(lambda: not view.is_playing)
+
+
+def test_not_playing_after_ndisplay_changes(qtbot):
+    """See https://github.com/napari/napari/issues/3998"""
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    # Loop to prevent finishing before the assertions in this test.
+    view.play(loop_mode='loop')
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    dims.ndisplay = 3
+
+    qtbot.waitUntil(lambda: not view.is_playing)
+
+
 def test_set_axis_labels_after_ndim_changes(qtbot):
     """See https://github.com/napari/napari/issues/3753"""
     dims = Dims(ndim=3, ndisplay=2)
