@@ -8,7 +8,6 @@ from app_model import Application
 
 from ._submenus import SUBMENUS
 from .actions._layer_actions import LAYER_ACTIONS
-from .actions._window_actions import WINDOW_ACTIONS
 from .injection._processors import PROCESSORS
 from .injection._providers import PROVIDERS
 
@@ -31,7 +30,7 @@ class NapariApplication(Application):
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in chain(LAYER_ACTIONS, WINDOW_ACTIONS):
+        for action in chain(LAYER_ACTIONS):
             self.register_action(action)
 
         self.menus.append_menu_items(SUBMENUS)
