@@ -1,13 +1,36 @@
+"""Defines window menu actions."""
+
 from typing import List
 
 from app_model.types import Action
 
 from ...._app_model.constants import CommandId, MenuGroup, MenuId
+from ....utils.translations import trans
+from ...qt_main_window import Window
+
+
+def _show_console(window: Window):
+    window._qt_viewer.dockConsole.setVisible(
+        not window._qt_viewer.dockConsole.isVisible()
+    )
+
+
+def _show_layer_controls(window: Window):
+    window._qt_viewer.dockLayerControls.setVisible(
+        not window._qt_viewer.dockLayerControls.isVisible()
+    )
+
+
+def _show_layer_list(window: Window):
+    window._qt_viewer.dockLayerList.setVisible(
+        not window._qt_viewer.dockLayerList.isVisible()
+    )
+
 
 WINDOW_ACTIONS: List[Action] = [
     Action(
-        id=CommandId.TOGGLE_WINDOW_CONSOLE,
-        title=CommandId.TOGGLE_WINDOW_CONSOLE.title,
+        id=CommandId.TOGGLE_CONSOLE,
+        title=CommandId.TOGGLE_CONSOLE.title,
         menus=[
             {
                 'id': MenuId.MENUBAR_WINDOW,
@@ -15,8 +38,8 @@ WINDOW_ACTIONS: List[Action] = [
                 'order': 1,
             }
         ],
-        callback=,
-        keybindings=,
+        callback=_show_console,
+        status_tip=trans._('Toggle console panel'),
     ),
     Action(
         id=CommandId.TOGGLE_LAYER_CONTROLS,
@@ -28,8 +51,8 @@ WINDOW_ACTIONS: List[Action] = [
                 'order': 2,
             }
         ],
-        callback=,
-        keybindings=
+        callback=_show_layer_controls,
+        status_tip=trans._('Toggle layer controls panel'),
     ),
     Action(
         id=CommandId.TOGGLE_LAYER_LIST,
@@ -41,7 +64,7 @@ WINDOW_ACTIONS: List[Action] = [
                 'order': 3,
             }
         ],
-        callback=,
-        keybindings=
+        callback=_show_layer_list,
+        status_tip=trans._('Toggle layer list panel'),
     ),
 ]

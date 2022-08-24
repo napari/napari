@@ -36,6 +36,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .._app_model.constants import MenuId
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
@@ -47,6 +48,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from ._qapp_model import build_qmodel_menu
 from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
@@ -612,7 +614,11 @@ class Window:
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = menus.ViewMenu(self)
         self.main_menu.addMenu(self.view_menu)
-        self.window_menu = menus.WindowMenu(self)
+        self.window_menu = build_qmodel_menu(
+            MenuId.MENUBAR_WINDOW,
+            title=trans._('Window'),
+            parent=self._qt_window,
+        )
         self.main_menu.addMenu(self.window_menu)
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)

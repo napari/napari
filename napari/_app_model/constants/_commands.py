@@ -17,7 +17,7 @@ from ...utils.translations import trans
 class CommandId(str, Enum):
     """Id representing a napari command."""
 
-    TOGGLE_WINDOW_CONSOLE = "napari:window:window:toggle_window_console"
+    TOGGLE_CONSOLE = "napari:window:window:toggle_window_console"
     TOGGLE_LAYER_CONTROLS = "napari:window:window:toggle_layer_controls"
     TOGGLE_LAYER_LIST = "napari:window:window:toggle_layer_list"
 
@@ -68,7 +68,7 @@ class _i(NamedTuple):
 
 # fmt: off
 _COMMAND_INFO = {
-    CommandId.TOGGLE_WINDOW_CONSOLE: _i(trans._('Open console window')),
+    CommandId.TOGGLE_CONSOLE: _i(trans._('Open console panel')),
     CommandId.TOGGLE_LAYER_CONTROLS: _i(trans._('Open layer control panel')),
     CommandId.TOGGLE_LAYER_LIST: _i(trans._('Open layer list panel')),
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
