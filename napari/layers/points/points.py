@@ -1,3 +1,4 @@
+import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
@@ -12,7 +13,7 @@ from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import project_points_onto_plane, rotate_points
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
@@ -749,6 +750,18 @@ class Points(Layer):
 
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
+        if (isinstance(size, numbers.Number) and size < 0) or (
+            isinstance(size, list) and min(size) < 0
+        ):
+            warnings.warn(
+                message=trans._(
+                    'current_size value must be positive, value will be left at {value}.',
+                    deferred=True,
+                    value=self.current_size,
+                ),
+                category=RuntimeWarning,
+            )
+            size = self.current_size
         self._current_size = size
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
@@ -2015,42 +2028,49 @@ class Points(Layer):
 
     def get_status(
         self,
-        position,
+        position: Optional[Tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ) -> str:
-        """Status message of the data at a coordinate position.
+    ) -> dict:
+        """Status message information of the data at a coordinate position.
 
-        Parameters
-        ----------
-        position : tuple
-            Position in either data or world coordinates.
-        view_direction : Optional[np.ndarray]
-            A unit vector giving the direction of the ray in nD world coordinates.
-            The default value is None.
-        dims_displayed : Optional[List[int]]
-            A list of the dimensions currently being displayed in the viewer.
-            The default value is None.
-        world : bool
-            If True the position is taken to be in world coordinates
-            and converted into data coordinates. False by default.
+        # Parameters
+        # ----------
+        # position : tuple
+        #     Position in either data or world coordinates.
+        # view_direction : Optional[np.ndarray]
+        #     A unit vector giving the direction of the ray in nD world coordinates.
+        #     The default value is None.
+        # dims_displayed : Optional[List[int]]
+        #     A list of the dimensions currently being displayed in the viewer.
+        #     The default value is None.
+        # world : bool
+        #     If True the position is taken to be in world coordinates
+        #     and converted into data coordinates. False by default.
 
-        Returns
-        -------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-        value = self.get_value(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
+        # Returns
+        # -------
+        # source_info : dict
+        #     Dict containing information that can be used in a status update.
+        #"""
+        if position is not None:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        else:
+            value = None
+
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
         )
-        msg = generate_layer_status(self.name, position, value)
 
-        # if this labels layer has properties
+        # if this points layer has properties
         properties = self._get_properties(
             position,
             view_direction=view_direction,
@@ -2058,9 +2078,9 @@ class Points(Layer):
             world=world,
         )
         if properties:
-            msg += "; " + ", ".join(properties)
+            source_info['coordinates'] += "; " + ", ".join(properties)
 
-        return msg
+        return source_info
 
     def _get_tooltip_text(
         self,
