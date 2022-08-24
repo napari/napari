@@ -552,7 +552,7 @@ def test_message():
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -564,7 +564,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
