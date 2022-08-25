@@ -10,8 +10,7 @@ from typing import Optional
 @lru_cache  # only call once
 def init_qactions():
 
-    from napari._app_model import get_app
-
+    from ...._app_model import get_app
     from ...qt_main_window import Window, _QtMainWindow
     from ._view import VIEW_ACTIONS
 
