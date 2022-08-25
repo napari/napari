@@ -68,9 +68,9 @@ class _i(NamedTuple):
 
 # fmt: off
 _COMMAND_INFO = {
-    CommandId.TOGGLE_CONSOLE: _i(trans._('Open console panel')),
-    CommandId.TOGGLE_LAYER_CONTROLS: _i(trans._('Open layer control panel')),
-    CommandId.TOGGLE_LAYER_LIST: _i(trans._('Open layer list panel')),
+    CommandId.TOGGLE_CONSOLE: _i(trans._('console')),
+    CommandId.TOGGLE_LAYER_CONTROLS: _i(trans._('layer controls')),
+    CommandId.TOGGLE_LAYER_LIST: _i(trans._('layer list')),
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
