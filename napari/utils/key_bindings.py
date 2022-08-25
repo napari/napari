@@ -38,8 +38,8 @@ import inspect
 import re
 import time
 import types
-import typing
 from collections import ChainMap
+from typing import Callable, Dict
 
 from vispy.util import keys
 
@@ -84,7 +84,8 @@ MODIFIER_KEYS = [keys.CONTROL, keys.ALT, keys.SHIFT, keys.META]
 
 KEY_SUBS = {'Ctrl': 'Control'}
 
-USER_KEYMAP = {}
+# global user keymap; to be made public later in refactoring process
+USER_KEYMAP: Dict[str, Callable] = {}
 
 
 def parse_key_combo(key_combo):
@@ -373,41 +374,7 @@ def _bind_user_key(key, func=UNDEFINED, *, overwrite=False):
 
     To create a keymap that will block others, ``_bind_user_key(..., ...)```.
     """
-    keymap = _get_user_keymap()
-
-    if func is UNDEFINED:
-
-        def inner(func):
-            bind_key(keymap, key, func, overwrite=overwrite)
-            return func
-
-        return inner
-
-    if key is not Ellipsis:
-        key = normalize_key_combo(key)
-
-    if func is not None and key in keymap and not overwrite:
-        raise ValueError(
-            trans._(
-                'key combination {key} already used! specify \'overwrite=True\' to bypass this check',
-                deferred=True,
-                key=key,
-            )
-        )
-
-    unbound = keymap.pop(key, None)
-
-    if func is not None:
-        if func is not Ellipsis and not callable(func):
-            raise TypeError(
-                trans._(
-                    "'func' must be a callable",
-                    deferred=True,
-                )
-            )
-        keymap[key] = func
-
-    return unbound
+    return bind_key(_get_user_keymap(), key, func, overwrite=overwrite)
 
 
 class KeybindingDescriptor:
@@ -562,7 +529,7 @@ class KeymapHandler:
             else:
                 key, _ = parse_key_combo(key_combo)
                 self._key_release_generators[key] = generator_or_callback
-        if isinstance(generator_or_callback, typing.Callable):
+        if isinstance(generator_or_callback, Callable):
             key, _ = parse_key_combo(key_combo)
             self._key_release_generators[key] = (
                 generator_or_callback,
