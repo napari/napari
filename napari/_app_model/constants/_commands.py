@@ -17,6 +17,9 @@ from ...utils.translations import trans
 class CommandId(str, Enum):
     """Id representing a napari command."""
 
+    DLG_PLUGIN_INSTALL = 'napari:plugins:plugin_install_dialog'
+    DLG_PLUGIN_ERR = 'napari:plugins:plugin_err_reporter'
+
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
@@ -64,6 +67,8 @@ class _i(NamedTuple):
 
 # fmt: off
 _COMMAND_INFO = {
+    CommandId.DLG_PLUGIN_INSTALL: _i(trans._('Install/Uninstall Plugins...')),
+    CommandId.DLG_PLUGIN_ERR: _i(trans._('Plugin Errors...')),
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
