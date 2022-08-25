@@ -319,60 +319,7 @@ def _get_user_keymap():
 def _bind_user_key(key, func=UNDEFINED, *, overwrite=False):
     """Bind a key combination to the user keymap.
 
-    Parameters
-    ----------
-    key : str or ...
-        Key combination.
-        ``...`` acts as a wildcard if no key combinations can be matched
-        in the keymap (this will overwrite all key combinations
-        further down the lookup chain).
-    func : callable, None, or ...
-        Callable to bind to the key combination.
-        If ``None`` is passed, unbind instead.
-        ``...`` acts as a blocker, effectively unbinding the key
-        combination for all keymaps further down the lookup chain.
-    overwrite : bool, keyword-only, optional
-        Whether to overwrite the key combination if it already exists.
-
-    Returns
-    -------
-    unbound : callable or None
-        Callable unbound by this operation, if any.
-
-    Notes
-    -----
-    Key combinations are represented in the form ``[modifier-]key``,
-    e.g. ``a``, ``Control-c``, or ``Control-Alt-Delete``.
-    Valid modifiers are Control, Alt, Shift, and Meta.
-
-    Letters will always be read as upper-case.
-    Due to the native implementation of the key system, Shift pressed in
-    certain key combinations may yield inconsistent or unexpected results.
-    Therefore, it is not recommended to use Shift with non-letter keys. On OSX,
-    Control is swapped with Meta such that pressing Command reads as Control.
-
-    Special keys include Shift, Control, Alt, Meta, Up, Down, Left, Right,
-    PageUp, PageDown, Insert, Delete, Home, End, Escape, Backspace, F1,
-    F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, Space, Enter, and Tab
-
-    Functions take in only one argument: the parent that the function
-    was bound to.
-
-    By default, all functions are assumed to work on key presses only,
-    but can be denoted to work on release too by separating the function
-    into two statements with the yield keyword::
-
-        @_bind_user_key('Space')
-        def hello_world():
-            # on key press
-            print('hello world!')
-
-            yield
-
-            # on key release
-            print('goodbye world :(')
-
-    To create a keymap that will block others, ``_bind_user_key(..., ...)```.
+    See ``bind_key`` docs for details.
     """
     return bind_key(_get_user_keymap(), key, func, overwrite=overwrite)
 
