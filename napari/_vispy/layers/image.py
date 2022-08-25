@@ -99,7 +99,12 @@ class VispyImageLayer(VispyBaseLayer):
         # Copied from set_node_data without downsampling (TODO).
         LOGGER.debug('VispyImageLayer._set_slice : %s', response.request)
 
-        data = fix_data_dtype(response.data)
+        # Labels means that we need to consume the colormapped data stored
+        # in the layer instead of the data in the response.
+        # TODO: make the response contain the colormapped data.
+        # data = response.data
+        data = self.layer._data_view
+        data = fix_data_dtype(data)
 
         # Check if ndisplay has changed current node type needs updating
         if (
