@@ -7,7 +7,9 @@ if TYPE_CHECKING:
 
 
 def build_qmodel_menu(
-    menu_id: str, title: Optional[str] = None, parent: Optional[QWidget] = None
+    menu_id: str,
+    title: Optional[str] = None,
+    parent: Optional['QWidget'] = None,
 ) -> QModelMenu:
     """Build a QModelMenu from the napari app model
 
