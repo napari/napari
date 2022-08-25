@@ -173,8 +173,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         coordinates of each layer. For multiscale data the coordinates are in
         the space of the currently viewed data level, not the highest resolution
         level.
-    position : tuple
-        Cursor position in world coordinates.
     ndim : int
         Dimensionality of the layer.
     thumbnail : (N, M, 4) array
