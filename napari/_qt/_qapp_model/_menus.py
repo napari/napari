@@ -1,11 +1,13 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from app_model.backends.qt import QModelMenu
-from qtpy.QtCore import QObject
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
 
 
 def build_qmodel_menu(
-    menu_id: str, title: str = None, parent: Optional[QObject] = None
+    menu_id: str, title: Optional[str] = None, parent: Optional[QWidget] = None
 ) -> QModelMenu:
     """Build a QModelMenu from the napari app model
 
@@ -13,9 +15,9 @@ def build_qmodel_menu(
     ----------
     menu_id : str
         ID of a menu registered with napari._app_model.get_app().menus
-    title : str
+    title : Optional[str]
         Title of the menu
-    parent : QWidget
+    parent : Optional[QWidget]
         Parent of the menu
 
     Returns
