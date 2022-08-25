@@ -20,7 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
@@ -200,7 +199,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
-            throttled(self._update_status_bar_from_cursor, timeout=50)
+            self._update_status_bar_from_cursor
         )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)

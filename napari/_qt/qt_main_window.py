@@ -35,6 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from superqt.utils import qthrottled
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -479,6 +480,15 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
         viewer.events.status.connect(self._status_changed)
+        try:
+            viewer.cursor.events.position.disconnect(
+                viewer._update_status_bar_from_cursor
+            )
+        except IndexError:
+            pass
+        viewer.cursor.events.position.connect(
+            qthrottled(viewer._update_status_bar_from_cursor, timeout=50)
+        )
 
         if show:
             self.show()
