@@ -480,6 +480,9 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
         viewer.events.status.connect(self._status_changed)
+
+        # Here we disconnect function that update statusbar,
+        # and connect it throttled version to get smother GUI experience
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer._update_status_bar_from_cursor
