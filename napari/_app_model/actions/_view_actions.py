@@ -8,6 +8,7 @@ from typing import List
 
 from app_model.types import Action
 
+from ...settings import get_settings
 from ..constants import CommandId, MenuId
 from ._toggle_action import ViewerToggleAction
 
@@ -33,3 +34,24 @@ for cmd, viewer_attr, sub_attr in (
             menus=[{'id': menu}],
         )
     )
+
+
+def _tooltip_visibility_toggle():
+    settings = get_settings().appearance
+    settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
+
+
+VIEW_ACTIONS.extend(
+    [
+        # TODO: this could be made into a toggle setting Action subclass
+        Action(
+            id=CommandId.TOGGLE_LAYER_TOOLTIPS,
+            title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+            menus=[
+                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}
+            ],
+            callback=_tooltip_visibility_toggle,
+            toggled='settings_appearance_layer_tooltip_visibility',  # TODO
+        ),
+    ]
+)

@@ -3,16 +3,9 @@ from typing import List
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
 from ...._app_model.constants import CommandId, MenuGroup, MenuId
-from ....settings import get_settings
 from ....utils.translations import trans
 from ...qt_main_window import Window
 from ...qt_viewer import QtViewer
-
-
-def _tooltip_visibility_toggle():
-    settings = get_settings().appearance
-    settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
-
 
 VIEW_ACTIONS: List[Action] = [
     Action(
@@ -71,14 +64,7 @@ VIEW_ACTIONS: List[Action] = [
         # Open files as stack
         enablement='settings_experimental_octree',  # TODO
     ),
-    # TODO: this could be made into a toggle setting Action subclass
-    Action(
-        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-        title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
-        callback=_tooltip_visibility_toggle,
-        toggled='settings_appearance_layer_tooltip_visibility',  # TODO
-    ),
+    # TODO
     Action(
         id=CommandId.TOGGLE_ACTIVITY_DOCK,
         title=CommandId.TOGGLE_ACTIVITY_DOCK.title,
