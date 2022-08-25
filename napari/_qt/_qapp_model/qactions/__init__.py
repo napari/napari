@@ -1,4 +1,5 @@
 from functools import lru_cache
+from itertools import chain
 from typing import Optional
 
 # Submodules should be able to import from most modules, so to
@@ -8,7 +9,6 @@ from typing import Optional
 
 @lru_cache  # only call once
 def init_qactions():
-    from itertools import chain
 
     from napari._app_model import get_app
 
