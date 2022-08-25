@@ -1173,6 +1173,7 @@ class Window:
         """
         self._qt_window.setWindowTitle(event.value)
 
+    @ensure_main_thread
     def _help_changed(self, event):
         """Update help message on status bar.
 
