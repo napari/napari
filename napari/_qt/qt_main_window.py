@@ -1318,6 +1318,10 @@ class Window:
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
+            # disconnect events to prevent leaking `Viewer` object because of throttle
+            self._qt_window._qt_viewer.viewer.cursor.events.position.disconnect(
+                None
+            )
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
