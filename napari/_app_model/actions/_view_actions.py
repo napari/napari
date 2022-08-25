@@ -1,3 +1,9 @@
+"""Actions related to the view that require Qt.
+
+View actions that do not require Qt should go in
+napari/_app_model/actions/_view_actions.py.
+"""
+
 from typing import List
 
 from app_model.types import Action
