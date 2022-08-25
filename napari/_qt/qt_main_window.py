@@ -481,11 +481,11 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
-        viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
+        viewer.events.status.connect(self._status_changed)
 
         if show:
             self.show()
@@ -1159,7 +1159,16 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.value)
+        if isinstance(event.value, str):
+            self._status_bar.setStatusText(event.value)
+        else:
+            status_info = event.value
+            self._status_bar.setStatusText(
+                layer_base=status_info['layer_base'],
+                source_type=status_info['source_type'],
+                plugin=status_info['plugin'],
+                coordinates=status_info['coordinates'],
+            )
 
     def _title_changed(self, event):
         """Update window title.
