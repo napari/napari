@@ -62,7 +62,8 @@ class ViewerStatusBar(QStatusBar):
         self.addWidget(main_widget, 1)
         self._help = QElidingLabel('')
         self._help.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.addPermanentWidget(self._help, 2)
+        self._help.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        layout.addWidget(self._help, 1)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
