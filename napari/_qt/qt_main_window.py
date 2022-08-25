@@ -480,12 +480,10 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
         viewer.events.status.connect(self._status_changed)
-        try:
+        with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer._update_status_bar_from_cursor
             )
-        except IndexError:
-            pass
         viewer.cursor.events.position.connect(
             qthrottled(viewer._update_status_bar_from_cursor, timeout=50)
         )
