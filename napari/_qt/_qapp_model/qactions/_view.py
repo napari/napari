@@ -7,6 +7,11 @@ from ....utils.translations import trans
 from ...qt_main_window import Window
 from ...qt_viewer import QtViewer
 
+
+def _toggle_activity_dock(window: Window):
+    window._status_bar._toggle_activity_dock()
+
+
 VIEW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_FULLSCREEN,
@@ -64,14 +69,10 @@ VIEW_ACTIONS: List[Action] = [
         # Open files as stack
         enablement='settings_experimental_octree',  # TODO
     ),
-    # TODO
     Action(
         id=CommandId.TOGGLE_ACTIVITY_DOCK,
         title=CommandId.TOGGLE_ACTIVITY_DOCK.title,
         menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 11}],
-        # callback=Window._status_bar._toggle_activity_dock,
-        callback='',
-        toggled='settings_appearance_activity_dock_visible',  # TODO
-        # 'checked': window._qt_window._activity_dialog.isVisible(),
+        callback=_toggle_activity_dock,
     ),
 ]
