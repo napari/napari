@@ -132,7 +132,7 @@ def handle_gui_reading(
     stack: Union[bool, List[List[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
-    plugin_override: Optional[bool] = False,
+    plugin_override: bool = False,
     **kwargs,
 ):
     """Present reader dialog to choose reader and open paths based on result.
