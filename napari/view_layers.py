@@ -132,7 +132,7 @@ def _make_viewer_then(
     viewer : Viewer, optional
         A pre-existing viewer, which will be used provided, rather than
         creating a new one.
-        
+
     Returns
     -------
     viewer : napari.Viewer
