@@ -1,6 +1,11 @@
-# Experimenting with tests to test future async layers
-#
-#
+# See "Writing benchmarks" in the asv docs for more information.
+# https://asv.readthedocs.io/en/latest/writing_benchmarks.html
+# or the napari documentation on benchmarking
+# https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
+
+# TODO: (before PR merge)
+#   Adjust data sizes to represent real sample data and access patterns
+
 
 import time
 
