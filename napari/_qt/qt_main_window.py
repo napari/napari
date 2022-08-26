@@ -294,6 +294,8 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
+        if hasattr(self.status_throttler, "_timer"):
+            self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         if (
@@ -302,8 +304,6 @@ class _QtMainWindow(QMainWindow):
             or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
         ):
             self._quit_app = quit_app
-            if hasattr(self.status_throttler, "_timer"):
-                self.status_throttler._timer.stop()
             return super().close()
 
     def close_window(self):
