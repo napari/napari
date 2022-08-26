@@ -374,9 +374,6 @@ class ActionManager:
 
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""
-
-        # injected functions return a Future.  since we're currently synchronous,
-        # we call `.result()` to force raising any exceptions.
         return self._actions[name].injected()
 
 
