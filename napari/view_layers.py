@@ -117,8 +117,31 @@ _dims_params = Dims.__fields__
 def _make_viewer_then(
     add_method: str, args, kwargs, viewer=None
 ) -> Tuple[Viewer, Any]:
-    """Utility function that creates a viewer, adds a layer, returns viewer
-    and layer."""
+    """Create a viewer, call given add_* method, then return viewer and layer.
+
+    Parameters
+    ----------
+    add_method : str
+        Which ``add_`` method to call on the viewer, e.g. `add_image`,
+        or `add_labels`.
+    args : list
+        Positional arguments for the ``add_`` method.
+    kwargs : dict
+        Keyword arguments for either the `Viewer` constructor or for the
+        ``add_`` method.
+    viewer : Viewer, optional
+        A pre-existing viewer, which will be used provided, rather than
+        creating a new one.
+        
+    Returns
+    -------
+    viewer : napari.Viewer
+        The created viewer, or the same one that was passed in, if given.
+    layer(s): napari.layers.Layer or List[napari.layers.Layer]
+        The value returned by the add_method. Can be a list of layers if
+        ``add_image`` is called with a ``channel_axis=`` keyword
+        argument.
+    """
     vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
@@ -291,7 +314,11 @@ def imshow(*args, viewer=None, **kwargs):
 
     Returns
     -------
-    Tuple: (Viwer, Layer)
+    viewer : napari.Viewer
+        The created or passed viewer.
+    layer(s) : napari.layers.Image or List[napari.layers.Image]
+        The added layer(s). (May be more than one if the ``channel_axis`` keyword
+        argument is given.
     """
 
     return _make_viewer_then('add_image', args, kwargs, viewer=viewer)

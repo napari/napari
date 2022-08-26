@@ -197,7 +197,9 @@ def test_imshow_with_viewer(qtbot, napari_plugin_manager, make_napari_viewer):
     np.random.seed(0)
     data = np.random.random(shape)
     viewer = make_napari_viewer()
-    viewer, layer = napari.imshow(data, viewer=viewer, show=False)
+    viewer2, layer = napari.imshow(data, viewer=viewer, show=False)
+    assert viewer is viewer2
+    np.testing.assert_array_equal(data, layer.data)
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     viewer.close()
