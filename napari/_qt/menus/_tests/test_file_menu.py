@@ -50,3 +50,36 @@ def test_show_shortcuts_actions(make_napari_viewer):
         == "Shortcuts"
     )
     viewer.window.file_menu._pref_dialog.close()
+
+def get_open_with_plugin_function(viewer, action_text):
+    actions = viewer.window.file_menu.actions()
+    open_w_plugin_menu = [action.menu() for action in actions if action.text() == 'Open with Plugin'][0]
+    requested_action = [action for action in open_w_plugin_menu.actions() if action.text() == action_text][0]
+    return requested_action
+
+def test_open_file_with_plugin(make_napari_viewer):
+    viewer = make_napari_viewer()
+    action = get_open_with_plugin_function(viewer, 'Open File(s)...')
+    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file, mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read:
+        mock_file_instance = mock_file.return_value
+        mock_file_instance.getOpenFileNames.return_value = (['my-file.tif'], '') 
+        action.trigger()
+    mock_read.assert_called_once_with(['my-file.tif'], stack=False, choose_plugin=True)
+
+def test_open_file_stack_with_plugin(make_napari_viewer):
+    viewer = make_napari_viewer()
+    action = get_open_with_plugin_function(viewer, 'Open Files as Stack...')
+    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file, mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read:
+        mock_file_instance = mock_file.return_value
+        mock_file_instance.getOpenFileNames.return_value = (['my-file.tif'], '') 
+        action.trigger()
+    mock_read.assert_called_once_with(['my-file.tif'], stack=True, choose_plugin=True)
+
+def test_open_folder_with_plugin(make_napari_viewer):
+    viewer = make_napari_viewer()
+    action = get_open_with_plugin_function(viewer, 'Open Folder...')
+    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mock_file, mock.patch('napari._qt.qt_viewer.QtViewer._qt_open') as mock_read:
+        mock_file_instance = mock_file.return_value
+        mock_file_instance.getExistingDirectory.return_value = 'my-dir/'
+        action.trigger()
+    mock_read.assert_called_once_with(['my-dir/'], stack=False, choose_plugin=True)
