@@ -136,6 +136,8 @@ class _QtMainWindow(QMainWindow):
                 self._qt_viewer.canvas._backend.screen_changed
             )
 
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
     def statusBar(self) -> 'ViewerStatusBar':

@@ -438,6 +438,14 @@ def disable_notification_dismiss_timer(monkeypatch):
 
 @pytest.fixture
 def app():
+    """Prefer using this fixture for tests instead of `napari._app_model.get_app()`.
+
+    Note that this currently doesn't add all of our actions, but that could be
+    something to add here in the future.
+
+    This could (should?) also be mock.patched into the return value for
+    `napari._app_model.get_app()`.
+    """
     from app_model import Application
 
     from napari._app_model._app import _napari_names

@@ -44,6 +44,7 @@ def _tooltip_visibility_toggle():
 VIEW_ACTIONS.extend(
     [
         # TODO: this could be made into a toggle setting Action subclass
+        # using a similar pattern to the above ViewerToggleAction classes
         Action(
             id=CommandId.TOGGLE_LAYER_TOOLTIPS,
             title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
