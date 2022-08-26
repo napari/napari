@@ -434,3 +434,17 @@ def disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+
+
+@pytest.fixture
+def app():
+    from app_model import Application
+
+    from napari._app_model._app import _napari_names
+
+    app = Application("test_app", raise_synchronous_exceptions=True)
+    app.injection_store.namespace = _napari_names
+    try:
+        yield app
+    finally:
+        Application.destroy("test_app")
