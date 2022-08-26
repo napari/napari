@@ -36,7 +36,10 @@ class QtReaderDialog(QDialog):
         self._current_file = pth
 
         self._extension = os.path.splitext(pth)[1]
-        self._persist_text = f'Remember this choice for files with a {self._extension} extension'
+        self._persist_text = trans._(
+            'Remember this choice for files with a {extension} extension',
+            extension=self._extension,
+        )
 
         if os.path.isdir(pth):
             self._extension = os.path.realpath(pth)
@@ -44,7 +47,10 @@ class QtReaderDialog(QDialog):
                 '.zarr'
             ) and not self._extension.endswith(os.sep):
                 self._extension = self._extension + os.sep
-                self._persist_text = f'Remember this choice for folders labeled as {self._extension}.'
+                self._persist_text = trans._(
+                    'Remember this choice for folders labeled as {extension}.',
+                    extension=self._extension,
+                )
 
         self._reader_buttons = []
         self.setup_ui(error_message, readers, persist_checked)
@@ -73,25 +79,38 @@ class QtReaderDialog(QDialog):
         self.btn_box.accepted.connect(self.accept)
         self.btn_box.rejected.connect(self.reject)
 
-        # checkbox to remember the choice 
+        # checkbox to remember the choice
         if os.path.isdir(self._current_file):
-            existing_pref = get_settings().plugins.extension2reader.get(self._extension)
+            existing_pref = get_settings().plugins.extension2reader.get(
+                self._extension
+            )
+            isdir = True
         else:
             existing_pref = get_settings().plugins.extension2reader.get(
-            '*' + self._extension)
+                '*' + self._extension
+            )
+            isdir = False
 
         if existing_pref:
-            self._persist_text = trans._(
-                'Override existing preference for files with a {extension} extension: {pref}',
-                extension=self._extension,
-                pref=existing_pref,
-            )
+            if isdir:
+                self._persist_text = trans._(
+                    'Override existing preference for folders labeled as {extension}: {pref}',
+                    extension=self._extension,
+                    pref=existing_pref,
+                )
+
+            else:
+                self._persist_text = trans._(
+                    'Override existing preference for files with a {extension} extension: {pref}',
+                    extension=self._extension,
+                    pref=existing_pref,
+                )
 
         self.persist_checkbox = QCheckBox(self._persist_text)
         self.persist_checkbox.toggle()
         self.persist_checkbox.setChecked(persist_checked)
         layout.addWidget(self.persist_checkbox)
-        
+
         layout.addWidget(self.btn_box)
         self.setLayout(layout)
 
