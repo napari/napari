@@ -84,12 +84,10 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(
-        self, viewer: 'Viewer', window: 'Window', parent=None
-    ) -> None:
+    def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent)
         self._ev = None
-        self._window = window
+        self._window = viewer.window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -449,8 +447,12 @@ class Window:
         ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
 
+        # add this reference here so that it's available in the _QtMainWindow.__init__
+        # (even though we're likely being called here by Viewer.__init__, which will
+        # also assign this Window instance to viewer._window)
+        viewer._window = self
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer, self)
+        self._qt_window = _QtMainWindow(viewer)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
