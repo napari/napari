@@ -136,8 +136,8 @@ class _QtMainWindow(QMainWindow):
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
 
-        # Here we disconnect function that update statusbar,
-        # and connect it throttled version to get smother GUI experience
+        # In the GUI we expect lots of changes to the cursor position, so
+        # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer._update_status_bar_from_cursor
