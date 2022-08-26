@@ -35,7 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
-from superqt.utils import qthrottled
+from superqt.utils import QSignalThrottler
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -132,6 +132,20 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        self.status_throttler = QSignalThrottler(parent=self)
+        self.status_throttler.setTimeout(50)
+
+        # Here we disconnect function that update statusbar,
+        # and connect it throttled version to get smother GUI experience
+        with contextlib.suppress(IndexError):
+            viewer.cursor.events.position.disconnect(
+                viewer._update_status_bar_from_cursor
+            )
+        viewer.cursor.events.position.connect(self.status_throttler.throttle)
+        self.status_throttler.triggered.connect(
+            viewer._update_status_bar_from_cursor
+        )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -480,16 +494,6 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
         viewer.events.status.connect(self._status_changed)
-
-        # Here we disconnect function that update statusbar,
-        # and connect it throttled version to get smother GUI experience
-        with contextlib.suppress(IndexError):
-            viewer.cursor.events.position.disconnect(
-                viewer._update_status_bar_from_cursor
-            )
-        viewer.cursor.events.position.connect(
-            qthrottled(viewer._update_status_bar_from_cursor, timeout=50)
-        )
 
         if show:
             self.show()
