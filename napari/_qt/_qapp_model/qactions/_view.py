@@ -1,18 +1,22 @@
+import sys
 from typing import List
 
 from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
 
 from ...._app_model.constants import CommandId, MenuGroup, MenuId
+from ....settings import get_settings
 from ....utils.translations import trans
 from ...qt_main_window import Window
 from ...qt_viewer import QtViewer
+
+print(sys.platform != 'darwin')
 
 
 def _toggle_activity_dock(window: Window):
     window._status_bar._toggle_activity_dock()
 
 
-VIEW_ACTIONS: List[Action] = [
+Q_VIEW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_FULLSCREEN,
         title=CommandId.TOGGLE_FULLSCREEN.title,
@@ -34,7 +38,7 @@ VIEW_ACTIONS: List[Action] = [
                 'id': MenuId.MENUBAR_VIEW,
                 'group': MenuGroup.NAVIGATION,
                 'order': 2,
-                'when': 'not is_mac',
+                'when': sys.platform != 'darwin',
             }
         ],
         callback=Window._toggle_menubar_visible,
@@ -44,7 +48,8 @@ VIEW_ACTIONS: List[Action] = [
                 'linux': KeyMod.CtrlCmd | KeyCode.KeyM,
             }
         ],
-        enablement='not is_mac',
+        # TODO: add is_mac global context keys (rather than boolean here)
+        enablement=sys.platform != 'darwin',
         status_tip=trans._('Show/Hide Menubar'),
     ),
     Action(
@@ -63,11 +68,18 @@ VIEW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES,
         title=CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 1}],
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': '1_render',
+                'order': 1,
+                'when': get_settings().experimental.octree,
+            }
+        ],
         callback=QtViewer._toggle_chunk_outlines,
+        enablement=get_settings().experimental.octree,
         # this used to have a keybinding of Ctrl+Alt+O, but that conflicts with
         # Open files as stack
-        enablement='settings_experimental_octree',  # TODO
     ),
     Action(
         id=CommandId.TOGGLE_ACTIVITY_DOCK,
