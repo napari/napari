@@ -6,12 +6,15 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
+
+from napari.components.dims import reorder_after_dim_reduction
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import (
@@ -66,6 +69,26 @@ def no_op(layer: Layer, event: Event) -> None:
 
     """
     return None
+
+
+# TODO: consider making this frozen.
+@dataclass
+class _SliceInput:
+    ndisplay: int
+    point: List[float]
+    order: List[int]
+
+    @property
+    def displayed(self) -> List[int]:
+        return self.order[-self.ndisplay :]
+
+    @property
+    def not_displayed(self) -> List[int]:
+        return self.order[: -self.ndisplay]
+
+    @property
+    def displayed_order(self) -> Tuple[int]:
+        return reorder_after_dim_reduction(self.displayed)
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -255,8 +278,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
-        self._ndisplay = 2
-        self._dims_order = list(range(ndim))
+
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            point=[0] * ndim,
+            order=list(range(ndim)),
+        )
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -293,7 +320,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ]
         )
 
-        self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
         self._array_like = False
@@ -620,34 +646,55 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._private_is_moving = value
 
     @property
-    def _dims_displayed(self):
+    def _ndisplay(self) -> int:
+        return self._slice_input.ndisplay
+
+    @_ndisplay.setter
+    def _ndisplay(self, ndisplay: int) -> None:
+        self._slice_input.ndisplay = ndisplay
+
+    @property
+    def _dims_order(self) -> List[int]:
+        return self._slice_input.order
+
+    @_dims_order.setter
+    def _dims_order(self, dims_order: Iterable[int]) -> None:
+        self._slice_input.order = list(dims_order)
+
+    @property
+    def _dims_point(self) -> List[float]:
+        return self._slice_input.point
+
+    @_dims_point.setter
+    def _dims_point(self, dims_point: Iterable[float]) -> None:
+        self._slice_input.point = list(dims_point)
+
+    @property
+    def _dims_displayed(self) -> List[int]:
         """To be removed displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple
         # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
         # for additional discussion.
-        return self._dims_order[-self._ndisplay :]
+        return self._slice_input.displayed
 
     @property
-    def _dims_not_displayed(self):
+    def _dims_not_displayed(self) -> List[int]:
         """To be removed not displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple
         # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
         # for additional discussion.
-        return self._dims_order[: -self._ndisplay]
+        return self._slice_input.not_displayed
 
     @property
-    def _dims_displayed_order(self):
+    def _dims_displayed_order(self) -> List[int]:
         """To be removed order of displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple
         # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
         # for additional discussion.
-        displayed = self._dims_displayed
-        # equivalent to: order = np.argsort(displayed)
-        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
+        return self._slice_input.displayed_order
 
     def _update_dims(self, event=None):
         """Update the dims model and clear the extent cache.
@@ -955,45 +1002,38 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             rendered in canvas.
         """
         if point is None:
-            ndim = self.ndim
+            point = [0] * self.ndim
         else:
-            ndim = len(point)
+            point = list(point)
+
+        ndim = len(point)
+        assert (
+            ndim >= self.ndim
+        ), 'slicing with fewer dimensions than layer has'
 
         if order is None:
             order = list(range(ndim))
 
-        # adjust the order of the global dims based on the number of
-        # dimensions that a layer has - for example a global order of
-        # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
-        # or -> [1, 0, 2] for a layer with three as that corresponds to
-        # the relative order of the last two and three dimensions
-        # respectively
+        point = point[-self.ndim :]
         order = self._world_to_data_dims_displayed(order, ndim_world=ndim)
 
-        if point is None:
-            point = [0] * ndim
-            nd = min(self.ndim, ndisplay)
-            for i in order[-nd:]:
-                point[i] = slice(None)
-        else:
-            point = list(point)
+        slice_input = _SliceInput(
+            ndisplay=ndisplay,
+            point=point,
+            order=order,
+        )
 
-        # If no slide data has changed, then do nothing
-        offset = ndim - self.ndim
-        if (
-            np.all(order == self._dims_order)
-            and ndisplay == self._ndisplay
-            and np.all(point[offset:] == self._dims_point)
-        ):
+        if self._slice_input == slice_input:
             return
 
-        self._dims_order = order
-        if self._ndisplay != ndisplay:
-            self._ndisplay = ndisplay
+        old_ndisplay = self._slice_input.ndisplay
+        self._slice_input = slice_input
+
+        if old_ndisplay != ndisplay:
             self.events._ndisplay()
 
         # Update the point values
-        self._dims_point = point[offset:]
+        # TODO: use refresh here instead because data is not changing here.
         self._update_dims()
         self._set_editable()
 
