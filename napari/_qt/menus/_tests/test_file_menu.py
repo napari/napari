@@ -52,7 +52,7 @@ def test_show_shortcuts_actions(make_napari_viewer):
     viewer.window.file_menu._pref_dialog.close()
 
 
-def get_open_with_plugin_function(viewer, action_text):
+def get_open_with_plugin_action(viewer, action_text):
     actions = viewer.window.file_menu.actions()
     open_w_plugin_menu = [
         action.menu()
@@ -69,7 +69,7 @@ def get_open_with_plugin_function(viewer, action_text):
 
 def test_open_file_with_plugin(make_napari_viewer):
     viewer = make_napari_viewer()
-    action = get_open_with_plugin_function(viewer, 'Open File(s)...')
+    action = get_open_with_plugin_action(viewer, 'Open File(s)...')
     with mock.patch(
         'napari._qt.qt_viewer.QFileDialog'
     ) as mock_file, mock.patch(
@@ -88,7 +88,7 @@ def test_open_file_with_plugin(make_napari_viewer):
 
 def test_open_file_stack_with_plugin(make_napari_viewer):
     viewer = make_napari_viewer()
-    action = get_open_with_plugin_function(viewer, 'Open Files as Stack...')
+    action = get_open_with_plugin_action(viewer, 'Open Files as Stack...')
     with mock.patch(
         'napari._qt.qt_viewer.QFileDialog'
     ) as mock_file, mock.patch(
@@ -107,7 +107,7 @@ def test_open_file_stack_with_plugin(make_napari_viewer):
 
 def test_open_folder_with_plugin(make_napari_viewer):
     viewer = make_napari_viewer()
-    action = get_open_with_plugin_function(viewer, 'Open Folder...')
+    action = get_open_with_plugin_action(viewer, 'Open Folder...')
     with mock.patch(
         'napari._qt.qt_viewer.QFileDialog'
     ) as mock_file, mock.patch(
