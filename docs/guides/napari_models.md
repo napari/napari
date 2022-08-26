@@ -8,8 +8,9 @@ familiar with basic usage of napari.
 
 The three main components:
 
-* python models describing objects - these are able to operate without the GUI
-  interface and do not have any dependencies on user interface classes
+* python models describing components in the napari application - these are able
+  to operate without the GUI interface and do not have any dependencies on user
+  interface classes
     * this code lives in `napari/components` (utility objects) and
      `napari/layers` (objects that contain data)
 * Qt classes that handle the interactive GUI aspect of the napari viewer
