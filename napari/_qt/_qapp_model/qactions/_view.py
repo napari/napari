@@ -9,8 +9,6 @@ from ....utils.translations import trans
 from ...qt_main_window import Window
 from ...qt_viewer import QtViewer
 
-print(sys.platform != 'darwin')
-
 
 def _toggle_activity_dock(window: Window):
     window._status_bar._toggle_activity_dock()
