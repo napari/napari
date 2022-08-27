@@ -1,3 +1,5 @@
+import os
+
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QComboBox,
@@ -235,7 +237,7 @@ class Extension2ReaderTable(QWidget):
 
         self._table.insertRow(last_row)
         item = QTableWidgetItem(fn_pattern)
-        if fn_pattern.endswith('/'):
+        if fn_pattern.endswith(os.sep):
             item.setTextAlignment(Qt.AlignLeft)
         item.setFlags(Qt.ItemFlag.NoItemFlags)
         self._table.setItem(last_row, self._fn_pattern_col, item)
