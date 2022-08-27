@@ -366,111 +366,74 @@ def _run_plugin_module(mod, plugin_name):
     run()
 
 
-def _run_pythonw(python_path):
-    """Execute this script again through pythonw.
-
-    This can be used to ensure we're using a framework
-    build of Python on macOS, which fixes frozen menubar issues.
-
-    Parameters
-    ----------
-    python_path : pathlib.Path
-        Path to python framework build.
+def _maybe_rerun_with_macos_fixes():
     """
-    import subprocess
+    Apply some fixes needed in macOS, which might involve
+    running this script again using a different sys.executable.
 
-    cwd = Path.cwd()
-    cmd = [python_path, '-m', 'napari']
-    env = os.environ.copy()
-
-    # Append command line arguments.
-    if len(sys.argv) > 1:
-        cmd.extend(sys.argv[1:])
-
-    result = subprocess.run(cmd, env=env, cwd=cwd)
-    sys.exit(result.returncode)
-
-
-def _run_as_napari_app():
+    1) Quick fix for Big Sur Python 3.9 and Qt 5.
+       No relaunch needed.
+    1) Using `pythonw` instead of `python`.
+       This can be used to ensure we're using a framework
+       build of Python on macOS, which fixes frozen menubar issues
+       in some macOS versions.
+    2) Make sure the menu bar uses 'napari' as the display name.
+       This requires relaunching the app from a symlink to the
+       desired python executable, conveniently named 'napari'.
     """
-    Fixes the app name on MacOS menu bar
-    See https://github.com/napari/napari/issues/4910
-    for details
-    """
-    if "_RUNNING_AS_NAPARI_APP" in os.environ:
+    if sys.platform != "darwin":
+        return
+
+    if "_NAPARI_RERUN_WITH_FIXES" in os.environ:
         # This function already ran, do not recurse!
-        # We also restore sys.executable to its initial value
-        if exe := os.environ.pop("_NAPARI_OLD_SYS_EXECUTABLE", ""):
+        # We also restore sys.executable to its initial value,
+        # if we used a symlink
+        if exe := os.environ.pop("_NAPARI_SYMLINKED_EXECUTABLE", ""):
             sys.executable = exe
         return
 
-    if os.path.basename(sys.executable) == "napari":
-        # If this is true, macOS should have picked the right name
-        # and we do not need workarounds
-        return
-
-    import subprocess
-    from tempfile import TemporaryDirectory
-
-    cwd = Path.cwd()
-    env = os.environ.copy()
-    # Sentinel var to prevent a recursion
-    env["_RUNNING_AS_NAPARI_APP"] = "1"
-    # Pass original sys.executable to the subprocess so it can restore it later
-    env["_NAPARI_OLD_SYS_EXECUTABLE"] = sys.executable
-    with TemporaryDirectory(prefix="symlink-to-fix-macos-menu-name-") as tmp:
-        # By using a symlink with basename napari
-        # we make macOS take 'napari' as the program name
-        napari_link = os.path.join(tmp, "napari")
-        os.symlink(sys.executable, napari_link)
-        cmd = [napari_link, '-m', 'napari']
-        # Append command line arguments.
-        if len(sys.argv) > 1:
-            cmd.extend(sys.argv[1:])
-
-        result = subprocess.run(cmd, env=env, cwd=cwd)
-        sys.exit(result.returncode)
-
-
-def main():
-    # Ensure we're always using a "framework build" on the latest
-    # macOS to ensure menubar works without needing to refocus napari.
-    # We try this for macOS later than the Catelina release
-    # See https://github.com/napari/napari/pull/1554 and
-    # https://github.com/napari/napari/issues/380#issuecomment-659656775
-    # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
+    import subprocess
+    from tempfile import mkdtemp
 
     from qtpy import API_NAME
 
-    _MACOS_AT_LEAST_CATALINA = (
-        sys.platform == "darwin"
-        and int(platform.release().split('.')[0]) >= 19
-    )
-    _MACOS_AT_LEAST_BIG_SUR = (
-        sys.platform == "darwin"
-        and int(platform.release().split('.')[0]) >= 20
-    )
+    # In principle, we will relaunch to the same python we were using
+    executable = sys.executable
+    cwd = Path.cwd()
 
+    _MACOS_AT_LEAST_CATALINA = int(platform.release().split('.')[0]) >= 19
+    _MACOS_AT_LEAST_BIG_SUR = int(platform.release().split('.')[0]) >= 20
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
-    # quick fix for Big Sur py3.9 and qt 5
+    # 1) quick fix for Big Sur py3.9 and qt 5
+    # https://github.com/napari/napari/pull/1894
     if _MACOS_AT_LEAST_BIG_SUR and '6' not in API_NAME:
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
+    # Create the env copy now because the following changes
+    # should not persist in the current process in case
+    # we do not run the subprocess!
+    env = os.environ.copy()
+
+    # 2) Ensure we're always using a "framework build" on the latest
+    # macOS to ensure menubar works without needing to refocus napari.
+    # We try this for macOS later than the Catalina release
+    # See https://github.com/napari/napari/pull/1554 and
+    # https://github.com/napari/napari/issues/380#issuecomment-659656775
+    # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     if (
         _MACOS_AT_LEAST_CATALINA
         and not _MACOS_AT_LEAST_BIG_SUR
         and _RUNNING_CONDA
         and not _RUNNING_PYTHONW
     ):
-        python_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
-
-        if python_path.exists():
-            # Running again with pythonw will exit this script
-            # and use the framework build of python.
-            _run_pythonw(python_path)
+        pythonw_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
+        if pythonw_path.exists():
+            # Use this one instead of sys.executable to relaunch
+            # the subprocess
+            executable = pythonw_path
         else:
             msg = (
                 'pythonw executable not found.\n'
@@ -482,18 +445,57 @@ def main():
             )
             warnings.warn(msg)
 
+    # 3) Make sure the app name in the menu bar is 'napari', not 'python'
+    tempdir = None
+    _NEEDS_SYMLINK = (
+        # When napari is launched from the conda bundle shortcut
+        # it already has the right 'napari' name in the app title
+        # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
+        "napari" not in os.environ.get("__CFBundleIdentifier", "")
+        # with a sys.executable named napari,
+        # macOS should have picked the right name already
+        or os.path.basename(executable) != "napari"
+    )
+    if _NEEDS_SYMLINK:
+        tempdir = mkdtemp(prefix="symlink-to-fix-macos-menu-name-")
+        # By using a symlink with basename napari
+        # we make macOS take 'napari' as the program name
+        napari_link = os.path.join(tempdir, "napari")
+        os.symlink(executable, napari_link)
+        # Pass original executable to the subprocess so it can restore it later
+        env["_NAPARI_SYMLINKED_EXECUTABLE"] = executable
+        executable = napari_link
+
+    # if at this point 'executable' is different from 'sys.executable', we
+    # need to launch the subprocess to apply the fixes
+    if sys.executable != executable:
+        env["_NAPARI_RERUN_WITH_FIXES"] = "1"
+        cmd = [executable, '-m', 'napari']
+        # Append original command line arguments.
+        if len(sys.argv) > 1:
+            cmd.extend(sys.argv[1:])
+        try:
+            result = subprocess.run(cmd, env=env, cwd=cwd)
+            sys.exit(result.returncode)
+        finally:
+            if tempdir is not None:
+                import shutil
+
+                shutil.rmtree(tempdir)
+
+
+def main():
+    # There a number of macOS issues we can fix with env vars
+    # and/or relaunching a subprocess
+    _maybe_rerun_with_macos_fixes()
+
+    # Prevent https://github.com/napari/napari/issues/3415
+    # This one fix is needed _after_ a potential relaunch,
+    # that's why it's here and not in _maybe_rerun_with_macos_fixes()
     if sys.platform == "darwin":
-        # Prevent https://github.com/napari/napari/issues/3415
         import multiprocessing
 
         multiprocessing.set_start_method('fork')
-
-        # Make sure menu bar in macOS uses 'napari' as the app name
-        if "napari" not in os.environ.get("__CFBundleIdentifier", ""):
-            # When napari is launched from the bundle shortcut
-            # it already has the right 'napari' name in the app title
-            # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
-            _run_as_napari_app()
 
     _run()
 
