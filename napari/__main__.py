@@ -391,6 +391,47 @@ def _run_pythonw(python_path):
     sys.exit(result.returncode)
 
 
+def _run_as_napari_app():
+    """
+    Fixes the app name on MacOS menu bar
+    See https://github.com/napari/napari/issues/4910
+    for details
+    """
+    if "_RUNNING_AS_NAPARI_APP" in os.environ:
+        # This function already ran, do not recurse!
+        # We also restore sys.executable to its initial value
+        if exe := os.environ.pop("_NAPARI_OLD_SYS_EXECUTABLE", ""):
+            sys.executable = exe
+        return
+
+    if os.path.basename(sys.executable) == "napari":
+        # If this is true, macOS should have picked the right name
+        # and we do not need workarounds
+        return
+
+    import subprocess
+    from tempfile import TemporaryDirectory
+
+    cwd = Path.cwd()
+    env = os.environ.copy()
+    # Sentinel var to prevent a recursion
+    env["_RUNNING_AS_NAPARI_APP"] = "1"
+    # Pass original sys.executable to the subprocess so it can restore it later
+    env["_NAPARI_OLD_SYS_EXECUTABLE"] = sys.executable
+    with TemporaryDirectory(prefix="symlink-to-fix-macos-menu-name-") as tmp:
+        # By using a symlink with basename napari
+        # we make macOS take 'napari' as the program name
+        napari_link = os.path.join(tmp, "napari")
+        os.symlink(sys.executable, napari_link)
+        cmd = [napari_link, '-m', 'napari']
+        # Append command line arguments.
+        if len(sys.argv) > 1:
+            cmd.extend(sys.argv[1:])
+
+        result = subprocess.run(cmd, env=env, cwd=cwd)
+        sys.exit(result.returncode)
+
+
 def main():
     # Ensure we're always using a "framework build" on the latest
     # macOS to ensure menubar works without needing to refocus napari.
@@ -441,11 +482,18 @@ def main():
             )
             warnings.warn(msg)
 
-    # Prevent https://github.com/napari/napari/issues/3415
     if sys.platform == "darwin":
+        # Prevent https://github.com/napari/napari/issues/3415
         import multiprocessing
 
         multiprocessing.set_start_method('fork')
+
+        # Make sure menu bar in macOS uses 'napari' as the app name
+        if "napari" not in os.environ.get("__CFBundleIdentifier", ""):
+            # When napari is launched from the bundle shortcut
+            # it already has the right 'napari' name in the app title
+            # and __CFBundleIdentifier is set to 'com.napari._(<version>)'
+            _run_as_napari_app()
 
     _run()
 
