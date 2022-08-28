@@ -3,10 +3,6 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 
-# TODO: (before PR merge)
-#   Adjust data sizes to represent real sample data and access patterns
-
-
 import time
 
 import numpy as np
@@ -15,6 +11,30 @@ from qtpy.QtWidgets import QApplication
 
 import napari
 from napari.layers import Image
+
+SAMPLE_PARAMS = {
+    'skin_data': {
+        # napari-bio-sample-data
+        'shape': (1280, 960, 3),
+        'chunk_shape': (512, 512, 3),
+        'dtype': 'uint8',
+    },
+    'jrc_hela-2 (scale 3)': {
+        # s3://janelia-cosem-datasets/jrc_hela-2/jrc_hela-2.n5
+        'shape': (796, 200, 1500),
+        'dtype': 'uint16',
+        'chunk_shape': (64, 64, 64),
+    },
+}
+
+
+def get_image_params():
+    # chunksizes = [(64,64,64), (256,256,256), (512,512,512)]
+    latencies = [0.05 * i for i in range(0, 3)]
+    datanames = SAMPLE_PARAMS.keys()
+    params = (latencies, datanames)
+
+    return params
 
 
 class SlowMemoryStore(zarr.storage.MemoryStore):
@@ -28,18 +48,21 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 
 
 class AsyncImage2DSuite:
-    chunksize = [256, 512, 1024, 2048]
-    latency = [0.05 * i for i in range(0, 4)]
-    params = (latency, chunksize)
+    params = get_image_params()
 
-    def setup(self, latency, chunksize):
+    def setup(self, latency, dataname):
+        shape = SAMPLE_PARAMS[dataname]['shape']
+        chunk_shape = SAMPLE_PARAMS[dataname]['chunk_shape']
+        dtype = SAMPLE_PARAMS[dataname]['dtype']
+
         store = SlowMemoryStore(load_delay=latency)
         self.data = zarr.zeros(
-            (64, 2048, 2048),
-            chunks=(1, chunksize, chunksize),
-            dtype='uint8',
+            shape,
+            chunks=chunk_shape,
+            dtype=dtype,
             store=store,
         )
+
         self.layer = Image(self.data)
 
     def time_create_layer(self, *args):
@@ -56,18 +79,24 @@ class AsyncImage2DSuite:
 
 
 class QtViewerAsyncImage2DSuite:
-    chunksize = [256, 512, 1024, 2048]
-    latency = [0.05 * i for i in range(0, 4)]
-    params = (latency, chunksize)
+    params = get_image_params()
 
-    def setup(self, latency, chunksize):
+    def setup(self, latency, dataname):
+        shape = SAMPLE_PARAMS[dataname]['shape']
+        chunk_shape = SAMPLE_PARAMS[dataname]['chunk_shape']
+        dtype = SAMPLE_PARAMS[dataname]['dtype']
+
+        if len(shape) == 3 and shape[2] == 3:
+            # Skip 2D RGB tests -- scrolling does not apply
+            self.viewer = None
+            raise NotImplementedError
+
         store = SlowMemoryStore(load_delay=latency)
         _ = QApplication.instance() or QApplication([])
-
         self.data = zarr.zeros(
-            (64, 2048, 2048),
-            chunks=(1, chunksize, chunksize),
-            dtype='uint8',
+            shape,
+            chunks=chunk_shape,
+            dtype=dtype,
             store=store,
         )
 
@@ -75,11 +104,14 @@ class QtViewerAsyncImage2DSuite:
         self.viewer.add_image(self.data)
 
     def time_z_scroll(self, *args):
-        for z in range(self.data.shape[0]):
+        layers_to_scroll = 4
+        for z in range(layers_to_scroll):
+            z = z * (self.data.shape[2] // layers_to_scroll)
             self.viewer.dims.set_current_step(0, z)
 
     def teardown(self, *args):
-        self.viewer.window.close()
+        if self.viewer is not None:
+            self.viewer.window.close()
 
 
 class QtViewerAsyncPointsSuite:
