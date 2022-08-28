@@ -4,6 +4,8 @@ from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
 
 from napari.utils.action_manager import action_manager
+import qtpy
+from qtpy.QtWidgets import QMenu
 
 
 def test_sample_data_triggers_reader_dialog(
@@ -54,11 +56,12 @@ def test_show_shortcuts_actions(make_napari_viewer):
 
 def get_open_with_plugin_action(viewer, action_text):
     actions = viewer.window.file_menu.actions()
-    open_w_plugin_menu = [
-        action.menu()
+    open_w_plugin_action = [
+        action
         for action in actions
         if action.text() == 'Open with Plugin'
     ][0]
+    open_w_plugin_menu = open_w_plugin_action.menu() if qtpy.PYQT5 else QMenu.menuInAction(open_w_plugin_action)
     requested_action = [
         action
         for action in open_w_plugin_menu.actions()
