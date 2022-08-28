@@ -4,6 +4,3 @@ napari_gui/_version.py export-subst
 *.gif filter=lfs diff=lfs merge=lfs -text
 *.webm filter=lfs diff=lfs merge=lfs -text
 napari/resources/* !filter=lfs !diff=lfs !merge=lfs -text
-docs/developers/documentation/images/doc-ci-1.png filter=lfs diff=lfs merge=lfs -text
-docs/developers/documentation/images/doc-ci-2.png filter=lfs diff=lfs merge=lfs -text
-docs/developers/documentation/images/doc-ci-3.png filter=lfs diff=lfs merge=lfs -text
