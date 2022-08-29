@@ -8,7 +8,7 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
@@ -650,14 +650,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._slice_input.ndisplay = ndisplay
 
     @property
-    def _dims_order(self) -> List[int]:
-        return self._slice_input.order
-
-    @_dims_order.setter
-    def _dims_order(self, dims_order: Iterable[int]) -> None:
-        self._slice_input.order = list(dims_order)
-
-    @property
     def _dims_displayed(self) -> List[int]:
         """To be removed displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
@@ -699,8 +691,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
             self._slice_input.point = self._slice_input.point[-ndim:]
-            self._dims_order = list(
-                reorder_after_dim_reduction(self._dims_order[-ndim:])
+            self._slice_input.order = list(
+                reorder_after_dim_reduction(self._slice_input.order[-ndim:])
             )
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
@@ -708,8 +700,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._slice_input.point = [0] * (
                 ndim - old_ndim
             ) + self._slice_input.point
-            self._dims_order = list(range(ndim - old_ndim)) + [
-                o + ndim - old_ndim for o in self._dims_order
+            self._slice_input.order = list(range(ndim - old_ndim)) + [
+                o + ndim - old_ndim for o in self._slice_input.order
             ]
 
         self._ndim = ndim
@@ -1581,10 +1573,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         self.scale_factor = scale_factor
 
+        # TODO: use self._slice_input.displayed_order?
         displayed_axes = self._displayed_axes
-        # must adjust displayed_axes according to _dims_order
         displayed_axes = np.asarray(
-            [self._dims_order[d] for d in displayed_axes]
+            [self._slice_input.order[d] for d in displayed_axes]
         )
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not

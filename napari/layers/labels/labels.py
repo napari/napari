@@ -1189,7 +1189,9 @@ class Labels(_ImageBase):
         ):
             return
 
-        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions :])
+        dims_to_fill = sorted(
+            self._slice_input.order[-self.n_edit_dimensions :]
+        )
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
@@ -1275,8 +1277,12 @@ class Labels(_ImageBase):
             calls.
         """
         shape = self.data.shape
-        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
-        dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])
+        dims_to_paint = sorted(
+            self._slice_input.order[-self.n_edit_dimensions :]
+        )
+        dims_not_painted = sorted(
+            self._slice_input.order[: -self.n_edit_dimensions]
+        )
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )

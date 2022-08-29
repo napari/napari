@@ -952,7 +952,7 @@ def test_ndim_paint():
     assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
 
     layer.n_edit_dimensions = 2  # 3x3 square
-    layer._dims_order = [1, 2, 0, 3]
+    layer._slice_input.order = [1, 2, 0, 3]
     layer.paint((4, 5, 6, 7), 8)
     assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
     np.testing.assert_array_equal(

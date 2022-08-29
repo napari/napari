@@ -2191,7 +2191,7 @@ class Shapes(Layer):
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
 
-        self._display_order_stored = copy(self._dims_order)
+        self._display_order_stored = copy(self._slice_input.order)
         self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
 
@@ -2207,7 +2207,7 @@ class Shapes(Layer):
                     d,
                     edge_width=ew,
                     z_index=z,
-                    dims_order=self._dims_order,
+                    dims_order=self._slice_input.order,
                     ndisplay=self._ndisplay,
                 ),
                 ec,
@@ -2255,10 +2255,10 @@ class Shapes(Layer):
             self._ndisplay_stored = copy(self._ndisplay)
             self._clipboard = {}
 
-        if not self._dims_order == self._display_order_stored:
+        if not self._slice_input.order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims_order)
-            self._display_order_stored = copy(self._dims_order)
+            self._data_view.update_dims_order(self._slice_input.order)
+            self._display_order_stored = copy(self._slice_input.order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
