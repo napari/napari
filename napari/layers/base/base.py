@@ -645,10 +645,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _ndisplay(self) -> int:
         return self._slice_input.ndisplay
 
-    @_ndisplay.setter
-    def _ndisplay(self, ndisplay: int) -> None:
-        self._slice_input.ndisplay = ndisplay
-
     @property
     def _dims_displayed(self) -> List[int]:
         """To be removed displayed dimensions."""

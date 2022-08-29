@@ -80,7 +80,7 @@ def create_known_points_layer_3d():
     # for certain 3D related methods.
     # e.g. Points._display_bounding_box_augmented, Points.get_ray_intersections
     layer._indices_view = np.array([0, 1, 2, 3])
-    layer._ndisplay = 3
+    layer._slice_input.ndisplay = 3
 
     assert np.all(layer.data == data)
     assert layer.ndim == 3

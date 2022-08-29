@@ -2164,5 +2164,5 @@ def test_set_data_3d():
         np.array([[0, 0, 0], [0, 0, 200]]),
     ]
     shapes = Shapes(lines, shape_type='line')
-    shapes._ndisplay = 3
+    shapes._slice_input.ndisplay = 3
     shapes.data = lines
