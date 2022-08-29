@@ -373,11 +373,11 @@ def _maybe_rerun_with_macos_fixes():
 
     1) Quick fix for Big Sur Python 3.9 and Qt 5.
        No relaunch needed.
-    1) Using `pythonw` instead of `python`.
+    2) Using `pythonw` instead of `python`.
        This can be used to ensure we're using a framework
        build of Python on macOS, which fixes frozen menubar issues
        in some macOS versions.
-    2) Make sure the menu bar uses 'napari' as the display name.
+    3) Make sure the menu bar uses 'napari' as the display name.
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
