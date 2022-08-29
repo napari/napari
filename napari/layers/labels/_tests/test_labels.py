@@ -989,7 +989,7 @@ def test_switching_display_func_during_slicing():
     label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
     label_array[0, :, :] = [[0, 1], [2, 3]]
     layer = Labels(label_array)
-    layer._dims_point = (1, 0, 0)
+    layer._slice_input.point = [1, 0, 0]
     layer._set_view_slice()
     assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
     assert layer._all_vals.size < 1026
@@ -1406,7 +1406,7 @@ def test_negative_label_slicing():
     data = np.array([[[0, 1], [-1, -1]], [[100, 100], [-1, -2]]])
     layer = Labels(data)
     assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
-    layer._dims_point = (1, 0, 0)
+    layer._slice_input.point = [1, 0, 0]
     layer._set_view_slice()
     assert tuple(layer.get_color(-1)) != tuple(layer.get_color(100))
     assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
@@ -1424,7 +1424,7 @@ def test_negative_label_doesnt_flicker():
         ]
     )
     layer = Labels(data)
-    layer._dims_point = (1, 0, 0)
+    layer._slice_input.point = [1, 0, 0]
     layer._set_view_slice()
     # this is expected to fail: -1 doesn't trigger an index error in
     # layer._all_vals, it instead just wraps to 5, the previous max label.

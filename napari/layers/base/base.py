@@ -658,14 +658,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._slice_input.order = list(dims_order)
 
     @property
-    def _dims_point(self) -> List[float]:
-        return self._slice_input.point
-
-    @_dims_point.setter
-    def _dims_point(self, dims_point: Iterable[float]) -> None:
-        self._slice_input.point = list(dims_point)
-
-    @property
     def _dims_displayed(self) -> List[int]:
         """To be removed displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
@@ -706,14 +698,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
-            self._dims_point = self._dims_point[-ndim:]
+            self._slice_input.point = self._slice_input.point[-ndim:]
             self._dims_order = list(
                 reorder_after_dim_reduction(self._dims_order[-ndim:])
             )
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
-            self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
+            self._slice_input.point = [0] * (
+                ndim - old_ndim
+            ) + self._slice_input.point
             self._dims_order = list(range(ndim - old_ndim)) + [
                 o + ndim - old_ndim for o in self._dims_order
             ]
@@ -809,7 +803,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
 
         slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
-        world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
+        world_pts = [
+            self._slice_input.point[ax] for ax in self._dims_not_displayed
+        ]
         data_pts = slice_inv_transform(world_pts)
         if getattr(self, "_round_index", True):
             # A round is taken to convert these values to slicing integers
