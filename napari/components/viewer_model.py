@@ -198,7 +198,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
-        self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
             throttled(self._update_status_bar_from_cursor, timeout=50)
         )
@@ -401,19 +400,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
-
-    def _on_cursor_position_change(self):
-        """Set the layer cursor position."""
-        with warnings.catch_warnings():
-            # Catch the deprecation warning on layer.position
-            warnings.filterwarnings(
-                'ignore',
-                message=str(
-                    trans._('layer.position is deprecated', deferred=True)
-                ),
-            )
-            for layer in self.layers:
-                layer.position = self.cursor.position
 
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.

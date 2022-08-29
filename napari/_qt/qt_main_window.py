@@ -35,6 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from superqt import ensure_main_thread
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -1142,6 +1143,7 @@ class Window:
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
 
+    @ensure_main_thread
     def _status_changed(self, event):
         """Update status bar.
 
@@ -1171,6 +1173,7 @@ class Window:
         """
         self._qt_window.setWindowTitle(event.value)
 
+    @ensure_main_thread
     def _help_changed(self, event):
         """Update help message on status bar.
 
