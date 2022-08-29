@@ -61,7 +61,7 @@ def get_open_with_plugin_action(viewer, action_text):
     ][0]
     open_w_plugin_menu = (
         open_w_plugin_action.menu()
-        if qtpy.QT5
+        if getattr(qtpy, 'QT5', True)
         else QMenu.menuInAction(open_w_plugin_action)
     )
     requested_action = [
