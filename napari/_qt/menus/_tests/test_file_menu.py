@@ -57,10 +57,14 @@ def test_show_shortcuts_actions(make_napari_viewer):
 
 def get_open_with_plugin_action(viewer, action_text):
     def _get_menu(act):
+        # this function may be removed when PyQt6 will release next version
+        # (after 6.3.1 - if we do not want to support this test on older PyQt6)
+        # https://www.riverbankcomputing.com/pipermail/pyqt/2022-July/044817.html
+        # because both PyQt6 and PySide6 will have working manu method of action
         return (
-            act.menu()
-            if getattr(qtpy, 'QT5', True)
-            else QMenu.menuInAction(act)
+            QMenu.menuInAction(act)
+            if getattr(qtpy, 'PYQT6', False)
+            else act.menu()
         )
 
     actions = viewer.window.file_menu.actions()
