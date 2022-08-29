@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from npe2 import DynamicPlugin
@@ -61,7 +63,7 @@ def test_reader_dir(tmpdir, reader_dialog):
     widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
     assert (
         widg._persist_text
-        == f'Remember this choice for folders labeled as {dir}/.'
+        == f'Remember this choice for folders labeled as {dir}{os.sep}.'
     )
 
 
