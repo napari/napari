@@ -79,6 +79,10 @@ class _SliceInput:
     order: List[int]
 
     @property
+    def ndim(self) -> int:
+        return len(self.order)
+
+    @property
     def displayed(self) -> List[int]:
         return self.order[-self.ndisplay :]
 
@@ -89,6 +93,50 @@ class _SliceInput:
     @property
     def displayed_order(self) -> Tuple[int]:
         return reorder_after_dim_reduction(self.displayed)
+
+    def data_indices(
+        self, world_to_data: Affine, round_index: bool = True
+    ) -> Tuple[Union[int, slice]]:
+        if self.is_non_orthogonal(world_to_data):
+            warnings.warn(
+                trans._(
+                    'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
+                    deferred=True,
+                ),
+                category=UserWarning,
+            )
+
+        slice_world_to_data = world_to_data.set_slice(self.not_displayed)
+        world_pts = [self.point[ax] for ax in self.not_displayed]
+        data_pts = slice_world_to_data(world_pts)
+        if round_index:
+            # A round is taken to convert these values to slicing integers
+            data_pts = np.round(data_pts).astype(int)
+
+        indices = [slice(None)] * self.ndim
+        for i, ax in enumerate(self.not_displayed):
+            indices[ax] = data_pts[i]
+
+        return tuple(indices)
+
+    def is_non_orthogonal(self, world_to_data: Affine) -> bool:
+        # Subspace spanned by non displayed dimensions
+        non_displayed_subspace = np.zeros(self.ndim)
+        for d in self.not_displayed:
+            non_displayed_subspace[d] = 1
+        # Map subspace through inverse transform, ignoring translation
+        world_to_data = Affine(
+            ndim=self.ndim,
+            linear_matrix=world_to_data.linear_matrix,
+            translate=None,
+        )
+        mapped_nd_subspace = world_to_data(non_displayed_subspace)
+        # Look at displayed subspace
+        displayed_mapped_subspace = (
+            mapped_nd_subspace[d] for d in self.displayed
+        )
+        # Check that displayed subspace is null
+        return any(abs(v) > 1e-8 for v in displayed_mapped_subspace)
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -758,52 +806,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-
-        if len(self._dims_not_displayed) == 0:
-            # all dims are displayed dimensions
-            return (slice(None),) * self.ndim
-
-        if self.ndim > self._ndisplay:
-            inv_transform = self._data_to_world.inverse
-            # Subspace spanned by non displayed dimensions
-            non_displayed_subspace = np.zeros(self.ndim)
-            for d in self._dims_not_displayed:
-                non_displayed_subspace[d] = 1
-            # Map subspace through inverse transform, ignoring translation
-            _inv_transform = Affine(
-                ndim=self.ndim,
-                linear_matrix=inv_transform.linear_matrix,
-                translate=None,
-            )
-            mapped_nd_subspace = _inv_transform(non_displayed_subspace)
-            # Look at displayed subspace
-            displayed_mapped_subspace = (
-                mapped_nd_subspace[d] for d in self._dims_displayed
-            )
-            # Check that displayed subspace is null
-            if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
-                warnings.warn(
-                    trans._(
-                        'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
-                )
-
-        slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
-        world_pts = [
-            self._slice_input.point[ax] for ax in self._dims_not_displayed
-        ]
-        data_pts = slice_inv_transform(world_pts)
-        if getattr(self, "_round_index", True):
-            # A round is taken to convert these values to slicing integers
-            data_pts = np.round(data_pts).astype(int)
-
-        indices = [slice(None)] * self.ndim
-        for i, ax in enumerate(self._dims_not_displayed):
-            indices[ax] = data_pts[i]
-
-        return tuple(indices)
+        return self._slice_input.data_indices(
+            self._data_to_world.inverse,
+            getattr(self, '_round_index', True),
+        )
 
     @abstractmethod
     def _get_ndim(self):
