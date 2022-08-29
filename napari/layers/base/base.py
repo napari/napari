@@ -94,6 +94,21 @@ class _SliceInput:
     def displayed_order(self) -> Tuple[int]:
         return reorder_after_dim_reduction(self.displayed)
 
+    def with_ndim(self, ndim: int) -> _SliceInput:
+        old_ndim = self.ndim
+        if old_ndim > ndim:
+            point = self.point[-ndim:]
+            order = list(reorder_after_dim_reduction(self.order[-ndim:]))
+        elif old_ndim < ndim:
+            point = [0] * (ndim - old_ndim) + self.point
+            order = list(range(ndim - old_ndim)) + [
+                o + ndim - old_ndim for o in self.order
+            ]
+        else:
+            point = list(self.point)
+            order = list(self.order)
+        return _SliceInput(ndisplay=self.ndisplay, point=point, order=order)
+
     def data_indices(
         self, world_to_data: Affine, round_index: bool = True
     ) -> Tuple[Union[int, slice]]:
@@ -726,27 +741,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This function needs to be called whenever data or transform information
         changes, and should be called before events get emitted.
         """
-        from ...components.dims import reorder_after_dim_reduction
-
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
-            self._slice_input.point = self._slice_input.point[-ndim:]
-            self._slice_input.order = list(
-                reorder_after_dim_reduction(self._slice_input.order[-ndim:])
-            )
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
-            self._slice_input.point = [0] * (
-                ndim - old_ndim
-            ) + self._slice_input.point
-            self._slice_input.order = list(range(ndim - old_ndim)) + [
-                o + ndim - old_ndim for o in self._slice_input.order
-            ]
+
+        self._slice_input = self._slice_input.with_ndim(ndim)
 
         self._ndim = ndim
         if 'extent' in self.__dict__:
