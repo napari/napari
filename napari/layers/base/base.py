@@ -83,11 +83,11 @@ class _SliceInput:
     ndisplay: int
     # The point in layer world coordinates that defines the slicing plane.
     # Only the elements in the non-displayed dimensions have meaningful values.
-    point: List[float]
+    point: Tuple[float, ...]
     # The layer dimensions in the order they are displayed.
     # A permutation of the ``range(self.ndim)``.
     # The last ``ndisplay`` dimensions are displayed in the canvas.
-    order: List[int]
+    order: Tuple[int, ...]
 
     @property
     def ndim(self) -> int:
@@ -97,12 +97,12 @@ class _SliceInput:
     @property
     def displayed(self) -> List[int]:
         """The layer dimensions displayed in this slice."""
-        return self.order[-self.ndisplay :]
+        return list(self.order[-self.ndisplay :])
 
     @property
     def not_displayed(self) -> List[int]:
         """The layer dimensions not displayed in this slice."""
-        return self.order[: -self.ndisplay]
+        return list(self.order[: -self.ndisplay])
 
     @property
     def displayed_order(self) -> Tuple[int]:
@@ -119,15 +119,15 @@ class _SliceInput:
         old_ndim = self.ndim
         if old_ndim > ndim:
             point = self.point[-ndim:]
-            order = list(reorder_after_dim_reduction(self.order[-ndim:]))
+            order = reorder_after_dim_reduction(self.order[-ndim:])
         elif old_ndim < ndim:
-            point = [0] * (ndim - old_ndim) + self.point
-            order = list(range(ndim - old_ndim)) + [
+            point = (0,) * (ndim - old_ndim) + self.point
+            order = tuple(range(ndim - old_ndim)) + tuple(
                 o + ndim - old_ndim for o in self.order
-            ]
+            )
         else:
-            point = list(self.point)
-            order = list(self.order)
+            point = self.point
+            order = self.order
         return _SliceInput(ndisplay=self.ndisplay, point=point, order=order)
 
     def data_indices(
@@ -367,8 +367,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._slice_input = _SliceInput(
             ndisplay=2,
-            point=[0] * ndim,
-            order=list(range(ndim)),
+            point=(0,) * ndim,
+            order=tuple(range(ndim)),
         )
 
         # Create a transform chain consisting of four transforms:
@@ -1020,9 +1020,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             rendered in canvas.
         """
         if point is None:
-            point = [0] * self.ndim
+            point = (0,) * self.ndim
         else:
-            point = list(point)
+            point = tuple(point)
 
         ndim = len(point)
         assert (
@@ -1030,10 +1030,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ), 'slicing with fewer dimensions than layer has'
 
         if order is None:
-            order = list(range(ndim))
+            order = tuple(range(ndim))
 
         point = point[-self.ndim :]
-        order = self._world_to_data_dims_displayed(order, ndim_world=ndim)
+        order = tuple(
+            self._world_to_data_dims_displayed(order, ndim_world=ndim)
+        )
 
         slice_input = _SliceInput(
             ndisplay=ndisplay,
