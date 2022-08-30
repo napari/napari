@@ -71,14 +71,12 @@ def no_op(layer: Layer, event: Event) -> None:
     return None
 
 
-@dataclass()
+@dataclass(frozen=True)
 class _SliceInput:
     """Encapsulates the input needed for slicing a layer.
 
     An instance of this should be associated with a layer and ``Viewer.dims``
     and should be created just before slicing a layer.
-
-    TODO: consider making this frozen.
     """
 
     # The number of dimensions displayed in this slice.

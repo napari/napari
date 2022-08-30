@@ -560,7 +560,7 @@ def test_message_3d():
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._slice_input.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
