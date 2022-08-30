@@ -72,29 +72,52 @@ def no_op(layer: Layer, event: Event) -> None:
 
 
 # TODO: consider making this frozen.
+""" Encapsulates the input needed for slicing a layer.
+
+An instance of this should be associated with a layer and ``Viewer.dims``
+and should be created just before slicing a layer.
+"""
+
+
 @dataclass
 class _SliceInput:
+    # The number of dimensions displayed in this slice.
     ndisplay: int
+    # The point in layer world coordinates that defines the slicing plane.
+    # Only the elements in the non-displayed dimensions have meaningful values.
     point: List[float]
+    # The layer dimensions in the order they are displayed.
+    # A permutation of the ``range(self.ndim)``.
+    # The last ``ndisplay`` dimensions are displayed in the canvas.
     order: List[int]
 
     @property
     def ndim(self) -> int:
+        """The dimensionality of the associated layer."""
         return len(self.order)
 
     @property
     def displayed(self) -> List[int]:
+        """The layer dimensions displayed in this slice."""
         return self.order[-self.ndisplay :]
 
     @property
     def not_displayed(self) -> List[int]:
+        """The layer dimensions not displayed in this slice."""
         return self.order[: -self.ndisplay]
 
     @property
     def displayed_order(self) -> Tuple[int]:
+        """The order of the displayed dimensions.
+
+        This is a permutation of ``range(self.ndisplay)``.
+        It no longer indexes a layer's dimensions.
+        Instead it indexes the output of ``self.displayed``.
+        """
         return reorder_after_dim_reduction(self.displayed)
 
     def with_ndim(self, ndim: int) -> _SliceInput:
+        """Returns a new instance with the given number of layer dimensions."""
         old_ndim = self.ndim
         if old_ndim > ndim:
             point = self.point[-ndim:]
@@ -112,6 +135,11 @@ class _SliceInput:
     def data_indices(
         self, world_to_data: Affine, round_index: bool = True
     ) -> Tuple[Union[int, slice]]:
+        """Transforms this into indices that can be used to slice layer data.
+
+        The elements in non-displayed dimensions will be real numbers.
+        The elements in displayed dimensions will be ``slice(None)``.
+        """
         if self.is_non_orthogonal(world_to_data):
             warnings.warn(
                 trans._(
@@ -135,6 +163,7 @@ class _SliceInput:
         return tuple(indices)
 
     def is_non_orthogonal(self, world_to_data: Affine) -> bool:
+        """Returns True if this slice represents a non-orthogonal slice through a layer's data, False otherwise."""
         # Subspace spanned by non displayed dimensions
         non_displayed_subspace = np.zeros(self.ndim)
         for d in self.not_displayed:
