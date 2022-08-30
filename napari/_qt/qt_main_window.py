@@ -36,6 +36,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .._app_model.constants import MenuId
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
@@ -47,6 +48,8 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from ._qapp_model import build_qmodel_menu
+from ._qapp_model.qactions import init_qactions
 from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
@@ -84,6 +87,7 @@ class _QtMainWindow(QMainWindow):
     def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent)
         self._ev = None
+        self._window = viewer.window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -131,6 +135,10 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
+        init_qactions()
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
