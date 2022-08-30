@@ -1,5 +1,6 @@
 from unittest import mock
 
+import pytest
 import qtpy
 from npe2 import DynamicPlugin
 from npe2.manifest.contributions import SampleDataURI
@@ -55,25 +56,29 @@ def test_show_shortcuts_actions(make_napari_viewer):
 
 
 def get_open_with_plugin_action(viewer, action_text):
+    def _get_menu(act):
+        # this function may be removed when PyQt6 will release next version
+        # (after 6.3.1 - if we do not want to support this test on older PyQt6)
+        # https://www.riverbankcomputing.com/pipermail/pyqt/2022-July/044817.html
+        # because both PyQt6 and PySide6 will have working manu method of action
+        return (
+            QMenu.menuInAction(act)
+            if getattr(qtpy, 'PYQT6', False)
+            else act.menu()
+        )
+
     actions = viewer.window.file_menu.actions()
-    open_w_plugin_action = [
-        action for action in actions if action.text() == 'Open with Plugin'
-    ][0]
-    open_w_plugin_menu = (
-        open_w_plugin_action.menu()
-        if getattr(qtpy, 'QT5', True)
-        else QMenu.menuInAction(open_w_plugin_action)
-    )
-    requested_action = [
-        action
-        for action in open_w_plugin_menu.actions()
-        if action.text() == action_text
-    ][0]
-    return requested_action
+    for action1 in actions:
+        if action1.text() == 'Open with Plugin':
+            for action2 in _get_menu(action1).actions():
+                if action2.text() == action_text:
+                    return action2, action1
+    raise ValueError(f'Could not find action "{action_text}"')
 
 
-def test_open_with_plugin(make_napari_viewer):
-    params = [
+@pytest.mark.parametrize(
+    "menu_str,dialog_method,dialog_return,filename_call,stack",
+    [
         (
             'Open File(s)...',
             'getOpenFileNames',
@@ -95,80 +100,27 @@ def test_open_with_plugin(make_napari_viewer):
             ['my-dir/'],
             False,
         ),
-    ]
+    ],
+)
+def test_open_with_plugin(
+    make_napari_viewer,
+    menu_str,
+    dialog_method,
+    dialog_return,
+    filename_call,
+    stack,
+):
+
     viewer = make_napari_viewer()
-    for (
-        menu_str,
-        dialog_method,
-        dialog_return,
-        filename_call,
-        stack,
-    ) in params:
-        action = get_open_with_plugin_action(viewer, menu_str)
-        with mock.patch(
-            'napari._qt.qt_viewer.QFileDialog'
-        ) as mock_file, mock.patch(
-            'napari._qt.qt_viewer.QtViewer._qt_open'
-        ) as mock_read:
-            mock_file_instance = mock_file.return_value
-            getattr(
-                mock_file_instance, dialog_method
-            ).return_value = dialog_return
-            action.trigger()
-        mock_read.assert_called_once_with(
-            filename_call, stack=stack, choose_plugin=True
-        )
-
-
-# def test_open_file_with_plugin(make_napari_viewer):
-#     viewer = make_napari_viewer()
-#     action = get_open_with_plugin_action(viewer, 'Open File(s)...')
-#     with mock.patch(
-#         'napari._qt.qt_viewer.QFileDialog'
-#     ) as mock_file, mock.patch(
-#         'napari._qt.qt_viewer.QtViewer._qt_open'
-#     ) as mock_read:
-#         mock_file_instance = mock_file.return_value
-#         mock_file_instance.getOpenFileNames.return_value = (
-#             ['my-file.tif'],
-#             '',
-#         )
-#         action.trigger()
-#     mock_read.assert_called_once_with(
-#         ['my-file.tif'], stack=False, choose_plugin=True
-#     )
-
-
-# def test_open_file_stack_with_plugin(make_napari_viewer):
-#     viewer = make_napari_viewer()
-#     action = get_open_with_plugin_action(viewer, 'Open Files as Stack...')
-#     with mock.patch(
-#         'napari._qt.qt_viewer.QFileDialog'
-#     ) as mock_file, mock.patch(
-#         'napari._qt.qt_viewer.QtViewer._qt_open'
-#     ) as mock_read:
-#         mock_file_instance = mock_file.return_value
-#         mock_file_instance.getOpenFileNames.return_value = (
-#             ['my-file.tif'],
-#             '',
-#         )
-#         action.trigger()
-#     mock_read.assert_called_once_with(
-#         ['my-file.tif'], stack=True, choose_plugin=True
-#     )
-
-
-# def test_open_folder_with_plugin(make_napari_viewer):
-#     viewer = make_napari_viewer()
-#     action = get_open_with_plugin_action(viewer, 'Open Folder...')
-#     with mock.patch(
-#         'napari._qt.qt_viewer.QFileDialog'
-#     ) as mock_file, mock.patch(
-#         'napari._qt.qt_viewer.QtViewer._qt_open'
-#     ) as mock_read:
-#         mock_file_instance = mock_file.return_value
-#         mock_file_instance.getExistingDirectory.return_value = 'my-dir/'
-#         action.trigger()
-#     mock_read.assert_called_once_with(
-#         ['my-dir/'], stack=False, choose_plugin=True
-#     )
+    action, _a = get_open_with_plugin_action(viewer, menu_str)
+    with mock.patch(
+        'napari._qt.qt_viewer.QFileDialog'
+    ) as mock_file, mock.patch(
+        'napari._qt.qt_viewer.QtViewer._qt_open'
+    ) as mock_read:
+        mock_file_instance = mock_file.return_value
+        getattr(mock_file_instance, dialog_method).return_value = dialog_return
+        action.trigger()
+    mock_read.assert_called_once_with(
+        filename_call, stack=stack, choose_plugin=True
+    )
