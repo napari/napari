@@ -394,15 +394,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
+        dims_displayed_order = self._slice_input.displayed_order
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims_displayed_order + (
-                max(self._dims_displayed_order) + 1,
-            )
+            return dims_displayed_order + (max(dims_displayed_order) + 1,)
         else:
-            return self._dims_displayed_order
+            return dims_displayed_order
 
     @property
     def _data_view(self):

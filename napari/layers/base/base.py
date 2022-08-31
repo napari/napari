@@ -759,15 +759,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # for additional discussion.
         return self._slice_input.not_displayed
 
-    @property
-    def _dims_displayed_order(self) -> List[int]:
-        """To be removed order of displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        return self._slice_input.displayed_order
-
     def _update_dims(self, event=None):
         """Update the dims model and clear the extent cache.
 
