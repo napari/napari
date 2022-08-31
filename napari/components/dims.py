@@ -183,10 +183,7 @@ class Dims(EventedModel):
 
     @property
     def displayed_order(self) -> Tuple[int, ...]:
-        displayed = self.displayed
-        # equivalent to: order = np.argsort(self.displayed)
-        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
+        return reorder_after_dim_reduction(self.displayed)
 
     def set_range(
         self,
@@ -410,16 +407,17 @@ class Dims(EventedModel):
 def reorder_after_dim_reduction(order):
     """Ensure current dimension order is preserved after dims are dropped.
 
+    Equivalent to ``np.argsort(order)``
+
     Parameters
     ----------
     order : tuple
-        The data to reorder.
+        The dimensions to reorder.
 
     Returns
     -------
     arr : tuple
-        The original array with the unneeded dimension
-        thrown away.
+        The reordered dimensions.
     """
     arr = sorted(range(len(order)), key=lambda x: order[x])
     return tuple(arr)
