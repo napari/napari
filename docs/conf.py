@@ -174,6 +174,7 @@ sphinx_gallery_conf = {
     'only_warn_on_example_error': True,
     'image_scrapers': (qtgallery.qtscraper,),
     'reset_modules': (reset_napari_theme,),
+    'reference_url': {'napari': None},
 }
 
 
