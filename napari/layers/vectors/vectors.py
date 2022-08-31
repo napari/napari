@@ -606,8 +606,7 @@ class Vectors(Layer):
         """
 
         if len(self.data) > 0:
-            # ensure dims not displayed is a list
-            dims_not_displayed = list(self._dims_not_displayed)
+            dims_not_displayed = self._slice_input.not_displayed
 
             # We want a numpy array so we can use fancy indexing with the non-displayed
             # indices, but as dims_indices can (and often/always does) contain slice
@@ -649,7 +648,7 @@ class Vectors(Layer):
 
         indices, alphas = self._slice_data(self._slice_indices)
 
-        disp = list(self._dims_displayed)
+        disp = self._slice_input.displayed
 
         if len(self.data) == 0:
             self._view_data = np.empty((0, 2, 2))
@@ -670,14 +669,14 @@ class Vectors(Layer):
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
         de = self._extent_data
-        offset = (np.array([de[0, d] for d in self._dims_displayed]) + 0.5)[
-            -2:
-        ]
+        offset = (
+            np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
+        )[-2:]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
+            [de[1, d] - de[0, d] + 1 for d in self._slice_input.displayed]
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 

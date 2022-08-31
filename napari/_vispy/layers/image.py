@@ -250,7 +250,7 @@ class VispyImageLayer(VispyBaseLayer):
                 np.divide(data.shape, MAX_TEXTURE_SIZE)
             ).astype(int)
             scale = np.ones(self.layer.ndim)
-            for i, d in enumerate(self.layer._dims_displayed):
+            for i, d in enumerate(self.layer._slice_input.displayed):
                 scale[d] = downsample[i]
             self.layer._transforms['tile2data'].scale = scale
             self._on_matrix_change()

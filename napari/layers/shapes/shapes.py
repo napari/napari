@@ -469,7 +469,7 @@ class Shapes(Layer):
 
         self._data_view = ShapeList(ndisplay=self._ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
-            list(self._dims_not_displayed)
+            self._slice_input.not_displayed
         ]
 
         self._value = (None, None)
@@ -1548,7 +1548,7 @@ class Shapes(Layer):
 
         # get the coordinates for the dimensions being displayed
         sliced_in_view_coords = [
-            position[:, self._dims_displayed]
+            position[:, self._slice_input.displayed]
             for position in in_view_shapes_coords
         ]
 
@@ -2263,7 +2263,7 @@ class Shapes(Layer):
             self._clipboard = {}
 
         slice_key = np.array(self._slice_indices)[
-            list(self._dims_not_displayed)
+            self._slice_input.not_displayed
         ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
@@ -2519,12 +2519,14 @@ class Shapes(Layer):
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
             de = self._extent_data
-            offset = np.array([de[0, d] for d in self._dims_displayed]) + 0.5
+            offset = (
+                np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
+            )
             # calculate range of values for the vertices and pad with 1
             # padding ensures the entire shape can be represented in the thumbnail
             # without getting clipped
             shape = np.ceil(
-                [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
+                [de[1, d] - de[0, d] + 1 for d in self._slice_input.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -2639,7 +2641,7 @@ class Shapes(Layer):
         if self._is_moving:
             return self._moving_value
 
-        coord = [position[i] for i in self._dims_displayed]
+        coord = [position[i] for i in self._slice_input.displayed]
 
         # Check selected shapes
         value = None
@@ -2861,7 +2863,7 @@ class Shapes(Layer):
             # Calculate offset based on dimension shifts
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
-                for i in self._dims_not_displayed
+                for i in self._slice_input.not_displayed
             ]
 
             self._feature_table.append(self._clipboard['features'])
@@ -2871,9 +2873,8 @@ class Shapes(Layer):
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self._dims_not_displayed] = data[
-                    :, self._dims_not_displayed
-                ] + np.array(offset)
+                not_disp = self._slice_input.not_displayed
+                data[:, not_disp] = data[:, not_disp] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]
                 edge_color = self._clipboard['edge_color'][i]

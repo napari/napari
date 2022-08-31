@@ -402,19 +402,21 @@ class Surface(IntensityVisualizationMixin, Layer):
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
-                for d in np.subtract(self._dims_displayed, values_ndim)
+                for d in np.subtract(self._slice_input.displayed, values_ndim)
                 if d >= 0
             ]
             not_disp = [
                 d
-                for d in np.subtract(self._dims_not_displayed, values_ndim)
+                for d in np.subtract(
+                    self._slice_input.not_displayed, values_ndim
+                )
                 if d >= 0
             ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self._dims_not_displayed)
-            disp = list(self._dims_displayed)
+            not_disp = list(self._slice_input.not_displayed)
+            disp = list(self._slice_input.displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:

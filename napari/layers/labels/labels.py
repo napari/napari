@@ -378,7 +378,9 @@ class Labels(_ImageBase):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
-        min_scale = np.min([abs(scale[d]) for d in self._dims_displayed])
+        min_scale = np.min(
+            [abs(scale[d]) for d in self._slice_input.displayed]
+        )
         return abs(self.brush_size * min_scale)
 
     @property
@@ -1245,13 +1247,12 @@ class Labels(_ImageBase):
         """
         if coordinates is None:
             return
-        ndisplay = len(self._dims_displayed)
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size
         )
         for c in interp_coord:
             if (
-                ndisplay == 3
+                self._slice_input.ndisplay == 3
                 and self.data[tuple(np.round(c).astype(int))] == 0
             ):
                 continue

@@ -80,7 +80,7 @@ def create_known_points_layer_3d():
 
     assert np.all(layer.data == data)
     assert layer.ndim == 3
-    assert len(layer._dims_displayed) == 3
+    assert len(layer._slice_input.displayed) == 3
     assert len(layer.data) == n_points
     assert len(layer._view_size) == n_points
     assert len(layer.selected_data) == 0

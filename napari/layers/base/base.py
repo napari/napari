@@ -741,24 +741,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _ndisplay(self) -> int:
         return self._slice_input.ndisplay
 
-    @property
-    def _dims_displayed(self) -> List[int]:
-        """To be removed displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        return self._slice_input.displayed
-
-    @property
-    def _dims_not_displayed(self) -> List[int]:
-        """To be removed not displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        return self._slice_input.not_displayed
-
     def _update_dims(self, event=None):
         """Update the dims model and clear the extent cache.
 

@@ -60,7 +60,7 @@ def select(layer, event):
                 layer._move(layer.selected_data, coordinates)
         else:
             # while dragging, update the drag box
-            coord = [coordinates[i] for i in layer._dims_displayed]
+            coord = [coordinates[i] for i in layer._slice_input.displayed]
             layer._is_selecting = True
             if layer._drag_start is None:
                 layer._drag_start = coord

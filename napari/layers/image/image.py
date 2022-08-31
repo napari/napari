@@ -716,7 +716,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
-        not_disp = self._dims_not_displayed
+        not_disp = self._slice_input.not_displayed
 
         # Check if requested slice outside of data range
         indices = np.array(self._slice_indices)
@@ -762,7 +762,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             indices[not_disp] = downsampled_indices
 
             scale = np.ones(self.ndim)
-            for d in self._dims_displayed:
+            for d in self._slice_input.displayed:
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
@@ -979,9 +979,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate
             offset = len(coord) - len(shape)
-            coord = coord[[d + offset for d in self._dims_displayed]]
+            coord = coord[[d + offset for d in self._slice_input.displayed]]
         else:
-            coord = coord[self._dims_displayed]
+            coord = coord[self._slice_input.displayed]
 
         if all(0 <= c < s for c, s in zip(coord, shape)):
             value = raw[tuple(coord)]
