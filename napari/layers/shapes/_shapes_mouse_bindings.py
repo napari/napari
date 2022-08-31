@@ -44,6 +44,7 @@ def select(layer, event):
 
     # we don't update the thumbnail unless a shape has been moved
     update_thumbnail = False
+    _set_drag_start(layer, layer.world_to_data(event.position))
     yield
 
     # on move
@@ -357,6 +358,13 @@ def _drag_selection_box(layer, coordinates):
         layer._drag_start = coord
     layer._drag_box = np.array([layer._drag_start, coord])
     layer._set_highlight()
+
+
+def _set_drag_start(layer, coordinates):
+    coord = [coordinates[i] for i in layer._dims_displayed]
+    if layer._drag_start is None and len(layer.selected_data) > 0:
+        center = layer._selected_box[Box.CENTER]
+        layer._drag_start = coord - center
 
 
 def _move(layer, coordinates):

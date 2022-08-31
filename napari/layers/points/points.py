@@ -1857,9 +1857,7 @@ class Points(Layer):
         if len(index) > 0:
             index = list(index)
             disp = list(self._dims_displayed)
-            if self._drag_start is None:
-                center = self.data[np.ix_(index, disp)].mean(axis=0)
-                self._drag_start = np.array(coord)[disp] - center
+            self._set_drag_start(index, coord)
             center = self.data[np.ix_(index, disp)].mean(axis=0)
             shift = np.array(coord)[disp] - center - self._drag_start
             self.data[np.ix_(index, disp)] = (
@@ -1867,6 +1865,14 @@ class Points(Layer):
             )
             self.refresh()
         self.events.data(value=self.data)
+
+    def _set_drag_start(self, index, coord):
+        if len(index) > 0:
+            index = list(index)
+            disp = list(self._dims_displayed)
+            if self._drag_start is None:
+                center = self.data[np.ix_(index, disp)].mean(axis=0)
+                self._drag_start = np.array(coord)[disp] - center
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
