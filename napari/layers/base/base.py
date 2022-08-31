@@ -1603,11 +1603,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         self.scale_factor = scale_factor
 
-        # TODO: simplify this.
-        displayed_axes = self._slice_input.displayed_sorted
-        displayed_axes = np.asarray(
-            [self._slice_input.order[d] for d in displayed_axes]
-        )
+        displayed_axes = self._slice_input.displayed
 
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not

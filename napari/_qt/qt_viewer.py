@@ -1073,15 +1073,12 @@ class QtViewer(QSplitter):
         # The canvas corners in full world coordinates (i.e. across all layers).
         canvas_corners_world = self._canvas_corners_in_world
         for layer in self.viewer.layers:
-            displayed = layer._slice_input.displayed_sorted
-            nd = len(displayed)
-            # The following condition can be false when switching from 3D to 2D display
-            # because the ordering of events can cause a draw to occur before slice_input
-            # has been updated, but after Dims.ndisplay.
-            # TODO: the current fix seems wrong, but if it doesn't cause errors, then I
-            # believe another refresh/draw will fix it.
-            if nd <= self.viewer.dims.ndisplay:
-                displayed = self.viewer.dims.displayed[-nd:]
+            # It is possible for layer._slice_input.ndisplay to be temporarily different
+            # to self.viewer.dims.ndisplay because the ordering of events connected to
+            # changes to Dims.ndisplay can cause a draw to occur before slice_input
+            # has been updated. Therefore, we use the following as a way to index the canvas
+            # corners with respect to the displayed dimensions that the layer is aware of.
+            displayed = self.viewer.dims.order[-layer._slice_input.ndisplay :]
             layer._update_draw(
                 scale_factor=1 / self.viewer.camera.zoom,
                 corner_pixels_displayed=canvas_corners_world[:, displayed],
