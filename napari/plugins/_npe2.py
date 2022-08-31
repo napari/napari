@@ -76,13 +76,13 @@ def write_layers(
     path : str
         The path (file, directory, url) to write.
     layers : list of Layers
-        All lower-class name of the layer class to be written.
+        The layers to write.
     plugin_name : str, optional
         Name of the plugin to write data with. If None then all plugins
         corresponding to appropriate hook specification will be looped
         through to find the first one that can write the data.
     writer : WriterContribution, optional
-        writer contribution to use to write given layer, autodetedect if None.
+        Writer contribution to use to write given layers, autodetect if None.
 
     Returns
     -------
