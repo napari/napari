@@ -1070,20 +1070,23 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
+        # The canvas corners in full world coordinates (i.e. across all layers).
+        canvas_corners_world = self._canvas_corners_in_world
         for layer in self.viewer.layers:
-            if layer.ndim <= self.viewer.dims.ndim:
-                nd = len(layer._displayed_axes)
-                if nd > self.viewer.dims.ndisplay:
-                    displayed_axes = layer._displayed_axes
-                else:
-                    displayed_axes = self.viewer.dims.displayed[-nd:]
-                layer._update_draw(
-                    scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels_displayed=self._canvas_corners_in_world[
-                        :, displayed_axes
-                    ],
-                    shape_threshold=self.canvas.size,
-                )
+            displayed = layer._slice_input.displayed_sorted
+            nd = len(displayed)
+            # The following condition can be false when switching from 3D to 2D display
+            # because the ordering of events can cause a draw to occur before slice_input
+            # has been updated, but after Dims.ndisplay.
+            # TODO: the current fix seems wrong, but if it doesn't cause errors, then I
+            # believe another refresh/draw will fix it.
+            if nd <= self.viewer.dims.ndisplay:
+                displayed = self.viewer.dims.displayed[-nd:]
+            layer._update_draw(
+                scale_factor=1 / self.viewer.camera.zoom,
+                corner_pixels_displayed=canvas_corners_world[:, displayed],
+                shape_threshold=self.canvas.size,
+            )
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""

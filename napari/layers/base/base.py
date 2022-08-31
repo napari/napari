@@ -114,6 +114,12 @@ class _SliceInput:
         """
         return reorder_after_dim_reduction(self.displayed)
 
+    @property
+    def displayed_sorted(self) -> List[int]:
+        """``self.displayed`` sorted in increasing order."""
+        displayed = self.displayed
+        return [displayed[i] for i in self.displayed_order]
+
     def with_ndim(self, ndim: int) -> _SliceInput:
         """Returns a new instance with the given number of layer dimensions."""
         old_ndim = self.ndim
@@ -1032,6 +1038,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if order is None:
             order = tuple(range(ndim))
 
+        # Correspondence between dimensions across all layers and
+        # dimensions of this layer.
         point = point[-self.ndim :]
         order = tuple(
             self._world_to_data_dims_displayed(order, ndim_world=ndim)
@@ -1575,20 +1583,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return start_point, end_point
 
-    @property
-    def _displayed_axes(self):
-        # assignment upfront to avoid repeated computation of properties
-        _dims_displayed = self._dims_displayed
-        _dims_displayed_order = self._dims_displayed_order
-        displayed_axes = [_dims_displayed[i] for i in _dims_displayed_order]
-        return displayed_axes
-
-    @property
-    def _corner_pixels_displayed(self):
-        displayed_axes = self._displayed_axes
-        corner_pixels_displayed = self.corner_pixels[:, displayed_axes]
-        return corner_pixels_displayed
-
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
@@ -1609,11 +1603,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         self.scale_factor = scale_factor
 
-        # TODO: use self._slice_input.displayed_order?
-        displayed_axes = self._displayed_axes
+        # TODO: simplify this.
+        displayed_axes = self._slice_input.displayed_sorted
         displayed_axes = np.asarray(
             [self._slice_input.order[d] for d in displayed_axes]
         )
+
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not
         # remain top-left and bottom-right after transformations.

@@ -363,7 +363,7 @@ class _OctreeImageBase(_ImageBase):
         # Compute our 2D corners from the incoming n-d corner_pixels
         data_corners = (
             self._transforms[1:]
-            .simplified.set_slice(self._displayed_axes)
+            .simplified.set_slice(self._slice_input.displayed_sorted)
             .inverse(corner_pixels_displayed)
         )
 
