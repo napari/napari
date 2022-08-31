@@ -368,6 +368,7 @@ def _set_drag_start(layer, coordinates):
     if layer._drag_start is None and len(layer.selected_data) > 0:
         center = layer._selected_box[Box.CENTER]
         layer._drag_start = coord - center
+    return coord
 
 
 def _move(layer, coordinates):
@@ -389,14 +390,11 @@ def _move(layer, coordinates):
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
-        coord = [coordinates[i] for i in layer._dims_displayed]
+        coord = _set_drag_start(layer, coordinates)
         layer._moving_coordinates = coordinates
         layer._is_moving = True
         if vertex is None:
             # Check where dragging box from to move whole object
-            if layer._drag_start is None:
-                center = layer._selected_box[Box.CENTER]
-                layer._drag_start = coord - center
             center = layer._selected_box[Box.CENTER]
             shift = coord - center - layer._drag_start
             for index in layer.selected_data:
