@@ -1,1 +1,4 @@
-*.png @jni
+*.png @napari/core-devs 
+*.jpg @napari/core-devs
+*.gif @napari/core-devs
+*.webm @napari/core-devs
