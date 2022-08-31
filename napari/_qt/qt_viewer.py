@@ -1078,6 +1078,7 @@ class QtViewer(QSplitter):
             # changes to Dims.ndisplay can cause a draw to occur before slice_input
             # has been updated. Therefore, we use the following as a way to index the canvas
             # corners with respect to the displayed dimensions that the layer is aware of.
+            # TODO: make this work with examples/nD_shapes.py when changing displayed dimensions.
             displayed = self.viewer.dims.order[-layer._slice_input.ndisplay :]
             layer._update_draw(
                 scale_factor=1 / self.viewer.camera.zoom,
