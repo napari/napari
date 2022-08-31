@@ -44,6 +44,9 @@ def select(layer, event):
 
     # we don't update the thumbnail unless a shape has been moved
     update_thumbnail = False
+
+    # Set _drag_start value here to prevent an offset when mouse_move happens
+    # https://github.com/napari/napari/pull/4999
     _set_drag_start(layer, layer.world_to_data(event.position))
     yield
 
