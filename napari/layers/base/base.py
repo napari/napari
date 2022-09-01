@@ -995,7 +995,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # dimensions of this layer.
         point = point[-self.ndim :]
         order = tuple(
-            self._world_to_data_dims_displayed(order, ndim_world=ndim)
+            self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
         )
 
         slice_input = _SliceInput(
@@ -1329,31 +1329,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
 
-    def _world_to_data_dims_displayed(
-        self, dims_displayed: List[int], ndim_world: int
+    def _world_to_layer_dims(
+        self, *, world_dims: List[int], ndim_world: int
     ) -> List[int]:
-        """Convert indices of displayed dims from world to data coordinates.
+        """Map world dimensions to layer dimensions while maintaining order.
 
-        This accounts for differences in dimensionality between the world
-        and the data coordinates. For example a world dims order of
-        [2, 1, 0, 3] would be [0, 1] for a layer that only has two dimensions
-        or [1, 0, 2] for a layer with three as that corresponds to the
-        relative order of the last two and three dimensions respectively
+        This is used to map dimensions from the full world space defined by ``Dims``
+        to the subspace that a layer inhabits, so that those can be used to index the
+        layer's data and associated coordinates.
+
+        For example a world ``Dims.order`` of [2, 1, 0, 3] would map to [0, 1] for a
+        layer with two dimensions and [1, 0, 2] for a layer with three dimensions
+        as those correspond to the relative order of the last two and three world dimensions
+        respectively.
 
         Parameters
         ----------
-        dims_displayed : List[int]
-            The world displayed dimensions.
+        world_dims : List[int]
+            The world dimensions.
         ndim_world : int
             The number of dimensions in the world coordinate system.
 
         Returns
         -------
-        dims_displayed_data : List[int]
-            The displayed dimensions in data coordinates.
+        List[int]
+            The corresponding layer dimensions with the same ordering as the given world dimensions.
         """
         offset = ndim_world - self.ndim
-        order = np.array(dims_displayed)
+        order = np.array(world_dims)
+        # TODO: understand if this ever happens.
         if offset <= 0:
             return list(range(-offset)) + list(order - offset)
         else:

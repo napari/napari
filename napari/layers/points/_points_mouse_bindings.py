@@ -158,18 +158,18 @@ def _update_drag_vectors_from_event(layer, event):
         # if in 3D, set the drag normal and up directions
         # get the indices of the displayed dimensions
         ndim_world = len(event.position)
-        dims_displayed_data = layer._world_to_data_dims_displayed(
-            dims_displayed=event.dims_displayed, ndim_world=ndim_world
+        layer_dims_displayed = layer._world_to_layer_dims(
+            world_dims=event.dims_displayed, ndim_world=ndim_world
         )
 
         # get the view direction in displayed data coordinates
         layer._drag_normal = layer._world_to_displayed_data_ray(
-            event.view_direction, dims_displayed_data
+            event.view_direction, layer_dims_displayed
         )
 
         # get the up direction of the camera in displayed data coordinates
         layer._drag_up = layer._world_to_displayed_data_ray(
-            event.up_direction, dims_displayed_data
+            event.up_direction, layer_dims_displayed
         )
 
     else:
