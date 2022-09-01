@@ -579,21 +579,15 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     viewer.dims.order = (0, 1, 2)
     viewer.window._qt_viewer.canvas.size = canvas_size
     viewer.window._qt_viewer.on_draw(None)
-    np.testing.assert_array_equal(
-        img_multi_layer.corner_pixels, expected_corner_pixels
-    )
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (2, 0, 1)
     viewer.window._qt_viewer.on_draw(None)
-    np.testing.assert_array_equal(
-        img_multi_layer.corner_pixels, expected_corner_pixels
-    )
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (1, 2, 0)
     viewer.window._qt_viewer.on_draw(None)
-    np.testing.assert_array_equal(
-        img_multi_layer.corner_pixels, expected_corner_pixels
-    )
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
 
 def test_remove_add_image_3D(make_napari_viewer):
