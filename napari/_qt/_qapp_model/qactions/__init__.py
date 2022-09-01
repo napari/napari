@@ -1,5 +1,5 @@
-from itertools import chain
 from functools import lru_cache
+from itertools import chain
 from typing import Optional
 
 # Submodules should be able to import from most modules, so to
