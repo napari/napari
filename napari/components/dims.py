@@ -407,7 +407,7 @@ class Dims(EventedModel):
 def reorder_after_dim_reduction(order):
     """Ensure current dimension order is preserved after dims are dropped.
 
-    Equivalent to ``np.argsort(order)``
+    Equivalent to ``tuple(np.argsort(order))``
 
     Parameters
     ----------

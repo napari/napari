@@ -323,18 +323,13 @@ class QtImageControls(QtBaseImageControls):
     def _toggle_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        if (
-            depiction == VolumeDepiction.VOLUME
-            or self.layer._slice_input.ndisplay == 2
-        ):
+        ndisplay = self.layer._slice_input.ndisplay
+        if depiction == VolumeDepiction.VOLUME and ndisplay == 2:
             self.planeNormalButtons.hide()
             self.planeNormalLabel.hide()
             self.planeThicknessSlider.hide()
             self.planeThicknessLabel.hide()
-        if (
-            depiction == VolumeDepiction.PLANE
-            and self.layer._slice_input.ndisplay == 3
-        ):
+        if depiction == VolumeDepiction.PLANE and ndisplay == 3:
             self.planeNormalButtons.show()
             self.planeNormalLabel.show()
             self.planeThicknessSlider.show()

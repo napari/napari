@@ -1534,12 +1534,12 @@ class Shapes(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+        ndisplay = self._slice_input.ndisplay
 
         # short circuit if no text present
         if self.text.values.shape == ():
             return self.text.compute_text_coords(
-                np.zeros((0, self._slice_input.ndisplay)),
-                self._slice_input.ndisplay,
+                np.zeros((0, ndisplay)), ndisplay
             )
 
         # get the coordinates of the vertices for the shapes in view
@@ -1553,9 +1553,7 @@ class Shapes(Layer):
             for position in in_view_shapes_coords
         ]
 
-        return self.text.compute_text_coords(
-            sliced_in_view_coords, self._slice_input.ndisplay
-        )
+        return self.text.compute_text_coords(sliced_in_view_coords, ndisplay)
 
     @property
     def _view_text_color(self) -> np.ndarray:
@@ -2250,12 +2248,11 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._slice_input.ndisplay == self._ndisplay_stored:
+        ndisplay = self._slice_input.ndisplay
+        if not ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(
-                self.ndim, self._slice_input.ndisplay
-            )
-            self._ndisplay_stored = copy(self._slice_input.ndisplay)
+            self._data_view.ndisplay = min(self.ndim, ndisplay)
+            self._ndisplay_stored = ndisplay
             self._clipboard = {}
 
         if not self._slice_input.order == self._display_order_stored:
