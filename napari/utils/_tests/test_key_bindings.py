@@ -13,54 +13,7 @@ from ..key_bindings import (
     _bind_user_key,
     _get_user_keymap,
     bind_key,
-    components_to_key_combo,
-    normalize_key_combo,
-    parse_key_combo,
 )
-
-
-def test_parse_key_combo():
-    assert parse_key_combo('X') == ('X', set())
-    assert parse_key_combo('Control-X') == ('X', {'Control'})
-    assert parse_key_combo('Control-Alt-Shift-Meta-X') == (
-        'X',
-        {'Control', 'Alt', 'Shift', 'Meta'},
-    )
-
-
-def test_components_to_key_combo():
-    assert components_to_key_combo('X', []) == 'X'
-    assert components_to_key_combo('X', ['Control']) == 'Control-X'
-
-    # test consuming
-    assert components_to_key_combo('X', []) == 'X'
-    assert components_to_key_combo('X', ['Shift']) == 'Shift-X'
-    assert components_to_key_combo('x', []) == 'X'
-
-    assert components_to_key_combo('@', ['Shift']) == '@'
-    assert (
-        components_to_key_combo('2', ['Control', 'Shift']) == 'Control-Shift-2'
-    )
-
-    # test ordering
-    assert (
-        components_to_key_combo('2', ['Control', 'Alt', 'Shift', 'Meta'])
-        == 'Control-Alt-Shift-Meta-2'
-    )
-    assert (
-        components_to_key_combo('2', ['Alt', 'Shift', 'Control', 'Meta'])
-        == 'Control-Alt-Shift-Meta-2'
-    )
-
-
-def test_normalize_key_combo():
-    assert normalize_key_combo('x') == 'X'
-    assert normalize_key_combo('Control-X') == 'Control-X'
-    assert normalize_key_combo('Meta-Alt-X') == 'Alt-Meta-X'
-    assert (
-        normalize_key_combo('Shift-Alt-Control-Meta-2')
-        == 'Control-Alt-Shift-Meta-2'
-    )
 
 
 def test_bind_key():
@@ -126,9 +79,9 @@ def test_keymap_provider():
     assert Bar.class_keymap is not Foo.class_keymap
 
     class Baz(KeymapProvider):
-        class_keymap = {'A', ...}
+        class_keymap = {'A': ...}
 
-    assert Baz.class_keymap == {'A', ...}
+    assert Baz.class_keymap == {'A': ...}
 
 
 def test_bind_keymap():
