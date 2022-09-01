@@ -137,7 +137,7 @@ class VispyBaseLayer(ABC):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        if self._array_like and self.layer._ndisplay == 2:
+        if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in

@@ -737,10 +737,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    @property
-    def _ndisplay(self) -> int:
-        return self._slice_input.ndisplay
-
     def _update_dims(self, event=None):
         """Update the dims model and clear the extent cache.
 
@@ -1380,7 +1376,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
-        """An axis aligned (self._ndisplay, 2) bounding box around the data"""
+        """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
     def click_plane_from_click_data(
@@ -1598,7 +1594,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
 
-        if self._ndisplay == 2 and self.multiscale:
+        if self._slice_input.ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
                 data_bbox_int,
                 shape_threshold,

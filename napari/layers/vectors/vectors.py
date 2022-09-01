@@ -578,7 +578,7 @@ class Vectors(Layer):
         face_color[:, -1] *= self._view_alphas
         face_color = np.repeat(face_color, 2, axis=0)
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color

@@ -50,7 +50,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
         if len(self.layer._indices_view) == 0:
-            data = np.zeros((1, self.layer._ndisplay))
+            data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = [0]
             edge_width = [0]
         else:
@@ -93,7 +93,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
         else:
-            data = np.zeros((1, self.layer._ndisplay))
+            data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
 
         self.node._subvisuals[1].set_data(
@@ -108,7 +108,7 @@ class VispyPointsLayer(VispyBaseLayer):
             self.layer._highlight_box is None
             or 0 in self.layer._highlight_box.shape
         ):
-            pos = np.zeros((1, self.layer._ndisplay))
+            pos = np.zeros((1, self.layer._slice_input.ndisplay))
             width = 0
         else:
             pos = self.layer._highlight_box

@@ -388,9 +388,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1,) * self._ndisplay + (3,))
+            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
         else:
-            return np.zeros((1,) * self._ndisplay)
+            return np.zeros((1,) * self._slice_input.ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -545,7 +545,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         return str(
             self._interpolation2d
-            if self._ndisplay == 2
+            if self._slice_input.ndisplay == 2
             else self._interpolation3d
         )
 
@@ -559,7 +559,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             category=DeprecationWarning,
             stacklevel=2,
         )
-        if self._ndisplay == 3:
+        if self._slice_input.ndisplay == 3:
             self.interpolation3d = interpolation
         else:
             self.interpolation2d = interpolation
@@ -736,8 +736,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._empty = False
 
         if self.multiscale:
-            if self._ndisplay == 3:
-                # If 3d redering just show lowest level of multiscale
+            if self._slice_input.ndisplay == 3:
+                # If 3d rendering just show lowest level of multiscale
                 warnings.warn(
                     trans._(
                         'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
@@ -766,7 +766,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if self._ndisplay == 2:
+            if self._slice_input.ndisplay == 2:
                 for d in self._slice_input.displayed:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
@@ -891,7 +891,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         image = self._slice.thumbnail.view
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom

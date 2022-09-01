@@ -90,11 +90,11 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_display_change(self, data=None):
         parent = self.node.parent
         self.node.parent = None
-
-        self.node = self._layer_node.get_node(self.layer._ndisplay)
+        ndisplay = self.layer._slice_input.ndisplay
+        self.node = self._layer_node.get_node(ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.float32)
+            data = np.zeros((1,) * ndisplay, dtype=np.float32)
 
         if self.layer._empty:
             self.node.visible = False
@@ -120,22 +120,21 @@ class VispyImageLayer(VispyBaseLayer):
         """Our self.layer._data_view has been updated, update our node."""
 
         data = fix_data_dtype(data)
+        ndisplay = self.layer._slice_input.ndisplay
 
-        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
+        if ndisplay == 3 and self.layer.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
-        if self.MAX_TEXTURE_SIZE_2D is not None and self.layer._ndisplay == 2:
+        if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_2D)
-        elif (
-            self.MAX_TEXTURE_SIZE_3D is not None and self.layer._ndisplay == 3
-        ):
+        elif self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
         # Check if ndisplay has changed current node type needs updating
-        if (
-            self.layer._ndisplay == 3 and not isinstance(node, VolumeNode)
-        ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
+        if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
+            ndisplay == 2 and not isinstance(node, ImageNode)
+        ):
             self._on_display_change(data)
         else:
             node.set_data(data)
@@ -152,7 +151,7 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_interpolation_change(self):
         self.node.interpolation = (
             self.layer.interpolation2d
-            if self.layer._ndisplay == 2
+            if self.layer._slice_input.ndisplay == 2
             else self.layer.interpolation3d
         )
 
@@ -234,7 +233,7 @@ class VispyImageLayer(VispyBaseLayer):
                         deferred=True,
                         shape=data.shape,
                         texture_size=MAX_TEXTURE_SIZE,
-                        ndisplay=self.layer._ndisplay,
+                        ndisplay=self.layer._slice_input.ndisplay,
                     )
                 )
             warnings.warn(
@@ -243,7 +242,7 @@ class VispyImageLayer(VispyBaseLayer):
                     deferred=True,
                     shape=data.shape,
                     texture_size=MAX_TEXTURE_SIZE,
-                    ndisplay=self.layer._ndisplay,
+                    ndisplay=self.layer._slice_input.ndisplay,
                 )
             )
             downsample = np.ceil(

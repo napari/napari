@@ -450,7 +450,7 @@ class Shapes(Layer):
         self._allow_thumbnail_update = True
 
         self._display_order_stored = []
-        self._ndisplay_stored = self._ndisplay
+        self._ndisplay_stored = self._slice_input.ndisplay
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -467,7 +467,7 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._data_view = ShapeList(ndisplay=self._ndisplay)
+        self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
             self._slice_input.not_displayed
         ]
@@ -643,7 +643,7 @@ class Shapes(Layer):
                 )
             )
 
-        self._data_view = ShapeList(ndisplay=self._ndisplay)
+        self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self.add(
             data,
             shape_type=shape_type,
@@ -1538,7 +1538,8 @@ class Shapes(Layer):
         # short circuit if no text present
         if self.text.values.shape == ():
             return self.text.compute_text_coords(
-                np.zeros((0, self._ndisplay)), self._ndisplay
+                np.zeros((0, self._slice_input.ndisplay)),
+                self._slice_input.ndisplay,
             )
 
         # get the coordinates of the vertices for the shapes in view
@@ -1553,7 +1554,7 @@ class Shapes(Layer):
         ]
 
         return self.text.compute_text_coords(
-            sliced_in_view_coords, self._ndisplay
+            sliced_in_view_coords, self._slice_input.ndisplay
         )
 
     @property
@@ -1618,7 +1619,7 @@ class Shapes(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._ndisplay == 3:
+            if self._slice_input.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -2192,7 +2193,7 @@ class Shapes(Layer):
             self._add_shapes_to_view(shape_inputs, self._data_view)
 
         self._display_order_stored = copy(self._slice_input.order)
-        self._ndisplay_stored = copy(self._ndisplay)
+        self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
 
     def _add_shapes_to_view(self, shape_inputs, data_view):
@@ -2208,7 +2209,7 @@ class Shapes(Layer):
                     edge_width=ew,
                     z_index=z,
                     dims_order=self._slice_input.order,
-                    ndisplay=self._ndisplay,
+                    ndisplay=self._slice_input.ndisplay,
                 ),
                 ec,
                 fc,
@@ -2249,10 +2250,12 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._ndisplay == self._ndisplay_stored:
+        if not self._slice_input.ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(self.ndim, self._ndisplay)
-            self._ndisplay_stored = copy(self._ndisplay)
+            self._data_view.ndisplay = min(
+                self.ndim, self._slice_input.ndisplay
+            )
+            self._ndisplay_stored = copy(self._slice_input.ndisplay)
             self._clipboard = {}
 
         if not self._slice_input.order == self._display_order_stored:
@@ -2635,7 +2638,7 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._ndisplay == 3:
+        if self._slice_input.ndisplay == 3:
             return (None, None)
 
         if self._is_moving:

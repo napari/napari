@@ -1341,7 +1341,7 @@ class Points(Layer):
             ]
         else:
             # if no points in this slice send dummy data
-            data = np.zeros((0, self._ndisplay))
+            data = np.zeros((0, self._slice_input.ndisplay))
 
         return data
 
@@ -1372,7 +1372,9 @@ class Points(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        return self.text.compute_text_coords(self._view_data, self._ndisplay)
+        return self.text.compute_text_coords(
+            self._view_data, self._slice_input.ndisplay
+        )
 
     @property
     def _view_text_color(self) -> np.ndarray:
@@ -1445,7 +1447,7 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-        if self.ndim < 3 and self._ndisplay == 3:
+        if self.ndim < 3 and self._slice_input.ndisplay == 3:
             # interaction currently does not work for 2D
             # layers being rendered in 3D.
             self.editable = False
@@ -1596,7 +1598,7 @@ class Points(Layer):
         return selection
 
     def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
         This bounding box for includes the full size of displayed points
         and enables calculation of intersections in `Layer._get_value_3d()`.

@@ -338,7 +338,7 @@ class Tracks(Layer):
         data = vertices[:, self._slice_input.displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
-        if self._ndisplay == 2:
+        if self._slice_input.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
         else:
