@@ -128,7 +128,7 @@ class _SliceInput:
         The elements in non-displayed dimensions will be real numbers.
         The elements in displayed dimensions will be ``slice(None)``.
         """
-        if self.is_non_orthogonal(world_to_data):
+        if not self.is_orthogonal(world_to_data):
             warnings.warn(
                 trans._(
                     'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
@@ -150,8 +150,8 @@ class _SliceInput:
 
         return tuple(indices)
 
-    def is_non_orthogonal(self, world_to_data: Affine) -> bool:
-        """Returns True if this slice represents a non-orthogonal slice through a layer's data, False otherwise."""
+    def is_orthogonal(self, world_to_data: Affine) -> bool:
+        """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""
         # Subspace spanned by non displayed dimensions
         non_displayed_subspace = np.zeros(self.ndim)
         for d in self.not_displayed:
@@ -168,7 +168,7 @@ class _SliceInput:
             mapped_nd_subspace[d] for d in self.displayed
         )
         # Check that displayed subspace is null
-        return any(abs(v) > 1e-8 for v in displayed_mapped_subspace)
+        return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
