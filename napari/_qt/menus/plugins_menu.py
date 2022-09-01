@@ -30,21 +30,6 @@ class PluginsMenu(NapariMenu):
         plugin_manager.events.unregistered.connect(
             self._remove_unregistered_widget
         )
-        self._build()
-
-    def _build(self, event=None):
-        self.clear()
-        action = self.addAction(trans._("Install/Uninstall Plugins..."))
-        action.triggered.connect(self._show_plugin_install_dialog)
-        action = self.addAction(trans._("Plugin Errors..."))
-        action.setStatusTip(
-            trans._(
-                'Review stack traces for plugin exceptions and notify developers'
-            )
-        )
-        action.triggered.connect(self._show_plugin_err_reporter)
-        self.addSeparator()
-
         # Add a menu item (QAction) for each available plugin widget
         self._add_registered_widget(call_all=True)
 

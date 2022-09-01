@@ -4,9 +4,21 @@ from typing import List
 
 from app_model.types import Action
 
-from ...._app_model.constants import CommandId, MenuGroup, MenuId
+from ...._app_model.constants import CommandId, MenuId
 from ....utils.translations import trans
+from ...dialogs.qt_plugin_dialog import QtPluginDialog
+from ...dialogs.qt_plugin_report import QtPluginErrReporter
 from ...qt_main_window import Window
+
+
+def _show_plugin_install_dialog(window: Window):
+    """Show dialog that allows users to sort the call order of plugins."""
+    QtPluginDialog(window._qt_window).exec_()
+
+
+def _show_plugin_err_reporter(window: Window):
+    """Show dialog that allows users to review and report plugin errors."""
+    QtPluginErrReporter(parent=window._qt_window).exec_()
 
 
 Q_PLUGINS_ACTIONS: List[Action] = [
@@ -16,11 +28,11 @@ Q_PLUGINS_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
-                'group': MenuGroup.NAVIGATION,
+                'group': '1_plugins',
                 'order': 1,
             }
         ],
-        callback=,
+        callback=_show_plugin_install_dialog,
     ),
     Action(
         id=CommandId.DLG_PLUGIN_ERR,
@@ -28,10 +40,13 @@ Q_PLUGINS_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,
-                'group': MenuGroup.NAVIGATION,
+                'group': '1_plugins',
                 'order': 2,
             }
         ],
-        callback=_show_layer_controls,
+        callback=_show_plugin_err_reporter,
+        status_tip=trans._(
+            'Review stack traces for plugin exceptions and notify developers'
+        ),
     ),
 ]
