@@ -75,18 +75,18 @@ def no_op(layer: Layer, event: Event) -> None:
 class _SliceInput:
     """Encapsulates the input needed for slicing a layer.
 
-    An instance of this should be associated with a layer and ``Viewer.dims``
-    and should be created just before slicing a layer.
+    An instance of this should be associated with a layer and some of the values
+    in ``Viewer.dims`` when slicing a layer.
     """
 
-    # The number of dimensions displayed in this slice.
+    # The number of dimensions displayed to be displayed in the slice.
     ndisplay: int
     # The point in layer world coordinates that defines the slicing plane.
     # Only the elements in the non-displayed dimensions have meaningful values.
     point: Tuple[float, ...]
-    # The layer dimensions in the order they are displayed.
+    # The layer dimension indices in the order they are displayed.
     # A permutation of the ``range(self.ndim)``.
-    # The last ``ndisplay`` dimensions are displayed in the canvas.
+    # The last ``self.ndisplay`` dimensions are displayed in the canvas.
     order: Tuple[int, ...]
 
     @property
@@ -96,29 +96,13 @@ class _SliceInput:
 
     @property
     def displayed(self) -> List[int]:
-        """The layer dimensions displayed in this slice."""
+        """The layer dimension indices displayed in this slice."""
         return list(self.order[-self.ndisplay :])
 
     @property
     def not_displayed(self) -> List[int]:
-        """The layer dimensions not displayed in this slice."""
+        """The layer dimension indices not displayed in this slice."""
         return list(self.order[: -self.ndisplay])
-
-    @property
-    def displayed_order(self) -> Tuple[int]:
-        """The order of the displayed dimensions.
-
-        This is a permutation of ``range(self.ndisplay)``.
-        It no longer indexes a layer's dimensions.
-        Instead it indexes the output of ``self.displayed``.
-        """
-        return reorder_after_dim_reduction(self.displayed)
-
-    @property
-    def displayed_sorted(self) -> List[int]:
-        """``self.displayed`` sorted in increasing order."""
-        displayed = self.displayed
-        return [displayed[i] for i in self.displayed_order]
 
     def with_ndim(self, ndim: int) -> _SliceInput:
         """Returns a new instance with the given number of layer dimensions."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, List, Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -392,16 +392,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             return np.zeros((1,) * self._slice_input.ndisplay)
 
-    def _get_order(self):
+    def _get_order(self) -> Tuple[int]:
         """Return the order of the displayed dimensions."""
-        dims_displayed_order = self._slice_input.displayed_order
+        displayed_order = tuple(np.argsort(self._slice_input.displayed))
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return dims_displayed_order + (max(dims_displayed_order) + 1,)
+            return displayed_order + (max(displayed_order) + 1,)
         else:
-            return dims_displayed_order
+            return displayed_order
 
     @property
     def _data_view(self):

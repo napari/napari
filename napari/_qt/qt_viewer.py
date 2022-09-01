@@ -1073,7 +1073,7 @@ class QtViewer(QSplitter):
         # The canvas corners in full world coordinates (i.e. across all layers).
         canvas_corners_world = self._canvas_corners_in_world
         for layer in self.viewer.layers:
-            displayed_axes = layer._slice_input.displayed_sorted
+            displayed_axes = sorted(layer._slice_input.displayed)
             nd = len(displayed_axes)
             # The following condition should mostly be True. One case when it can
             # be False is when a callback connected to self.viewer.dims.events.ndisplay
