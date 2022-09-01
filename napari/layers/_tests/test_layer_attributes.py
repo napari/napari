@@ -57,7 +57,7 @@ def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
 
 
 def _check_subpixel_values(layer, val_dict):
-    ndisplay = layer._ndisplay
+    ndisplay = layer._slice_input.ndisplay
     for center, expected_value in val_dict.items():
         # ensure all positions within the pixel extent report the same value
         # note: values are checked in data coordinates in this function

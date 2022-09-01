@@ -324,7 +324,7 @@ class QtImageControls(QtBaseImageControls):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
         ndisplay = self.layer._slice_input.ndisplay
-        if depiction == VolumeDepiction.VOLUME and ndisplay == 2:
+        if depiction == VolumeDepiction.VOLUME or ndisplay == 2:
             self.planeNormalButtons.hide()
             self.planeNormalLabel.hide()
             self.planeThicknessSlider.hide()
