@@ -1014,7 +1014,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.events._ndisplay()
 
         # Update the point values
-        # TODO: use refresh here instead because data is not changing here.
         self._update_dims()
         self._set_editable()
 
@@ -1357,7 +1356,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         offset = ndim_world - self.ndim
         order = np.array(world_dims)
-        # TODO: understand if this ever happens.
         if offset <= 0:
             return list(range(-offset)) + list(order - offset)
         else:
