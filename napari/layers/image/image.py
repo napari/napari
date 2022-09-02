@@ -21,7 +21,7 @@ from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
 from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.layer_utils import calc_data_range
+from ..utils.layer_utils import calc_data_range, dims_displayed_world_to_layer
 from ..utils.plane import SlicingPlane
 from ._image_constants import (
     ImageRendering,
@@ -394,15 +394,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
+        order = dims_displayed_world_to_layer(
+            dims_displayed_world=self._dims_displayed,
+            ndim_world=self.ndim,
+            ndim_layer=self._ndisplay,
+        )
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims_displayed_order + (
-                max(self._dims_displayed_order) + 1,
-            )
+            return order + (max(order) + 1,)
         else:
-            return self._dims_displayed_order
+            return order
 
     @property
     def _data_view(self):
