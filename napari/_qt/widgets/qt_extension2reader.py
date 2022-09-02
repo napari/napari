@@ -146,7 +146,7 @@ class Extension2ReaderTable(QWidget):
     def _display_no_preferences_found(self):
         self._table.setRowCount(1)
         item = QTableWidgetItem(trans._('No filename preferences found.'))
-        item.setFlags(Qt.NoItemFlags)
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
         self._table.setItem(self._fn_pattern_col, 0, item)
 
     def _add_reader_choice(self, i, plugin_name, display_name):
@@ -166,7 +166,7 @@ class Extension2ReaderTable(QWidget):
             )
             tooltip_text = f'Accepts: {reader_patterns_formatted}'
         self._new_reader_dropdown.setItemData(
-            i, tooltip_text, role=Qt.ToolTipRole
+            i, tooltip_text, role=Qt.ItemDataRole.ToolTipRole
         )
 
     def _filter_compatible_readers(self, new_pattern):
@@ -235,7 +235,7 @@ class Extension2ReaderTable(QWidget):
 
         self._table.insertRow(last_row)
         item = QTableWidgetItem(fn_pattern)
-        item.setFlags(Qt.NoItemFlags)
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
         self._table.setItem(last_row, self._fn_pattern_col, item)
 
         plugin_widg = QWidget()

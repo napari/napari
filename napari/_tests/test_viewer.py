@@ -100,7 +100,7 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
-    'Points': 8,
+    'Points': 9,
     'Labels': 11,
     'Shapes': 17,
 }
@@ -222,7 +222,7 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
-    viewer.dims._transpose()
+    viewer.dims.transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
@@ -308,7 +308,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     viewer.layers.selection.active = layer
 
     assert layer._value is None
-    viewer._mouse_over_canvas = True
+    viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
     assert layer._value == 1
 
@@ -357,3 +357,22 @@ def test_current_viewer(make_napari_viewer):
 
     assert current_viewer() is viewer1
     assert current_viewer() is not viewer2
+
+
+def test_reset_empty(make_napari_viewer):
+    """
+    Test that resetting an empty viewer doesn't crash
+    https://github.com/napari/napari/issues/4867
+    """
+    viewer = make_napari_viewer()
+    viewer.reset()
+
+
+def test_reset_non_empty(make_napari_viewer):
+    """
+    Test that resetting a non-empty viewer doesn't crash
+    https://github.com/napari/napari/issues/4867
+    """
+    viewer = make_napari_viewer()
+    viewer.add_points([(0, 1), (2, 3)])
+    viewer.reset()

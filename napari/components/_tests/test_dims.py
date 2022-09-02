@@ -294,3 +294,10 @@ def test_changing_focus():
     assert dims.last_used == 0
     dims._focus_down()
     assert dims.last_used == 2
+
+
+def test_floating_point_edge_case():
+    # see #4889
+    dims = Dims(ndim=2)
+    dims.set_range(0, (0.0, 17.665, 3.533))
+    assert dims.nsteps[0] == 5

@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -67,9 +67,23 @@ class QtReaderDialog(QDialog):
 
         # checkbox to remember the choice (doesn't pop up for folders with no extension)
         if self._extension:
-            self.persist_checkbox = QCheckBox(
-                f'Remember this choice for files with a {self._extension} extension'
+
+            existing_pref = get_settings().plugins.extension2reader.get(
+                '*' + self._extension
             )
+            if existing_pref:
+                warn_message = trans._(
+                    'Override existing preference for files with a {extension} extension: {pref}',
+                    extension=self._extension,
+                    pref=existing_pref,
+                )
+            else:
+                warn_message = trans._(
+                    'Remember this choice for files with a {extension} extension',
+                    extension=self._extension,
+                )
+
+            self.persist_checkbox = QCheckBox(warn_message)
             self.persist_checkbox.toggle()
             layout.addWidget(self.persist_checkbox)
 
@@ -114,7 +128,7 @@ class QtReaderDialog(QDialog):
 def handle_gui_reading(
     paths: List[str],
     qt_viewer,
-    stack: bool,
+    stack: Union[bool, List[List[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
     **kwargs,
@@ -134,8 +148,9 @@ def handle_gui_reading(
         list of paths to open, as strings
     qt_viewer : QtViewer
         QtViewer to associate dialog with
-    stack : bool
-        True if list of paths should be stacked, otherwise False
+    stack : bool or list[list[str]]
+        True if list of paths should be stacked, otherwise False.
+        Can also be a list containing lists of files to stack
     plugin_name : str | None
         name of plugin already tried, if any
     error : ReaderPluginError | None
@@ -144,7 +159,6 @@ def handle_gui_reading(
     _path = paths[0]
     readers = prepare_remaining_readers(paths, plugin_name, error)
     error_message = str(error) if error else ''
-
     readerDialog = QtReaderDialog(
         parent=qt_viewer,
         pth=_path,

@@ -61,7 +61,7 @@ napari.run()  # start the "event loop" and show the viewer
 
 ## features
 
-Check out the scripts in our `examples` folder to see some of the functionality we're developing!
+Check out the scripts in our [`examples` folder](examples) to see some of the functionality we're developing!
 
 **napari** supports six main different layer types, `Image`, `Labels`, `Points`, `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type, visualization, and interactivity. You can add multiple layers of different types into the viewer and then start working with them, adjusting their properties.
 
@@ -108,6 +108,6 @@ We're a community partner on the [image.sc forum](https://forum.image.sc/tags/na
 Bug reports should be made on our [github issues](https://github.com/napari/napari/issues/new?template=bug_report.md) using
 the bug report template. If you think something isn't working, don't hesitate to reach out - it is probably us and not you!
 
-## insitutional and funding partners
+## institutional and funding partners
 
 ![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)

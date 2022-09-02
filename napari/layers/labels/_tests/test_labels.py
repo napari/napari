@@ -12,6 +12,7 @@ import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
+from vispy.color import Colormap as VispyColormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.components import ViewerModel
@@ -288,31 +289,31 @@ def test_properties():
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith(f'Class {current_label - 1}')
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
     layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
     layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
 
 def test_default_properties_assignment():
@@ -349,19 +350,19 @@ def test_multiscale_properties():
 
     current_label = layer.get_value((0, 0))[1]
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith(f'Class {current_label - 1}')
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
 
 def test_colormap():
@@ -392,10 +393,63 @@ def test_custom_color_dict():
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
 
+    # Test to see if our label mapped control points map to those in the colormap
+    # with an extra half step.
+    local_controls = np.array(
+        sorted(np.unique(list(layer._label_color_index.values()) + [1.0]))
+    )
+    colormap_controls = np.array(layer._colormap.controls)
+    assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
+        0.5 / (len(colormap_controls) - 1)
+    )
+
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
+def test_large_custom_color_dict():
+    """Confirm that the napari & vispy colormaps behave the same."""
+
+    label_count = 897
+    colors = {
+        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
+        for color in range(label_count)
+    }
+    data, _ = np.meshgrid(range(label_count), range(5))
+    layer = Labels(data, color=colors)
+
+    # Get color list using layer interface & napari.utils.colormap.ColorMap
+    label_color = layer.get_color(list(range(label_count)))
+
+    # Get the color by converting to control points with the layer and passing
+    # that to a vispy.color.colormap.Colormap
+    vispy_colormap = VispyColormap(
+        colors=layer.colormap.colors,
+        controls=layer.colormap.controls,
+        interpolation='zero',
+    )
+    label_color_controls = [
+        layer._label_color_index[x] for x in range(label_count)
+    ]
+    vispy_colors = vispy_colormap.map(
+        np.array([x for x in label_color_controls])
+    )
+
+    assert (label_color == vispy_colors).all()
+
+
+def test_warning_too_many_colors():
+    label_count = 1500
+    colors = {
+        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
+        for color in range(label_count)
+    }
+    data, _ = np.meshgrid(range(label_count), range(5))
+    with pytest.warns(UserWarning):
+        # Expect a warning for 1500 colors > 1024 in LUT
+        Labels(data, color=colors)
 
 
 def test_add_colors():
@@ -801,7 +855,7 @@ def test_message():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     msg = layer.get_status((0, 0))
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -1120,7 +1174,7 @@ def test_get_value_ray_3d_rolled():
 
 def test_get_value_ray_3d_transposed():
     """Test using _get_value_ray to interrogate labels in 3D
-    with the dimensions trasposed.
+    with the dimensions transposed.
     """
     # make a mock mouse event
     mouse_event = MouseEvent(
@@ -1395,9 +1449,17 @@ def test_get_status_with_custom_index():
         {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
     )
     layer.properties = df
-    assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
-    assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
-    assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
+    assert (
+        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+    )
+    assert (
+        layer.get_status((3, 3))['coordinates']
+        == ' [3 3]: 1; text1: 1, text2: 7'
+    )
+    assert (
+        layer.get_status((6, 6))['coordinates']
+        == ' [6 6]: 2; text1: 3, text2: -2'
+    )
 
 
 def test_labels_features_event():

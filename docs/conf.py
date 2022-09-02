@@ -71,13 +71,26 @@ external_toc_exclude_missing = False
 # a list of builtin themes.
 #
 html_theme = 'napari'
+
+# Define the json_url for our version switcher.
+json_url = "https://napari.org/version_switcher.json"
+
+if version == "dev":
+    version_match = "latest"
+else:
+    version_match = release
+
 html_theme_options = {
     "external_links": [
         {"name": "napari hub", "url": "https://napari-hub.org"}
     ],
     "github_url": "https://github.com/napari/napari",
     "navbar_start": ["navbar-project"],
-    "navbar_end": ["navbar-icon-links"],
+    "navbar_end": ["version-switcher", "navbar-icon-links"],
+    "switcher": {
+        "json_url": "https://napari.org/version_switcher.json",
+        "version_match": version_match,
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -105,15 +118,14 @@ intersphinx_mapping = {
     ],
 }
 
-jupyter_cache = ''
-jupyter_execute_notebooks = 'auto'
-
 myst_enable_extensions = [
     'colon_fence',
     'dollarmath',
     'substitution',
     'tasklist',
 ]
+
+myst_heading_anchors = 3
 
 nb_output_stderr = 'show'
 
@@ -133,6 +145,7 @@ exclude_patterns = [
     '.DS_Store',
     '.jupyter_cache',
     'jupyter_execute',
+    'plugins/_*.md',
 ]
 
 napoleon_custom_sections = [('Events', 'params_style')]
@@ -161,6 +174,7 @@ sphinx_gallery_conf = {
     'only_warn_on_example_error': True,
     'image_scrapers': (qtgallery.qtscraper,),
     'reset_modules': (reset_napari_theme,),
+    'reference_url': {'napari': None},
 }
 
 

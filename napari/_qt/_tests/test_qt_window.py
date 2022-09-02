@@ -55,15 +55,14 @@ def test_set_geometry(make_napari_viewer):
     assert viewer.window.geometry() == values
 
 
-@patch.object(Window, "_theme_icon_changed")
+@patch.object(Window, "_update_theme_no_event")
 @patch.object(Window, "_remove_theme")
 @patch.object(Window, "_add_theme")
 def test_update_theme(
     mock_add_theme,
     mock_remove_theme,
-    mock_icon_changed,
+    mock_update_theme_no_event,
     make_napari_viewer,
-    qapp,
 ):
     viewer = make_napari_viewer()
 
@@ -79,11 +78,11 @@ def test_update_theme(
     # triggered when theme was removed
     mock_remove_theme.assert_called()
 
-    mock_icon_changed.assert_not_called()
+    mock_update_theme_no_event.assert_not_called()
     viewer.theme = "light"
     theme = _themes["light"]
     theme.icon = "#FF0000"
-    mock_icon_changed.assert_called()
+    mock_update_theme_no_event.assert_called()
 
 
 def test_lazy_console(make_napari_viewer):

@@ -1,13 +1,21 @@
-from typing import Any, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
 from pydantic import Field, parse_obj_as, validator
-from typing_extensions import Protocol, runtime_checkable
+
+from napari.utils.color import ColorArray, ColorValue
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
-from ...utils.colormaps.standardize_color import transform_color
 from ...utils.translations import trans
 from .color_transformations import ColorType
 from .style_encoding import (
@@ -17,37 +25,8 @@ from .style_encoding import (
     _ManualStyleEncoding,
 )
 
-
-class ColorValue(np.ndarray):
-    """A 4x1 array that represents one RGBA color value."""
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
-
-    @classmethod
-    def validate_type(cls, val):
-        return transform_color(val)[0]
-
-
-class ColorArray(np.ndarray):
-    """An Nx4 array where each row of N represents one RGBA color value."""
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
-
-    @classmethod
-    def validate_type(cls, val):
-        return (
-            np.empty((0, 4), np.float32)
-            if len(val) == 0
-            else transform_color(val)
-        )
-
-
 """The default color to use, which may also be used a safe fallback color."""
-DEFAULT_COLOR = ColorValue.validate_type('cyan')
+DEFAULT_COLOR = ColorValue.validate('cyan')
 
 
 @runtime_checkable
@@ -99,7 +78,7 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
                 value,
             )
         try:
-            color_array = ColorArray.validate_type(value)
+            color_array = ColorArray.validate(value)
         except (ValueError, AttributeError, KeyError):
             raise TypeError(
                 trans._(
@@ -161,7 +140,7 @@ class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     def __call__(self, features: Any) -> ColorArray:
         # A column-like may be a series or have an object dtype (e.g. color names),
         # neither of which transform_color handles, so convert to a list.
-        return ColorArray.validate_type(list(features[self.feature]))
+        return ColorArray.validate(list(features[self.feature]))
 
 
 class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):

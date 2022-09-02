@@ -234,10 +234,10 @@ def test_interpolation():
     with pytest.deprecated_call():
         assert layer.interpolation == 'bicubic'
 
-    layer.interpolation2d = 'bilinear'
+    layer.interpolation2d = 'linear'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bilinear'
-    assert layer.interpolation2d == 'bilinear'
+        assert layer.interpolation == 'linear'
+    assert layer.interpolation2d == 'linear'
 
 
 def test_colormaps():
@@ -373,7 +373,7 @@ def test_message():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -432,3 +432,57 @@ def test_multiscale_data_protocol():
     assert layer.data.dtype == float
     assert layer.data.shape == shapes[0]
     assert isinstance(layer.data[0], np.ndarray)
+
+
+@pytest.mark.parametrize(
+    ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
+    (
+        ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
+        # Multiscale level selection uses > rather than >= so use -1 and 21
+        # instead of 0 and 20 to ensure that the FOV is big enough.
+        ([[-1, -1], [21, 21]], 1, [[0, 0], [10, 10]]),
+        ([[-11, -11], [31, 31]], 2, [[0, 0], [5, 5]]),
+    ),
+)
+def test_update_draw_variable_fov_fixed_canvas_size(
+    corner_pixels_world, exp_level, exp_corner_pixels_data
+):
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    canvas_size_pixels = (10, 10)
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array(corner_pixels_world),
+        shape_threshold=canvas_size_pixels,
+    )
+
+    assert layer.data_level == exp_level
+    np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
+
+
+@pytest.mark.parametrize(
+    ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
+    (
+        ([16, 16], 0, [[0, 0], [20, 20]]),
+        ([8, 8], 1, [[0, 0], [10, 10]]),
+        ([4, 4], 2, [[0, 0], [5, 5]]),
+    ),
+)
+def test_update_draw_variable_canvas_size_fixed_fov(
+    canvas_size_pixels, exp_level, exp_corner_pixels_data
+):
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    corner_pixels_world = np.array([[0, 0], [20, 20]])
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=corner_pixels_world,
+        shape_threshold=canvas_size_pixels,
+    )
+
+    assert layer.data_level == exp_level
+    np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
