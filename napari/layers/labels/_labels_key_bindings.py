@@ -57,12 +57,19 @@ def activate_label_erase_mode(layer: Labels):
     layer.mode = Mode.ERASE
 
 
+@register_label_mode_action(trans._("Activate fill contour mode"))
+def activate_fill_contour_mode(layer: Labels):
+    """activate fill contour mode"""
+    layer.mode = Mode.FILL_CONTOUR
+
+
 labels_fun_to_mode = [
     (activate_label_erase_mode, Mode.ERASE),
     (activate_paint_mode, Mode.PAINT),
     (activate_fill_mode, Mode.FILL),
     (activate_label_picker_mode, Mode.PICK),
     (activate_label_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_fill_contour_mode, Mode.FILL_CONTOUR),
 ]
 
 

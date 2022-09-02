@@ -28,7 +28,7 @@ from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
-from ._labels_mouse_bindings import draw, pick
+from ._labels_mouse_bindings import draw, pick, toggle, toggled_draw
 from ._labels_utils import (
     indices_in_shape,
     interpolate_coordinates,
@@ -301,6 +301,10 @@ class Labels(_ImageBase):
         self._status = self.mode
         self._preserve_labels = False
 
+        # setup states for 'fill_contour' mode
+        self.toggle_draw = False
+        self._previous_data = None
+        self._drawcoords = []
         self._reset_history()
 
         # Trigger generation of view slice and thumbnail
@@ -690,6 +694,7 @@ class Labels(_ImageBase):
         Mode.PAINT: draw,
         Mode.FILL: draw,
         Mode.ERASE: draw,
+        Mode.FILL_CONTOUR: toggle,
     }
 
     _move_modes = {
@@ -699,7 +704,9 @@ class Labels(_ImageBase):
         Mode.PAINT: no_op,
         Mode.FILL: no_op,
         Mode.ERASE: no_op,
+        Mode.FILL_CONTOUR: toggled_draw,
     }
+
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
@@ -707,6 +714,7 @@ class Labels(_ImageBase):
         Mode.PAINT: 'circle',
         Mode.FILL: 'cross',
         Mode.ERASE: 'circle',
+        Mode.FILL_CONTOUR: 'circle',
     }
 
     @mode.setter
@@ -932,8 +940,7 @@ class Labels(_ImageBase):
         ):
             image = self._color_lookup_func(raw_modified)
         elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
+            self.show_selected_label and self._color_mode == LabelColorMode.AUTO
         ):
             image = self._color_lookup_func(raw_modified, self._selected_label)
         elif (
@@ -1059,6 +1066,9 @@ class Labels(_ImageBase):
         self._staged_history = []
         self._block_history = False
 
+    def _reset_toggle_draw(self):
+        self._drawcoords = []
+
     @contextmanager
     def block_history(self):
         """Context manager to group history-editing operations together.
@@ -1150,9 +1160,7 @@ class Labels(_ImageBase):
         self.refresh()
 
     def undo(self):
-        self._load_history(
-            self._undo_history, self._redo_history, undoing=True
-        )
+        self._load_history(self._undo_history, self._redo_history, undoing=True)
 
     def redo(self):
         self._load_history(
@@ -1248,12 +1256,9 @@ class Labels(_ImageBase):
             last_cursor_coord, coordinates, self.brush_size
         )
         for c in interp_coord:
-            if (
-                ndisplay == 3
-                and self.data[tuple(np.round(c).astype(int))] == 0
-            ):
+            if ndisplay == 3 and self.data[tuple(np.round(c).astype(int))] == 0:
                 continue
-            if self._mode in [Mode.PAINT, Mode.ERASE]:
+            if self._mode in [Mode.PAINT, Mode.ERASE, Mode.FILL_CONTOUR]:
                 self.paint(c, new_label, refresh=False)
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)

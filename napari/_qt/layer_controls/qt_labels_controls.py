@@ -68,6 +68,8 @@ class QtLabelsControls(QtLayerControls):
         Button to select PICKER mode on Labels layer.
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
+    fillcontour_button: qtpYy.QtWidgets.QtModeRadioButton
+        Button to select FILL_CONTOUR mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
@@ -87,9 +89,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
+        self.layer.events.selected_label.connect(self._on_selected_label_change)
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
         self.layer.events.n_edit_dimensions.connect(
@@ -153,9 +153,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_preserve_labels_change()
 
         selectedColorCheckbox = QCheckBox()
-        selectedColorCheckbox.setToolTip(
-            trans._("Display only selected label")
-        )
+        selectedColorCheckbox.setToolTip(trans._("Display only selected label"))
         selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
         self.selectedColorCheckbox = selectedColorCheckbox
 
@@ -165,6 +163,16 @@ class QtLabelsControls(QtLayerControls):
             'shuffle',
             slot=self.changeColor,
             tooltip=trans._('shuffle colors'),
+        )
+
+        self.fillcontour_button = QtModeRadioButton(
+            layer,
+            'fill_contour',
+            Mode.FILL_CONTOUR,
+            checked=False,
+        )
+        action_manager.bind_button(
+            'napari:activate_fill_contour_mode', self.fillcontour_button
         )
 
         self.panzoom_button = QtModeRadioButton(
@@ -309,6 +317,8 @@ class QtLabelsControls(QtLayerControls):
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
+        elif mode == Mode.FILL_CONTOUR:
+            self.fillcontour_button.setChecked(True)
         elif mode != Mode.TRANSFORM:
             raise ValueError(trans._("Mode not recognized"))
 
@@ -511,9 +521,7 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
+        self.layer.events.selected_label.connect(self._on_selected_label_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
 
