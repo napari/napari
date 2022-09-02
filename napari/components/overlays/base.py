@@ -7,9 +7,6 @@ class Overlay(EventedModel):
     opacity: float = 1
     order: int = 1e6
 
-    def __hash__(self):
-        return id(self)
-
 
 class CanvasOverlay(Overlay):
     position: CanvasPosition = CanvasPosition.BOTTOM_RIGHT
