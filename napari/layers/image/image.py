@@ -392,7 +392,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             return np.zeros((1,) * self._ndisplay)
 
-    def _get_order(self):
+    def _get_order(self) -> List[int]:
         """Return the order of the displayed dimensions."""
         # The return value is used to index the sliced data array.
         # Slicing does not prepend dimensions to the sliced data array,
@@ -412,7 +412,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return order + (max(order) + 1,)
+            return order + [max(order) + 1]
         else:
             return order
 
