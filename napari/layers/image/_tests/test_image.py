@@ -839,3 +839,10 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
+
+
+def test_3d_slice_of_3d_image_with_non_trivial_order():
+    """See https://github.com/napari/napari/issues/4926"""
+    image = Image(np.zeros((4, 4, 2)))
+    image._slice_dims(ndisplay=3, order=(2, 0, 1))
+    assert image._data_view.shape == (2, 4, 4)
