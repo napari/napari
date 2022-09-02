@@ -392,7 +392,6 @@ class QtViewer(QSplitter):
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
-        # will become Overlay models
         self.axes = VispyAxesOverlay(
             overlay=self.viewer.axes,
             viewer=self.viewer,
