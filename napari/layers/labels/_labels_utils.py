@@ -229,3 +229,16 @@ def count_unique_coordinates(coords):
     coordsarr = np.round(np.array(coords)).astype(int)
     uniquecoords = np.unique(coordsarr, axis=0)
     return len(uniquecoords)
+
+
+def find_next_label(layer):
+    uniquelabels = np.delete(np.unique(layer.data), 0)
+    sequentialset = np.arange(1, uniquelabels.max() + 1)
+    # find next sequence
+    missing_sequence = np.setdiff1d(sequentialset, uniquelabels)
+    # if there are not missing sequence
+    if len(missing_sequence) > 0:
+        return missing_sequence.min()
+    else:
+        # otherwise, increment label by 1
+        return uniquelabels.max() + 1

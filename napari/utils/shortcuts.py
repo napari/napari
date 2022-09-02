@@ -22,6 +22,7 @@ default_shortcuts = {
     'napari:new_label': ['M'],
     'napari:decrease_label_id': ['-'],
     'napari:increase_label_id': ['='],
+    'napari:delete_current_label': ['Backspace', 'Delete'],
     'napari:activate_points_add_mode': ['2'],
     'napari:activate_points_select_mode': ['3'],
     'napari:activate_points_pan_zoom_mode': ['4'],

@@ -4,6 +4,7 @@ from ._labels_utils import (
     measure_coord_distance,
     get_valid_indices,
     count_unique_coordinates,
+    find_next_label,
 )
 
 
@@ -101,3 +102,6 @@ def toggled_draw(layer, event):
             # erase drawn contour to remove invalid regions
             layer.data = layer._previous_data
             layer.data_setitem(valid_indices, new_label)
+            # and automatically increment/find the next label
+            nextlabel = find_next_label(layer)
+            layer.selected_label = nextlabel
