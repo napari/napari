@@ -394,11 +394,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
-        order = dims_displayed_world_to_layer(
-            dims_displayed_world=self._dims_displayed,
-            ndim_world=self.ndim,
-            ndim_layer=self._ndisplay,
-        )
+        # The return value is used to index the sliced data array.
+        # Slicing does not prepend dimensions to the sliced data array,
+        # (i.e. a 3D slice of 2D layer gives a 2D array), so we need
+        # to use the layer's displayed dimensions as an index rather
+        # than prepending a 0.
+        if self.ndim <= self._ndisplay:
+            order = self._dims_displayed
+        else:
+            order = dims_displayed_world_to_layer(
+                dims_displayed_world=self._dims_displayed,
+                ndim_world=self.ndim,
+                ndim_layer=self._ndisplay,
+            )
+
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
