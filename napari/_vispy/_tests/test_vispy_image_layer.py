@@ -32,10 +32,10 @@ def test_3d_slice_of_2d_image_with_order(order):
     image = Image(np.zeros((4, 2)), scale=(1, 2))
     vispy_image = VispyImageLayer(image)
 
-    image._slice_dims(point=(0, 0, 0), ndisplay=2, order=order)
+    image._slice_dims(point=(0, 0, 0), ndisplay=3, order=order)
 
     scene_size = _node_scene_size(vispy_image.node)
-    np.testing.assert_array_equal((4, 4, 0, 1), scene_size)
+    np.testing.assert_array_equal((4, 4, 1, 1), scene_size)
 
 
 @pytest.mark.parametrize('order', permutations((0, 1, 2)))
