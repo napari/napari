@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-from napari.components.dims import Dims
-from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
+from ...components.dims import Dims
+from ...layers.base.base import _LayerSliceRequest, _LayerSliceResponse
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
@@ -1706,7 +1706,7 @@ class Points(Layer):
     def _is_async(self) -> bool:
         return True
 
-    def _make_slice_request(self, dims: Dims) -> _PointsSliceRequest:
+    def _make_slice_request(self, dims: "Dims") -> _PointsSliceRequest:
         LOGGER.debug('Points._make_slice_request: %s', dims)
         base_request = super()._make_slice_request(dims)
         return _PointsSliceRequest(

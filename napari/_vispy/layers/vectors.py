@@ -1,7 +1,12 @@
+import logging
+
 import numpy as np
 
 from ..visuals.vectors import VectorsVisual
 from .base import VispyBaseLayer
+from ...layers.base.base import _LayerSliceResponse
+
+LOGGER = logging.getLogger("napari._vispy.layers.vectors")
 
 
 class VispyVectorsLayer(VispyBaseLayer):
@@ -14,31 +19,28 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
-        if (
-            len(self.layer._view_vertices) == 0
-            or len(self.layer._view_faces) == 0
-        ):
-            vertices = np.zeros((3, self.layer._ndisplay))
-            faces = np.array([[0, 1, 2]])
-            face_color = np.array([[0, 0, 0, 0]])
-        else:
-            vertices = self.layer._view_vertices[:, ::-1]
-            faces = self.layer._view_faces
-            face_color = self.layer._view_face_color
-
-        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
-            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
+    def _set_slice(self, response: _LayerSliceResponse) -> None:
+        """This method replaces the old on_data_change"""
+        LOGGER.debug('VispyVectorsLayer._set_slice : %s', response.request)
 
         # self.node.set_data(
         #     vertices=vertices, faces=faces, color=self.layer.current_edge_color
         # )
         self.node.set_data(
-            vertices=vertices,
-            faces=faces,
-            face_colors=face_color,
+            vertices=response.vertices,
+            faces=response.faces,
+            face_colors=response.face_color,
         )
 
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def _on_data_change(self):
+        """this is replaced by set_slice
+        The only thing calling this now is line 17 above:
+        `self.layer.events.edge_color.connect(self._on_data_change)`
+        This is here as a placeholder for more delicate implementation
+        """
+
+        self.layer.refresh()  # TODO temporary sledgehammer, we may not always want to do a full refresh

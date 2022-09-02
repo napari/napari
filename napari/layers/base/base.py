@@ -110,7 +110,6 @@ def no_op(layer: Layer, event: Event) -> None:
     """
     return None
 
-
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
@@ -499,7 +498,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
 
         self._opacity = opacity
-        self._update_thumbnail()
+        self._update_thumbnail()  # TODO: we need some "current slice state", this is where SliceInput/Output comes in
         self.events.opacity()
 
     @property
@@ -1699,7 +1698,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
-        LOGGER.debug('_update_draw')
+        LOGGER.debug(
+            '_update_draw: %s, %s, %s',
+            scale_factor,
+            list(corner_pixels_displayed),
+            shape_threshold,
+        )
         self.scale_factor = scale_factor
 
         displayed_axes = self._displayed_axes

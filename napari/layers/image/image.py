@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any, List, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from napari.components.dims import Dims
-from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
-from napari.utils.transforms.transforms import Affine
+from ...components.dims import Dims
+from ...layers.base.base import _LayerSliceRequest, _LayerSliceResponse
+from ...utils.transforms.transforms import Affine
 
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
@@ -742,7 +742,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _is_async(self) -> bool:
         return True
 
-    def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
+    def _make_slice_request(self, dims: "Dims") -> _ImageSliceRequest:
         LOGGER.debug('Image._make_slice_request: %s', dims)
         base_request = super()._make_slice_request(dims)
         return _ImageSliceRequest(
