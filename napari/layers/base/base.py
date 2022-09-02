@@ -373,9 +373,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return mode, False
         if mode.value not in Modeclass.keys():
             raise ValueError(
-                trans._(
-                    "Mode not recognized: {mode}", deferred=True, mode=mode
-                )
+                trans._("Mode not recognized: {mode}", deferred=True, mode=mode)
             )
         old_mode = self._mode
         self._mode = mode
@@ -395,7 +393,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == Modeclass.PAN_ZOOM
+        self.interactive = (mode == Modeclass.PAN_ZOOM) or (
+            mode == Modeclass.FILL_CONTOUR
+        )
         return mode, True
 
     @classmethod
