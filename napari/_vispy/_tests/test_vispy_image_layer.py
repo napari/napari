@@ -1,3 +1,4 @@
+from itertools import permutations
 from typing import Tuple, Union
 
 import numpy as np
@@ -21,7 +22,7 @@ def _node_scene_size(
     return transform.map(data.shape[::-1])
 
 
-@pytest.mark.parametrize('order', ((0, 1, 2), (2, 1, 0), (0, 2, 1)))
+@pytest.mark.parametrize('order', permutations((0, 1, 2)))
 def test_2d_slice_of_3d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -37,7 +38,7 @@ def test_2d_slice_of_3d_image_with_order(order):
     np.testing.assert_array_equal((4, 4, 0, 1), scene_size)
 
 
-@pytest.mark.parametrize('order', ((0, 1, 2), (2, 1, 0), (0, 2, 1)))
+@pytest.mark.parametrize('order', permutations((0, 1, 2)))
 def test_3d_slice_of_3d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
