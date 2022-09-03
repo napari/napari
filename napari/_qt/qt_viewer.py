@@ -414,7 +414,9 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_move.connect(self.on_mouse_move)
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
-        self.canvas.events.key_press.connect(self._key_map_handler.on_key_press)
+        self.canvas.events.key_press.connect(
+            self._key_map_handler.on_key_press
+        )
         self.canvas.events.key_release.connect(
             self._key_map_handler.on_key_release
         )
@@ -453,7 +455,9 @@ class QtViewer(QSplitter):
             parent=self.view,
             order=1e6 + 2,
         )
-        self.canvas.events.resize.connect(self.text_overlay._on_position_change)
+        self.canvas.events.resize.connect(
+            self.text_overlay._on_position_change
+        )
         self.interaction_box_visual = VispyInteractionBox(
             self.viewer, parent=self.view.scene, order=1e6 + 3
         )

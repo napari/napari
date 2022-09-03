@@ -940,7 +940,8 @@ class Labels(_ImageBase):
         ):
             image = self._color_lookup_func(raw_modified)
         elif (
-            self.show_selected_label and self._color_mode == LabelColorMode.AUTO
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
         ):
             image = self._color_lookup_func(raw_modified, self._selected_label)
         elif (
@@ -1160,7 +1161,9 @@ class Labels(_ImageBase):
         self.refresh()
 
     def undo(self):
-        self._load_history(self._undo_history, self._redo_history, undoing=True)
+        self._load_history(
+            self._undo_history, self._redo_history, undoing=True
+        )
 
     def redo(self):
         self._load_history(
@@ -1256,7 +1259,10 @@ class Labels(_ImageBase):
             last_cursor_coord, coordinates, self.brush_size
         )
         for c in interp_coord:
-            if ndisplay == 3 and self.data[tuple(np.round(c).astype(int))] == 0:
+            if (
+                ndisplay == 3
+                and self.data[tuple(np.round(c).astype(int))] == 0
+            ):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE, Mode.FILL_CONTOUR]:
                 self.paint(c, new_label, refresh=False)

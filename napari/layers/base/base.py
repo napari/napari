@@ -373,7 +373,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return mode, False
         if mode.value not in Modeclass.keys():
             raise ValueError(
-                trans._("Mode not recognized: {mode}", deferred=True, mode=mode)
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
             )
         old_mode = self._mode
         self._mode = mode

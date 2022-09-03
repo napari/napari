@@ -1,10 +1,10 @@
 from ._labels_constants import Mode
 from ._labels_utils import (
-    mouse_event_to_labels_coordinate,
-    measure_coord_distance,
-    get_valid_indices,
     count_unique_coordinates,
     find_next_label,
+    get_valid_indices,
+    measure_coord_distance,
+    mouse_event_to_labels_coordinate,
 )
 
 

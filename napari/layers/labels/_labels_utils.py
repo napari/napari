@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 import numpy as np
 from scipy.ndimage import binary_fill_holes
 

@@ -89,7 +89,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.selected_label.connect(self._on_selected_label_change)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
         self.layer.events.n_edit_dimensions.connect(
@@ -153,7 +155,9 @@ class QtLabelsControls(QtLayerControls):
         self._on_preserve_labels_change()
 
         selectedColorCheckbox = QCheckBox()
-        selectedColorCheckbox.setToolTip(trans._("Display only selected label"))
+        selectedColorCheckbox.setToolTip(
+            trans._("Display only selected label")
+        )
         selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
         self.selectedColorCheckbox = selectedColorCheckbox
 
@@ -523,7 +527,9 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.selected_label.connect(self._on_selected_label_change)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
 
