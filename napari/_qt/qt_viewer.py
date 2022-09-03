@@ -248,6 +248,8 @@ class QtViewer(QSplitter):
             self._on_active_change
         )
         self.viewer.camera.events.interactive.connect(self._on_interactive)
+        # change cursor size upon zoom
+        self.viewer.camera.events.zoom.connect(self._on_cursor)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
@@ -412,9 +414,7 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_move.connect(self.on_mouse_move)
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
-        self.canvas.events.key_press.connect(
-            self._key_map_handler.on_key_press
-        )
+        self.canvas.events.key_press.connect(self._key_map_handler.on_key_press)
         self.canvas.events.key_release.connect(
             self._key_map_handler.on_key_release
         )
@@ -453,9 +453,7 @@ class QtViewer(QSplitter):
             parent=self.view,
             order=1e6 + 2,
         )
-        self.canvas.events.resize.connect(
-            self.text_overlay._on_position_change
-        )
+        self.canvas.events.resize.connect(self.text_overlay._on_position_change)
         self.interaction_box_visual = VispyInteractionBox(
             self.viewer, parent=self.view.scene, order=1e6 + 3
         )
