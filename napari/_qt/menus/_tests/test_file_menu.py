@@ -73,7 +73,7 @@ def get_open_with_plugin_action(viewer, action_text):
             for action2 in _get_menu(action1).actions():
                 if action2.text() == action_text:
                     return action2, action1
-    raise ValueError(f'Could not find action "{action_text}"')
+    raise ValueError(f'Could not find action "{action_text}"')  # pragma: no cover
 
 
 @pytest.mark.parametrize(
