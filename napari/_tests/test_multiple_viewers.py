@@ -1,9 +1,9 @@
 import gc
 from unittest.mock import patch
 
-# import pytest
-
 from napari import Viewer
+
+# import pytest
 
 
 # @pytest.mark.skip(reason="problem with clean")
