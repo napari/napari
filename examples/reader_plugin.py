@@ -4,6 +4,7 @@ Reader plugin
 
 Barebones reader plugin example, using ``imageio.imread```
 
+.. tags:: historical
 """
 from napari_plugin_engine import napari_hook_implementation
 from imageio import formats, imread
