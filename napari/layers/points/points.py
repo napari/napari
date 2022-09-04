@@ -2,7 +2,7 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1866,13 +1866,28 @@ class Points(Layer):
             self.refresh()
         self.events.data(value=self.data)
 
-    def _set_drag_start(self, index, coord):
-        if len(index) > 0:
-            index = list(index)
-            disp = list(self._dims_displayed)
+    def _set_drag_start(
+        self,
+        selection_indices: set[int],
+        position: Sequence[Union[int, float]],
+    ) -> None:
+        """Store the initial position at the start of a drag event.
+
+        Parameters
+        ----------
+        selection_indices : set of int
+            integer indices of selected data used to index into self.data
+        position : Sequence of numbers
+            position of the drag start in data coordinates.
+        """
+        if len(selection_indices) > 0:
+            selection_indices = list(selection_indices)
+            dims_displayed = list(self._dims_displayed)
             if self._drag_start is None:
-                center = self.data[np.ix_(index, disp)].mean(axis=0)
-                self._drag_start = np.array(coord)[disp] - center
+                center = self.data[
+                    np.ix_(selection_indices, dims_displayed)
+                ].mean(axis=0)
+                self._drag_start = np.array(position)[dims_displayed] - center
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
