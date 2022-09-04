@@ -471,8 +471,8 @@ def _maybe_rerun_with_macos_fixes():
     if sys.executable != executable:
         env["_NAPARI_RERUN_WITH_FIXES"] = "1"
         if Path(sys.argv[0]).name == "napari":
-            # launched through entry point, we do that again to
-            # avoid issues with working directory getting into sys.path
+            # launched through entry point, we do that again to avoid 
+            # issues with working directory getting into sys.path (#5007)
             cmd = [executable, sys.argv[0]]
         else:  # we assume it must have been launched via '-m' syntax
             cmd = [executable, "-m", "napari"]
