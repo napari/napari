@@ -308,6 +308,18 @@ QLabeledRangeSlider > QAbstractSpinBox {
   color: {{ secondary }};
 }
 
+QWidget[emphasized="true"] QDoubleSlider::sub-page:horizontal:disabled {
+    background: {{ darken(highlight, 30) }};
+}
+
+QWidget[emphasized="true"] QDoubleSlider::add-page:horizontal:disabled {
+    background: {{ darken(primary, 30) }};
+}
+
+QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
+    background: {{ darken(secondary, 30) }};
+}
+
 AutoScaleButtons QPushButton {
   font-size: 9pt;
   padding: 4;
