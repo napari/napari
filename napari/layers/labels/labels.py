@@ -1264,7 +1264,7 @@ class Labels(_ImageBase):
                 and self.data[tuple(np.round(c).astype(int))] == 0
             ):
                 continue
-            if self._mode in [Mode.PAINT, Mode.ERASE, Mode.FILL_CONTOUR]:
+            if self._mode in {Mode.PAINT, Mode.ERASE, Mode.FILL_CONTOUR}:
                 self.paint(c, new_label, refresh=False)
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
