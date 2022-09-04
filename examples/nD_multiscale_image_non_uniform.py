@@ -3,6 +3,8 @@ nD multiscale image non-uniform
 ===============================
 
 Displays an nD multiscale image
+
+.. tags:: visualization-advanced
 """
 
 from skimage import data

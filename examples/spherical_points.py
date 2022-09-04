@@ -2,6 +2,7 @@
 Spherical points
 ================
 
+.. tags:: experimental
 """
 import napari
 import numpy as np
