@@ -68,7 +68,7 @@ class QtLabelsControls(QtLayerControls):
         Button to select PICKER mode on Labels layer.
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
-    fillcontour_button: qtpYy.QtWidgets.QtModeRadioButton
+    fillcontour_button: qtpy.QtWidgets.QtModeRadioButton
         Button to select FILL_CONTOUR mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
