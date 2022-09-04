@@ -3,6 +3,8 @@ Zarr array
 ==========
 
 Display a zarr array
+
+.. tags:: visualization-nD
 """
 
 try:

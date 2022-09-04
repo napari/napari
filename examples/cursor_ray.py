@@ -3,6 +3,8 @@ Cursor ray
 ==========
 
 Depict a ray through a layer in 3D to demonstrate interactive 3D functionality
+
+.. tags:: interactivity
 """
 import numpy as np
 import napari
