@@ -470,7 +470,7 @@ def _maybe_rerun_with_macos_fixes():
     # need to launch the subprocess to apply the fixes
     if sys.executable != executable:
         env["_NAPARI_RERUN_WITH_FIXES"] = "1"
-        if Path(sys.argv[0]).name == "napari":  
+        if Path(sys.argv[0]).name == "napari":
             # launched through entry point, we do that again to
             # avoid issues with working directory getting into sys.path
             cmd = [executable, sys.argv[0]]
