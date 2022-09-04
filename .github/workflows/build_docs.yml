@@ -39,6 +39,9 @@ jobs:
         with:
           run: make docs
 
+      - name: LinkCheck
+        run: make linkcheck-files
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

@@ -49,3 +49,6 @@ watch:
 			--signal SIGKILL \
 			napari -- $(WATCH_ARGS) || \
 		echo "please run 'pip install watchdog[watchmedo]'"
+
+linkcheck-files:
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0 sphinx-build -b linkcheck --color docs/ docs/_build
