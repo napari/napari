@@ -3,6 +3,8 @@ Add multiscale image
 ====================
 
 Displays a multiscale image
+
+.. tags:: visualization-advanced
 """
 
 from skimage import data

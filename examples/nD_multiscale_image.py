@@ -3,6 +3,8 @@ nD multiscale image
 ===================
 
 Displays an nD multiscale image
+
+.. tags:: visualization-advanced
 """
 
 from skimage.transform import pyramid_gaussian

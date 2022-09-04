@@ -2,8 +2,10 @@
 Layers
 ======
 
-Display multiple image layers using the add_image API and then reorder them
+Display multiple image layers using the ``add_image`` API and then reorder them
 using the layers swap method and remove one
+
+.. tags:: visualization-basic
 """
 
 from skimage import data

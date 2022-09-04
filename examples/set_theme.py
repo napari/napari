@@ -3,6 +3,8 @@ Set theme
 =========
 
 Displays an image and sets the theme to 'light'.
+
+.. tags:: gui
 """
 
 from skimage import data

@@ -166,15 +166,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Currently, this only applies to dask arrays.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
-    coordinates : tuple of float
-        Cursor position in data coordinates.
     corner_pixels : array
         Coordinates of the top-left and bottom-right canvas pixels in the data
         coordinates of each layer. For multiscale data the coordinates are in
         the space of the currently viewed data level, not the highest resolution
         level.
-    position : tuple
-        Cursor position in world coordinates.
     ndim : int
         Dimensionality of the layer.
     thumbnail : (N, M, 4) array
