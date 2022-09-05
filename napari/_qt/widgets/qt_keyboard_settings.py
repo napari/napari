@@ -326,7 +326,7 @@ class ShortcutEditor(QWidget):
     def _show_bind_shortcut_error(
         self, current_action, current_shortcuts, row, new_shortcut
     ):
-        action_manager._shortcuts[current_action] = set()
+        action_manager._shortcuts[current_action] = []
         # need to rebind the old shortcut
         action_manager.unbind_shortcut(current_action)
         for short in current_shortcuts:
@@ -582,11 +582,18 @@ class EditorWidget(QLineEdit):
         if not event_key or event_key == Qt.Key.Key_unknown:
             return
 
+        key_map = {
+            Qt.Key.Key_Control: 'Control',
+            Qt.Key.Key_Shift: 'Shift',
+            Qt.Key.Key_Alt: 'Alt',
+            Qt.Key.Key_Meta: 'Meta',
+        }
+
+        if event_key in key_map:
+            self.setText(key_map[event_key])
+            return
+
         if event_key in [
-            Qt.Key.Key_Control,
-            Qt.Key.Key_Shift,
-            Qt.Key.Key_Alt,
-            Qt.Key.Key_Meta,
             Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
             Qt.Key.Key_CapsLock,
