@@ -90,8 +90,8 @@ def increase_label_id(layer: Labels):
     layer.selected_label += 1
 
 
-@register_label_action(
-    trans._("Toggle preserve labels"),
+@register_layer_attr_action(
+    Labels, trans._("Toggle preserve labels"), "preserve_labels"
 )
 def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
