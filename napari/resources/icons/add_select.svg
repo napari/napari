@@ -15,7 +15,12 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg"><defs
-   id="defs22" /><sodipodi:namedview
+   id="defs22"><linearGradient
+     id="linearGradient1667"
+     inkscape:swatch="solid"><stop
+       style="stop-color:#000000;stop-opacity:1;"
+       offset="0"
+       id="stop1665" /></linearGradient></defs><sodipodi:namedview
    id="namedview20"
    pagecolor="#ffffff"
    bordercolor="#666666"
@@ -26,8 +31,8 @@
    inkscape:deskcolor="#d1d1d1"
    showgrid="false"
    inkscape:zoom="10.27"
-   inkscape:cx="49.951315"
-   inkscape:cy="49.951315"
+   inkscape:cx="53.748783"
+   inkscape:cy="50.048685"
    inkscape:window-width="3840"
    inkscape:window-height="2075"
    inkscape:window-x="1200"
@@ -36,12 +41,15 @@
    inkscape:current-layer="Layer_1" />
 <g
    id="Outline"
-   transform="matrix(0.66621406,0,0,0.66672503,32.706865,-1.6837861)">
+   transform="matrix(0.66621406,0,0,0.66672503,32.706865,-1.6837861)"
+   style="stroke-width:0.99929555;stroke-dasharray:none">
 	<g
-   id="g16">
+   id="g16"
+   style="stroke-width:0.99929555;stroke-dasharray:none">
 		<path
    d="m 47.2,86.9 c -1.4,0 -2.7,-0.9 -3.3,-2.2 l -25,-60.6 c -0.6,-1.3 -0.2,-2.9 0.8,-3.9 1,-1 2.5,-1.3 3.9,-0.8 l 60.6,25 c 1.4,0.6 2.3,2 2.2,3.6 -0.1,1.5 -1.2,2.8 -2.7,3.2 l -26.4,6.6 -6.6,26.4 c -0.4,1.5 -1.7,2.6 -3.2,2.7 -0.2,0 -0.3,0 -0.3,0 z M 28.7,29.3 46.3,72 50.8,54 c 0.3,-1.3 1.3,-2.3 2.6,-2.6 l 18,-4.5 z"
-   id="path14" />
+   id="path14"
+   style="stroke-width:0.99929555;stroke-dasharray:none" />
 	</g>
 </g><g
    id="Solid"
@@ -59,8 +67,18 @@
    id="polygon4" />
 	</g>
 <path
-   style="fill:none;stroke:#000000;stroke-width:4.92226;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+   style="stroke-width:0.99980887;stroke-dasharray:none;fill:none;fill-opacity:1"
    d="M 15.440288,-77.746065 C 60.978064,-32.208002 179.51512,86.329807 179.51512,86.329807"
    id="path584"
    sodipodi:nodetypes="cc" /></g>
-</svg>
+<path
+   d="M 10.45028,10.45028 C 89.549716,89.549719 89.549716,89.549719 89.549716,89.549719"
+   id="path912"
+   style="stroke-width:1;stroke-dasharray:none" /><rect
+   x="19.116741"
+   y="3.3095067"
+   transform="matrix(0.7524852,0.65860916,-0.75528315,0.65539863,0,0)"
+   width="104.17128"
+   height="2.8575373"
+   id="rect18"
+   style="stroke-width:1.00473" /></svg>
