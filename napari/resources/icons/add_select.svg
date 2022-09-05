@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 100 100"
+   style="enable-background:new 0 0 100 100;"
+   xml:space="preserve"
+   sodipodi:docname="add_select.svg"
+   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs22" /><sodipodi:namedview
+   id="namedview20"
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1.0"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   showgrid="false"
+   inkscape:zoom="10.27"
+   inkscape:cx="49.951315"
+   inkscape:cy="49.951315"
+   inkscape:window-width="3840"
+   inkscape:window-height="2075"
+   inkscape:window-x="1200"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Layer_1" />
+<g
+   id="Outline">
+	<g
+   id="g16">
+		<path
+   d="M47.2,86.9c-1.4,0-2.7-0.9-3.3-2.2l-25-60.6c-0.6-1.3-0.2-2.9,0.8-3.9s2.5-1.3,3.9-0.8l60.6,25c1.4,0.6,2.3,2,2.2,3.6    c-0.1,1.5-1.2,2.8-2.7,3.2l-26.4,6.6l-6.6,26.4c-0.4,1.5-1.7,2.6-3.2,2.7C47.3,86.9,47.2,86.9,47.2,86.9z M28.7,29.3L46.3,72    l4.5-18c0.3-1.3,1.3-2.3,2.6-2.6l18-4.5L28.7,29.3z"
+   id="path14" />
+	</g>
+</g>
+<polygon
+   class="st0"
+   points="68.1,46.3 53.6,46.3 53.6,31.8 46.3,31.8 46.3,46.3 31.8,46.3 31.8,53.6 46.3,53.6 46.3,68.1 53.6,68.1 53.6,53.6 68.1,53.6 "
+   id="polygon4"
+   transform="matrix(0.41322314,0,0,0.41322314,24.859504,24.859504)" /></svg>
