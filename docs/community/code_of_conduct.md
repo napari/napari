@@ -85,5 +85,5 @@ The committee will respond to any report as soon as possible, and at most within
 
 We are thankful to the groups behind the following documents, from which we drew content and inspiration:
 
-* [The SciPy Code of Conduct](https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html)
+* [The SciPy Code of Conduct](https://docs.scipy.org/doc/scipy/dev/conduct/code_of_conduct.html)
 * [The Numpy Code of Conduct](https://numpy.org/code-of-conduct/)
