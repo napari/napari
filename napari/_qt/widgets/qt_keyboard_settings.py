@@ -158,12 +158,14 @@ class ShortcutEditor(QWidget):
         self._action_name_col = 0
         self._icon_col = 1
         self._shortcut_col = 2
-        self._action_col = 3
+        self._shortcut_col2 = 3
+        self._action_col = 4
 
         # Set header strings for table.
-        header_strs = ['', '', '', '']
+        header_strs = ['', '', '', '', '']
         header_strs[self._action_name_col] = trans._('Action')
         header_strs[self._shortcut_col] = trans._('Keybinding')
+        header_strs[self._shortcut_col2] = trans._('Alternative Keybinding')
 
         # If no layer_str, then set the page to the viewer keybindings page.
         if not layer_str:
@@ -188,10 +190,13 @@ class ShortcutEditor(QWidget):
 
             # Set up table based on number of actions and needed columns.
             self._table.setRowCount(len(actions))
-            self._table.setColumnCount(4)
+            self._table.setColumnCount(5)
             # Set up delegate in order to capture keybindings.
             self._table.setItemDelegateForColumn(
                 self._shortcut_col, ShortcutDelegate(self._table)
+            )
+            self._table.setItemDelegateForColumn(
+                self._shortcut_col2, ShortcutDelegate(self._table)
             )
             self._table.setHorizontalHeaderLabels(header_strs)
             self._table.verticalHeader().setVisible(False)
@@ -202,6 +207,7 @@ class ShortcutEditor(QWidget):
             # Column set up.
             self._table.setColumnWidth(self._action_name_col, 250)
             self._table.setColumnWidth(self._shortcut_col, 200)
+            self._table.setColumnWidth(self._shortcut_col2, 200)
             self._table.setColumnWidth(self._icon_col, 50)
 
             # Go through all the actions in the layer and add them to the table.
@@ -225,6 +231,13 @@ class ShortcutEditor(QWidget):
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
 
+                item_shortcut2 = QTableWidgetItem(
+                    Shortcut(list(shortcuts)[1]).platform
+                    if len(shortcuts) > 1
+                    else ""
+                )
+                self._table.setItem(row, self._shortcut_col2, item_shortcut2)
+
                 # action_name is stored in the table to use later, but is not shown on dialog.
                 item_action = QTableWidgetItem(action_name)
                 self._table.setItem(row, self._action_col, item_action)
@@ -243,6 +256,101 @@ class ShortcutEditor(QWidget):
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._table.setItem(0, 0, item)
 
+    def _get_layer_actions(self):
+        current_layer_text = self.layer_combo_box.currentText()
+        layer_actions = self.key_bindings_strs[current_layer_text]
+        actions_all = layer_actions.copy()
+        if current_layer_text is not self.VIEWER_KEYBINDINGS:
+            viewer_actions = self.key_bindings_strs[self.VIEWER_KEYBINDINGS]
+
+            actions_all.update(viewer_actions)
+        return actions_all
+
+    def _mark_conflicts(self, new_shortcut, current_action, row) -> bool:
+        # Go through all layer actions to determine if the new shortcut is already here.
+        actions_all = self._get_layer_actions()
+        current_item = self._table.currentItem()
+        for row1, (action_name, action) in enumerate(actions_all.items()):
+            shortcuts = action_manager._shortcuts.get(action_name, [])
+
+            if new_shortcut not in shortcuts:
+                continue
+            # Shortcut is here (either same action or not), don't replace in settings.
+            if action_name != current_action:
+                # the shortcut is saved to a different action
+
+                # show warning symbols
+                self._show_warning_icons([row, row1])
+
+                current_shortcuts = list(
+                    action_manager._shortcuts.get(current_action, {})
+                )
+
+                # show warning message
+                message = trans._(
+                    "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+                    new_shortcut=new_shortcut,
+                    action_description=action.description,
+                )
+                self._show_warning(new_shortcut, action, row, message)
+
+                if current_shortcuts:
+                    # If there was a shortcut set originally, then format it and reset the text.
+                    format_shortcut = Shortcut(current_shortcuts[0]).platform
+
+                    if format_shortcut != current_shortcuts[0]:
+                        # only skip the next round if there are special symbols
+                        self._skip = True
+
+                    current_item.setText(format_shortcut)
+
+                else:
+                    # There wasn't a shortcut here.
+                    current_item.setText("")
+
+                self._cleanup_warning_icons([row, row1])
+
+                return False
+
+            else:
+                # This shortcut was here.  Reformat and reset text.
+                format_shortcut = Shortcut(new_shortcut).platform
+                if format_shortcut != new_shortcut:
+                    # Only skip the next round if there are special symbols in shortcut.
+                    self._skip = True
+
+                current_item.setText(format_shortcut)
+
+        return True
+
+    def _show_bind_shortcut_error(
+        self, current_action, current_shortcuts, row, new_shortcut
+    ):
+        action_manager._shortcuts[current_action] = set()
+        # need to rebind the old shortcut
+        action_manager.unbind_shortcut(current_action)
+        for short in current_shortcuts:
+            action_manager.bind_shortcut(current_action, short)
+
+        # Show warning message to let user know this shortcut is invalid.
+        self._show_warning_icons([row])
+
+        message = trans._(
+            "<b>{new_shortcut}</b> is not a valid keybinding.",
+            new_shortcut=new_shortcut,
+        )
+        self._show_warning(new_shortcut, current_action, row, message)
+
+        self._cleanup_warning_icons([row])
+
+        format_shortcut = Shortcut(current_shortcuts[0]).platform
+        if format_shortcut != current_shortcuts[0]:
+            # Skip the next round if there are special symbols.
+            self._skip = True
+
+        # Update text to formated shortcut.
+        self._table.currentItem().setText(format_shortcut)
+
     def _set_keybinding(self, row, col):
         """Checks the new keybinding to determine if it can be set.
 
@@ -260,7 +368,7 @@ class ShortcutEditor(QWidget):
             self._skip = False
             return
 
-        if col == self._shortcut_col:
+        if col in {self._shortcut_col, self._shortcut_col2}:
             # Get all layer actions and viewer actions in order to determine
             # the new shortcut is not already set to an action.
 
@@ -277,115 +385,54 @@ class ShortcutEditor(QWidget):
             # get the current item from shortcuts column
             current_item = self._table.currentItem()
             new_shortcut = current_item.text()
-            new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
+            if new_shortcut:
+                new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
 
             # get the current action name
             current_action = self._table.item(row, self._action_col).text()
 
             # get the original shortcutS
             current_shortcuts = list(
-                action_manager._shortcuts.get(current_action, {})
+                action_manager._shortcuts.get(current_action, [])
             )
 
             # Flag to indicate whether to set the new shortcut.
-            replace = True
-            # Go through all layer actions to determine if the new shortcut is already here.
-            for row1, (action_name, action) in enumerate(actions_all.items()):
-                shortcuts = action_manager._shortcuts.get(action_name, [])
-
-                if new_shortcut in shortcuts:
-                    # Shortcut is here (either same action or not), don't replace in settings.
-                    replace = False
-                    if action_name != current_action:
-                        # the shortcut is saved to a different action
-
-                        # show warning symbols
-                        self._show_warning_icons([row, row1])
-
-                        # show warning message
-                        message = trans._(
-                            "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
-                            new_shortcut=new_shortcut,
-                            action_description=action.description,
-                        )
-                        self._show_warning(new_shortcut, action, row, message)
-
-                        if current_shortcuts:
-                            # If there was a shortcut set originally, then format it and reset the text.
-                            format_shortcut = Shortcut(
-                                current_shortcuts[0]
-                            ).platform
-
-                            if format_shortcut != current_shortcuts[0]:
-                                # only skip the next round if there are special symbols
-                                self._skip = True
-
-                            current_item.setText(format_shortcut)
-
-                        else:
-                            # There wasn't a shortcut here.
-                            current_item.setText("")
-
-                        self._cleanup_warning_icons([row, row1])
-
-                        break
-
-                    else:
-                        # This shortcut was here.  Reformat and reset text.
-                        format_shortcut = Shortcut(new_shortcut).platform
-                        if format_shortcut != new_shortcut:
-                            # Only skip the next round if there are special symbols in shortcut.
-                            self._skip = True
-
-                        current_item.setText(format_shortcut)
+            replace = self._mark_conflicts(new_shortcut, current_action, row)
 
             if replace is True:
                 # This shortcut is not taken.
 
                 #  Unbind current action from shortcuts in action manager.
-                action_manager.unbind_shortcut(current_action)
+                shortcuts_list = list(
+                    action_manager.unbind_shortcut(current_action)
+                )
+                ind = col - self._shortcut_col
+                if new_shortcut != "":
+                    if ind < len(shortcuts_list):
+                        shortcuts_list[ind] = new_shortcut
+                    else:
+                        shortcuts_list.append(new_shortcut)
+                elif ind < len(shortcuts_list):
+                    shortcuts_list.pop(col - self._shortcut_col)
                 new_value_dict = {}
                 if new_shortcut != "":
                     # Bind the new shortcut.
                     try:
-                        action_manager.bind_shortcut(
-                            current_action, new_shortcut
-                        )
+                        for short in shortcuts_list:
+                            action_manager.bind_shortcut(current_action, short)
                     except TypeError:
-                        # Shortcut is not valid.
-                        action_manager._shortcuts[current_action] = set()
-                        # need to rebind the old shortcut
-                        action_manager.unbind_shortcut(current_action)
-                        action_manager.bind_shortcut(
-                            current_action, current_shortcuts[0]
+                        self._show_bind_shortcut_error(
+                            current_action,
+                            current_shortcuts,
+                            row,
+                            new_shortcut,
                         )
-
-                        # Show warning message to let user know this shortcut is invalid.
-                        self._show_warning_icons([row])
-
-                        message = trans._(
-                            "<b>{new_shortcut}</b> is not a valid keybinding.",
-                            new_shortcut=new_shortcut,
-                        )
-                        self._show_warning(new_shortcut, action, row, message)
-
-                        self._cleanup_warning_icons([row])
-
-                        format_shortcut = Shortcut(
-                            current_shortcuts[0]
-                        ).platform
-                        if format_shortcut != current_shortcuts[0]:
-                            # Skip the next round if there are special symbols.
-                            self._skip = True
-
-                        # Update text to formated shortcut.
-                        current_item.setText(format_shortcut)
                         return
 
                     # The new shortcut is valid and can be displayed in widget.
 
                     # Keep track of what changed.
-                    new_value_dict = {current_action: [new_shortcut]}
+                    new_value_dict = {current_action: shortcuts_list}
 
                     # Format new shortcut.
                     format_shortcut = Shortcut(new_shortcut).platform
