@@ -144,16 +144,16 @@ def parse_sys_argv():
             "open napari with dock widget from specified plugin name."
             "(If plugin provides multiple dock widgets, widget name must also "
             "be provided). Use __all__ to open all dock widgets of a "
-            "specified plugin."
+            "specified plugin. Multiple widgets are opened in tabs."
         ),
     )
-    parser.add_argument(
-        '-t',
-        '--tabify',
-        dest='tabify_',
-        action='store_true',
-        help='When multiple dock widgets are loaded start them as tabs.',
-    )
+    # parser.add_argument(
+    #    '-t',
+    #    '--tabify',
+    #    dest='tabify_',
+    #    action='store_true',
+    #    help='When multiple dock widgets are loaded start them as tabs.',
+    # )
     parser.add_argument(
         '--version',
         action='version',
@@ -301,14 +301,13 @@ def _run():
                         if '__all__' in wnames:
                             # Plugin_manager iter_widgets return wnames as dict keys
                             wnames = list(_wnames.keys())
-                        if args.tabify_:
-                            print(
-                                trans._(
-                                    'Non-npe2 plugin {pname} in combination with -t/--tabify detected. Disable tabify for this plugin.',
-                                    deferred=True,
-                                    pname=pname,
-                                )
+                        print(
+                            trans._(
+                                'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
+                                deferred=True,
+                                pname=pname,
                             )
+                        )
                         break
 
                 if wnames:
@@ -358,7 +357,7 @@ def _run():
             # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.
             # Therefore, read npe2 plugins first and do not tabify for non-npe2 plugins.
             for plugin, tabify in chain(
-                zip(npe2_plugins, repeat(args.tabify_)),
+                zip(npe2_plugins, repeat(True)),
                 zip(plugin_manager_plugins, repeat(False)),
             ):
                 pname, *wnames = plugin
