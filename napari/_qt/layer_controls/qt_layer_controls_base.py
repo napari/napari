@@ -1,8 +1,9 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
+from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
 
@@ -34,6 +35,8 @@ class QtLayerControls(QFrame):
         An instance of a napari layer.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
+    opacityLabel : qtpy.QtWidgets.QLabel
+        Label for the opacity slider widget.
     """
 
     def __init__(self, layer):
@@ -55,6 +58,8 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
+        self.opacityLabel = QLabel(trans._('opacity:'))
+
         self._on_opacity_change()
 
         blend_comboBox = QComboBox(self)
@@ -67,7 +72,8 @@ class QtLayerControls(QFrame):
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
         # GL minimum blending does not support changing alpha
-        self.opacitySlider.setVisible(self.layer.blending != 'minimum')
+        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
+        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -92,6 +98,8 @@ class QtLayerControls(QFrame):
         self.layer.blending = self.blendComboBox.currentData()
         # GL minimum blending does not support changing alpha
         self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
+        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
+
         self.blendComboBox.setToolTip(
             "`minimum` blending mode works best with inverted colormaps with a white background."
             if self.layer.blending == 'minimum'

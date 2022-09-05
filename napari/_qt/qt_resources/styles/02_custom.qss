@@ -320,6 +320,10 @@ QWidget[emphasized="true"] SliderLabel:disabled {
     color: {{ opacity(text, 50) }};
 }
 
+QWidget[emphasized="true"] QLabel:disabled {
+    color: {{ opacity(text, 50) }};
+}
+
 AutoScaleButtons QPushButton {
   font-size: 9pt;
   padding: 4;
