@@ -176,7 +176,7 @@ class QtPointsControls(QtLayerControls):
         button_row.setSpacing(4)
 
         self.layout().addRow(button_row)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('point size:'), self.sizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
