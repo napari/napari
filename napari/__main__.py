@@ -147,13 +147,6 @@ def parse_sys_argv():
             "specified plugin. Multiple widgets are opened in tabs."
         ),
     )
-    # parser.add_argument(
-    #    '-t',
-    #    '--tabify',
-    #    dest='tabify_',
-    #    action='store_true',
-    #    help='When multiple dock widgets are loaded start them as tabs.',
-    # )
     parser.add_argument(
         '--version',
         action='version',
