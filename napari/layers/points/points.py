@@ -1306,7 +1306,7 @@ class Points(Layer):
             return
         assert mode is not None, mode
 
-        if mode == Mode.ADD:
+        if mode in (Mode.ADD, Mode.ADD_SELECT):
             self.selected_data = set()
             self.interactive = True
         elif mode == Mode.PAN_ZOOM:
