@@ -1726,7 +1726,7 @@ class Points(Layer):
                 # highlight the hovered point if not in adding mode
                 if (
                     self._value in self._indices_view
-                    and self._mode == Mode.SELECT
+                    and self._mode in (Mode.SELECT, Mode.ADD_SELECT)
                     and not self._is_selecting
                 ):
                     hover_point = list(self._indices_view).index(self._value)
@@ -1737,7 +1737,7 @@ class Points(Layer):
                 # only highlight hovered points in select mode
                 if (
                     self._value in self._indices_view
-                    and self._mode == Mode.SELECT
+                    and self._mode in (Mode.SELECT, Mode.ADD_SELECT)
                     and not self._is_selecting
                 ):
                     hover_point = list(self._indices_view).index(self._value)
