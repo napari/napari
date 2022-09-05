@@ -3,10 +3,7 @@ from unittest.mock import patch
 
 from napari import Viewer
 
-# import pytest
 
-
-# @pytest.mark.skip(reason="problem with clean")
 def test_multi_viewers_dont_clash(qtbot):
     v1 = Viewer(show=False, title='v1')
     v2 = Viewer(show=False, title='v2')
