@@ -72,7 +72,7 @@ class EventedList(TypedMutableSequence[_T]):
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     duplicated (index: int, old_value: T, value: T)
-        emitted after the duplicate ``value`` of ``old_value`` was created and inserted at ``index``.
+        emitted after the duplicate ``value`` of ``old_value`` was created and inserted at ``index``. This event is emitted after the respective ``inserted`` event.
     """
 
     events: EmitterGroup
