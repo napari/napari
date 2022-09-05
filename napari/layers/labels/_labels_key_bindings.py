@@ -100,3 +100,13 @@ def undo(layer: Labels):
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()
+
+
+@Labels.bind_key('[')
+def decrease_brush_size(layer: Labels):
+    layer.brush_size -= 1
+
+
+@Labels.bind_key(']')
+def increase_brush_size(layer: Labels):
+    layer.brush_size += 1
