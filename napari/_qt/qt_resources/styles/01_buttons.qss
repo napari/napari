@@ -167,7 +167,7 @@ QtModeRadioButton[mode="add_points"]::indicator {
 }
 
 QtModeRadioButton[mode="add_select_points"]::indicator {
-    image: url("theme_{{ name }}:/add.svg");
+    image: url("theme_{{ name }}:/add_select.svg");
 }
 
 QtModePushButton[mode="shuffle"] {
