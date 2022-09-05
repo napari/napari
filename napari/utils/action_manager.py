@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from ..utils.events import EmitterGroup
 from .interactions import Shortcut
@@ -245,7 +245,7 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._emit_shortcut_change(name, shortcut)
 
-    def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
+    def unbind_shortcut(self, name: str) -> Optional[List[str]]:
         """
         Unbind all shortcuts for a given action name.
 
