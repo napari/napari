@@ -27,7 +27,7 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
         new = Layer.create(deepcopy(data), state, type_str)
         index = ll.index(lay) + 1
         ll.insert(index, new)
-        ll.events.duplicated(index=index, value=new)
+        ll.events.duplicated(index=index, old=lay, value=new)
 
 
 def _split_stack(ll: LayerList, axis: int = 0):

@@ -71,6 +71,8 @@ class EventedList(TypedMutableSequence[_T]):
         emitted when ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
+    duplicated (index: int, old_value: T, value: T)
+        emitted after the duplicate ``value`` of ``old_value`` was created and inserted at ``index``.
     """
 
     events: EmitterGroup
@@ -91,7 +93,7 @@ class EventedList(TypedMutableSequence[_T]):
             'moved': None,  # Tuple[Tuple[int, int], Any]
             'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
             'reordered': None,  # None
-            'duplicated': None,  # Tuple[int, Any] - (idx, value)
+            'duplicated': None,  # Tuple[int, Any, Any] - (idx, old, new)
         }
 
         # For inheritance: If the mro already provides an EmitterGroup, add...
