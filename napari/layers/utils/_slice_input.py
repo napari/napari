@@ -6,7 +6,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from napari.components.dims import reorder_after_dim_reduction
+from napari.utils.dims import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
