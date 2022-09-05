@@ -118,6 +118,7 @@ def test_move(test_list):
     test_list.events.removed.connect(_fail)
     test_list.events.inserting.connect(_fail)
     test_list.events.inserted.connect(_fail)
+    test_list.events.duplicated.connect(_fail)
 
     before = list(test_list)
     assert before == [0, 1, 2, 3, 4]  # from fixture
@@ -176,6 +177,7 @@ def test_move_multiple(sources, dest, expectation):
     el.events.removed.connect(_fail)
     el.events.inserting.connect(_fail)
     el.events.inserted.connect(_fail)
+    el.events.duplicated.connect(_fail)
 
     el.move_multiple(sources, dest)
     assert el == expectation

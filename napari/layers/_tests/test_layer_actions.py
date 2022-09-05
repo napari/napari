@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import numpy as np
 import pytest
 
@@ -16,12 +18,18 @@ def test_duplicate_layers():
         pass
 
     layer_list = LayerList()
+
+    layer_list.events = Mock(wraps=layer_list.events)
+
     layer_list.append(Points([[0, 0]], name="test"))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
     assert len(layer_list[0].events.data.callbacks) == 2
     assert len(layer_list) == 1
     _duplicate_layer(layer_list)
+    layer_list.events.duplicated.assert_called_with(
+        index=1, old_value=layer_list[0], value=layer_list[1]
+    )
     assert len(layer_list) == 2
     assert layer_list[0].name == "test"
     assert layer_list[1].name == "test copy"
