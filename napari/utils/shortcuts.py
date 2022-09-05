@@ -24,6 +24,7 @@ default_shortcuts = {
     'napari:activate_points_add_mode': ['2'],
     'napari:activate_points_select_mode': ['3'],
     'napari:activate_points_pan_zoom_mode': ['4'],
+    'napari:activate_points_add_select_mode': ['5'],
     'napari:select_all_in_slice': ['A', 'Control-A'],
     'napari:select_all_data': ['Shift-A'],
     'napari:delete_selected_points': ['Backspace', 'Delete', '1'],

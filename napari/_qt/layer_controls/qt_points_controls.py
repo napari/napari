@@ -143,6 +143,12 @@ class QtPointsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_points_add_mode', self.addition_button
         )
+        self.add_select_button = QtModeRadioButton(
+            layer, 'add_select_points', Mode.ADD_SELECT
+        )
+        action_manager.bind_button(
+            'napari:activate_points_add_select_mode', self.add_select_button
+        )
         self.panzoom_button = QtModeRadioButton(
             layer,
             'pan_zoom',
@@ -168,12 +174,14 @@ class QtPointsControls(QtLayerControls):
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.addition_button)
+        self.button_group.addButton(self.add_select_button)
         self.button_group.addButton(self.panzoom_button)
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
         button_row.addWidget(self.delete_button)
         button_row.addWidget(self.addition_button)
+        button_row.addWidget(self.add_select_button)
         button_row.addWidget(self.select_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setContentsMargins(0, 0, 0, 5)
@@ -210,6 +218,8 @@ class QtPointsControls(QtLayerControls):
         mode = event.mode
         if mode == Mode.ADD:
             self.addition_button.setChecked(True)
+        elif mode == Mode.ADD_SELECT:
+            self.add_select_button.setChecked(True)
         elif mode == Mode.SELECT:
             self.select_button.setChecked(True)
         elif mode == Mode.PAN_ZOOM:

@@ -32,6 +32,7 @@ class Mode(StringEnum):
     """
 
     ADD = auto()
+    ADD_SELECT = auto()
     SELECT = auto()
     PAN_ZOOM = auto()
     TRANSFORM = auto()

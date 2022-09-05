@@ -36,6 +36,11 @@ def hold_to_pan_zoom(layer: Points):
         layer._set_highlight()
 
 
+@register_points_mode_action(trans._('Add/Select points'))
+def activate_points_add_select_mode(layer: Points):
+    layer.mode = Mode.ADD_SELECT
+
+
 @register_points_mode_action(trans._('Add points'))
 def activate_points_add_mode(layer: Points):
     layer.mode = Mode.ADD
@@ -53,6 +58,7 @@ def activate_points_pan_zoom_mode(layer: Points):
 
 points_fun_to_mode = [
     (activate_points_add_mode, Mode.ADD),
+    (activate_points_add_select_mode, Mode.ADD_SELECT),
     (activate_points_select_mode, Mode.SELECT),
     (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
 ]

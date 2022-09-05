@@ -3,7 +3,22 @@ import numpy as np
 from ._points_utils import _points_in_box_3d, points_in_box
 
 
-def select(layer, event):
+def add_select(layer, event):
+    # Get value under the cursor, for points, this is the index of the highlighted
+    # if any, or None.
+    value = layer.get_value(
+        position=event.position,
+        view_direction=event.view_direction,
+        dims_displayed=event.dims_displayed,
+        world=True,
+    )
+    if value is not None:
+        yield from select(layer, event)
+    else:
+        yield from add(layer, event)
+
+
+def select(layer, event, ignore_modifiers=False):
     """Select points.
 
     Clicking on a point will select that point. If holding shift while clicking
@@ -22,7 +37,7 @@ def select(layer, event):
     # on press
     modify_selection = (
         'Shift' in event.modifiers or 'Control' in event.modifiers
-    )
+    ) and not ignore_modifiers
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
@@ -99,6 +114,9 @@ DRAG_DIST_THRESHOLD = 5
 
 def add(layer, event):
     """Add a new point at the clicked position."""
+    if 'Shift' in event.modifiers:
+        yield from select(layer, event, True)
+        return
 
     if event.type == 'mouse_press':
         start_pos = event.pos

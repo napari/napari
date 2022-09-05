@@ -24,7 +24,7 @@ from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import _features_to_properties, _FeatureTable
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
-from ._points_mouse_bindings import add, highlight, select
+from ._points_mouse_bindings import add, add_select, highlight, select
 from ._points_utils import (
     _create_box_from_corners_3d,
     create_box,
@@ -1277,6 +1277,7 @@ class Points(Layer):
 
     _drag_modes = {
         Mode.ADD: add,
+        Mode.ADD_SELECT: add_select,
         Mode.SELECT: select,
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
@@ -1284,12 +1285,14 @@ class Points(Layer):
 
     _move_modes = {
         Mode.ADD: no_op,
+        Mode.ADD_SELECT: highlight,
         Mode.SELECT: highlight,
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: no_op,
     }
     _cursor_modes = {
         Mode.ADD: 'crosshair',
+        Mode.ADD_SELECT: 'crosshair',
         Mode.SELECT: 'standard',
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
