@@ -25,7 +25,9 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
         data, state, type_str = lay.as_layer_data_tuple()
         state["name"] = trans._('{name} copy', name=lay.name)
         new = Layer.create(deepcopy(data), state, type_str)
-        ll.insert(ll.index(lay) + 1, new)
+        index = ll.index(lay) + 1
+        ll.insert(index, new)
+        ll.events.duplicated(index=index, value=new)
 
 
 def _split_stack(ll: LayerList, axis: int = 0):

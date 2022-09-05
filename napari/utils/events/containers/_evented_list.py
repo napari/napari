@@ -91,6 +91,7 @@ class EventedList(TypedMutableSequence[_T]):
             'moved': None,  # Tuple[Tuple[int, int], Any]
             'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
             'reordered': None,  # None
+            'duplicated': None,  # Tuple[int, Any] - (idx, value)
         }
 
         # For inheritance: If the mro already provides an EmitterGroup, add...
