@@ -580,11 +580,11 @@ class EditorWidget(QLineEdit):
             return
 
         key_map = {
-            Qt.Key.Key_Control: keys.CONTROL,
-            Qt.Key.Key_Shift: keys.SHIFT,
-            Qt.Key.Key_Alt: keys.ALT,
-            Qt.Key.Key_Meta: keys.META,
-            Qt.Key.Key_Delete: keys.DELETE,
+            Qt.Key.Key_Control: keys.CONTROL.name,
+            Qt.Key.Key_Shift: keys.SHIFT.name,
+            Qt.Key.Key_Alt: keys.ALT.name,
+            Qt.Key.Key_Meta: keys.META.name,
+            Qt.Key.Key_Delete: keys.DELETE.name,
         }
 
         if event_key in key_map:
