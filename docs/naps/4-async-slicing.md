@@ -415,7 +415,7 @@ to the vispy layers so that the canvas can be updated.
 ### Hooking up the viewer
 
 Using Python's standard library threads in the `ViewerModel`
-mean that we have a portable way to perform asynchronous slicing
+means that we have a portable way to perform asynchronous slicing
 in napari without an explicit dependency on Qt.
 
 ```python
@@ -477,6 +477,15 @@ not work when layer data is mutated.
 There are some other rough edges and plenty of ways to break it, but basic
 functionality should work.
 
+The rough implementation plan is as follows.
+
+- Implement pure refactors related to slicing to support this work (no public API or behavior changes).
+- Implement high-level asynchronous slicing model described here (i.e. add `LayerSlicer`, changes to `ViewerModel`), but with existing layer slicing implementation (i.e. `Layer._set_view_slice`).
+- Incrementally add layer slicing implementation described here (i.e. `Layer._get_slice`) for each layer separately.
+
+This allows us to merge small pieces of work into `main`, testing and fixing
+them as we go. The alternative is to maintain a large branch/fork of napari that
+may be less tested and harder to merge in the end.
 
 ## Backward compatibility
 
@@ -486,6 +495,14 @@ The main goal of this project is to perform slicing asynchronously, so it's
 natural that we might break anyone that was depending on slicing being synchronous.
 At a minimum, we must provide a public way to achieve the same fundamental goals,
 such as connecting to the `slice_ready` event.
+
+The initial plan is to keep synchronous slicing as the default behavior and only
+trigger asynchronous slicing in specific cases.
+For example, using the API to directly set `Dims.current_step` should cause synchronous
+slicing whereas dragging a dimension slider in the GUI should cause asynchronous slicing.
+This allows us to start exposing asynchronous slicing as a useful behavior for
+interacting with large data without breaking those that were dependent on the existing
+synchronous behavior.
 
 ### Store existing slice state on layer
 
@@ -557,7 +574,8 @@ event per layer that only contains that layer's slice response.
 - May improve general readability of async code for some.
 - Mostly syntactic sugar on top of `concurrent.futures`.
 - Likely need an `asyncio` event loop distinct from Qt's main event loop, which could be confusing and cause issues.
-
+- [As discussed on Zulip](https://napari.zulipchat.com/#narrow/stream/212875-general/topic/qt-async-threads), `qt-async-threads` is a possible solution,
+  but it is still quite new.
 
 ### Slice from vispy layer instead of viewer model
 
@@ -625,35 +643,45 @@ which might cause issues with things like selection that may depend on that stat
 - [Remove slice state from layer](https://github.com/napari/napari/issues/4682)
     - Feature request to remove slice/render state from the layer types.
     - Motivated by creating multiple slices of the same layers for multiple canvases.
+    - Decision: postpone.
+        - There are too many behaviors that depend on slice state (e.g. `Layer._get_value`) and it's easy enough to set it after an async slicing task is done, so leave it for now.
+        - This work should simplify removing it in the future.
 - [Draft PR on andy-sweet's fork](https://github.com/andy-sweet/napari/pull/16)
     - Initial feedback before sharing more widely.
 - Define a class that encapsulates the slicing bounding box in world coordinates.
     - [Define a class that only encapsulates the dims and camera info needed for slicing](https://github.com/napari/napari/pull/4892/files#r935771292)
     - [Replace `point` and similar with `bbox`](https://github.com/napari/napari/pull/4892/files#r935877117)
     - The idea here is to collapse some of the existing input slicing state like `point` and `dims_displayed` into one class that describes the bounding box for slicing in world coordinates.
-    - This is a good long term goal, especially when we have named dimensions, but may not be worth it yet.
+    - Decision: postpone.
+        - This can be done independently of this work and the order is not important enough to slow this work down. 
 - [Replace layer slice request and response types with a single slice type](https://github.com/napari/napari/pull/4892/files#r935773848)
     - Motivation is make it easier to add a new layer type by reducing the number of class types needed. 
     - Some disagreement here as one type for two purposes (input vs. output) seems confusing.
     - Keeping the request and response types separate may also allow us to better target alternatives to vispy.
-    - Not critical/blocking, especially if we have an explicit class for encapsulate the dims and camera slicing input.
+    - Decision: keep request and response types separate for now.
+        - Adding a new layer type is not a frequent occurrence.
+        - Having one class may reduce the number of classes, but implementing a new layer type is already quite complex.
 - [Slicing in a shader](https://github.com/napari/napari/pull/4892/files#r935322222)
     - How to handle future cases where layer data has been pre-loaded onto the GPU and we want to slice in the shader?
     - Less about large/slow data, and more about not blocking approaches to handling small/fast data efficiently.
     - May be particularly useful for multi-canvas.
-    - Not critical/blocking, but we should consider keeping data types private or vague to not blocking this in the future.
+    - Decision: postpone.
+        - Keep related types private or vague to not blocking this in the future.
 - [Support existing usage and plugins that depends on synchronous slicing](https://github.com/napari/napari/pull/4892/files#r934961214)
     - Main example is [the napari-animation plugin](https://www.napari-hub.org/plugins/napari-animation), but there may be others.
-    - Need to understand if existing proposed design easily supports this usage.
-    - If not, we may need some way to allow users to force slicing to be synchronous.
-    - This is a critical/blocking discussion point that we need to resolve before approval.
+    - This was explored [^pull-4969] with the following main findings.
+        - Forcing synchronous slicing when combining the prototype and `napari-animation` seems to work for the basic examples.
+        - We only need to force synchronous slicing when using `Viewer.screenshot`, as keyframes just capture the value of `current_step` and similar.
+        - `screenshot` is only called a few times in `napari-animation`, so wouldn't require large changes if asynchronous slicing was the default.
+    - Decision: always have some way to force synchronous slicing.
+        - Initially, slicing may be synchronous by default, so no modifications are needed for `napari-animation` or similar plugins/scripts.
 - Should `Dims.current_step` (and `corner_pixels`) represent the last slice position request or the last slice response?
     - With sync slicing, there is no distinction.
-    - If it represents the last slice response, then what should we connect the sliders to?
-    - [Small consensus around last request](https://github.com/napari/napari/pull/4892/files#r935336654)
-    - May want to store both, but maybe not publicly.
-    - This is a critical/blocking discussion point that we need to resolve before approval.
-
+    - With async slicing, `current` is ambiguous.
+    - [Initial small consensus around last request](https://github.com/napari/napari/pull/4892/files#r935336654)
+    - Decision: last request.
+        - The implementation is simpler if this represents the last request
+        - Can introduce an additional public attribute later if last response is needed.
 
 ## References and footnotes
 
@@ -678,6 +706,8 @@ CC0+BY [^cc0-by].
 [^issue-2862]: napari issue 2862, <https://github.com/napari/napari/issues/2862>
 
 [^pull-4334]: napari pull request 4334, <https://github.com/napari/napari/pull/4334>
+
+[^pull-4969]: napari pull request 4969, <https://github.com/napari/napari/issues/4969>
 
 [^vispy-faq-threads]: Vispy FAQs: Is VisPy multi-threaded or thread-safe?, <https://vispy.org/faq.html#is-vispy-multi-threaded-or-thread-safe>
 
