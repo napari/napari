@@ -25,6 +25,8 @@ class Source(BaseModel):
         `viewer.open_sample`.
     widget: FunctionGui, optional
         magicgui widget, if the layer was added via a magicgui widget.
+    parent: Layer, optional
+        parent layer if the layer is a duplicate.
     """
 
     path: Optional[str] = None
