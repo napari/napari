@@ -34,7 +34,7 @@ def test_layer_actions(shortcut_editor_widget):
     assert actions2 == {**widget.key_bindings_strs["Labels layer"], **actions1}
 
 
-def test_mark_conflicts(shortcut_editor_widget):
+def test_mark_conflicts(shortcut_editor_widget, qtbot):
     widget = shortcut_editor_widget()
     widget._table.item(0, widget._shortcut_col).setText("U")
     act = widget._table.item(0, widget._action_col).text()
@@ -44,3 +44,4 @@ def test_mark_conflicts(shortcut_editor_widget):
         assert mock.called
     assert widget._mark_conflicts("Y", 1)
     # "Y" is arbitrary chosen and on conflict with existing shortcut should be changed
+    qtbot.add_widget(widget._warn_dialog)
