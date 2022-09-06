@@ -50,7 +50,9 @@ def select(layer, event):
     # Set _drag_start value here to prevent an offset when mouse_move happens
     # https://github.com/napari/napari/pull/4999
     layer._set_drag_start(
-        layer.selected_data, layer.world_to_data(event.position)
+        layer.selected_data,
+        layer.world_to_data(event.position),
+        center_by_data=not modify_selection,
     )
     yield
 
@@ -67,8 +69,6 @@ def select(layer, event):
             # while dragging, update the drag box
             coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
-            if layer._drag_start is None:
-                layer._drag_start = coord
             layer._drag_box = np.array([layer._drag_start, coord])
 
             # update the drag up and normal vectors on the layer
