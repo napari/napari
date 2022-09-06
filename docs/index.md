@@ -182,7 +182,7 @@ import napari
 viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
 
-![image](./images/screenshot-add-image.png)
+![image](./images/viewer-add-image.png)
 
 To do the same thing inside a script call (note the call to {func}`napari.run` at
 the end)
