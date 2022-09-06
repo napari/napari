@@ -174,17 +174,29 @@ class QtLabelsControls(QtLayerControls):
             checked=True,
         )
         action_manager.bind_button(
-            'napari:activate_label_pan_zoom_mode', self.panzoom_button
+            'napari:activate_label_pan_zoom_mode',
+            self.panzoom_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
         action_manager.bind_button(
-            'napari:activate_label_picker_mode', self.pick_button
+            'napari:activate_label_picker_mode',
+            self.pick_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
         action_manager.bind_button(
-            'napari:activate_paint_mode', self.paint_button
+            'napari:activate_paint_mode',
+            self.paint_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.fill_button = QtModeRadioButton(
@@ -196,7 +208,7 @@ class QtLabelsControls(QtLayerControls):
             'napari:activate_fill_mode',
             self.fill_button,
             extra_tooltip_text=trans._(
-                "Toggle with {shortcut}",
+                "\nHold shortcut or {shortcut} to temporarily activate",
                 shortcut=Shortcut("Control"),
             ),
         )
@@ -210,7 +222,7 @@ class QtLabelsControls(QtLayerControls):
             'napari:activate_label_erase_mode',
             self.erase_button,
             extra_tooltip_text=trans._(
-                "Toggle with {shortcut}",
+                "\nHold shortcut or {shortcut} to temporarily activate",
                 shortcut=Shortcut("Alt"),
             ),
         )

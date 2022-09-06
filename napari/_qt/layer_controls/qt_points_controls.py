@@ -137,11 +137,19 @@ class QtPointsControls(QtLayerControls):
             Mode.SELECT,
         )
         action_manager.bind_button(
-            'napari:activate_points_select_mode', self.select_button
+            'napari:activate_points_select_mode',
+            self.select_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.addition_button = QtModeRadioButton(layer, 'add_points', Mode.ADD)
         action_manager.bind_button(
-            'napari:activate_points_add_mode', self.addition_button
+            'napari:activate_points_add_mode',
+            self.addition_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
@@ -150,7 +158,11 @@ class QtPointsControls(QtLayerControls):
             checked=True,
         )
         action_manager.bind_button(
-            'napari:activate_points_pan_zoom_mode', self.panzoom_button
+            'napari:activate_points_pan_zoom_mode',
+            self.panzoom_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut or Space to temporarily activate"
+            ),
         )
         self.delete_button = QtModePushButton(
             layer,
@@ -173,8 +185,8 @@ class QtPointsControls(QtLayerControls):
         button_row = QHBoxLayout()
         button_row.addStretch(1)
         button_row.addWidget(self.delete_button)
-        button_row.addWidget(self.addition_button)
         button_row.addWidget(self.select_button)
+        button_row.addWidget(self.addition_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)

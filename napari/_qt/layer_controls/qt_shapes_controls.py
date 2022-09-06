@@ -8,7 +8,6 @@ from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
-from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets._slider_compat import QSlider
@@ -148,16 +147,28 @@ class QtShapesControls(QtLayerControls):
             action_manager.bind_button(
                 action_name,
                 btn,
-                extra_tooltip_text='',
+                extra_tooltip_text=extra_tooltip_text,
             )
             return btn
 
         self.select_button = _radio_button(
-            layer, 'select', Mode.SELECT, "activate_select_mode"
+            layer,
+            'select',
+            Mode.SELECT,
+            "activate_select_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.direct_button = _radio_button(
-            layer, 'direct', Mode.DIRECT, "activate_direct_mode"
+            layer,
+            'direct',
+            Mode.DIRECT,
+            "activate_direct_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.panzoom_button = _radio_button(
@@ -165,7 +176,9 @@ class QtShapesControls(QtLayerControls):
             'zoom',
             Mode.PAN_ZOOM,
             "activate_shape_pan_zoom_mode",
-            extra_tooltip_text=trans._('(or hold Space)'),
+            extra_tooltip_text=trans._(
+                '\nHold shortcut or Space to temporarily activate'
+            ),
             checked=True,
         )
 
@@ -174,37 +187,64 @@ class QtShapesControls(QtLayerControls):
             'rectangle',
             Mode.ADD_RECTANGLE,
             "activate_add_rectangle_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.ellipse_button = _radio_button(
             layer,
             'ellipse',
             Mode.ADD_ELLIPSE,
             "activate_add_ellipse_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.line_button = _radio_button(
-            layer, 'line', Mode.ADD_LINE, "activate_add_line_mode"
+            layer,
+            'line',
+            Mode.ADD_LINE,
+            "activate_add_line_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.path_button = _radio_button(
-            layer, 'path', Mode.ADD_PATH, "activate_add_path_mode"
+            layer,
+            'path',
+            Mode.ADD_PATH,
+            "activate_add_path_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.polygon_button = _radio_button(
             layer,
             'polygon',
             Mode.ADD_POLYGON,
             "activate_add_polygon_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.vertex_insert_button = _radio_button(
             layer,
             'vertex_insert',
             Mode.VERTEX_INSERT,
             "activate_vertex_insert_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
         self.vertex_remove_button = _radio_button(
             layer,
             'vertex_remove',
             Mode.VERTEX_REMOVE,
             "activate_vertex_remove_mode",
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.move_front_button = QtModePushButton(
@@ -215,7 +255,11 @@ class QtShapesControls(QtLayerControls):
         )
 
         action_manager.bind_button(
-            'napari:move_shapes_selection_to_front', self.move_front_button
+            'napari:move_shapes_selection_to_front',
+            self.move_front_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.move_back_button = QtModePushButton(
@@ -225,7 +269,11 @@ class QtShapesControls(QtLayerControls):
             tooltip=trans._('Move to back'),
         )
         action_manager.bind_button(
-            'napari:move_shapes_selection_to_back', self.move_back_button
+            'napari:move_shapes_selection_to_back',
+            self.move_back_button,
+            extra_tooltip_text=trans._(
+                "\nHold shortcut to temporarily activate"
+            ),
         )
 
         self.delete_button = QtModePushButton(
@@ -233,9 +281,11 @@ class QtShapesControls(QtLayerControls):
             'delete_shape',
             slot=self.layer.remove_selected,
             tooltip=trans._(
-                "Delete selected shapes ({shortcut})",
-                shortcut=Shortcut('Backspace').platform,
+                "Delete selected shapes",
             ),
+        )
+        action_manager.bind_button(
+            'napari:delete_selected_shapes', self.delete_button
         )
 
         self.button_group = QButtonGroup(self)
@@ -251,11 +301,11 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.vertex_remove_button)
 
         button_grid = QGridLayout()
-        button_grid.addWidget(self.vertex_remove_button, 0, 2)
-        button_grid.addWidget(self.vertex_insert_button, 0, 3)
-        button_grid.addWidget(self.delete_button, 0, 4)
-        button_grid.addWidget(self.direct_button, 0, 5)
-        button_grid.addWidget(self.select_button, 0, 6)
+        button_grid.addWidget(self.delete_button, 0, 2)
+        button_grid.addWidget(self.select_button, 0, 3)
+        button_grid.addWidget(self.vertex_remove_button, 0, 4)
+        button_grid.addWidget(self.vertex_insert_button, 0, 5)
+        button_grid.addWidget(self.direct_button, 0, 6)
         button_grid.addWidget(self.panzoom_button, 0, 7)
         button_grid.addWidget(self.move_back_button, 1, 1)
         button_grid.addWidget(self.move_front_button, 1, 2)
