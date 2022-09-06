@@ -1891,7 +1891,7 @@ class Points(Layer):
         selection_indices = list(selection_indices)
         dims_displayed = list(self._dims_displayed)
         if self._drag_start is None:
-            self._drag_start = np.array(position)[dims_displayed]
+            self._drag_start = np.array(position, dtype=float)[dims_displayed]
             if len(selection_indices) > 0 and center_by_data:
                 center = self.data[
                     np.ix_(selection_indices, dims_displayed)
