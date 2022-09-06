@@ -11,6 +11,8 @@ we slice through the dataset, the segmentation stays unchanged, but is visible
 on every slice.
 
 .. [1] https://numpy.org/doc/stable/user/basics.broadcasting.html
+
+.. tags:: visualization-nD
 """
 
 from skimage.data import binary_blobs
