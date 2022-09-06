@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from magicgui.widgets import FunctionGui
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from .base.base import Layer
 
 
 class Source(BaseModel):
@@ -28,6 +31,7 @@ class Source(BaseModel):
     reader_plugin: Optional[str] = None
     sample: Optional[Tuple[str, str]] = None
     widget: Optional[FunctionGui] = None
+    parent: Optional[Layer] = None
 
     class Config:
         arbitrary_types_allowed = True

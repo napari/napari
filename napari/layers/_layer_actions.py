@@ -25,6 +25,7 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
         data, state, type_str = lay.as_layer_data_tuple()
         state["name"] = trans._('{name} copy', name=lay.name)
         new = Layer.create(deepcopy(data), state, type_str)
+        new._source = new.source.copy(update={'parent': lay})
         ll.insert(ll.index(lay) + 1, new)
 
 
