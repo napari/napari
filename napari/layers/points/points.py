@@ -1892,7 +1892,7 @@ class Points(Layer):
         """
         if len(selection_indices) > 0:
             selection_indices = list(selection_indices)
-            dims_displayed = list(self._dims_displayed)
+            dims_displayed = list(self._slice_input.displayed)
             if self._drag_start is None:
                 center = self.data[
                     np.ix_(selection_indices, dims_displayed)
