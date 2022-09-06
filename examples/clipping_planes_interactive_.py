@@ -4,6 +4,8 @@ Clipping planes interactive
 
 Display a 3D image (plus labels) with a clipping plane and interactive controls
 for moving the plane
+
+.. tags:: experimental
 """
 import napari
 import numpy as np

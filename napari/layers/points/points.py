@@ -2,7 +2,7 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1850,29 +1850,54 @@ class Points(Layer):
             self.data = np.delete(self.data, index, axis=0)
             self.selected_data = set()
 
-    def _move(self, index, coord):
-        """Moves points relative drag start location.
+    def _move(
+        self,
+        selection_indices: Sequence[int],
+        position: Sequence[Union[int, float]],
+    ) -> None:
+        """Move points relative to drag start location.
 
         Parameters
         ----------
-        index : list
-            Integer indices of points to move
-        coord : tuple
-            Coordinates to move points to
+        selection_indices : Sequence[int]
+            Integer indices of points to move in self.data
+        position : tuple
+            Position to move points to in data coordinates.
         """
-        if len(index) > 0:
-            index = list(index)
-            disp = self._slice_input.displayed
-            if self._drag_start is None:
-                center = self.data[np.ix_(index, disp)].mean(axis=0)
-                self._drag_start = np.array(coord)[disp] - center
-            center = self.data[np.ix_(index, disp)].mean(axis=0)
-            shift = np.array(coord)[disp] - center - self._drag_start
-            self.data[np.ix_(index, disp)] = (
-                self.data[np.ix_(index, disp)] + shift
+        if len(selection_indices) > 0:
+            selection_indices = list(selection_indices)
+            disp = list(self._slice_input.displayed)
+            self._set_drag_start(selection_indices, position)
+            center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
+            shift = np.array(position)[disp] - center - self._drag_start
+            self.data[np.ix_(selection_indices, disp)] = (
+                self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
         self.events.data(value=self.data)
+
+    def _set_drag_start(
+        self,
+        selection_indices: Sequence[int],
+        position: Sequence[Union[int, float]],
+    ) -> None:
+        """Store the initial position at the start of a drag event.
+
+        Parameters
+        ----------
+        selection_indices : set of int
+            integer indices of selected data used to index into self.data
+        position : Sequence of numbers
+            position of the drag start in data coordinates.
+        """
+        if len(selection_indices) > 0:
+            selection_indices = list(selection_indices)
+            dims_displayed = list(self._dims_displayed)
+            if self._drag_start is None:
+                center = self.data[
+                    np.ix_(selection_indices, dims_displayed)
+                ].mean(axis=0)
+                self._drag_start = np.array(position)[dims_displayed] - center
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""

@@ -2450,3 +2450,19 @@ def test_antialiasing_value_clipping():
     with pytest.warns(RuntimeWarning):
         layer.antialiasing = -1
     assert layer.antialiasing == 0
+
+
+def test_set_drag_start():
+    """Drag start should only change when currently None."""
+    data = [[0, 0], [1, 1]]
+    layer = Points(data)
+    assert layer._drag_start is None
+    position = (0, 1)
+    layer._set_drag_start({0}, position=position)
+    assert all(
+        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    )
+    layer._set_drag_start({0}, position=(1, 2))
+    assert all(
+        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    )

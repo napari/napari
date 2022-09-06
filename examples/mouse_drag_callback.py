@@ -4,6 +4,8 @@ Mouse drag callback
 
 Example updating the status bar with line profile info while dragging
 lines around in a shapes layer.
+
+.. tags:: gui
 """
 
 from skimage import data

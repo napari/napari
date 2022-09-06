@@ -3,6 +3,8 @@ Spheres
 =======
 
 Display two spheres with Surface layers
+
+.. tags:: visualization-advanced
 """
 
 import napari
