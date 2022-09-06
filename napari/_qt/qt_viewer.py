@@ -722,7 +722,7 @@ class QtViewer(QSplitter):
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _open_files_dialog(self):
+    def _open_files_dialog(self, choose_plugin=False):
         """Add files from the menubar."""
         dlg = QFileDialog()
         hist = get_open_history()
@@ -741,10 +741,12 @@ class QtViewer(QSplitter):
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
-                self._qt_open([filename], stack=False)
+                self._qt_open(
+                    [filename], stack=False, choose_plugin=choose_plugin
+                )
             update_open_history(filenames[0])
 
-    def _open_files_dialog_as_stack_dialog(self):
+    def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
         """Add files as a stack, from the menubar."""
         dlg = QFileDialog()
         hist = get_open_history()
@@ -762,10 +764,10 @@ class QtViewer(QSplitter):
         )
 
         if (filenames != []) and (filenames is not None):
-            self._qt_open(filenames, stack=True)
+            self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
             update_open_history(filenames[0])
 
-    def _open_folder_dialog(self):
+    def _open_folder_dialog(self, choose_plugin=False):
         """Add a folder of files from the menubar."""
         dlg = QFileDialog()
         hist = get_open_history()
@@ -783,30 +785,43 @@ class QtViewer(QSplitter):
         )
 
         if folder not in {'', None}:
-            self._qt_open([folder], stack=False)
+            self._qt_open([folder], stack=False, choose_plugin=choose_plugin)
             update_open_history(folder)
 
     def _qt_open(
         self,
         filenames: List[str],
         stack: Union[bool, List[List[str]]],
+        choose_plugin: bool = False,
         plugin: str = None,
         layer_type: str = None,
         **kwargs,
     ):
         """Open files, potentially popping reader dialog for plugin selection.
 
-        Call ViewerModel._open_or_raise_error and catch errors that could
+        Call ViewerModel.open and catch errors that could
         be fixed by user making a plugin choice.
 
         Parameters
         ----------
         filenames : List[str]
             paths to open
+        choose_plugin : bool
+            True if user wants to explicitly choose the plugin else False
         stack : bool or list[list[str]]
             whether to stack files or not. Can also be a list containing
             files to stack.
+        plugin: str
+            plugin to use for reading
+        layer_type: str
+            layer type for opened layers
         """
+        if choose_plugin:
+            handle_gui_reading(
+                filenames, self, stack, plugin_override=choose_plugin, **kwargs
+            )
+            return
+
         try:
             self.viewer.open(
                 filenames,
@@ -1125,9 +1140,16 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         if event.mimeData().hasUrls():
+            self._set_drag_status()
             event.accept()
         else:
             event.ignore()
+
+    def _set_drag_status(self):
+        """Set dedicated status message when dragging files into viewer"""
+        self.viewer.status = trans._(
+            'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+        )
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
@@ -1147,6 +1169,10 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.ShiftModifier
         )
+        alt_down = (
+            QGuiApplication.keyboardModifiers()
+            & Qt.KeyboardModifier.AltModifier
+        )
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
@@ -1155,13 +1181,11 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        # if trying to open as a stack, open with any available reader
-        if shift_down:
-            self._qt_open(filenames, stack=bool(shift_down))
-            return
-
-        for filename in filenames:
-            self._qt_open([filename], stack=bool(shift_down))
+        self._qt_open(
+            filenames,
+            stack=bool(shift_down),
+            choose_plugin=bool(alt_down),
+        )
 
     def closeEvent(self, event):
         """Cleanup and close.
