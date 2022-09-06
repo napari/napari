@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from vispy.util import keys
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
 from ...settings import get_settings
@@ -113,6 +114,13 @@ class ShortcutEditor(QWidget):
         layout = QVBoxLayout()
         layout.addLayout(hlayout2)
         layout.addWidget(self._table)
+        layout.addWidget(
+            QLabel(
+                trans._(
+                    "To clean shortcut use Backspace or Delete. To set one of this as shortcut, first clean previous shortcut."
+                )
+            )
+        )
 
         self.setLayout(layout)
 
@@ -445,7 +453,7 @@ class ShortcutEditor(QWidget):
 
                 elif action_manager._shortcuts[current_action]:
                     # There is not a new shortcut to bind.  Keep track of it.
-                    new_value_dict = {current_action: [""]}
+                    new_value_dict = {current_action: shortcuts_list}
 
                 if new_value_dict:
                     # Emit signal when new value set for shortcut.
@@ -582,22 +590,32 @@ class EditorWidget(QLineEdit):
         if not event_key or event_key == Qt.Key.Key_unknown:
             return
 
+        if (
+            event_key in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace}
+            and self.text() != ''
+        ):
+            # Allow user to delete shortcut.
+            self.setText('')
+            return
+
         key_map = {
-            Qt.Key.Key_Control: 'Control',
-            Qt.Key.Key_Shift: 'Shift',
-            Qt.Key.Key_Alt: 'Alt',
-            Qt.Key.Key_Meta: 'Meta',
+            Qt.Key.Key_Control: keys.CONTROL,
+            Qt.Key.Key_Shift: keys.SHIFT,
+            Qt.Key.Key_Alt: keys.ALT,
+            Qt.Key.Key_Meta: keys.META,
+            Qt.Key.Key_Delete: keys.DELETE,
         }
 
         if event_key in key_map:
             self.setText(key_map[event_key])
             return
 
-        if event_key in [
+        if event_key in {
             Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
             Qt.Key.Key_CapsLock,
-        ]:
+            Qt.Key.Key_Enter,
+        }:
             # Do not allow user to set these keys as shortcut.
             return
 
@@ -609,16 +627,16 @@ class EditorWidget(QLineEdit):
         # Split the shortcut if it contains a symbol.
         parsed = re.split('[-(?=.+)]', event_keystr)
 
-        keys = []
+        keys_li = []
         # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
         for val in parsed:
             if val in KEY_SUBS.keys():
-                keys.append(KEY_SUBS[val])
+                keys_li.append(KEY_SUBS[val])
             else:
-                keys.append(val)
+                keys_li.append(val)
 
-        keys = '-'.join(keys)
-        self.setText(keys)
+        keys_li = '-'.join(keys_li)
+        self.setText(keys_li)
 
 
 class ShortcutTranslator(QKeySequenceEdit):
