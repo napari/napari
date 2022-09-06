@@ -5,9 +5,9 @@ have the same signatures.
 
 import inspect
 
-from napari.view_layers import imshow
-from napari.layers import Image
 from napari import Viewer
+from napari.layers import Image
+from napari.view_layers import imshow
 
 
 def test_signature_imshow():
@@ -18,13 +18,15 @@ def test_signature_imshow():
     # collect the signatures for this method and its classes
     class_parameters = {
         **inspect.signature(layer.__init__).parameters,
-        **inspect.signature(Viewer.__init__).parameters
+        **inspect.signature(Viewer.__init__).parameters,
     }
     method_parameters = dict(inspect.signature(method).parameters)
 
     # Remove unique parameters from viewer method
     del method_parameters['viewer']  # only in this method
-    del method_parameters['channel_axis']  # gets added in viewer_model (TODO: I don't understand this)
+    del method_parameters[
+        'channel_axis'
+    ]  # gets added in viewer_model (TODO: I don't understand this)
     del class_parameters['self']  # only in class
 
     # ensure both have the same parameters
