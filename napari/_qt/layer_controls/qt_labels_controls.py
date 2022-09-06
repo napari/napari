@@ -176,6 +176,7 @@ class QtLabelsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_label_pan_zoom_mode',
             self.panzoom_button,
+            extra_tooltip_text=trans._("\n(or Space)"),
         )
 
         self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)

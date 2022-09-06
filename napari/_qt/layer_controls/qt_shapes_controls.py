@@ -170,6 +170,7 @@ class QtShapesControls(QtLayerControls):
             'zoom',
             Mode.PAN_ZOOM,
             "activate_shape_pan_zoom_mode",
+            extra_tooltip_text=trans._("\n(or Space)"),
             checked=True,
         )
 
