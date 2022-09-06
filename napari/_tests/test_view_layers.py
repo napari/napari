@@ -172,9 +172,10 @@ def test_imshow(qtbot, napari_plugin_manager):
     ndim = len(shape)
     np.random.seed(0)
     data = np.random.random(shape)
-    viewer, layer = napari.imshow(data, show=False)
+    viewer, layer = napari.imshow(data, channel_axis=None, show=False)
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
+    assert isinstance(layer, napari.layers.Image)
     viewer.close()
 
 
@@ -185,6 +186,7 @@ def test_imshow_multichannel(qtbot, napari_plugin_manager):
     data = np.random.random((15, 10, 5))
     viewer, layers = napari.imshow(data, channel_axis=-1, show=False)
     assert len(layers) == data.shape[-1]
+    assert isinstance(layers, tuple)
     for i in range(data.shape[-1]):
         assert np.all(layers[i].data == data.take(i, axis=-1))
     viewer.close()

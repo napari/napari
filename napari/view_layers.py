@@ -13,11 +13,12 @@ of the layer types, like "image", "points", etc...):
         return viewer
 """
 import inspect
-from typing import Any, Tuple
+from typing import Any, Tuple, List
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
 from napari.components.dims import Dims
+from napari.layers import Image
 
 from .viewer import Viewer
 
@@ -115,9 +116,11 @@ _dims_params = Dims.__fields__
 
 
 def _make_viewer_then(
-    add_method: str, args, kwargs, viewer=None
+    add_method: str, args, kwargs,
 ) -> Tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
+
+    This function will be deprecated soon (See #4693)
 
     Parameters
     ----------
@@ -147,11 +150,14 @@ def _make_viewer_then(
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
     }
+    viewer = kwargs.pop("viewer", None)
     if viewer is None:
         viewer = Viewer(**vkwargs)
     kwargs.update(kwargs.pop("kwargs", {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)
+    if isinstance(added, list):
+        added = tuple(added)
     for arg_name, arg_val in dims_kwargs.items():
         setattr(viewer.dims, arg_name, arg_val)
     return viewer, added
@@ -206,7 +212,41 @@ def view_path(*args, **kwargs):
     return _make_viewer_then('open', args, kwargs)[0]
 
 
-def imshow(*args, viewer=None, **kwargs):
+def imshow(
+    data,
+    *,
+    channel_axis=None,
+    rgb=None,
+    colormap='gray',
+    contrast_limits=None,
+    gamma=1,
+    interpolation2d='nearest',
+    interpolation3d='linear',
+    rendering='mip',
+    depiction='volume',
+    iso_threshold=0.5,
+    attenuation=0.05,
+    name=None,
+    metadata=None,
+    scale=None,
+    translate=None,
+    rotate=None,
+    shear=None,
+    affine=None,
+    opacity=1,
+    blending='translucent',
+    visible=True,
+    multiscale=None,
+    cache=True,
+    plane=None,
+    experimental_clipping_planes=None,
+    viewer=None,
+    title='napari',
+    ndisplay=2,
+    order=(),
+    axis_labels=(),
+    show=True,
+) -> Tuple[Viewer, List[Image]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -218,6 +258,12 @@ def imshow(*args, viewer=None, **kwargs):
         a multiscale image. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    channel_axis : int, optional
+            Axis to expand image along.  If provided, each channel in the data
+            will be added as an individual image layer.  In channel_axis mode,
+            all other parameters MAY be provided as lists, and the Nth value
+            will be applied to the Nth channel in the data.  If a single value
+            is provided, it will be broadcast to all Layers.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -321,4 +367,49 @@ def imshow(*args, viewer=None, **kwargs):
         argument is given.
     """
 
-    return _make_viewer_then('add_image', args, kwargs, viewer=viewer)
+    kwargs = dict(
+        viewer=viewer,
+        channel_axis=channel_axis,
+        rgb=rgb,
+        colormap=colormap,
+        contrast_limits=contrast_limits,
+        gamma=gamma,
+        interpolation2d=interpolation2d,
+        interpolation3d=interpolation3d,
+        rendering=rendering,
+        depiction=depiction,
+        iso_threshold=iso_threshold,
+        attenuation=attenuation,
+        name=name,
+        metadata=metadata,
+        scale=scale,
+        translate=translate,
+        rotate=rotate,
+        shear=shear,
+        affine=affine,
+        opacity=opacity,
+        blending=blending,
+        visible=visible,
+        multiscale=multiscale,
+        cache=cache,
+        plane=plane,
+        experimental_clipping_planes=experimental_clipping_planes,
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
+    )
+
+    args = tuple(
+        [data]
+    )
+
+    viewer, layers = _make_viewer_then(
+        'add_image',
+        # *, # TODO sort out if this needs to be kept/how to handle it
+        args,
+        kwargs,
+    )
+
+    return viewer, layers
