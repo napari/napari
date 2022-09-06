@@ -518,6 +518,7 @@ class KeymapHandler:
         if (
             event.native is not None
             and event.native.isAutoRepeat()
+            # Adding [, ] here for hard-coded Labels brush size press & hold keybind
             and event.key.name not in ['Up', 'Down', 'Left', 'Right', '[', ']']
         ) or event.key is None:
             # pass if no key is present or if key is held down, unless the
