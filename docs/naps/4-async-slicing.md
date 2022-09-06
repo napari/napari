@@ -5,8 +5,11 @@
 ```{eval-rst}
 :Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni, Eric Perlman, Kim Pevey
 :Created: 2022-06-23
-:Status: Draft
+:Resolution: TODO <url>
+:Resolved: TODO <yyyy-mm-dd>
+:Status: Accepted
 :Type: Standards Track
+:Version effective: 0.5
 ```
 
 ## Abstract
