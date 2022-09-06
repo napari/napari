@@ -48,4 +48,4 @@ def test_bind_unbind_existing_action(action_manager):
 
     assert action_manager.bind_shortcut('napari:test_action_1', 'X') is None
     assert action_manager.unbind_shortcut('napari:test_action_1') == ['X']
-    assert action_manager._shortcuts['napari:test_action_1'] == set()
+    assert action_manager._shortcuts['napari:test_action_1'] == []
