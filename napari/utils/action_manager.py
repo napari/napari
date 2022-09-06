@@ -37,6 +37,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
+    is_toggle: bool  # subclassclass or instance of a subclass
 
     @cached_property
     def injected(self) -> Callable:
@@ -70,7 +71,7 @@ class ActionManager:
 
     >>> action_manager.register_action('bump one', callback,
     ...     'Add one to dims',
-    ...     None)
+    ...     None, False)
 
     The callback signature is going to be inspected and required globals passed
     in.
@@ -105,6 +106,7 @@ class ActionManager:
         command: Callable,
         description: str,
         keymapprovider: KeymapProvider,
+        is_toggle: bool = False,
     ):
         """
         Register an action for future usage
@@ -150,7 +152,9 @@ class ActionManager:
 
         """
         self._validate_action_name(name)
-        self._actions[name] = Action(command, description, keymapprovider)
+        self._actions[name] = Action(
+            command, description, keymapprovider, is_toggle
+        )
         self._update_shortcut_bindings(name)
 
     def _update_shortcut_bindings(self, name: str):
@@ -295,6 +299,7 @@ class ActionManager:
     def _build_tooltip(self, name: str) -> str:
         """Build tooltip for action `name`."""
         ttip = self._actions[name].description
+        is_toggle = self._actions[name].is_toggle
 
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
@@ -302,6 +307,9 @@ class ActionManager:
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
+        if is_toggle:
+            ttip += trans._("\nHold shortcut to temporarily activate")
+
         return ttip
 
     def _get_layer_shortcuts(self, layers):

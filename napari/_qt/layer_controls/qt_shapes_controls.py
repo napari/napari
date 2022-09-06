@@ -156,9 +156,6 @@ class QtShapesControls(QtLayerControls):
             'select',
             Mode.SELECT,
             "activate_select_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
 
         self.direct_button = _radio_button(
@@ -166,9 +163,6 @@ class QtShapesControls(QtLayerControls):
             'direct',
             Mode.DIRECT,
             "activate_direct_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
 
         self.panzoom_button = _radio_button(
@@ -176,9 +170,6 @@ class QtShapesControls(QtLayerControls):
             'zoom',
             Mode.PAN_ZOOM,
             "activate_shape_pan_zoom_mode",
-            extra_tooltip_text=trans._(
-                '\nHold shortcut or Space to temporarily activate'
-            ),
             checked=True,
         )
 
@@ -187,18 +178,12 @@ class QtShapesControls(QtLayerControls):
             'rectangle',
             Mode.ADD_RECTANGLE,
             "activate_add_rectangle_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.ellipse_button = _radio_button(
             layer,
             'ellipse',
             Mode.ADD_ELLIPSE,
             "activate_add_ellipse_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
 
         self.line_button = _radio_button(
@@ -206,45 +191,30 @@ class QtShapesControls(QtLayerControls):
             'line',
             Mode.ADD_LINE,
             "activate_add_line_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.path_button = _radio_button(
             layer,
             'path',
             Mode.ADD_PATH,
             "activate_add_path_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.polygon_button = _radio_button(
             layer,
             'polygon',
             Mode.ADD_POLYGON,
             "activate_add_polygon_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.vertex_insert_button = _radio_button(
             layer,
             'vertex_insert',
             Mode.VERTEX_INSERT,
             "activate_vertex_insert_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.vertex_remove_button = _radio_button(
             layer,
             'vertex_remove',
             Mode.VERTEX_REMOVE,
             "activate_vertex_remove_mode",
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
 
         self.move_front_button = QtModePushButton(
@@ -257,9 +227,6 @@ class QtShapesControls(QtLayerControls):
         action_manager.bind_button(
             'napari:move_shapes_selection_to_front',
             self.move_front_button,
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
 
         self.move_back_button = QtModePushButton(
@@ -271,9 +238,6 @@ class QtShapesControls(QtLayerControls):
         action_manager.bind_button(
             'napari:move_shapes_selection_to_back',
             self.move_back_button,
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
 
         self.delete_button = QtModePushButton(

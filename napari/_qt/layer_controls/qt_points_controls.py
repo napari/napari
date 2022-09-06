@@ -139,17 +139,11 @@ class QtPointsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_points_select_mode',
             self.select_button,
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.addition_button = QtModeRadioButton(layer, 'add_points', Mode.ADD)
         action_manager.bind_button(
             'napari:activate_points_add_mode',
             self.addition_button,
-            extra_tooltip_text=trans._(
-                "\nHold shortcut to temporarily activate"
-            ),
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
@@ -160,9 +154,7 @@ class QtPointsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_points_pan_zoom_mode',
             self.panzoom_button,
-            extra_tooltip_text=trans._(
-                "\nHold shortcut or Space to temporarily activate"
-            ),
+            extra_tooltip_text=trans._("\n(or Space)"),
         )
         self.delete_button = QtModePushButton(
             layer,
