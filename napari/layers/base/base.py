@@ -882,9 +882,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point = tuple(point)
 
         ndim = len(point)
-        assert (
-            ndim >= self.ndim
-        ), 'slicing with fewer dimensions than layer has'
 
         if order is None:
             order = tuple(range(ndim))
