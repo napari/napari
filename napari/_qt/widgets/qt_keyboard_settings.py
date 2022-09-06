@@ -274,6 +274,19 @@ class ShortcutEditor(QWidget):
             actions_all.update(viewer_actions)
         return actions_all
 
+    def _restore_shortcuts(self, row):
+        action_name = self._table.item(row, self._action_col).text()
+        shortcuts = action_manager._shortcuts.get(action_name, [])
+        with lock_keybind_update(self):
+            self._table.item(row, self._shortcut_col).setText(
+                Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
+            )
+            self._table.item(row, self._shortcut_col2).setText(
+                Shortcut(list(shortcuts)[1]).platform
+                if len(shortcuts) > 1
+                else ""
+            )
+
     def _mark_conflicts(self, new_shortcut, current_action, row) -> bool:
         # Go through all layer actions to determine if the new shortcut is already here.
         actions_all = self._get_layer_actions()
@@ -290,10 +303,6 @@ class ShortcutEditor(QWidget):
                 # show warning symbols
                 self._show_warning_icons([row, row1])
 
-                current_shortcuts = list(
-                    action_manager._shortcuts.get(current_action, {})
-                )
-
                 # show warning message
                 message = trans._(
                     "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
@@ -302,19 +311,7 @@ class ShortcutEditor(QWidget):
                 )
                 self._show_warning(new_shortcut, action, row, message)
 
-                if current_shortcuts:
-                    # If there was a shortcut set originally, then format it and reset the text.
-                    format_shortcut = Shortcut(current_shortcuts[0]).platform
-
-                    if format_shortcut != current_shortcuts[0]:
-                        # only skip the next round if there are special symbols
-                        self._skip = True
-
-                    current_item.setText(format_shortcut)
-
-                else:
-                    # There wasn't a shortcut here.
-                    current_item.setText("")
+                self._restore_shortcuts(row)
 
                 self._cleanup_warning_icons([row, row1])
 
@@ -323,11 +320,8 @@ class ShortcutEditor(QWidget):
             else:
                 # This shortcut was here.  Reformat and reset text.
                 format_shortcut = Shortcut(new_shortcut).platform
-                if format_shortcut != new_shortcut:
-                    # Only skip the next round if there are special symbols in shortcut.
-                    self._skip = True
-
-                current_item.setText(format_shortcut)
+                with lock_keybind_update(self):
+                    current_item.setText(format_shortcut)
 
         return True
 
@@ -350,14 +344,7 @@ class ShortcutEditor(QWidget):
         self._show_warning(new_shortcut, current_action, row, message)
 
         self._cleanup_warning_icons([row])
-
-        format_shortcut = Shortcut(current_shortcuts[0]).platform
-        if format_shortcut != current_shortcuts[0]:
-            # Skip the next round if there are special symbols.
-            self._skip = True
-
-        # Update text to formated shortcut.
-        self._table.currentItem().setText(format_shortcut)
+        self._restore_shortcuts(row)
 
     def _set_keybinding(self, row, col):
         """Checks the new keybinding to determine if it can be set.
@@ -370,10 +357,7 @@ class ShortcutEditor(QWidget):
             Column being edited (shortcut column).
         """
 
-        if self._skip is True:
-            # Do nothing if the text is setting to a symbol.
-            # Its already been handled.
-            self._skip = False
+        if self._skip:
             return
 
         if col in {self._shortcut_col, self._shortcut_col2}:
@@ -443,17 +427,12 @@ class ShortcutEditor(QWidget):
                     new_value_dict = {current_action: shortcuts_list}
 
                     # Format new shortcut.
-                    format_shortcut = Shortcut(new_shortcut).platform
-                    if format_shortcut != new_shortcut:
-                        # Skip the next round because there are special symbols.
-                        self._skip = True
-
-                    # Update text to formated shortcut.
-                    current_item.setText(format_shortcut)
 
                 elif action_manager._shortcuts[current_action]:
                     # There is not a new shortcut to bind.  Keep track of it.
                     new_value_dict = {current_action: shortcuts_list}
+
+                self._restore_shortcuts(row)
 
                 if new_value_dict:
                     # Emit signal when new value set for shortcut.
@@ -665,3 +644,13 @@ class ShortcutTranslator(QKeySequenceEdit):
     def event(self, event):
         """Qt Override"""
         return False
+
+
+@contextlib.contextmanager
+def lock_keybind_update(widget: ShortcutEditor):
+    prev = widget._skip
+    widget._skip = True
+    try:
+        yield
+    finally:
+        widget._skip = prev
