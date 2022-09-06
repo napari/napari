@@ -287,8 +287,9 @@ class ShortcutEditor(QWidget):
                 else ""
             )
 
-    def _mark_conflicts(self, new_shortcut, current_action, row) -> bool:
+    def _mark_conflicts(self, new_shortcut, row) -> bool:
         # Go through all layer actions to determine if the new shortcut is already here.
+        current_action = self._table.item(row, self._action_col).text()
         actions_all = self._get_layer_actions()
         current_item = self._table.currentItem()
         for row1, (action_name, action) in enumerate(actions_all.items()):
@@ -360,6 +361,8 @@ class ShortcutEditor(QWidget):
         if self._skip:
             return
 
+        self._table.setCurrentItem(self._table.item(row, col))
+
         if col in {self._shortcut_col, self._shortcut_col2}:
             # Get all layer actions and viewer actions in order to determine
             # the new shortcut is not already set to an action.
@@ -389,15 +392,14 @@ class ShortcutEditor(QWidget):
             )
 
             # Flag to indicate whether to set the new shortcut.
-            replace = self._mark_conflicts(new_shortcut, current_action, row)
+            replace = self._mark_conflicts(new_shortcut, row)
 
             if replace is True:
                 # This shortcut is not taken.
 
                 #  Unbind current action from shortcuts in action manager.
-                shortcuts_list = list(
-                    action_manager.unbind_shortcut(current_action)
-                )
+                action_manager.unbind_shortcut(current_action)
+                shortcuts_list = list(current_shortcuts)
                 ind = col - self._shortcut_col
                 if new_shortcut != "":
                     if ind < len(shortcuts_list):
