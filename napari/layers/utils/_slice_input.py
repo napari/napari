@@ -18,7 +18,7 @@ class _SliceInput:
     in ``Viewer.dims`` when slicing a layer.
     """
 
-    # The number of dimensions displayed to be displayed in the slice.
+    # The number of dimensions to be displayed in the slice.
     ndisplay: int
     # The point in layer world coordinates that defines the slicing plane.
     # Only the elements in the non-displayed dimensions have meaningful values.
