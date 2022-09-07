@@ -111,7 +111,7 @@ class Extension2ReaderTable(QWidget):
 
         self._fn_pattern_edit = QLineEdit()
         self._fn_pattern_edit.setPlaceholderText(
-            "Start typing filename pattern..."
+            trans._("Start typing filename pattern...")
         )
         self._fn_pattern_edit.textChanged.connect(
             self._filter_compatible_readers
@@ -159,12 +159,15 @@ class Extension2ReaderTable(QWidget):
 
         self._new_reader_dropdown.addItem(display_name, plugin_name)
         if '*' in reader_patterns:
-            tooltip_text = 'Accepts all'
+            tooltip_text = trans._('Accepts all')
         else:
             reader_patterns_formatted = ', '.join(
                 sorted(list(reader_patterns))
             )
-            tooltip_text = f'Accepts: {reader_patterns_formatted}'
+            tooltip_text = trans._(
+                'Accepts: {reader_patterns_formatted}',
+                reader_patterns_formatted=reader_patterns_formatted,
+            )
         self._new_reader_dropdown.setItemData(
             i, tooltip_text, role=Qt.ItemDataRole.ToolTipRole
         )
@@ -186,7 +189,7 @@ class Extension2ReaderTable(QWidget):
         readers.update(self._npe1_readers)
 
         if not readers:
-            self._new_reader_dropdown.addItem("None available")
+            self._new_reader_dropdown.addItem(trans._("None available"))
         else:
             for i, (plugin_name, display_name) in enumerate(
                 sorted(readers.items())
