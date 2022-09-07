@@ -37,7 +37,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
-    is_toggle: bool  # subclassclass or instance of a subclass
+    is_toggle_on_long_hold: bool  # subclassclass or instance of a subclass
 
     @cached_property
     def injected(self) -> Callable:
@@ -106,7 +106,7 @@ class ActionManager:
         command: Callable,
         description: str,
         keymapprovider: KeymapProvider,
-        is_toggle: bool = False,
+        is_toggle_on_long_hold: bool = False,
     ):
         """
         Register an action for future usage
@@ -153,7 +153,7 @@ class ActionManager:
         """
         self._validate_action_name(name)
         self._actions[name] = Action(
-            command, description, keymapprovider, is_toggle
+            command, description, keymapprovider, is_toggle_on_long_hold
         )
         self._update_shortcut_bindings(name)
 
@@ -299,7 +299,7 @@ class ActionManager:
     def _build_tooltip(self, name: str) -> str:
         """Build tooltip for action `name`."""
         ttip = self._actions[name].description
-        is_toggle = self._actions[name].is_toggle
+        is_toggle_on_long_hold = self._actions[name].is_toggle_on_long_hold
 
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
@@ -307,7 +307,7 @@ class ActionManager:
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
-        if is_toggle:
+        if is_toggle_on_long_hold:
             ttip += trans._("\nHold shortcut to temporarily activate")
 
         return ttip

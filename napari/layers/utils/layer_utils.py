@@ -16,7 +16,10 @@ from ...utils.translations import trans
 
 
 def register_layer_action(
-    keymapprovider, description: str, shortcuts=None, is_toggle=False
+    keymapprovider,
+    description: str,
+    shortcuts=None,
+    is_toggle_on_long_hold=False,
 ):
     """
     Convenient decorator to register an action with the current Layers
@@ -53,7 +56,7 @@ def register_layer_action(
             command=func,
             description=description,
             keymapprovider=keymapprovider,
-            is_toggle=is_toggle,
+            is_toggle_on_long_hold=is_toggle_on_long_hold,
         )
         if shortcuts:
             if isinstance(shortcuts, str):
