@@ -120,6 +120,8 @@ def register_layer_attr_action(
 
             return _callback
 
+        _wrapper._hold_button_delay = True
+
         register_layer_action(keymapprovider, description, shortcuts)(_wrapper)
         return func
 
