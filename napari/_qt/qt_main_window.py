@@ -35,6 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from superqt.utils import QSignalThrottler
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -131,6 +132,20 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        self.status_throttler = QSignalThrottler(parent=self)
+        self.status_throttler.setTimeout(50)
+
+        # In the GUI we expect lots of changes to the cursor position, so
+        # replace the direct connection with a throttled one.
+        with contextlib.suppress(IndexError):
+            viewer.cursor.events.position.disconnect(
+                viewer._update_status_bar_from_cursor
+            )
+        viewer.cursor.events.position.connect(self.status_throttler.throttle)
+        self.status_throttler.triggered.connect(
+            viewer._update_status_bar_from_cursor
+        )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -279,6 +294,8 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
+        if hasattr(self.status_throttler, "_timer"):
+            self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         if (

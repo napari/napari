@@ -3,6 +3,8 @@ Cursor position
 ===============
 
 Add small data to examine cursor positions
+
+.. tags:: interactivity
 """
 
 import numpy as np
