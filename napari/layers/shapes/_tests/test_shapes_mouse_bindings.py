@@ -720,21 +720,7 @@ def test_all_modes_covered(attr):
     'pre_selection,on_point,modifier',
     [
         (set(), True, []),
-        ({0}, True, []),
-        ({0, 1}, True, []),
         ({1}, True, []),
-        (set(), True, ['Shift']),
-        ({0}, True, ['Shift']),
-        ({0, 1}, True, ['Shift']),
-        ({1}, True, ['Shift']),
-        (set(), False, []),
-        ({0}, False, []),
-        ({0, 1}, False, []),
-        ({1}, False, []),
-        (set(), False, ['Shift']),
-        ({0}, False, ['Shift']),
-        ({0, 1}, False, ['Shift']),
-        ({1}, False, ['Shift']),
     ],
 )
 def test_drag_start_selection(
@@ -750,8 +736,11 @@ def test_drag_start_selection(
         initial_position = tuple(known_non_point)
     zero_pos = [0, 0]
 
+    value = layer.get_value(initial_position, world=True)
+    assert value[0] == 0
     assert layer._drag_start is None
     assert layer._drag_box is None
+    assert layer.selected_data == pre_selection
 
     # Simulate click
     event = ReadOnlyWrapper(
