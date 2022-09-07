@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+import skimage
 from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -15,7 +17,7 @@ def test_random_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0])
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -29,7 +31,7 @@ def test_infer_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0])
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -38,12 +40,12 @@ def test_infer_tuple_multiscale():
     """Test instantiating Image layer with random 2D multiscale data."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
-    data = tuple(np.random.random(s) for s in shapes)
+    data = [np.random.random(s) for s in shapes]
     layer = Image(data)
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0])
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -57,7 +59,7 @@ def test_blocking_multiscale():
     assert np.all(layer.data == data)
     assert layer.multiscale is False
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -67,12 +69,18 @@ def test_multiscale_tuple():
     shape = (40, 20)
     np.random.seed(0)
     img = np.random.random(shape)
-    data = tuple(pyramid_gaussian(img, multichannel=False))
+
+    if skimage.__version__ > '0.19':
+        pyramid_kwargs = {'channel_axis': None}
+    else:
+        pyramid_kwargs = {'multichannel': False}
+
+    data = list(pyramid_gaussian(img, **pyramid_kwargs))
     layer = Image(data)
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -85,7 +93,7 @@ def test_3D_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0])
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -98,7 +106,7 @@ def test_non_uniform_3D_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0])
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -111,7 +119,7 @@ def test_rgb_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0][:-1])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0][:-1])
     assert layer.rgb is True
     assert layer._data_view.ndim == 3
 
@@ -124,7 +132,7 @@ def test_3D_rgb_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0][:-1])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0][:-1])
     assert layer.rgb is True
     assert layer._data_view.ndim == 3
 
@@ -137,7 +145,7 @@ def test_non_rgb_image():
     layer = Image(data, multiscale=True, rgb=False)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shapes[0])
+    np.testing.assert_array_equal(layer.extent.data[1], shapes[0])
     assert layer.rgb is False
 
 
@@ -216,13 +224,20 @@ def test_interpolation():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer.interpolation == 'nearest'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'nearest'
+    assert layer.interpolation2d == 'nearest'
+    assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, multiscale=True, interpolation='bicubic')
-    assert layer.interpolation == 'bicubic'
+    layer = Image(data, multiscale=True, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'bicubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'bicubic'
 
-    layer.interpolation = 'bilinear'
-    assert layer.interpolation == 'bilinear'
+    layer.interpolation2d = 'linear'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'linear'
+    assert layer.interpolation2d == 'linear'
 
 
 def test_colormaps():
@@ -272,7 +287,6 @@ def test_contrast_limits():
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
-    assert layer.contrast_limits == layer._contrast_limits_range
 
     # Change contrast_limits property
     contrast_limits = [0, 2]
@@ -359,7 +373,7 @@ def test_message():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -388,8 +402,8 @@ def test_world_data_extent():
     shapes = [(6, 40, 80), (3, 20, 40), (1, 10, 20)]
     data = [np.random.random(s) for s in shapes]
     layer = Image(data)
-    extent = np.array(((0,) * 3, np.subtract(shapes[0], 1)))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    extent = np.array(((0,) * 3, shapes[0]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 
 def test_5D_multiscale():
@@ -401,3 +415,74 @@ def test_5D_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
+
+
+def test_multiscale_data_protocol():
+    """Test multiscale data provides basic data protocol."""
+    shapes = [(2, 5, 20, 20), (2, 5, 10, 10), (2, 5, 5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    assert '3 levels' in repr(layer.data)
+    assert layer.data == data
+    assert layer.data_raw is data
+    assert layer.data is not data
+    assert layer.multiscale is True
+
+    assert layer.data.dtype == float
+    assert layer.data.shape == shapes[0]
+    assert isinstance(layer.data[0], np.ndarray)
+
+
+@pytest.mark.parametrize(
+    ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
+    (
+        ([[5, 5], [15, 15]], 0, [[5, 5], [15, 15]]),
+        # Multiscale level selection uses > rather than >= so use -1 and 21
+        # instead of 0 and 20 to ensure that the FOV is big enough.
+        ([[-1, -1], [21, 21]], 1, [[0, 0], [10, 10]]),
+        ([[-11, -11], [31, 31]], 2, [[0, 0], [5, 5]]),
+    ),
+)
+def test_update_draw_variable_fov_fixed_canvas_size(
+    corner_pixels_world, exp_level, exp_corner_pixels_data
+):
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    canvas_size_pixels = (10, 10)
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array(corner_pixels_world),
+        shape_threshold=canvas_size_pixels,
+    )
+
+    assert layer.data_level == exp_level
+    np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
+
+
+@pytest.mark.parametrize(
+    ('canvas_size_pixels', 'exp_level', 'exp_corner_pixels_data'),
+    (
+        ([16, 16], 0, [[0, 0], [20, 20]]),
+        ([8, 8], 1, [[0, 0], [10, 10]]),
+        ([4, 4], 2, [[0, 0], [5, 5]]),
+    ),
+)
+def test_update_draw_variable_canvas_size_fixed_fov(
+    canvas_size_pixels, exp_level, exp_corner_pixels_data
+):
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    data = [np.zeros(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    corner_pixels_world = np.array([[0, 0], [20, 20]])
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=corner_pixels_world,
+        shape_threshold=canvas_size_pixels,
+    )
+
+    assert layer.data_level == exp_level
+    np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)

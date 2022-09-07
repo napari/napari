@@ -14,7 +14,7 @@ from napari._tests.utils import skip_local_popups
 def test_canvas_drawing(make_napari_viewer):
     """Test drawing before and after adding and then deleting a layer."""
     viewer = make_napari_viewer(show=True)
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     view.set_welcome_visible(False)
 
     assert len(viewer.layers) == 0

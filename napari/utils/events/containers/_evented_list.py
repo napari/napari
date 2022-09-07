@@ -22,6 +22,7 @@ MUST make sure that all the appropriate events are emitted.  (Tests should
 cover this in test_evented_list.py)
 """
 
+import contextlib
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
@@ -108,9 +109,7 @@ class EventedList(TypedMutableSequence[_T]):
     # def remove(self, value: T): ...
 
     def __setitem__(self, key, value):
-        old = self._list[key]
-        if value is old:  # https://github.com/napari/napari/pull/2120
-            return
+        old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
@@ -119,7 +118,11 @@ class EventedList(TypedMutableSequence[_T]):
                         deferred=True,
                     )
                 )
-
+            value = list(
+                value
+            )  # make sure we don't empty generators and reuse them
+            if value == old:
+                return
             [self._type_check(v) for v in value]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))
@@ -140,6 +143,8 @@ class EventedList(TypedMutableSequence[_T]):
                 for i, v in enumerate(value):
                     self.insert(start + i, v)
         else:
+            if value is old:
+                return
             super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)
 
@@ -170,7 +175,11 @@ class EventedList(TypedMutableSequence[_T]):
             parent.events.removing(index=index)
             self._disconnect_child_emitters(parent[index])
             item = parent._list.pop(index)
+            self._process_delete_item(item)
             parent.events.removed(index=index, value=item)
+
+    def _process_delete_item(self, item):
+        """Allow process item in inherited class before event was emitted"""
 
     def insert(self, index: int, value: _T):
         """Insert ``value`` before index."""
@@ -182,10 +191,8 @@ class EventedList(TypedMutableSequence[_T]):
     def _reemit_child_event(self, event: Event):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
-            try:
+            with contextlib.suppress(ValueError):
                 setattr(event, 'index', self.index(event.source))
-            except ValueError:
-                pass
         # reemit with this object's EventEmitter of the same type if present
         # otherwise just emit with the EmitterGroup itself
         getattr(self.events, event.type, self.events)(event)
@@ -313,8 +320,9 @@ class EventedList(TypedMutableSequence[_T]):
             else:
                 raise TypeError(
                     trans._(
-                        "Can only move integer or slice indices",
+                        "Can only move integer or slice indices, not {t}",
                         deferred=True,
+                        t=type(idx),
                     )
                 )
 

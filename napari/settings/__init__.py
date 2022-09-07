@@ -3,9 +3,9 @@ from typing import Any, Optional, Union, cast
 
 from ..utils.translations import trans
 from ._base import _NOT_SET
-from ._napari_settings import NapariSettings
+from ._napari_settings import CURRENT_SCHEMA_VERSION, NapariSettings
 
-__all__ = ['NapariSettings', 'get_settings']
+__all__ = ['NapariSettings', 'get_settings', 'CURRENT_SCHEMA_VERSION']
 
 
 class _SettingsProxy:
@@ -52,11 +52,11 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
-        raise Exception(
+        raise RuntimeError(
             trans._(
-                "The path can only be set once per session. Settings called from {calframe[1][3]}",
+                "The path can only be set once per session. Settings called from {calframe}",
                 deferred=True,
-                calframe=calframe,
+                calframe=calframe[1][3],
             )
         )
 

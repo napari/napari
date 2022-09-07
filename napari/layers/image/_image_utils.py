@@ -1,8 +1,12 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
+from typing import Tuple
+
 import numpy as np
 
 from ...utils.translations import trans
+from .._data_protocols import LayerDataProtocol
+from .._multiscale_data import MultiScaleData
 
 
 def guess_rgb(shape):
@@ -26,7 +30,7 @@ def guess_rgb(shape):
     return ndim > 2 and last_dim in (3, 4)
 
 
-def guess_multiscale(data):
+def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
     If shape of arrays along first axis is strictly decreasing, the data is
@@ -50,38 +54,42 @@ def guess_multiscale(data):
     # If data is a zarr array, this check ensure that subsets of it are not
     # instantiated. (`for d in data` instantiates `d` as a NumPy array if
     # `data` is a zarr array.)
+    if isinstance(data, MultiScaleData):
+        return True, data
+
     if hasattr(data, 'ndim') and data.ndim > 1:
         return False, data
 
-    shapes = [d.shape for d in data]
-    sizes = np.array([np.prod(shape, dtype=np.uint64) for shape in shapes])
-    if len(sizes) == 1 and (isinstance(data, list) or isinstance(data, tuple)):
+    if isinstance(data, (list, tuple)) and len(data) == 1:
         # pyramid with only one level, unwrap
         return False, data[0]
-    if len(sizes) > 1:
-        consistent = bool(np.all(sizes[:-1] > sizes[1:]))
-        flat = bool(np.all(sizes == sizes[0]))
-        if flat:
-            # note: the individual array case should be caught by the first
-            # code line in this function, hasattr(ndim) and ndim > 1.
-            raise ValueError(
-                trans._(
-                    'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single shape: {shape}',
-                    deferred=True,
-                    shape=shapes[0],
-                )
-            )
-        if not consistent:
-            raise ValueError(
-                trans._(
-                    'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, shapes: {shapes}',
-                    deferred=True,
-                    shapes=shapes,
-                )
-            )
-        return True, data
-    else:
+
+    shapes = [d.shape for d in data]
+    sizes = np.array([np.prod(shape, dtype=np.uint64) for shape in shapes])
+    if len(sizes) <= 1:
         return False, data
+
+    consistent = bool(np.all(sizes[:-1] > sizes[1:]))
+    if np.all(sizes == sizes[0]):
+        # note: the individual array case should be caught by the first
+        # code line in this function, hasattr(ndim) and ndim > 1.
+        raise ValueError(
+            trans._(
+                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single shape: {shape}',
+                deferred=True,
+                shape=shapes[0],
+            )
+        )
+    if not consistent:
+        raise ValueError(
+            trans._(
+                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, shapes: {shapes}',
+                deferred=True,
+                shapes=shapes,
+            )
+        )
+
+    return True, MultiScaleData(data)
 
 
 def guess_labels(data):

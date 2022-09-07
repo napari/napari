@@ -13,7 +13,6 @@
    .. rubric:: {{ _('Methods') }}
 
    .. autosummary::
-      :inherited-members:
    {% for item in methods %}
    {% if not item.startswith('_') %}
       ~{{ name }}.{{ item }}
@@ -27,9 +26,10 @@
    .. rubric:: {{ _('Attributes') }}
 
    .. autosummary::
-      :inherited-members:
    {% for item in attributes %}
-      ~{{ name }}.{{ item }}
+      {{ item|get_attributes(name, module) }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
+   .. rubric:: {{ _('Details') }}

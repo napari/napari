@@ -6,11 +6,13 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy.QtCore import Qt
+from qtpy import PYQT5
+from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .. import __version__
+from .. import Viewer, __version__
+from ..resources._icons import _theme_path
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
@@ -18,13 +20,14 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
+from ..utils.theme import _themes
 from ..utils.translations import trans
-from .dialogs.qt_notification import (
-    NapariQtNotification,
-    NotificationDispatcher,
+from .dialogs.qt_notification import NapariQtNotification
+from .qt_event_filters import QtToolTipEventFilter
+from .qthreading import (
+    register_threadworker_processors,
+    wait_for_workers_to_quit,
 )
-from .qt_resources import _register_napari_resources
-from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
@@ -136,14 +139,27 @@ def get_app(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        if PYQT5:
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
+            )
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
+            )
+
+        argv = sys.argv.copy()
+        if sys.platform == "darwin" and not argv[0].endswith("napari"):
+            # Make sure the app name in the Application menu is `napari`
+            # which is taken from the basename of sys.argv[0]; we use
+            # a copy so the original value is still available at sys.argv
+            argv[0] = "napari"
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
 
-            app = QApplicationWithTracing(sys.argv)
+            app = QApplicationWithTracing(argv)
         else:
-            app = QApplication(sys.argv)
+            app = QApplication(argv)
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
@@ -153,13 +169,9 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+        # Intercept tooltip events in order to convert all text to rich text
+        # to allow for text wrapping of tooltips
+        app.installEventFilter(QtToolTipEventFilter())
 
     if app.windowIcon().isNull():
         app.setWindowIcon(QIcon(kwargs.get('icon')))
@@ -168,6 +180,14 @@ def get_app(
         ipy_interactive = get_settings().application.ipy_interactive
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
+
+    if not _ipython_has_eventloop():
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -178,23 +198,31 @@ def get_app(
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
 
-        # this will register all of our resources (icons) with Qt, so that they
-        # can be used in qss files and elsewhere.
-        _register_napari_resources()
+        # Setup search paths for currently installed themes.
+        for name in _themes:
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        # When a new theme is added, at it to the search path.
+        @_themes.events.changed.connect
+        @_themes.events.added.connect
+        def _(event):
+            name = event.key
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        register_threadworker_processors()
 
     _app_ref = app  # prevent garbage collection
 
     # Add the dispatcher attribute to the application to be able to dispatch
     # notifications coming from threads
-    dispatcher = getattr(app, "_dispatcher", None)
-    if dispatcher is None:
-        app._dispatcher = NotificationDispatcher()
 
     return app
 
 
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
+    for v in list(Viewer._instances):
+        v.close()
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
     if (
@@ -354,6 +382,7 @@ def run(
         return
 
     app = QApplication.instance()
+
     if _pycharm_has_eventloop(app):
         # explicit check for PyCharm pydev console
         return

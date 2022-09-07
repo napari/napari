@@ -1,4 +1,5 @@
-# Core Developer Guide
+(core-dev-guide)=
+# Core Developer guide
 
 Welcome, new core developer!  The core team appreciate the quality of
 your work, and enjoy working with you; we have therefore invited you
@@ -11,14 +12,14 @@ GitHub team. You should now be on that list too.
 
 This document offers guidelines for your new role.  First and
 foremost, you should familiarize yourself with the project's
-[mission and values](MISSION_AND_VALUES.md).  When in
+[mission and values](mission-and-values).  When in
 doubt, always refer back there.
 
 As a core team member, you gain the responsibility of shepherding
 other contributors through the review process; here are some
 guidelines for how to do that.
 
-## All Contributors Are Treated The Same
+## All contributors are treated the same
 
 As a core developer, you gain the ability to merge or approve
 other contributors' pull requests.  Much like nuclear launch keys, it
@@ -36,7 +37,7 @@ to contribute during nights and weekends. It is important to be respectful of ot
 schedules and working habits, even if it slows the project down slightly - we are in this
 for the long run. In the same vein you also shouldn't feel pressured to be constantly
 available or online, and users or contributors who are overly demanding and unreasonable
-to the point of harassment will be directed to our [Code of Conduct](CODE_OF_CONDUCT.md).
+to the point of harassment will be directed to our [Code of Conduct](napari-coc).
 We value sustainable development practices over mad rushes.
 
 When merging, use GitHub's
@@ -44,12 +45,12 @@ When merging, use GitHub's
 to ensure a clean git history.
 
 You should also continue to make your own pull requests as before and in accordance
-with the [general contributor guide](CONTRIBUTING.md). These pull requests still
+with the [general contributor guide](napari-contributing). These pull requests still
 require the approval of another core developer before they can be merged.
 
 ## Reviewing
 
-### How to Conduct A Good Review
+### How to conduct a good review
 
 *Always* be kind to contributors. Contributors are often doing
 volunteer work, for which we are tremendously grateful. Provide
@@ -74,12 +75,12 @@ to both coding and non-coding users, and new features should ultimately be
 accessible to everyone using the app. `napari` targets the scientific user
 community broadly, and core features should be domain-agnostic and general purpose.
 Custom functionality is meant to be provided through our plugin ecosystem. If in doubt,
-consult back with our [mission and values](MISSION_AND_VALUES.md).
+consult back with our [mission and values](mission-and-values).
 
 2. **Performance and benchmarks:** As `napari` targets scientific applications that often involve
 large multidimensional datasets, high performance is a key value of `napari`. While
 every new feature won't scale equally to all sizes of data, keeping in mind performance
-and our [benchmarks](BENCHMARKS.md) during a review may be important, and you may
+and our [benchmarks](napari-benchmarks) during a review may be important, and you may
 need to ask for benchmarks to be run and reported or new benchmarks to be added.
 
 3. **APIs and stability:** Coding users and plugin developers will make
@@ -92,11 +93,11 @@ trouble in the future. Right now we are still making breaking changes with minor
 version numbers `0.x` and do not have a deprecation policy, but we will work to add one soon.
 
 4. **Documentation and tutorials:** All new methods should have appropriate doc
-strings following [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
-[NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html).
+strings following [PEP257](https://peps.python.org/pep-0257/) and the
+[NumPy documentation guide](https://numpy.org/devdocs/dev/howto-docs.html#documentation-style).
 For any major new features, accompanying changes should be made to our
-[tutorials repository](https://github.com/napari/napari-tutorials), that not only
-illustrates the new feature, but explains it.
+[tutorials](https://napari.org/tutorials). These should not only
+illustrates the new feature, but explains it. Titles for all documents in napari should follow [sentence case capitalization](https://apastyle.apa.org/style-grammar-guidelines/capitalization/sentence-case), but the name `napari` should always be written in lowercase.
 
 5. **Implementations and algorithms:** You should understand the code being modified
 or added before approving it.  (See [Merge Only Changes You Understand](#merge-only-changes-you-understand)
@@ -123,7 +124,7 @@ request and closing the original, including a reference to the original pull
 request. In doing so, ensure you communicate that you are not throwing the
 contributor's work away!
 
-### Merge Only Changes You Understand
+### Merge only changes you understand
 
 *Long-term maintainability* is an important concern.  Code doesn't
 merely have to *work*, but should be *understood* by multiple core
@@ -143,14 +144,14 @@ that responsibility seriously.
 As a core member, you should be familiar with community and developer
 resources such as:
 
-- Our [contributor guide](CONTRIBUTING.md).
-- Our [code of conduct](CODE_OF_CONDUCT.md).
-- Our [governance](GOVERNANCE.md).
-- Our [mission and values](MISSION_AND_VALUES.md).
-- Our [benchmarking guide](BENCHMARKS.md).
-- [PEP8](https://www.python.org/dev/peps/pep-0008/) for Python style.
-- [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
-   [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html)
+- Our [contributor guide](napari-contributing).
+- Our [code of conduct](napari-coc).
+- Our [governance](napari-governance).
+- Our [mission and values](mission-and-values).
+- Our [benchmarking guide](napari-benchmarks).
+- [PEP8](https://peps.python.org/pep-0008/) for Python style.
+- [PEP257](https://peps.python.org/pep-0257/) and the
+   [NumPy documentation guide](https://numpy.org/devdocs/dev/howto-docs.html#documentation-style)
    for docstring conventions.
 - [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
 - [`black`](https://github.com/psf/black) autoformatting.
@@ -169,7 +170,7 @@ We also have a private mailing list for core developers
 `napari-core-devs@googlegroups.com` which is sparingly used for discussions
 that are required to be private, such as voting on new core members.
 
-## Inviting New Core Members
+## Inviting new core members
 
 Any core member may nominate other contributors to join the core team.
 While there is no hard-and-fast rule about who can be nominated, ideally,
@@ -183,7 +184,7 @@ the cast votes is enough.
 Core developers can choose to become emeritus core developers and suspend
 their approval and voting rights until they become active again.
 
-## Contribute To This Guide (!)
+## Contribute to this guide (!)
 
 This guide reflects the experience of the current core developers.  We
 may well have missed things that, by now, have become second

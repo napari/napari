@@ -1,6 +1,7 @@
 import numpy as np
 
 from napari.layers import Image
+from napari.layers.image._image_mouse_bindings import move_plane_along_normal
 
 
 def test_random_volume():
@@ -12,7 +13,7 @@ def test_random_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -24,7 +25,7 @@ def test_switching_displayed_dimensions():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
 
     # check displayed data is initially 2D
     assert layer._data_view.shape == shape[-2:]
@@ -41,7 +42,7 @@ def test_switching_displayed_dimensions():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
 
     # check displayed data is initially 3D
     assert layer._data_view.shape == shape[-3:]
@@ -63,7 +64,7 @@ def test_all_zeros_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -76,7 +77,7 @@ def test_integer_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -89,7 +90,7 @@ def test_3D_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -102,7 +103,7 @@ def test_4D_volume():
     layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -118,7 +119,7 @@ def test_changing_volume():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
+    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
     assert layer._data_view.shape == shape_b[-3:]
 
 
@@ -134,8 +135,10 @@ def test_scale():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     np.testing.assert_array_equal(
-        layer.extent.world[1] + layer.extent.step, full_shape
+        layer.extent.world[1] - layer.extent.world[0], full_shape
     )
+    pixel_extent_end = np.asarray(full_shape) - 0.5 * np.asarray(scale)
+    np.testing.assert_array_equal(layer.extent.world[1], pixel_extent_end)
     # Note that the scale appears as the step size in the range
     assert layer._data_view.shape == shape[-3:]
 
@@ -157,4 +160,17 @@ def test_message():
     layer = Image(data)
     layer._slice_dims(ndisplay=3)
     msg = layer.get_status((0,) * 3)
-    assert type(msg) == str
+    assert type(msg) == dict
+
+
+def test_plane_drag_callback():
+    """Plane drag callback should only be active when depicting as plane."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Image(data, depiction='volume')
+
+    assert move_plane_along_normal not in layer.mouse_drag_callbacks
+    layer.depiction = 'plane'
+    assert move_plane_along_normal in layer.mouse_drag_callbacks
+    layer.depiction = 'volume'
+    assert move_plane_along_normal not in layer.mouse_drag_callbacks

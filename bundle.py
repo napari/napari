@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import tomlkit
 
@@ -29,17 +30,20 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
-ARCH = platform.machine() or "generic"
-
+ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
+    APP_DIR = os.path.join(BUILD_DIR, APP, 'src')
+    EXT, OS = 'msi', 'Windows'
 elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
+    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
+    EXT, OS = 'AppImage', 'Linux'
 elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
-
+    EXT, OS = 'dmg', 'macOS'
 
 with open(os.path.join(HERE, "napari", "_version.py")) as f:
     match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
@@ -126,22 +130,29 @@ def patched_toml():
             f.write(original_toml)
 
 
-def patch_dmgbuild():
+@contextmanager
+def patched_dmgbuild():
     if not MACOS:
-        return
-    from dmgbuild import core
+        yield
+    else:
+        from dmgbuild import core
 
-    with open(core.__file__) as f:
-        src = f.read()
-    with open(core.__file__, 'w') as f:
-        f.write(
-            src.replace(
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)"
-                ";time.sleep(30)",
+        with open(core.__file__) as f:
+            src = f.read()
+        with open(core.__file__, 'w') as f:
+            f.write(
+                src.replace(
+                    "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
+                    "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True);time.sleep(30)",
+                )
             )
-        )
         print("patched dmgbuild.core")
+        try:
+            yield
+        finally:
+            # undo
+            with open(core.__file__, 'w') as f:
+                f.write(src)
 
 
 def add_site_packages_to_path():
@@ -198,6 +209,8 @@ def patch_python_lib_location():
         BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
     )
     python_resources = os.path.join(support, "Python", "Resources")
+    if os.path.exists(python_resources):
+        return
     os.makedirs(python_resources, exist_ok=True)
     for subdir in ("bin", "lib"):
         orig = os.path.join(support, subdir)
@@ -206,30 +219,26 @@ def patch_python_lib_location():
         print("symlinking", orig, "to", dest)
 
 
+def add_sentinel_file():
+    if MACOS:
+        (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
+    elif LINUX:
+        (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
+    elif WINDOWS:
+        (Path(APP_DIR) / "python" / ".napari_is_bundled").touch()
+    else:
+        print("!!! Sentinel files not yet implemented in", sys.platform)
+
+
 def patch_environment_variables():
-    os.environ["ARCH"] = architecture()
-
-
-def architecture():
-    arch = platform.machine() or "generic"
-    # Try to canonicalize across OS
-    replacements = {
-        "amd64": "x86_64",
-    }
-    return replacements.get(arch.lower(), arch)
+    os.environ["ARCH"] = ARCH
 
 
 def make_zip():
     import glob
     import zipfile
 
-    if WINDOWS:
-        ext, OS = '*.msi', 'Windows'
-    elif LINUX:
-        ext, OS = '*.AppImage', 'Linux'
-    elif MACOS:
-        ext, OS = '*.dmg', 'macOS'
-    artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
+    artifact = glob.glob(os.path.join(BUILD_DIR, f"*.{EXT}"))[0]
     dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -245,9 +254,6 @@ def clean():
 def bundle():
     clean()
 
-    if MACOS:
-        patch_dmgbuild()
-
     if LINUX:
         patch_environment_variables()
 
@@ -255,7 +261,7 @@ def bundle():
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
     # the briefcase calls need to happen while the pyproject toml is patched
-    with patched_toml():
+    with patched_toml(), patched_dmgbuild():
         # create
         cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
@@ -263,6 +269,7 @@ def bundle():
         time.sleep(0.5)
 
         add_site_packages_to_path()
+        add_sentinel_file()
 
         if WINDOWS:
             patch_wxs()
@@ -293,6 +300,6 @@ if __name__ == "__main__":
         print(VERSION)
         sys.exit()
     if '--arch' in sys.argv:
-        print(architecture())
+        print(ARCH)
         sys.exit()
     print('created', bundle())

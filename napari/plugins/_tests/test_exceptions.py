@@ -17,12 +17,22 @@ def test_format_exceptions(cgitb, as_html, monkeypatch):
         'standard_metadata',
         lambda x: {'package': 'test-package', 'version': '0.1.0'},
     )
-    _ = PluginError(
-        'some error',
-        plugin_name='test_plugin',
-        plugin="mock",
-        cause=ValueError("cause"),
-    )
+
+    # we make sure to actually raise the exceptions,
+    # otherwise they will miss the __traceback__ attributes.
+    try:
+        try:
+            raise ValueError('cause')
+        except ValueError as e:
+            raise PluginError(
+                'some error',
+                plugin_name='test_plugin',
+                plugin="mock",
+                cause=e,
+            )
+    except PluginError:
+        pass
+
     formatted = exceptions.format_exceptions('test_plugin', as_html=as_html)
     assert "some error" in formatted
     assert "version: 0.1.0" in formatted

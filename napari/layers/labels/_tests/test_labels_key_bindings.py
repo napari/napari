@@ -2,7 +2,6 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pytest
-import tensorstore as ts
 import zarr
 
 from napari.layers import Labels
@@ -25,6 +24,8 @@ def test_max_label(labels_data_4d):
 
 
 def test_max_label_tensorstore(labels_data_4d):
+    ts = pytest.importorskip('tensorstore')
+
     with TemporaryDirectory(suffix='.zarr') as fout:
         labels_temp = zarr.open(
             fout,

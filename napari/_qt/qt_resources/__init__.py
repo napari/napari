@@ -2,22 +2,9 @@ import warnings
 from pathlib import Path
 from typing import List, Optional
 
-from ._icons import (
-    _register_napari_resources,
-    _unregister_napari_resources,
-    compile_qt_svgs,
-    register_napari_themes,
-)
 from ._svg import QColoredSVGIcon
 
-__all__ = [
-    'get_stylesheet',
-    'QColoredSVGIcon',
-    '_register_napari_resources',
-    '_unregister_napari_resources',
-    'compile_qt_svgs',
-    'register_napari_themes',
-]
+__all__ = ['get_stylesheet', 'QColoredSVGIcon']
 
 STYLE_PATH = (Path(__file__).parent / 'styles').resolve()
 STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
@@ -56,8 +43,6 @@ def get_stylesheet(
     if theme:
         from ...utils.theme import get_theme, template
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            return template(stylesheet, **get_theme(theme))
+        return template(stylesheet, **get_theme(theme, as_dict=True))
 
     return stylesheet

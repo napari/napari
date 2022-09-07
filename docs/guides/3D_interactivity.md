@@ -1,3 +1,5 @@
+(3d-interactivity)=
+
 # 3D interactivity
 
 ## Coordinate systems in napari
@@ -12,7 +14,6 @@ Since the 3D scene is rendered on a 2D surface (your screen), your mouse click d
 
 When a user clicks or moves the mouse in the canvas, napari emits a mouse event with the following properties:
 
-
 - **pos**: the position of the click in canvas coordinates.
 - **position**: the position of the click in world coordinates. The point is located at the intersection of the click line (`view_direction`) and a plane parallel to the camera plane (i.e,. a plane normal to `view_direction`).
 - **view_direction**: a unit vector giving the direction of the camera in
@@ -20,8 +21,6 @@ When a user clicks or moves the mouse in the canvas, napari emits a mouse event 
 - **dims_displayed**: a list of the dimensions currently being displayed
     in the viewer. This comes from `viewer.dims.displayed`.
 - **dims_point**: the indices for the data in view in world coordinates. This comes from `viewer.dims.point`.
-
-
 
 ## Determining where the click intersects the data
 Each napari layer has a method called `get_ray_intersections()` that will return the points on the data bounding box that a given line will intersect (`start_point ` and `end_point `). When the click line (`view_direction`) and position (`position`) are used as inputs, `start_point` and `end_point` are the end points of the segment click line that intersects the layer's axis-alinged data bounding box. `start_point` is the end point that is closest to the camera (i.e, the "first" intersection) and `end_point` is the end point that is farthest from the camera (i.e., the "last" intersection). You can use the line segment between `start_point` and `end_point` to interrogate the layer data that is "under" your cursor.

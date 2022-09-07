@@ -8,7 +8,7 @@ def test_viewer_key_bindings(make_napari_viewer):
     """Test adding key bindings to the viewer"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     mock_press = Mock()
     mock_release = Mock()
@@ -76,7 +76,7 @@ def test_layer_key_bindings(make_napari_viewer):
     """Test adding key bindings to a layer"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     layer = viewer.add_image(np.random.random((10, 20)))
     viewer.layers.selection.add(layer)
@@ -143,7 +143,7 @@ def test_layer_key_bindings(make_napari_viewer):
 def test_reset_scroll_progress(make_napari_viewer):
     """Test select all key binding."""
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     assert viewer.dims._scroll_progress == 0
 
     view.canvas.events.key_press(key=keys.Key('Control'))

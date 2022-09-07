@@ -2,12 +2,22 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import collections
+from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 from qtpy.QtWidgets import QApplication
 
 import napari
+
+
+@dataclass
+class MouseEvent:
+    # mock mouse event class
+    type: str
+    is_dragging: bool
+    pos: List[int]
+    view_direction: List[int]
 
 
 class QtViewerSingleLabelsSuite:
@@ -23,22 +33,26 @@ class QtViewerSingleLabelsSuite:
         self.layer.mode = 'paint'
         self.layer.selected_label = 3
         self.layer._last_cursor_coord = (511, 511)
-        Event = collections.namedtuple('Event', 'is_dragging')
-        self.event = Event(is_dragging=True)
+        self.event = MouseEvent(
+            type='mouse_move',
+            is_dragging=True,
+            pos=(500, 500),
+            view_direction=None,
+        )
 
     def teardown(self):
         self.viewer.window.close()
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_view_slice(self):
         """Time to set view slice."""
         self.layer._set_view_slice()
 
-    def time_refresh(self, n):
+    def time_refresh(self):
         """Time to refresh view."""
         self.layer.refresh()
 
@@ -52,7 +66,7 @@ class QtViewerSingleLabelsSuite:
 
     def time_raw_to_displayed(self):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint(self):
         """Time to paint."""
@@ -68,4 +82,4 @@ class QtViewerSingleLabelsSuite:
 
     def time_on_mouse_move(self):
         """Time to drag paint on mouse move."""
-        self.layer.on_mouse_move(self.event)
+        self.viewer.window._qt_viewer.on_mouse_move(self.event)

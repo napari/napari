@@ -17,6 +17,11 @@ class Blending(StringEnum):
                 Allows for multiple layers to be blended with different opacity
                 and corresponds to depth_test=True, cull_face=False,
                 blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.TRANSLUCENT_NO_DEPTH
+                Allows for multiple layers to be blended with different opacity,
+                but no depth testing is performed.
+                and corresponds to depth_test=False, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
             Blending.ADDITIVE
                 Allows for multiple layers to be blended together with
                 different colors and opacity. Useful for creating overlays. It
@@ -25,6 +30,7 @@ class Blending(StringEnum):
     """
 
     TRANSLUCENT = auto()
+    TRANSLUCENT_NO_DEPTH = auto()
     ADDITIVE = auto()
     OPAQUE = auto()
 
@@ -32,6 +38,7 @@ class Blending(StringEnum):
 BLENDING_TRANSLATIONS = OrderedDict(
     [
         (Blending.TRANSLUCENT, trans._("translucent")),
+        (Blending.TRANSLUCENT_NO_DEPTH, trans._("translucent_no_depth")),
         (Blending.ADDITIVE, trans._("additive")),
         (Blending.OPAQUE, trans._("opaque")),
     ]

@@ -119,7 +119,7 @@ class RowTable:
             The maximum width of this column.
         """
         if self.rows:
-            return max([len(str(row[index])) for row in self.rows])
+            return max(len(str(row[index])) for row in self.rows)
         return 0
 
     def _get_widths(self) -> List[int]:

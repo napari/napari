@@ -1,6 +1,5 @@
 """Test the translations API."""
 
-import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -18,7 +17,6 @@ from napari.utils.translations import (
 TEST_LOCALE = "es_CO"
 HERE = Path(__file__).parent
 TEST_LANGUAGE_PACK_PATH = HERE / "napari-language-pack-es_CO"
-PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 es_CO_po = r"""msgid ""
@@ -210,14 +208,8 @@ def test_locale_singular_context(trans):
     context = "singular-context"
     singular = "More about napari with context"
 
-    if PY37_OR_LOWER:
-        # Context not supported on this version
-        expected_result = singular
-    else:
-        expected_result = "Más sobre napari con contexto"
-
     result = trans._p(context, singular)
-    assert result == expected_result
+    assert result == "Más sobre napari con contexto"
 
 
 def test_locale_singular_context_with_format(trans):
@@ -225,14 +217,8 @@ def test_locale_singular_context_with_format(trans):
     variable = 1
     singular = "More about napari with context and {variable}"
 
-    if PY37_OR_LOWER:
-        # Context not supported on this version
-        expected_result = singular.format(variable=variable)
-    else:
-        expected_result = f"Más sobre napari con contexto y {variable}"
-
     result = trans._p(context, singular, variable=variable)
-    assert result == expected_result
+    assert result == f"Más sobre napari con contexto y {variable}"
 
 
 def test_locale_singular_context_deferred_with_format(trans):
@@ -241,11 +227,7 @@ def test_locale_singular_context_deferred_with_format(trans):
     singular = "More about napari with context and {variable}"
     original_result = f"More about napari with context and {variable}"
 
-    if PY37_OR_LOWER:
-        # Context not supported on this version
-        translated_result = original_result
-    else:
-        translated_result = f"Más sobre napari con contexto y {variable}"
+    translated_result = f"Más sobre napari con contexto y {variable}"
 
     result = trans._p(context, singular, deferred=True, variable=variable)
     assert isinstance(result, TranslationString)
@@ -260,13 +242,11 @@ def test_locale_plural(trans):
 
     n = 1
     result = trans._n(singular, plural, n=n)
-    expected_result = "Tengo napari"
-    assert result == expected_result
+    assert result == "Tengo napari"
 
     n = 2
     result_plural = trans._n(singular, plural, n=n)
-    expected_result_plural = "Tengo naparis"
-    assert result_plural == expected_result_plural
+    assert result_plural == "Tengo naparis"
 
 
 def test_locale_plural_with_format(trans):
@@ -318,13 +298,11 @@ def test_locale_plural_context(trans):
 
     n = 1
     result = trans._np(context, singular, plural, n=n)
-    expected_res = singular if PY37_OR_LOWER else "Tengo napari con contexto"
-    assert result == expected_res
+    assert result == "Tengo napari con contexto"
 
     n = 2
     result_plural = trans._np(context, singular, plural, n=n)
-    expected_res = plural if PY37_OR_LOWER else "Tengo naparis con contexto"
-    assert result_plural == expected_res
+    assert result_plural == "Tengo naparis con contexto"
 
 
 def test_locale_plural_context_with_format(trans):
@@ -335,23 +313,13 @@ def test_locale_plural_context_with_format(trans):
 
     n = 1
     result = trans._np(context, singular, plural, n=n, variable=variable)
-    if PY37_OR_LOWER:
-        expected_result = singular.format(n=n, variable=variable)
-    else:
-        expected_result = f"Tengo {n} napari con {variable} y contexto"
-
-    assert result == expected_result
+    assert result == f"Tengo {n} napari con {variable} y contexto"
 
     n = 2
     result_plural = trans._np(
         context, singular, plural, n=n, variable=variable
     )
-    if PY37_OR_LOWER:
-        expected_result_plural = plural.format(n=n, variable=variable)
-    else:
-        expected_result_plural = f"Tengo {n} naparis con {variable} y contexto"
-
-    assert result_plural == expected_result_plural
+    assert result_plural == f"Tengo {n} naparis con {variable} y contexto"
 
 
 def test_locale_plural_context_deferred_with_format(trans):
@@ -365,10 +333,7 @@ def test_locale_plural_context_deferred_with_format(trans):
     result = trans._np(
         context, singular, plural, n=n, deferred=True, variable=variable
     )
-    if PY37_OR_LOWER:
-        expected_result = original_result
-    else:
-        expected_result = f"Tengo {n} napari con {variable} y contexto"
+    expected_result = f"Tengo {n} napari con {variable} y contexto"
 
     assert isinstance(result, TranslationString)
     assert result.translation() == expected_result
@@ -380,10 +345,7 @@ def test_locale_plural_context_deferred_with_format(trans):
     result_plural = trans._np(
         context, singular, plural, n=n, deferred=True, variable=variable
     )
-    if PY37_OR_LOWER:
-        expected_result_plural = original_result_plural
-    else:
-        expected_result_plural = f"Tengo {n} naparis con {variable} y contexto"
+    expected_result_plural = f"Tengo {n} naparis con {variable} y contexto"
 
     assert isinstance(result, TranslationString)
     assert result_plural.translation() == expected_result_plural
@@ -417,13 +379,48 @@ def test_bundle_exceptions(trans):
         trans._dnpgettext()
 
 
-def test_deepcopy():
-    """see https://github.com/napari/napari/issues/2911
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {
+            'msgid': 'huhu',
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'dtype': 'uint16',
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'dtype': 'uint16',
+            'deferred': True,
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'dtype': 'uint16',
+            'deferred': False,
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'msgid_plural': 'Convert to {dtype}s',
+            'n': 1,
+            'dtype': 'uint16',
+        },
+        {
+            'msgid': 'Convert to {dtype}',
+            'msgid_plural': 'Convert to {dtype}s',
+            'n': 2,
+            'dtype': 'uint16',
+        },
+    ],
+)
+def test_deepcopy(kwargs):
+    """Object containing translation strings can't be deep-copied.
 
-    Object containing translation strings can't bee deep-copied.
+    See:
+      - https://github.com/napari/napari/issues/2911
+      - https://github.com/napari/napari/issues/4736
     """
-
-    t = TranslationString(msgid='huhu')
+    t = TranslationString(**kwargs)
     u = deepcopy(t)
     assert t is not u
     assert t == u

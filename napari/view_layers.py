@@ -3,6 +3,8 @@
 All functions follow this pattern, (where <layer_type> is replaced with one
 of the layer types, like "image", "points", etc...):
 
+.. code-block:: python
+
     def view_<layer_type>(*args, **kwargs):
         # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
         viewer = Viewer(**viewer_kwargs)
@@ -13,6 +15,8 @@ of the layer types, like "image", "points", etc...):
 import inspect
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
+
+from napari.components.dims import Dims
 
 from .viewer import Viewer
 
@@ -46,14 +50,12 @@ def _merge_docstrings(add_method, layer_string):
     import textwrap
 
     add_method_doc = _NumpyDocString(add_method.__doc__)
-    params = (
-        "\n".join(add_method_doc._str_param_list('Parameters')) + _VIEW_PARAMS
-    )
+
     # this ugliness is because the indentation of the parsed numpydocstring
     # is different for the first parameter :(
-    lines = params.splitlines()
+    lines = add_method_doc._str_param_list('Parameters')
     lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
-    params = "\n".join(lines)
+    params = "\n".join(lines) + "\n" + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 
@@ -107,16 +109,22 @@ def _merge_layer_viewer_sigs_docs(func):
 
 
 _viewer_params = inspect.signature(Viewer).parameters
+_dims_params = Dims.__fields__
 
 
 def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
     """Utility function that creates a viewer, adds a layer, returns viewer."""
     vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
+    # separate dims kwargs because we want to set those after adding data
+    dims_kwargs = {
+        k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
+    }
     viewer = Viewer(**vkwargs)
-    if 'kwargs' in kwargs:
-        kwargs.update(kwargs.pop("kwargs"))
+    kwargs.update(kwargs.pop("kwargs", {}))
     method = getattr(viewer, add_method)
     method(*args, **kwargs)
+    for arg_name, arg_val in dims_kwargs.items():
+        setattr(viewer.dims, arg_name, arg_val)
     return viewer
 
 

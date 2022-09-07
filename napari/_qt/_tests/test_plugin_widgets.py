@@ -1,9 +1,14 @@
+from unittest.mock import Mock, patch
+
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer
+from napari._qt.menus import PluginsMenu
+from napari._qt.qt_main_window import _instantiate_dock_widget
+from napari.utils._proxies import PublicOnlyProxy
 
 
 class Widg1(QWidget):
@@ -20,6 +25,10 @@ class Widg3(QWidget):
     def __init__(self, v: Viewer):
         self.viewer = v
         super().__init__()
+
+    def fail(self):
+        """private attr not allowed"""
+        self.viewer.window._qt_window
 
 
 def magicfunc(viewer: 'napari.Viewer'):
@@ -79,28 +88,26 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     yield
 
 
-def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
+def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
     """Test the plugin widgets get added to the window menu correctly."""
-    viewer = make_napari_viewer()
     # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()
+    window = Mock()
+    qtwin = QWidget()
+    qtbot.addWidget(qtwin)
+    with patch.object(window, '_qt_window', qtwin):
+        actions = PluginsMenu(window=window).actions()
     for cnt, action in enumerate(actions):
         if action.text() == "":
-            # this is the separator
             break
     actions = actions[cnt + 1 :]
-    assert len(actions) == 3
-    expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
-    assert [a.text() for a in actions] == expected_text
+    texts = [a.text() for a in actions]
+    for t in ['TestP1', 'TestP2: Widg3', 'TestP3: magic']:
+        assert t in texts
 
-    # the first item of the plugins is a submenu (for "Test plugin1")
-    assert actions[0].menu()
-    subnames = ['Widg1', 'Widg2']
-    assert [a.text() for a in actions[0].menu().actions()] == subnames
-
-    # the other items for the plugins are not submenus
-    assert not actions[1].menu()
-    assert not actions[2].menu()
+    # Expect a submenu ("Test plugin1") with particular entries.
+    tp1 = next(m for m in actions if m.text() == 'TestP1')
+    assert tp1.parent()
+    assert [a.text() for a in tp1.parent().actions()] == ['Widg1', 'Widg2']
 
 
 def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
@@ -115,7 +122,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     actions = actions[cnt + 1 :]
 
     # trigger the 'TestP2: Widg3' action
-    actions[1].trigger()
+    tp2 = next(m for m in actions if m.text().startswith('TestP2'))
+    tp2.trigger()
     # make sure that a dock widget was created
     assert 'TestP2: Widg3' in viewer.window._dock_widgets
     dw = viewer.window._dock_widgets['TestP2: Widg3']
@@ -123,10 +131,11 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     # This widget uses the parameter annotation method to receive a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
     # Add twice is ok, only does a show
-    actions[1].trigger()
+    tp2.trigger()
 
     # trigger the 'TestP1 > Widg2' action (it's in a submenu)
-    action = actions[0].menu().actions()[1]
+    tp2 = next(m for m in actions if m.text().startswith('TestP1'))
+    action = tp2.parent().actions()[1]
     assert action.text() == 'Widg2'
     action.trigger()
     # make sure that a dock widget was created
@@ -137,6 +146,14 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(dw.widget().viewer, napari.Viewer)
     # Add twice is ok, only does a show
     action.trigger()
+    # Check that widget is still there when closed.
+    widg = dw.widget()
+    dw.title.hide_button.click()
+    assert widg
+    # Check that widget is destroyed when closed.
+    dw.destroyOnClose()
+    assert action not in viewer.window.plugins_menu.actions()
+    assert not widg.parent()
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
@@ -153,7 +170,8 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     actions = actions[cnt + 1 :]
 
     # trigger the 'TestP3: magic' action
-    actions[2].trigger()
+    tp3 = next(m for m in actions if m.text().startswith('TestP3'))
+    tp3.trigger()
     # make sure that a dock widget was created
     assert 'TestP3: magic' in viewer.window._dock_widgets
     dw = viewer.window._dock_widgets['TestP3: magic']
@@ -169,4 +187,16 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     # The function just returns the viewer... make sure we can call it
     assert isinstance(magic_widget(), napari.Viewer)
     # Add twice is ok, only does a show
-    actions[2].trigger()
+    tp3.trigger()
+
+
+def test_inject_viewer_proxy(make_napari_viewer):
+    """Test that the injected viewer is a public-only proxy"""
+    viewer = make_napari_viewer()
+    wdg = _instantiate_dock_widget(Widg3, viewer)
+    assert isinstance(wdg.viewer, PublicOnlyProxy)
+
+    # simulate access from outside napari
+    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
+        with pytest.warns(FutureWarning):
+            wdg.fail()

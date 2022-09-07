@@ -7,6 +7,7 @@ from napari._qt.utils import (
     add_flash_animation,
     is_qbyte,
     qbytearray_to_str,
+    qt_might_be_rich_text,
     qt_signals_blocked,
     str_to_qbytearray,
 )
@@ -21,6 +22,7 @@ class Emitter(QObject):
 
 def test_signal_blocker(qtbot):
     """make sure context manager signal blocker works"""
+    import pytestqt.exceptions
 
     obj = Emitter()
 
@@ -29,13 +31,10 @@ def test_signal_blocker(qtbot):
         obj.go()
 
     # make sure blocker works
-    def err():
-        raise AssertionError('a signal was emitted')
-
-    obj.test_signal.connect(err)
     with qt_signals_blocked(obj):
-        obj.go()
-        qtbot.wait(750)
+        with pytest.raises(pytestqt.exceptions.TimeoutError):
+            with qtbot.waitSignal(obj.test_signal, timeout=500):
+                obj.go()
 
 
 def test_is_qbyte_valid():
@@ -95,3 +94,10 @@ def test_add_flash_animation(qtbot):
     qtbot.wait(350)
     assert widget.graphicsEffect() is None
     assert not hasattr(widget, "_flash_animation")
+
+
+def test_qt_might_be_rich_text(qtbot):
+    widget = QMainWindow()
+    qtbot.addWidget(widget)
+    assert qt_might_be_rich_text("<b>rich text</b>")
+    assert not qt_might_be_rich_text("plain text")

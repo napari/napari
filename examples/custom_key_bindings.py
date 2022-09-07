@@ -1,5 +1,10 @@
 """
-Display one 4-D image layer using the add_image API
+Custom key bindings
+===================
+
+Display one 4-D image layer using the ``add_image`` API
+
+.. tags:: gui
 """
 
 from skimage import data
@@ -50,4 +55,5 @@ def hello(viewer):
 # change viewer title
 viewer.title = 'quality control images'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

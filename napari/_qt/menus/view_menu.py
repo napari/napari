@@ -1,25 +1,24 @@
+import platform
 from functools import partial
 from typing import TYPE_CHECKING
-
-from qtpy.QtWidgets import QMenu
 
 from ...settings import get_settings
 from ...utils import config as async_config
 from ...utils.translations import trans
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class ViewMenu(QMenu):
+class ViewMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&View'), window._qt_window)
 
         def _toggle_dict(text, name, prop):
             # helper func to make a Action dict for togglers
-            obj = getattr(window.qt_viewer.viewer, name)
+            obj = getattr(window._qt_viewer.viewer, name)
             return {
                 'text': text,
                 'slot': partial(setattr, obj, prop),
@@ -37,6 +36,7 @@ class ViewMenu(QMenu):
                 'shortcut': 'Ctrl+F',
             },
             {
+                'when': platform.system() != "Darwin",
                 'text': trans._('Toggle Menubar Visibility'),
                 'slot': window._toggle_menubar_visible,
                 'shortcut': 'Ctrl+M',
@@ -51,7 +51,7 @@ class ViewMenu(QMenu):
             {
                 'when': async_config.async_octree,
                 'text': trans._('Toggle Chunk Outlines'),
-                'slot': window.qt_viewer._toggle_chunk_outlines,
+                'slot': window._qt_viewer._toggle_chunk_outlines,
                 'shortcut': 'Ctrl+Alt+O',
             },
             {

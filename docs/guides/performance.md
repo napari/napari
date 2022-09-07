@@ -1,4 +1,5 @@
-# Napari Performance
+(napari-performance)=
+# napari performance
 
 With offline analysis tools performance dictates how long the user has to wait
 for a result, however with an interactive tool like napari performance is even
@@ -12,12 +13,12 @@ better scientific results.
 
 There are two main types of performance:
 
-1. [Objective Performance](#objective-performance)
+1. [Objective performance](#objective-performance)
 
    * How long operations take when timed with a stopwatch.
    * Most times will vary based on the data being viewed.
 
-2. [Subjective Performance](#subjective-performance)
+2. [Subjective performance](#subjective-performance)
 
    * The user’s experience as it relates to performance.
    * Is the user’s experience pleasant or frustrating? Does napari "seem fast"?
@@ -26,11 +27,11 @@ Both types of performance are important. No amount of slickness can make up for
 an application that is fundamentally too slow. And even a relatively fast
 application can feel clunky or frustrating if not designed well.
 
-## Objective Performance
+## Objective performance
 
 How to keep napari objectively fast:
 
-### Focus On Real Use Cases
+### Focus on real use cases
 
 * Focus on cases that matter to lots of people.
 * It’s easy to waste time optimizing things no one cares about or no one will
@@ -38,7 +39,7 @@ How to keep napari objectively fast:
 * If a dataset is unreasonable or out of scope or fringe, don’t spend too
   many resources trying to make it run fast.
 
-### Always Be Timing
+### Always be timing
 
 * Build timers into the software that always run.
 * If not always visible, power users and developers should be able to toggle them on.
@@ -50,25 +51,25 @@ How to keep napari objectively fast:
   * For example seek times with SSD are radically faster than HDD.
   * Become familiar with the impact of local vs. networked file systems.
 
-### Performance System Tests
+### Performance system tests
 
 * Create automatic tests that time specific operations in specific known datasets.
 * Time many different operations on a nice selection of different datasets.
 
-### Performance Unit Tests
+### Performance unit tests
 
 * Time one small operation to monitor for regressions.
 * Napari has some of these today as "benchmarks".
 * Interesting to see how different hardware performs as time goes on.
 
-### Run All Tests Every Merge
+### Run all tests every merge
 
 * Save results to a database maybe using [ASV](https://asv.readthedocs.io/en/stable/index.html).
 * Catch a regression right when it happens and not weeks or
   months later.
 * See how new features run on large datasets no one tested.
 
-## Subjective Performance
+## Subjective performance
 
 Napari should strive to have these properties:
 
@@ -109,11 +110,11 @@ Napari should strive to have these properties:
 * Let power users see timings, bandwidth, FPS, etc.
 * Revealing internal state that explains why it's taking time is helpful.
 
-## Performance Is Never Done
+## Performance is never done
 
 Performance is never "done" for several reasons:
 
-### New Features
+### New features
 
 * The objective and subjective performance of new features should be scrutinized
   before merging to main.
@@ -128,7 +129,7 @@ Performance is never "done" for several reasons:
 * New versions of dependencies can slow things down.
 * New hardware generally helps performance but not always.
 
-### Scope Changes
+### Scope changes
 
 * As new types of users adopt napari they will have new use cases.
 * Existing users will change their usage over time such as more remote viewing.

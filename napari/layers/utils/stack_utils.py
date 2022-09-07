@@ -51,7 +51,7 @@ def split_channels(
     function. Colormap, blending, or multiscale are set as follows if not
     overridden by a keyword:
     - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
-    - blending : additive
+    - blending : translucent for first channel, additive for others
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
     Colormap, blending and multiscale will be set and returned in meta if not in kwargs.
@@ -80,8 +80,10 @@ def split_channels(
         kwargs['multiscale'] = multiscale
 
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
-
-    kwargs['blending'] = kwargs.get('blending') or 'additive'
+    # Use original blending mode or for multichannel use translucent for first channel then additive
+    kwargs['blending'] = kwargs.get('blending') or ['translucent_no_depth'] + [
+        'additive'
+    ] * (n_channels - 1)
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {
@@ -90,7 +92,7 @@ def split_channels(
         'affine',
         'contrast_limits',
         'metadata',
-        'experimental_slicing_plane',
+        'plane',
         'experimental_clipping_planes',
     }
 
@@ -113,7 +115,10 @@ def split_channels(
         ):
             kwargs[key] = iter(
                 ensure_sequence_of_iterables(
-                    val, n_channels, repeat_empty=True
+                    val,
+                    n_channels,
+                    repeat_empty=True,
+                    allow_none=True,
                 )
             )
         else:
@@ -238,7 +243,10 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
 def split_rgb(stack: Image, with_alpha=False) -> List[Image]:
     """Variant of stack_to_images that splits an RGB with predefined cmap."""
     if not stack.rgb:
-        raise ValueError('Image must be RGB to use split_rgb')
+        raise ValueError(
+            trans._('Image must be RGB to use split_rgb', deferred=True)
+        )
+
     images = stack_to_images(stack, -1, colormap=('red', 'green', 'blue'))
     return images if with_alpha else images[:3]
 
@@ -281,5 +289,7 @@ def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
 def merge_rgb(images: List[Image]) -> List[Image]:
     """Variant of images_to_stack that makes an RGB from 3 images."""
     if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
-        raise ValueError("merge_rgb requires 3 images layers")
+        raise ValueError(
+            trans._("merge_rgb requires 3 images layers", deferred=True)
+        )
     return images_to_stack(images, axis=-1, rgb=True)

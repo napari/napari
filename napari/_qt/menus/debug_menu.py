@@ -7,22 +7,22 @@ easy-to-use and discoverable, but which is not for the average user.
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QTimer
-from qtpy.QtWidgets import QFileDialog, QMenu
+from qtpy.QtWidgets import QFileDialog
 
 from ...utils import perf
 from ...utils.history import get_save_history, update_save_history
 from ...utils.translations import trans
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class DebugMenu(QMenu):
+class DebugMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&Debug'), window._qt_window)
-        self._perf_menu = QMenu("Performance Trace", self)
+        self._perf_menu = NapariMenu(trans._("Performance Trace"), self)
 
         ACTIONS = [
             {
@@ -56,7 +56,7 @@ class DebugMenu(QMenu):
 
     def _start_trace_dialog(self):
         """Open Save As dialog to start recording a trace file."""
-        viewer = self._win.qt_viewer
+        viewer = self._win._qt_viewer
 
         dlg = QFileDialog()
         hist = get_save_history()
@@ -95,7 +95,7 @@ class DebugMenu(QMenu):
             Are we currently recording a trace file.
         """
         for action in self._perf_menu.actions():
-            if 'Start Recording' in action.text():
+            if trans._('Start Recording') in action.text():
                 action.setEnabled(not recording)
-            elif 'Stop Recording' in action.text():
+            elif trans._('Stop Recording') in action.text():
                 action.setEnabled(recording)

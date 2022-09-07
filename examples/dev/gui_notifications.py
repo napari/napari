@@ -4,7 +4,9 @@ import napari
 
 
 def raise_():
-    raise ValueError("error!")
+    x = 1
+    y = 'a string'
+    import something_that_does_not_exist
 
 
 def warn_():
@@ -12,9 +14,9 @@ def warn_():
 
 
 viewer = napari.Viewer()
-layer_buttons = viewer.window.qt_viewer.layerButtons
-err_btn = QtViewerPushButton(None, 'warning', 'new Error', raise_)
-warn_btn = QtViewerPushButton(None, 'warning', 'new Warn', warn_)
+layer_buttons = viewer.window._qt_viewer.layerButtons
+err_btn = QtViewerPushButton('warning', 'new Error', raise_)
+warn_btn = QtViewerPushButton('warning', 'new Warn', warn_)
 layer_buttons.layout().insertWidget(3, warn_btn)
 layer_buttons.layout().insertWidget(3, err_btn)
 

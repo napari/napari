@@ -52,7 +52,7 @@ class QColoredSVGIcon(QIcon):
         colorized = get_colorized_svg(path_or_xml, color, opacity)
         super().__init__(SVGBufferIconEngine(colorized))
 
-    @lru_cache()
+    @lru_cache
     def colored(
         self,
         color: Optional[str] = None,
@@ -83,12 +83,12 @@ class QColoredSVGIcon(QIcon):
         if not color and theme:
             from ...utils.theme import get_theme
 
-            color = getattr(get_theme(theme, False), theme_key)
+            color = getattr(get_theme(theme, False), theme_key).as_hex()
 
         return QColoredSVGIcon(self._svg, color, opacity)
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def from_resources(
         icon_name: str,
     ) -> 'QColoredSVGIcon':

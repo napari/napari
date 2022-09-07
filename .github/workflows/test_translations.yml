@@ -4,6 +4,7 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '0 1 * * *'
+  workflow_dispatch:
 
 jobs:
   translations:
@@ -12,13 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
       - name: Install napari
         run: |
           pip install -e .[all]
           pip install -e .[testing]
       - name: Run check
         run: |
-          pytest tools/ --tb=short
+          python -m pytest -Wignore tools/ --tb=short
+      - uses: JasonEtco/create-an-issue@v2
+        if: ${{ failure() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/missing_translations.md
+          update_existing: true

@@ -1,6 +1,6 @@
 import inspect
 from enum import auto
-from typing import ClassVar
+from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
 from unittest.mock import Mock
 
 import dask.array as da
@@ -73,7 +73,7 @@ def test_evented_model_with_array():
     """Test creating an evented pydantic model with an array."""
 
     def make_array():
-        return np.array([4, 3])
+        return np.array([[4, 3]])
 
     class Model(EventedModel):
         """Demo evented model."""
@@ -238,6 +238,64 @@ def test_values_updated():
     assert user1_events.call_count == 0
 
 
+def test_update_with_inner_model_union():
+    class Inner(EventedModel):
+        w: str
+
+    class AltInner(EventedModel):
+        x: str
+
+    class Outer(EventedModel):
+        y: int
+        z: Union[Inner, AltInner]
+
+    original = Outer(y=1, z=Inner(w='a'))
+    updated = Outer(y=2, z=AltInner(x='b'))
+
+    original.update(updated, recurse=False)
+
+    assert original == updated
+
+
+def test_update_with_inner_model_protocol():
+    @runtime_checkable
+    class InnerProtocol(Protocol):
+        def string(self) -> str:
+            ...
+
+        # Protocol fields are not successfully set without explicit validation.
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v):
+            return v
+
+    class Inner(EventedModel):
+        w: str
+
+        def string(self) -> str:
+            return self.w
+
+    class AltInner(EventedModel):
+        x: str
+
+        def string(self) -> str:
+            return self.x
+
+    class Outer(EventedModel):
+        y: int
+        z: InnerProtocol
+
+    original = Outer(y=1, z=Inner(w='a'))
+    updated = Outer(y=2, z=AltInner(x='b'))
+
+    original.update(updated, recurse=False)
+
+    assert original == updated
+
+
 def test_evented_model_signature():
     class T(EventedModel):
         x: int
@@ -373,3 +431,61 @@ def test_evented_model_with_string_enum_parse_obj():
     model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
     deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
     assert deserialized_model.enum_field == model.enum_field
+
+
+class T(EventedModel):
+    a: int = 1
+    b: int = 1
+
+    @property
+    def c(self) -> List[int]:
+        return [self.a, self.b]
+
+    @c.setter
+    def c(self, val: Sequence[int]):
+        self.a, self.b = val
+
+
+def test_evented_model_with_property_setters():
+    t = T()
+
+    assert list(T.__property_setters__) == ['c']
+    # the metaclass should have figured out that both a and b affect c
+    assert T.__field_dependents__ == {'a': {'c'}, 'b': {'c'}}
+
+    # all the fields and properties behave as expected
+    assert t.c == [1, 1]
+    t.a = 4
+    assert t.c == [4, 1]
+    t.c = [2, 3]
+    assert t.c == [2, 3]
+    assert t.a == 2
+    assert t.b == 3
+
+
+def test_evented_model_with_property_setters_events():
+    t = T()
+    assert 'c' in t.events  # the setter has an event
+    t.events.a = Mock(t.events.a)
+    t.events.b = Mock(t.events.b)
+    t.events.c = Mock(t.events.c)
+
+    # setting t.c emits events for all three a, b, and c
+    t.c = [10, 20]
+    t.events.a.assert_called_with(value=10)
+    t.events.b.assert_called_with(value=20)
+    t.events.c.assert_called_with(value=[10, 20])
+    assert t.a == 10
+    assert t.b == 20
+
+    t.events.a.reset_mock()
+    t.events.b.reset_mock()
+    t.events.c.reset_mock()
+
+    # setting t.a emits events for a and c, but not b
+    # this is because we declared c to be dependent on ['a', 'b']
+    t.a = 5
+    t.events.a.assert_called_with(value=5)
+    t.events.c.assert_called_with(value=[5, 20])
+    t.events.b.assert_not_called()
+    assert t.c == [5, 20]

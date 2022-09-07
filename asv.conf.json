@@ -14,7 +14,9 @@
     "repo": ".",
 
     // Install using default qt install
+    "build_command": ["python -V"],  // skip build stage
     "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all]"],
+    "uninstall_command": ["in-dir={env_dir} python -m pip uninstall -y {project}"],
 
     // List of branches to benchmark
     "branches": ["main"],
@@ -29,7 +31,7 @@
     "show_commit_url": "http://github.com/napari/napari/commit/",
 
     // The Pythons you'd like to test against.
-    "pythons": ["3.7"],
+    "pythons": ["3.9"],
 
     // The directory (relative to the current directory) to cache the Python
     // environments in.

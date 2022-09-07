@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 from pydantic import BaseModel
-from yaml import Dumper, SafeDumper, dump_all
+from yaml import SafeDumper, dump_all
+
+from ._fields import Version
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -38,6 +40,9 @@ YamlDumper.add_multi_representer(
 YamlDumper.add_representer(
     set, lambda dumper, data: dumper.represent_list(data)
 )
+YamlDumper.add_representer(
+    Version, lambda dumper, data: dumper.represent_str(str(data))
+)
 
 
 class PydanticYamlMixin(BaseModel):
@@ -59,7 +64,7 @@ class PydanticYamlMixin(BaseModel):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        dumper: Optional[Dumper] = None,
+        dumper: Optional[Type[SafeDumper]] = None,
         **dumps_kwargs: Any,
     ) -> str:
         """Serialize model to yaml."""
@@ -77,6 +82,9 @@ class PydanticYamlMixin(BaseModel):
             data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
-    def _yaml_dump(self, data, dumper: Optional[Dumper] = None, **kw) -> str:
+    def _yaml_dump(
+        self, data, dumper: Optional[Type[SafeDumper]] = None, **kw
+    ) -> str:
+        kw.setdefault('sort_keys', False)
         dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
         return dump_all([data], Dumper=dumper, **kw)

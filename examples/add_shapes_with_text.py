@@ -1,7 +1,12 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
+Add shapes with text
+====================
+
+Display one shapes layer ontop of one image layer using the ``add_shapes`` and
+``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -19,15 +24,15 @@ polygons = [
     np.array([[111, 336], [220, 336], [220, 240], [111, 240]]),
 ]
 
-# create properties
-properties = {
+# create features
+features = {
     'likelihood': [21.23423, 51.2315, 100],
     'class': ['hand', 'face', 'camera'],
 }
 edge_color_cycle = ['blue', 'magenta', 'green']
 
-text_properties = {
-    'text': '{class}: {likelihood:0.1f}%',
+text = {
+    'string': '{class}: {likelihood:0.1f}%',
     'anchor': 'upper_left',
     'translation': [-5, 0],
     'size': 8,
@@ -37,20 +42,21 @@ text_properties = {
 # add polygons
 shapes_layer = viewer.add_shapes(
     polygons,
-    properties=properties,
+    features=features,
     shape_type='polygon',
     edge_width=3,
     edge_color='class',
     edge_color_cycle=edge_color_cycle,
     face_color='transparent',
-    text=text_properties,
+    text=text,
     name='shapes',
 )
 
-# change some properties of the layer
+# change some attributes of the layer
 shapes_layer.opacity = 1
 
 # To save layers to svg:
 # viewer.layers.save('viewer.svg', plugin='svg')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

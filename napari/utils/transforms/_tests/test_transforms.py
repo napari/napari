@@ -12,10 +12,30 @@ transform_types = [Affine, CompositeAffine, ScaleTranslate]
 def test_scale_translate(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert transform._is_diagonal
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
     assert transform.name == 'st'
     npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', [Affine, CompositeAffine])
+def test_affine_is_diagonal(Transform):
+    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert transform._is_diagonal
+    transform.rotate = 5.0
+    assert not transform._is_diagonal
+    # Rotation back to 0.0 will result in tiny non-zero off-diagonal values.
+    # _is_diagonal assumes values below 1e-8 are equivalent to 0.
+    transform.rotate = 0.0
+    assert transform._is_diagonal
+
+
+def test_diagonal_scale_setter():
+    diag_transform = Affine(scale=[2, 3], name='st')
+    assert diag_transform._is_diagonal
+    diag_transform.scale = [1]
+    npt.assert_allclose(diag_transform.scale, [1.0, 1.0])
 
 
 @pytest.mark.parametrize('Transform', transform_types)
@@ -303,3 +323,30 @@ def test_composite_affine_equiv_to_affine(dimensionality):
     np.testing.assert_almost_equal(
         composite.affine_matrix, affine.affine_matrix
     )
+
+
+def test_replace_slice_independence():
+    affine = Affine(ndim=6)
+
+    a = Affine(translate=(3, 8), rotate=33, scale=(0.75, 1.2), shear=[-0.5])
+    b = Affine(translate=(2, 5), rotate=-10, scale=(1.0, 2.3), shear=[-0.0])
+    c = Affine(translate=(0, 0), rotate=45, scale=(3.33, 0.9), shear=[1.5])
+
+    affine = affine.replace_slice([1, 2], a)
+    affine = affine.replace_slice([3, 4], b)
+    affine = affine.replace_slice([0, 5], c)
+
+    np.testing.assert_almost_equal(
+        a.affine_matrix, affine.set_slice([1, 2]).affine_matrix
+    )
+    np.testing.assert_almost_equal(
+        b.affine_matrix, affine.set_slice([3, 4]).affine_matrix
+    )
+    np.testing.assert_almost_equal(
+        c.affine_matrix, affine.set_slice([0, 5]).affine_matrix
+    )
+
+
+def test_replace_slice_num_dimensions():
+    with pytest.raises(ValueError):
+        Affine().replace_slice([0], Affine())

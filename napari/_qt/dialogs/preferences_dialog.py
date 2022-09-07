@@ -28,6 +28,7 @@ class PreferencesDialog(QDialog):
         "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},
+        "extension2reader": {"ui:widget": "extension2reader"},
     }
 
     resized = Signal(QSize)
@@ -69,7 +70,7 @@ class PreferencesDialog(QDialog):
         self._rebuild_dialog()
 
     def keyPressEvent(self, e: 'QKeyEvent'):
-        if e.key() == Qt.Key_Escape:
+        if e.key() == Qt.Key.Key_Escape:
             # escape key should just close the window
             # which implies "accept"
             e.accept()
@@ -145,7 +146,7 @@ class PreferencesDialog(QDialog):
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(form)
 
-    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict, dict]:
+    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)

@@ -4,11 +4,12 @@ from typing import Optional
 import numpy as np
 from pydantic import PrivateAttr, validator
 
+from napari.utils.color import ColorArray
+
 from ..events import EventedModel
 from ..events.custom_types import Array
 from ..translations import trans
 from .colorbars import make_colorbar
-from .standardize_color import transform_color
 
 
 class ColormapInterpolationMode(str, Enum):
@@ -46,11 +47,11 @@ class Colormap(EventedModel):
     """
 
     # fields
-    colors: Array[float, (-1, 4)]
+    colors: ColorArray
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[float, (-1,)] = None
+    controls: Array[np.float32, (-1,)] = None
 
     def __init__(self, colors, display_name: Optional[str] = None, **data):
         if display_name is None:
@@ -59,19 +60,51 @@ class Colormap(EventedModel):
         super().__init__(colors=colors, **data)
         self._display_name = display_name
 
-    # validators
-    @validator('colors', pre=True)
-    def _ensure_color_array(cls, v):
-        return transform_color(v)
-
     # controls validator must be called even if None for correct initialization
     @validator('controls', pre=True, always=True)
     def _check_controls(cls, v, values):
+        # If no control points provided generate defaults
         if v is None or len(v) == 0:
             n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
-            return np.linspace(0, 1, n_controls)
+            return np.linspace(0, 1, n_controls, dtype=np.float32)
+
+        # Check control end points are correct
+        if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
+            raise ValueError(
+                trans._(
+                    'Control points must start with 0.0 and end with 1.0. Got {start_control_point} and {end_control_point}',
+                    deferred=True,
+                    start_control_point=v[0],
+                    end_control_point=v[-1],
+                )
+            )
+
+        # Check control points are sorted correctly
+        if not np.array_equal(v, sorted(v)):
+            raise ValueError(
+                trans._(
+                    'Control points need to be sorted in ascending order',
+                    deferred=True,
+                )
+            )
+
+        # Check number of control points is correct
+        n_controls_target = len(values['colors']) + int(
+            values['interpolation'] == ColormapInterpolationMode.ZERO
+        )
+        n_controls = len(v)
+        if n_controls != n_controls_target:
+            raise ValueError(
+                trans._(
+                    'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
+                    deferred=True,
+                    n_controls_target=n_controls_target,
+                    n_controls=n_controls,
+                )
+            )
+
         return v
 
     def __iter__(self):
@@ -89,7 +122,9 @@ class Colormap(EventedModel):
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             indices = np.clip(
-                np.searchsorted(self.controls, values) - 1, 0, len(self.colors)
+                np.searchsorted(self.controls, values, side="right") - 1,
+                0,
+                len(self.colors),
             )
             cols = self.colors[indices.astype(np.int32)]
         else:

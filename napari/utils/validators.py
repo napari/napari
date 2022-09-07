@@ -59,7 +59,7 @@ def validate_n_seq(n: int, dtype=None):
                     number=n,
                 )
             )
-        if not len(obj) == n:
+        if len(obj) != n:
             raise ValueError(
                 trans._(
                     "object must have length {number}, got {obj_len}",

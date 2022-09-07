@@ -1,8 +1,15 @@
+import time
+
 import numpy as np
 import pytest
+from npe2 import DynamicPlugin
 
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
+from napari.errors import MultipleReaderError, ReaderPluginError
+from napari.errors.reader_errors import NoAvailableReaderError
+from napari.layers import Image
+from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
 
@@ -117,6 +124,15 @@ def test_add_points():
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
+
+
+def test_single_point_dims():
+    """Test dims of a Points layer with a single 3D point."""
+    viewer = ViewerModel()
+    shape = (1, 3)
+    data = np.zeros(shape)
+    viewer.add_points(data)
+    assert all(r == (0.0, 1.0, 1.0) for r in viewer.dims.range)
 
 
 def test_add_empty_points_to_empty_viewer():
@@ -278,6 +294,28 @@ def test_new_points():
     assert viewer.dims.ndim == 2
 
 
+def test_view_centering_with_points_add():
+    """Test if the viewer is only centered when the first
+    points were added
+    Regression test for issue  #3803
+    """
+    image = np.zeros((5, 10, 10))
+
+    viewer = ViewerModel()
+    viewer.add_image(image)
+    assert tuple(viewer.dims.point) == (2, 5, 5)
+
+    viewer.dims.set_point(0, 0)
+    # viewer point shouldn't change after this
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer = viewer.add_points(ndim=3)
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer.add([(0, 8, 8)])
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+
 def test_new_shapes():
     """Test adding new shapes layer."""
     # Add labels to empty viewer
@@ -305,7 +343,7 @@ def test_swappable_dims():
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[0, 0, :, :]
+        viewer.layers[image_name]._data_view == image_data[3, 6, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -316,18 +354,20 @@ def test_swappable_dims():
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     labels_name = viewer.add_labels(labels_data).name
+    # midpoints indices into the data below depend on the data range.
+    # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 6, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
+        viewer.layers[image_name]._data_view == image_data[3, :, 5, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, :, 0, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 5, :]
     )
 
 
@@ -343,7 +383,7 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -352,7 +392,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
         [0, 15],
@@ -368,7 +408,7 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -378,7 +418,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
         [0, 0],
@@ -538,6 +578,9 @@ def test_active_layer_status_update():
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
 
+    # wait 1 s to avoid the cursor event throttling
+    time.sleep(1)
+    viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
     assert viewer.status == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
@@ -585,22 +628,24 @@ def test_sliced_world_extent():
     viewer = ViewerModel()
 
     # Empty data is taken to be 512 x 512
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (-0.5, -0.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511.5, 511.5))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers.extent.world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers.extent.world[1], (25, 29, 19))
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
+    np.testing.assert_allclose(viewer.layers.extent.world[0], (8.5, 19.5, 4.5))
+    np.testing.assert_allclose(
+        viewer.layers.extent.world[1], (26.5, 29.5, 19.5)
+    )
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (19.5, 4.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29.5, 19.5))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (4.5, 8.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19.5, 26.5))
 
 
 def test_camera():
@@ -634,11 +679,11 @@ def test_update_scale():
     shape = (10, 15, 20)
     data = np.random.random(shape)
     viewer.add_image(data)
-    assert viewer.dims.range == tuple((0.0, x - 1.0, 1.0) for x in shape)
+    assert viewer.dims.range == tuple((0.0, x, 1.0) for x in shape)
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
-        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
+        (0.0, x * s, s) for x, s in zip(shape, scale)
     )
 
 
@@ -683,7 +728,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Connect a custom callback
-    def my_custom_callback(event):
+    def my_custom_callback():
         return
 
     layer.events.connect(my_custom_callback)
@@ -731,3 +776,132 @@ def test_not_mutable_fields(field):
     assert 'has allow_mutation set to False and cannot be assigned' in str(
         err.value
     )
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_status_tooltip(Layer, data, ndim):
+    viewer = ViewerModel()
+    viewer.tooltip.visible = True
+    layer = Layer(data)
+    viewer.layers.append(layer)
+    viewer.cursor.position = (1,) * ndim
+
+
+def test_viewer_object_event_sources():
+    viewer = ViewerModel()
+    assert viewer.cursor.events.source is viewer.cursor
+    assert viewer.camera.events.source is viewer.camera
+
+
+def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
+    """Assert error is returned when multiple plugins are available to read."""
+    viewer = ViewerModel()
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    with pytest.raises(
+        MultipleReaderError, match='Multiple plugins found capable'
+    ):
+        viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_or_get_error_no_plugin():
+    """Assert error is raised when no plugin is available."""
+    viewer = ViewerModel()
+
+    with pytest.raises(
+        NoAvailableReaderError, match='No plugin found capable of reading'
+    ):
+        viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_or_get_error_builtins(builtins: DynamicPlugin, tmp_path):
+    """Test builtins is available to read npy files."""
+    viewer = ViewerModel()
+
+    f_pth = tmp_path / 'my-file.npy'
+    data = np.random.random((10, 10))
+    np.save(f_pth, data)
+
+    added = viewer._open_or_raise_error([str(f_pth)])
+    assert len(added) == 1
+    layer = added[0]
+    assert isinstance(layer, Image)
+    np.testing.assert_allclose(layer.data, data)
+    assert layer.source.reader_plugin == builtins.name
+
+
+def test_open_or_get_error_prefered_plugin(
+    tmp_path, builtins: DynamicPlugin, tmp_plugin: DynamicPlugin
+):
+    """Test plugin preference is respected."""
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+    np.save(pth, np.random.random((10, 10)))
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
+    def _(path):
+        ...
+
+    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
+
+    added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.name
+
+
+def test_open_or_get_error_cant_find_plugin(tmp_path, builtins: DynamicPlugin):
+    """Test user is warned and only plugin used if preferred plugin missing."""
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+    np.save(pth, np.random.random((10, 10)))
+
+    get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
+
+    with pytest.warns(RuntimeWarning, match="Can't find fake-reader plugin"):
+        added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.name
+
+
+def test_open_or_get_error_no_prefered_plugin_many_available(
+    tmp_plugin: DynamicPlugin,
+):
+    """Test MultipleReaderError raised if preferred plugin missing."""
+    viewer = ViewerModel()
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
+
+    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
+        with pytest.raises(
+            MultipleReaderError, match='Multiple plugins found capable'
+        ):
+            viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_or_get_error_preferred_fails(builtins, tmp_path):
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+
+    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
+
+    with pytest.raises(
+        ReaderPluginError, match='Tried opening with napari, but failed.'
+    ):
+        viewer._open_or_raise_error([str(pth)])

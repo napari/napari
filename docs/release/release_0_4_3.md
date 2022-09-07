@@ -23,9 +23,9 @@ Both of these hook specs are marked as `experimental` as we're likely to evolve 
 
 In this release we also seperate out more of the Qt functionality from napari making it easier to run headless (#2039, #2055). We also added a `napari.run` method as an alternative to using the `napari.gui_qt` context manager (#2056).
 
-We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/docs/dev/events/rendering.html) for more details on how to use the octree and its current limitations.
+We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/guides/stable/rendering.html) for more details on how to use the octree and its current limitations.
 
-Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_4.html) and a [retrospective on our 0.3 roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3_retrospective.html)!
+Finally we've added our [0.4 series roadmap](https://napari.org/roadmaps/0_4.html) and a [retrospective on our 0.3 roadmap](https://napari.org/roadmaps/0_3_retrospective.html)!
 
 
 ## New Features

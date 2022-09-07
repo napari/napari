@@ -5,58 +5,34 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
-  code:
-    name: Code
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [flake8, black, isort, import-lint]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install tox
-      - name: Run task
-        run: tox -e ${{ matrix.task }}
-
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-      - name: Install dependencies
+          python-version: "3.x"
+      - name: Check Manifest
         run: |
           pip install --upgrade pip
           pip install check-manifest
-      - name: Check Manifest
-        run: check-manifest
+          check-manifest
 
   localization_syntax:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
+          python-version: "3.x"
       - name: Check localization formatting
         run: |
           pip install --upgrade pip semgrep
@@ -71,53 +47,60 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest]
-        python: [3.7, 3.8, 3.9]
+        python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
-          # Windows py37
-          - python: 3.7
-            platform: windows-latest
           # Windows py38
           - python: 3.8
             platform: windows-latest
-          # macOS py38
+            backend: pyqt5
           - python: 3.8
+            platform: windows-latest
+            backend: pyside2
+          - python: 3.9
             platform: macos-latest
-            backend: pyqt # (only testing pyqt on mac in the interest of speed)
+            backend: pyqt5
           # minimum specified requirements
-          - python: 3.7
+          - python: 3.8
             platform: ubuntu-18.04
+            backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-pyqt-py38-linux
+            toxenv: async-pyqt5-py38-linux
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
 
-      # these libraries, along with pytest-xvfb (added in the `deps` in tox.ini),
-      # enable testing on Qt on linux
-      - name: Install Linux libraries
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+      - uses: tlambert03/setup-qt-libs@v1
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
@@ -133,6 +116,7 @@ jobs:
           # it is a no-op if MIN_REQ is not set
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
+
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
@@ -142,7 +126,7 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox
+          run: python -m tox
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
@@ -150,33 +134,58 @@ jobs:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: upload pytest timing reports as json
+          path: |
+            ./report-*.json
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
   test_pip_install:
-    name: ubuntu-latest 3.8 pip install
+    name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
         with:
-          python-version: 3.8
+          path: napari-from-github
 
-      - name: Install Linux libraries
-        run: |
-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: "pip"
+
+      - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install this commit
         run: |
-          # pip install this git sha directly from github
           pip install --upgrade pip
-          pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pip install ./napari-from-github[all,testing]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: pytest --pyargs napari --color=yes
+          run: |
+            python -m pytest --pyargs napari --color=yes
+            python -m pytest --pyargs napari_builtins --color=yes
+
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples

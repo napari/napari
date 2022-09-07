@@ -1,14 +1,18 @@
 """Miscellaneous utility functions.
 """
+
 import builtins
 import collections.abc
+import contextlib
+import importlib.metadata
 import inspect
 import itertools
 import os
 import re
 import sys
+import warnings
 from enum import Enum, EnumMeta
-from os import PathLike, fspath
+from os import fspath
 from os import path as os_path
 from pathlib import Path
 from typing import (
@@ -16,8 +20,9 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Iterator,
+    List,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,
@@ -33,11 +38,6 @@ if TYPE_CHECKING:
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
-try:
-    from importlib import metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata  # noqa
-
 
 def parse_version(v) -> 'packaging.version._BaseVersion':
     """Parse a version string and return a packaging.version.Version obj."""
@@ -50,20 +50,32 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
 
 
 def running_as_bundled_app() -> bool:
-    """Infer whether we are running as a briefcase bundle"""
+    """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
+    # From 0.4.12 we add a sentinel file next to the bundled sys.executable
+    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
+        return True
+
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
         return False
+
     try:
-        metadata = importlib_metadata.metadata(app_module)
-    except importlib_metadata.PackageNotFoundError:
+        metadata = importlib.metadata.metadata(app_module)
+    except importlib.metadata.PackageNotFoundError:
         return False
 
     return 'Briefcase-Version' in metadata
+
+
+def running_as_constructor_app() -> bool:
+    """Infer whether we are running as a constructor bundle."""
+    return (
+        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+    ).exists()
 
 
 def bundle_bin_dir() -> Optional[str]:
@@ -113,12 +125,12 @@ def ensure_iterable(arg, color=False):
         return itertools.repeat(arg)
 
 
-def is_iterable(arg, color=False):
+def is_iterable(arg, color=False, allow_none=False):
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
-    is taken to not be iterable.
+    is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None:
+    if arg is None and not allow_none:
         return False
     elif type(arg) is str:
         return False
@@ -151,7 +163,10 @@ def is_sequence(arg):
 
 
 def ensure_sequence_of_iterables(
-    obj, length: Optional[int] = None, repeat_empty: bool = False
+    obj,
+    length: Optional[int] = None,
+    repeat_empty: bool = False,
+    allow_none: bool = False,
 ):
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
@@ -166,6 +181,8 @@ def ensure_sequence_of_iterables(
         If provided, assert that obj has len ``length``, by default None
     repeat_empty : bool
         whether to repeat an empty sequence (otherwise return the empty sequence itself)
+    allow_none : bool
+        treat None as iterable
 
     Returns
     -------
@@ -180,23 +197,26 @@ def ensure_sequence_of_iterables(
     In [2]: ensure_sequence_of_iterables([(1, 2), (3, 4)])
     Out[2]: [(1, 2), (3, 4)]
 
-    In [3]: ensure_sequence_of_iterables({'a':1})
-    Out[3]: repeat({'a': 1})
+    In [3]: ensure_sequence_of_iterables([(1, 2), None], allow_none=True)
+    Out[3]: [(1, 2), None]
 
-    In [4]: ensure_sequence_of_iterables(None)
-    Out[4]: repeat(None)
+    In [4]: ensure_sequence_of_iterables({'a':1})
+    Out[4]: repeat({'a': 1})
 
-    In [5]: ensure_sequence_of_iterables([])
-    Out[5]: repeat([])
+    In [5]: ensure_sequence_of_iterables(None)
+    Out[5]: repeat(None)
 
-    In [6]: ensure_sequence_of_iterables([], repeat_empty=False)
-    Out[6]: []
+    In [6]: ensure_sequence_of_iterables([])
+    Out[6]: repeat([])
+
+    In [7]: ensure_sequence_of_iterables([], repeat_empty=False)
+    Out[7]: []
     """
 
     if (
         obj is not None
         and is_sequence(obj)
-        and all(is_iterable(el) for el in obj)
+        and all(is_iterable(el, allow_none=allow_none) for el in obj)
     ):
         if length is not None and len(obj) != length:
             if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
@@ -314,10 +334,10 @@ def camel_to_spaces(val):
     return camel_to_spaces_pattern.sub(r" \1", val)
 
 
-T = TypeVar('T', str, Sequence[str])
+T = TypeVar('T', str, Path)
 
 
-def abspath_or_url(relpath: T) -> T:
+def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     """Utility function that normalizes paths or a sequence thereof.
 
     Expands user directory and converts relpaths to abspaths... but ignores
@@ -325,33 +345,40 @@ def abspath_or_url(relpath: T) -> T:
 
     Parameters
     ----------
-    relpath : str or list or tuple
-        A path, or list or tuple of paths.
+    relpath : str|Path
+        A path, either as string or Path object.
+    must_exist : bool, default True
+        Raise ValueError if `relpath` is not a URL and does not exist.
 
     Returns
     -------
-    abspath : str or list or tuple
+    abspath : str|Path
         An absolute path, or list or tuple of absolute paths (same type as
-        input).
+        input)
     """
     from urllib.parse import urlparse
 
-    if isinstance(relpath, (tuple, list)):
-        return type(relpath)(abspath_or_url(p) for p in relpath)
-
-    if isinstance(relpath, (str, PathLike)):
-        relpath = fspath(relpath)
-        urlp = urlparse(relpath)
-        if urlp.scheme and urlp.netloc:
-            return relpath
-        return os_path.abspath(os_path.expanduser(relpath))
-
-    raise TypeError(
-        trans._(
-            "Argument must be a string, PathLike, or sequence thereof",
-            deferred=True,
+    if not isinstance(relpath, (str, Path)):
+        raise TypeError(
+            trans._("Argument must be a string or Path", deferred=True)
         )
-    )
+    OriginType = type(relpath)
+
+    relpath = fspath(relpath)
+    urlp = urlparse(relpath)
+    if urlp.scheme and urlp.netloc:
+        return relpath
+
+    path = os_path.abspath(os_path.expanduser(relpath))
+    if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
+        raise ValueError(
+            trans._(
+                "Requested path {path!r} does not exist.",
+                deferred=True,
+                path=path,
+            )
+        )
+    return OriginType(path)
 
 
 class CallDefault(inspect.Parameter):
@@ -414,26 +441,42 @@ def ensure_n_tuple(val, n, fill=0):
 
 
 def ensure_layer_data_tuple(val):
-    if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
-        raise TypeError(
-            trans._(
-                'Not a valid layer data tuple: {value!r}',
-                deferred=True,
-                value=val,
-            )
-        )
+    msg = trans._(
+        'Not a valid layer data tuple: {value!r}',
+        deferred=True,
+        value=val,
+    )
+    if not isinstance(val, tuple) and val:
+        raise TypeError(msg)
+    if len(val) > 1:
+        if not isinstance(val[1], dict):
+            raise TypeError(msg)
+        if len(val) > 2 and not isinstance(val[2], str):
+            raise TypeError(msg)
     return val
 
 
-def ensure_list_of_layer_data_tuple(val):
-    if isinstance(val, list) and len(val):
-        try:
+def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
+    # allow empty list to be returned but do nothing in that case
+    if isinstance(val, list):
+        with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
-        except TypeError:
-            pass
     raise TypeError(
         trans._('Not a valid list of layer data tuples!', deferred=True)
     )
+
+
+def _quiet_array_equal(*a, **k):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "elementwise comparison")
+        return np.array_equal(*a, **k)
+
+
+def _arraylike_short_names(obj) -> Iterator[str]:
+    """Yield all the short names of an array-like or its class."""
+    type_ = type(obj) if not inspect.isclass(obj) else obj
+    for base in type_.mro():
+        yield f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
 
 
 def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
@@ -459,24 +502,42 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     """
     import operator
 
-    type_ = type(obj) if not inspect.isclass(obj) else obj
-
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
     _known_arrays = {
-        'numpy.ndarray': np.array_equal,  # numpy.ndarray
+        'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
-        'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
+        'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
     }
-    for base in type_.mro():
-        key = f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
-        func = _known_arrays.get(key)
+
+    for name in _arraylike_short_names(obj):
+        func = _known_arrays.get(name)
         if func:
             return func
 
     return operator.eq
+
+
+def _is_array_type(array, type_name: str) -> bool:
+    """Checks if an array-like instance or class is of the type described by a short name.
+
+    This is useful when you want to check the type of array-like quickly without
+    importing its package, which might take a long time.
+
+    Parameters
+    ----------
+    array
+        The array-like object.
+    type_name : str
+        The short name of the type to test against (e.g. 'numpy.ndarray', 'xarray.DataArray').
+
+    Returns
+    -------
+    True if the array is associated with the type name.
+    """
+    return type_name in _arraylike_short_names(array)
 
 
 def dir_hash(
@@ -560,12 +621,12 @@ def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
 
     Parameters
     ----------
-    _hash: :
-    file: Path
+    _hash
+    file : Path
         Path to the source file which will be used to compute the hash.
     path : Path
         Path to the base directory of the `file`. This can be usually obtained by using `file.parent`.
-    include_paths: bool
+    include_paths : bool
         If ``True``, the hash will also include the ``file`` parts.
     """
     _hash.update(file.read_bytes())
@@ -617,3 +678,20 @@ def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
         else:
             _dct[k] = v
     return _dct
+
+
+def install_certifi_opener():
+    """Install urlopener that uses certifi context.
+
+    This is useful in the bundle, where otherwise users might get SSL errors
+    when using `urllib.request.urlopen`.
+    """
+    import ssl
+    from urllib import request
+
+    import certifi
+
+    context = ssl.create_default_context(cafile=certifi.where())
+    https_handler = request.HTTPSHandler(context=context)
+    opener = request.build_opener(https_handler)
+    request.install_opener(opener)

@@ -1,5 +1,10 @@
 """
+New theme
+=========
+
 Displays an image and sets the theme to new custom theme.
+
+.. tags:: experimental
 """
 
 from skimage import data
@@ -31,4 +36,5 @@ print('New themes', available_themes())
 # Set theme
 viewer.theme = 'blue'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

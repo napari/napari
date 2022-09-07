@@ -3,33 +3,9 @@ import re
 import sys
 import warnings
 
-import wrapt
 from numpydoc.docscrape import FunctionDoc
 
 from ..utils.translations import trans
-
-
-class ReadOnlyWrapper(wrapt.ObjectProxy):
-    """
-    Disable item and attribute setting with the exception of  ``__wrapped__``.
-    """
-
-    def __setattr__(self, name, val):
-        if name != '__wrapped__':
-            raise TypeError(
-                trans._(
-                    'cannot set attribute {name}',
-                    deferred=True,
-                    name=name,
-                )
-            )
-
-        super().__setattr__(name, val)
-
-    def __setitem__(self, name, val):
-        raise TypeError(
-            trans._('cannot set item {name}', deferred=True, name=name)
-        )
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -260,7 +236,7 @@ KEY_SYMBOLS = {
 }
 
 
-joinchar = '-'
+joinchar = '+'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
         {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}

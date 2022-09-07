@@ -1,18 +1,26 @@
+import warnings
 from collections import OrderedDict
 from threading import Lock
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import BaseColormap as VispyColormap
-from vispy.color import get_colormap, get_colormaps
+from vispy.color import Color, ColorArray, get_colormap, get_colormaps
+from vispy.color.colormap import LUT_len
 
 from ..translations import trans
 from .bop_colors import bopd
-from .colormap import Colormap
+from .colormap import Colormap, ColormapInterpolationMode
+from .standardize_color import transform_color
 from .vendored import cm, colorconv
+
+# All parsable input color types that a user can provide
+ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]
+
 
 ValidColormapArg = Union[
     str,
+    ColorType,
     VispyColormap,
     Colormap,
     Tuple[str, VispyColormap],
@@ -248,14 +256,34 @@ def color_dict_to_colormap(colors):
         Mapping of Label to color control point within colormap
     """
 
+    MAX_DISTINCT_COLORS = LUT_len
+
     control_colors = np.unique(list(colors.values()), axis=0)
-    colormap = Colormap(control_colors)
+
+    if len(control_colors) >= MAX_DISTINCT_COLORS:
+        warnings.warn(
+            trans._(
+                'Label layers with more than {max_distinct_colors} distinct colors will not render correctly. This layer has {distinct_colors}.',
+                deferred=True,
+                distinct_colors=str(len(control_colors)),
+                max_distinct_colors=str(MAX_DISTINCT_COLORS),
+            ),
+            category=UserWarning,
+        )
+
+    colormap = Colormap(
+        colors=control_colors, interpolation=ColormapInterpolationMode.ZERO
+    )
+
     control2index = {
-        tuple(ctrl): i / (len(control_colors) - 1)
-        for i, ctrl in enumerate(control_colors)
+        tuple(color): control_point
+        for color, control_point in zip(colormap.colors, colormap.controls)
     }
+
+    control_small_delta = 0.5 / len(control_colors)
     label_color_index = {
-        label: control2index[tuple(color)] for label, color in colors.items()
+        label: np.float32(control2index[tuple(color)] + control_small_delta)
+        for label, color in colors.items()
     }
 
     return colormap, label_color_index
@@ -418,7 +446,7 @@ def vispy_or_mpl_colormap(name):
                         deferred=True,
                         name=name,
                         colormaps=", ".join(
-                            sorted([f'"{cm}"' for cm in colormaps])
+                            sorted(f'"{cm}"' for cm in colormaps)
                         ),
                     )
                 )
@@ -482,19 +510,24 @@ def _increment_unnamed_colormap(
 
 
 def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
-    """Accept any valid colormap arg, and return (name, Colormap), or raise.
+    """Accept any valid colormap argument, and return Colormap, or raise.
 
-    Adds any new colormaps to AVAILABLE_COLORMAPS in the process.
+    Adds any new colormaps to AVAILABLE_COLORMAPS in the process, except
+    for custom unnamed colormaps created from color values.
 
     Parameters
     ----------
     colormap : ValidColormapArg
-        colormap as str, napari.utils.Colormap.
+        See ValidColormapArg for supported input types.
 
     Returns
     -------
-    Tuple[str, Colormap]
-        Normalized name and napari.utils.Colormap.
+    Colormap
+
+    Warns
+    -----
+    UserWarning
+        If ``colormap`` is not a valid colormap argument type.
 
     Raises
     ------
@@ -506,8 +539,6 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     TypeError
         If a dict is provided and any of the values are not Colormap instances
         or valid inputs to the Colormap constructor.
-    TypeError
-        If ``colormap`` is not a ``str``, ``dict``, ``tuple``, or ``Colormap``
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
@@ -539,27 +570,29 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             AVAILABLE_COLORMAPS[name] = cmap
 
         elif isinstance(colormap, tuple):
-            if not (
+            if (
                 len(colormap) == 2
-                and (
-                    isinstance(colormap[1], VispyColormap)
-                    or isinstance(colormap[1], Colormap)
-                )
                 and isinstance(colormap[0], str)
+                and isinstance(colormap[1], (VispyColormap, Colormap))
             ):
+                name, cmap = colormap
+                # Convert from vispy colormap
+                if isinstance(cmap, VispyColormap):
+                    cmap = convert_vispy_colormap(cmap, name=name)
+                else:
+                    cmap.name = name
+                AVAILABLE_COLORMAPS[name] = cmap
+            else:
+                colormap = _colormap_from_colors(colormap)
+                if colormap is not None:
+                    # Return early because we don't have a name for this colormap.
+                    return colormap
                 raise TypeError(
                     trans._(
-                        "When providing a tuple as a colormap argument, the first element must be a string and the second a Colormap instance",
+                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
                         deferred=True,
                     )
                 )
-            name, cmap = colormap
-            # Convert from vispy colormap
-            if isinstance(cmap, VispyColormap):
-                cmap = convert_vispy_colormap(cmap, name=name)
-            else:
-                cmap.name = name
-            AVAILABLE_COLORMAPS[name] = cmap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
@@ -594,7 +627,6 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     name = list(colormap)[0]  # first key in dict
                 elif len(colormap) > 1:
                     name = list(colormap.keys())[0]
-                    import warnings
 
                     warnings.warn(
                         trans._(
@@ -610,7 +642,10 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         )
                     )
         else:
-            import warnings
+            colormap = _colormap_from_colors(colormap)
+            if colormap is not None:
+                # Return early because we don't have a name for this colormap.
+                return colormap
 
             warnings.warn(
                 trans._(
@@ -624,6 +659,16 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
+
+
+def _colormap_from_colors(colors: ColorType) -> Optional[Colormap]:
+    try:
+        color_array = transform_color(colors)
+    except (ValueError, AttributeError, KeyError):
+        return None
+    if color_array.shape[0] == 1:
+        color_array = np.array([[0, 0, 0, 1], color_array[0]])
+    return Colormap(color_array)
 
 
 def make_default_color_array():

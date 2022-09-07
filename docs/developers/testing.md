@@ -1,3 +1,4 @@
+(napari-testing)=
 # Testing
 
 ## Overview
@@ -39,7 +40,7 @@ and `napari/utils` folders. Our GUI code is tests in the `napari/_tests`,
 `napari/_qt`, `napari/_vispy` folders. The `napari/plugins` folder contains a mix
 of tests.
 
-## Running Tests
+## Running tests
 
 To run our test suite locally, run `pytest` on the command line.  If, for some reason
 you don't already have the test requirements in your environment, run `pip install -e .[testing]`.
@@ -84,7 +85,7 @@ pytest --cov=napari.layers.shapes --cov-report=html napari/layers/shapes
 open htmlcov/index.html  # look at the report
 ```
 
-## Writing Tests
+## Writing tests
 
 Writing tests for new code is a critical part of keeping napari maintainable as
 it grows. Tests are written in files whose names
@@ -172,7 +173,7 @@ were to receive some value from the upstream code.  For a few examples of using
 mocks when testing napari, search the codebase for
 [`unittest.mock`](https://github.com/napari/napari/search?q=%22unittest.mock%22&type=Code)
 
-## Known Issues
+## Known issues
 
 There are several known issues with displaying GUI tests on windows in CI, and
 so certain tests have been disabled from windows in CI, see

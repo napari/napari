@@ -1,0 +1,55 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# Only allow one docs build at a time so that overlapping stale builds will get
+# cancelled automatically.
+concurrency:
+  group: deploy_docs
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code + LFS with cache
+        uses: nschloe/action-cached-lfs-checkout@v1
+        # See discussion at https://github.com/actions/checkout/issues/165
+        # This is a bundling of the pattern in this comment:
+        # https://github.com/actions/checkout/issues/165#issuecomment-657673315
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[docs]"
+
+      - name: Build Docs
+        uses: GabrielBB/xvfb-action@v1
+        env:
+          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+          GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
+        with:
+          run: make docs
+
+      - name: Deploy Docs
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          external_repository: napari/napari.github.io
+          publish_dir: docs/_build
+          publish_branch: gh-pages
+          destination_dir: dev
+          cname: napari.org

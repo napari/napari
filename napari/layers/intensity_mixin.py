@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ..utils._dtype import normalize_dtype
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event
 from ..utils.status_messages import format_float
@@ -26,40 +27,50 @@ class IntensityVisualizationMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.events.add(contrast_limits=Event, gamma=Event, colormap=Event)
+        self.events.add(
+            contrast_limits=Event,
+            contrast_limits_range=Event,
+            gamma=Event,
+            colormap=Event,
+        )
         self._gamma = 1
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         self._contrast_limits = [None, None]
         self._contrast_limits_range = [None, None]
-        self._autoscale_source = 'slice'
-        self._keep_autoscale = False
+        self._auto_contrast_source = 'slice'
+        self._keep_auto_contrast = False
 
     def reset_contrast_limits(self: 'Image', mode=None):
         """Scale contrast limits to data range"""
-        mode = mode or self._autoscale_source
+        mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
 
-    def reset_contrast_limits_range(self):
-        """Scale contrast limits range to data type.
-
-        Currently, this only does something if the data type is an unsigned
-        integer... otherwise it's unclear what the full range should be.
+    def reset_contrast_limits_range(self, mode=None):
+        """Scale contrast limits range to data type if dtype is an integer,
+        or use the current maximum data range otherwise.
         """
-        if np.issubdtype(self.dtype, np.unsignedinteger):
-            info = np.iinfo(self.dtype)
+        dtype = normalize_dtype(self.dtype)
+        if np.issubdtype(dtype, np.integer):
+            info = np.iinfo(dtype)
             self.contrast_limits_range = (info.min, info.max)
+        else:
+            mode = mode or self._auto_contrast_source
+            self.contrast_limits_range = self._calc_data_range(mode)
 
     @property
     def colormap(self):
         """napari.utils.Colormap: colormap for luminance images."""
         return self._colormap
 
-    @colormap.setter
-    def colormap(self, colormap):
+    def _set_colormap(self, colormap):
         self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
+
+    @colormap.setter
+    def colormap(self, colormap):
+        self._set_colormap(colormap)
 
     @property
     def colormaps(self):
@@ -106,6 +117,7 @@ class IntensityVisualizationMixin:
         for i in range(2):
             value[i] = current_range[i] if value[i] is None else value[i]
         self._contrast_limits_range = value
+        self.events.contrast_limits_range()
 
         # make sure that the current values fit within the new range
         # this also serves the purpose of emitting events.contrast_limits()
@@ -115,7 +127,6 @@ class IntensityVisualizationMixin:
             new_min = min(max(value[0], cur_min), value[1])
             new_max = max(min(value[1], cur_max), value[0])
             self.contrast_limits = (new_min, new_max)
-            self.events.contrast_limits()
 
     @property
     def gamma(self):

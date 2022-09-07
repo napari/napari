@@ -2,6 +2,8 @@ from functools import partial
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 
 from qtpy import QtCore, QtGui, QtWidgets
+
+from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
@@ -618,6 +620,25 @@ class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
         self.opacity.setOpacity(1)
 
 
+class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
+    @state_property
+    def state(self) -> dict:
+        return self.value()
+
+    def setDescription(self, description: str):
+        self.description = description
+
+    @state.setter
+    def state(self, state: dict):
+        # self.setValue(state)
+        return None
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
         self,
@@ -665,8 +686,6 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         if 'title' in schema:
             self.setTitle(schema['title'])
 
-        if 'description' in schema:
-            self.setToolTip(schema['description'])
 
         # Populate rows
         widgets = {}

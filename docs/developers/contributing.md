@@ -1,4 +1,5 @@
-# Contributing Guide
+(napari-contributing)=
+# Contributing guide
 
 We welcome your contributions! Please see the provided steps below and never hesitate to contact us.
 
@@ -24,7 +25,7 @@ git remote add upstream https://github.com/napari/napari.git
 
 Install the package in editable mode, along with all of the developer tools
 ```sh
-pip install -r requirements.txt
+pip install -e ".[dev]"  # (quotes only needed for zsh shell)
 ```
 
 We use [`pre-commit`](https://pre-commit.com) to sort imports with
@@ -51,7 +52,7 @@ in our [`flake8` configuration](https://github.com/napari/napari/blob/main/setup
 [C901](https://lintlyci.github.io/Flake8Rules/rules/C901.html).  For information
 on any specific flake8 error code, see the [Flake8
 Rules](https://lintlyci.github.io/Flake8Rules/).  You may also wish to refer to
-the [PEP 8 style guide](https://www.python.org/dev/peps/pep-0008/).
+the [PEP 8 style guide](https://peps.python.org/pep-0008/).
 
 If you wish to tell the linter to ignore a specific line use the `# noqa`
 comment along with the specific error code (e.g. `import sys  # noqa: E402`) but
@@ -78,7 +79,7 @@ Icons are typically used inside of one of our `stylesheet.qss` files, with the
 
 ```css
 QtDeleteButton {
-   image: url(":/themes/{{ folder }}/delete.svg");
+   image: url("theme_{{ name }}:/delete.svg");
 }
 ```
 
@@ -136,7 +137,7 @@ from napari.utils.translations import trans
 some_string = trans._("Localizable string")
 ```
 
-To learn more, please see the [translations guide](../guides/translations.md).
+To learn more, please see the {ref}`translations guide <translations>`.
 
 ## Making changes
 
@@ -163,7 +164,7 @@ We use unit tests, integration tests, and functional tests to ensure that
 napari works as intended. Writing tests for new code is a critical part of
 keeping napari maintainable as it grows.
 
-We have dedicated documentation on [testing](TESTING.md) that we recommend you
+We have dedicated documentation on [testing](napari-testing) that we recommend you
 read as you're working on your first contribution.
 
 ### Help us make sure it's you
@@ -219,11 +220,9 @@ The docs will be built at `docs/_build/html`.
 Most web browsers will allow you to preview HTML pages.
 Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in your address bar.
 
-To read more about the docs, how they're organized, and built, read {ref}`docs-dev`.
+## Code of Conduct
 
-## Code of conduct
-
-`napari` has a [Code of Conduct](CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](napari-coc) that should be honored by everyone who participates in the `napari` community.
 
 ## Questions, comments, and feedback
 

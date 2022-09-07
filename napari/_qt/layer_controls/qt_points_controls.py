@@ -1,12 +1,8 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QComboBox,
-    QHBoxLayout,
-    QLabel,
-)
+from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.action_manager import action_manager
@@ -17,6 +13,9 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtPointsControls(QtLayerControls):
@@ -35,20 +34,14 @@ class QtPointsControls(QtLayerControls):
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete points from layer.
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
-        Color swatch showing shapes edge display color.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select display color for shape edges.
-    faceColorSwatch : qtpy.QtWidgets.QFrame
-        Color swatch showing shapes face display color.
-    faceComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select display color for shape faces.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
+    edgeColorEdit : QColorSwatchEdit
+        Widget to select display color for shape edges.
+    faceColorEdit : QColorSwatchEdit
+        Widget to select display color for shape faces.
     layer : napari.layers.Points
         An instance of a napari Points layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to indicate whether layer is n-dimensional.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
     select_button : qtpy.QtWidgets.QtModeRadioButton
@@ -65,11 +58,15 @@ class QtPointsControls(QtLayerControls):
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
 
+    layer: 'napari.layers.Points'
+
     def __init__(self, layer):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.out_of_slice_display.connect(
+            self._on_out_of_slice_display_change
+        )
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
         self.layer.events.current_edge_color.connect(
@@ -87,10 +84,19 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
-        sld = QSlider(Qt.Horizontal)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal)
+        sld.setToolTip(
+            trans._(
+                "Change the size of currently selected points and any added afterwards."
+            )
+        )
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        sld.setMaximum(100)
+        if self.layer.size.size:
+            max_value = max(100, int(np.max(self.layer.size)) + 1)
+        else:
+            max_value = 100
+        sld.setMaximum(max_value)
         sld.setSingleStep(1)
         value = self.layer.current_size
         sld.setValue(int(value))
@@ -108,24 +114,22 @@ class QtPointsControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-        symbol_comboBox = QComboBox()
+        self.symbolComboBox = QComboBox()
         current_index = 0
         for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
             data = data.value
-            symbol_comboBox.addItem(text, data)
+            self.symbolComboBox.addItem(text, data)
 
             if data == self.layer.symbol:
                 current_index = index
 
-        symbol_comboBox.setCurrentIndex(current_index)
-        symbol_comboBox.activated[str].connect(self.changeSymbol)
-        self.symbolComboBox = symbol_comboBox
+        self.symbolComboBox.setCurrentIndex(current_index)
+        self.symbolComboBox.currentTextChanged.connect(self.changeSymbol)
 
-        ndim_cb = QCheckBox()
-        ndim_cb.setToolTip(trans._('N-dimensional points'))
-        ndim_cb.setChecked(self.layer.n_dimensional)
-        ndim_cb.stateChanged.connect(self.change_ndim)
-        self.ndimCheckBox = ndim_cb
+        self.outOfSliceCheckBox = QCheckBox()
+        self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
+        self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
+        self.outOfSliceCheckBox.stateChanged.connect(self.change_out_of_slice)
 
         self.select_button = QtModeRadioButton(
             layer,
@@ -156,11 +160,10 @@ class QtPointsControls(QtLayerControls):
             'napari:delete_selected_points', self.delete_button
         )
 
-        text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip(trans._('toggle text visibility'))
-        text_disp_cb.setChecked(self.layer.text.visible)
-        text_disp_cb.stateChanged.connect(self.change_text_visibility)
-        self.textDispCheckBox = text_disp_cb
+        self.textDispCheckBox = QCheckBox()
+        self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
+        self.textDispCheckBox.setChecked(self.layer.text.visible)
+        self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -176,28 +179,15 @@ class QtPointsControls(QtLayerControls):
         button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 1, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('point size:')), 2, 0)
-        self.grid_layout.addWidget(self.sizeSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('symbol:')), 4, 0)
-        self.grid_layout.addWidget(self.symbolComboBox, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('face color:')), 5, 0)
-        self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
-        self.grid_layout.addWidget(QLabel(trans._('edge color:')), 6, 0)
-        self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
-        self.grid_layout.addWidget(QLabel(trans._('display text:')), 7, 0)
-        self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 8, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 8, 1)
-        self.grid_layout.setRowStretch(9, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self.layout().addRow(button_row)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('point size:'), self.sizeSlider)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
+        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
+        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
+        self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
+        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.
@@ -224,7 +214,7 @@ class QtPointsControls(QtLayerControls):
             self.select_button.setChecked(True)
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
-        else:
+        elif mode != Mode.TRANSFORM:
             raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
 
     def changeSymbol(self, text):
@@ -247,78 +237,59 @@ class QtPointsControls(QtLayerControls):
         """
         self.layer.current_size = value
 
-    def change_ndim(self, state):
-        """Toggle n-dimensional state of label layer.
+    def change_out_of_slice(self, state):
+        """Toggleout of slice display of points layer.
 
         Parameters
         ----------
         state : QCheckBox
-            Checkbox indicating if label layer is n-dimensional.
+            Checkbox indicating whether to render out of slice.
         """
-        if state == Qt.Checked:
-            self.layer.n_dimensional = True
-        else:
-            self.layer.n_dimensional = False
+        # needs cast to bool for Qt6
+        self.layer.out_of_slice_display = bool(state)
 
     def change_text_visibility(self, state):
-        """Toggle the visibiltiy of the text.
+        """Toggle the visibility of the text.
 
         Parameters
         ----------
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        if state == Qt.Checked:
-            self.layer.text.visible = True
-        else:
-            self.layer.text.visible = False
+        # needs cast to bool for Qt6
+        self.layer.text.visible = bool(state)
 
-    def _on_text_visibility_change(self, event):
-        """Receive layer model text visibiltiy change change event and update checkbox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_text_visibility_change(self):
+        """Receive layer model text visibiltiy change change event and update checkbox."""
         with self.layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
-    def _on_n_dimensional_change(self, event):
-        """Receive layer model n-dimensional change event and update checkbox.
+    def _on_out_of_slice_display_change(self):
+        """Receive layer model out_of_slice_display change event and update checkbox."""
+        with self.layer.events.out_of_slice_display.blocker():
+            self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
 
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        with self.layer.events.n_dimensional.blocker():
-            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
-
-    def _on_symbol_change(self, event):
-        """Receive marker symbol change event and update the dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_symbol_change(self):
+        """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
                 self.symbolComboBox.findData(self.layer.symbol)
             )
 
-    def _on_size_change(self, event=None):
-        """Receive layer model size change event and update point size slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_size_change(self):
+        """Receive layer model size change event and update point size slider."""
         with self.layer.events.size.blocker():
             value = self.layer.current_size
-            self.sizeSlider.setValue(int(value))
+            min_val = min(value) if isinstance(value, list) else value
+            max_val = max(value) if isinstance(value, list) else value
+            if min_val < self.sizeSlider.minimum():
+                self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
+            if max_val > self.sizeSlider.maximum():
+                self.sizeSlider.setMaximum(int(max_val + 1))
+            try:
+                self.sizeSlider.setValue(int(value))
+            except TypeError:
+                pass
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):
@@ -332,24 +303,18 @@ class QtPointsControls(QtLayerControls):
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
-    def _on_current_face_color_change(self, event=None):
+    def _on_current_face_color_change(self):
         """Receive layer.current_face_color() change event and update view."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_current_edge_color_change(self, event=None):
+    def _on_current_edge_color_change(self):
         """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_editable_change(self, event=None):
-        """Receive layer model editable change event & enable/disable buttons.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_editable_change(self):
+        """Receive layer model editable change event & enable/disable buttons."""
         disable_with_opacity(
             self,
             ['select_button', 'addition_button', 'delete_button'],

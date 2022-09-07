@@ -1,24 +1,22 @@
 name: Test typing
 
 on:
-  schedule:
-    # * is a special character in YAML so you have to quote this string
-    - cron:  '0 2 * * *'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   typing:
-    name: Test typing on modules
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Install napari
         run: |
-          pip install -e .[all]
-          pip install mypy types-PyYAML
+          pip install mypy types-PyYAML types-setuptools
+          SETUPTOOLS_ENABLE_FEATURES="legacy-editable" pip install -e .[all]
+
       - name: Run mypy on typed modules
-        run: |
-          mypy napari/settings
+        run: make typecheck

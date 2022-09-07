@@ -59,7 +59,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         bool ``True`` if the `data` and `action` were handled by the model;
             otherwise returns ``False``.
         """
-        if not data or action != Qt.MoveAction:
+        if not data or action != Qt.DropAction.MoveAction:
             return False
         if not data.hasFormat(self.mimeTypes()[0]):
             return False

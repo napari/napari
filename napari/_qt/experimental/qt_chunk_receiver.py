@@ -48,9 +48,7 @@ class QtGuiEvent(QObject):
         emitter.connect(self._on_event)
         self.emitter = emitter
 
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, gui_event=None
-        )
+        self.events = EmitterGroup(source=self, gui_event=None)
 
         self.signal.connect(self._slot)
 

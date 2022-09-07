@@ -4,10 +4,12 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
-from napari.layers.utils._text_constants import Anchor, TextMode
+from napari.layers.utils._text_constants import Anchor
+from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -33,6 +35,13 @@ def _make_cycled_properties(values, length):
 def test_empty_shapes():
     shp = Shapes()
     assert shp.ndim == 2
+
+
+def test_update_thumbnail_empty_shapes():
+    """Test updating the thumbnail with an empty shapes layer."""
+    layer = Shapes()
+    layer._allow_thumbnail_update = True
+    layer._update_thumbnail()
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -73,7 +82,7 @@ def test_properties(properties):
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['properties']['shape_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['features']['shape_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
@@ -120,6 +129,25 @@ def test_adding_properties(attribute):
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
+
+
+def test_colormap_scale_change():
+    data = 20 * np.random.random((10, 4, 2))
+    properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
+    layer = Shapes(data, properties=properties, edge_color='b')
+
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+    layer.edge_color = 'a'
+
+    # note that VisPy colormaps linearly interpolate by default, so
+    # non-rescaled colors are not identical, but they are closer than 24-bit
+    # color precision can distinguish!
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
 
 
 def test_data_setter_with_properties():
@@ -196,19 +224,18 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
     )
-    assert layer.text._mode == TextMode.PROPERTY
     assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
 
     # add a shape and check that the appropriate text value was added
     layer.add(np.random.random((1, 4, 2)))
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.constant, [1, 0, 0, 1])
 
 
 def test_empty_layer_with_text_formatted():
@@ -218,7 +245,6 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='shape_type: {shape_type:.2f}',
     )
-    assert layer.text._mode == TextMode.FORMATTED
     assert layer.text.values.size == 0
 
     # add a shape and check that the appropriate text value was added
@@ -273,8 +299,8 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {shape_type}',
-        'color': [0, 0, 0, 1],
+        'string': 'type: {shape_type}',
+        'color': ConstantColorEncoding(constant=[0, 0, 0, 1]),
         'rotation': 10,
         'translation': [5, 5],
         'anchor': Anchor.UPPER_LEFT,
@@ -290,7 +316,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -303,7 +329,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Shapes(data, properties=copy(properties), text=123)
 
 
@@ -337,7 +363,7 @@ def test_nd_text():
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
     properties = {'shape_type': ['A', 'B']}
-    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 
@@ -1323,7 +1349,6 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -1481,7 +1506,7 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1615,7 +1640,7 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Shapes(data, **shapes_kwargs)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
@@ -1891,7 +1916,7 @@ def test_copy_and_paste():
     layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
-    assert len(layer._clipboard) == 6
+    assert len(layer._clipboard) > 0
     assert len(layer.data) == shape[0] + 2
     assert np.all(
         [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]
@@ -1983,7 +2008,7 @@ def test_message():
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -1995,7 +2020,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -2023,6 +2048,21 @@ def test_to_masks():
     assert masks.shape == (shape[0], 20, 20)
 
 
+def test_to_masks_default_shape():
+    """Test that labels data generation preserves origin at (0, 0).
+
+    See https://github.com/napari/napari/issues/3401
+    """
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape) + [50, 100]
+    layer = Shapes(data)
+    masks = layer.to_masks()
+    assert len(masks) == 10
+    assert 50 <= masks[0].shape[0] <= 71
+    assert 100 <= masks[0].shape[1] <= 121
+
+
 def test_to_labels():
     """Test the labels generation."""
     shape = (10, 4, 2)
@@ -2036,6 +2076,22 @@ def test_to_labels():
     labels = layer.to_labels(labels_shape=[20, 20])
     assert labels.shape == (20, 20)
     assert len(np.unique(labels)) <= 11
+
+
+def test_to_labels_default_shape():
+    """Test that labels data generation preserves origin at (0, 0).
+
+    See https://github.com/napari/napari/issues/3401
+    """
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape) + [50, 100]
+    layer = Shapes(data)
+    labels = layer.to_labels()
+    assert labels.ndim == 2
+    assert 1 < len(np.unique(labels)) <= 11
+    assert 50 <= labels.shape[0] <= 71
+    assert 100 <= labels.shape[1] <= 121
 
 
 def test_to_labels_3D():
@@ -2097,4 +2153,16 @@ def test_world_data_extent():
     min_val = (-2, -8, 0)
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_set_data_3d():
+    """Test for reproduce https://github.com/napari/napari/issues/4527"""
+    lines = [
+        np.array([[0, 0, 0], [500, 0, 0]]),
+        np.array([[0, 0, 0], [0, 300, 0]]),
+        np.array([[0, 0, 0], [0, 0, 200]]),
+    ]
+    shapes = Shapes(lines, shape_type='line')
+    shapes._ndisplay = 3
+    shapes.data = lines

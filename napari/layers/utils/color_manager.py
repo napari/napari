@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import root_validator, validator
+from pydantic import Field, root_validator, validator
 
 from ...utils.colormaps import Colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
-from ...utils.colormaps.colormap_utils import ensure_colormap
+from ...utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
@@ -19,7 +19,6 @@ from .color_manager_utils import (
     is_color_mapped,
 )
 from .color_transformations import (
-    ColorType,
     normalize_and_broadcast_colors,
     transform_color,
     transform_color_with_defaults,
@@ -147,19 +146,22 @@ class ColorManager(EventedModel):
     current_color: Optional[Array[float, (4,)]] = None
     color_mode: ColorMode = ColorMode.DIRECT
     color_properties: Optional[ColorProperties] = None
-    continuous_colormap: Colormap = 'viridis'
+    continuous_colormap: Colormap = ensure_colormap('viridis')
     contrast_limits: Optional[Tuple[float, float]] = None
-    categorical_colormap: CategoricalColormap = [0, 0, 0, 1]
-    colors: Array[float, (-1, 4)] = []
+    categorical_colormap: CategoricalColormap = CategoricalColormap.from_array(
+        [0, 0, 0, 1]
+    )
+    colors: Array[float, (-1, 4)] = Field(
+        default_factory=lambda: np.empty((0, 4))
+    )
 
     # validators
     @validator('continuous_colormap', pre=True)
     def _ensure_continuous_colormap(cls, v):
-        coerced_colormap = ensure_colormap(v)
-        return coerced_colormap
+        return ensure_colormap(v)
 
     @validator('colors', pre=True)
-    def _ensure_color_array(cls, v, values):
+    def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
         else:

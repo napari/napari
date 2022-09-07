@@ -11,7 +11,7 @@ import napari
 class QtViewerViewImageSuite:
     """Benchmarks for viewing images in the viewer."""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2**i for i in range(4, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
@@ -30,7 +30,7 @@ class QtViewerViewImageSuite:
 class QtViewerAddImageSuite:
     """Benchmarks for adding images to the viewer."""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2**i for i in range(4, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
@@ -49,7 +49,7 @@ class QtViewerAddImageSuite:
 class QtViewerImageSuite:
     """Benchmarks for images in the viewer."""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2**i for i in range(4, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
@@ -62,8 +62,8 @@ class QtViewerImageSuite:
 
     def time_zoom(self, n):
         """Time to zoom in and zoom out."""
-        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_refresh(self, n):
         """Time to refresh view."""
@@ -97,8 +97,8 @@ class QtViewerSingleImageSuite:
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_data(self):
         """Time to set view slice."""
@@ -140,8 +140,8 @@ class QtViewerSingleInvisbleImageSuite:
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_data(self):
         """Time to set view slice."""
@@ -171,12 +171,12 @@ class QtViewerSingleInvisbleImageSuite:
 class QtImageRenderingSuite:
     """Benchmarks for a single image layer in the viewer."""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2**i for i in range(4, 13)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
-        self.data = np.random.random((n, n)) * 2 ** 12
+        self.data = np.random.random((n, n)) * 2**12
         self.viewer = napari.view_image(self.data, ndisplay=2)
 
     def teardown(self, n):
@@ -198,12 +198,12 @@ class QtImageRenderingSuite:
 class QtVolumeRenderingSuite:
     """Benchmarks for a single image layer in the viewer."""
 
-    params = [2 ** i for i in range(4, 10)]
+    params = [2**i for i in range(4, 10)]
 
     def setup(self, n):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
-        self.data = np.random.random((n, n, n)) * 2 ** 12
+        self.data = np.random.random((n, n, n)) * 2**12
         self.viewer = napari.view_image(self.data, ndisplay=3)
 
     def teardown(self, n):

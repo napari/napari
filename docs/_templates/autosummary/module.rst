@@ -7,7 +7,7 @@
    .. rubric:: Module Attributes
 
    {% for item in attributes %}
-   .. autoattribute:: {{ item }}
+   .. autoattribute:: {{ fullname }}.{{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}

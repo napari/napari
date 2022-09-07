@@ -1,9 +1,14 @@
 """
+Add vectors image
+=================
+
 This example generates an image of vectors
 Vector data is an array of shape (N, M, 2)
-Each vector position is defined by an (x-proj, y-proj) element
-    where x-proj and y-proj are the vector projections at each center
-    where each vector is centered on a pixel of the NxM grid
+Each vector position is defined by an (x-proj, y-proj) element where
+* x-proj and y-proj are the vector projections at each center
+* each vector is centered on a pixel of the NxM grid
+
+.. tags:: visualization-basic
 """
 
 import napari
@@ -35,4 +40,5 @@ vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
 
 print(image.shape, pos.shape)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

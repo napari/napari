@@ -17,7 +17,10 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins.exceptions import format_exceptions
+from ...settings import get_settings
+from ...utils.theme import get_theme
 from ...utils.translations import trans
+from ..code_syntax_highlight import Pylighter
 
 
 class QtPluginErrReporter(QDialog):
@@ -63,14 +66,20 @@ class QtPluginErrReporter(QDialog):
         self.plugin_manager = plugin_manager
 
         self.setWindowTitle(trans._('Recorded Plugin Exceptions'))
-        self.setWindowModality(Qt.NonModal)
+        self.setWindowModality(Qt.WindowModality.NonModal)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(self.layout)
 
         self.text_area = QTextEdit()
-        self.text_area.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        theme = get_theme(get_settings().appearance.theme, as_dict=False)
+        self._highlight = Pylighter(
+            self.text_area.document(), "python", theme.syntax_style
+        )
+        self.text_area.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.text_area.setMinimumWidth(360)
 
         # Create plugin dropdown menu
@@ -102,10 +111,12 @@ class QtPluginErrReporter(QDialog):
         # plugin_meta contains a URL to the home page, (and/or other details)
         self.plugin_meta = QLabel('', parent=self)
         self.plugin_meta.setObjectName("pluginInfo")
-        self.plugin_meta.setTextFormat(Qt.RichText)
-        self.plugin_meta.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.plugin_meta.setTextFormat(Qt.TextFormat.RichText)
+        self.plugin_meta.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextBrowserInteraction
+        )
         self.plugin_meta.setOpenExternalLinks(True)
-        self.plugin_meta.setAlignment(Qt.AlignRight)
+        self.plugin_meta.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         # make layout
         row_1_layout = QHBoxLayout()
@@ -147,7 +158,7 @@ class QtPluginErrReporter(QDialog):
 
         if not plugin or (plugin == self.NULL_OPTION):
             self.plugin_meta.setText('')
-            self.text_area.setHtml('')
+            self.text_area.setText('')
             return
 
         if not self.plugin_manager.get_errors(plugin):
@@ -159,8 +170,8 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_combo.setCurrentText(plugin)
 
-        err_string = format_exceptions(plugin, as_html=True)
-        self.text_area.setHtml(err_string)
+        err_string = format_exceptions(plugin, as_html=False, color="NoColor")
+        self.text_area.setText(err_string)
         self.clipboard_button.show()
 
         # set metadata and outbound links/buttons

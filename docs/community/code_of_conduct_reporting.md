@@ -1,4 +1,5 @@
-# Handling Code of Conduct Reports
+(coc-reporting)=
+# Handling Code of Conduct reports
 
 This is the manual followed by napari's Code of Conduct Committee. It’s used when we respond to an issue to make sure we’re consistent and fair.
 
@@ -104,6 +105,6 @@ Finally, the committee will make a report to the napari core team in the event o
 
 The committee will never publicly discuss the issue; all public statements will be made by the chair of the Code of Conduct Committee.
 
-## Conflicts of Interest
+## Conflicts of interest
 
 In the event of any conflict of interest, a committee member must immediately notify the other members, and recuse themselves if necessary.

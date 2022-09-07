@@ -1,0 +1,17 @@
+name: Conda
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  schedule:
+    - cron: "0 0 * * *"
+  # workflow_dispatch: # go to napari/packaging to trigger manual runs
+
+jobs:
+  packaging:
+    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@main
+    secrets: inherit
+    with:
+      event_name: ${{ github.event_name }}

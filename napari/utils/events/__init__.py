@@ -1,4 +1,9 @@
-from .event import EmitterGroup, Event, EventEmitter  # isort:skip
+from .event import (  # isort:skip
+    EmitterGroup,
+    Event,
+    EventEmitter,
+    set_event_tracing_enabled,
+)
 from .containers._evented_dict import EventedDict
 from .containers._evented_list import EventedList
 from .containers._nested_list import NestableEventedList
@@ -23,4 +28,5 @@ __all__ = [
     'Selection',
     'SupportsEvents',
     'TypedMutableSequence',
+    'set_event_tracing_enabled',
 ]

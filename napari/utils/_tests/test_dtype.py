@@ -10,7 +10,7 @@ from napari.utils._dtype import get_dtype_limits, normalize_dtype
 ts = pytest.importorskip('tensorstore')
 torch = pytest.importorskip('torch')
 
-bit_depths = [str(2 ** i) for i in range(3, 7)]
+bit_depths = [str(2**i) for i in range(3, 7)]
 uints = ['uint' + b for b in bit_depths]
 ints = ['int' + b for b in bit_depths]
 floats = ['float32', 'float64']
@@ -74,7 +74,10 @@ def test_pure_python_types(dtype_str):
         float,
         'float32',
         'float64',
-    ],
+        '>f4',
+        '>f8',
+    ]
+    + [''.join(t) for t in itertools.product('<>', 'iu', '1248')],
 )
 def test_dtype_lims(dtype):
     lims = get_dtype_limits(dtype)

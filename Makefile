@@ -2,15 +2,20 @@
 
 docs:
 	rm -rf docs/_build/
-	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
+	rm -rf docs/api/napari*.rst
+	rm -rf docs/gallery/*
 	pip install -qr docs/requirements.txt
-	python docs/update_docs.py
-	NAPARI_APPLICATION_IPY_INTERACTIVE=0
-	jb build docs
-	unset NAPARI_APPLICATION_IPY_INTERACTIVE
+	python docs/_scripts/prep_docs.py
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0 sphinx-build -b html docs/ docs/_build
 
 typestubs:
 	python -m napari.utils.stubgen
+
+# note: much faster to run mypy as daemon,
+# dmypy run -- ...
+# https://mypy.readthedocs.io/en/stable/mypy_daemon.html
+typecheck:
+	mypy napari/settings napari/types.py napari/plugins
 
 dist:
 	pip install -U check-manifest build

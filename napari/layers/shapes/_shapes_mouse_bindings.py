@@ -29,7 +29,12 @@ def select(layer, event):
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             else:
-                layer.selected_data.add(shape_under_cursor)
+                if len(layer.selected_data):
+                    # one or more shapes already selected
+                    layer.selected_data.add(shape_under_cursor)
+                else:
+                    # first shape being selected
+                    layer.selected_data = {shape_under_cursor}
         elif shape_under_cursor is not None:
             if shape_under_cursor not in layer.selected_data:
                 layer.selected_data = {shape_under_cursor}
@@ -39,6 +44,10 @@ def select(layer, event):
 
     # we don't update the thumbnail unless a shape has been moved
     update_thumbnail = False
+
+    # Set _drag_start value here to prevent an offset when mouse_move happens
+    # https://github.com/napari/napari/pull/4999
+    _set_drag_start(layer, layer.world_to_data(event.position))
     yield
 
     # on move
@@ -354,6 +363,14 @@ def _drag_selection_box(layer, coordinates):
     layer._set_highlight()
 
 
+def _set_drag_start(layer, coordinates):
+    coord = [coordinates[i] for i in layer._dims_displayed]
+    if layer._drag_start is None and len(layer.selected_data) > 0:
+        center = layer._selected_box[Box.CENTER]
+        layer._drag_start = coord - center
+    return coord
+
+
 def _move(layer, coordinates):
     """Moves object at given mouse position and set of indices.
 
@@ -373,14 +390,11 @@ def _move(layer, coordinates):
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
-        coord = [coordinates[i] for i in layer._dims_displayed]
+        coord = _set_drag_start(layer, coordinates)
         layer._moving_coordinates = coordinates
         layer._is_moving = True
         if vertex is None:
             # Check where dragging box from to move whole object
-            if layer._drag_start is None:
-                center = layer._selected_box[Box.CENTER]
-                layer._drag_start = coord - center
             center = layer._selected_box[Box.CENTER]
             shift = coord - center - layer._drag_start
             for index in layer.selected_data:
@@ -394,71 +408,71 @@ def _move(layer, coordinates):
                 layer._fixed_index = (vertex + 4) % Box.LEN
                 layer._fixed_vertex = box[layer._fixed_index]
 
-            size = (
-                box[(layer._fixed_index + 4) % Box.LEN]
-                - box[layer._fixed_index]
+            handle_offset = box[Box.HANDLE] - box[Box.CENTER]
+            if np.linalg.norm(handle_offset) == 0:
+                handle_offset = [1, 1]
+            handle_offset_norm = handle_offset / np.linalg.norm(handle_offset)
+
+            rot = np.array(
+                [
+                    [handle_offset_norm[0], -handle_offset_norm[1]],
+                    [handle_offset_norm[1], handle_offset_norm[0]],
+                ]
             )
-            offset = box[Box.HANDLE] - box[Box.CENTER]
-            if np.linalg.norm(offset) == 0:
-                offset = [1, 1]
-            offset = offset / np.linalg.norm(offset)
-            offset_perp = np.array([offset[1], -offset[0]])
+            inv_rot = np.linalg.inv(rot)
 
             fixed = layer._fixed_vertex
             new = list(coord)
 
+            c = box[Box.CENTER]
             if layer._fixed_aspect and layer._fixed_index % 2 == 0:
-                if (new - fixed)[0] == 0:
-                    ratio = 1
-                else:
-                    ratio = abs((new - fixed)[1] / (new - fixed)[0])
-                if ratio > layer._aspect_ratio:
-                    r = layer._aspect_ratio / ratio
-                    new[1] = fixed[1] + (new[1] - fixed[1]) * r
-                else:
-                    r = ratio / layer._aspect_ratio
-                    new[0] = fixed[0] + (new[0] - fixed[0]) * r
-
-            if size @ offset == 0:
-                dist = 1
-            else:
-                dist = ((new - fixed) @ offset) / (size @ offset)
-
-            if size @ offset_perp == 0:
-                dist_perp = 1
-            else:
-                dist_perp = ((new - fixed) @ offset_perp) / (
-                    size @ offset_perp
-                )
+                # corner
+                new = (box[vertex] - c) / np.linalg.norm(
+                    box[vertex] - c
+                ) * np.linalg.norm(new - c) + c
 
             if layer._fixed_index % 2 == 0:
                 # corner selected
-                scale = np.array([dist_perp, dist])
+                scale = (inv_rot @ (new - fixed)) / (
+                    inv_rot @ (box[vertex] - fixed)
+                )
             elif layer._fixed_index % 4 == 3:
-                # top selected
-                scale = np.array([1, dist])
+                # top or bottom selected
+                scale = np.array(
+                    [
+                        (inv_rot @ (new - fixed))[0]
+                        / (inv_rot @ (box[vertex] - fixed))[0],
+                        1,
+                    ]
+                )
             else:
-                # side selected
-                scale = np.array([dist_perp, 1])
+                # left or right selected
+                scale = np.array(
+                    [
+                        1,
+                        (inv_rot @ (new - fixed))[1]
+                        / (inv_rot @ (box[vertex] - fixed))[1],
+                    ]
+                )
 
             # prevent box from shrinking below a threshold size
-            threshold = layer._vertex_size * layer.scale_factor / 8
-            scale[abs(scale * size[[1, 0]]) < threshold] = 1
+            size = [
+                np.linalg.norm(box[Box.TOP_CENTER] - c),
+                np.linalg.norm(box[Box.LEFT_CENTER] - c),
+            ]
+            threshold = layer._vertex_size * layer.scale_factor / 2
+            scale[abs(scale * size) < threshold] = 1
 
             # check orientation of box
-            angle = -np.arctan2(offset[0], -offset[1])
-            c, s = np.cos(angle), np.sin(angle)
-            if angle == 0:
+            if abs(handle_offset_norm[0]) == 1:
                 for index in layer.selected_data:
                     layer._data_view.scale(
                         index, scale, center=layer._fixed_vertex
                     )
                 layer._scale_box(scale, center=layer._fixed_vertex)
             else:
-                rotation = np.array([[c, s], [-s, c]])
                 scale_mat = np.array([[scale[0], 0], [0, scale[1]]])
-                inv_rot = np.array([[c, -s], [s, c]])
-                transform = rotation @ scale_mat @ inv_rot
+                transform = rot @ scale_mat @ inv_rot
                 for index in layer.selected_data:
                     layer._data_view.shift(index, -layer._fixed_vertex)
                     layer._data_view.transform(index, transform)

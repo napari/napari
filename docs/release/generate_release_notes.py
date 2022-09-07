@@ -34,7 +34,7 @@ from github import Github
 
 try:
     from tqdm import tqdm
-except ImportError:
+except ModuleNotFoundError:
     warn(
         'tqdm not installed. This script takes approximately 5 minutes '
         'to run. To view live progressbars, please install tqdm. '

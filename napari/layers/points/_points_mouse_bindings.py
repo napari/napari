@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._points_utils import points_in_box
+from ._points_utils import _points_in_box_3d, points_in_box
 
 
 def select(layer, event):
@@ -26,7 +26,12 @@ def select(layer, event):
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
-    value = layer.get_value(event.position, world=True)
+    value = layer.get_value(
+        position=event.position,
+        view_direction=event.view_direction,
+        dims_displayed=event.dims_displayed,
+        world=True,
+    )
     # if modifying selection add / remove any from existing selection
     if modify_selection:
         if value is not None:
@@ -42,6 +47,11 @@ def select(layer, event):
             layer.selected_data = set()
     layer._set_highlight()
 
+    # Set _drag_start value here to prevent an offset when mouse_move happens
+    # https://github.com/napari/napari/pull/4999
+    layer._set_drag_start(
+        layer.selected_data, layer.world_to_data(event.position)
+    )
     yield
 
     is_moving = False
@@ -54,11 +64,16 @@ def select(layer, event):
             with layer.events.data.blocker():
                 layer._move(layer.selected_data, coordinates)
         else:
+            # while dragging, update the drag box
             coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
             if layer._drag_start is None:
                 layer._drag_start = coord
             layer._drag_box = np.array([layer._drag_start, coord])
+
+            # update the drag up and normal vectors on the layer
+            _update_drag_vectors_from_event(layer=layer, event=event)
+
             layer._set_highlight()
         yield
 
@@ -70,22 +85,17 @@ def select(layer, event):
     # on release
     layer._drag_start = None
     if layer._is_selecting:
+        # if drag selection was being performed, select points
+        # using the drag box
         layer._is_selecting = False
-        if len(layer._view_data) > 0:
-            selection = points_in_box(
-                layer._drag_box, layer._view_data, layer._view_size
-            )
-            # If shift combine drag selection with existing selected ones
-            if modify_selection:
-                new_selected = layer._indices_view[selection]
-                target = set(layer.selected_data).symmetric_difference(
-                    set(new_selected)
-                )
-                layer.selected_data = list(target)
-            else:
-                layer.selected_data = layer._indices_view[selection]
-        else:
-            layer.selected_data = set()
+        n_display = len(event.dims_displayed)
+        _select_points_from_drag(
+            layer=layer, modify_selection=modify_selection, n_display=n_display
+        )
+
+    # reset the selection box data and highlights
+    layer._drag_normal = None
+    layer._drag_up = None
     layer._set_highlight(force=True)
 
 
@@ -133,3 +143,83 @@ def _toggle_selected(selected_data, value):
         selected_data.add(value)
 
     return selected_data
+
+
+def _update_drag_vectors_from_event(layer, event):
+    """Update the drag normal and up vectors on layer from a mouse event.
+
+    Note that in 2D mode, the layer._drag_normal and layer._drag_up
+    are set to None.
+
+    Parameters
+    ----------
+    layer : "napari.layers.Points"
+        The Points layer to update.
+    event
+        The mouse event object.
+    """
+    n_display = len(event.dims_displayed)
+    if n_display == 3:
+        # if in 3D, set the drag normal and up directions
+        # get the indices of the displayed dimensions
+        ndim_world = len(event.position)
+        dims_displayed_data = layer._world_to_data_dims_displayed(
+            dims_displayed=event.dims_displayed, ndim_world=ndim_world
+        )
+
+        # get the view direction in displayed data coordinates
+        layer._drag_normal = layer._world_to_displayed_data_ray(
+            event.view_direction, dims_displayed_data
+        )
+
+        # get the up direction of the camera in displayed data coordinates
+        layer._drag_up = layer._world_to_displayed_data_ray(
+            event.up_direction, dims_displayed_data
+        )
+
+    else:
+        # if in 2D, set the drag normal and up to None
+        layer._drag_normal = None
+        layer._drag_up = None
+
+
+def _select_points_from_drag(layer, modify_selection: bool, n_display: int):
+    """Select points on a Points layer after a drag event.
+
+    Parameters
+    ----------
+    layer : napari.layers.Points
+        The points layer to select points on.
+    modify_selection : bool
+        Set to true if the selection should modify the current selected data
+        in layer.selected_data.
+    n_display : int
+        The number of dimensions current being displayed
+    """
+    if len(layer._view_data) == 0:
+        # if no data in view, there isn't any data to select
+        layer.selected_data = set()
+
+    # if there is data in view, find the points in the drag box
+    if n_display == 2:
+        selection = points_in_box(
+            layer._drag_box, layer._view_data, layer._view_size
+        )
+    else:
+        selection = _points_in_box_3d(
+            layer._drag_box,
+            layer._view_data,
+            layer._view_size,
+            layer._drag_normal,
+            layer._drag_up,
+        )
+
+    # If shift combine drag selection with existing selected ones
+    if modify_selection:
+        new_selected = layer._indices_view[selection]
+        target = set(layer.selected_data).symmetric_difference(
+            set(new_selected)
+        )
+        layer.selected_data = list(target)
+    else:
+        layer.selected_data = layer._indices_view[selection]

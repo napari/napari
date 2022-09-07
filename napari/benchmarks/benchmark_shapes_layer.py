@@ -7,8 +7,8 @@ import collections
 import numpy as np
 
 from napari.layers import Shapes
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -22,7 +22,7 @@ Event = collections.namedtuple(
 class Shapes2DSuite:
     """Benchmarks for the Shapes layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 9)]
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -61,7 +61,7 @@ class Shapes2DSuite:
 class Shapes3DSuite:
     """Benchmarks for the Shapes layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 9)]
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -100,7 +100,7 @@ class Shapes3DSuite:
 class ShapesInteractionSuite:
     """Benchmarks for interacting with the Shapes layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 9)]
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         np.random.seed(0)

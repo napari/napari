@@ -13,12 +13,12 @@ for now the visual and Octree both depend on OctreeChunk.
 from typing import Callable, List, Set
 
 import numpy as np
+from vispy.scene.visuals import Image
+from vispy.visuals.shaders import Function, FunctionChain
 
 from ...layers.image.experimental import OctreeChunk
 from ...types import ArrayLike
 from ...utils.translations import trans
-from ..vendored import ImageVisual
-from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
 from .tile_set import TileSet
 
@@ -28,7 +28,7 @@ from .tile_set import TileSet
 SHAPE_IN_TILES = (16, 16)
 
 
-class TiledImageVisual(ImageVisual):
+class TiledImageVisual(Image):
     """An image that is drawn using one or more tiles.
 
     A regular ImageVisual is a single image drawn as a single rectangle
@@ -123,7 +123,7 @@ class TiledImageVisual(ImageVisual):
         TextureAtlas2D
             The newly created texture atlas.
         """
-        interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
+        interp = 'linear' if self._interpolation == 'linear' else 'nearest'
         return TextureAtlas2D(
             tile_shape,
             SHAPE_IN_TILES,
@@ -368,6 +368,39 @@ class TiledImageVisual(ImageVisual):
 
         self._need_texture_upload = False
 
+    def _build_color_transform(self):
+        # this first line should be the only difference from the same method in base Image
+        if len(self.tile_shape) == 2 or self.tile_shape[2] == 1:
+            # luminance data
+            fclim = Function(self._func_templates['clim_float'])
+            fgamma = Function(self._func_templates['gamma_float'])
+            # NOTE: red_to_luminance only uses the red component, fancy internalformats
+            #   may need to use the other components or a different function chain
+            fun = FunctionChain(
+                None,
+                [
+                    Function(self._func_templates['red_to_luminance']),
+                    fclim,
+                    fgamma,
+                    Function(self.cmap.glsl_map),
+                ],
+            )
+        else:
+            # RGB/A image data (no colormap)
+            fclim = Function(self._func_templates['clim'])
+            fgamma = Function(self._func_templates['gamma'])
+            fun = FunctionChain(
+                None,
+                [
+                    Function(self._func_templates['null_color_transform']),
+                    fclim,
+                    fgamma,
+                ],
+            )
+        fclim['clim'] = self._texture.clim_normalized
+        fgamma['gamma'] = self.gamma
+        return fun
+
     def _prepare_draw(self, view) -> None:
         """Override of ImageVisual._prepare_draw()"""
         if self._need_interpolation_update:
@@ -384,12 +417,9 @@ class TiledImageVisual(ImageVisual):
         # TODO_OCTREE: how does colortransform change for tiled?
         if self._need_colortransform_update:
             prg = view.view_program
-            grayscale = len(self.tile_shape) == 2 or self.tile_shape[2] == 1
             self.shared_program.frag[
                 'color_transform'
-            ] = _build_color_transform(
-                grayscale, self.clim_normalized, self.gamma, self.cmap
-            )
+            ] = self._build_color_transform()
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = (
                 self.cmap.texture_lut()

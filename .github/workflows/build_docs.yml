@@ -1,0 +1,46 @@
+name: Build Docs
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - docs
+  workflow_dispatch:
+
+jobs:
+  build-and-upload-artifact:
+    name: Build & Upload Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code + LFS with cache
+        uses: nschloe/action-cached-lfs-checkout@v1
+        # See discussion at https://github.com/actions/checkout/issues/165
+        # This is a bundling of the pattern in this comment:
+        # https://github.com/actions/checkout/issues/165#issuecomment-657673315
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[docs]"
+
+      - name: Build Docs
+        uses: GabrielBB/xvfb-action@v1
+        env:
+          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+          GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
+        with:
+          run: make docs
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          path: docs/_build

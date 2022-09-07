@@ -10,7 +10,7 @@ from napari.layers import Surface
 class Surface2DSuite:
     """Benchmarks for the Surface layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -53,7 +53,7 @@ class Surface2DSuite:
 class Surface3DSuite:
     """Benchmarks for the Surface layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)

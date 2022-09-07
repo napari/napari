@@ -35,6 +35,25 @@ def test_random_vectors_image():
     assert layer._view_data.shape[2] == 2
 
 
+def test_no_args_vectors():
+    """Test instantiating Vectors layer with no arguments"""
+    layer = Vectors()
+    assert layer.data.shape == (0, 2, 2)
+
+
+def test_no_data_vectors_with_ndim():
+    """Test instantiating Vectors layers with no data but specifying ndim"""
+    layer = Vectors(ndim=2)
+    assert layer.data.shape[-1] == 2
+
+
+def test_incompatible_ndim_vectors():
+    """Test instantiating Vectors layer with ndim argument incompatible with data"""
+    data = np.empty((0, 2, 2))
+    with pytest.raises(ValueError):
+        Vectors(data, ndim=3)
+
+
 def test_empty_vectors():
     """Test instantiating Vectors layer with empty coordinate-like 2D data."""
     shape = (0, 2, 2)
@@ -56,7 +75,7 @@ def test_empty_vectors_with_property_choices():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(layer._property_choices, property_choices)
+    np.testing.assert_equal(layer.property_choices, property_choices)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -118,6 +137,12 @@ def test_random_3D_vectors_image():
     assert layer.data.shape == (12 * 20 * 10, 2, 3)
     assert layer.ndim == 3
     assert layer._view_data.shape[2] == 2
+
+
+def test_no_data_3D_vectors_with_ndim():
+    """Test instantiating Vectors layers with no data but specifying ndim"""
+    layer = Vectors(ndim=3)
+    assert layer.data.shape[-1] == 3
 
 
 @pytest.mark.filterwarnings("ignore:Passing `np.nan`:DeprecationWarning:numpy")
@@ -218,7 +243,7 @@ def test_adding_properties():
         layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
-    bad_properties = {'vector_type': np.array(['A'])}
+    bad_properties = {'vector_type': np.array(['A', 'B'])}
     with pytest.raises(ValueError):
         layer.properties = bad_properties
 
@@ -396,7 +421,7 @@ def test_edge_color_colormap():
         edge_color='angle',
         edge_colormap='gray',
     )
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)
@@ -450,7 +475,6 @@ def test_edge_color_map_non_numeric_property():
         layer.edge_color_mode = 'colormap'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparis:FutureWarning:numpy")
 def test_switching_edge_color_mode():
     """Test transitioning between all color modes"""
     np.random.seed(0)
@@ -600,7 +624,7 @@ def test_message():
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_world_data_extent():
@@ -611,4 +635,37 @@ def test_world_data_extent():
     max_val = (8, 30, 12)
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_out_of_slice_display():
+    """Test setting out_of_slice_display flag for 2D and 4D data."""
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Vectors(data)
+    assert layer.out_of_slice_display is False
+
+    layer.out_of_slice_display = True
+    assert layer.out_of_slice_display is True
+
+    layer = Vectors(data, out_of_slice_display=True)
+    assert layer.out_of_slice_display is True
+
+    shape = (10, 2, 4)
+    data = 20 * np.random.random(shape)
+    layer = Vectors(data)
+    assert layer.out_of_slice_display is False
+
+    layer.out_of_slice_display = True
+    assert layer.out_of_slice_display is True
+
+    layer = Vectors(data, out_of_slice_display=True)
+    assert layer.out_of_slice_display is True
+
+
+def test_empty_data_from_tuple():
+    """Test that empty data raises an error."""
+    layer = Vectors(name="vector", ndim=3)
+    layer2 = Vectors.create(*layer.as_layer_data_tuple())
+    assert layer2.data.size == 0

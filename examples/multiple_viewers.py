@@ -1,5 +1,10 @@
 """
+Multiple viewers
+================
+
 Create multiple viewers from the same script
+
+.. tags:: gui
 """
 
 from skimage import data
@@ -15,4 +20,5 @@ astronaut = data.astronaut()
 # Also view_path, view_shapes, view_points, view_labels etc.
 viewer_b = napari.view_image(astronaut, name='astronaut')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

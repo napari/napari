@@ -1,0 +1,15 @@
+{
+    "trace_qt_events": false,
+    "trace_file_on_start": "tools/perfmon/slicing/traces-latest.json",
+    "trace_callables": [
+        "slicing"
+    ],
+    "callable_lists": {
+        "slicing": [
+            "napari.components.dims.Dims.set_current_step",
+            "napari.layers.base.base.Layer.refresh",
+            "napari.layers.base.base.Layer.set_view_slice",
+            "napari._qt.widgets.qt_dims_slider.QtDimSliderWidget._value_changed"
+        ]
+    }
+}

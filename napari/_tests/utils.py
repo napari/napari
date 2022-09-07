@@ -1,7 +1,10 @@
 import os
 import sys
+from collections import abc
+from typing import Any, Dict
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from napari import Viewer
@@ -14,6 +17,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils.color import ColorArray
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -22,8 +26,15 @@ skip_on_win_ci = pytest.mark.skipif(
 
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
+    reason='Tests requiring GUI windows are skipped locally by default.'
+    ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
+
+"""
+The default timeout duration in seconds when waiting on tasks running in non-main threads.
+The value was chosen to be consistent with `QtBot.waitSignal` and `QtBot.waitUntil`.
+"""
+DEFAULT_TIMEOUT_SECS: float = 5
 
 
 """
@@ -34,12 +45,18 @@ layer_test_data = [
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (Image, np.array([[1.5, np.nan], [np.inf, 2.2]]), 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
+    (Labels, np.zeros((10, 10), dtype=bool), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
+    (
+        Labels,
+        [np.random.randint(20, size=s) for s in [(40, 20), (20, 10), (10, 5)]],
+        2,
+    ),
     (Points, 20 * np.random.random((10, 2)), 2),
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
-    (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (
         Surface,
@@ -66,6 +83,14 @@ layer_test_data = [
     ),
 ]
 
+try:
+    import tensorstore as ts
+
+    m = ts.array(np.random.random((10, 15)))
+    p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
+    layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
+except ImportError:
+    pass
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
@@ -108,9 +133,36 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
     return layer2addmethod[layer_type](viewer, data, visible=visible)
 
 
+def are_objects_equal(object1, object2):
+    """
+    compare two (collections of) arrays or other objects for equality. Ignores nan.
+    """
+    if isinstance(object1, abc.Sequence):
+        items = zip(object1, object2)
+    elif isinstance(object1, dict):
+        items = [(value, object2[key]) for key, value in object1.items()]
+    else:
+        items = [(object1, object2)]
+
+    # equal_nan does not exist in array_equal in old numpy
+    npy_major_version = tuple(int(v) for v in np.__version__.split('.')[:2])
+    if npy_major_version < (1, 19):
+        fixed = [(np.nan_to_num(a1), np.nan_to_num(a2)) for a1, a2 in items]
+        return np.all([np.all(a1 == a2) for a1, a2 in fixed])
+
+    try:
+        return np.all(
+            [np.array_equal(a1, a2, equal_nan=True) for a1, a2 in items]
+        )
+    except TypeError:
+        # np.array_equal fails for arrays of type `object` (e.g: strings)
+        return np.all([a1 == a2 for a1, a2 in items])
+
+
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
-    assert np.all(viewer.layers[0].data == data)
+    # if multiscale or composite data (surface), check one by one
+    assert are_objects_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert view.layers.model().rowCount() == len(viewer.layers)
 
@@ -156,7 +208,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         return None
 
     # Get an handle on visual layer:
-    vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
+    vis_lyr = viewer.window._qt_viewer.layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
         disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D
@@ -166,7 +218,9 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
 
 
-def check_layer_world_data_extent(layer, extent, scale, translate):
+def check_layer_world_data_extent(
+    layer, extent, scale, translate, pixels=False
+):
     """Test extents after applying transforms.
 
     Parameters
@@ -181,16 +235,55 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
         Translation to be applied to layer.
     """
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, extent)
+    world_extent = extent - 0.5 if pixels else extent
+    np.testing.assert_almost_equal(layer.extent.world, world_extent)
 
     # Apply scale transformation
     layer.scale = scale
-    scaled_extent = np.multiply(extent, scale)
+    scaled_world_extent = np.multiply(world_extent, scale)
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, scaled_extent)
+    np.testing.assert_almost_equal(layer.extent.world, scaled_world_extent)
 
     # Apply translation transformation
     layer.translate = translate
-    translated_extent = np.add(scaled_extent, translate)
+    translated_world_extent = np.add(scaled_world_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, translated_extent)
+    np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
+
+
+def assert_layer_state_equal(
+    actual: Dict[str, Any], expected: Dict[str, Any]
+) -> None:
+    """Asserts that an layer state dictionary is equal to an expected one.
+
+    This is useful because some members of state may array-like whereas others
+    maybe dataframe-like, which need to be checked for equality differently.
+    """
+    assert actual.keys() == expected.keys()
+    for name in actual:
+        actual_value = actual[name]
+        expected_value = expected[name]
+        if isinstance(actual_value, pd.DataFrame):
+            pd.testing.assert_frame_equal(actual_value, expected_value)
+        else:
+            np.testing.assert_equal(actual_value, expected_value)
+
+
+def assert_colors_equal(actual, expected):
+    """Asserts that a sequence of colors is equal to an expected one.
+
+    This converts elements in the given sequences from color values
+    recognized by ``transform_color`` to the canonical RGBA array form.
+
+    Examples
+    --------
+    >>> assert_colors_equal([[1, 0, 0, 1], [0, 0, 1, 1]], ['red', 'blue'])
+
+    >>> assert_colors_equal([[1, 0, 0, 1], [0, 0, 1, 1]], ['red', 'green'])
+    Traceback (most recent call last):
+    AssertionError:
+    ...
+    """
+    actual_array = ColorArray.validate(actual)
+    expected_array = ColorArray.validate(expected)
+    np.testing.assert_array_equal(actual_array, expected_array)

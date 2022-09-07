@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -16,7 +16,7 @@ from napari.utils.interactions import (
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red', name='red')
@@ -60,7 +60,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
 @skip_local_popups
 def test_z_order_images(make_napari_viewer):
     """Test changing order of images changes z order in display."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -81,7 +81,7 @@ def test_z_order_images(make_napari_viewer):
 @skip_local_popups
 def test_z_order_image_points(make_napari_viewer):
     """Test changing order of image and points changes z order in display."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -102,7 +102,7 @@ def test_z_order_image_points(make_napari_viewer):
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
     """Test z order of images remanins constant after chaning ndisplay."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -127,15 +127,16 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
+@pytest.mark.skip('Image is 1 pixel thick in 3D, so point is swallowed')
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     """Test z order of image and points remanins constant after chaning ndisplay."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
-    viewer.add_points([5, 5], face_color='blue', size=10)
+    viewer.add_points([5, 5], face_color='blue', size=5)
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is visible
@@ -197,7 +198,7 @@ def test_changing_image_gamma(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    assert screenshot[center + (0,)] == 128
+    assert 127 <= screenshot[center + (0,)] <= 129
 
     layer.gamma = 0.1
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -229,7 +230,7 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -243,7 +244,7 @@ def test_grid_mode(make_napari_viewer):
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
         [0, 15],
@@ -306,7 +307,7 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -326,19 +327,25 @@ def test_changing_image_attenuation(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3
     viewer.add_image(data, contrast_limits=[0, 1])
-    viewer.layers[0].rendering = 'attenuated_mip'
 
+    # normal mip
+    viewer.layers[0].rendering = 'mip'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    mip_value = screenshot[center][0]
+
+    # zero attenuation (still attenuated!)
+    viewer.layers[0].rendering = 'attenuated_mip'
+    viewer.layers[0].attenuation = 0.0
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    zero_att_value = screenshot[center][0]
+
+    # increase attenuation
     viewer.layers[0].attenuation = 0.5
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    # Check that rendering has not been attenuated
-    assert screenshot[center + (0,)] > 80
-
-    viewer.layers[0].attenuation = 0.02
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    more_att_value = screenshot[center][0]
     # Check that rendering has been attenuated
-    assert screenshot[center + (0,)] < 60
+    assert zero_att_value < more_att_value < mip_value
 
 
 @skip_on_win_ci
@@ -444,7 +451,7 @@ def test_welcome(make_napari_viewer):
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window.qt_viewer.set_welcome_visible(False)
+    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -468,7 +475,7 @@ def test_axes_visible(make_napari_viewer):
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window.qt_viewer.set_welcome_visible(False)
+    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -485,3 +492,19 @@ def test_scale_bar_visible(make_napari_viewer):
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert not viewer.scale_bar.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_screenshot_has_no_border(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/3357"""
+    viewer = make_napari_viewer(show=True)
+    image_data = np.ones((60, 80))
+    viewer.add_image(image_data, colormap='red')
+    # Zoom in dramatically to make the screenshot all red.
+    viewer.camera.zoom = 1000
+
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+
+    expected = np.broadcast_to([255, 0, 0, 255], screenshot.shape)
+    np.testing.assert_array_equal(screenshot, expected)

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -8,12 +8,15 @@ from ..utils._base import _DEFAULT_CONFIG_PATH
 from ..utils.translations import trans
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
-from ._base import EventedConfigFileSettings
+from ._base import _NOT_SET, EventedConfigFileSettings, _remove_empty_dicts
 from ._experimental import ExperimentalSettings
+from ._fields import Version
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
+
+CURRENT_SCHEMA_VERSION = Version(0, 5, 0)
 
 
 class NapariSettings(EventedConfigFileSettings):
@@ -25,11 +28,11 @@ class NapariSettings(EventedConfigFileSettings):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: Tuple[int, int, int] = Field(
-        (0, 3, 0),
+    schema_version: Version = Field(
+        CURRENT_SCHEMA_VERSION,
         description=trans._("Napari settings schema version."),
-        allow_mutation=False,
     )
+
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
         title=trans._("Application"),
@@ -59,7 +62,7 @@ class NapariSettings(EventedConfigFileSettings):
     # private attributes and ClassVars will not appear in the schema
     _config_path: Optional[Path] = Path(_CFG_PATH) if _CFG_PATH else None
 
-    class Config:
+    class Config(EventedConfigFileSettings.Config):
         env_prefix = 'napari_'
         use_enum_values = False
         # all of these fields are evented models, so we don't want to break
@@ -67,14 +70,40 @@ class NapariSettings(EventedConfigFileSettings):
         # (you can still mutate attributes in the subfields)
         allow_mutation = False
 
+        @classmethod
+        def _config_file_settings_source(cls, settings) -> dict:
+            # before '0.4.0' we didn't write the schema_version in the file
+            # written to disk. so if it's missing, add schema_version of 0.3.0
+            d = super()._config_file_settings_source(settings)
+            d.setdefault('schema_version', '0.3.0')
+            return d
+
+    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+        super().__init__(config_path, **values)
+        self._maybe_migrate()
+
+    def _save_dict(self, **kwargs):
+        # we always want schema_version written to the settings.yaml
+        # TODO: is there a better way to always include schema version?
+        return {
+            'schema_version': self.schema_version,
+            **super()._save_dict(**kwargs),
+        }
+
     def __str__(self):
-        out = 'NapariSettings (defaults excluded)\n'
-        out += '----------------------------------\n'
-        out += self._yaml_dump(self._save_dict())
+        out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
+        data = self.dict(exclude_defaults=True)
+        out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
     def __repr__(self):
         return str(self)
+
+    def _maybe_migrate(self):
+        if self.schema_version < CURRENT_SCHEMA_VERSION:
+            from ._migrations import do_migrations
+
+            do_migrations(self)
 
 
 if __name__ == '__main__':

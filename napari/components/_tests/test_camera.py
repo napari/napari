@@ -39,6 +39,41 @@ def test_calculate_view_direction_3d():
     assert np.allclose(camera.view_direction, (0, 1, 0))
 
 
+def test_calculate_up_direction_3d():
+    """Check that up direction is calculated properly from camera angles."""
+    # simple case
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 90), zoom=1)
+    assert np.allclose(camera.up_direction, (0, -1, 0))
+
+    # shouldn't change with zoom
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 90), zoom=10)
+    assert np.allclose(camera.up_direction, (0, -1, 0))
+
+    # shouldn't change with center
+    camera = Camera(center=(15, 15, 15), angles=(0, 0, 90), zoom=1)
+    assert np.allclose(camera.up_direction, (0, -1, 0))
+
+    # more complex case with order dependent Euler angles
+    camera = Camera(center=(0, 0, 0), angles=(10, 20, 30), zoom=1)
+    assert np.allclose(camera.up_direction, (0.88, -0.44, 0.16), atol=0.01)
+
+
+def test_set_view_direction_3d():
+    """Check that view direction can be set properly."""
+    # simple case
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), zoom=1)
+    camera.set_view_direction(view_direction=(1, 0, 0))
+    assert np.allclose(camera.view_direction, (1, 0, 0))
+    assert np.allclose(camera.angles, (0, 0, 90))
+
+    # case with ordering and up direction setting
+    view_direction = np.array([1, 2, 3], dtype=float)
+    view_direction /= np.linalg.norm(view_direction)
+    camera.set_view_direction(view_direction=view_direction)
+    assert np.allclose(camera.view_direction, view_direction)
+    assert np.allclose(camera.angles, (58.1, -53.3, 26.6), atol=0.1)
+
+
 def test_calculate_view_direction_nd():
     """Check that nD view direction is calculated properly."""
     camera = Camera(center=(0, 0, 0), angles=(90, 0, 0), zoom=1)

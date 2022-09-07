@@ -1,18 +1,18 @@
 import sys
 import threading
-import time
 import warnings
 from typing import List
 
 import pytest
 
+from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.utils.notifications import (
     Notification,
     notification_manager,
+    show_error,
     show_info,
+    show_warning,
 )
-
-PY38_OR_HIGHER = bool(getattr(threading, 'excepthook', None))
 
 
 # capsys fixture comes from pytest
@@ -41,19 +41,12 @@ def test_notification_manager_no_gui(monkeypatch):
     This does not test the integration with the gui, but test that the
     notification manager itself can receive a info, warning or error.
     """
-    try:
-        from napari._qt.dialogs.qt_notification import NapariQtNotification
-
-        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
-    except ImportError:
-        pass
     previous_exhook = sys.excepthook
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
-        _append = lambda e: store.append(e)  # lambda needed on py3.7  # noqa
-        notification_manager.notification_ready.connect(_append)
+        notification_manager.notification_ready.connect(store.append)
 
         show_info('this is one way of showing an information message')
         assert (
@@ -65,6 +58,7 @@ def test_notification_manager_no_gui(monkeypatch):
             'This is another information message'
         )
         assert len(notification_manager.records) == 2
+        assert len(store) == 2
         assert store[-1].type == 'info'
 
         # test that exceptions that go through sys.excepthook are catalogued
@@ -74,8 +68,12 @@ def test_notification_manager_no_gui(monkeypatch):
 
         # pytest intercepts the error, so we can manually call sys.excepthook
         assert sys.excepthook == notification_manager.receive_error
-        sys.excepthook(*sys.exc_info())
+        try:
+            raise ValueError("a")
+        except ValueError:
+            sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
+        assert len(store) == 3
         assert store[-1].type == 'error'
 
         # test that warnings that go through showwarning are catalogued
@@ -83,6 +81,14 @@ def test_notification_manager_no_gui(monkeypatch):
         assert warnings.showwarning == notification_manager.receive_warning
         warnings.showwarning('this is a warning', UserWarning, '', 0)
         assert len(notification_manager.records) == 4
+        assert store[-1].type == 'warning'
+
+        show_error('This is an error')
+        assert len(notification_manager.records) == 5
+        assert store[-1].type == 'error'
+
+        show_warning('This is a warning')
+        assert len(notification_manager.records) == 6
         assert store[-1].type == 'warning'
 
     # make sure we've restored the except hook
@@ -100,40 +106,33 @@ def test_notification_manager_no_gui_with_threading():
     """
 
     def _warn():
-        time.sleep(0.01)
         warnings.showwarning('this is a warning', UserWarning, '', 0)
 
     def _raise():
-        time.sleep(0.01)
         with pytest.raises(PurposefulException):
             raise PurposefulException("this is an exception")
 
-    if PY38_OR_HIGHER:
-        previous_threading_exhook = threading.excepthook
+    previous_threading_exhook = threading.excepthook
 
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
-        _append = lambda e: store.append(e)  # lambda needed on py3.7  # noqa
-        notification_manager.notification_ready.connect(_append)
+        notification_manager.notification_ready.connect(store.append)
 
         # Test exception inside threads
-        if PY38_OR_HIGHER:
-            # `threading.excepthook` available only for Python >= 3.8
-            assert (
-                threading.excepthook
-                == notification_manager.receive_thread_error
-            )
+        assert (
+            threading.excepthook == notification_manager.receive_thread_error
+        )
 
         exception_thread = threading.Thread(target=_raise)
         exception_thread.start()
-        time.sleep(0.02)
+        exception_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
-        if PY38_OR_HIGHER:
+        try:
+            raise ValueError("a")
+        except ValueError:
             threading.excepthook(sys.exc_info())
-        else:
-            sys.excepthook(*sys.exc_info())
 
         assert len(notification_manager.records) == 1
         assert store[-1].type == 'error'
@@ -142,19 +141,12 @@ def test_notification_manager_no_gui_with_threading():
         assert warnings.showwarning == notification_manager.receive_warning
         warning_thread = threading.Thread(target=_warn)
         warning_thread.start()
+        warning_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
-        for _ in range(100):
-            time.sleep(0.01)
-            if (
-                len(notification_manager.records) == 2
-                and store[-1].type == 'warning'
-            ):
-                break
-        else:
-            raise AssertionError("Thread notification not received in time")
+        assert len(notification_manager.records) == 2
+        assert store[-1].type == 'warning'
 
     # make sure we've restored the threading except hook
-    if PY38_OR_HIGHER:
-        assert threading.excepthook == previous_threading_exhook
+    assert threading.excepthook == previous_threading_exhook
 
     assert all(isinstance(x, Notification) for x in store)

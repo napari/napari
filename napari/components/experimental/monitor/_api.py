@@ -111,9 +111,7 @@ class MonitorApi:
     def __init__(self):
         # RemoteCommands listens to our run_command event. It executes
         # commands from the clients.
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, run_command=None
-        )
+        self.events = EmitterGroup(source=self, run_command=None)
 
         # We must register all callbacks before we create our instance of
         # SharedMemoryManager. The client must do the same thing, but it

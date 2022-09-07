@@ -33,6 +33,7 @@ class Mode(StringEnum):
     ADD_POLYGON = auto()
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
+    TRANSFORM = auto()
 
 
 class ColorMode(StringEnum):

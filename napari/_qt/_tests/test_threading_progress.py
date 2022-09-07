@@ -1,6 +1,7 @@
 import pytest
 
 from napari._qt import qthreading
+from napari._qt.widgets.qt_progress_bar import QtLabeledProgressBar
 
 pytest.importorskip(
     'qtpy', reason='Cannot test threading progress without qtpy.'
@@ -133,3 +134,24 @@ def test_function_worker_0_total():
     )
     worker = thread_func()
     assert worker.pbar.total == 0
+
+
+def test_unstarted_worker_no_widget(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    def func():
+        for _ in range(5):
+            yield
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress={'total': 5},
+        start_thread=False,
+    )
+
+    thread_func()
+    assert not bool(
+        viewer.window._qt_viewer.window()._activity_dialog.findChildren(
+            QtLabeledProgressBar
+        )
+    )

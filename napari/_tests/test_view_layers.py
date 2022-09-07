@@ -131,7 +131,7 @@ def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
         data, show=False
     )
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     viewer.close()
 
@@ -149,6 +149,8 @@ def test_view_multichannel(qtbot, napari_plugin_manager):
 
 
 def test_kwargs_passed(monkeypatch):
+    import napari.view_layers
+
     viewer_mock = MagicMock(napari.Viewer)
     monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
     napari.view_path(
@@ -159,6 +161,6 @@ def test_kwargs_passed(monkeypatch):
         scale=(1, 2, 3),
     )
     assert viewer_mock.mock_calls == [
-        call(title='my viewer', ndisplay=3),
+        call(title='my viewer'),
         call().open(path='some/path', name='img name', scale=(1, 2, 3)),
     ]

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
 from ...translations import trans
+from ..event import EmitterGroup
 from ._set import EventedSet
 
 if TYPE_CHECKING:
@@ -11,9 +12,9 @@ _S = TypeVar("_S")
 
 
 class Selection(EventedSet[_T]):
-    """An model of selected items, with a `active` and `current` item.
+    """A model of selected items, with ``active`` and ``current`` item.
 
-    There can only be one `active` and one `current` item, but there can be
+    There can only be one ``active`` and one ``current` item, but there can be
     multiple selected items.  An "active" item is defined as a single selected
     item (if multiple items are selected, there is no active item).  The
     "current" item is mostly useful for (e.g.) keyboard actions: even with
@@ -56,10 +57,13 @@ class Selection(EventedSet[_T]):
     def __init__(self, data: Iterable[_T] = ()):
         self._active: Optional[_T] = None
         self._current_ = None
+        self.events = EmitterGroup(source=self, _current=None, active=None)
         super().__init__(data=data)
-        self.events.add(_current=None, active=None)
-        self.events.changed.connect(self._update_active)
         self._update_active()
+
+    def _emit_change(self, added=set(), removed=set()):
+        self._update_active()
+        return super()._emit_change(added=added, removed=removed)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._set)})"
@@ -99,17 +103,16 @@ class Selection(EventedSet[_T]):
         self._current = value
         self.events.active(value=value)
 
-    def _update_active(self, event=None):
+    def _update_active(self):
         """On a selection event, update the active item based on selection.
 
         (An active item is a single selected item).
         """
         if len(self) == 1:
             self.active = list(self)[0]
-        else:
-            if self._active is not None:
-                self._active = None
-                self.events.active(value=None)
+        elif self._active is not None:
+            self._active = None
+            self.events.active(value=None)
 
     def clear(self, keep_current: bool = False) -> None:
         """Clear the selection."""

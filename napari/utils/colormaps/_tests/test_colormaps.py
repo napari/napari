@@ -12,6 +12,7 @@ from napari.utils.colormaps.colormap_utils import (
     ensure_colormap,
     vispy_or_mpl_colormap,
 )
+from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.colormaps.vendored import cm
 
 
@@ -176,3 +177,46 @@ def test_colormap_error_suggestion():
         vispy_or_mpl_colormap(wrong_name)
 
     assert name in str(excinfo.value)
+
+
+np.random.seed(0)
+_SINGLE_RGBA_COLOR = np.random.rand(4)
+_SINGLE_RGB_COLOR = _SINGLE_RGBA_COLOR[:3]
+_SINGLE_COLOR_VARIANTS = (
+    _SINGLE_RGB_COLOR,
+    _SINGLE_RGBA_COLOR,
+    tuple(_SINGLE_RGB_COLOR),
+    tuple(_SINGLE_RGBA_COLOR),
+    list(_SINGLE_RGB_COLOR),
+    list(_SINGLE_RGBA_COLOR),
+)
+
+
+@pytest.mark.parametrize('color', _SINGLE_COLOR_VARIANTS)
+def test_ensure_colormap_with_single_color(color):
+    """See https://github.com/napari/napari/issues/3141"""
+    colormap = ensure_colormap(color)
+    np.testing.assert_array_equal(colormap.colors[0], [0, 0, 0, 1])
+    expected_color = transform_color(color)[0]
+    np.testing.assert_array_equal(colormap.colors[-1], expected_color)
+
+
+np.random.seed(0)
+_MULTI_RGBA_COLORS = np.random.rand(5, 4)
+_MULTI_RGB_COLORS = _MULTI_RGBA_COLORS[:, :3]
+_MULTI_COLORS_VARIANTS = (
+    _MULTI_RGB_COLORS,
+    _MULTI_RGBA_COLORS,
+    tuple(tuple(color) for color in _MULTI_RGB_COLORS),
+    tuple(tuple(color) for color in _MULTI_RGBA_COLORS),
+    list(list(color) for color in _MULTI_RGB_COLORS),
+    list(list(color) for color in _MULTI_RGBA_COLORS),
+)
+
+
+@pytest.mark.parametrize('colors', _MULTI_COLORS_VARIANTS)
+def test_ensure_colormap_with_multi_colors(colors):
+    """See https://github.com/napari/napari/issues/3141"""
+    colormap = ensure_colormap(colors)
+    expected_colors = transform_color(colors)
+    np.testing.assert_array_equal(colormap.colors, expected_colors)

@@ -65,48 +65,30 @@ class QtDims(QWidget):
 
     @property
     def nsliders(self):
-        """Returns the number of sliders displayed.
+        """Returns the number of sliders.
 
         Returns
         -------
         nsliders: int
-            Number of sliders displayed.
+            Number of sliders.
         """
         return len(self.slider_widgets)
 
-    def _on_last_used_changed(self, event):
-        """Sets the style of the last used slider.
-
-        Parameters
-        ----------
-        event : napari.utils.events.Event
-            Event that triggered method.
-        """
+    def _on_last_used_changed(self):
+        """Sets the style of the last used slider."""
         for i, widget in enumerate(self.slider_widgets):
             sld = widget.slider
             sld.setProperty('last_used', i == self.dims.last_used)
             sld.style().unpolish(sld)
             sld.style().polish(sld)
 
-    def _update_slider(self, event):
-        """Updates position for a given slider.
-
-        Parameters
-        ----------
-        event : napari.events.Event
-            Event that triggers update, emitted by viewer.dims.current_step.
-        """
+    def _update_slider(self):
+        """Updates position for a given slider."""
         for widget in self.slider_widgets:
             widget._update_slider()
 
-    def _update_range(self, event):
-        """Updates range for a given slider.
-
-        Parameters
-        ----------
-        event : napari.events.Event
-            Event that triggers update, emitted by viewer.dims.range.
-        """
+    def _update_range(self):
+        """Updates range for a given slider."""
         for widget in self.slider_widgets:
             widget._update_range()
 
@@ -114,17 +96,9 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
 
-    def _update_display(self, event=None):
-        """Updates display for all sliders.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _update_display(self):
+        """Updates display for all sliders."""
+        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
@@ -142,24 +116,16 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
 
-    def _update_nsliders(self, event=None):
-        """Updates the number of sliders based on the number of dimensions.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _update_nsliders(self):
+        """Updates the number of sliders based on the number of dimensions."""
+        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
         for i in range(self.dims.ndim):
-            self._update_range(i)
+            self._update_range()
             if self._displayed_sliders[i]:
-                self._update_slider(i)
+                self._update_slider()
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
@@ -169,7 +135,7 @@ class QtDims(QWidget):
         """
         fm = QFontMetrics(QFont("", 0))
         labels = self.findChildren(QLineEdit, 'axis_label')
-        newwidth = max([fm.boundingRect(lab.text()).width() for lab in labels])
+        newwidth = max(fm.boundingRect(lab.text()).width() for lab in labels)
 
         if any(self._displayed_sliders):
             # set maximum width to no more than 20% of slider width
@@ -243,6 +209,10 @@ class QtDims(QWidget):
         slider_widget = self.slider_widgets.pop(index)
         self._displayed_sliders.pop(index)
         self.layout().removeWidget(slider_widget)
+        # As we delete this widget later, callbacks with a weak reference
+        # to it may successfully grab the instance, but may be incompatible
+        # with other update state like dims.
+        self.dims.events.axis_labels.disconnect(slider_widget._pull_label)
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))

@@ -1,9 +1,19 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
 from ..widgets._slider_compat import QDoubleSlider
+
+
+class LayerFormLayout(QFormLayout):
+    """Reusable form layout for subwidgets in each QtLayerControls class"""
+
+    def __init__(self, QWidget=None):
+        super().__init__(QWidget)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(4)
+        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
 
 class QtLayerControls(QFrame):
@@ -19,9 +29,7 @@ class QtLayerControls(QFrame):
     Attributes
     ----------
     blendComboBox : qtpy.QtWidgets.QComboBox
-        Drowpdown widget to select blending mode of layer.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
+        Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
     opacitySlider : qtpy.QtWidgets.QSlider
@@ -38,15 +46,10 @@ class QtLayerControls(QFrame):
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.grid_layout = QGridLayout(self)
-        self.grid_layout.setContentsMargins(0, 0, 0, 0)
-        self.grid_layout.setSpacing(2)
-        self.grid_layout.setColumnMinimumWidth(0, 86)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.setLayout(self.grid_layout)
+        self.setLayout(LayerFormLayout(self))
 
-        sld = QDoubleSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)
@@ -61,7 +64,7 @@ class QtLayerControls(QFrame):
             if data == self.layer.blending:
                 blend_comboBox.setCurrentIndex(index)
 
-        blend_comboBox.activated[str].connect(self.changeBlending)
+        blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
 
     def changeOpacity(self, value):
@@ -86,25 +89,13 @@ class QtLayerControls(QFrame):
         """
         self.layer.blending = self.blendComboBox.currentData()
 
-    def _on_opacity_change(self, event=None):
-        """Receive layer model opacity change event and update opacity slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_opacity_change(self):
+        """Receive layer model opacity change event and update opacity slider."""
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.opacity)
 
-    def _on_blending_change(self, event=None):
-        """Receive layer model blending mode change event and update slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_blending_change(self):
+        """Receive layer model blending mode change event and update slider."""
         with self.layer.events.blending.blocker():
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)

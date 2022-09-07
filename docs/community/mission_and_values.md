@@ -1,10 +1,11 @@
+(mission-and-values)=
 # Mission and Values
 
 This document is meant to help guide decisions about the future of `napari`, be it in terms of
 whether to accept new functionality, changes to the styling of the code or graphical user interface (GUI),
-or whether to take on new dependencies, among other things. It serves as a point of reference for [core developers](CORE_DEV_GUIDE.md) actively working on the project, and an introduction for
+or whether to take on new dependencies, among other things. It serves as a point of reference for [core developers](core-dev-guide) actively working on the project, and an introduction for
 newcomers who want to learn a little more about where the project is going and what the team's
-values are. You can also learn more about how the project is managed by looking at our [governance model](GOVERNANCE).
+values are. You can also learn more about how the project is managed by looking at our [governance model](napari-governance).
 
 ## Our founding principles
 
@@ -22,13 +23,14 @@ The founding napari team came together around a shared vision for a Python based
 
 As the project has grown we've turned these original principles into the mission statement and set of values that we described below.
 
+(our-mission)=
 ## Our mission
 
 napari aims to be the **multi-dimensional image viewer for Python** and to **provide GUI access to a plugin ecosystem of image analysis tools for scientists** to use in their daily work. We hope to accomplish this by:
 
 - being **easy to use and install**. We are careful in taking on new dependencies, sometimes making them optional, and will support a fully packaged installation that works cross-platform.
 
-- being **well-documented** with **comprehensive tutorials and examples**. All functions in our API have thorough docstrings clarifying expected inputs and outputs, and we maintain a separate [tutorials and example website](http://napari.org) to explain different use cases and working modes.
+- being **well-documented** with **comprehensive tutorials and examples**. All functions in our API have thorough docstrings clarifying expected inputs and outputs, and we maintain [tutorials and examples on our website](http://napari.org) to explain different use cases and working modes.
 
 - providing **GUI access** to all critical functionality so napari can be used by people with no coding experience.
 
@@ -38,9 +40,10 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - **ensuring correctness**. We strive for complete test coverage of both the code and GUI, with all code reviewed by a core developer before being included in the repository.
 
+(our-values)=
 ## Our values
 
-- We are **inclusive**. We welcome and mentor newcomers who are making their first contribution and strive to grow our most dedicated contributors into [core developers](CORE_DEV_GUIDE.md). We have a [Code of Conduct](CODE_OF_CONDUCT.md) to make napari
+- We are **inclusive**. We welcome and mentor newcomers who are making their first contribution and strive to grow our most dedicated contributors into [core developers](core-dev-guide). We have a [Code of Conduct](napari-coc) to make napari
 a welcoming place for all.
 
 - We are **community-driven**. We respond to feature requests and proposals on our [issue tracker](https://github.com/napari/napari/issues), making decisions that are driven by our users’ requirements, not by the whims of the core team.
@@ -55,7 +58,7 @@ a welcoming place for all.
 
 - We value **simple, readable implementations**. Readable code that is easy to understand, for newcomers and maintainers alike, makes it easier to contribute new code as well as prevent bugs.
 
-- We value **education and documentation**. All functions should have docstrings, preferably with examples, and major functionality should be explained in our [tutorials](https://github.com/napari/napari-tutorials). Core developers can take an active role in finishing documentation examples.
+- We value **education and documentation**. All functions should have docstrings, preferably with examples, and major functionality should be explained in our [tutorials](https://napari.org/tutorials). Core developers can take an active role in finishing documentation examples.
 
 - We **minimize [magic](https://en.wikipedia.org/wiki/Magic_(programming))** and always provide a way for users to opt out of magical behaviour and guessing by providing explicit ways to control functionality. We support NumPy array like objects and we prefer to educate users rather than make decisions on their behalf. This does not preclude the use of sensible defaults.
 

@@ -1,6 +1,11 @@
 """
-Display a points layer on top of an image layer using the add_points and
-add_image APIs
+Add points
+==========
+
+Display a points layer on top of an image layer using the ``add_points`` and
+``add_image`` APIs
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -19,7 +24,7 @@ viewer.add_points(points, size=size)
 # unselect the image layer
 viewer.layers.selection.discard(viewer.layers[0])
 
-# adjust some of the points layer properties
+# adjust some of the points layer attributes
 layer = viewer.layers[1]
 
 # change the layer name
@@ -41,10 +46,11 @@ layer.opacity = 0.9
 # change the layer point symbol using an alias
 layer.symbol = '+'
 
-# change the layer point n_dimensional status
-layer.n_dimensional = True
+# change the layer point out_of_slice_display status
+layer.out_of_slice_display = True
 
 # change the layer mode
 layer.mode = 'add'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

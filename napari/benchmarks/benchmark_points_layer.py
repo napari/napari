@@ -10,7 +10,7 @@ from napari.layers import Points
 class Points2DSuite:
     """Benchmarks for the Points layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -37,6 +37,9 @@ class Points2DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 2)
 
+    def time_add(self, n):
+        self.layer.add(self.data)
+
     def mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
@@ -49,7 +52,7 @@ class Points2DSuite:
 class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -89,6 +92,7 @@ class PointsSlicingSuite:
     """Benchmarks for slicing the Points layer with 3D data."""
 
     params = [True, False]
+    timeout = 300
 
     def setup(self, flatten_slice_axis):
         np.random.seed(0)

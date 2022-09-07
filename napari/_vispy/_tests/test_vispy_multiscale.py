@@ -14,8 +14,8 @@ def test_multiscale(make_napari_viewer):
     layer = viewer.layers[0]
 
     # Set canvas size to target amount
-    viewer.window.qt_viewer.view.canvas.size = (800, 600)
-    viewer.window.qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
+    viewer.window._qt_viewer.on_draw(None)
 
     # Check that current level is first large enough to fill the canvas with
     # a greater than one pixel depth
@@ -55,7 +55,7 @@ def test_3D_multiscale_image(make_napari_viewer):
     assert viewer.layers[0].data_level == 1
 
     # Note that draw command must be explicitly triggered in our tests
-    viewer.window.qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.on_draw(None)
 
 
 @skip_on_win_ci
@@ -69,7 +69,7 @@ def test_multiscale_screenshot(make_napari_viewer):
     _ = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
-    viewer.window.qt_viewer.view.canvas.size = (800, 600)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
@@ -91,7 +91,7 @@ def test_multiscale_screenshot(make_napari_viewer):
 def test_multiscale_screenshot_zoomed(make_napari_viewer):
     """Test rendering of multiscale data with screenshot after zoom."""
     viewer = make_napari_viewer(show=True)
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
@@ -102,7 +102,7 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
 
     # Set zoom of camera to show highest resolution tile
     view.view.camera.rect = [1000, 1000, 200, 150]
-    viewer.window.qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.on_draw(None)
 
     # Check that current level is bottom level of multiscale
     assert viewer.layers[0].data_level == 0
@@ -112,6 +112,10 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
+    # for whatever reason this is the only test where the border is 6px on hi DPI.
+    # if the 6 by 6 corner is all black assume we have a 6px border.
+    if not np.allclose(screenshot[:6, :6], np.array([0, 0, 0, 255])):
+        screen_offset = 6  # Hi DPI
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
     np.testing.assert_allclose(
         screenshot[screen_offset, screen_offset], target_center
@@ -126,7 +130,7 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
 def test_image_screenshot_zoomed(make_napari_viewer):
     """Test rendering of image data with screenshot after zoom."""
     viewer = make_napari_viewer(show=True)
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     data = np.ones((4000, 3000))
     _ = viewer.add_image(data, multiscale=False, contrast_limits=[0, 1])
@@ -136,7 +140,7 @@ def test_image_screenshot_zoomed(make_napari_viewer):
 
     # Set zoom of camera to show highest resolution tile
     view.view.camera.rect = [1000, 1000, 200, 150]
-    viewer.window.qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.on_draw(None)
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
@@ -154,11 +158,44 @@ def test_image_screenshot_zoomed(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_multiscale_zoomed_out(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/4781"""
+    # Need to show viewer to ensure that pixel_scale and physical_size
+    # get set appropriately.
+    viewer = make_napari_viewer(show=True)
+    shapes = [(3200, 3200), (1600, 1600), (800, 800)]
+    data = [np.empty(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True)
+    qt_viewer = viewer.window._qt_viewer
+    # Canvas size is in screen pixels.
+    qt_viewer.canvas.size = (1600, 1600)
+    # The camera rect is (left, top, width, height) in scene coordinates.
+    # In this case scene coordinates are the same as data/world coordinates
+    # the layer is 2D and data-to-world is identity.
+    # We pick a camera rect size that is much bigger than the data extent
+    # to simulate being zoomed out in the viewer.
+    camera_rect_size = 34000
+    camera_rect_center = 1599.5
+    camera_rect_start = camera_rect_center - (camera_rect_size / 2)
+    qt_viewer.view.camera.rect = (
+        camera_rect_start,
+        camera_rect_start,
+        camera_rect_size,
+        camera_rect_size,
+    )
+
+    qt_viewer.on_draw(None)
+
+    assert layer.data_level == 2
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
     viewer = make_napari_viewer(show=True)
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     view.set_welcome_visible(False)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)

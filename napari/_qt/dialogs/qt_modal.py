@@ -30,8 +30,6 @@ class QtPopup(QDialog):
     ----------
     frame : qtpy.QtWidgets.QFrame
         Frame of the popup dialog box.
-    layout : qtpy.QtWidgets.QVBoxLayout
-        Layout of the popup dialog box.
     """
 
     def __init__(self, parent):
@@ -50,14 +48,14 @@ class QtPopup(QDialog):
         """Show popup dialog above the mouse cursor position."""
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
-        pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
+        pos -= QPoint(szhint.width() // 2, szhint.height() + 14)
         self.move(pos)
         self.show()
 
     def show_right_of_mouse(self, *args):
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
-        pos -= QPoint(-14, szhint.height() / 4)
+        pos -= QPoint(-14, szhint.height() // 4)
         self.move(pos)
         self.show()
 
@@ -97,9 +95,9 @@ class QtPopup(QDialog):
             left = window.pos().x()
             top = window.pos().y()
             if position in ('top', 'bottom'):
-                width = window.width() * win_ratio
+                width = int(window.width() * win_ratio)
                 width = max(width, min_length)
-                left += (window.width() - width) / 2
+                left += (window.width() - width) // 2
                 height = self.sizeHint().height()
                 top += (
                     24
@@ -107,10 +105,10 @@ class QtPopup(QDialog):
                     else (window.height() - height - 12)
                 )
             elif position in ('left', 'right'):
-                height = window.height() * win_ratio
+                height = int(window.height() * win_ratio)
                 height = max(height, min_length)
                 # 22 is for the title bar
-                top += 22 + (window.height() - height) / 2
+                top += 22 + (window.height() - height) // 2
                 width = self.sizeHint().width()
                 left += (
                     12 if position == 'left' else (window.width() - width - 12)
@@ -139,16 +137,9 @@ class QtPopup(QDialog):
         # make sure the popup is completely on the screen
         # In Qt ≥5.10 we can use screenAt to know which monitor the mouse is on
 
-        if hasattr(QGuiApplication, "screenAt"):
-            screen_geometry: QRect = QGuiApplication.screenAt(
-                QCursor.pos()
-            ).geometry()
-        else:
-            # This widget is deprecated since Qt 5.11
-            from qtpy.QtWidgets import QDesktopWidget
-
-            screen_num = QDesktopWidget().screenNumber(QCursor.pos())
-            screen_geometry = QGuiApplication.screens()[screen_num].geometry()
+        screen_geometry: QRect = QGuiApplication.screenAt(
+            QCursor.pos()
+        ).geometry()
 
         left = max(
             min(screen_geometry.right() - width, left), screen_geometry.left()
@@ -166,6 +157,7 @@ class QtPopup(QDialog):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            return self.close()
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.close()
+            return
         super().keyPressEvent(event)

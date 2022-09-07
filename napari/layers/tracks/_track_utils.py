@@ -1,12 +1,13 @@
 from typing import Dict, List, Union
 
 import numpy as np
+import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import validate_properties
+from ..utils.layer_utils import _FeatureTable
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -30,6 +31,9 @@ class TrackManager:
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
         or volumetric timeseries respectively.
+    features : Dataframe-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -66,7 +70,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._properties = None
+        self._feature_table = _FeatureTable()
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
@@ -80,7 +84,6 @@ class TrackManager:
 
         self._track_vertices = None
         self._track_connex = None
-        self._track_colors = None
 
         self._graph = None
         self._graph_vertices = None
@@ -120,10 +123,11 @@ class TrackManager:
         # here to make sure that we align with the napari dims index which
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
-        frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
+        time = np.round(self._points[:, 0]).astype(np.uint)
+        frames = list(set(time.tolist()))
         self._points_lookup = {}
         for f in frames:
-            idx = np.where(self._points[:, 0] == f)[0]
+            idx = np.where(time == f)[0]
             self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
 
         # make a second lookup table using a sparse matrix to convert track id
@@ -139,17 +143,42 @@ class TrackManager:
         # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
 
     @property
+    def features(self):
+        """Dataframe-like features table.
+
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._feature_table.values
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._feature_table.set_values(features, num_data=len(self.data))
+        if 'track_id' not in self._feature_table.values:
+            self._feature_table.values['track_id'] = self.track_ids
+        self._feature_table.reorder(self._order)
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return self._properties
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        properties = validate_properties(properties, len(self.data))
-        if 'track_id' not in properties:
-            properties['track_id'] = self.track_ids
-        self._properties = {k: v[self._order] for k, v in properties.items()}
+        self.features = properties
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
@@ -219,25 +248,6 @@ class TrackManager:
             )
 
         return data
-
-    def _validate_track_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """validate the track properties"""
-
-        for k, v in properties.items():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of vertices',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
 
     def _validate_track_graph(
         self, graph: Dict[int, Union[int, List[int]]]
@@ -368,12 +378,6 @@ class TrackManager:
     def track_connex(self) -> np.ndarray:
         """vertex connections for drawing track lines"""
         return self._track_connex
-
-    @property
-    def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        return self._track_colors
 
     @property
     def graph_vertices(self) -> np.ndarray:

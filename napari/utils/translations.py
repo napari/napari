@@ -5,7 +5,6 @@ localization data.
 
 import gettext
 import os
-import sys
 from pathlib import Path
 from typing import Optional, Union
 
@@ -18,7 +17,6 @@ NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
 
 # Constants
 LOCALE_DIR = "locale"
-PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 def _get_display_name(
@@ -169,6 +167,10 @@ class TranslationString(str):
     def __deepcopy__(self, memo):
         from copy import deepcopy
 
+        kwargs = deepcopy(self._kwargs)
+        # Remove `n` from `kwargs` added in the initializer
+        # See https://github.com/napari/napari/issues/4736
+        kwargs.pop("n")
         return TranslationString(
             domain=self._domain,
             msgctxt=self._msgctxt,
@@ -176,7 +178,7 @@ class TranslationString(str):
             msgid_plural=self._msgid_plural,
             n=self._n,
             deferred=self._deferred,
-            kwargs=deepcopy(self._kwargs),
+            **kwargs,
         )
 
     def __new__(
@@ -272,42 +274,33 @@ class TranslationString(str):
         """
         Return the translated string with interpolated kwargs, if provided.
         """
-        # Python 3.7 or lower does not offer translations based on context.
-        # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
-        if PY37_OR_LOWER:
-            if self._n is None:
-                translation = gettext.dgettext(self._domain, self._msgid)
-            else:
-                translation = gettext.dngettext(
-                    self._domain, self._msgid, self._msgid_plural, self._n
-                )
+
+        if self._n is None and self._msgctxt is None:
+            translation = gettext.dgettext(
+                self._domain,
+                self._msgid,
+            )
+        elif self._n is None:
+            translation = gettext.dpgettext(
+                self._domain,
+                self._msgctxt,
+                self._msgid,
+            )
+        elif self._msgctxt is None:
+            translation = gettext.dngettext(
+                self._domain,
+                self._msgid,
+                self._msgid_plural,
+                self._n,
+            )
         else:
-            if self._n is None and self._msgctxt is None:
-                translation = gettext.dgettext(
-                    self._domain,
-                    self._msgid,
-                )
-            elif self._n is None:
-                translation = gettext.dpgettext(
-                    self._domain,
-                    self._msgctxt,
-                    self._msgid,
-                )
-            elif self._msgctxt is None:
-                translation = gettext.dngettext(
-                    self._domain,
-                    self._msgid,
-                    self._msgid_plural,
-                    self._n,
-                )
-            else:
-                translation = gettext.dnpgettext(
-                    self._domain,
-                    self._msgctxt,
-                    self._msgid,
-                    self._msgid_plural,
-                    self._n,
-                )
+            translation = gettext.dnpgettext(
+                self._domain,
+                self._msgctxt,
+                self._msgid,
+                self._msgid_plural,
+                self._n,
+            )
 
         return translation.format(**self._kwargs)
 
@@ -401,32 +394,25 @@ class TranslationBundle:
                 )
             )
 
-        if PY37_OR_LOWER:
-            translation = (
-                gettext.dgettext(self._domain, msgid)
-                if n is None
-                else gettext.dngettext(self._domain, msgid, msgid_plural, n)
+        if n is None and msgctxt is None:
+            translation = gettext.dgettext(self._domain, msgid)
+        elif n is None:
+            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+        elif msgctxt is None:
+            translation = gettext.dngettext(
+                self._domain,
+                msgid,
+                msgid_plural,
+                n,
             )
         else:
-            if n is None and msgctxt is None:
-                translation = gettext.dgettext(self._domain, msgid)
-            elif n is None:
-                translation = gettext.dpgettext(self._domain, msgctxt, msgid)
-            elif msgctxt is None:
-                translation = gettext.dngettext(
-                    self._domain,
-                    msgid,
-                    msgid_plural,
-                    n,
-                )
-            else:
-                translation = gettext.dnpgettext(
-                    self._domain,
-                    msgctxt,
-                    msgid,
-                    msgid_plural,
-                    n,
-                )
+            translation = gettext.dnpgettext(
+                self._domain,
+                msgctxt,
+                msgid,
+                msgid_plural,
+                n,
+            )
 
         kwargs['n'] = n
         return translation.format(**kwargs)

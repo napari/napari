@@ -1,6 +1,6 @@
 (intro-to-event-loop)=
 
-# An Introduction to the Event Loop in napari
+# An introduction to the event loop in napari
 
 ## Brief summary
 
@@ -29,7 +29,7 @@ If you would prefer that napari did *not* start the interactive
 event loop for you in IPython, then you can disable it with:
 
 ```python
-from napari.utils import get_settings
+from napari.settings import get_settings
 
 get_settings().application.ipy_interactive = False
 ```
@@ -84,7 +84,7 @@ while True:  # infinite loop!
 Actions taken by the user add events to the queue (e.g. "button pressed",
 "slider moved", etc...), and the event loop handles them one at a time.
 
-## Qt Applications and Event Loops
+## Qt applications and event loops
 
 Currently, napari uses Qt as its GUI backend, and the main loop handling events
 in napari is the [Qt
@@ -164,4 +164,4 @@ usage of napari.
 :::
 
 Now that you have an understanding of how napari creates the event loop, you may
-wish to learn more about {ref}`hooking up your own actions <connecting-events >` and callbacks to specific events.  
+wish to learn more about {ref}`hooking up your own actions <connecting-events>` and callbacks to specific events.

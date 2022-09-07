@@ -1,89 +1,179 @@
-# Table of content
-# Learn more at https://jupyterbook.org/customize/toc.html
-#
-- file: index
-
-- file: guides/index
-  sections:
-    - file: guides/3D_interactivity
-    - file: guides/event_loop
-    - file: guides/connecting_events
-    - file: guides/threading
-    - file: guides/magicgui
-    - file: guides/perfmon
-    - file: guides/rendering
-    - file: guides/preferences
-    - file: guides/translations
-
-- file: plugins/index
-  sections:
-    - file: plugins/find-and-install-plugin
-    - file: plugins/for_napari_developers
-    - file: plugins/for_plugin_developers
-    - file: plugins/hook_specifications
-
-- file: developers/index
-  sections:
-    - file: developers/team
-    - file: developers/benchmarks
-    - file: developers/code_of_conduct
-    - file: developers/code_of_conduct_reporting
-    - file: developers/contributing
-    - file: developers/core_dev_guide
-    - file: developers/docs
-    - file: developers/governance
-    - file: developers/mission_and_values
-    - file: developers/release
-    - file: developers/roadmap_0_3
-    - file: developers/roadmap_0_3_retrospective
-    - file: developers/roadmap_0_4
-    - file: developers/testing
-
-- file: explanations/index
-  sections:
-    - file: explanations/docker
-    - file: explanations/performance
-    - file: explanations/rendering
-
-- file: release/index
-  sections:
-    - file: release/release_0_4_11
-    - file: release/release_0_4_10
-    - file: release/release_0_4_9
-    - file: release/release_0_4_8
-    - file: release/release_0_4_7
-    - file: release/release_0_4_6
-    - file: release/release_0_4_5
-    - file: release/release_0_4_4
-    - file: release/release_0_4_3
-    - file: release/release_0_4_2
-    - file: release/release_0_4_1
-    - file: release/release_0_4_0
-    - file: release/release_0_3_8
-    - file: release/release_0_3_7
-    - file: release/release_0_3_6
-    - file: release/release_0_3_5
-    - file: release/release_0_3_4
-    - file: release/release_0_3_3
-    - file: release/release_0_3_2
-    - file: release/release_0_3_1
-    - file: release/release_0_3_0
-    - file: release/release_0_2_12
-    - file: release/release_0_2_11
-    - file: release/release_0_2_10
-    - file: release/release_0_2_9
-    - file: release/release_0_2_8
-    - file: release/release_0_2_7
-    - file: release/release_0_2_6
-    - file: release/release_0_2_5
-    - file: release/release_0_2_4
-    - file: release/release_0_2_3
-    - file: release/release_0_2_1
-    - file: release/release_0_2_0
-    - file: release/release_0_1_5
-    - file: release/release_0_1_3
-    - file: release/release_0_1_0
-
-- file: api/index
-  sections:
-    - file: api/napari
+root: index
+subtrees:
+- entries:
+  - file: usage
+    subtrees:
+    - titlesonly: True
+      entries:
+      - file: tutorials/start_index
+        subtrees:
+        - titlesonly: True
+          entries:
+          - file: tutorials/fundamentals/quick_start
+          - file: tutorials/fundamentals/installation
+          - file: tutorials/fundamentals/getting_started
+          - file: tutorials/fundamentals/viewer
+          - file: guides/layers
+      - file: tutorials/index
+        subtrees:
+        - entries:
+          - file: tutorials/annotation/index
+            subtrees:
+            - entries:
+              - file: tutorials/annotation/annotate_points
+          - file: tutorials/processing/index
+            subtrees:
+            - entries:
+              - file: tutorials/processing/dask
+          - file: tutorials/segmentation/index
+            subtrees:
+            - entries:
+              - file: tutorials/segmentation/annotate_segmentation
+          - file: tutorials/tracking/index
+            subtrees:
+            - entries:
+              - file: tutorials/tracking/cell_tracking
+      - file: further-resources/napari-workshops
+      - file: howtos/index
+        subtrees:
+        - titlesonly: True
+          entries:
+          - file: howtos/layers/index
+            subtrees:
+            - titlesonly: True
+              entries:
+              - file: howtos/layers/image
+              - file: howtos/layers/labels
+              - file: howtos/layers/points
+              - file: howtos/layers/shapes
+              - file: howtos/layers/surface
+              - file: howtos/layers/tracks
+              - file: howtos/layers/vectors
+          - file: howtos/connecting_events
+          - file: howtos/napari_imageJ
+          - file: howtos/docker
+          - file: howtos/perfmon
+          - file: howtos/headless
+      - file: guides/index
+        subtrees:
+        - entries:
+          - file: guides/magicgui
+          - file: guides/event_loop
+          - file: guides/napari_models
+          - file: guides/threading
+          - file: guides/3D_interactivity
+          - file: guides/rendering-explanation
+          - file: guides/rendering
+          - file: guides/performance
+          - file: guides/preferences
+          - file: guides/contexts_expressions
+          - file: guides/app_model
+          - file: guides/events_reference
+      - file: further-resources/glossary
+      - file: gallery
+  - file: plugins/index
+    subtrees:
+    - entries:
+      - file: plugins/find_and_install_plugin
+      - file: plugins/first_plugin
+      - file: plugins/manifest
+      - file: plugins/contributions
+      - file: plugins/guides
+      - file: plugins/test_deploy
+      - file: plugins/best_practices
+      - file: plugins/npe2_migration_guide
+      - file: plugins/npe1
+  - file: community/index
+    subtrees:
+    - titlesonly: True
+      entries:
+      - file: community/mission_and_values
+      - file: community/team
+      - file: community/code_of_conduct
+      - file: community/code_of_conduct_reporting
+      - file: community/governance
+      - file: community/working_groups
+      - file: community/meeting_schedule
+      - file: developers/index
+        subtrees:
+        - entries:
+          - file: developers/contributing
+          - file: naps/index
+            subtrees:
+            - maxdepth: 1
+              entries:
+              - file: naps/0-nap-process
+              - file: naps/1-institutional-funding-partners
+              - file: naps/2-conda-based-packaging
+              - file: naps/3-spaces
+              - file: naps/4-async-slicing
+          - file: developers/documentation/index
+            subtrees:
+            - entries:
+              - file: developers/documentation/docs_template
+          - file: developers/translations
+          - file: developers/core_dev_guide
+          - file: developers/release
+          - file: developers/testing
+          - file: developers/profiling
+          - file: developers/benchmarks
+          - file: developers/packaging
+      - file: release/index
+        subtrees:
+        - entries:
+          - file: release/release_0_4_16
+          - file: release/release_0_4_15
+          - file: release/release_0_4_14
+          - file: release/release_0_4_13
+          - file: release/release_0_4_12
+          - file: release/release_0_4_11
+          - file: release/release_0_4_10
+          - file: release/release_0_4_9
+          - file: release/release_0_4_8
+          - file: release/release_0_4_7
+          - file: release/release_0_4_6
+          - file: release/release_0_4_5
+          - file: release/release_0_4_4
+          - file: release/release_0_4_3
+          - file: release/release_0_4_2
+          - file: release/release_0_4_1
+          - file: release/release_0_4_0
+          - file: release/release_0_3_8
+          - file: release/release_0_3_7
+          - file: release/release_0_3_6
+          - file: release/release_0_3_5
+          - file: release/release_0_3_4
+          - file: release/release_0_3_3
+          - file: release/release_0_3_2
+          - file: release/release_0_3_1
+          - file: release/release_0_3_0
+          - file: release/release_0_2_12
+          - file: release/release_0_2_11
+          - file: release/release_0_2_10
+          - file: release/release_0_2_9
+          - file: release/release_0_2_8
+          - file: release/release_0_2_7
+          - file: release/release_0_2_6
+          - file: release/release_0_2_5
+          - file: release/release_0_2_4
+          - file: release/release_0_2_3
+          - file: release/release_0_2_1
+          - file: release/release_0_2_0
+          - file: release/release_0_1_5
+          - file: release/release_0_1_3
+          - file: release/release_0_1_0
+      - file: roadmaps/index
+        subtrees:
+        - entries:
+          - file: roadmaps/0_4
+          - file: roadmaps/0_3_retrospective
+          - file: roadmaps/0_3
+      - file: community/licensing
+  - file: api/index
+    subtrees:
+    - titlesonly: True
+      entries:
+      - file: api/modules
+      - file: api/event_loop
+      - file: api/view_layer
+      - file: api/misc

@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
+from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtTracksControls(QtLayerControls):
@@ -17,12 +22,12 @@ class QtTracksControls(QtLayerControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : layers.Tracks
         An instance of a Tracks layer.
 
     """
+
+    layer: 'napari.layers.Tracks'
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -46,22 +51,22 @@ class QtTracksControls(QtLayerControls):
             self.colormap_combobox.addItem(display_name, name)
 
         # slider for track head length
-        self.head_length_slider = QSlider(Qt.Horizontal)
-        self.head_length_slider.setFocusPolicy(Qt.NoFocus)
+        self.head_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.head_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.head_length_slider.setMinimum(0)
         self.head_length_slider.setMaximum(self.layer._max_length)
         self.head_length_slider.setSingleStep(1)
 
         # slider for track tail length
-        self.tail_length_slider = QSlider(Qt.Horizontal)
-        self.tail_length_slider.setFocusPolicy(Qt.NoFocus)
+        self.tail_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_length_slider.setMinimum(1)
         self.tail_length_slider.setMaximum(self.layer._max_length)
         self.tail_length_slider.setSingleStep(1)
 
         # slider for track edge width
-        self.tail_width_slider = QSlider(Qt.Horizontal)
-        self.tail_width_slider.setFocusPolicy(Qt.NoFocus)
+        self.tail_width_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_width_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_width_slider.setMinimum(1)
         self.tail_width_slider.setMaximum(int(2 * self.layer._max_width))
         self.tail_width_slider.setSingleStep(1)
@@ -82,75 +87,41 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-
-        self.grid_layout.addWidget(QLabel(trans._('color by:')), 0, 0)
-        self.grid_layout.addWidget(self.color_by_combobox, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 1, 0)
-        self.grid_layout.addWidget(self.colormap_combobox, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 2, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 3, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail width:')), 4, 0)
-        self.grid_layout.addWidget(self.tail_width_slider, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail length:')), 5, 0)
-        self.grid_layout.addWidget(self.tail_length_slider, 5, 1)
-        self.grid_layout.addWidget(QLabel(trans._('head length:')), 6, 0)
-        self.grid_layout.addWidget(self.head_length_slider, 6, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail:')), 7, 0)
-        self.grid_layout.addWidget(self.tail_checkbox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('show ID:')), 8, 0)
-        self.grid_layout.addWidget(self.id_checkbox, 8, 1)
-        self.grid_layout.addWidget(QLabel(trans._('graph:')), 9, 0)
-        self.grid_layout.addWidget(self.graph_checkbox, 9, 1)
-        self.grid_layout.setRowStretch(9, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self.layout().addRow(trans._('color by:'), self.color_by_combobox)
+        self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
+        self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
+        self.layout().addRow(trans._('head length:'), self.head_length_slider)
+        self.layout().addRow(trans._('tail:'), self.tail_checkbox)
+        self.layout().addRow(trans._('show ID:'), self.id_checkbox)
+        self.layout().addRow(trans._('graph:'), self.graph_checkbox)
 
         self._on_tail_length_change()
         self._on_tail_width_change()
         self._on_colormap_change()
         self._on_color_by_change()
 
-    def _on_tail_width_change(self, event=None):
-        """Receive layer model track line width change event and update slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_tail_width_change(self):
+        """Receive layer model track line width change event and update slider."""
         with self.layer.events.tail_width.blocker():
             value = int(2 * self.layer.tail_width)
             self.tail_width_slider.setValue(value)
 
-    def _on_tail_length_change(self, event=None):
-        """Receive layer model track line width change event and update slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_tail_length_change(self):
+        """Receive layer model track line width change event and update slider."""
         with self.layer.events.tail_length.blocker():
             value = self.layer.tail_length
             self.tail_length_slider.setValue(value)
 
-    def _on_head_length_change(self, event=None):
-        """Receive layer model track line width change event and update slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_head_length_change(self):
+        """Receive layer model track line width change event and update slider."""
         with self.layer.events.head_length.blocker():
             value = self.layer.head_length
             self.head_length_slider.setValue(value)
 
-    def _on_properties_change(self, event=None):
+    def _on_properties_change(self):
         """Change the properties that can be used to color the tracks."""
         with self.layer.events.properties.blocker():
 
@@ -158,32 +129,20 @@ class QtTracksControls(QtLayerControls):
                 self.color_by_combobox.clear()
             self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
-    def _on_colormap_change(self, event=None):
-        """Receive layer model colormap change event and update combobox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_colormap_change(self):
+        """Receive layer model colormap change event and update combobox."""
         with self.layer.events.colormap.blocker():
             self.colormap_combobox.setCurrentIndex(
                 self.colormap_combobox.findData(self.layer.colormap)
             )
 
-    def _on_color_by_change(self, event=None):
-        """Receive layer model color_by change event and update combobox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_color_by_change(self):
+        """Receive layer model color_by change event and update combobox."""
         with self.layer.events.color_by.blocker():
             color_by = self.layer.color_by
 
             idx = self.color_by_combobox.findText(
-                color_by, Qt.MatchFixedString
+                color_by, Qt.MatchFlag.MatchFixedString
             )
             self.color_by_combobox.setCurrentIndex(idx)
 

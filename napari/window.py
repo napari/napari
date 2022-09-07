@@ -13,7 +13,9 @@ from .utils.translations import trans
 try:
     from ._qt import Window
 
-except ImportError:
+except ImportError as e:
+
+    err = e
 
     class Window:  # type: ignore
         def __init__(self, *args, **kwargs):
@@ -23,6 +25,8 @@ except ImportError:
             pass
 
         def __getattr__(self, name):
-            raise ImportError(
-                trans._("could not import `qtpy`. Cannot show napari window.")
-            )
+            raise type(err)(
+                trans._(
+                    "An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above",
+                )
+            ) from err

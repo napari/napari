@@ -50,7 +50,6 @@ not to leave them in the code. Think of them as similar to debug prints.
 """
 import os
 
-from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
 from ._timers import (

@@ -4,9 +4,6 @@
 name: --pre Test
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '0 */12 * * *'  # every 12 hours
   # Allows you to run this workflow manually from the Actions tab
@@ -21,28 +18,23 @@ jobs:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.8]
-        backend: [pyqt, pyside]
+        python: [3.9]
+        backend: [pyqt5, pyside2]
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install Linux libraries
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+      - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
@@ -55,7 +47,7 @@ jobs:
         # run tests using pip install --pre
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox -v --pre
+          run: python -m tox -v --pre
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}

@@ -7,7 +7,7 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     mouse_event_to_labels_coordinate,
 )
-from napari.utils.interactions import ReadOnlyWrapper
+from napari.utils._proxies import ReadOnlyWrapper
 
 
 def test_interpolate_coordinates():

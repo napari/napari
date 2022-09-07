@@ -2,7 +2,7 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Set
+from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
@@ -52,7 +52,10 @@ def no_class_attributes():
 
     # monkey patch the pydantic ClassAttribute object
     # the second argument to ClassAttribute is the inspect.Signature object
-    main.ClassAttribute = lambda x, y: y
+    def _return2(x, y):
+        return y
+
+    main.ClassAttribute = _return2
     try:
         yield
     finally:
@@ -91,14 +94,82 @@ class EventedMetaclass(main.ModelMetaclass):
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
                 EventedModel.__config__.json_encoders[f.type_] = encoder
+        # check for @_.setters defined on the class, so we can allow them
+        # in EventedModel.__setattr__
+        cls.__property_setters__ = {}
+        for name, attr in namespace.items():
+            if isinstance(attr, property) and attr.fset is not None:
+                cls.__property_setters__[name] = attr
+        cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
 
+def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
+    """Return mapping of field name -> dependent set of property names.
+
+    Dependencies may be declared in the Model Config to emit an event
+    for a computed property when a model field that it depends on changes
+    e.g.  (@property 'c' depends on model fields 'a' and 'b')
+
+    Examples
+    --------
+        class MyModel(EventedModel):
+            a: int = 1
+            b: int = 1
+
+            @property
+            def c(self) -> List[int]:
+                return [self.a, self.b]
+
+            @c.setter
+            def c(self, val: Sequence[int]):
+                self.a, self.b = val
+
+            class Config:
+                dependencies={'c': ['a', 'b']}
+    """
+    if not cls.__property_setters__:
+        return {}
+
+    deps: Dict[str, Set[str]] = {}
+
+    _deps = getattr(cls.__config__, 'dependencies', None)
+    if _deps:
+        for prop, fields in _deps.items():
+            if prop not in cls.__property_setters__:
+                raise ValueError(
+                    'Fields with dependencies must be property.setters. '
+                    f'{prop!r} is not.'
+                )
+            for field in fields:
+                if field not in cls.__fields__:
+                    warnings.warn(f"Unrecognized field dependency: {field}")
+                deps.setdefault(field, set()).add(prop)
+    else:
+        # if dependencies haven't been explicitly defined, we can glean
+        # them from the property.fget code object:
+        for prop, setter in cls.__property_setters__.items():
+            for name in setter.fget.__code__.co_names:
+                if name in cls.__fields__:
+                    deps.setdefault(name, set()).add(prop)
+    return deps
+
+
 class EventedModel(BaseModel, metaclass=EventedMetaclass):
+    """A Model subclass that emits an event whenever a field value is changed.
+
+    Note: As per the standard pydantic behavior, default Field values are
+    not validated (#4138) and should be correctly typed.
+    """
 
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
 
+    # mapping of name -> property obj for methods that are property setters
+    __property_setters__: ClassVar[Dict[str, property]]
+    # mapping of field name -> dependent set of property names
+    # when field is changed, an event for dependent properties will be emitted.
+    __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
@@ -126,23 +197,42 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         self._events.source = self
         # add event emitters for each field which is mutable
-        fields = []
-        for name, field in self.__fields__.items():
-            if field.field_info.allow_mutation:
-                fields.append(name)
-        self._events.add(**dict.fromkeys(fields))
+        field_events = [
+            name
+            for name, field in self.__fields__.items()
+            if field.field_info.allow_mutation
+        ]
 
-    def __setattr__(self, name, value):
+        self._events.add(
+            **dict.fromkeys(field_events + list(self.__property_setters__))
+        )
+
+        # while seemingly redundant, this next line is very important to maintain
+        # correct sources; see https://github.com/napari/napari/pull/4138
+        # we solve it by re-setting the source after initial validation, which allows
+        # us to use `validate_all = True`
+        self._reset_event_source()
+
+    def _super_setattr_(self, name: str, value: Any) -> None:
+        # pydantic will raise a ValueError if extra fields are not allowed
+        # so we first check to see if this field has a property.setter.
+        # if so, we use it instead.
+        if name in self.__property_setters__:
+            self.__property_setters__[name].fset(self, value)
+        else:
+            super().__setattr__(name, value)
+
+    def __setattr__(self, name: str, value: Any) -> None:
         if name not in getattr(self, 'events', {}):
             # fallback to default behavior
-            super().__setattr__(name, value)
+            self._super_setattr_(name, value)
             return
 
         # grab current value
         before = getattr(self, name, object())
 
         # set value using original setter
-        super().__setattr__(name, value)
+        self._super_setattr_(name, value)
 
         # if different we emit the event with new value
         after = getattr(self, name)
@@ -150,10 +240,29 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if not are_equal(after, before):
             getattr(self.events, name)(value=after)  # emit event
 
+            # emit events for any dependent computed property setters as well
+            for dep in self.__field_dependents__.get(name, {}):
+                getattr(self.events, dep)(value=getattr(self, dep))
+
     # expose the private EmitterGroup publically
     @property
-    def events(self):
+    def events(self) -> EmitterGroup:
         return self._events
+
+    def _reset_event_source(self):
+        """
+        set the event sources of self and all the children to the correct values
+        """
+        # events are all messed up due to objects being probably
+        # recreated arbitrarily during validation
+        self.events.source = self
+        for name in self.__fields__:
+            child = getattr(self, name)
+            if isinstance(child, EventedModel):
+                # TODO: this isinstance check should be EventedMutables in the future
+                child._reset_event_source()
+            elif name in self.events.emitters:
+                getattr(self.events, name).source = self
 
     @property
     def _defaults(self):
@@ -170,19 +279,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             ):
                 setattr(self, name, value)
 
-    def asdict(self):
-        """Convert a model to a dictionary."""
-        warnings.warn(
-            trans._(
-                "The `asdict` method has been renamed `dict` and is now deprecated. It will be removed in 0.4.7",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.dict()
-
-    def update(self, values):
+    def update(
+        self, values: Union['EventedModel', dict], recurse: bool = True
+    ) -> None:
         """Update a model in place.
 
         Parameters
@@ -191,6 +290,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Values to update the model with. If an EventedModel is passed it is
             first converted to a dictionary. The keys of this dictionary must
             be found as attributes on the current model.
+        recurse : bool
+            If True, recursively update fields that are EventedModels.
+            Otherwise, just update the immediate fields of this EventedModel,
+            which is useful when the declared field type (e.g. ``Union``) can have
+            different realized types with different fields.
         """
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -206,8 +310,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
-                if isinstance(field, EventedModel):
-                    field.update(value)
+                if isinstance(field, EventedModel) and recurse:
+                    field.update(value, recurse=recurse)
                 else:
                     setattr(self, key, value)
 
@@ -222,15 +326,19 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """
-        if isinstance(other, EventedModel):
-            for f_name, eq in self.__eq_operators__.items():
-                if f_name not in other.__eq_operators__:
-                    return False
-                if not eq(getattr(self, f_name), getattr(other, f_name)):
-                    return False
-            return True
-        else:
+        if not isinstance(other, EventedModel):
             return self.dict() == other
+
+        for f_name, eq in self.__eq_operators__.items():
+            if f_name not in other.__eq_operators__:
+                return False
+            if (
+                hasattr(self, f_name)
+                and hasattr(other, f_name)
+                and not eq(getattr(self, f_name), getattr(other, f_name))
+            ):
+                return False
+        return True
 
     @contextmanager
     def enums_as_values(self, as_values: bool = True):

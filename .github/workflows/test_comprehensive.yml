@@ -11,35 +11,17 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-jobs:
-  code:
-    name: Code
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [flake8, black, isort]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install tox
-      - name: Run task
-        run: tox -e ${{ matrix.task }}
+concurrency:
+  group: comprehensive-test
 
+jobs:
   manifest:
     name: Check Manifest
-    needs: code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -50,54 +32,54 @@ jobs:
         run: check-manifest
 
   test:
-    needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
-        python: [3.7, 3.8, 3.9]
+        platform: [ubuntu-latest, windows-latest]
+        python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
-          # test big sur on 3.9.0
           - python: 3.9
-            platform: macos-11.0
-            toxenv: py39-macos-pyqt
+            platform: macos-latest
+            backend: pyqt5
           # test with minimum specified requirements
-          - python: 3.7
+          - python: 3.8
             platform: ubuntu-18.04
+            backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-py38-linux-pyqt
+            toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
 
+
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+
       - uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
 
-      # these libraries, along with pytest-xvfb (added in the `deps` in tox.ini),
-      # enable testing on Qt on linux
-      - name: Install Linux libraries
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+      - uses: tlambert03/setup-qt-libs@v1
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
@@ -118,17 +100,17 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox
+          run: python -m tox
         env:
           PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
           TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
       - name: Report Failures
         if: ${{ failure() }}
@@ -139,33 +121,52 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: '[test-bot] Comprehensive tests failing'
+          TITLE: "[test-bot] Comprehensive tests failing"
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
 
   test_pip_install:
-    name: ubuntu-latest 3.8 pip install
+    name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v2
         with:
-          python-version: 3.8
+          path: napari-from-github
 
-      - name: Install Linux libraries
-        run: |
-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: "pip"
+
+      - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install this commit
         run: |
-          # pip install this git sha directly from github
           pip install --upgrade pip
-          pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pip install ./napari-from-github[all,testing]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: pytest --pyargs napari --color=yes
+          run: python -m pytest --pyargs napari --color=yes
+
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples

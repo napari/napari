@@ -1,12 +1,13 @@
 include LICENSE
+include *.cff
 graft napari/_vendor
 recursive-include napari *.pyi
 recursive-include napari _tests/*.py
+recursive-include napari_builtins _tests/*.py
 recursive-include napari *.pyi
-recursive-include napari *.png *.svg *.qss *.gif
+recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
+recursive-include napari *.yaml
 exclude napari/resources/_qt_resources*.py
-
-exclude requirements.txt
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
@@ -16,5 +17,9 @@ recursive-exclude examples *
 recursive-exclude napari *.pyc
 exclude napari/benchmarks/*
 recursive-exclude resources *
-exclude bundle.py
+recursive-exclude binder *
+exclude bundle.py bundle_conda.py
 exclude dockerfile
+exclude EULA.md
+exclude Singularity
+

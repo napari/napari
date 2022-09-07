@@ -1,4 +1,5 @@
 import itertools
+import time
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -6,16 +7,17 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
-import tensorstore as ts
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
+from vispy.color import Colormap as VispyColormap
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.layers import Labels
-from napari.layers.image._image_constants import Rendering
+from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
 from napari.utils.colormaps import low_discrepancy_image
 
@@ -28,7 +30,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -40,7 +42,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -52,7 +54,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -101,7 +103,7 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
+    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
     data_c = np.zeros(shape_c, dtype=bool)
@@ -125,7 +127,7 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
+    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -277,41 +279,41 @@ def test_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
     layer.properties = properties
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith(f'Class {current_label - 1}')
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
     layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
     layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
 
 def test_default_properties_assignment():
@@ -343,24 +345,24 @@ def test_multiscale_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))[1]
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith(f'Class {current_label - 1}')
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
 
 def test_colormap():
@@ -391,17 +393,70 @@ def test_custom_color_dict():
     assert (layer.get_color(4) == layer.get_color(16)).all()
     assert (layer.get_color(8) == layer.get_color(32)).all()
 
+    # Test to see if our label mapped control points map to those in the colormap
+    # with an extra half step.
+    local_controls = np.array(
+        sorted(np.unique(list(layer._label_color_index.values()) + [1.0]))
+    )
+    colormap_controls = np.array(layer._colormap.controls)
+    assert np.max(np.abs(local_controls - colormap_controls)) == pytest.approx(
+        0.5 / (len(colormap_controls) - 1)
+    )
+
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
     layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
+def test_large_custom_color_dict():
+    """Confirm that the napari & vispy colormaps behave the same."""
+
+    label_count = 897
+    colors = {
+        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
+        for color in range(label_count)
+    }
+    data, _ = np.meshgrid(range(label_count), range(5))
+    layer = Labels(data, color=colors)
+
+    # Get color list using layer interface & napari.utils.colormap.ColorMap
+    label_color = layer.get_color(list(range(label_count)))
+
+    # Get the color by converting to control points with the layer and passing
+    # that to a vispy.color.colormap.Colormap
+    vispy_colormap = VispyColormap(
+        colors=layer.colormap.colors,
+        controls=layer.colormap.controls,
+        interpolation='zero',
+    )
+    label_color_controls = [
+        layer._label_color_index[x] for x in range(label_count)
+    ]
+    vispy_colors = vispy_colormap.map(
+        np.array([x for x in label_color_controls])
+    )
+
+    assert (label_color == vispy_colors).all()
+
+
+def test_warning_too_many_colors():
+    label_count = 1500
+    colors = {
+        color: (0, (color / 256.0) / 256.0, (color % 256) / 256.0)
+        for color in range(label_count)
+    }
+    data, _ = np.meshgrid(range(label_count), range(5))
+    with pytest.warns(UserWarning):
+        # Expect a warning for 1500 colors > 1024 in LUT
+        Labels(data, color=colors)
+
+
 def test_add_colors():
     """Test adding new colors"""
     data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
-    assert len(layer._all_vals) == layer.num_colors
+    assert len(layer._all_vals) == np.max(data) + 1
 
     layer.selected_label = 51
     assert len(layer._all_vals) == 52
@@ -450,11 +505,7 @@ def test_n_edit_dimensions():
     data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
     layer.n_edit_dimensions = 2
-    with pytest.warns(FutureWarning):
-        assert layer.n_dimensional is False
     layer.n_edit_dimensions = 3
-    with pytest.warns(FutureWarning):
-        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
@@ -566,6 +617,25 @@ def test_contour(input_data, expected_data_view):
     np.testing.assert_array_equal(
         layer._raw_to_displayed(input_data), layer._data_view
     )
+
+
+def test_contour_large_new_labels():
+    """Check that new labels larger than the lookup table work in contour mode.
+
+    References
+    ----------
+    [1]: https://forum.image.sc/t/data-specific-reason-for-indexerror-in-raw-to-displayed/60808
+    [2]: https://github.com/napari/napari/pull/3697
+    """
+    viewer = ViewerModel()
+
+    labels = np.zeros((5, 10, 10), dtype=int)
+    labels[0, 4:6, 4:6] = 1
+    labels[4, 4:6, 4:6] = 1000
+    labels_layer = viewer.add_labels(labels)
+    labels_layer.contour = 1
+    # This used to fail with IndexError
+    viewer.dims.set_point(axis=0, value=4)
 
 
 def test_selecting_label():
@@ -693,9 +763,9 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
-@pytest.mark.timeout(1)
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
+    now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
@@ -704,6 +774,8 @@ def test_paint_2d_xarray():
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
+    elapsed = time.monotonic() - now
+    assert elapsed < 1, "test was too slow, computation was likely not lazy"
 
 
 def test_paint_3d():
@@ -783,7 +855,7 @@ def test_message():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     msg = layer.get_status((0, 0))
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -801,8 +873,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    extent = np.array(((0,) * 3, shape))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 
 @pytest.mark.parametrize(
@@ -898,7 +970,7 @@ def test_ndim_paint():
 
 
 def test_switching_display_func():
-    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    label_data = np.random.randint(2**25, 2**25 + 5, size=(50, 50))
     layer = Labels(label_data)
     assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
 
@@ -927,7 +999,7 @@ def test_add_large_colors():
     label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
     label_array[0, :, :] = [[0, 1], [2, 3]]
     layer = Labels(label_array)
-    assert len(layer._all_vals) == layer.num_colors
+    assert len(layer._all_vals) == 4
 
     layer.show_selected_label = True
     layer.selected_label = int(5e6)
@@ -935,6 +1007,8 @@ def test_add_large_colors():
 
 
 def test_fill_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+
     labels = np.zeros((5, 7, 8, 9), dtype=int)
     labels[1, 2:4, 4:6, 4:6] = 1
     labels[1, 3:5, 5:7, 6:8] = 2
@@ -966,6 +1040,22 @@ def test_fill_tensorstore():
         np.testing.assert_array_equal(modified_labels, np.asarray(data))
 
 
+def test_fill_with_xarray():
+    """See https://github.com/napari/napari/issues/2374"""
+    data = xr.DataArray(np.zeros((5, 4, 4), dtype=int))
+    layer = Labels(data)
+
+    layer.fill((0, 2, 2), 1)
+
+    np.testing.assert_array_equal(layer.data[0, :, :], np.ones((4, 4)))
+    np.testing.assert_array_equal(layer.data[1:, :, :], np.zeros((4, 4, 4)))
+    # In the associated issue, using xarray.DataArray caused memory allocation
+    # problems due to different read indexing rules, so check that the data
+    # saved for undo has the expected vectorized shape and values.
+    undo_data = layer._undo_history[0][0][1]
+    np.testing.assert_array_equal(undo_data, np.zeros((16,)))
+
+
 @pytest.mark.parametrize(
     'scale', list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
 )
@@ -988,7 +1078,7 @@ def test_rendering_init():
     data = np.random.randint(20, size=shape)
     layer = Labels(data, rendering='iso_categorical')
 
-    assert layer.rendering == Rendering.ISO_CATEGORICAL.value
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL.value
 
 
 def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
@@ -1084,7 +1174,7 @@ def test_get_value_ray_3d_rolled():
 
 def test_get_value_ray_3d_transposed():
     """Test using _get_value_ray to interrogate labels in 3D
-    with the dimensions trasposed.
+    with the dimensions transposed.
     """
     # make a mock mouse event
     mouse_event = MouseEvent(
@@ -1163,7 +1253,7 @@ def test_cursor_ray_3d():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [1, 0, 11, 5])
-    np.testing.assert_allclose(end_point, [1, 19, 11, 5])
+    np.testing.assert_allclose(end_point, [1, 20, 11, 5])
 
     # click in the background
     mouse_event_2 = MouseEvent(
@@ -1196,7 +1286,7 @@ def test_cursor_ray_3d():
         mouse_event_3.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 0, 11, 5])
-    np.testing.assert_allclose(end_point, [0, 19, 11, 5])
+    np.testing.assert_allclose(end_point, [0, 20, 11, 5])
 
 
 def test_cursor_ray_3d_rolled():
@@ -1224,7 +1314,7 @@ def test_cursor_ray_3d_rolled():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
-    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [20, 11, 5, 1])
 
 
 def test_cursor_ray_3d_transposed():
@@ -1252,7 +1342,7 @@ def test_cursor_ray_3d_transposed():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
-    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [20, 11, 5, 1])
 
 
 def test_labels_state_update():
@@ -1296,3 +1386,104 @@ def test_is_default_color():
     # setting the color with non-default colors updates color mode
     layer.color = new_color
     assert layer.color_mode == 'direct'
+
+
+def test_negative_label():
+    """Test negative label values are supported."""
+    data = np.random.randint(low=-1, high=20, size=(10, 10))
+    original_data = np.copy(data)
+    layer = Labels(data)
+    layer.selected_label = -1
+    layer.brush_size = 3
+    layer.paint((5, 5), -1)
+    assert np.count_nonzero(layer.data == -1) > np.count_nonzero(
+        original_data == -1
+    )
+
+
+def test_negative_label_slicing():
+    """Test negative label color doesn't change during slicing."""
+    data = np.array([[[0, 1], [-1, -1]], [[100, 100], [-1, -2]]])
+    layer = Labels(data)
+    assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    assert tuple(layer.get_color(-1)) != tuple(layer.get_color(100))
+    assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
+
+
+@pytest.mark.xfail(
+    reason='This is a known bug with the current label color implementation'
+)
+def test_negative_label_doesnt_flicker():
+    data = np.array(
+        [
+            [[0, 5], [0, 5]],
+            [[-1, 5], [-1, 5]],
+            [[-1, 6], [-1, 6]],
+        ]
+    )
+    layer = Labels(data)
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    # this is expected to fail: -1 doesn't trigger an index error in
+    # layer._all_vals, it instead just wraps to 5, the previous max label.
+    assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
+    minus_one_color_original = tuple(layer.get_color(-1))
+    layer.dims_point = (2, 0, 0)
+    layer._set_view_slice()
+    # this is also expected to fail: when we switch layers, we see the 6
+    # label, which causes an index error, which triggers a recalculation of
+    # the label colors. Now -1 is seen so it is taken into account in the
+    # indexing calculation, and changes color
+    assert tuple(layer.get_color(-1)) == minus_one_color_original
+
+
+def test_get_status_with_custom_index():
+    """See https://github.com/napari/napari/issues/3811"""
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[2:5, 2:-2] = 1
+    data[5:-2, 2:-2] = 2
+    layer = Labels(data)
+    df = pd.DataFrame(
+        {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
+    )
+    layer.properties = df
+    assert (
+        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+    )
+    assert (
+        layer.get_status((3, 3))['coordinates']
+        == ' [3 3]: 1; text1: 1, text2: 7'
+    )
+    assert (
+        layer.get_status((6, 6))['coordinates']
+        == ' [6 6]: 2; text1: 3, text2: -2'
+    )
+
+
+def test_labels_features_event():
+    event_emitted = False
+
+    def on_event():
+        nonlocal event_emitted
+        event_emitted = True
+
+    layer = Labels(np.zeros((4, 5), dtype=np.uint8))
+    layer.events.features.connect(on_event)
+
+    layer.features = {'some_feature': []}
+
+    assert event_emitted
+
+
+class TestLabels:
+    @staticmethod
+    def get_objects():
+        return [(Labels(np.zeros((10, 10), dtype=np.uint8)))]
+
+    def test_events_defined(self, event_define_check, obj):
+        event_define_check(
+            obj,
+            {"seed", "num_colors", "show_selected_label", "color"},
+        )

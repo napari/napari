@@ -1,7 +1,12 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
+To screenshot
+=============
+
+Display one shapes layer ontop of one image layer using the ``add_shapes`` and
+``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
+
+.. tags:: visualization-advanced
 """
 
 import numpy as np
@@ -70,10 +75,10 @@ layer = viewer.add_shapes(
     name='shapes',
 )
 
-# change some properties of the layer
+# change some attributes of the layer
 layer.selected_data = set(range(layer.nshapes))
 layer.current_edge_width = 5
-layer.current_opacity = 0.75
+layer.opacity = 0.75
 layer.selected_data = set()
 
 # add an ellipse to the layer
@@ -122,4 +127,5 @@ viewer.add_image(screenshot, rgb=True, name='screenshot')
 # from skimage.io import imsave
 # imsave('screenshot.png', screenshot)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

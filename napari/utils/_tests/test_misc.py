@@ -6,8 +6,11 @@ import pytest
 
 from napari.utils.misc import (
     StringEnum,
+    _is_array_type,
+    _quiet_array_equal,
     abspath_or_url,
     ensure_iterable,
+    ensure_list_of_layer_data_tuple,
     ensure_sequence_of_iterables,
     pick_equality_operator,
 )
@@ -43,6 +46,11 @@ def test_sequence_of_iterables(input, expected):
     )
     for i, result, expectation in zipped:
         assert result == expectation
+
+
+def test_sequence_of_iterables_allow_none():
+    input = [(1, 2), None]
+    assert ensure_sequence_of_iterables(input, allow_none=True) == input
 
 
 def test_sequence_of_iterables_no_repeat_empty():
@@ -159,13 +167,14 @@ def test_abspath_or_url():
     assert abspath_or_url('ftp://something') == 'ftp://something'
     assert abspath_or_url('s3://something') == 's3://something'
     assert abspath_or_url('file://something') == 'file://something'
-    assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
-    assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
-
-    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})
+
+
+def test_type_stable():
+    assert isinstance(abspath_or_url('~'), str)
+    assert isinstance(abspath_or_url(Path('~')), Path)
 
 
 def test_equality_operator():
@@ -179,10 +188,48 @@ def test_equality_operator():
     class MyNPArray(np.ndarray):
         pass
 
-    assert pick_equality_operator(np.ones((1, 1))) == np.array_equal
-    assert pick_equality_operator(MyNPArray([1, 1])) == np.array_equal
+    assert pick_equality_operator(np.ones((1, 1))) == _quiet_array_equal
+    assert pick_equality_operator(MyNPArray([1, 1])) == _quiet_array_equal
     assert pick_equality_operator(da.ones((1, 1))) == operator.is_
     assert pick_equality_operator(zarr.ones((1, 1))) == operator.is_
     assert (
-        pick_equality_operator(xr.DataArray(np.ones((1, 1)))) == np.array_equal
+        pick_equality_operator(xr.DataArray(np.ones((1, 1))))
+        == _quiet_array_equal
     )
+    eq = pick_equality_operator(np.asarray([]))
+    # make sure this doesn't warn
+    assert not eq(np.asarray([]), np.asarray([], '<U32'))
+
+
+def test_is_array_type_with_xarray():
+    import numpy as np
+    import xarray as xr
+
+    assert _is_array_type(xr.DataArray(), 'xarray.DataArray')
+    assert not _is_array_type(xr.DataArray(), 'xr.DataArray')
+    assert not _is_array_type(
+        xr.DataArray(), 'xarray.core.dataarray.DataArray'
+    )
+    assert not _is_array_type([], 'xarray.DataArray')
+    assert not _is_array_type(np.array([]), 'xarray.DataArray')
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        ([([1, 10],)], [([1, 10],)]),
+        ([([1, 10], {'name': 'hi'})], [([1, 10], {'name': 'hi'})]),
+        (
+            [([1, 10], {'name': 'hi'}, "image")],
+            [([1, 10], {'name': 'hi'}, "image")],
+        ),
+        ([], []),
+    ],
+)
+def test_ensure_list_of_layer_data_tuple(input, expected):
+    """Ensure that when given layer data that a tuple can be generated.
+
+    When data with a name is supplied a layer should be created and named.
+    When an empty dataset is supplied no layer is created and no errors are produced.
+    """
+    assert ensure_list_of_layer_data_tuple(input) == expected
