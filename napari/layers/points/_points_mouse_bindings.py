@@ -56,6 +56,10 @@ def select(layer, event):
     )
     yield
 
+    # Undo the toggle selected in case of a mouse move with modifiers
+    if modify_selection and value is not None and event.type == 'mouse_move':
+        layer.selected_data = _toggle_selected(layer.selected_data, value)
+
     is_moving = False
     # on move
     while event.type == 'mouse_move':
@@ -94,6 +98,7 @@ def select(layer, event):
         )
 
     # reset the selection box data and highlights
+    layer._drag_box = None
     layer._drag_normal = None
     layer._drag_up = None
     layer._set_highlight(force=True)
