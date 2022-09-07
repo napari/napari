@@ -211,6 +211,7 @@ class ActionManager:
                 )
 
         button.clicked.connect(lambda: self.trigger(name))
+        button.setToolTip(f'{self._build_tooltip(name)} {extra_tooltip_text}')
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
@@ -299,7 +300,7 @@ class ActionManager:
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
             shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
-            ttip += f'({shorts})'
+            ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
         return ttip
