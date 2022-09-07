@@ -303,10 +303,6 @@ class ActionManager:
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
-
-        if getattr(self._actions[name].command, '_hold_button_delay', False):
-            ttip += trans._(' (hold to temporary activate)')
-
         return ttip
 
     def _get_layer_shortcuts(self, layers):
