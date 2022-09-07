@@ -1,5 +1,6 @@
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
+from contextlib import contextmanager
 from typing import Iterable
 
 from napari.layers import Layer
@@ -21,6 +22,13 @@ class _LayerSlicer:
         self._layers_to_task: dict[
             tuple[Layer], Future[_ViewerSliceResponse]
         ] = {}
+        self._force_sync = False
+
+    @contextmanager
+    def force_sync(self):
+        self._force_sync = True
+        yield None
+        self._force_sync = False
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
@@ -41,12 +49,16 @@ class _LayerSlicer:
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
         requests = {}
+        force_sync = self._force_sync
         for layer in layers:
             if layer._is_async():
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
+                force_sync = True
         task = self._executor.submit(self._slice_layers, requests)
+        if force_sync:
+            task.result()
         task.add_done_callback(self._on_slice_done)
         self._layers_to_task[tuple(requests.keys())] = task
         return task
