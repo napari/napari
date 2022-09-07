@@ -54,6 +54,106 @@
       "Viewer",
       "current_viewer"
     ],
+    "napari/_app_model/_app.py": [
+      "__module__"
+    ],
+    "napari/_app_model/actions/_layer_actions.py": [
+      "id",
+      "group",
+      "id",
+      "group",
+      "id",
+      "group",
+      "image",
+      "when",
+      "image",
+      "when",
+      "id",
+      "group",
+      "when",
+      "when",
+      "int8",
+      "int16",
+      "int32",
+      "int64",
+      "uint8",
+      "uint16",
+      "uint32",
+      "uint64",
+      "LAYER_CONVERT_TO_{_dtype.upper()}",
+      "id",
+      "max",
+      "min",
+      "std",
+      "sum",
+      "mean",
+      "median",
+      "LAYER_PROJECT_{mode.upper()}",
+      "id"
+    ],
+    "napari/_app_model/constants/_commands.py": [
+      "napari:layer:duplicate",
+      "napari:layer:split_stack",
+      "napari:layer:split_rgb",
+      "napari:layer:merge_stack",
+      "napari:layer:toggle_visibility",
+      "napari:layer:link_selected_layers",
+      "napari:layer:unlink_selected_layers",
+      "napari:layer:select_linked_layers",
+      "napari:layer:convert_to_labels",
+      "napari:layer:convert_to_image",
+      "napari:layer:convert_to_int8",
+      "napari:layer:convert_to_int16",
+      "napari:layer:convert_to_int32",
+      "napari:layer:convert_to_int64",
+      "napari:layer:convert_to_uint8",
+      "napari:layer:convert_to_uint16",
+      "napari:layer:convert_to_uint32",
+      "napari:layer:convert_to_uint64",
+      "napari:layer:project_max",
+      "napari:layer:project_min",
+      "napari:layer:project_std",
+      "napari:layer:project_sum",
+      "napari:layer:project_mean",
+      "napari:layer:project_median"
+    ],
+    "napari/_app_model/constants/_menus.py": [
+      "napari/layers/context",
+      "napari/layers/convert_dtype",
+      "napari/layers/project",
+      "1_conversion",
+      "5_split_merge",
+      "9_link",
+      "Set of all menu ids that can be contributed to by plugins.",
+      "napari/"
+    ],
+    "napari/_app_model/context/_context.py": [
+      "settings.",
+      "{self._PREFIX}{event.key}",
+      "dict"
+    ],
+    "napari/_app_model/context/_context_keys.py": [
+      "A",
+      "Event"
+    ],
+    "napari/_app_model/context/_layerlist_context.py": [
+      "rgb",
+      "image",
+      "labels",
+      "points",
+      "shapes",
+      "surface",
+      "vectors",
+      "tracks",
+      "ndim",
+      "shape",
+      "LayerSel"
+    ],
+    "napari/_app_model/injection/_processors.py": [
+      "name",
+      "Data",
+      "add_{layer_type}"
+    ],
     "napari/_event_loop.py": [],
     "napari/_qt/__init__.py": [
       "No Qt bindings could be found",
@@ -93,13 +193,13 @@
     "napari/_qt/containers/_factory.py": [],
     "napari/_qt/containers/_layer_delegate.py": [
       "_context_menu",
-      "action",
       "dark",
       "folder",
       "folder-open",
       "is_group",
       "light",
-      "new_{layer._type_string}"
+      "new_{layer._type_string}",
+      "globalPosition"
     ],
     "napari/_qt/containers/qt_layer_list.py": [],
     "napari/_qt/containers/qt_layer_model.py": [
@@ -129,6 +229,13 @@
       "NodeType"
     ],
     "napari/_qt/dialogs/__init__.py": [],
+    "napari/_qt/dialogs/confirm_close_dialog.py": [
+      "warning_icon_btn",
+      "Ctrl+Q",
+      "error_icon_element",
+      "Ctrl+W",
+      "warning_icon_element"
+    ],
     "napari/_qt/dialogs/preferences_dialog.py": [
       "0",
       "BaseModel",
@@ -198,12 +305,12 @@
       "opacity",
       "geometry",
       "QPushButton{padding: 4px 12px 4px 12px; font-size: 11px;min-height: 18px; border-radius: 0;}",
-      "python"
+      "python",
+      "resized"
     ],
     "napari/_qt/dialogs/qt_plugin_dialog.py": [
       "-c",
       ".json",
-      "0-",
       "bin",
       "cancel",
       "close_button",
@@ -267,7 +374,8 @@
       "=={item.latest_version}",
       "1.0",
       "shim",
-      "napari_hub"
+      "napari_hub",
+      "0-{item.text()}"
     ],
     "napari/_qt/dialogs/qt_plugin_report.py": [
       "QtCopyToClipboardButton",
@@ -276,13 +384,18 @@
       "url",
       "{meta.get(\"url\")}/issues/new?&body={err}",
       "python",
-      "NoColor"
+      "NoColor",
+      "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;</span><a href=\"{url}\" style=\"color:#999\">{url}</a>"
     ],
     "napari/_qt/dialogs/qt_reader_dialog.py": [
       "Choose reader",
       "persist_checkbox",
       "{display_name}",
-      "{error_message}Choose reader for {self._current_file}:"
+      "{error_message}Choose reader for {self._current_file}:",
+      "/",
+      "*",
+      "[{paths[0]}, ...]",
+      "*{extension}"
     ],
     "napari/_qt/dialogs/screenshot_dialog.py": [
       ".png"
@@ -294,7 +407,15 @@
     "napari/_qt/layer_controls/qt_colormap_combobox.py": [],
     "napari/_qt/layer_controls/qt_image_controls.py": [
       "RGB",
-      "rgb"
+      "rgb",
+      "napari.layers.Image",
+      "napari:orient_plane_normal_along_z",
+      "napari:orient_plane_normal_along_y",
+      "napari:orient_plane_normal_along_x",
+      "napari:orient_plane_normal_along_view_direction",
+      "x",
+      "y",
+      "z"
     ],
     "napari/_qt/layer_controls/qt_image_controls_base.py": [
       "colorbar",
@@ -308,7 +429,8 @@
       "reset_clims_button",
       "top",
       "gamma",
-      "reset_contrast_limits"
+      "reset_contrast_limits",
+      "_keep_auto_contrast"
     ],
     "napari/_qt/layer_controls/qt_labels_controls.py": [
       "Alt",
@@ -327,7 +449,8 @@
       "napari:activate_label_erase_mode",
       "napari:activate_label_pan_zoom_mode",
       "napari:activate_label_picker_mode",
-      "napari:activate_paint_mode"
+      "napari:activate_paint_mode",
+      "napari.layers.Labels"
     ],
     "napari/_qt/layer_controls/qt_layer_controls_base.py": [
       "close",
@@ -347,7 +470,8 @@
       "napari:activate_points_add_mode",
       "napari:activate_points_select_mode",
       "napari:activate_points_pan_zoom_mode",
-      "napari:delete_selected_points"
+      "napari:delete_selected_points",
+      "napari.layers.Points"
     ],
     "napari/_qt/layer_controls/qt_shapes_controls.py": [
       "Backspace",
@@ -385,17 +509,23 @@
       "activate_select_mode",
       "activate_vertex_insert_mode",
       "activate_vertex_remove_mode",
-      "napari:",
       "activate_shape_pan_zoom_mode",
       "napari:move_shapes_selection_to_back",
-      "napari:move_shapes_selection_to_front"
+      "napari:move_shapes_selection_to_front",
+      "napari.layers.Shapes",
+      "napari:{action_name}"
     ],
-    "napari/_qt/layer_controls/qt_surface_controls.py": [],
-    "napari/_qt/layer_controls/qt_tracks_controls.py": [],
+    "napari/_qt/layer_controls/qt_surface_controls.py": [
+      "napari.layers.Surface"
+    ],
+    "napari/_qt/layer_controls/qt_tracks_controls.py": [
+      "napari.layers.Tracks"
+    ],
     "napari/_qt/layer_controls/qt_vectors_controls.py": [
       "colormap",
       "cycle",
-      "direct"
+      "direct",
+      "napari.layers.Tracks"
     ],
     "napari/_qt/menus/_util.py": [
       "MenuItem",
@@ -446,7 +576,13 @@
       "slot",
       "statusTip",
       "text",
-      "when"
+      "when",
+      "items",
+      "Alt+C",
+      "Alt+Shift+C",
+      "&",
+      "&&",
+      "Viewer"
     ],
     "napari/_qt/menus/help_menu.py": [
       "Ctrl+/",
@@ -458,7 +594,9 @@
     ],
     "napari/_qt/menus/plugins_menu.py": [
       "Window",
-      "dock"
+      "dock",
+      "&",
+      "&&"
     ],
     "napari/_qt/menus/view_menu.py": [
       "Axes",
@@ -485,7 +623,8 @@
       "text",
       "ticks",
       "visible",
-      "when"
+      "when",
+      "Darwin"
     ],
     "napari/_qt/menus/window_menu.py": [
       "Window"
@@ -543,7 +682,8 @@
       "resources",
       "run",
       "PYCHARM_HOSTED",
-      "_in_event_loop"
+      "_in_event_loop",
+      "theme_{name}"
     ],
     "napari/_qt/qt_main_window.py": [
       "Ctrl+M",
@@ -571,7 +711,14 @@
       "Viewer",
       "ViewerStatusBar",
       "nt",
-      "system"
+      "system",
+      "globalPosition",
+      "_timer",
+      "Widget",
+      "layer_base",
+      "source_type",
+      "plugin",
+      "coordinates"
     ],
     "napari/_qt/qt_viewer.py": [
       "bottom",
@@ -612,7 +759,6 @@
     ],
     "napari/_qt/utils.py": [
       "!QBYTE_",
-      "PySide2",
       "native",
       "pyqtRemoveInputHook",
       "pyqtRestoreInputHook",
@@ -706,8 +852,6 @@
       "<em>\\1</em>",
       "<strong>\\1</strong>",
       "Parameters",
-      "\\*([^\\*]+)\\*",
-      "\\*\\*([^\\*]+)\\*\\*",
       "`([^`]+)`_",
       "``([^`]+)``",
       "``{_text}``",
@@ -757,7 +901,6 @@
       "ndisplay_button",
       "shape",
       "stride",
-      "Viewer",
       "napari:toggle_console_visibility"
     ],
     "napari/_qt/widgets/qt_viewer_dock_widget.py": [
@@ -812,7 +955,6 @@
     "napari/_vispy/experimental/tile_set.py": [],
     "napari/_vispy/experimental/tiled_image_visual.py": [
       "auto",
-      "bilinear",
       "color_transform",
       "linear",
       "nearest",
@@ -999,7 +1141,6 @@
       "white"
     ],
     "napari/_vispy/visuals/volume.py": [
-      "\n// the tolerance for testing equality of floats with floatEqual and floatNotEqual\nconst float equality_tolerance = 1e-8;\n\nbool floatNotEqual(float val1, float val2)\n{\n    // check if val1 and val2 are not equal\n    bool not_equal = abs(val1 - val2) > equality_tolerance;\n\n    return not_equal;\n}\n\nbool floatEqual(float val1, float val2)\n{\n    // check if val1 and val2 are equal\n    bool equal = abs(val1 - val2) < equality_tolerance;\n\n    return equal;\n}\n\n\n// the background value for the iso_categorical shader\nconst float categorical_bg_value = 0;\n\nint detectAdjacentBackground(float val_neg, float val_pos)\n{\n    // determine if the adjacent voxels along an axis are both background\n    int adjacent_bg = int( floatEqual(val_neg, categorical_bg_value) );\n    adjacent_bg = adjacent_bg * int( floatEqual(val_pos, categorical_bg_value) );\n    return adjacent_bg;\n}\n\nvec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)\n{\n    // Calculate color by incorporating ambient and diffuse lighting\n    vec4 color0 = $sample(u_volumetex, loc);\n    vec4 color1;\n    vec4 color2;\n    float val0 = colorToVal(color0);\n    float val1 = 0;\n    float val2 = 0;\n    int n_bg_borders = 0;\n\n    // View direction\n    vec3 V = normalize(view_ray);\n\n    // calculate normal vector from gradient\n    vec3 N; // normal\n    color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );\n    color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[0] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );\n    color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[1] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );\n    color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );\n    val1 = colorToVal(color1);\n    val2 = colorToVal(color2);\n    N[2] = val1 - val2;\n    n_bg_borders += detectAdjacentBackground(val1, val2);\n\n    // Normalize and flip normal so it points towards viewer\n    N = normalize(N);\n    float Nselect = float(dot(N,V) > 0.0);\n    N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;\n\n    // Init colors\n    vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 final_color;\n\n    // todo: allow multiple light, define lights on viewvox or subscene\n    int nlights = 1;\n    for (int i=0; i<nlights; i++)\n    {\n        // Get light direction (make sure to prevent zero devision)\n        vec3 L = normalize(view_ray);  //lightDirs[i];\n        float lightEnabled = float( length(L) > 0.0 );\n        L = normalize(L+(1.0-lightEnabled));\n\n        // Calculate lighting properties\n        float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );\n        if (n_bg_borders > 0) {\n            // to fix dim pixels due to poor normal estimation,\n            // we give a default lambda to pixels surrounded by background\n            lambertTerm = 0.5;\n        }\n\n        // Calculate mask\n        float mask1 = lightEnabled;\n\n        // Calculate colors\n        ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;\n        diffuse_color +=  mask1 * lambertTerm;\n    }\n\n    // Calculate final color by componing different components\n    final_color = betterColor * ( ambient_color + diffuse_color);\n    final_color.a = betterColor.a;\n\n    // Done\n    return final_color;\n}\n",
       "fragment",
       "iso_categorical",
       "void main()"
@@ -1315,9 +1456,7 @@
       "unlink_layers"
     ],
     "napari/components/scale_bar.py": [],
-    "napari/components/text_overlay.py": [
-      "color"
-    ],
+    "napari/components/text_overlay.py": [],
     "napari/components/viewer_model.py": [
       "Ready",
       "_mouse_drag_gen",
@@ -1336,7 +1475,6 @@
       "exclude",
       "gamma",
       "gray",
-      "ignore",
       "int",
       "interpolation",
       "iso_threshold",
@@ -1384,58 +1522,13 @@
       "__weakref__"
     ],
     "napari/layers/_layer_actions.py": [
-      " copy",
-      "Image",
-      "action",
-      "action_group",
       "colormap",
-      "description",
-      "enable_when",
       "image",
-      "int16",
-      "int32",
       "int64",
-      "int8",
       "labels",
       "max",
-      "mean",
-      "median",
-      "min",
       "name",
-      "napari:convert_to_image",
-      "napari:convert_to_labels",
-      "napari:duplicate_layer",
-      "napari:group:convert_type",
-      "napari:group:projections",
-      "napari:link_selected_layers",
-      "napari:max_projection",
-      "napari:mean_projection",
-      "napari:median_projection",
-      "napari:merge_stack",
-      "napari:min_projection",
-      "napari:select_linked_layers",
-      "napari:split_rgb",
-      "napari:split_stack",
-      "napari:std_projection",
-      "napari:sum_projection",
-      "napari:to_int16",
-      "napari:to_int32",
-      "napari:to_int64",
-      "napari:to_int8",
-      "napari:to_uint16",
-      "napari:to_uint32",
-      "napari:to_uint64",
-      "napari:to_uint8",
-      "napari:toggle_visibility",
-      "napari:unlink_selected_layers",
       "rendering",
-      "show_when",
-      "std",
-      "sum",
-      "uint16",
-      "uint32",
-      "uint64",
-      "uint8",
       "{layer} {mode}-proj"
     ],
     "napari/layers/_multiscale_data.py": [],
@@ -1578,7 +1671,6 @@
       "tile_size"
     ],
     "napari/layers/image/image.py": [
-      "Labels",
       "standard",
       "attenuation",
       "colormap",
@@ -1995,8 +2087,7 @@
       "out_of_slice_display"
     ],
     "napari/plugins/__init__.py": [
-      "{}: {}",
-      "builtins.yaml"
+      "{}: {}"
     ],
     "napari/plugins/_builtins.py": [
       ".csv",
@@ -2117,25 +2208,7 @@
       "Writing to {path}.  Hook caller: {hook_caller}"
     ],
     "napari/plugins/pypi.py": [
-      "<a href=\"/simple/(.+)\">({prefix}.*)</a>",
-      ">{name}-(.+).tar",
-      "Framework :: napari",
-      "UNKNOWN",
-      "author",
-      "class=\"package-snippet__name\">(.+)</span>",
-      "classifiers",
-      "entry_points\\s?=\\s?([^}]*napari.plugin[^}]*)}",
-      "home_page",
-      "https://pypi.org/pypi/{name}/json",
-      "https://pypi.org/search/?c={parse.quote_plus(classifier)}&page=",
-      "https://pypi.org/simple/",
-      "info",
-      "license",
-      "name",
-      "napari-plugin-engine",
-      "summary",
-      "version",
-      "{url}{page}"
+      "name"
     ],
     "napari/plugins/utils.py": [
       "napari_get_reader"
@@ -2400,12 +2473,10 @@
       "\"{cm}\""
     ],
     "napari/utils/colormaps/standardize_color.py": [
-      "#00000000",
       "O",
       "U",
       "f",
       "i",
-      "transparent",
       "u",
       "{v.lower()}ff",
       "|U9"
@@ -2635,9 +2706,7 @@
       "  - failed to load screen information {e}",
       "  - failed to load vispy",
       "  - screen {i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>",
-      "  - {plugin_name}{version_string}",
       "  - {sys_info_text}<br>",
-      "  None",
       "\"",
       "'",
       "-d",
@@ -2645,7 +2714,6 @@
       "-r",
       "/etc/os-release",
       ":",
-      ": {version}",
       "</b>",
       "<b>",
       "<b>Python</b>: {sys_version}<br>",
@@ -2656,7 +2724,6 @@
       "<br>",
       "<br>  - ",
       "<br><b>OpenGL:</b><br>",
-      "<br><b>Plugins</b>:",
       "<br><b>Screens:</b><br>",
       "=",
       "Dask",
@@ -2672,16 +2739,13 @@
       "VERSION",
       "VERSION_ID",
       "VisPy",
-      "builtins",
       "darwin",
       "dask",
       "linux",
       "lsb_release",
       "numpy",
-      "plugin_name",
       "scipy",
       "sw_vers",
-      "version",
       "vispy",
       "{data[\"NAME\"]} (no version)",
       "{data[\"NAME\"]} {data[\"VERSION\"]}",
@@ -2735,62 +2799,8 @@
       "\u2423"
     ],
     "napari/utils/io.py": [
-      "\"",
-      "([0-9]+)",
-      "*.*",
-      ",",
-      ".bmp",
-      ".bsdf",
-      ".bw",
-      ".eps",
-      ".gif",
-      ".icns",
-      ".ico",
-      ".im",
-      ".j2c",
-      ".j2k",
-      ".jfif",
-      ".jp2",
-      ".jpc",
-      ".jpe",
-      ".jpeg",
-      ".jpf",
-      ".jpg",
-      ".jpx",
-      ".lsm",
-      ".mpo",
-      ".npz",
-      ".pbm",
-      ".pcx",
-      ".pgm",
-      ".png",
-      ".ppm",
-      ".ps",
-      ".rgb",
-      ".rgba",
-      ".sgi",
-      ".stk",
-      ".tga",
       ".tif",
       ".tiff",
-      ".zarr",
-      ".zarray",
-      ".zgroup",
-      "any",
-      "axis-",
-      "axis-0",
-      "axis-1",
-      "float",
-      "index",
-      "input arrays must have the same shape",
-      "int",
-      "points",
-      "properties",
-      "shape-type",
-      "shape_type",
-      "shapes",
-      "vertex-index",
-      "w",
       "zlib",
       "{tifffile.__version__:!r}"
     ],
@@ -2977,20 +2987,12 @@
       "([vh])gradient\\((.+)\\)",
       ")",
       "-",
-      "background",
       "black",
-      "canvas",
-      "console",
-      "current",
       "dark",
       "default",
-      "foreground",
       "h",
-      "highlight",
-      "icon",
       "light",
       "native",
-      "primary",
       "qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, ",
       "qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, ",
       "rgb(",
@@ -3015,18 +3017,14 @@
       "rgb(90, 98, 108)",
       "rgb({red}, {green}, {blue})",
       "rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})",
-      "secondary",
       "stop: {n} {stop}",
       "syntax_style",
-      "text",
-      "warning",
       "white",
       "{{ %s }}",
       "{{\\s?darken\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       "{{\\s?lighten\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       "{{\\s?opacity\\((\\w+),?\\s?([-\\d]+)?\\)\\s?}}",
       " {', '.join(STYLE_MAP)}",
-      "name",
       "system"
     ],
     "napari/utils/transforms/__init__.py": [],
