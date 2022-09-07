@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Optional, Tuple
 
 from magicgui.widgets import FunctionGui
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
-if TYPE_CHECKING:
-    from .base.base import Layer
+from .base.base import Layer
 
 
 class Source(BaseModel):
@@ -38,6 +38,10 @@ class Source(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         frozen = True
+
+    @validator('parent')
+    def make_weakref(cls, layer: Layer):
+        return weakref.ref(layer)
 
     def __deepcopy__(self, memo):
         """Custom deepcopy implementation.
