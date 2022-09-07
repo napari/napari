@@ -5,6 +5,8 @@ Live tiffs
 Loads and Displays tiffs as they get generated in the specific directory.
 Trying to simulate the live display of data as it gets acquired by microscope.
 This script should be run together with live_tiffs_generator.py
+
+.. tags:: experimental
 """
 
 import os

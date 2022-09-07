@@ -6,6 +6,8 @@ Using dask array operations, one can dynamically take arbitrary slices
 and computations of a source dask array and display the results in napari.
 When the computation takes one or more parameters, one can tie a UI to
 them using magicgui.
+
+.. tags:: visualization-advanced
 """
 
 import numpy as np

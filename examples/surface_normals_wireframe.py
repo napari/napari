@@ -3,6 +3,8 @@ Surface normals wireframe
 =========================
 
 Display a 3D mesh with normals and wireframe
+
+.. tags:: experimental
 """
 
 from vispy.io import read_mesh, load_data_file

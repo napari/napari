@@ -75,15 +75,14 @@ def write_layers(
     ----------
     path : str
         The path (file, directory, url) to write.
-    layer_type : str
-        All lower-class name of the layer class to be written.
+    layers : list of Layers
+        The layers to write.
     plugin_name : str, optional
         Name of the plugin to write data with. If None then all plugins
         corresponding to appropriate hook specification will be looped
         through to find the first one that can write the data.
-    command_id : str, optional
-        npe2 command identifier that uniquely identifies the command to ivoke
-        to save layers. If specified, overrides, the plugin_name.
+    writer : WriterContribution, optional
+        Writer contribution to use to write given layers, autodetect if None.
 
     Returns
     -------

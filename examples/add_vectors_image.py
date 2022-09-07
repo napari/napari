@@ -7,6 +7,8 @@ Vector data is an array of shape (N, M, 2)
 Each vector position is defined by an (x-proj, y-proj) element where
 * x-proj and y-proj are the vector projections at each center
 * each vector is centered on a pixel of the NxM grid
+
+.. tags:: visualization-basic
 """
 
 import napari

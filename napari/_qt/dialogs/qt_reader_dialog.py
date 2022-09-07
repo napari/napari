@@ -28,6 +28,7 @@ class QtReaderDialog(QDialog):
         parent: QWidget = None,
         readers: Dict[str, str] = {},
         error_message: str = '',
+        persist_checked: bool = True,
     ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
@@ -39,9 +40,9 @@ class QtReaderDialog(QDialog):
         self._extension = os.path.splitext(pth)[1]
 
         self._reader_buttons = []
-        self.setup_ui(error_message, readers)
+        self.setup_ui(error_message, readers, persist_checked)
 
-    def setup_ui(self, error_message, readers):
+    def setup_ui(self, error_message, readers, persist_checked):
         """Build UI using given error_messsage and readers dict"""
 
         # add instruction label
@@ -84,7 +85,7 @@ class QtReaderDialog(QDialog):
                 )
 
             self.persist_checkbox = QCheckBox(warn_message)
-            self.persist_checkbox.toggle()
+            self.persist_checkbox.setChecked(persist_checked)
             layout.addWidget(self.persist_checkbox)
 
         layout.addWidget(self.btn_box)
@@ -131,6 +132,7 @@ def handle_gui_reading(
     stack: Union[bool, List[List[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
+    plugin_override: bool = False,
     **kwargs,
 ):
     """Present reader dialog to choose reader and open paths based on result.
@@ -155,6 +157,9 @@ def handle_gui_reading(
         name of plugin already tried, if any
     error : ReaderPluginError | None
         previous error raised in the process of opening
+    plugin_override: bool
+        True when user is forcing a plugin choice, otherwise False.
+        Dictates whether checkbox to remember choice is unchecked by default
     """
     _path = paths[0]
     readers = prepare_remaining_readers(paths, plugin_name, error)
@@ -164,6 +169,7 @@ def handle_gui_reading(
         pth=_path,
         error_message=error_message,
         readers=readers,
+        persist_checked=not plugin_override,
     )
     display_name, persist = readerDialog.get_user_choices()
     if display_name:

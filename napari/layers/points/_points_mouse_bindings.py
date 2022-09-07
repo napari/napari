@@ -47,6 +47,11 @@ def select(layer, event):
             layer.selected_data = set()
     layer._set_highlight()
 
+    # Set _drag_start value here to prevent an offset when mouse_move happens
+    # https://github.com/napari/napari/pull/4999
+    layer._set_drag_start(
+        layer.selected_data, layer.world_to_data(event.position)
+    )
     yield
 
     is_moving = False

@@ -20,7 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
@@ -198,9 +197,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
-        self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
-            throttled(self._update_status_bar_from_cursor, timeout=50)
+            self._update_status_bar_from_cursor
         )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
@@ -401,19 +399,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
-
-    def _on_cursor_position_change(self):
-        """Set the layer cursor position."""
-        with warnings.catch_warnings():
-            # Catch the deprecation warning on layer.position
-            warnings.filterwarnings(
-                'ignore',
-                message=str(
-                    trans._('layer.position is deprecated', deferred=True)
-                ),
-            )
-            for layer in self.layers:
-                layer.position = self.cursor.position
 
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.
@@ -668,7 +653,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             If a list then must be same length as the axis that is being
             expanded as channels.
         interpolation : str or list
-            Interpolation mode used by vispy. Must be one of our supported
+            Deprecated, to be removed in 0.6.0
+        interpolation2d : str or list
+            Interpolation mode used by vispy in 2D. Must be one of our supported
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        interpolation3d : str or list
+            Interpolation mode used by vispy in 3D. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
         rendering : str or list
