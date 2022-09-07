@@ -231,12 +231,12 @@ class QtLabelsControls(QtLayerControls):
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
-        button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
         button_row.addWidget(self.paint_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
+        button_row.addWidget(self.colormapUpdate)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
