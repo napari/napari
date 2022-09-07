@@ -838,7 +838,7 @@ class Points(Layer):
         if np.any(edge_width < 0):
             raise ValueError(
                 trans._(
-                    'edge_width must be > 0',
+                    'All edge_width must be > 0',
                     deferred=True,
                 )
             )
@@ -846,7 +846,7 @@ class Points(Layer):
         if self.edge_width_is_relative and np.any(edge_width > 1):
             raise ValueError(
                 trans._(
-                    'edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    'All edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
                     deferred=True,
                 )
             )
