@@ -43,6 +43,25 @@ def status_format(value):
         return str(value)
 
 
+def generate_layer_coords_status(position, value):
+    if position is not None:
+        full_coord = map(str, np.round(position).astype(int))
+        msg = f" [{' '.join(full_coord)}]"
+    else:
+        msg = ""
+
+    if value is not None:
+        if isinstance(value, tuple) and value != (None, None):
+            # it's a multiscale -> value = (data_level, value)
+            msg += f': {status_format(value[0])}'
+            if value[1] is not None:
+                msg += f', {status_format(value[1])}'
+        else:
+            # it's either a grayscale or rgb image (scalar or list)
+            msg += f': {status_format(value)}'
+    return msg
+
+
 def generate_layer_status(name, position, value):
     """Generate a status message based on the coordinates and value
 
@@ -60,9 +79,11 @@ def generate_layer_status(name, position, value):
     msg : string
         String containing a message that can be used as a status update.
     """
-    full_coord = np.round(position).astype(int)
-
-    msg = f'{name} {full_coord}'
+    if position is not None:
+        full_coord = map(str, np.round(position).astype(int))
+        msg = f"{name} [{' '.join(full_coord)}]"
+    else:
+        msg = f"{name}"
 
     if value is not None:
         if isinstance(value, tuple) and value != (None, None):

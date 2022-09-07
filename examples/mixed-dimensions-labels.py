@@ -1,4 +1,7 @@
 """
+Mixed dimensions labels
+=======================
+
 Overlay a 3D segmentation on a 4D time series.
 
 Sometimes, our data have mixed dimensionality. napari "right-aligns" the
@@ -8,6 +11,8 @@ we slice through the dataset, the segmentation stays unchanged, but is visible
 on every slice.
 
 .. [1] https://numpy.org/doc/stable/user/basics.broadcasting.html
+
+.. tags:: visualization-nD
 """
 
 from skimage.data import binary_blobs
@@ -27,4 +32,5 @@ image_layer = viewer.add_image(blobs3dt)
 labels_layer = viewer.add_labels(labels)
 viewer.dims.current_step = (5, 0, 0, 0)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

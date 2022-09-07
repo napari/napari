@@ -105,9 +105,10 @@ def test_receive_return_proxy_object():
         assert isinstance(layer, PublicOnlyProxy)
         # remove and add it back, should be fine
         add_layer = getattr(pv, 'add_layer')
+        viewer.layers.pop()
 
     add_layer(layer)
-    assert len(viewer.layers) == 2
+    assert len(viewer.layers) == 1
 
 
 def test_viewer_method():

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import functools
+import inspect
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -59,6 +61,69 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
         return func
 
     return _inner
+
+
+def register_layer_attr_action(
+    keymapprovider,
+    description: str,
+    attribute_name: str,
+    shortcuts=None,
+):
+    """
+    Convenient decorator to register an action with the current Layers.
+    This will get and restore attribute from function first argument.
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+
+    Parameters
+    ----------
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    attribute_name : str
+        The name of the attribute to be restored if key is hold over `get_settings().get_settings().application.hold_button_delay.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
+    """
+
+    def _handle(func):
+        sig = inspect.signature(func)
+        try:
+            first_variable_name = next(iter(sig.parameters))
+        except StopIteration:
+            raise RuntimeError(
+                "If actions has no arguments there is no way to know what to set the attribute to."
+            )
+
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            if args:
+                obj = args[0]
+            else:
+                obj = kwargs[first_variable_name]
+            prev_mode = getattr(obj, attribute_name)
+            func(*args, **kwargs)
+
+            def _callback():
+                setattr(obj, attribute_name, prev_mode)
+
+            return _callback
+
+        register_layer_action(keymapprovider, description, shortcuts)(_wrapper)
+        return func
+
+    return _handle
 
 
 def _nanmin(array):
@@ -501,7 +566,7 @@ def compute_multiscale_level(
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
-    # Find the highest resolution level allowed
+    # Find the highest level (lowest resolution) allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
     if len(locations) > 0:
         level = locations[-1][0]
@@ -807,7 +872,7 @@ class _FeatureTable:
         if size < current_size:
             self.remove(range(size, current_size))
         elif size > current_size:
-            to_append = pd.concat([self._defaults] * (size - current_size))
+            to_append = self._defaults.iloc[np.zeros(size - current_size)]
             self.append(to_append)
 
     def append(self, to_append: pd.DataFrame) -> None:
@@ -828,11 +893,6 @@ class _FeatureTable:
         indices : Any
             The indices of the rows to remove. Must be usable as the labels parameter
             to pandas.DataFrame.drop.
-
-        Returns
-        -------
-        pd.DataFrame
-            The resulting features table, which contain copies of the existing data.
         """
         self._values = self._values.drop(labels=indices, axis=0).reset_index(
             drop=True
@@ -912,6 +972,15 @@ def _validate_features(
     """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
+    elif isinstance(features, dict):
+        # Convert all array-like objects into a numpy array.
+        # This section was introduced due to an unexpected behavior when using
+        # a pandas Series with mixed indices as input.
+        # This way should handle all array-like objects correctly.
+        # See https://github.com/napari/napari/pull/4755 for more details.
+        features = {
+            key: np.array(value, copy=False) for key, value in features.items()
+        }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 

@@ -1,8 +1,14 @@
-"""Example showing how to accomplish a napari parameter sweep with magicgui.
+"""
+magicgui parameter sweep
+========================
+
+Example showing how to accomplish a napari parameter sweep with magicgui.
 
 It demonstrates:
 1. overriding the default widget type with a custom class
 2. the `auto_call` option, which calls the function whenever a parameter changes
+
+.. tags:: gui
 """
 import skimage.data
 import skimage.filters
@@ -12,7 +18,7 @@ from typing_extensions import Annotated
 # Define our gaussian_blur function.
 # Note that we can use forward references for the napari type annotations.
 # You can read more about them here:
-# https://www.python.org/dev/peps/pep-0484/#forward-references
+# https://peps.python.org/pep-0484/#forward-references
 # In this example, because we have already imported napari anyway, it doesn't
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
@@ -38,4 +44,5 @@ viewer.add_image(skimage.data.grass().astype("float"), name="grass")
 # Add our magic function to napari
 viewer.window.add_function_widget(gaussian_blur)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

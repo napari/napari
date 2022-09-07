@@ -2,6 +2,8 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+
+import contextlib
 import inspect
 import os
 import sys
@@ -16,6 +18,8 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Union,
+    cast,
 )
 from weakref import WeakValueDictionary
 
@@ -31,6 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from superqt.utils import QSignalThrottler
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -38,15 +43,16 @@ from ..settings import get_settings
 from ..utils import perf
 from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter, running_as_bundled_app
+from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_resources import get_stylesheet, register_napari_themes
+from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
@@ -58,6 +64,7 @@ from .widgets.qt_viewer_status_bar import ViewerStatusBar
 _sentinel = object()
 
 if TYPE_CHECKING:
+    from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
     from ..viewer import Viewer
@@ -82,7 +89,7 @@ class _QtMainWindow(QMainWindow):
         self._quit_app = False
 
         self.setWindowIcon(QIcon(self._window_icon))
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -126,11 +133,25 @@ class _QtMainWindow(QMainWindow):
                 self._qt_viewer.canvas._backend.screen_changed
             )
 
+        self.status_throttler = QSignalThrottler(parent=self)
+        self.status_throttler.setTimeout(50)
+
+        # In the GUI we expect lots of changes to the cursor position, so
+        # replace the direct connection with a throttled one.
+        with contextlib.suppress(IndexError):
+            viewer.cursor.events.position.disconnect(
+                viewer._update_status_bar_from_cursor
+            )
+        viewer.cursor.events.position.connect(self.status_throttler.throttle)
+        self.status_throttler.triggered.connect(
+            viewer._update_status_bar_from_cursor
+        )
+
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
 
     @classmethod
-    def current(cls):
+    def current(cls) -> Optional['_QtMainWindow']:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -138,27 +159,28 @@ class _QtMainWindow(QMainWindow):
         window = cls.current()
         return window._qt_viewer.viewer if window else None
 
-    def event(self, e):
+    def event(self, e: QEvent) -> bool:
         if (
-            e.type() == QEvent.ToolTip
+            e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
-            QToolTip.showText(
-                e.globalPos(), self._qt_viewer.viewer.tooltip.text, self
+            # globalPos is for Qt5 e.globalPosition().toPoint() is for QT6
+            # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
+            pnt = (
+                e.globalPosition().toPoint()
+                if hasattr(e, "globalPosition")
+                else e.globalPos()
             )
-        if e.type() == QEvent.Close:
+            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
+        if e.type() == QEvent.Type.Close:
             # when we close the MainWindow, remove it from the instances list
-            try:
+            with contextlib.suppress(ValueError):
                 _QtMainWindow._instances.remove(self)
-            except ValueError:
-                pass
-        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+        if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
-            try:
+            with contextlib.suppress(ValueError):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
-            except ValueError:
-                pass
         return super().event(e)
 
     def _load_window_settings(self):
@@ -174,7 +196,7 @@ class _QtMainWindow(QMainWindow):
             window_position = (self.x(), self.y())
         else:
             width, height = window_position
-            screen_geo = QApplication.desktop().geometry()
+            screen_geo = QApplication.primaryScreen().geometry()
             if screen_geo.width() < width or screen_geo.height() < height:
                 window_position = (self.x(), self.y())
 
@@ -221,7 +243,7 @@ class _QtMainWindow(QMainWindow):
         Symmetric to the 'get_window_settings' accessor.
         """
         self.setUpdatesEnabled(False)
-        self.setWindowState(Qt.WindowNoState)
+        self.setWindowState(Qt.WindowState.WindowNoState)
 
         if window_position:
             window_position = QPoint(*window_position)
@@ -234,11 +256,16 @@ class _QtMainWindow(QMainWindow):
         if window_state:
             self.restoreState(str_to_qbytearray(window_state))
 
+        # Toggling the console visibility is disabled when it is not
+        # available, so ensure that it is hidden.
+        if in_ipython():
+            self._qt_viewer.dockConsole.setVisible(False)
+
         if window_fullscreen:
-            self.setWindowState(Qt.WindowFullScreen)
+            self.setWindowState(Qt.WindowState.WindowFullScreen)
             self._maximized_flag = window_maximized
         elif window_maximized:
-            self.setWindowState(Qt.WindowMaximized)
+            self.setWindowState(Qt.WindowState.WindowMaximized)
 
         self.setUpdatesEnabled(True)
 
@@ -265,10 +292,19 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def close(self, quit_app=False):
+    def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        self._quit_app = quit_app
-        return super().close()
+        if hasattr(self.status_throttler, "_timer"):
+            self.status_throttler._timer.stop()
+        if not quit_app and not self._qt_viewer.viewer.layers:
+            return super().close()
+        if (
+            not confirm_need
+            or not get_settings().application.confirm_close_window
+            or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
+        ):
+            self._quit_app = quit_app
+            return super().close()
 
     def close_window(self):
         """Close active dialog or active window."""
@@ -284,18 +320,19 @@ class _QtMainWindow(QMainWindow):
 
             try:
                 parent = parent.parent()
-            except Exception:
+            except AttributeError:
                 parent = getattr(parent, "_parent", None)
 
     def show(self, block=False):
         super().show()
+        self._qt_viewer.setFocus()
         if block:
             self._ev = QEventLoop()
             self._ev.exec()
 
     def changeEvent(self, event):
         """Handle window state changes."""
-        if event.type() == QEvent.WindowStateChange:
+        if event.type() == QEvent.Type.WindowStateChange:
             # TODO: handle maximization issue. When double clicking on the
             # title bar on Mac the resizeEvent is called an varying amount
             # of times which makes it hard to track the original size before
@@ -338,12 +375,21 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if (
+            event.spontaneous()
+            and get_settings().application.confirm_close_window
+            and self._qt_viewer.viewer.layers
+            and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
+        ):
+            event.ignore()
+            return
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
-            if dock.isFloating():
+            if isinstance(dock, QWidget) and dock.isFloating():
                 dock.setFloating(False)
 
         self._save_current_window_settings()
@@ -353,7 +399,7 @@ class _QtMainWindow(QMainWindow):
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self.isFullScreen():
             self.showNormal()
-            for _i in range(5):
+            for _ in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
@@ -396,8 +442,7 @@ class Window:
         Help menu.
     main_menu : qtpy.QtWidgets.QMainWindow.menuBar
         Main menubar.
-    qt_viewer : QtViewer
-        Contained viewer widget.
+
     view_menu : qtpy.QtWidgets.QMenu
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
@@ -420,7 +465,6 @@ class Window:
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
         _themes.events.added.connect(self._add_theme)
-        _themes.events.added.connect(register_napari_themes)
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
@@ -447,14 +491,23 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
-        viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
+        viewer.events.status.connect(self._status_changed)
 
         if show:
             self.show()
+            # Ensure the controls dock uses the minimum height
+            self._qt_window.resizeDocks(
+                [
+                    self._qt_viewer.dockLayerControls,
+                    self._qt_viewer.dockLayerList,
+                ],
+                [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
+                Qt.Orientation.Vertical,
+            )
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -482,7 +535,7 @@ class Window:
         theme.events.text.connect(self._update_theme_no_event)
         theme.events.warning.connect(self._update_theme_no_event)
         theme.events.current.connect(self._update_theme_no_event)
-        theme.events.icon.connect(self._theme_icon_changed)
+        theme.events.icon.connect(self._update_theme_no_event)
         theme.events.canvas.connect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -506,7 +559,7 @@ class Window:
         theme.events.text.disconnect(self._update_theme_no_event)
         theme.events.warning.disconnect(self._update_theme_no_event)
         theme.events.current.disconnect(self._update_theme_no_event)
-        theme.events.icon.disconnect(self._theme_icon_changed)
+        theme.events.icon.disconnect(self._update_theme_no_event)
         theme.events.canvas.disconnect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -531,22 +584,6 @@ class Window:
         """Remove theme and disconnect events."""
         theme = event.value
         self._disconnect_theme(theme)
-
-    def _theme_icon_changed(self):
-        """Trigger rebuild of theme and all resources.
-
-        This is really only required whenever there are changes to the `icon`
-        attribute on the `Theme` model. Most other attributes simply update
-        the stylesheet.
-        """
-        from .._qt.qt_resources import (
-            _register_napari_resources,
-            _unregister_napari_resources,
-        )
-
-        _unregister_napari_resources()
-        _register_napari_resources(True, force_rebuild=True)
-        self._update_theme()
 
     @property
     def qt_viewer(self):
@@ -611,24 +648,16 @@ class Window:
         menubar is visible.
         """
         self.main_menu.setVisible(not self.main_menu.isVisible())
-        self._main_menu_shortcut.setEnabled(self.main_menu.isVisible())
+        self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
 
-    def _tooltip_visibility_toggle(self, value):
-        get_settings().appearance.layer_tooltip_visibility = value
-
-    def _tooltip_visibility_toggled(self, event):
-        self.tooltip_menu.setChecked(
-            get_settings().appearance.layer_tooltip_visibility
-        )
-
-    def _toggle_fullscreen(self, event=None):
+    def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
             self._qt_window.showNormal()
         else:
             self._qt_window.showFullScreen()
 
-    def _toggle_play(self, state=None):
+    def _toggle_play(self):
         """Toggle play."""
         if self._qt_viewer.dims.is_playing:
             self._qt_viewer.dims.stop()
@@ -661,8 +690,7 @@ class Window:
         Widget = None
         dock_kwargs = {}
 
-        result = _npe2.get_widget_contribution(plugin_name, widget_name)
-        if result:
+        if result := _npe2.get_widget_contribution(plugin_name, widget_name):
             Widget, widget_name = result
 
         if Widget is None:
@@ -682,7 +710,9 @@ class Window:
                 wdg = wdg._magic_widget
             return dock_widget, wdg
 
-        wdg = _instantiate_dock_widget(Widget, self._qt_viewer.viewer)
+        wdg = _instantiate_dock_widget(
+            Widget, cast('Viewer', self._qt_viewer.viewer)
+        )
 
         # Add dock widget
         dock_kwargs.pop('name', None)
@@ -714,7 +744,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: QWidget,
+        widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
         area: str = 'right',
@@ -760,11 +790,8 @@ class Window:
             `dock_widget` that can pass viewer events.
         """
         if not name:
-            try:
+            with contextlib.suppress(AttributeError):
                 name = widget.objectName()
-            except AttributeError:
-                pass
-
             name = name or trans._(
                 "Dock widget {number}",
                 number=self._unnamed_dockwidget_count,
@@ -847,7 +874,9 @@ class Window:
                 _wdg = current_dws_in_area + [dock_widget]
                 # add sizes to push lower widgets up
                 sizes = list(range(1, len(_wdg) * 4, 4))
-                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
+                self._qt_window.resizeDocks(
+                    _wdg, sizes, Qt.Orientation.Vertical
+                )
 
         if menu:
             action = dock_widget.toggleViewAction()
@@ -864,6 +893,9 @@ class Window:
 
             menu.addAction(action)
         # self.window_menu.addAction(action)
+
+        # see #3663, to fix #3624 more generally
+        dock_widget.setFloating(False)
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())
@@ -891,6 +923,7 @@ class Window:
             return
 
         if not isinstance(widget, QDockWidget):
+            dw: QDockWidget
             for dw in self._qt_window.findChildren(QDockWidget):
                 if dw.widget() is widget:
                     _dw: QDockWidget = dw
@@ -1002,6 +1035,39 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
+    def set_geometry(self, left, top, width, height):
+        """Set the geometry of the widget
+
+        Parameters
+        ----------
+        left : int
+            X coordinate of the upper left border.
+        top : int
+            Y coordinate of the upper left border.
+        width : int
+            Width of the rectangle shape of the window.
+        height : int
+            Height of the rectangle shape of the window.
+        """
+        self._qt_window.setGeometry(left, top, width, height)
+
+    def geometry(self) -> Tuple[int, int, int, int]:
+        """Get the geometry of the widget
+
+        Returns
+        -------
+        left : int
+            X coordinate of the upper left border.
+        top : int
+            Y coordinate of the upper left border.
+        width : int
+            Width of the rectangle shape of the window.
+        height : int
+            Height of the rectangle shape of the window.
+        """
+        rect = self._qt_window.geometry()
+        return rect.left(), rect.top(), rect.width(), rect.height()
+
     def show(self, *, block=False):
         """Resize, show, and bring forward the window.
 
@@ -1079,21 +1145,19 @@ class Window:
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
-        try:
+        with contextlib.suppress(AttributeError, RuntimeError):
             if event:
                 value = event.value
                 self._qt_viewer.viewer.theme = value
                 settings.appearance.theme = value
             else:
-                if settings.appearance.theme == "system":
-                    value = get_system_theme()
-                else:
-                    value = self._qt_viewer.viewer.theme
+                value = (
+                    get_system_theme()
+                    if settings.appearance.theme == "system"
+                    else self._qt_viewer.viewer.theme
+                )
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
-        except (AttributeError, RuntimeError):
-            # wrapped C/C++ object may have been deleted?
-            pass
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1103,7 +1167,16 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.value)
+        if isinstance(event.value, str):
+            self._status_bar.setStatusText(event.value)
+        else:
+            status_info = event.value
+            self._status_bar.setStatusText(
+                layer_base=status_info['layer_base'],
+                source_type=status_info['source_type'],
+                plugin=status_info['plugin'],
+                coordinates=status_info['coordinates'],
+            )
 
     def _title_changed(self, event):
         """Update window title.
@@ -1129,7 +1202,9 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
-    def _screenshot(self, flash=True, canvas_only=False) -> 'QImage':
+    def _screenshot(
+        self, size=None, scale=None, flash=True, canvas_only=False
+    ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1137,6 +1212,12 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        size : tuple (int, int)
+            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
         canvas_only : bool
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
@@ -1149,22 +1230,50 @@ class Window:
         from .utils import add_flash_animation
 
         if canvas_only:
-            img = self._qt_viewer.canvas.native.grabFramebuffer()
-            if flash:
-                add_flash_animation(self._qt_viewer._canvas_overlay)
+            canvas = self._qt_viewer.canvas
+            prev_size = canvas.size
+            if size is not None:
+                if len(size) != 2:
+                    raise ValueError(
+                        f'screenshot size must be 2 values, got {len(size)}'
+                    )
+                # Scale the requested size to account for HiDPI
+                size = tuple(
+                    dim / self._qt_window.devicePixelRatio() for dim in size
+                )
+                canvas.size = size[::-1]  # invert x ad y for vispy
+            if scale is not None:
+                # multiply canvas dimensions by the scale factor to get new size
+                canvas.size = tuple(dim * scale for dim in canvas.size)
+            try:
+                img = self._qt_viewer.canvas.native.grabFramebuffer()
+                if flash:
+                    add_flash_animation(self._qt_viewer._canvas_overlay)
+            finally:
+                # make sure we always go back to the right canvas size
+                if size is not None or scale is not None:
+                    canvas.size = prev_size
         else:
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
         return img
 
-    def screenshot(self, path=None, flash=True, canvas_only=False):
+    def screenshot(
+        self, path=None, size=None, scale=None, flash=True, canvas_only=False
+    ):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        size : tuple (int, int)
+            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
@@ -1179,7 +1288,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = QImg2array(self._screenshot(flash, canvas_only))
+        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
         return img
@@ -1204,14 +1313,11 @@ class Window:
         """Carry out various teardown tasks such as event disconnection."""
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
-        _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
         self._qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:
-            try:
+            with contextlib.suppress(RuntimeError):
                 menu._destroy()
-            except RuntimeError:
-                pass
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

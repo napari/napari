@@ -68,3 +68,7 @@ def isDark():
 
 def isLight():
     return theme() == 'Light'
+
+#def listener(callback: typing.Callable[[str], None]) -> None:
+def listener(callback):
+    raise NotImplementedError()

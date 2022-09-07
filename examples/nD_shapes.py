@@ -1,5 +1,10 @@
 """
-Display one 4-D image layer using the add_image API
+nD shapes
+=========
+
+Display one 4-D image layer using the ``add_image`` API
+
+.. tags:: visualization-nD
 """
 
 import numpy as np
@@ -50,4 +55,5 @@ print(
     f'labels_shape {labels.shape}, array_shape, {shape_array.shape}'
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

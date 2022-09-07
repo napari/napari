@@ -2,7 +2,7 @@
 
 In this tutorial, we will use napari to view and annotate a segmentation with bounding boxes and text labels. Here we perform a segmentation by setting an intensity threshold with Otsu's method, but this same approach could also be used to visualize the results of other image processing algorithms such as [object detection with neural networks](https://www.tensorflow.org/lite/models/object_detection/overview).
 
-![image: annotated bounding box](../assets/tutorials/annotated_bbox.png)
+![napari viewer showing eight roughly circular shapes. The shapes are classified according to circularity and have bounding boxes automatically generated around them showing a circularity parameter and an integer for a label.](../assets/tutorials/annotated_bbox.png)
 
 The completed code is shown below and also can be found in the napari examples directory ([`annotate_segmentation_with_text.py`](https://github.com/napari/napari/blob/master/examples/annotate_segmentation_with_text.py)).
 
@@ -113,7 +113,7 @@ bbox_rects = make_bbox([properties[f'bbox-{i}'] for i in range(4)])
 
 # specify the display parameters for the text
 text_parameters = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -186,7 +186,7 @@ label_layer = viewer.add_labels(label_image, name='segmentation')
 napari.run()
 ```
 
-![image: segmentation labels](../assets/tutorials/segmentation_labels.png)
+![napari viewer showing eight roughly circular shapes, each colored differently. In the left sidebar, the segmentation layer is highlighted.](../assets/tutorials/segmentation_labels.png)
 
 ## Analyzing the segmentation
 
@@ -315,7 +315,7 @@ Next, we will use the Shapes layer to overlay the bounding boxes for each detect
     )
 ```
 
-![image: segmentation bounding box](../assets/tutorials/segmentation_bbox.png)
+![napari viewer showing eight roughly circular shapes, each colored differently. Each shape has a bounding box automatically generated around it.](../assets/tutorials/segmentation_bbox.png)
 
 The first positional argument (`bbox_rects`) contains the bounding boxes we created above. We specified that the face of each bounding box has no color (`face_color='transparent'`) and the edges of the bounding box are green (`edge_color='green'`). Finally, the name of the layer displayed in the layer list in the napari GUI is `bounding box` (`name='bounding box'`).
 
@@ -347,7 +347,7 @@ Each bounding box can be annotated with text drawn from the layer `properties`. 
 
 ```python
 text_parameters = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -377,7 +377,7 @@ properties = {
 
 # specify the display parameters for the text
 text_kwargs = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -405,4 +405,4 @@ napari.run()
 ## Summary
 In this tutorial, we have used napari to view and annotate segmentation results.
 
-![image: annotated bounding box](../assets/tutorials/annotated_bbox.png)
+![napari viewer showing eight roughly circular shapes. The shapes are classified according to circularity and have bounding boxes automatically generated around them showing a circularity parameter and an integer for a label.](../assets/tutorials/annotated_bbox.png)

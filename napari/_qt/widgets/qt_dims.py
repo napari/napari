@@ -97,12 +97,8 @@ class QtDims(QWidget):
         self._resize_slice_labels()
 
     def _update_display(self):
-        """
-        Updates display for all sliders.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-        """
+        """Updates display for all sliders."""
+        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
@@ -121,12 +117,8 @@ class QtDims(QWidget):
         self._resize_slice_labels()
 
     def _update_nsliders(self):
-        """
-        Updates the number of sliders based on the number of dimensions.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-        """
+        """Updates the number of sliders based on the number of dimensions."""
+        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -217,6 +209,10 @@ class QtDims(QWidget):
         slider_widget = self.slider_widgets.pop(index)
         self._displayed_sliders.pop(index)
         self.layout().removeWidget(slider_widget)
+        # As we delete this widget later, callbacks with a weak reference
+        # to it may successfully grab the instance, but may be incompatible
+        # with other update state like dims.
+        self.dims.events.axis_labels.disconnect(slider_widget._pull_label)
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))

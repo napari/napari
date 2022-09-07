@@ -14,6 +14,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from importlib import import_module
+from pathlib import Path
+
+import qtgallery
+from jinja2.filters import FILTERS
 
 import napari
 
@@ -54,10 +59,17 @@ extensions = [
     #    "sphinx_comments",
     "sphinx_panels",
     "sphinx.ext.viewcode",
+    "sphinx_gallery.gen_gallery",
+    "sphinx_tags",
 ]
 
 external_toc_path = "_toc.yml"
-external_toc_exclude_missing = True
+external_toc_exclude_missing = False
+
+tags_create_tags = True
+tags_output_dir = "_tags"
+tags_overview_title = "Tags"
+tags_extension = ["md", "rst"]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -65,13 +77,26 @@ external_toc_exclude_missing = True
 # a list of builtin themes.
 #
 html_theme = 'napari'
+
+# Define the json_url for our version switcher.
+json_url = "https://napari.org/version_switcher.json"
+
+if version == "dev":
+    version_match = "latest"
+else:
+    version_match = release
+
 html_theme_options = {
     "external_links": [
         {"name": "napari hub", "url": "https://napari-hub.org"}
     ],
     "github_url": "https://github.com/napari/napari",
-    "navbar_start": ["navbar-logo", "navbar-project"],
-    "navbar_end": ["navbar-icon-links"],
+    "navbar_start": ["navbar-project"],
+    "navbar_end": ["version-switcher", "navbar-icon-links"],
+    "switcher": {
+        "json_url": "https://napari.org/version_switcher.json",
+        "version_match": version_match,
+    },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -81,6 +106,10 @@ html_static_path = ['_static']
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ''
 html_title = 'napari'
+
+html_css_files = [
+    'custom.css',
+]
 
 intersphinx_mapping = {
     'python': ['https://docs.python.org/3', None],
@@ -95,15 +124,14 @@ intersphinx_mapping = {
     ],
 }
 
-jupyter_cache = ''
-jupyter_execute_notebooks = 'auto'
-
 myst_enable_extensions = [
     'colon_fence',
     'dollarmath',
     'substitution',
     'tasklist',
 ]
+
+myst_heading_anchors = 3
 
 nb_output_stderr = 'show'
 
@@ -123,4 +151,60 @@ exclude_patterns = [
     '.DS_Store',
     '.jupyter_cache',
     'jupyter_execute',
+    'plugins/_*.md',
 ]
+
+napoleon_custom_sections = [('Events', 'params_style')]
+
+
+def reset_napari_theme(gallery_conf, fname):
+    from napari.settings import get_settings
+
+    settings = get_settings()
+    settings.appearance.theme = 'dark'
+    qtgallery.reset_qapp(gallery_conf, fname)
+
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',  # path to your example scripts
+    'gallery_dirs': 'gallery',  # path to where to save gallery generated output
+    'filename_pattern': '/*.py',
+    'ignore_pattern': 'README.rst|/*_.py',
+    'default_thumb_file': Path(__file__).parent.parent
+    / 'napari'
+    / 'resources'
+    / 'logo.png',
+    'plot_gallery': True,
+    'download_all_examples': False,
+    'min_reported_time': 10,
+    'only_warn_on_example_error': True,
+    'image_scrapers': (qtgallery.qtscraper,),
+    'reset_modules': (reset_napari_theme,),
+    'reference_url': {'napari': None},
+}
+
+
+def setup(app):
+    """Ignore .ipynb files.
+
+    Prevents sphinx from complaining about multiple files found for document
+    when generating the gallery.
+
+    """
+    app.registry.source_suffix.pop(".ipynb", None)
+
+
+def get_attributes(item, obj, modulename):
+    """Filters attributes to be used in autosummary.
+
+    Fixes import errors when documenting inherited attributes with autosummary.
+
+    """
+    module = import_module(modulename)
+    if hasattr(getattr(module, obj), item):
+        return f"~{obj}.{item}"
+    else:
+        return ""
+
+
+FILTERS["get_attributes"] = get_attributes

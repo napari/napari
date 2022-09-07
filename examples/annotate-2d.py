@@ -1,6 +1,11 @@
 """
-Display one points layer ontop of one image layer using the add_points and
-add_image APIs
+Annotate 2D
+===========
+
+Display one points layer ontop of one image layer using the ``add_points`` and
+``add_image`` APIs
+
+.. tags:: analysis
 """
 
 import numpy as np
@@ -14,7 +19,8 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 points = viewer.add_points(np.zeros((0, 2)))
 points.mode = 'add'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
 
-print("you clicked on:")
-print(points.data)
+    print("you clicked on:")
+    print(points.data)

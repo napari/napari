@@ -43,8 +43,8 @@ to adjust the layer opacity between 0, fully invisible and 1, fully visible.
 globally to all the points in the layer, and so you don't need to have any
 points selected for it to have an effect.
 * For the [shapes layer](napari.layers.Shapes), the opacity value applies
-individually to each shape in the layer, and so you must have shapes selected
-for it to have an effect.
+globally to all shapes in the layer, and so you don't need to have any
+shape selected for it to have an effect.
 * For the [vectors layer](napari.layers.Vectors), the opacity value applies
 globally to all the vectors in the layer.
 * For the [tracks layer](napari.layers.Tracks), the opacity value applies globally to all the tracks in the layer.
@@ -69,7 +69,7 @@ colors.
 
 For example:
 
-![image: blending](./images/blending.png)
+![napari viewer with an image of a cell. Layer controls are open in the left sidebar with the blending set to additive.](./images/blending.png)
 
 ## 3D rendering of images
 
@@ -79,7 +79,7 @@ or 3 less than the total number of dimensions of the layer, allowing you to
 browse volumetric timeseries data and other high dimensional data. See for
 example these cells undergoing mitosis in this volumetric timeseries:
 
-![image: mitosis](./images/mitosis.gif)
+![napari viewer with an image of a cell undergoing mitosis. The scroll bar below the canvas controls the timeseries, allowing different stages of mitosis to be visible.](./images/mitosis.webm)
 
 ```{note}
 Switching to 3D mode for a very large data set could trigger computation that
@@ -105,7 +105,7 @@ distances from the camera according to a maximum intensity projection to create
 the 2D image that is then displayed on the screen. This mode works well for many
 biological images such as these cells growing in culture:
 
-![image: rendering](./images/rendering.png)
+![napari viewer with an image of cells in a culture. Layer controls are open in the left sidebar and rendering set to mip.](./images/rendering.png)
 
 When viewing 2D slices the rendering mode has no effect.
 
@@ -123,6 +123,19 @@ the layer multiplicatively according to the scale values (one for each
 dimension). This property can be particularly useful for viewing anisotropic
 volumes where the size of the voxel in the z dimension might be different then
 the size in the x and y dimensions.
+
+In napari, you can scale the layers when creating an image layer or for an
+existing layer using the `scale` as a keyword argument or property respectively.
+
+```python
+# scaling while creating the image layer
+napari.view_image(retina, name='retina', scale=[1,10,1,1])
+# scaling an existing layer
+viewer.layers['retina'].scale = [1,10,1,1]
+```
+
+![napari viewer with an image where all layers are scaled equally; when rotated, the image appears flat. By using console below the canvas and applying a scale factor to one of the dimensions, the image's volume becomes apparent.](images/scaling.webm)
+
 
 ## Translating layers
 

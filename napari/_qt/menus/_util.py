@@ -1,3 +1,4 @@
+import contextlib
 from typing import TYPE_CHECKING, Callable, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 
     # note: TypedDict still doesn't have the concept of "optional keys"
     # so we add in generic `dict` for type checking.
-    # see PEP655: https://www.python.org/dev/peps/pep-0655/
+    # see PEP655: https://peps.python.org/pep-0655/
     MenuItem = Union[MenuDict, ActionDict, dict]
 
 
@@ -87,7 +88,10 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
             continue
         action: QAction = menu.addAction(ax['text'])
         if 'slot' in ax:
-            action.triggered.connect(ax['slot'])
+            if ax.get("checkable"):
+                action.toggled.connect(ax['slot'])
+            else:
+                action.triggered.connect(ax['slot'])
         action.setShortcut(ax.get('shortcut', ''))
         action.setStatusTip(ax.get('statusTip', ''))
         if 'menuRole' in ax:
@@ -122,18 +126,14 @@ class NapariMenu(QMenu):
         for ax in self.actions():
             ax.setData(None)
 
-            try:
+            with contextlib.suppress(AttributeError):
                 ax._destroy()
-            except AttributeError:
-                pass
-
         if self in self._INSTANCES:
             self._INSTANCES.remove(self)
 
     def update(self, event=None):
         """Update action enabled/disabled state based on action data."""
         for ax in self.actions():
-            data = ax.data()
-            if data:
+            if data := ax.data():
                 enabled_func = data.get('enabled', lambda event: True)
                 ax.setEnabled(bool(enabled_func(event)))

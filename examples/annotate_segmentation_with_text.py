@@ -1,6 +1,11 @@
 """
+Annotate segmentation with text
+===============================
+
 Perform a segmentation and annotate the results with
 bounding boxes and text
+
+.. tags:: analysis
 """
 import numpy as np
 from skimage import data
@@ -91,20 +96,20 @@ def circularity(perimeter, area):
 image = data.coins()[50:-50, 50:-50]
 label_image = segment(image)
 
-# create the properties dictionary
-properties = regionprops_table(
+# create the features dictionary
+features = regionprops_table(
     label_image, properties=('label', 'bbox', 'perimeter', 'area')
 )
-properties['circularity'] = circularity(
-    properties['perimeter'], properties['area']
+features['circularity'] = circularity(
+    features['perimeter'], features['area']
 )
 
 # create the bounding box rectangles
-bbox_rects = make_bbox([properties[f'bbox-{i}'] for i in range(4)])
+bbox_rects = make_bbox([features[f'bbox-{i}'] for i in range(4)])
 
 # specify the display parameters for the text
 text_parameters = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -121,9 +126,10 @@ shapes_layer = viewer.add_shapes(
     bbox_rects,
     face_color='transparent',
     edge_color='green',
-    properties=properties,
+    features=features,
     text=text_parameters,
     name='bounding box',
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

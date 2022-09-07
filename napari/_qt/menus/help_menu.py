@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 try:
     from napari_error_reporter import ask_opt_in
-except ImportError:
+except ModuleNotFoundError:
     ask_opt_in = None
 
 

@@ -4,6 +4,7 @@ import pytest
 from napari.utils.transforms.transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
+    is_diagonal,
     is_matrix_lower_triangular,
     is_matrix_triangular,
     is_matrix_upper_triangular,
@@ -81,3 +82,18 @@ def test_is_matrix_triangular():
     assert is_matrix_triangular(upper)
     assert is_matrix_triangular(lower)
     assert not is_matrix_triangular(full)
+
+
+def test_is_diagonal():
+    assert is_diagonal(np.eye(3))
+    assert not is_diagonal(np.asarray([[0, 1, 0], [1, 0, 0], [0, 0, 1]]))
+
+    # affine with tiny off-diagonal elements will be considered diagonal
+    m = np.full((3, 3), 1e-10)
+    m[0, 0] = 1
+    m[1, 1] = 1
+    m[2, 2] = 1
+    assert is_diagonal(m)
+
+    # will be considered non-diagonal with stricter tolerance
+    assert not is_diagonal(m, tol=1e-12)

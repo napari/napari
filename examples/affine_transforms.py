@@ -1,5 +1,10 @@
 """
+Affine transforms
+=================
+
 Display an image and its corners before and after an affine transform
+
+.. tags:: visualization-advanced
 """
 import numpy as np
 import napari
@@ -14,7 +19,6 @@ affine = np.array([[1, -1, 4], [2, 3, 2], [0, 0, 1]])
 # Define the corners of the image, including in homogeneous space
 corners = np.array([[0, 0], [4, 0], [0, 4], [4, 4]])
 corners_h = np.concatenate([corners, np.ones((4, 1))], axis=1)
-
 
 viewer = napari.Viewer()
 
@@ -38,4 +42,5 @@ viewer.add_image(scipy_affine, colormap='green', opacity=.5, name='scipy')
 # Reset the view
 viewer.reset_view()
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

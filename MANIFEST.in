@@ -1,7 +1,9 @@
 include LICENSE
+include *.cff
 graft napari/_vendor
 recursive-include napari *.pyi
 recursive-include napari _tests/*.py
+recursive-include napari_builtins _tests/*.py
 recursive-include napari *.pyi
 recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
 recursive-include napari *.yaml
@@ -16,5 +18,8 @@ recursive-exclude napari *.pyc
 exclude napari/benchmarks/*
 recursive-exclude resources *
 recursive-exclude binder *
-exclude bundle.py
+exclude bundle.py bundle_conda.py
 exclude dockerfile
+exclude EULA.md
+exclude Singularity
+

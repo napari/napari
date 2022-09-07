@@ -20,6 +20,8 @@ class PluginsMenu(NapariMenu):
 
         from ...plugins import plugin_manager
 
+        _npe2.index_npe1_adapters()
+
         plugin_manager.discover_widgets()
         plugin_manager.events.disabled.connect(
             self._remove_unregistered_widget
@@ -94,13 +96,9 @@ class PluginsMenu(NapariMenu):
                     return
 
                 if hook_type == 'dock':
-                    dock_widget, _w = self._win.add_plugin_dock_widget(*key)
+                    self._win.add_plugin_dock_widget(*key)
                 else:
-                    dock_widget = self._win._add_plugin_function_widget(*key)
-
-                # Fixes https://github.com/napari/napari/issues/3624
-                dock_widget.setFloating(True)
-                dock_widget.setFloating(False)
+                    self._win._add_plugin_function_widget(*key)
 
             action.setCheckable(True)
             # check that this wasn't added to the menu already

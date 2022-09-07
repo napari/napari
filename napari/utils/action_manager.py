@@ -4,15 +4,15 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
+from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from ..utils.events import EmitterGroup
-from ._injection import inject_napari_dependencies
 from .interactions import Shortcut
 from .translations import trans
 
 if TYPE_CHECKING:
-    from typing_extensions import Protocol
+    from typing import Protocol
 
     from .key_bindings import KeymapProvider
 
@@ -46,7 +46,9 @@ class Action:
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
-        return inject_napari_dependencies(self.command)
+        from .._app_model import get_app
+
+        return get_app().injection_store.inject(self.command)
 
 
 class ActionManager:
@@ -196,13 +198,23 @@ class ActionManager:
         calling `bind_button` can be done before an action with the
         corresponding name is registered, in which case the effect will be
         delayed until the corresponding action is registered.
+
+        Note: this method cannot be used with generator functions,
+        see https://github.com/napari/napari/issues/4164 for details.
         """
         self._validate_action_name(name)
+
+        if action := self._actions.get(name):
+            if isgeneratorfunction(action):
+                raise ValueError(
+                    'bind_button cannot be used with generator functions'
+                )
+
         button.clicked.connect(lambda: self.trigger(name))
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
-                button.setToolTip(event.tooltip + ' ' + extra_tooltip_text)
+                button.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)
@@ -315,7 +327,7 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_layer_actions(self, layer):
+    def _get_layer_actions(self, layer) -> dict:
         """
         Get actions filtered by the given layers.
 

@@ -18,6 +18,14 @@ ItemType = TypeVar("ItemType")
 ItemRole = Qt.UserRole
 SortRole = Qt.UserRole + 1
 
+_BASE_FLAGS = (
+    Qt.ItemFlag.ItemIsSelectable
+    | Qt.ItemFlag.ItemIsEditable
+    | Qt.ItemFlag.ItemIsUserCheckable
+    | Qt.ItemFlag.ItemIsDragEnabled
+    | Qt.ItemFlag.ItemIsEnabled
+)
+
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     """A QAbstractItemModel desigend to work with `SelectableEventedList`.
@@ -110,24 +118,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
         See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         """
-        if (
-            not index.isValid()
-            or index.row() >= len(self._root)
-            or index.model() is not self
-        ):
+        if not index.isValid() or index.model() is not self:
             # we allow drops outside the items
-            return Qt.ItemIsDropEnabled
-
-        base_flags = (
-            Qt.ItemIsSelectable
-            | Qt.ItemIsEditable
-            | Qt.ItemIsUserCheckable
-            | Qt.ItemIsDragEnabled
-            | Qt.ItemIsEnabled
-        )
+            return Qt.ItemFlag.ItemIsDropEnabled
         if isinstance(self.getItem(index), MutableSequence):
-            return base_flags | Qt.ItemIsDropEnabled
-        return base_flags | Qt.ItemNeverHasChildren
+            return _BASE_FLAGS | Qt.ItemFlag.ItemIsDropEnabled
+        return _BASE_FLAGS | Qt.ItemFlag.ItemNeverHasChildren
 
     def columnCount(self, parent: QModelIndex) -> int:
         """Return the number of columns for the children of the given `parent`.
@@ -136,19 +132,21 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return 1
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: QModelIndex = None) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number
         of children of parent.
         """
+        if parent is None:
+            parent = QModelIndex()
         try:
             return len(self.getItem(parent))
         except TypeError:
             return 0
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
+        self, row: int, column: int = 0, parent: QModelIndex = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
@@ -173,6 +171,9 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         #
         # Unfortunately, all of those come at a cost... as this is a very
         # frequently called function :/
+
+        if parent is None:
+            parent = QModelIndex()
 
         return (
             self.createIndex(row, column, self.getItem(parent)[row])

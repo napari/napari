@@ -69,6 +69,15 @@ def test_viewer_open():
     assert all(lay.source == expected_source for lay in viewer.layers)
 
 
+def test_viewer_open_no_plugin(tmp_path):
+    viewer = ViewerModel()
+    fname = tmp_path / 'gibberish.gbrsh'
+    fname.touch()
+    with pytest.raises(ValueError, match='No plugin found capable of reading'):
+        # will default to builtins
+        viewer.open(fname)
+
+
 plugin_returns = [
     ([(img, {'name': 'foo'})], {'name': 'bar'}),
     ([(img, {'blending': 'additive'}), (img,)], {'blending': 'translucent'}),

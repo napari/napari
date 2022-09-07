@@ -22,7 +22,7 @@ def register_viewer_action(description):
 
     def _inner(func):
         action_manager.register_action(
-            name='napari:' + func.__name__,
+            name=f'napari:{func.__name__}',
             command=func,
             description=description,
             keymapprovider=ViewerModel,
@@ -108,7 +108,7 @@ def roll_axes(viewer: Viewer):
     ),
 )
 def transpose_axes(viewer: Viewer):
-    viewer.dims._transpose()
+    viewer.dims.transpose()
 
 
 @register_viewer_action(trans._("Toggle grid mode."))
@@ -121,6 +121,10 @@ def toggle_selected_visibility(viewer: Viewer):
     viewer.layers.toggle_selected_visibility()
 
 
-@register_viewer_action(trans._("Show/Hide IPython console"))
+@register_viewer_action(
+    trans._(
+        "Show/Hide IPython console (only available when napari started as standalone application)"
+    )
+)
 def toggle_console_visibility(viewer: Viewer):
     viewer.window._qt_viewer.toggle_console_visibility()

@@ -81,7 +81,7 @@ def test_interaction_box_dim_change(make_napari_viewer):
         bottom_right_corner=[6, 30],
     )
 
-    viewer.dims._transpose()
+    viewer.dims.transpose()
 
     check_corners_of_axis_aligned_interaction_box(
         viewer.overlays.interaction_box._box,
@@ -138,3 +138,17 @@ def test_transform_coupling(make_napari_viewer):
 
     viewer.overlays.interaction_box.transform_drag = Affine(scale=[2.0, 2.0])
     np.testing.assert_almost_equal(layer.affine.scale, [0.5, 0.5, 2.0, 2.0])
+
+
+def test_interaction_box_changes_with_layer_transform(make_napari_viewer):
+    viewer = make_napari_viewer()
+    layer = viewer.add_image(np.random.random((28, 28)))
+    layer.mode = 'transform'
+    initial_selection_box = np.copy(
+        viewer.overlays.interaction_box.transform.scale
+    )
+    layer.scale = [5, 5]
+    np.testing.assert_almost_equal(
+        initial_selection_box * 5,
+        viewer.overlays.interaction_box.transform.scale,
+    )

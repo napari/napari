@@ -16,7 +16,8 @@ kernelspec:
 In this document, you will learn how to use the `napari` image layer, including
 the types of images that can be displayed, and how to set properties like the
 contrast, opacity, colormaps and blending mode. You will also understand how
-to add and manipulate a variety of different types of images both from the
+to add and manipulate a variety of different types of images both from the GUI
+and from the console.
 
 ## A simple example
 
@@ -40,7 +41,7 @@ viewer = napari.view_image(cells, colormap='magma')
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="Cells")
 ```
 
 ```{code-cell} python
@@ -72,7 +73,7 @@ object that you can index into and when you call
 [`np.asarray`](https://numpy.org/doc/stable/reference/generated/numpy.asarray.html)
 on it you get back a numpy array.
 
-The great thing about napari support array-like objects is that you get to keep
+The great thing about napari support of array-like objects is that you get to keep
 on using your favorite array libraries without worrying about any conversions as
 we'll handle all of that for you.
 
@@ -84,7 +85,7 @@ napari to seamlessly browse enormous datasets that are loaded in the right way.
 For example, here we are browsing over 100GB of lattice lightsheet data stored
 in a zarr file:
 
-![image: lattice light sheet microscopy](../../images/LLSM.gif)
+![image: lattice light sheet microscopy](../../images/LLSM.webm)
 
 ## Multiscale images
 
@@ -101,7 +102,7 @@ viewed in 2D or incredibly large 3D images when viewed in 3D. For example this
 easily browsed as at each moment in time we only load the level of the
 multiscale image and the part of the image that needs to be displayed:
 
-![image: pathology](../../images/pathology.gif)
+![image: pathology](../../images/pathology.webm)
 
 This example had precomputed multiscale images stored in a zarr file, which is
 best for performance. If, however you don't have a precomputed multiscale image
@@ -159,7 +160,7 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="napari viewer with the left sidebar layer controls and an image of astronaut Eileen Collins. In the layer controls, the colormap is fixed to RGB")
 ```
 
 ```{code-cell} python
@@ -223,7 +224,7 @@ viewer = napari.view_image(image, colormap=('diverging', cmap))
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="napari viewer with colormap example using random data")
 ```
 
 Note in this example how we passed the colormap keyword argument as a tuple
@@ -266,7 +267,7 @@ viewer.layers['moon'].contrast_limits=(100, 175)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A viewer where the contrast limits have been adjusted")
 ```
 
 ```{code-cell} python
@@ -292,3 +293,13 @@ can.
 
 Currently if you pass contrast limits as a keyword argument to a layer then full
 extent of the contrast limits range slider will be set to those values.
+
+## Saving without image compression
+
+When saving an image layer, lossless zlib compression is applied by default. 
+ To save with a different level of compression, consider using 
+ [imageio.imwrite](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html).  
+Adjusting compression can be accomplished by including the appropriate kwargs 
+as outlined in the following locations for 
+[tiff](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.plugins.tifffile.html#metadata-for-writing) or 
+[png](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png) files. 

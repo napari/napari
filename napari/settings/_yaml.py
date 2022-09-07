@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Type
 from pydantic import BaseModel
 from yaml import SafeDumper, dump_all
 
+from ._fields import Version
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import AbstractSet, Any, Dict, Optional, TypeVar, Union
@@ -37,6 +39,9 @@ YamlDumper.add_multi_representer(
 # and pydantic will make sure that incoming sets are converted to sets
 YamlDumper.add_representer(
     set, lambda dumper, data: dumper.represent_list(data)
+)
+YamlDumper.add_representer(
+    Version, lambda dumper, data: dumper.represent_str(str(data))
 )
 
 
@@ -80,5 +85,6 @@ class PydanticYamlMixin(BaseModel):
     def _yaml_dump(
         self, data, dumper: Optional[Type[SafeDumper]] = None, **kw
     ) -> str:
+        kw.setdefault('sort_keys', False)
         dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
         return dump_all([data], Dumper=dumper, **kw)

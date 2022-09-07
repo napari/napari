@@ -18,8 +18,8 @@ if len(sys.argv) <= 1:
 
 try:
     import imagej
-except ImportError:
-    raise ImportError("""This example uses ImageJ but pyimagej is not
+except ModuleNotFoundError:
+    raise ModuleNotFoundError("""This example uses ImageJ but pyimagej is not
     installed. To install try 'conda install pyimagej'.""")
 
 print('--> Initializing imagej')

@@ -7,6 +7,7 @@ from napari.utils.geometry import (
     distance_between_point_and_line_3d,
     face_coordinate_from_bounding_box,
     find_front_back_face,
+    find_nearest_triangle_intersection,
     inside_triangles,
     intersect_line_with_axis_aligned_bounding_box_3d,
     intersect_line_with_axis_aligned_plane,
@@ -482,3 +483,61 @@ def test_line_in_triangles_3d():
     )
     in_triangle = line_in_triangles_3d(line_point, line_direction, triangles)
     np.testing.assert_array_equal(in_triangle, [True, False])
+
+
+@pytest.mark.parametrize(
+    "ray_start,ray_direction,expected_index,expected_position",
+    [
+        ([0, 1, 1], [1, 0, 0], 0, [3, 1, 1]),
+        ([6, 1, 1], [-1, 0, 0], 1, [5, 1, 1]),
+    ],
+)
+def test_find_nearest_triangle_intersection(
+    ray_start, ray_direction, expected_index, expected_position
+):
+    triangles = np.array(
+        [
+            [[3, 0, 0], [3, 0, 10], [3, 10, 0]],
+            [[5, 0, 0], [5, 0, 10], [5, 10, 0]],
+            [
+                [2, 50, 50],
+                [2, 50, 100],
+                [2, 100, 50],
+            ],
+        ]
+    )
+    index, intersection = find_nearest_triangle_intersection(
+        ray_position=ray_start,
+        ray_direction=ray_direction,
+        triangles=triangles,
+    )
+
+    assert index == expected_index
+    np.testing.assert_allclose(intersection, expected_position)
+
+
+def test_find_nearest_triangle_intersection_no_intersection():
+    """Test find_nearest_triangle_intersection() when there is not intersection"""
+    triangles = np.array(
+        [
+            [[3, 0, 0], [3, 0, 10], [3, 10, 0]],
+            [[5, 0, 0], [5, 0, 10], [5, 10, 0]],
+            [
+                [2, 50, 50],
+                [2, 50, 100],
+                [2, 100, 50],
+            ],
+        ]
+    )
+
+    ray_start = np.array([0, -10, -10])
+    ray_direction = np.array([-1, 0, 0])
+
+    index, intersection = find_nearest_triangle_intersection(
+        ray_position=ray_start,
+        ray_direction=ray_direction,
+        triangles=triangles,
+    )
+
+    assert index is None
+    assert intersection is None

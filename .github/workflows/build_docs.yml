@@ -20,7 +20,7 @@ jobs:
         # This is a bundling of the pattern in this comment:
         # https://github.com/actions/checkout/issues/165#issuecomment-657673315
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -33,6 +33,9 @@ jobs:
 
       - name: Build Docs
         uses: GabrielBB/xvfb-action@v1
+        env:
+          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+          GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
         with:
           run: make docs
 

@@ -48,9 +48,9 @@ theme:
 ## Multi-dimensional image viewer for python
 
 [![image.sc forum](https://img.shields.io/badge/dynamic/json.svg?label=forum&url=https%3A%2F%2Fforum.image.sc%2Ftags%2Fnapari.json&query=%24.topic_list.tags.0.topic_count&colorB=brightgreen&suffix=%20topics&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAABPklEQVR42m3SyyqFURTA8Y2BER0TDyExZ+aSPIKUlPIITFzKeQWXwhBlQrmFgUzMMFLKZeguBu5y+//17dP3nc5vuPdee6299gohUYYaDGOyyACq4JmQVoFujOMR77hNfOAGM+hBOQqB9TjHD36xhAa04RCuuXeKOvwHVWIKL9jCK2bRiV284QgL8MwEjAneeo9VNOEaBhzALGtoRy02cIcWhE34jj5YxgW+E5Z4iTPkMYpPLCNY3hdOYEfNbKYdmNngZ1jyEzw7h7AIb3fRTQ95OAZ6yQpGYHMMtOTgouktYwxuXsHgWLLl+4x++Kx1FJrjLTagA77bTPvYgw1rRqY56e+w7GNYsqX6JfPwi7aR+Y5SA+BXtKIRfkfJAYgj14tpOF6+I46c4/cAM3UhM3JxyKsxiOIhH0IO6SH/A1Kb1WBeUjbkAAAAAElFTkSuQmCC)](https://forum.image.sc/tag/napari)
-[![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/master/LICENSE)
+[![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/main/LICENSE)
 [![Build Status](https://api.cirrus-ci.com/github/Napari/napari.svg)](https://cirrus-ci.com/napari/napari)
-[![codecov](https://codecov.io/gh/napari/napari/branch/master/graph/badge.svg)](https://codecov.io/gh/napari/napari)
+[![codecov](https://codecov.io/gh/napari/napari/branch/main/graph/badge.svg)](https://codecov.io/gh/napari/napari)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
@@ -81,10 +81,10 @@ versions as we release them, and contribute ideas and code.
 ### Which distribution to install
 
 If you want to contribute back to the napari codebase, you should install from
-source code: see the [from source](#from-source) section.
+source code: see the [from source](from-source) section.
 
 If you only wish to use napari as GUI app (and not from python code), the
-[bundled app](./tutorials/fundamentals/installation#installing-as-a-bundled-app)
+[bundled app](./tutorials/fundamentals/installation.md#install-as-a-bundled-app)
 is the easiest way to install, it does not require having python pre-installed.
 
 If you are using napari from Python to programmatically interact with the app,
@@ -108,7 +108,7 @@ napari into a clean virtual environment using an environment manager like
 [venv](https://docs.python.org/3/library/venv.html).  For example, with `conda`:
 
 ```sh
-conda create -y -n napari-env python=3.9
+conda create -y -n napari-env -c conda-forge python=3.9
 conda activate napari-env
 pip install "napari[all]"
 ```
@@ -120,6 +120,7 @@ pip install "napari[all]"
 conda install -c conda-forge napari
 ```
 
+(from-source)=
 ### Current development branch from github
 
 To install the current `main` branch on github (which will usually be ahead
@@ -194,8 +195,9 @@ napari.run()  # start the event loop and show viewer
 
 ## Features
 
-Check out the scripts in our `examples` folder to see some of the functionality
-we're developing!
+Check out the scripts in our
+[`examples` folder](https://github.com/napari/napari/tree/main/examples)
+to see some of the functionality we're developing!
 
 **napari** supports six main different layer types, `Image`, `Labels`, `Points`,
 `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type,

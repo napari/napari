@@ -466,3 +466,27 @@ def is_matrix_triangular(matrix):
     return is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
         matrix
     )
+
+
+def is_diagonal(matrix, tol=1e-8):
+    """Determine whether a matrix is diagonal up to some tolerance.
+
+    Parameters
+    ----------
+    matrix : 2-D array
+        The matrix to test.
+    tol : float, optional
+        Consider any entries with magnitude < `tol` as 0.
+
+    Returns
+    -------
+    is_diag : bool
+        True if matrix is diagonal, False otherwise.
+    """
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("matrix must be square")
+    non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
+    if tol == 0:
+        return np.count_nonzero(non_diag) == 0
+    else:
+        return np.max(np.abs(non_diag)) <= tol

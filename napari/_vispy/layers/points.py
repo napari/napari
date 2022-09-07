@@ -31,7 +31,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
         self.layer.events.shading.connect(self._on_shading_change)
-        self.layer.events._antialias.connect(self._on_antialias_change)
+        self.layer.events.antialiasing.connect(self._on_antialiasing_change)
         self.layer.events.experimental_canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
@@ -140,10 +140,13 @@ class VispyPointsLayer(VispyBaseLayer):
         return text_node
 
     def _on_text_change(self, event=None):
-        if event is not None and event.type == 'blending':
-            self._on_blending_change(event)
-        else:
-            self._update_text()
+        if event is not None:
+            if event.type == 'blending':
+                self._on_blending_change(event)
+                return
+            if event.type == 'values':
+                return
+        self._update_text()
 
     def _on_blending_change(self):
         """Function to set the blending mode"""
@@ -160,8 +163,8 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _on_antialias_change(self):
-        self.node.antialias = self.layer._antialias
+    def _on_antialiasing_change(self):
+        self.node.antialias = self.layer.antialiasing
 
     def _on_shading_change(self):
         shading = self.layer.shading
@@ -180,7 +183,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._update_text(update_node=False)
         self._on_symbol_change()
         self._on_highlight_change()
-        self._on_antialias_change()
+        self._on_antialiasing_change()
         self._on_shading_change()
         self._on_canvas_size_limits_change()
 

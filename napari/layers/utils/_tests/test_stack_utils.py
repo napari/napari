@@ -224,9 +224,13 @@ def test_split_channels_missing_keywords():
     result_list = split_channels(data, 0)
 
     assert len(result_list) == 3
-    for d, meta, _ in result_list:
-        assert d.shape == (128, 128)
-        assert meta['blending'] == 'additive'
+    for chan, layer in enumerate(result_list):
+        assert layer[0].shape == (128, 128)
+        assert (
+            layer[1]['blending'] == 'translucent_no_depth'
+            if chan == 0
+            else 'additive'
+        )
 
 
 def test_split_channels_affine_nparray(kwargs):

@@ -93,7 +93,7 @@ trouble in the future. Right now we are still making breaking changes with minor
 version numbers `0.x` and do not have a deprecation policy, but we will work to add one soon.
 
 4. **Documentation and tutorials:** All new methods should have appropriate doc
-strings following [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
+strings following [PEP257](https://peps.python.org/pep-0257/) and the
 [NumPy documentation guide](https://numpy.org/devdocs/dev/howto-docs.html#documentation-style).
 For any major new features, accompanying changes should be made to our
 [tutorials](https://napari.org/tutorials). These should not only
@@ -149,8 +149,8 @@ resources such as:
 - Our [governance](napari-governance).
 - Our [mission and values](mission-and-values).
 - Our [benchmarking guide](napari-benchmarks).
-- [PEP8](https://www.python.org/dev/peps/pep-0008/) for Python style.
-- [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
+- [PEP8](https://peps.python.org/pep-0008/) for Python style.
+- [PEP257](https://peps.python.org/pep-0257/) and the
    [NumPy documentation guide](https://numpy.org/devdocs/dev/howto-docs.html#documentation-style)
    for docstring conventions.
 - [`pre-commit`](https://pre-commit.com) hooks for autoformatting.

@@ -33,7 +33,7 @@ You can create a new viewer and add a set of tracks in one go using the
 `napari.view_tracks` method, or if you already have an existing viewer, you can
 add tracks to it using `viewer.add_tracks`. The API of both methods is the same.
 
-In this example of we will overlay some tracks on an image from the Hubble space
+In this example, we will overlay some tracks on an image from the Hubble space
 telescope:
 
 ```python
@@ -66,7 +66,7 @@ viewer.add_tracks(tracks_data, name='tracks')
 napari.run()
 ```
 
-![image: tracks simple demo](../../images/tracks_simple_demo.gif)
+![image: tracks simple demo](../../images/tracks_simple_demo.webm)
 
 ## Arguments of `view_tracks` and `add_tracks`
 
@@ -230,7 +230,7 @@ viewer.layers["my_tracks"].tail_width = 3
 
 Additionally, we can adjust the width of the track in the GUI using the "tail width" slider in the Tracks layer controls.
 
-![image: tracks tail width](../../images/tracks_tail_width.gif)
+![image: tracks tail width](../../images/tracks_tail_width.webm)
 
 ## Changing tail length
 
@@ -247,7 +247,7 @@ viewer.layers["my_tracks"].tail_length = 3
 
 Additionally, we can adjust the width of the track in the GUI using the "tail length" slider in the Tracks layer controls.
 
-![image: tracks tail length](../../images/tracks_tail_length.gif)
+![image: tracks tail length](../../images/tracks_tail_length.webm)
 
 ## Setting the track color with properties
 
@@ -287,10 +287,10 @@ viewer.add_tracks(tracks_data, properties=properties)
 napari.run()
 ```
 
-![image: tracks colored by properties](../../images/tracks_color_by.gif)
+![image: tracks colored by properties](../../images/tracks_color_by.webm)
 
 ## Putting it all together
 
 Here you can see an example of 3D+t tracks. You can view the source code for this example [here](https://github.com/napari/napari/blob/main/examples/tracks_3d.py)
 
-![image: tracks 3D plus time](../../images/tracks_3d_t.gif)
+![image: tracks 3D plus time](../../images/tracks_3d_t.webm)

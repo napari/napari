@@ -1,10 +1,10 @@
 from typing import Any, Dict, Union
 
 import numpy as np
-from pydantic import validator
+
+from napari.utils.color import ColorValue
 
 from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
 from ..translations import trans
 from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts
 from .standardize_color import transform_color
@@ -25,12 +25,8 @@ class CategoricalColormap(EventedModel):
         The default value is a cycle of all white.
     """
 
-    colormap: Dict[Any, Array[np.float32, (4,)]] = {}
+    colormap: Dict[Any, ColorValue] = {}
     fallback_color: ColorCycle = ColorCycle.validate_type('white')
-
-    @validator('colormap', pre=True)
-    def _standardize_colormap(cls, v):
-        return {k: transform_color(v)[0] for k, v in v.items()}
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
         """Map an array of values to an array of colors

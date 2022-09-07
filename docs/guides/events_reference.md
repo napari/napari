@@ -1,7 +1,7 @@
+(events-reference)=
 # Events reference
 
-The following tables contain events that you may connect to.  
-For example, to have a specific function called whenever the users
+The following tables contain events that you may connect to. For example, to have a specific function called whenever the users
 changes the number of dimensions displayed in the viewer (e.g.
 from 2D to 3D), you can use `<event>.connect(your_callback)`:
 

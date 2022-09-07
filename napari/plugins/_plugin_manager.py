@@ -1,4 +1,3 @@
-import importlib.util
 import sys
 import warnings
 from functools import partial
@@ -12,6 +11,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
 )
@@ -30,7 +30,7 @@ from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.theme import Theme, register_theme, unregister_theme
 from ..utils.translations import trans
-from . import _builtins, hook_specifications
+from . import hook_specifications
 
 
 class PluginHookOption(TypedDict):
@@ -76,6 +76,10 @@ class NapariPluginManager(PluginManager):
         self._blocked: EventedSet[str] = EventedSet()
         self._blocked.events.changed.connect(self._on_blocked_change)
 
+        # set of package names to skip when discovering, used for skipping
+        # npe2 stuff
+        self._skip_packages: Set[str] = set()
+
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
@@ -88,19 +92,13 @@ class NapariPluginManager(PluginManager):
             str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
         ] = {}
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
-        self._theme_data: Dict[str, Dict[str, Theme]] = dict()
+        self._theme_data: Dict[str, Dict[str, Theme]] = {}
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
 
     def _initialize(self):
         with self.discovery_blocked():
-            self.register(_builtins, name='builtins')
-            if importlib.util.find_spec("skimage") is not None:
-                from . import _skimage_data
-
-                self.register(_skimage_data, name='scikit-image')
-
             from ..settings import get_settings
 
             # dicts to store maps from extension -> plugin_name
@@ -115,6 +113,17 @@ class NapariPluginManager(PluginManager):
         if name:
             self.events.registered(value=name)
         return name
+
+    def iter_available(
+        self,
+        path: Optional[str] = None,
+        entry_point: Optional[str] = None,
+        prefix: Optional[str] = None,
+    ) -> Iterator[Tuple[str, str, Optional[str]]]:
+        # overriding to skip npe2 plugins
+        for item in super().iter_available(path, entry_point, prefix):
+            if item[-1] not in self._skip_packages:
+                yield item
 
     def unregister(
         self,
@@ -168,7 +177,7 @@ class NapariPluginManager(PluginManager):
         -------
         call_order : CallOrderDict
             mapping of hook_specification name, to a list of dicts with keys:
-            {'plugin', 'enabled'}.  Plugins earlier in the dict are called
+            {'plugin', 'hook_impl', 'enabled'}.  Plugins earlier in the dict are called
             sooner.
         """
 
@@ -181,7 +190,10 @@ class NapariPluginManager(PluginManager):
             # no need to save call order if there is only a single item
             if len(impls) > 1:
                 order[spec_name] = [
-                    {'plugin': impl.plugin_name, 'enabled': impl.enabled}
+                    {
+                        'plugin': f'{impl.plugin_name}--{impl.function.__name__}',
+                        'enabled': impl.enabled,
+                    }
                     for impl in reversed(impls)
                 ]
         return order
@@ -204,11 +216,30 @@ class NapariPluginManager(PluginManager):
                 order = []
                 for p in new_order.get(spec_name, []):
                     try:
+                        plugin = p['plugin']
+                        hook_impl_name = None
+                        if '--' in plugin:
+                            plugin, hook_impl_name = tuple(plugin.split('--'))
+
+                        enabled = p['enabled']
                         # the plugin may not be there if its been disabled.
-                        hook_caller._set_plugin_enabled(
-                            p['plugin'], p['enabled']
+                        hook_caller._set_plugin_enabled(plugin, enabled)
+
+                        hook_impls = hook_caller.get_hookimpls()
+                        # get the HookImplementation objects matching this entry
+                        hook_impl = list(
+                            filter(
+                                # plugin name has to match
+                                lambda impl: impl.plugin_name == plugin
+                                and (
+                                    # if we have a hook_impl_name it must match
+                                    not hook_impl_name
+                                    or impl.function.__name__ == hook_impl_name
+                                ),
+                                hook_impls,
+                            )
                         )
-                        order.append(p['plugin'])
+                        order.extend(hook_impl)
                     except KeyError:
                         continue
                 if order:
@@ -402,7 +433,7 @@ class NapariPluginManager(PluginManager):
 
         dock_widgets = zip(repeat("dock"), self._dock_widgets.items())
         func_widgets = zip(repeat("func"), self._function_widgets.items())
-        yield from chain(dock_widgets, func_widgets)  # type: ignore [misc]
+        yield from chain(dock_widgets, func_widgets)
 
     def register_dock_widget(
         self,

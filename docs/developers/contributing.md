@@ -52,7 +52,7 @@ in our [`flake8` configuration](https://github.com/napari/napari/blob/main/setup
 [C901](https://lintlyci.github.io/Flake8Rules/rules/C901.html).  For information
 on any specific flake8 error code, see the [Flake8
 Rules](https://lintlyci.github.io/Flake8Rules/).  You may also wish to refer to
-the [PEP 8 style guide](https://www.python.org/dev/peps/pep-0008/).
+the [PEP 8 style guide](https://peps.python.org/pep-0008/).
 
 If you wish to tell the linter to ignore a specific line use the `# noqa`
 comment along with the specific error code (e.g. `import sys  # noqa: E402`) but
@@ -79,7 +79,7 @@ Icons are typically used inside of one of our `stylesheet.qss` files, with the
 
 ```css
 QtDeleteButton {
-   image: url(":/themes/{{ folder }}/delete.svg");
+   image: url("theme_{{ name }}:/delete.svg");
 }
 ```
 
@@ -219,8 +219,6 @@ The docs will be built at `docs/_build/html`.
 
 Most web browsers will allow you to preview HTML pages.
 Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in your address bar.
-
-To read more about the docs, how they're organized, and built, read {ref}`docs-dev`.
 
 ## Code of Conduct
 

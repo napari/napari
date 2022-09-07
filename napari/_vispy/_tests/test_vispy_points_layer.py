@@ -47,7 +47,7 @@ def test_change_text_updates_node_string():
 def test_change_text_color_updates_node_color():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    text = {'text': 'class', 'color': [1, 0, 0]}
+    text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Points(points, text=text, properties=properties)
     vispy_layer = VispyPointsLayer(layer)
     text_node = vispy_layer._get_text_node()
@@ -96,3 +96,25 @@ def test_change_canvas_size_limits():
     layer.experimental_canvas_size_limits = (20, 80)
     assert filter.min_size == 20
     assert filter.max_size == 80
+
+
+def test_text_with_non_empty_constant_string():
+    points = np.random.rand(3, 2)
+    layer = Points(points, text={'string': {'constant': 'a'}})
+
+    vispy_layer = VispyPointsLayer(layer)
+
+    text_node = vispy_layer._get_text_node()
+    # Vispy cannot broadcast a constant string and assert_array_equal
+    # automatically broadcasts, so explicitly check length.
+    assert len(text_node.text) == 3
+    np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+
+
+def test_change_antialiasing():
+    """Changing antialiasing on the layer should change it on the vispy node."""
+    points = np.random.rand(3, 2)
+    layer = Points(points)
+    vispy_layer = VispyPointsLayer(layer)
+    layer.antialiasing = 5
+    assert vispy_layer.node.antialias == layer.antialiasing

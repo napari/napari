@@ -1,8 +1,13 @@
 """
+nD vectors image
+================
+
 This example generates an image of vectors
 Vector data is an array of shape (M, N, P, 3)
 Each vector position is defined by an (x-proj, y-proj, z-proj) element
 which are vector projections centered on a pixel of the MxNxP grid
+
+.. tags:: visualization-nD
 """
 
 import napari
@@ -28,4 +33,5 @@ print(image.shape, pos.shape)
 # add the vectors
 vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

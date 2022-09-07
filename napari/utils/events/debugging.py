@@ -11,7 +11,7 @@ from ...utils.translations import trans
 
 try:
     from rich import print
-except ImportError:
+except ModuleNotFoundError:
     print(
         trans._(
             "TIP: run `pip install rich` for much nicer event debug printout."
@@ -19,7 +19,7 @@ except ImportError:
     )
 try:
     import dotenv
-except ImportError:
+except ModuleNotFoundError:
     dotenv = None  # type: ignore
 
 if TYPE_CHECKING:

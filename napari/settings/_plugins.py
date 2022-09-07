@@ -1,14 +1,16 @@
+from enum import Enum
 from typing import Dict, List, Set
 
 from pydantic import Field
 from typing_extensions import TypedDict
 
-from ..utils.events.evented_model import EventedModel
+from ..utils.misc import running_as_bundled_app, running_as_constructor_app
 from ..utils.translations import trans
+from ._base import EventedSettings
 
 
 class PluginHookOption(TypedDict):
-    """Custom type specifying plugin and enabled state."""
+    """Custom type specifying plugin, hook implementation function name, and enabled state."""
 
     plugin: str
     enabled: bool
@@ -17,7 +19,27 @@ class PluginHookOption(TypedDict):
 CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
-class PluginsSettings(EventedModel):
+class PluginAPI(str, Enum):
+    napari_hub = 'napari hub'
+    pypi = 'PyPI'
+
+
+class PluginsSettings(EventedSettings):
+    use_npe2_adaptor: bool = Field(
+        False,
+        title=trans._("Use npe2 adaptor"),
+        description=trans._(
+            "Use npe2-adaptor for first generation plugins.\nWhen an npe1 plugin is found, this option will\nimport its contributions and create/cache\na 'shim' npe2 manifest that allows it to be treated\nlike an npe2 plugin (with delayed imports, etc...)",
+        ),
+        requires_restart=True,
+    )
+    plugin_api: PluginAPI = Field(
+        PluginAPI.pypi,
+        title=trans._("Plugin API"),
+        description=trans._(
+            "Use the following API for querying plugin information.",
+        ),
+    )
     call_order: CallOrderDict = Field(
         default_factory=dict,
         title=trans._("Plugin sort order"),
@@ -47,6 +69,9 @@ class PluginsSettings(EventedModel):
         ),
     )
 
+    class Config:
+        use_enum_values = False
+
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = [
@@ -54,3 +79,6 @@ class PluginsSettings(EventedModel):
             'disabled_plugins',
             'extension2writer',
         ]
+
+        if running_as_bundled_app() or running_as_constructor_app():
+            preferences_exclude.append('plugin_api')

@@ -1,3 +1,4 @@
+import platform
 from functools import partial
 from typing import TYPE_CHECKING
 
@@ -35,6 +36,7 @@ class ViewMenu(NapariMenu):
                 'shortcut': 'Ctrl+F',
             },
             {
+                'when': platform.system() != "Darwin",
                 'text': trans._('Toggle Menubar Visibility'),
                 'slot': window._toggle_menubar_visible,
                 'shortcut': 'Ctrl+M',

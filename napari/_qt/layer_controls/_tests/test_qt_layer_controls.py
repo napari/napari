@@ -50,7 +50,7 @@ def test_inheritance(qtbot):
 @pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
 def test_text_set_visible_updates_checkbox(qtbot, layer_type_with_data):
     text = {
-        'text': 'test',
+        'string': {'constant': 'test'},
         'visible': True,
     }
     layer = layer_type_with_data.type(layer_type_with_data.data, text=text)
@@ -71,7 +71,7 @@ def test_set_text_then_set_visible_updates_checkbox(
     ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
     layer.text = {
-        'text': 'another_test',
+        'string': {'constant': 'another_test'},
         'visible': False,
     }
     assert not ctrl.textDispCheckBox.isChecked()

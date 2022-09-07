@@ -10,7 +10,25 @@ You can find more videos of talks, tutorials and demos on the
 
 *Workshops are listed from newest to oldest.*
 
-* August 2021 [NDCN](https://chanzuckerberg.com/science/programs-resources/neurodegeneration-challenge/) Workshop / September 2021 [ZIDAS](https://www.zidas.org/) Workshop
+* July 2022, SciPy 2022
+  * [watch it here](https://www.youtube.com/watch?v=vismuuc4y1I&list=PLYx7XA2nY5Gfxu98P_HL1MnFb_BSkpxLV&index=10)
+  * [Workshop materials available here](https://alisterburt.github.io/napari-workshops/SciPy-0722/intro.html) 
+
+* January to May 2022, [accelerator grantee plugin workshop](https://chanzuckerberg.github.io/napari-plugin-accel-workshops/)
+
+* May 2022, I2K napari workshop
+  * [Read the workshop materials online](https://github.com/haesleinhuepf/I2K2022-napari-workshop)
+
+* April 2022, ABRF LMRG image analysis workshop
+  * [watch it here](https://www.youtube.com/watch?v=lkw5di8NgUA) 
+
+* March 2022, [Alt text workshop](https://hackmd.io/vDsWUBqQSxW_7TNxF-RKKA)
+
+* February 2022, Modern microscopy guest lecture at Berkerley
+  * [Watch it here](https://drive.google.com/file/d/1EjJJZ3sy4mogcGwTao97sHzU9SDJeC3r/view?usp=sharing)
+  * [Slide available here](https://docs.google.com/presentation/d/1sqd_CYckEwmgQO6y9VffwnmT0RSlRYIAUBixRTMYcig/view)
+
+* August 2021, [NDCN](https://chanzuckerberg.com/science/programs-resources/neurodegeneration-challenge/) Workshop / September 2021 [ZIDAS](https://www.zidas.org/) Workshop
   * [Read the workshop materials online](https://alisterburt.github.io/napari-workshops/home.html)
   * [Workshop materials available here](https://github.com/alisterburt/napari-workshops)
 

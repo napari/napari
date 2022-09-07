@@ -74,8 +74,6 @@ def napari_plugin_manager(monkeypatch):
     Or, to re-enable global discovery, use:
     `napari_plugin_manager.discovery_blocker.stop()`
     """
-    from unittest.mock import patch
-
     import napari
     import napari.plugins.io
     from napari.plugins._plugin_manager import NapariPluginManager
@@ -98,6 +96,9 @@ def napari_plugin_manager(monkeypatch):
     pm._initialize()  # register our builtins
     yield pm
     pm.discovery_blocker.stop()
+
+
+GCPASS = 0
 
 
 @pytest.fixture
@@ -149,7 +150,13 @@ def make_napari_viewer(
     from napari._qt.qt_viewer import QtViewer
     from napari.settings import get_settings
 
-    gc.collect()
+    global GCPASS
+    GCPASS += 1
+
+    if GCPASS % 50 == 0:
+        gc.collect()
+    else:
+        gc.collect(1)
 
     _do_not_inline_below = len(QtViewer._instances)
     # # do not inline to avoid pytest trying to compute repr of expression.
@@ -213,7 +220,10 @@ def make_napari_viewer(
         else:
             viewer.close()
 
-    gc.collect()
+    if GCPASS % 50 == 0 or len(QtViewer._instances):
+        gc.collect()
+    else:
+        gc.collect(1)
 
     if request.config.getoption(_SAVE_GRAPH_OPNAME):
         fail_obj_graph(QtViewer)

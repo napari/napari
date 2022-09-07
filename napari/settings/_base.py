@@ -102,10 +102,13 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         super().__init__(**values)
         self._config_path = _cfg
 
-    def _on_sub_event(self, event, field=None):
-        super()._on_sub_event(event, field)
+    def _maybe_save(self):
         if self._save_on_change and self.config_path:
             self.save()
+
+    def _on_sub_event(self, event, field=None):
+        super()._on_sub_event(event, field)
+        self._maybe_save()
 
     @property
     def config_path(self):
@@ -139,7 +142,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             self._remove_env_settings(data)
         return data
 
-    def _save_dict(self, **dict_kwargs):
+    def _save_dict(self, **dict_kwargs: Any) -> DictStrAny:
         """The minimal dict representation that will be persisted to disk.
 
         By default, this will exclude settings values that match the default
@@ -240,9 +243,15 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             return (  # type: ignore [return-value]
                 init_settings,
                 cls._env_settings,
-                config_file_settings_source,
+                cls._config_file_settings_source,
                 file_secret_settings,
             )
+
+        @classmethod
+        def _config_file_settings_source(
+            cls, settings: EventedConfigFileSettings
+        ) -> Dict[str, Any]:
+            return config_file_settings_source(settings)
 
 
 # Utility functions

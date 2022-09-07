@@ -1,6 +1,7 @@
 import numpy as np
 
 from napari.layers import Image
+from napari.layers.image._image_mouse_bindings import move_plane_along_normal
 
 
 def test_random_volume():
@@ -159,4 +160,17 @@ def test_message():
     layer = Image(data)
     layer._slice_dims(ndisplay=3)
     msg = layer.get_status((0,) * 3)
-    assert type(msg) == str
+    assert type(msg) == dict
+
+
+def test_plane_drag_callback():
+    """Plane drag callback should only be active when depicting as plane."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Image(data, depiction='volume')
+
+    assert move_plane_along_normal not in layer.mouse_drag_callbacks
+    layer.depiction = 'plane'
+    assert move_plane_along_normal in layer.mouse_drag_callbacks
+    layer.depiction = 'volume'
+    assert move_plane_along_normal not in layer.mouse_drag_callbacks

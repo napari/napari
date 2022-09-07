@@ -249,6 +249,63 @@ def find_docstrings(fpath: str) -> Dict[str, str]:
     return results
 
 
+def compress_str(gen):
+    """
+    This function takes a stream of token and tries to join
+    consecutive strings.
+
+    This is usefull for long translation string to be broken across
+    many lines.
+
+    This should support both joined strings without backslashes:
+
+        trans._(
+            "this"
+            "will"
+            "work"
+        )
+
+    Those have NL in between each STING.
+
+    The following will work as well:
+
+
+        trans._(
+            "this"\
+            "as"\
+            "well"
+        )
+
+    Those are just a sequence of STRING
+
+
+    There _might_ be edge cases with quotes, but I'm unsure
+
+    """
+    acc, acc_line = [], None
+    for toktype, tokstr, (lineno, _), _, _ in gen:
+        if toktype not in (tokenize.STRING, tokenize.NL):
+            if acc:
+                nt = repr(''.join(acc))
+                yield tokenize.STRING, nt, acc_line
+                acc, acc_line = [], None
+            yield toktype, tokstr, lineno
+        elif toktype == tokenize.STRING:
+            if tokstr.startswith(("'", '"')):
+                acc.append(eval(tokstr))
+            else:
+                # b"", f"" ... are Strings
+                acc.append(eval(tokstr[1:]))
+            if not acc_line:
+                acc_line = lineno
+        else:
+            yield toktype, tokstr, lineno
+
+    if acc:
+        nt = repr(''.join(acc))
+        yield tokenize.STRING, nt, acc_line
+
+
 def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
     """Find all strings (and f-strings) for the given file.
 
@@ -266,8 +323,8 @@ def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
     """
     strings = {}
     with open(fpath) as f:
-        for toktype, tokstr, (lineno, _), _, _ in tokenize.generate_tokens(
-            f.readline
+        for toktype, tokstr, lineno in compress_str(
+            tokenize.generate_tokens(f.readline)
         ):
             if toktype == tokenize.STRING:
                 try:
@@ -414,11 +471,15 @@ def find_issues(
 
 # --- Fixture
 # ----------------------------------------------------------------------------
-@pytest.fixture(scope="module")
-def checks():
+def _checks():
     paths = find_files(NAPARI_MODULE, SKIP_FOLDERS, SKIP_FILES)
     issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
     return issues, outdated_strings, trans_errors
+
+
+@pytest.fixture(scope="module")
+def checks():
+    return _checks()
 
 
 # --- Tests
@@ -494,3 +555,65 @@ def test_translation_errors(checks):
 
     no_trans_errors = not trans_errors
     assert no_trans_errors
+
+
+def getch():
+    import sys
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
+if __name__ == '__main__':
+
+    issues, outdated_strings, trans_errors = _checks()
+    import json
+    import pathlib
+
+    pth = pathlib.Path(__file__).parent / 'string_list.json'
+    data = json.loads(pth.read_text())
+    for file, items in outdated_strings.items():
+        for to_remove in set(items):
+            # we don't use set logic to keep the order the same as in the target
+            # files.
+            data['SKIP_WORDS'][file].remove(to_remove)
+
+    break_ = False
+    for file, missing in issues.items():
+        code = Path(file).read_text().splitlines()
+        if break_:
+            break
+        for line, text in missing:
+            print()
+            print("i : ignore –  add to ignored localised strings")
+            print("q : quit –  quit w/o saving")
+            print("s : save and quit")
+            print()
+            print(f"{file}:{line}", repr(text))
+            print()
+            for lt in code[line - 3 : line - 1]:
+                print(' ', lt)
+            print('>', code[line - 1])
+            for lt in code[line : line + 3]:
+                print(' ', lt)
+            val = getch()
+            if val == 'i':
+                data['SKIP_WORDS'].setdefault(file, []).append(text)
+            elif val == 'q':
+                import sys
+
+                sys.exit(0)
+            elif val == 's':
+                break_ = True
+                break
+
+    pth.write_text(json.dumps(data, indent=2, sort_keys=True))
+    # test_outdated_string_skips(issues, outdated_strings, trans_errors)

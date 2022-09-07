@@ -7,7 +7,7 @@ import pytest
 from yaml import safe_load
 
 from napari import settings
-from napari.settings import NapariSettings
+from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -20,7 +20,9 @@ def test_settings(tmp_path):
         class Config:
             env_prefix = 'testnapari_'
 
-    return TestSettings(tmp_path / 'test_settings.yml')
+    return TestSettings(
+        tmp_path / 'test_settings.yml', schema_version=CURRENT_SCHEMA_VERSION
+    )
 
 
 def test_settings_file(test_settings):
@@ -93,7 +95,10 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
     s.save()
     text = fake_path.read_text()
     # removed bad key
-    assert safe_load(text) == {'application': {'first_time': False}}
+    assert safe_load(text) == {
+        'application': {'first_time': False},
+        'schema_version': CURRENT_SCHEMA_VERSION,
+    }
 
 
 def test_settings_load_invalid_section(tmp_path):
@@ -208,8 +213,8 @@ def test_settings_env_variables(monkeypatch):
 
     # can also use json in nested vars
     assert NapariSettings(None).plugins.extension2reader == {}
-    monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{".zarr": "hi"}')
-    assert NapariSettings(None).plugins.extension2reader == {".zarr": "hi"}
+    monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{"*.zarr": "hi"}')
+    assert NapariSettings(None).plugins.extension2reader == {"*.zarr": "hi"}
 
 
 def test_settings_env_variables_fails(monkeypatch):
@@ -283,19 +288,23 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     # load that yaml file and resave
     NapariSettings(fake_path).save()
 
-    # make sure that it's now just an empty dict
-    assert not safe_load(fake_path.read_text())
+    # make sure that the only value is now the schema version
+    assert safe_load(fake_path.read_text()) == {
+        'schema_version': CURRENT_SCHEMA_VERSION
+    }
 
 
 def test_get_settings(tmp_path):
-    s = settings.get_settings(tmp_path)
-    assert s.config_path == tmp_path
+    p = f'{tmp_path}.yaml'
+    s = settings.get_settings(p)
+    assert str(s.config_path) == str(p)
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
-    settings.get_settings(tmp_path)
+    p = f'{tmp_path}.yaml'
+    settings.get_settings(p)
     with pytest.raises(Exception) as e:
-        settings.get_settings(tmp_path)
+        settings.get_settings(p)
 
     assert 'The path can only be set once per session' in str(e)
 

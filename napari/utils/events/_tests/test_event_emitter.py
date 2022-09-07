@@ -1,4 +1,5 @@
 import weakref
+from functools import partial
 
 import pytest
 
@@ -146,6 +147,88 @@ def test_error_on_connect():
     with pytest.warns(RuntimeWarning, match="Problem with function"):
         e()
     assert t.m4 == 1
+
+
+def test_event_order_func():
+    res_li = []
+
+    def fun1():
+        res_li.append(1)
+
+    def fun2(val):
+        res_li.append(val)
+
+    def fun3():
+        res_li.append(3)
+
+    def fun4():
+        res_li.append(4)
+
+    def fun5(val):
+        res_li.append(val)
+
+    def fun6(val):
+        res_li.append(val)
+
+    fun1.__module__ = "napari.test.sample"
+    fun3.__module__ = "napari.test.sample"
+    fun5.__module__ = "napari.test.sample"
+
+    e = EventEmitter(type="test")
+    e.connect(fun1)
+    e.connect(partial(fun2, val=2))
+    e()
+    assert res_li == [1, 2]
+    res_li = []
+    e.connect(fun3)
+    e()
+    assert res_li == [3, 1, 2]
+    res_li = []
+    e.connect(fun4)
+    e()
+    assert res_li == [3, 1, 4, 2]
+    res_li = []
+    e.connect(partial(fun5, val=5), position="last")
+    e()
+    assert res_li == [3, 1, 5, 4, 2]
+    res_li = []
+    e.connect(partial(fun6, val=6), position="last")
+    e()
+    assert res_li == [3, 1, 5, 4, 2, 6]
+
+
+def test_event_order_methods():
+    res_li = []
+
+    class Test:
+        def fun1(self):
+            res_li.append(1)
+
+        def fun2(self):
+            res_li.append(2)
+
+    class Test2:
+        def fun3(self):
+            res_li.append(3)
+
+        def fun4(self):
+            res_li.append(4)
+
+    Test.__module__ = "napari.test.sample"
+
+    t1 = Test()
+    t2 = Test2()
+
+    e = EventEmitter(type="test")
+    e.connect(t1.fun1)
+    e.connect(t2.fun3)
+    e()
+    assert res_li == [1, 3]
+    res_li = []
+    e.connect(t1.fun2)
+    e.connect(t2.fun4)
+    e()
+    assert res_li == [2, 1, 4, 3]
 
 
 def test_no_event_arg():

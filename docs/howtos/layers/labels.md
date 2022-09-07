@@ -70,7 +70,7 @@ labels_layer = viewer.add_labels(label_image, name='segmentation')
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="Segmentation of coins in an image, displayed using a labels layer")
 ```
 
 ```{code-cell} python
@@ -101,9 +101,9 @@ and [zarr arrays](https://zarr.readthedocs.io/en/stable/api/core.html). A
 0.
 
 Because the labels layer subclasses the image layer it inherits the great
-properties of the image layer, like supporting lazy loading and image pyramids
-for big data layers. For more information about both these concepts see the
-details in the [image layer guide](./image).
+properties of the image layer, like supporting lazy loading and multiscale
+images for big data layers. For more information about both these concepts see
+the details in the [image layer guide](./image).
 
 ## Creating a new labels layer
 
@@ -113,6 +113,18 @@ layer button above the layers list. The shape of the new labels layer will match
 the size of any currently existing image layers, allowing you to paint on top of
 them.
 
+```{admonition} Want to save without compression?
+:class: tip
+
+When saving a labels layer, lossless zlib compression is applied by default. 
+ To save with a different level of compression, consider using 
+[imageio.imwrite](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html).  
+Adjusting compression can be accomplished by including the appropriate kwargs 
+as outlined in the following locations for 
+[tiff](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.plugins.tifffile.html#metadata-for-writing) or 
+[png](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png) files. 
+```
+
 ## Non-editable mode
 
 If you want to disable editing of the labels layer you can set the `editable`
@@ -120,7 +132,7 @@ property of the layer to `False`.
 
 As note in the section on 3D rendering, when using 3D rendering the labels layer
 is not editable. Similarly, for now, a labels layer where the data is
-represented as an image pyramid is not editable.
+represented as a multiscale image is not editable.
 
 ## 3D rendering of labels
 
@@ -146,7 +158,7 @@ viewer.dims.ndisplay = 3
 # programmatically adjust the camera angle
 viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A 3D view of a labels layer on top of 3D blobs")
 ```
 
 Note though that when entering 3D rendering mode the colorpicker, paintbrush,
@@ -258,7 +270,7 @@ checked).
 
 **Drawing a connected component**:
 
-![image: draw component](../../images/draw_component.gif)
+![image: draw component](../../images/draw_component.webm)
 
 Press `M` to select a new label color. Select the `paintbrush` tool and draw a
 closed contour around the object. Select the `fill bucket` tool and click inside
@@ -266,7 +278,7 @@ the contour to assign the label to all pixels of the object.
 
 **Selecting a connected component**:
 
-![image: delete label](../../images/delete_label.gif)
+![image: delete label](../../images/delete_label.webm)
 
 Select the background label with the `color picker` (alternative: press keyboard
 shortcut `E`), then use the `fill bucket` to set all pixels of the connected
@@ -274,14 +286,14 @@ component to background.
 
 **Merging connected components**:
 
-![image: merge labels](../../images/merge_labels.gif)
+![image: merge labels](../../images/merge_labels.webm)
 
 Select the label of one of the components with the `color picker` tool and then
 filling the components to be merged with the fill bucket.
 
 **Splitting a connected component**:
 
-![image: split label](../../images/split_label.gif)
+![image: split label](../../images/split_label.webm)
 
 Splitting a connected component will introduce an additional object, therefore
 press `M` to select a label number that is not already in use. Use the

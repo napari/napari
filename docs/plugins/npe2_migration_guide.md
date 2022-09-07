@@ -224,7 +224,7 @@ When migrating, you'll need to fill out the `layer_types` and
 `filename_extensions` used by your writer. `layer_types` is a set of
 constraints describing the combinations of layer types acceptable by this
 writer. More about layer types can be found in the
-[Writer contribution guide](./guides.html#layer-type-constraints).
+[Writer contribution guide](layer-type-constraints).
 
 In the example below, the svg writer accepts a set of layers with 0 or more
 images, and 0 or more label layers, and so on. It will not accept surface
@@ -439,6 +439,51 @@ contributions:
         canvas: "black"
 ```
 
+## The npe2 adapter
+
+Starting with napari v0.4.17+ napari will begin allowing users to use their
+npe1 plugins as if they were npe2 plugins using a "npe1 -> npe2 adaptor"
+(this option is at `Preferences > Plugins > Use npe2 adaptor`)
+
+When this option is enabled and a plugin using the legacy plugin manager API
+is loaded for the first time, the plugin will be imported as usual and
+contributions will be discovered. A "shim" npe2 manifest representing the
+plugin's contributions will be created and cached locally.  On all future
+launches of napari, that cached manifest will be used and the plugin will
+*not* be imported immediately when napari boots.
+
+### Benefits
+
+The benefits for an end-user opting in to the npe2 adaptor are:
+
+- dramatically reduced time to load napari.  By avoiding importing all plugins
+  at launch, napari can boot *significantly* faster.
+- Plugins are imported lazily, only after one of their commands or menu items
+  has been requested.
+- It will become clearer to the user which plugin has errored (if any), since it
+  will only occur when the plugin's functionality has been requested.
+- For napari, the internal codebase becomes *much* simpler since only the npe2 API
+  needs to be used.
+
+### Caveats
+
+There are a couple npe1 features that are no longer supported in npe2, and the
+following things will be "ignored" for a user using the npe2 adaptor:
+
+- The "plugin sort order" preference is deprecated, and will not be used when
+  loading npe2 plugins or npe1 plugins loaded with the npe2 adaptor.
+- arguments for `add_dock_widget` returned from
+  `napari_experimental_provide_dock_widget` (such as `area=` or
+  `add_vertical_stretch=`) will no longer do anything:  `area` will always be
+  `'right'` and `add_vertical_stretch` will always be `True`.
+
+There is nothing a plugin can do to prevent a user from using the npe2 adaptor,
+it is a user decision.  Furthermore, as we deprecate the legacy
+napari-plugin-engine API, the npe2 adapter will likely become the only way that
+npe1 plugins are supported in the future, and the option to *not* use the npe2
+adaptor will be removed.
+
+
 [epg]: https://packaging.python.org/specifications/entry-points/
 [pd]: https://setuptools.pypa.io/en/latest/userguide/datafiles.html
 [npe1]: https://github.com/napari/napari-plugin-engine
@@ -446,8 +491,4 @@ contributions:
 [json]: https://www.json.org/
 [yaml]: https://yaml.org/
 [toml]: https://toml.io/
-[get-reader-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_reader
-[get-writer-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_writer
-[write-image-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_write_image
-[dock-widget-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_experimental_provide_dock_widget
 [magicgui]: https://napari.org/magicgui

@@ -33,7 +33,7 @@ add shapes to it using `viewer.add_shapes`. The api of both methods is the same.
 In these examples we'll mainly use `add_shapes` to overlay shapes onto on an
 existing image.
 
-In this example of we will overlay some shapes on the image of a photographer:
+In this example, we will overlay some shapes on the image of a photographer:
 
 ```{code-cell} python
 import napari
@@ -67,7 +67,7 @@ shapes_layer = viewer.add_shapes(polygons, shape_type='polygon', edge_width=5,
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="Shapes overlaid on image")
 ```
 
 ```{code-cell} python
@@ -201,7 +201,7 @@ shapes_layer.add(
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="Add new shapes to an existing shapes layer")
 ```
 
 ```{code-cell} python
@@ -247,7 +247,7 @@ shapes_layer.add_ellipses(
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="Add new ellipses to an existing shapes layer using the specific method for this layer type")
 ```
 
 ```{code-cell} python
@@ -282,7 +282,7 @@ or 3 less than the total number of dimensions of the layer. See for example the
 [`examples/nD_shapes.py`](https://github.com/napari/napari/blob/main/examples/nD_shapes.py)
 to see shapes in both 2D and 3D:
 
-![image: nD shapes](../../images/nD_shapes.gif)
+![image: nD shapes](../../images/nD_shapes.webm)
 
 Note though that when entering 3D rendering mode the shape editing tools are all
 disabled. Those options are only supported when viewing a layer using 2D
@@ -340,7 +340,7 @@ key if you are in select mode.
 Once selected you can delete the selected shapes by clicking on the delete
 button in the layer controls panel or pressing the delete key.
 
-For example see below: ![image: shape resizing](../../images/shape_resizing.gif)
+For example see below: ![image: shape resizing](../../images/shape_resizing.webm)
 
 ## Adding, moving, and deleting individual vertices
 
@@ -358,7 +358,7 @@ can be selected either clicking on the vertex deletion tool in the layer
 controls panel or pressing the `X` key while the shapes layer is selected.
 
 For example see below: ![image: shape vertex
-editing](../../images/shape_vertex_editing.gif)
+editing](../../images/shape_vertex_editing.webm)
 
 ## Changing shape edge and face colors
 
@@ -366,10 +366,10 @@ Individual shapes can each have different edge and face colors. You can
 initially set these colors by providing a list of colors to the `edge_color` or
 `face_color` keyword arguments respectively, or you can edit them from the GUI.
 The colors of each of the shapes are available as lists under the
-`layer.edge_colors` and `layer.face_colors` properties. These properties are
-different from the `layer.edge_color` and `layer.face_color` properties that
-will determine the color of the next shape to be added or any currently selected
-shapes.
+`layer.edge_color` and `layer.face_color` properties. These properties are
+different from the `layer.current_edge_color` and `layer.current_face_color`
+properties that will determine the color of the next shape to be added or any 
+currently selected shapes.
 
 To change the shape color properties from the GUI you must first select the
 shape whose properties you want to change, otherwise you will just be
@@ -380,10 +380,10 @@ initializing the property for the next shape you add.
 Individual shapes can each have different edge widths. You can initially set the
 edge widths by providing a list of values to the `edge_width` keyword arguments
 respectively, or you can edit them from the GUI. The widths of each of the
-shapes are available as a list under the `layer.edge_widths` property. Similar
+shapes are available as a list under the `layer.edge_width` property. Similar
 to the edge and face colors, these property is different from the
-`layer.edge_width` property that will determine the edge width of the next shape
-to be added or any currently selected shapes.
+`layer.current_edge_width` property that will determine the edge width of the
+next shape to be added or any currently selected shapes.
 
 To change the edge with property from the GUI you must first select the shape
 whose properties you want to change, otherwise you will just be initializing the
@@ -407,18 +407,16 @@ will be updated with the new slice values.
 
 ## Shapes layer opacity
 
-The {ref}`opacity value <layer_opacity>` applies individually to each shape in
-the layer, and so you must have shapes selected for it to have an effect. You
-can initialize the shape opacities using the `opacity` keyword argument which
-accepts either a list of opacities or a single opacity value that will be
-applied globally. You can then access the opacity of every shape using the
-`layer.opacities` property. Note that this property is different from the
-`layer.opacity` property that determines the opacity of the next shape to be
-added.
+The {ref}`opacity value <layer_opacity>` applies to all shapes. You can 
+initialize the shape opacities using the `opacity` keyword argument which
+accepts a single opacity value that will be applied globally. You can then
+access the opacity using the `layer.opacity` property. In order to adjust the
+opacity of individual shapes you need to adjust the alpha value in the
+`layer.edge_color` and `layer.face_color` properties.
 
 ## Putting it all together
 
 Here you can see an example of adding, selecting, and editing shapes and change
 their properties:
 
-![image: editing shapes](../../images/editing_shapes.gif)
+![image: editing shapes](../../images/editing_shapes.webm)

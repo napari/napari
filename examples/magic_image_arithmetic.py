@@ -1,4 +1,12 @@
-"""Basic example of using magicgui to create an Image Arithmetic GUI in napari."""
+"""
+magicgui Image Arithmetic
+=========================
+
+Basic example of using magicgui to create an Image Arithmetic GUI in napari.
+
+.. tags:: gui
+"""
+
 import enum
 import numpy as np
 import napari
@@ -17,7 +25,7 @@ class Operation(enum.Enum):
 # Define our image_arithmetic function.
 # Note that we can use forward references for the napari type annotations.
 # You can read more about them here:
-# https://www.python.org/dev/peps/pep-0484/#forward-references
+# https://peps.python.org/pep-0484/#forward-references
 # In this example, because we have already imported napari anyway, it doesn't
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
@@ -42,4 +50,5 @@ viewer.add_image(np.random.rand(20, 20), name="Layer 2")
 # Add our magic function to napari
 viewer.window.add_function_widget(image_arithmetic)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

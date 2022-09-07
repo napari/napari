@@ -24,7 +24,7 @@ class ReverseProxyModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(model)
         self.setSortRole(SortRole)
-        self.sort(0, Qt.DescendingOrder)
+        self.sort(0, Qt.SortOrder.DescendingOrder)
 
     def dropMimeData(self, data, action, destRow, col, parent):
         """Handle destination row for dropping with reversed indices."""
@@ -53,7 +53,7 @@ class QtLayerList(QtListView[Layer]):
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
         """Override Qt event to pass events to the viewer."""
-        if e.key() != Qt.Key_Space:
+        if e.key() != Qt.Key.Key_Space:
             super().keyPressEvent(e)
-
-        e.ignore()  # pass key events up to viewer
+        if e.key() not in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+            e.ignore()  # pass key events up to viewer

@@ -58,11 +58,11 @@ activities. Core developers appear as organization members on the napari
 developers are expected to review code contributions while adhering to the
 [core developer guide](core-dev-guide). New core developers can be nominated
 by any existing core developer, and for details on that process see our core
-developer guide.
+developer guide. For a full list of core developers see our [About Us](team) page.
 
-### Steering Council
+### Steering council
 
-The Steering Council (SC) members are core developers who have additional
+The Steering Council (SC) members are primarily core developers who have additional
 responsibilities to ensure the smooth running of the project. SC members are
 expected to participate in strategic planning, approve changes to the
 governance model, and make decisions about funding granted to the project
@@ -73,28 +73,77 @@ long experience with both the project and the larger ecosystem. When the core
 developer community (including the SC members) fails to reach such a consensus
 in a reasonable timeframe, the SC is the entity that resolves the issue.
 
-Members of the steering council also have the "owner" role within the [napari GitHub organization](https://github.com/napari)
+Members of the SC also have the "owner" role within the [napari GitHub organization](https://github.com/napari)
 and are ultimately responsible for managing the napari GitHub account, the [@napari_imaging](https://twitter.com/napari_imaging)
 twitter account, the [napari website](http://napari.org), and other similar napari owned resources.
 
-The steering council is currently fixed in size to three members. This number may be increased in
-the future, but will always be an odd number to ensure a simple majority vote outcome
-is always possible. The initial steering council of napari consists of
+The SC will be no less than three members and no more than five members,
+with a strong preference for an odd number to ensure a simple majority vote
+outcome is always possible, and a preference for five members to ensure a
+diversity of voices. All deadlocked votes of the SC will be postponed until
+there is an odd number of members and another vote can be held. A majority of the
+SC will not be employed by the same entity. One seat on the SC is reserved
+for a member elected by the [Institutional and Funding Partner Advisory Council](#institutional-and-funding-partners),
+as detailed below. This member need not be an existing core developer.
 
-- [Juan Nunez-Iglesias](https://github.com/jni)
-- [Loic Royer](https://github.com/royerloic)
-- [Nicholas Sofroniew](https://github.com/sofroniewn)
-
-The SC membership is revisited every January. SC members who do
-not actively engage with the SC duties are expected to resign. New members are
-added by nomination by a core developer. Nominees should have demonstrated
+The SC membership, including the Institutional and Funding Partner (IFP) seat, is revisited every January.
+SC members who do not actively engage with the SC duties are expected to resign. New members for 
+vacant spots are added by nomination by a core developer. Nominees should have demonstrated
 long-term, continued commitment to the project and its [mission and values](mission-and-values). A
 nomination will result in discussion that cannot take more than a month and
 then admission to the SC by consensus. During that time deadlocked votes of the SC will
-be postponed until the new member has joined and another vote can be held.
+be postponed until the new member has joined and another vote can be held. The IFP seat
+is elected by the IFP Advisory Council.
 
-The napari steering council may be contacted at `napari-steering-council@googlegroups.com`.
-Or via the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) GitHub team.
+The SC may be contacted at `napari-steering-council@googlegroups.com`.
+Or via the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) GitHub team. For a list of the current SC see our [About Us](team) page.
+
+### Institutional and funding partners
+
+The SC is the primary leadership body for napari. No outside institution,
+individual or legal entity has the ability to own or control the project
+other than by participating in napari as contributors, core developers, and
+SC members. However, because institutions can be an important source of
+funding and contributions for the project, it is important to formally
+acknowledge institutional participation in the project. We call institutions
+recognized in this way Institutional and Funding Partners (IFPs).
+
+Institutions become eligible to become an IFP by employing individuals
+who actively contribute to napari as part of their official
+duties, or by committing significant funding to napari, as determined by the
+SC. Once an institution becomes eligible to become an IFP, the SC must
+nominate and approve the institution as an IFP. At that time one individual
+from the IFP is expected to become the IFP Representative and serve on the
+IFP Advisory Council. The role of the IFP Advisory Council is to provide
+input on project directions and plans, and to elect one IFP Representative
+to hold the IFP seat on the SC.
+
+The IFP Advisory Council is expected to self-organize according to rules
+agreed to by the existing IFPs. This document does not prescribe how IFPs
+should elect their representative on the SC, though the IFP Advisory Council
+should describe this process openly. IFPs are expected to work together
+and with the napari community in good faith towards a common goal
+of improving napari for the broader scientific computing community.
+
+If at some point an existing IFP is no longer contributing any employees
+or funding, then a one-year grace period commences. If during this one-year
+period they do not contribute any employees or funding, then at the end of
+the period their status as an IFP will lapse, and resuming it will require
+going through the normal process for new IFPs. If the IFP Representative on
+the SC is from an organization that loses its status as an Institutional Partner,
+that person will cease being a member of the SC and the remaining IFP Advisory
+Council members may choose a new Representative at their earliest convenience.
+
+IFP benefits are:
+
+- Acknowledgement on the napari website, including homepage, and in talks.
+- Ability to acknowledge their contribution to napari on their own websites and in talks.
+- Ability to provide input to the project through their Institutional Partner
+Representative.
+- Ability to influence the project through the election of the Institutional
+and Funding Partner seat on the SC.
+
+For a full list of current IFPs and their Representatives see our [About Us](team) page.
 
 ## Decision making process
 

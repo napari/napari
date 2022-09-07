@@ -60,6 +60,13 @@ def read_data_with_plugins(
     PluginCallError
         If ``plugin`` is specified but raises an Exception while reading.
     """
+    if plugin == 'builtins':
+        warnings.warn(
+            'The "builtins" plugin name is deprecated and will not work in a future '
+            'version. Please use "napari" instead.',
+        )
+        plugin = 'napari'
+
     assert isinstance(paths, list)
     if not stack:
         assert len(paths) == 1
@@ -68,11 +75,11 @@ def read_data_with_plugins(
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         _ld, hookimpl = res
-        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
+        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl  # type: ignore [return-value]
 
     hook_caller = plugin_manager.hook.napari_get_reader
     paths = [abspath_or_url(p, must_exist=True) for p in paths]
-    if not plugin and (stack is False):
+    if not plugin and not stack:
         extension = os.path.splitext(paths[0])[-1]
         plugin = plugin_manager.get_reader_for_extension(extension)
 
@@ -81,6 +88,15 @@ def read_data_with_plugins(
     npe1_path = paths if stack else paths[0]
     hookimpl = None
     if plugin:
+        if plugin == 'napari':
+            # napari is npe2 only
+            message = trans._(
+                'No plugin found capable of reading {repr_path!r}.',
+                deferred=True,
+                repr_path=npe1_path,
+            )
+            raise ValueError(message)
+
         if plugin not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
@@ -113,12 +129,12 @@ def read_data_with_plugins(
 
     layer_data = None
     result = hook_caller.call_with_result_obj(path=npe1_path)
-    reader = result.result  # will raise exceptions if any occurred
-    try:
-        layer_data = reader(npe1_path)  # try to read data
-        hookimpl = result.implementation
-    except Exception as exc:
-        raise PluginCallError(result.implementation, cause=exc)
+    if reader := result.result:  # will raise exceptions if any occurred
+        try:
+            layer_data = reader(npe1_path)  # try to read data
+            hookimpl = result.implementation
+        except Exception as exc:
+            raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
         # if layer_data is empty, it means no plugin could read path

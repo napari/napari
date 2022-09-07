@@ -7,33 +7,27 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
-from napari._qt.dialogs._tests.test_reader_dialog_get_choice import (
-    MockQtReaderDialog,
-)
+from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
-    restore_settings_on_exit,
     skip_local_popups,
     skip_on_win_ci,
 )
 from napari._vispy.utils.gl import fix_data_dtype
+from napari.components.viewer_model import ViewerModel
+from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
-from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS_DISP = 'napari'
-    BUILTINS_NAME = 'builtins'
-except ImportError:
-    BUILTINS_DISP = BUILTINS_NAME = 'builtins'
+BUILTINS_DISP = 'napari'
+BUILTINS_NAME = 'builtins'
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -511,7 +505,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     viewer.layers.clear()
     qtbot.wait(100)
     gc.collect()
-    assert not gc.collect()
+    gc.collect()
     assert not lr()
     assert not dr()
 
@@ -526,7 +520,7 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     viewer.layers.clear()
     qtbot.wait(100)
     gc.collect()
-    assert not gc.collect()
+    gc.collect()
     assert not lr()
     assert not dr()
 
@@ -652,83 +646,31 @@ def test_surface_mixed_dim(make_napari_viewer):
     viewer.add_surface(timeseries_data)
 
 
-def test_try_reader_from_settings(make_napari_viewer, tmpdir, layers):
-    """Test opening file with reader saved in settings"""
+def test_insert_layer_ordering(make_napari_viewer):
+    """make sure layer ordering is correct in vispy when inserting layers"""
     viewer = make_napari_viewer()
-    im_pth = os.path.join(tmpdir, 'layer.png')
-    extension = '.png'
-    layers[0].save(im_pth, plugin=BUILTINS_DISP)
+    pl1 = Points()
+    pl2 = Points()
 
-    readers = {BUILTINS_DISP: BUILTINS_NAME}
-    with restore_settings_on_exit():
-        # read successfully with settings
-        get_settings().plugins.extension2reader = {extension: BUILTINS_DISP}
-        error_message = viewer.window._qt_viewer._try_reader_from_settings(
-            readers, extension, im_pth
-        )
-        assert error_message is None
-        assert len(viewer.layers) == 1
-        assert viewer.layers[0].source.reader_plugin == BUILTINS_NAME
+    viewer.layers.append(pl1)
+    viewer.layers.insert(0, pl2)
 
-        # find plugin from settings but it fails to read
-        os.remove(im_pth)
-        error_message = viewer.window._qt_viewer._try_reader_from_settings(
-            readers, extension, im_pth
-        )
-        assert error_message.startswith(
-            f"Tried to open file with {BUILTINS_DISP}, but reading failed"
-        )
-
-    # fail to find plugin from settings
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {
-            extension: 'not-a-real-name'
-        }
-        error_message = viewer.window._qt_viewer._try_reader_from_settings(
-            readers, extension, im_pth
-        )
-        assert error_message.startswith(
-            "Can't find not-a-real-name plugin associated with .png files."
-        )
+    pl1_vispy = viewer.window._qt_viewer.layer_to_visual[pl1].node
+    pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
+    assert pl1_vispy.order == 1
+    assert pl2_vispy.order == 0
 
 
-def test_get_and_try_preferred_reader(make_napari_viewer, tmpdir, layers):
-    """Test opening file with user preference and persisting preference"""
-    viewer = make_napari_viewer()
-    im_pth = os.path.join(tmpdir, 'layer.png')
-    layers[0].save(im_pth, plugin=BUILTINS_DISP)
-    error_message = 'Test error message'
-    readers = {BUILTINS_DISP: BUILTINS_NAME, 'not-a-plugin': 'not-a-plugin'}
+def test_create_non_empty_viewer_model(qtbot):
+    viewer_model = ViewerModel()
+    viewer_model.add_points([(1, 2), (2, 3)])
 
-    # open successfully without persisting
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {}
-        reader_dialog = MockQtReaderDialog(
-            im_pth, readers=readers, error_message=error_message
-        )
-        reader_dialog._set_plugin_choice(BUILTINS_DISP)
-        reader_dialog._set_persist_choice(False)
-        viewer.window._qt_viewer._get_and_try_preferred_reader(
-            reader_dialog, readers, error_message
-        )
-        assert len(viewer.layers) == 1
-        assert viewer.layers[0].source.reader_plugin == BUILTINS_NAME
-        assert get_settings().plugins.extension2reader == {}
+    viewer = QtViewer(viewer=viewer_model)
 
-    # open successfully and persist choice
-    with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {}
-        reader_dialog = MockQtReaderDialog(
-            im_pth,
-            readers=readers,
-            error_message=error_message,
-            extension='.png',
-        )
-        reader_dialog._set_plugin_choice(BUILTINS_DISP)
-        reader_dialog._set_persist_choice(True)
-        viewer.window._qt_viewer._get_and_try_preferred_reader(
-            reader_dialog, readers, error_message
-        )
-        assert get_settings().plugins.extension2reader == {
-            '.png': BUILTINS_DISP
-        }
+    viewer.close()
+    viewer.deleteLater()
+    # try to del local reference for gc.
+    del viewer_model
+    del viewer
+    qtbot.wait(50)
+    gc.collect()

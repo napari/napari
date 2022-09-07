@@ -51,7 +51,7 @@ def split_channels(
     function. Colormap, blending, or multiscale are set as follows if not
     overridden by a keyword:
     - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
-    - blending : additive
+    - blending : translucent for first channel, additive for others
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
     Colormap, blending and multiscale will be set and returned in meta if not in kwargs.
@@ -80,8 +80,10 @@ def split_channels(
         kwargs['multiscale'] = multiscale
 
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
-
-    kwargs['blending'] = kwargs.get('blending') or 'additive'
+    # Use original blending mode or for multichannel use translucent for first channel then additive
+    kwargs['blending'] = kwargs.get('blending') or ['translucent_no_depth'] + [
+        'additive'
+    ] * (n_channels - 1)
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {
@@ -90,7 +92,7 @@ def split_channels(
         'affine',
         'contrast_limits',
         'metadata',
-        'experimental_slicing_plane',
+        'plane',
         'experimental_clipping_planes',
     }
 

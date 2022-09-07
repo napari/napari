@@ -48,6 +48,7 @@ def widget_demo(
 
 widget_demo.show()
 ```
+*Add caption here*
 
 For more information on the features and usage of `magicgui`, see the [magicgui
 documentation](https://napari.org/magicgui).  `magicgui` does not require
@@ -57,7 +58,7 @@ when using `magicgui` with napari-specific type annotations.
 
 ## magicgui and type annotations
 
-`magicgui` uses [type hints](https://www.python.org/dev/peps/pep-0484/) to infer
+`magicgui` uses [type hints](https://peps.python.org/pep-0484/) to infer
 the appropriate widget type for a given function parameter, and to indicate a
 context-dependent action for the object returned from the function (in the
 absence of a type hint, the type of the default value will be used).  Third
@@ -119,7 +120,6 @@ def my_widget(image: Image):
 viewer = napari.view_image(np.random.rand(64, 64), name="My Image")
 viewer.window.add_dock_widget(my_widget)
 ```
-
 *Note the widget at the bottom with "My Image" as the currently selected option*
 
 ```{code-cell} python
@@ -127,7 +127,7 @@ viewer.window.add_dock_widget(my_widget)
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A magicgui widget using an image layer parameter annotation")
 ```
 
 ### Annotating as `Layer`
@@ -148,6 +148,7 @@ def my_widget(layer: Layer):
     ...
 ```
 
+(annotating-as-napari-types-data)=
 ### Annotating as `napari.types.*Data`
 
 In the previous example, the object passed to your function will be the actual
@@ -186,7 +187,7 @@ def my_widget(viewer: Viewer):
 ```{caution}
 Please use this sparingly, as a last resort. If you need to *add* layers
 to the viewer from your function, prefer one of the return-annotation methods
-described [below](#adding-layers-to-napari-from-your-magicgui-function).
+described [below](#return-annotations).
 If you find that you require the viewer instance because of functionality that
 is otherwise missing here, please consider opening an issue in the
 [napari issue tracker](https://github.com/napari/napari/issues/new/choose),
@@ -204,6 +205,7 @@ each type is described below:
 - any of the `<LayerType>Data` types from {mod}`napari.types`, such as
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {attr}`napari.types.LayerDataTuple`
+- `List`s of {class}`napari.layers.Layer` or {attr}`napari.types.LayerDataTuple`
 
 ### Returning a `Layer` subclass
 
@@ -242,7 +244,7 @@ my_widget()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A magicgui widget using an image layer return annotation")
 ```
 
 ```{note}
@@ -251,6 +253,28 @@ function is called.  To update an existing layer, you must use the
 `LayerDataTuple` approach described below
 ```
 
+### Returning `List[napari.layers.Layer]`
+
+You can create multiple layers by returning a list of
+{class}`~napari.layers.Layer`.
+
+```python
+from typing import List
+
+@magicgui
+def make_points(...) -> List[napari.layers.Layer]:
+  ...
+```
+
+```{note}
+Note: the `List[]` syntax here is optional from the perspective of `napari`.  You
+can return either a single Layer or a list of Layers and they will all be added
+to the viewer as long as you use either `List[napari.layers.Layer]` or 
+`napari.layers.Layer`.  If you want your code to be properly typed, however,
+your return type must match your return annotation.
+```
+
+(returning-napari-types-data)=
 ### Returning `napari.types.*Data`
 
 In the previous example, the object returned by the function had to be an actual
@@ -264,7 +288,7 @@ returned by your function to be turned into the corresponding
 {class}`~napari.layers.Layer` type, and added to the viewer.
 
 For example, in combination with the {attr}`~napari.types.ImageData` paramater
-annotation [described above](#annotating-as-napari-types-data):
+annotation [described above](annotating-as-napari-types-data):
 
 ```{code-cell} python
 :tags: [remove-output]
@@ -286,7 +310,7 @@ threshold()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A magicgui widget returning a layer attribute")
 ```
 
 ### Returning `napari.types.LayerDataTuple`
@@ -350,7 +374,7 @@ make_points()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A magicgui widget returning a LayerDataTuple")
 ```
 
 ### Returning `List[napari.types.LayerDataTuple]`
@@ -405,7 +429,7 @@ make_points()
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="A magicgui widget updating an existing layer")
 ```
 
 ## Avoid imports with forward references
@@ -414,7 +438,7 @@ Sometimes, it is undesirable to import and/or depend on `napari` directly just
 to provide type annotations.  It is possible to avoid importing `napari`
 entirely by annotating with the string form of the napari type.  This is called
 a [Forward
-reference](https://www.python.org/dev/peps/pep-0484/#forward-references):
+reference](https://peps.python.org/pep-0484/#forward-references):
 
 ```python
 @magicgui
@@ -466,7 +490,7 @@ In most cases, the {func}`@magicgui <magicgui.magicgui>` decorator used in the
 preceding examples can simply be replaced with the {func}`@magic_factory <magicgui.magic_factory>`
 decorator, to use it as a plugin dock widget.
 
-For example, the threshold widget [shown above](#returning-napari-types-data)
+For example, the threshold widget [shown above](returning-napari-types-data)
 could be provided as a napari plugin as follows:
 
 ```python

@@ -1,6 +1,11 @@
 """
-Display a points layer on top of an image layer using the add_points and
-add_image APIs
+Add points with text
+====================
+
+Display a points layer on top of an image layer using the ``add_points`` and
+``add_image`` APIs
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -12,8 +17,8 @@ viewer = napari.view_image(np.zeros((400, 400)))
 # add the points
 points = np.array([[100, 100], [200, 300], [333, 111]])
 
-# create properties for each point
-properties = {
+# create features for each point
+features = {
     'confidence': np.array([1, 0.5, 0]),
     'good_point': np.array([True, False, False]),
 }
@@ -22,17 +27,18 @@ properties = {
 face_color_cycle = ['blue', 'green']
 
 text = {
-    'text': 'Confidence is {confidence:.2f}',
+    'string': 'Confidence is {confidence:.2f}',
     'size': 20,
     'color': 'green',
     'translation': np.array([-30, 0]),
 }
 
-# create a points layer where the face_color is set by the good_point property
-# and the edge_color is set via a color map (grayscale) on the confidence property.
+# create a points layer where the face_color is set by the good_point feature
+# and the edge_color is set via a color map (grayscale) on the confidence
+# feature.
 points_layer = viewer.add_points(
     points,
-    properties=properties,
+    features=features,
     text=text,
     size=20,
     edge_width=7,
@@ -46,4 +52,5 @@ points_layer = viewer.add_points(
 # set the edge_color mode to colormap
 points_layer.edge_color_mode = 'colormap'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

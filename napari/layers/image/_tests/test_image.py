@@ -199,14 +199,13 @@ def test_non_rgb_image():
     assert layer._data_view.shape == shape[-2:]
 
 
-def test_error_non_rgb_image():
+@pytest.mark.parametrize("shape", [(10, 15, 6), (10, 10)])
+def test_error_non_rgb_image(shape):
     """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
-    # size > 4 then data cannot actually be rgb
-    shape = (10, 15, 6)
-    np.random.seed(0)
-    data = np.random.random(shape)
-    with pytest.raises(ValueError):
+    # size > 4 or ndim not >= 3 then data cannot actually be rgb
+    data = np.empty(shape)
+    with pytest.raises(ValueError, match="'rgb' was set to True but"):
         Image(data, rgb=True)
 
 
@@ -314,13 +313,20 @@ def test_interpolation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.interpolation == 'nearest'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'nearest'
+    assert layer.interpolation2d == 'nearest'
+    assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, interpolation='bicubic')
-    assert layer.interpolation == 'bicubic'
+    layer = Image(data, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'bicubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'bicubic'
 
-    layer.interpolation = 'bilinear'
-    assert layer.interpolation == 'bilinear'
+    layer.interpolation2d = 'linear'
+    assert layer.interpolation2d == 'linear'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'linear'
 
 
 def test_colormaps():
@@ -546,7 +552,7 @@ def test_message():
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -558,7 +564,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -736,7 +742,7 @@ def test_image_state_update():
         setattr(image, k, v)
 
 
-def test_instiantiate_with_experimental_slicing_plane_dict():
+def test_instantiate_with_plane_parameter_dict():
     """Test that an image layer can be instantiated with plane parameters
     in a dictionary.
     """
@@ -745,23 +751,21 @@ def test_instiantiate_with_experimental_slicing_plane_dict():
         'normal': (1, 1, 1),
         'thickness': 22,
     }
-    image = Image(
-        np.ones((32, 32, 32)), experimental_slicing_plane=plane_parameters
-    )
+    image = Image(np.ones((32, 32, 32)), plane=plane_parameters)
     for k, v in plane_parameters.items():
         if k == 'normal':
             v = tuple(v / np.linalg.norm(v))
-        assert v == getattr(image.experimental_slicing_plane, k, v)
+        assert v == getattr(image.plane, k, v)
 
 
-def test_instiantiate_with_experimental_slicing_plane():
+def test_instiantiate_with_plane():
     """Test that an image layer can be instantiated with plane parameters
     in a Plane.
     """
     plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
-    image = Image(np.ones((32, 32, 32)), experimental_slicing_plane=plane)
+    image = Image(np.ones((32, 32, 32)), plane=plane)
     for k, v in plane.dict().items():
-        assert v == getattr(image.experimental_slicing_plane, k, v)
+        assert v == getattr(image.plane, k, v)
 
 
 def test_instantiate_with_clipping_planelist():

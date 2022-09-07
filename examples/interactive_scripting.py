@@ -1,3 +1,10 @@
+"""
+Interactive scripting
+=====================
+
+.. tags:: interactivity
+"""
+
 import numpy as np
 import napari
 from napari.qt import thread_worker
@@ -21,4 +28,5 @@ def create_data(*, update_period, num_updates):
 
 create_data(update_period=0.05, num_updates=50)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

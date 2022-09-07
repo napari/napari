@@ -27,7 +27,7 @@
 
    .. autosummary::
    {% for item in attributes %}
-      ~{{ name }}.{{ item }}
+      {{ item|get_attributes(name, module) }}
    {%- endfor %}
    {% endif %}
    {% endblock %}

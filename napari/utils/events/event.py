@@ -60,6 +60,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -67,7 +68,6 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Literal
 from vispy.util.logs import _handle_exception
 
 from ..translations import trans
@@ -369,6 +369,34 @@ class EventEmitter:
     def source(self, s):
         self._source = None if s is None else weakref.ref(s)
 
+    def _is_core_callback(
+        self, callback: Union[CallbackRef, Callback], core: str
+    ):
+        """
+        Check if the callback is a core callback
+
+        Parameters
+        ----------
+        callback : Union[CallbackRef, Callback]
+            The callback to check. Callback could be function or
+            weak reference to object method coded using weakreference
+            to object and method name stored in tuple.
+        core : str
+            Name of core module, for example 'napari'.
+        """
+        try:
+            if isinstance(callback, partial):
+                callback = callback.func
+            if not isinstance(callback, tuple):
+                return callback.__module__.startswith(core + '.')
+            obj = callback[0]()  # get object behind weakref
+            if obj is None:  # object is dead
+                return False
+            return obj.__module__.startswith(core + '.')
+
+        except AttributeError:
+            return False
+
     def connect(
         self,
         callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
@@ -473,12 +501,26 @@ class EventEmitter:
                     position=position,
                 )
             )
+        core_callbacks_indexes = [
+            i
+            for i, c in enumerate(self._callbacks)
+            if self._is_core_callback(c, 'napari')
+        ]
+        core_callbacks_count = (
+            max(core_callbacks_indexes) + 1 if core_callbacks_indexes else 0
+        )
+        if self._is_core_callback(callback, 'napari'):
+            callback_bounds = (0, core_callbacks_count)
+        else:
+            callback_bounds = (core_callbacks_count, len(callback_refs))
 
         # bounds: upper & lower bnds (inclusive) of possible cb locs
-        bounds: List[int] = list()
+        bounds: List[int] = []
         for ri, criteria in enumerate((before, after)):
             if criteria is None or criteria == []:
-                bounds.append(len(callback_refs) if ri == 0 else 0)
+                bounds.append(
+                    callback_bounds[1] if ri == 0 else callback_bounds[0]
+                )
             else:
                 if not isinstance(criteria, list):
                     criteria = [criteria]
@@ -1035,13 +1077,19 @@ class EmitterGroup(EventEmitter):
         yield from self._emitters
 
     def block_all(self):
-        """Block all emitters in this group."""
+        """
+        Block all emitters in this group by increase counter of semaphores for each event emitter
+        """
         self.block()
         for em in self._emitters.values():
             em.block()
 
     def unblock_all(self):
-        """Unblock all emitters in this group."""
+        """
+        Unblock all emitters in this group, by decrease counter of semaphores for each event emitter.
+        if block is called twice and unblock is called once, then events will be still blocked
+        https://en.wikipedia.org/wiki/Semaphore_(programming)
+        """
         self.unblock()
         for em in self._emitters.values():
             em.unblock()
