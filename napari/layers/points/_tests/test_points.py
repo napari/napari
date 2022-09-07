@@ -933,7 +933,7 @@ def test_edge_width_types_negative(edge_width):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     with pytest.raises(ValueError):
-        layer = Points(  # noqa: F841
+        Points(
             data, edge_width=edge_width, edge_width_is_relative=False
         )
 
