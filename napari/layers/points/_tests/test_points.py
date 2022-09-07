@@ -910,7 +910,10 @@ def test_edge_width():
         layer.edge_width = -2
 
 
-@pytest.mark.parametrize("edge_width", [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]])
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+)
 def test_edge_width_types(edge_width):
     """Test edge_width dtypes with valid values"""
     shape = (5, 2)
@@ -920,14 +923,19 @@ def test_edge_width_types(edge_width):
     np.testing.assert_array_equal(layer.edge_width, edge_width)
 
 
-@pytest.mark.parametrize("edge_width", [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]])
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+)
 def test_edge_width_types_negative(edge_width):
     """Test negative values in all edge_width dtypes"""
     shape = (5, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     with pytest.raises(ValueError):
-        layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
+        layer = Points(
+            data, edge_width=edge_width, edge_width_is_relative=False
+        )
 
 
 def test_out_of_slice_display():
