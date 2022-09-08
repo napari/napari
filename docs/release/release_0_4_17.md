@@ -243,6 +243,7 @@ https://github.com/napari/napari
 - Ensure non-negative edge width (#5035)
 - MAINT: fix a couple of trans._. (#5034)
 - Fix shift selection for points (#5022)
+- Add saving folders to preferences (#4902)
 
 ## 40 authors added to this release (alphabetical)
 
