@@ -70,6 +70,8 @@ the Python ecosystem, **napari** can be easily coupled to leading machine
 learning and image analysis tools (e.g. `scikit-image`, `scikit-learn`,
 `TensorFlow`, `PyTorch`), enabling more user-friendly automated analysis.
 
+![image](./images/multichannel_cells.png)
+
 We're developing **napari** in the open! But the project is in an **alpha**
 stage, and there will still likely be **breaking changes** with each release.
 You can follow progress
