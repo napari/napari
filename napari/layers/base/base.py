@@ -38,7 +38,6 @@ from napari.utils._magicgui import (
     get_layers,
 )
 from napari.utils.events import EmitterGroup, Event, EventedDict
-from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -391,24 +390,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
-            reload=Event,
-            extent=Event,
-            _overlays=Event,
-            select=WarningEmitter(
-                trans._(
-                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='select',
-            ),
-            deselect=WarningEmitter(
-                trans._(
-                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
-                    deferred=True,
-                ),
-                type_name='deselect',
-            ),
-            mode=Event,
+            _ndisplay=Event,
         )
         self.name = name
         self.mode = mode
@@ -698,28 +680,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         self._clear_extent()
         self.events.affine()
-
-    @property
-    def translate_grid(self):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._translate_grid
-
-    @translate_grid.setter
-    def translate_grid(self, translate_grid):
-        warnings.warn(
-            trans._(
-                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._translate_grid = translate_grid
 
     @property
     def _translate_grid(self):
