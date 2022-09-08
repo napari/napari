@@ -31,7 +31,6 @@ from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_coords_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
-from .._source import current_source
 from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
     coerce_affine,
@@ -232,6 +231,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             raise ValueError(
                 f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
             )
+
+        # Needs to be imported here to avoid circular import in _source
+        from .._source import current_source
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
