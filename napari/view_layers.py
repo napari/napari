@@ -407,7 +407,6 @@ def imshow(
 
     viewer, layers = _make_viewer_then(
         'add_image',
-        # *, # TODO sort out if this needs to be kept/how to handle it
         args,
         kwargs,
     )
