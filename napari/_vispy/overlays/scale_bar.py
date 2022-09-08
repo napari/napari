@@ -46,7 +46,7 @@ class VispyScaleBarOverlay:
         self.text_node.transform = STTransform()
         self.text_node.font_size = 10
         self.text_node.anchors = ("center", "center")
-        self.text_node.text = f"{1}px"
+        self.text_node.text = "1px"
 
         self.rect_node = Rectangle(
             center=[0.5, 0.5],
