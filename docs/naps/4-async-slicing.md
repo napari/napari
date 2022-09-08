@@ -309,10 +309,52 @@ At this point `data` should be fast to access either from RAM (e.g. as a numpy
 array) or VRAM (e.g. as a CuPy array), so that it can be consumed on the main
 thread without blocking other operations for long.
 
-For layer types other than images, we need to extend this response to include
-other output, so will likely have type specific responses. For example, a `Points`
-layer likely needs to define a `PointsSliceResponse` that includes the face colors
-for the points in the output slice.
+For each layer type, we need to extend the request and response types to include
+state that is specific to slicing those types of layers. For example, the image
+request type should look something like the following.
+
+```python
+class ImageSliceRequest(LayerSliceRequest):
+    rgb: bool
+    multiscale: bool
+    corner_pixels: np.ndarray
+    data_level: int
+
+class ImageSliceResponse(LayerSliceResponse)
+    thumbnail: np.ndarray
+```
+
+As napari supports RGB and multi-scale images, we need a few more inputs to
+know what data should be accessed to generate the desired slice for the canvas.
+
+The points request and response types should look something like the following.
+
+```python
+class PointsSliceRequest(LayerSliceRequest):
+    out_of_slice_display: bool
+    size: np.ndarray
+    face_color: np.ndarray
+    edge_color: np.ndarray
+    edge_width: np.ndarray
+    shown: np.ndarray
+
+class PointsSliceResponse(LayerSliceResponse):
+    indices: np.ndarray
+    size: np.ndarray
+    view_size_scale: Union[int, np.ndarray]
+    face_color: np.ndarray
+    edge_color: np.ndarray
+    edge_width: np.ndarray
+```
+
+While the names and typing of some of the points request and response attributes
+are the same (e.g. `face_color`) they differ semantically because the response
+represent the sliced values only. Defining two distinct and explicit request and
+response types gives us more flexibility later in terms of how slicing works.
+For example, we may want to generate point face colors lazily, which could mean
+that `PointsSliceRequest.face_color` would become a callable instead of a
+materialized array as in the response.
+
 
 ### Layer methods
 
@@ -392,7 +434,7 @@ class LayerSlicer:
     def __init__(self, ...):
         self.events = EmitterGroup(source=self, slice_ready=Event)
 
-    def slice_layers_async(self, layers: LayerList, dims: Dims) -> None:
+    def slice_layers_async(self, layers: LayerList, dims: Dims) -> Future[ViewerSliceResponse]:
         if self._task is not None:
             self._task.cancel()
         requests = {
@@ -401,6 +443,7 @@ class LayerSlicer:
         }
         self._task = self._executor.submit(self._slice_layers, request)
         self._task.add_done_callback(self._on_slice_done)
+        return self._task
 
     def slice_layers(self, requests: ViewerSliceRequest) -> ViewerSliceResponse:
         return {layer: layer._get_slice(request) for layer, request in requests.items()}
