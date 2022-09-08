@@ -314,7 +314,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
-        canvas_size_limits=(5, 100),
+        canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
     ):
