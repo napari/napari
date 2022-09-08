@@ -244,6 +244,7 @@ https://github.com/napari/napari
 - MAINT: fix a couple of trans._. (#5034)
 - Fix shift selection for points (#5022)
 - Add saving folders to preferences (#4902)
+- Use Source object to track if a layer is duplicated (#5028)
 
 ## 40 authors added to this release (alphabetical)
 
