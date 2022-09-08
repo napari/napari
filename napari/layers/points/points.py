@@ -291,7 +291,7 @@ class Points(Layer):
         size=10,
         edge_width=0.1,
         edge_width_is_relative=True,
-        edge_color='black',
+        edge_color='dimgray',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
