@@ -666,7 +666,10 @@ class Window:
             self._qt_viewer.dims.play(axis)
 
     def add_plugin_dock_widget(
-        self, plugin_name: str, widget_name: str = None
+        self,
+        plugin_name: str,
+        widget_name: str = None,
+        tabify: bool = False,
     ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
@@ -697,6 +700,7 @@ class Window:
             Widget, dock_kwargs = plugin_manager.get_widget(
                 plugin_name, widget_name
             )
+
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
@@ -716,7 +720,9 @@ class Window:
 
         # Add dock widget
         dock_kwargs.pop('name', None)
-        dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
+        dock_widget = self.add_dock_widget(
+            wdg, name=full_name, tabify=tabify, **dock_kwargs
+        )
         return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
@@ -752,6 +758,7 @@ class Window:
         shortcut=_sentinel,
         add_vertical_stretch=True,
         menu=None,
+        tabify: bool = False,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -824,7 +831,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget, menu=menu)
+        self._add_viewer_dock_widget(dock_widget, menu=menu, tabify=tabify)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
