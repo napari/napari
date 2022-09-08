@@ -307,8 +307,17 @@ class ActionManager:
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
-        if is_toggle_on_long_hold:
-            ttip += trans._("\nHold shortcut to temporarily activate")
+        if (
+            is_toggle_on_long_hold
+            and name in self._shortcuts
+            and self._shortcuts[name]
+        ):
+            if len(self._shortcuts[name]) > 1:
+                ttip += trans._(
+                    "\nHold either shortcut to temporarily activate"
+                )
+            else:
+                ttip += trans._("\nHold shortcut to temporarily activate")
 
         return ttip
 
