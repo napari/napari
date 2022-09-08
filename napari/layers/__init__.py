@@ -5,7 +5,6 @@ Custom layers must inherit from Layer and pass along the
 to the super constructor.
 """
 import inspect as _inspect
-from importlib import import_module as _imp
 
 from ..utils.misc import all_subclasses as _all_subcls
 from .base import Layer
