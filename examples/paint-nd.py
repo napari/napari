@@ -6,6 +6,7 @@ Display a 4D labels layer and paint only in 3D.
 
 This is useful e.g. when proofreading segmentations within a time series.
 
+.. tags:: analysis
 """
 
 import numpy as np

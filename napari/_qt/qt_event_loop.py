@@ -24,7 +24,10 @@ from ..utils.theme import _themes
 from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
-from .qthreading import wait_for_workers_to_quit
+from .qthreading import (
+    register_threadworker_processors,
+    wait_for_workers_to_quit,
+)
 from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
@@ -205,6 +208,8 @@ def get_app(
         def _(event):
             name = event.key
             QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        register_threadworker_processors()
 
     _app_ref = app  # prevent garbage collection
 

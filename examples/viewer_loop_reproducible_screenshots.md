@@ -12,7 +12,8 @@ kernelspec:
   name: python3
 ---
 
-+++ {"tags": []}
+```{tags} gui
+```
 
 # Creating reproducible screenshots with a viewer loop
 

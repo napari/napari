@@ -47,7 +47,7 @@ def test_image_rendering(make_napari_viewer):
 
 
 @skip_on_win_ci
-def test_visibility_consistency(qtbot, make_napari_viewer):
+def test_visibility_consistency(qapp, make_napari_viewer):
     """Make sure toggling visibility maintains image contrast.
 
     see #1622 for details.
@@ -57,7 +57,7 @@ def test_visibility_consistency(qtbot, make_napari_viewer):
     layer = viewer.add_image(
         np.random.random((200, 200)), contrast_limits=[0, 10]
     )
-    qtbot.wait(10)
+    qapp.processEvents()
     layer.contrast_limits = (0, 2)
     screen1 = viewer.screenshot(flash=False).astype('float')
     layer.visible = True
