@@ -3,7 +3,7 @@ from __future__ import annotations
 import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 
 from magicgui.widgets import FunctionGui
 from pydantic import BaseModel, validator
