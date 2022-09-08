@@ -289,7 +289,7 @@ class Points(Layer):
         text=None,
         symbol='o',
         size=10,
-        edge_width=0.1,
+        edge_width=0.05,
         edge_width_is_relative=True,
         edge_color='dimgray',
         edge_color_cycle=None,
