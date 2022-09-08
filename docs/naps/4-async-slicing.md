@@ -326,6 +326,8 @@ class ImageSliceResponse(LayerSliceResponse)
 
 As napari supports RGB and multi-scale images, we need a few more inputs to
 know what data should be accessed to generate the desired slice for the canvas.
+And the thumbnail needs to access the layer data as well, so should do so while
+we are slicing asynchronous to avoid any blocking behavior.
 
 The points request and response types should look something like the following.
 
@@ -333,10 +335,10 @@ The points request and response types should look something like the following.
 class PointsSliceRequest(LayerSliceRequest):
     out_of_slice_display: bool
     size: np.ndarray
+    shown: np.ndarray
     face_color: np.ndarray
     edge_color: np.ndarray
     edge_width: np.ndarray
-    shown: np.ndarray
 
 class PointsSliceResponse(LayerSliceResponse):
     indices: np.ndarray
