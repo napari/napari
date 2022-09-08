@@ -239,6 +239,7 @@ https://github.com/napari/napari
 - Feature: register a keyboard shortcut for `preserve_labels` checkbox (#5017)
 - Revert "Fix sys.path issue with subprocess relaunch in macOS" (#5027)
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
+- Option to load all dock widgets (#4954)
 
 ## 40 authors added to this release (alphabetical)
 
