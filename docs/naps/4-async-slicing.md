@@ -496,16 +496,22 @@ may be less tested and harder to merge in the end.
 
 The main goal of this project is to perform slicing asynchronously, so it's
 natural that we might break anyone that was depending on slicing being synchronous.
-At a minimum, we must provide a public way to achieve the same fundamental goals,
-such as connecting to the `slice_ready` event.
+In particular, users or plugins that rely on `Viewer.screenshot` to capture the
+contents of the canvas after updating things like `Dims.current_step` will be affected.
 
-The initial plan is to keep synchronous slicing as the default behavior and only
-trigger asynchronous slicing in specific cases.
-For example, using the API to directly set `Dims.current_step` should cause synchronous
-slicing whereas dragging a dimension slider in the GUI should cause asynchronous slicing.
-This allows us to start exposing asynchronous slicing as a useful behavior for
-interacting with large data without breaking those that were dependent on the existing
-synchronous behavior.
+Our proposal will break that usage in general, but we plan to offer some public way to
+force synchronous slicing. For example, one promising idea is to define a context manager
+that would temporarily force `LayerSlicer` to always wait for asynchronous tasks to finish
+and could be used as follows.
+
+```python
+with viewer.sync_slicing():
+    viewer.dims.current_step = (10, 0, 0)
+viewer.screenshot(...)
+```
+
+Having such a mechanism in `LayerSlicer` also allows us to implement support for
+async slicing incrementally for each layer type.
 
 ### Store existing slice state on layer
 
@@ -674,16 +680,16 @@ which might cause issues with things like selection that may depend on that stat
     - Main example is [the napari-animation plugin](https://www.napari-hub.org/plugins/napari-animation), but there may be others.
     - This was explored [^pull-4969] with the following main findings.
         - Forcing synchronous slicing when combining the prototype and `napari-animation` seems to work for the basic examples.
-        - We only need to force synchronous slicing when using `Viewer.screenshot`, as keyframes just capture the value of `current_step` and similar.
+        - We only need to ensure synchronous slicing before using `Viewer.screenshot`, as keyframes just capture the value of `current_step` and similar.
         - `screenshot` is only called a few times in `napari-animation`, so wouldn't require large changes if asynchronous slicing was the default.
     - Decision: always have some way to force synchronous slicing.
-        - Initially, slicing may be synchronous by default, so no modifications are needed for `napari-animation` or similar plugins/scripts.
+        - But no need to support synchronous slicing by default, which is harder to implement.
 - Should `Dims.current_step` (and `corner_pixels`) represent the last slice position request or the last slice response?
     - With sync slicing, there is no distinction.
     - With async slicing, `current` is ambiguous.
     - [Initial small consensus around last request](https://github.com/napari/napari/pull/4892/files#r935336654)
     - Decision: last request.
-        - The implementation is simpler if this represents the last request
+        - The implementation is simpler if this represents the last request.
         - Can introduce an additional public attribute later if last response is needed.
 
 ## References and footnotes
