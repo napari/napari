@@ -831,16 +831,26 @@ class Points(Layer):
     def edge_width(
         self, edge_width: Union[int, float, np.ndarray, list]
     ) -> None:
+        # broadcast to np.array
         edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
-        if self.edge_width_is_relative and np.any(
-            (edge_width > 1) | (edge_width < 0)
-        ):
+
+        # edge width cannot be negative
+        if np.any(edge_width < 0):
             raise ValueError(
                 trans._(
-                    'edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    'All edge_width must be > 0',
                     deferred=True,
                 )
             )
+        # if relative edge width is enabled, edge_width must be between 0 and 1
+        if self.edge_width_is_relative and np.any(edge_width > 1):
+            raise ValueError(
+                trans._(
+                    'All edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    deferred=True,
+                )
+            )
+
         self._edge_width = edge_width
         self.refresh()
 
