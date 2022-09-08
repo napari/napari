@@ -246,6 +246,7 @@ https://github.com/napari/napari
 - Add saving folders to preferences (#4902)
 - Use Source object to track if a layer is duplicated (#5028)
 - Add saving folders to preferences (#4902)
+- Add option to edit second shortcut in settings (#5018)
 
 ## 40 authors added to this release (alphabetical)
 
