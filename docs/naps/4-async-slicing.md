@@ -1,6 +1,6 @@
 (nap-4-async-slicing)=
 
-# NAP-4: asynchronous slicing
+# NAP-4: Asynchronous slicing
 
 ```{eval-rst}
 :Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni, Eric Perlman, Kim Pevey
