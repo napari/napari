@@ -240,6 +240,8 @@ https://github.com/napari/napari
 - Revert "Fix sys.path issue with subprocess relaunch in macOS" (#5027)
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
 - Option to load all dock widgets (#4954)
+- Ensure non-negative edge width (#5035)
+- MAINT: fix a couple of trans._. (#5034)
 
 ## 40 authors added to this release (alphabetical)
 
