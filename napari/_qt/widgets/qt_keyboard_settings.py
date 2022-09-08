@@ -117,7 +117,7 @@ class ShortcutEditor(QWidget):
         layout.addWidget(
             QLabel(
                 trans._(
-                    "To edit, double-click the keybinding. To unbind a key, use Backspace or Delete. To set Backspace or Delete, first unbind."
+                    "To edit, double-click the keybinding. To unbind a shortcut, use Backspace or Delete. To set Backspace or Delete, first unbind."
                 )
             )
         )
