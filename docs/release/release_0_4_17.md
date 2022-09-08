@@ -245,6 +245,7 @@ https://github.com/napari/napari
 - Fix shift selection for points (#5022)
 - Add saving folders to preferences (#4902)
 - Use Source object to track if a layer is duplicated (#5028)
+- Add saving folders to preferences (#4902)
 
 ## 40 authors added to this release (alphabetical)
 
