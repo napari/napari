@@ -726,7 +726,7 @@ def test_all_modes_covered(attr):
 def test_drag_start_selection(
     create_known_shapes_layer, Event, pre_selection, on_point, modifier
 ):
-"""Check layer drag start and drag box behave as expected."""
+    """Check layer drag start and drag box behave as expected."""
     layer, n_points, known_non_point = create_known_shapes_layer
     layer.mode = 'select'
     layer.selected_data = pre_selection
