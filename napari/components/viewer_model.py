@@ -1101,7 +1101,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     trans._(
-                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
                         path_message=path_message,
                     )

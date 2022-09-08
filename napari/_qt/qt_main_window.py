@@ -1242,7 +1242,10 @@ class Window:
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
-                        f'screenshot size must be 2 values, got {len(size)}'
+                        trans._(
+                            'screenshot size must be 2 values, got {len_size}',
+                            len_size=len(size),
+                        )
                     )
                 # Scale the requested size to account for HiDPI
                 size = tuple(
