@@ -707,6 +707,7 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
 def test_drag_start_selection(
     create_known_points_layer_2d, pre_selection, on_point, modifier
 ):
+"""Check layer drag start and drag box behave as expected."""
     layer, n_points, known_non_point = create_known_points_layer_2d
     layer.mode = 'select'
     layer.selected_data = pre_selection
