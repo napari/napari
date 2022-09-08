@@ -242,6 +242,7 @@ https://github.com/napari/napari
 - Option to load all dock widgets (#4954)
 - Ensure non-negative edge width (#5035)
 - MAINT: fix a couple of trans._. (#5034)
+- Fix shift selection for points (#5022)
 
 ## 40 authors added to this release (alphabetical)
 
