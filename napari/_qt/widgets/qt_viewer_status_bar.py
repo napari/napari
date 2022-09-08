@@ -26,7 +26,7 @@ class ViewerStatusBar(QStatusBar):
 
         layout = QHBoxLayout()
 
-        self._status = QLabel('Ready')
+        self._status = QLabel(trans._('Ready'))
         self._status.setContentsMargins(0, 0, 0, 0)
 
         self._layer_base = QElidingLabel(trans._(''))
