@@ -8,7 +8,8 @@ from typing import Optional, Tuple, TYPE_CHECKING
 from magicgui.widgets import FunctionGui
 from pydantic import BaseModel, validator
 
-from .base.base import Layer
+if TYPE_CHECKING:
+    from .base.base import Layer
 
 
 class Source(BaseModel):
