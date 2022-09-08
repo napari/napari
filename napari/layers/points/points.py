@@ -1884,6 +1884,7 @@ class Points(Layer):
         self,
         selection_indices: Sequence[int],
         position: Sequence[Union[int, float]],
+        center_by_data: bool = True,
     ) -> None:
         """Store the initial position at the start of a drag event.
 
@@ -1893,15 +1894,19 @@ class Points(Layer):
             integer indices of selected data used to index into self.data
         position : Sequence of numbers
             position of the drag start in data coordinates.
+        center_by_data: bool
+            Center the drag start based on the selected data.
+            Used for modifier drag_box selection.
         """
-        if len(selection_indices) > 0:
-            selection_indices = list(selection_indices)
-            dims_displayed = list(self._dims_displayed)
-            if self._drag_start is None:
+        selection_indices = list(selection_indices)
+        dims_displayed = list(self._dims_displayed)
+        if self._drag_start is None:
+            self._drag_start = np.array(position, dtype=float)[dims_displayed]
+            if len(selection_indices) > 0 and center_by_data:
                 center = self.data[
                     np.ix_(selection_indices, dims_displayed)
                 ].mean(axis=0)
-                self._drag_start = np.array(position)[dims_displayed] - center
+                self._drag_start -= center
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
