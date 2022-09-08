@@ -5,7 +5,7 @@ from enum import Enum, auto
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import (
@@ -37,7 +37,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QElidingLabel
-from typing_extensions import Literal
 
 import napari.resources
 
@@ -1026,7 +1025,7 @@ class QtPluginDialog(QDialog):
 
         self.filter()
 
-    def filter(self, text: str = None) -> None:
+    def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""
         if text is None:
             text = self.packages_filter.text()
