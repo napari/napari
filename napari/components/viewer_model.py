@@ -522,6 +522,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
             help_li.append(
                 trans._(
                     "use <{shortcut}> for {desc}",

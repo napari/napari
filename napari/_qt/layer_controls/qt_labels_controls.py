@@ -23,7 +23,6 @@ from ...layers.labels._labels_utils import get_dtype
 from ...utils._dtype import get_dtype_limits
 from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
-from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
 from ..widgets._slider_compat import QSlider
@@ -195,10 +194,6 @@ class QtLabelsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_fill_mode',
             self.fill_button,
-            extra_tooltip_text=trans._(
-                "Toggle with {shortcut}",
-                shortcut=Shortcut("Control"),
-            ),
         )
 
         self.erase_button = QtModeRadioButton(
@@ -209,10 +204,6 @@ class QtLabelsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_label_erase_mode',
             self.erase_button,
-            extra_tooltip_text=trans._(
-                "Toggle with {shortcut}",
-                shortcut=Shortcut("Alt"),
-            ),
         )
 
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
