@@ -8,7 +8,7 @@ from ...utils.translations import trans
 from ..utils.gl import fix_data_dtype, get_gl_extensions
 from ..visuals.image import Image as ImageNode
 from ..visuals.volume import Volume as VolumeNode
-from .base import VispyBaseLayer
+from .base import RenderQualityChange, VispyBaseLayer
 
 
 class ImageLayerNode:
@@ -198,6 +198,20 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_plane_normal_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.plane_normal = self.layer.plane.normal
+
+    def change_render_quality(self, quality_change: RenderQualityChange):
+        if not isinstance(self.node, VolumeNode):
+            return
+
+        if quality_change == RenderQualityChange.INCREASE:
+            new_step_size = min(self.node.relative_step_size * 2, 2)
+        elif quality_change == RenderQualityChange.DECREASE:
+            new_step_size = max(self.node.relative_step_size / 2, 0.1)
+        elif quality_change == RenderQualityChange.MIN:
+            new_step_size = 2
+        elif quality_change == RenderQualityChange.MAX:
+            new_step_size = 0.1
+        self.node.relative_step_size = new_step_size
 
     def reset(self, event=None):
         super().reset()

@@ -1,10 +1,19 @@
 from abc import ABC, abstractmethod
+from enum import auto
 
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
 from ...utils.events import disconnect_events
+from ...utils.misc import StringEnum
 from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+
+
+class RenderQualityChange(StringEnum):
+    INCREASE = auto()
+    DECREASE = auto()
+    MAX = auto()
+    MIN = auto()
 
 
 class VispyBaseLayer(ABC):
@@ -48,6 +57,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self._rendering_quality = 1
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -159,6 +169,17 @@ class VispyBaseLayer(ABC):
                 # invert axes because vispy uses xyz but napari zyx
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
+
+    def change_render_quality(self, quality_change):
+        """
+        Change the render quality of the vispy nodes
+
+        Parameters
+        ----------
+        quality_change: RenderQualityChange
+            how much to increase or decrease the rendering quality of the layer.
+        """
+        pass
 
     def reset(self):
         self._on_visible_change()
