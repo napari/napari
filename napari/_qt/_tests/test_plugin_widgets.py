@@ -101,7 +101,7 @@ def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
             break
     actions = actions[cnt + 1 :]
     texts = [a.text() for a in actions]
-    for t in ['TestP1', 'Widg3: TestP2', 'magic: TestP3']:
+    for t in ['TestP1', 'Widg3 (TestP2)', 'magic (TestP3)']:
         assert t in texts
 
     # Expect a submenu ("Test plugin1") with particular entries.
@@ -122,11 +122,11 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     actions = actions[cnt + 1 :]
 
     # trigger the 'TestP2: Widg3' action
-    tp2 = next(m for m in actions if m.text().endswith('TestP2'))
+    tp2 = next(m for m in actions if m.text().endswith('(TestP2)'))
     tp2.trigger()
     # make sure that a dock widget was created
-    assert 'Widg3: TestP2' in viewer.window._dock_widgets
-    dw = viewer.window._dock_widgets['Widg3: TestP2']
+    assert 'Widg3 (TestP2)' in viewer.window._dock_widgets
+    dw = viewer.window._dock_widgets['Widg3 (TestP2)']
     assert isinstance(dw.widget(), Widg3)
     # This widget uses the parameter annotation method to receive a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
@@ -139,8 +139,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert action.text() == 'Widg2'
     action.trigger()
     # make sure that a dock widget was created
-    assert 'Widg2: TestP1' in viewer.window._dock_widgets
-    dw = viewer.window._dock_widgets['Widg2: TestP1']
+    assert 'Widg2 (TestP1)' in viewer.window._dock_widgets
+    dw = viewer.window._dock_widgets['Widg2 (TestP1)']
     assert isinstance(dw.widget(), Widg2)
     # This widget uses parameter *name* "napari_viewer" to get a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
@@ -170,11 +170,11 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     actions = actions[cnt + 1 :]
 
     # trigger the 'TestP3: magic' action
-    tp3 = next(m for m in actions if m.text().endswith('TestP3'))
+    tp3 = next(m for m in actions if m.text().endswith('(TestP3)'))
     tp3.trigger()
     # make sure that a dock widget was created
-    assert 'magic: TestP3' in viewer.window._dock_widgets
-    dw = viewer.window._dock_widgets['magic: TestP3']
+    assert 'magic (TestP3)' in viewer.window._dock_widgets
+    dw = viewer.window._dock_widgets['magic (TestP3)']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
     FGui = getattr(magicgui.widgets, 'FunctionGui', None)
