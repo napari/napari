@@ -36,6 +36,7 @@ https://github.com/napari/napari
 - support PyQt6, remove logic for `compile_qt_svgs` (#3707)
 - Multi-color text with color encodings (#4464)
 - Improvements on scale bar (#4511)
+- Add "Processors": (generalize magicgui return type behavior outside of magicgui) (#4543)
 - Do not add duplicate layers (#4544)
 - allow use of validate_all=True on nested evented models (#4551)
 - add ci for asv benchmark suite (#4554)
