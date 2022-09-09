@@ -104,17 +104,22 @@ class FramerateMonitor:
     """Tracks and filters the framerate emitted from the canvas measure_fps() callback."""
 
     def __init__(
-        self, stale_threshold: float = 1.1, debounce_threshold: int = 2
+        self,
+        fps_window: float = 0.5,
+        stale_threshold: float = 0.6,
+        debounce_threshold: int = 2,
     ):
 
         self.events = EmitterGroup(source=self, fps=Event)
+        self._fps_window = fps_window
         self._debounce_counter = 0
         self._debounce_threshold = debounce_threshold
         self._last_update = time.time()
         self._stale_threshold = stale_threshold
 
         self._fps = 0
-        self._stale = True
+        self._measuring = False
+
         self._last_measurement_valid = False
 
     @property
@@ -154,21 +159,27 @@ class FramerateMonitor:
         fps : float
             The newly measured framerate in frames per second.
         """
-        if self._fps_stale():
-            self._stale = True
-            self._last_measurement_valid = False
-            self._debounce_counter = 0
-        else:
-            self._stale = False
-
-        self._last_update = time.time()
-
-        if self._stale is True:
+        if not self._fps_stale():
+            # do nothing if the last fps measurement is still valid
             return
+        elif self._measuring is False:
+            # if the measurement is stale, start measuring
+            self._last_measurement_valid = False
+            self._measuring = True
+            self._debounce_counter = 0
 
         # debounce and update fps
+        # we need to debounce because the fps average is
+        # calculated over multiple calls, so the first ones
+        # are not very accurate
         self._debounce_counter += 1
         if self._debounce_counter > self._debounce_threshold:
             self._fps = fps
+
+            # update states
             self._last_measurement_valid = True
+            self._measuring = False
+            self._last_update = time.time()
+
+            # emit the event
             self.events.fps(fps=self.fps)

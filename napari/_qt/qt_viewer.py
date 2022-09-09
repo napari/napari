@@ -11,6 +11,7 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt.utils import QSignalDebouncer
 
 from napari_builtins.io import imsave_extensions
 
@@ -270,9 +271,16 @@ class QtViewer(QSplitter):
             stale_threshold=stale_threshold, debounce_threshold=2
         )
         self.canvas.measure_fps(
-            window=self._fps_window, callback=self._fps_monitor.update_fps
+            window=self._fps_monitor._fps_window,
+            callback=self._fps_monitor.update_fps,
         )
         self._fps_monitor.events.fps.connect(self.on_fps_update)
+        self._redraw_debouncer = QSignalDebouncer(parent=self)
+        self._redraw_debouncer.setTimeout(1500)
+        self._fps_monitor.events.fps.connect(self._redraw_debouncer.throttle)
+        self._redraw_debouncer.triggered.connect(
+            self.redraw_at_higher_resolution
+        )
 
         # Add axes, scale bar
         self._add_visuals()
@@ -1133,6 +1141,19 @@ class QtViewer(QSplitter):
         if fps > 45:
             for node in nodes:
                 node.relative_step_size = max(node.relative_step_size / 2, 0.1)
+
+    def redraw_at_higher_resolution(self, event=None):
+        image_layers = [
+            layer for layer in self.viewer.layers if isinstance(layer, Image)
+        ]
+
+        nodes = []
+        for image in image_layers:
+            visual = self.layer_to_visual[image]
+            nodes.append(visual._layer_node.get_node(3))
+        for node in nodes:
+            node.relative_step_size = 0.8
+        self.canvas.update()
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
