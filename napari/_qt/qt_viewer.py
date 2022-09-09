@@ -22,7 +22,6 @@ from ..components._interaction_box_mouse_bindings import (
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..errors import MultipleReaderError, ReaderPluginError
-from ..layers import Image
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..settings import get_settings
@@ -66,6 +65,7 @@ from .._vispy import (  # isort:skip
     VispyInteractionBox,
     VispyTextOverlay,
     create_vispy_visual,
+    RenderQualityChange,
 )
 
 if TYPE_CHECKING:
@@ -1125,34 +1125,24 @@ class QtViewer(QSplitter):
                 )
 
     def on_fps_update(self, event):
-        image_layers = [
-            layer for layer in self.viewer.layers if isinstance(layer, Image)
+        vispy_layers = [
+            self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
         ]
-
-        nodes = []
-        for image in image_layers:
-            visual = self.layer_to_visual[image]
-            nodes.append(visual._layer_node.get_node(3))
 
         fps = event.fps
         if fps < 30:
-            for node in nodes:
-                node.relative_step_size = min(node.relative_step_size * 2, 2)
+            for v_layer in vispy_layers:
+                v_layer.change_render_quality(RenderQualityChange.INCREASE)
         if fps > 45:
-            for node in nodes:
-                node.relative_step_size = max(node.relative_step_size / 2, 0.1)
+            for v_layer in vispy_layers:
+                v_layer.change_render_quality(RenderQualityChange.DECREASE)
 
     def redraw_at_higher_resolution(self, event=None):
-        image_layers = [
-            layer for layer in self.viewer.layers if isinstance(layer, Image)
+        vispy_layers = [
+            self.layer_to_visual[vl] for vl in self.viewer.layers if vl.visible
         ]
-
-        nodes = []
-        for image in image_layers:
-            visual = self.layer_to_visual[image]
-            nodes.append(visual._layer_node.get_node(3))
-        for node in nodes:
-            node.relative_step_size = 0.8
+        for v_layer in vispy_layers:
+            v_layer.change_render_quality(RenderQualityChange.MAX)
         self.canvas.update()
 
     def set_welcome_visible(self, visible):
