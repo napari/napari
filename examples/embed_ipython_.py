@@ -9,6 +9,8 @@ such as shown in https://github.com/napari/napari/blob/main/examples/update_cons
 
 However, differently from `update_console`, this will start an independent
 ipython console which can outlive the viewer.
+
+.. tags:: gui
 """
 
 import napari

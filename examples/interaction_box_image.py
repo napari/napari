@@ -2,7 +2,11 @@
 Interaction box image
 =====================
 
-Demonstrate interaction box on image layer
+This example demonstrates activating 'transform' mode on the image layer.
+This allows the user to manipulate the image via the interaction box
+(blue box and points around the image).
+
+.. tags:: experimental
 """
 
 from skimage import data

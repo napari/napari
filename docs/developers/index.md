@@ -10,9 +10,9 @@ project and the onboarding of new contributors.
 - [Translations](./translations)
 - [Testing](./testing)
 - [Profiling](./profiling)
-- [Benckmarks](./benchmarks)
+- [Benchmarks](./benchmarks)
 
 ## For core developers
 
-- [Core developer guide](./core_dev_guide)
+- [Core Developer guide](./core_dev_guide)
 - [Release guide](./release)

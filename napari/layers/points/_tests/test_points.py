@@ -639,8 +639,8 @@ def test_properties(properties):
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
 
-    assert layer.get_status(data[0]).endswith("point_type: B")
-    assert layer.get_status(data[1]).endswith("point_type: A")
+    assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
+    assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -906,6 +906,34 @@ def test_edge_width():
     layer = Points(data, edge_width=3, edge_width_is_relative=False)
     np.testing.assert_array_equal(layer.edge_width, 3)
     assert layer.edge_width_is_relative is False
+    with pytest.raises(ValueError):
+        layer.edge_width = -2
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+)
+def test_edge_width_types(edge_width):
+    """Test edge_width dtypes with valid values"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, edge_width)
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+)
+def test_edge_width_types_negative(edge_width):
+    """Test negative values in all edge_width dtypes"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    with pytest.raises(ValueError):
+        Points(data, edge_width=edge_width, edge_width_is_relative=False)
 
 
 def test_out_of_slice_display():
@@ -1610,7 +1638,7 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -1622,7 +1650,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -2458,3 +2486,19 @@ def test_antialiasing_value_clipping():
     with pytest.warns(RuntimeWarning):
         layer.antialiasing = -1
     assert layer.antialiasing == 0
+
+
+def test_set_drag_start():
+    """Drag start should only change when currently None."""
+    data = [[0, 0], [1, 1]]
+    layer = Points(data)
+    assert layer._drag_start is None
+    position = (0, 1)
+    layer._set_drag_start({0}, position=position)
+    assert all(
+        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    )
+    layer._set_drag_start({0}, position=(1, 2))
+    assert all(
+        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    )

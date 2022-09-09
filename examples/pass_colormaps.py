@@ -4,6 +4,7 @@ Pass colormaps
 
 Add named or unnamed vispy colormaps to existing layers.
 
+.. tags:: visualization-basic
 """
 
 import numpy as np
