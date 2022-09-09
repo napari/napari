@@ -42,6 +42,7 @@ https://github.com/napari/napari
 - add ci for asv benchmark suite (#4554)
 - Disconnect a removed slider's _pull_label callback from the axis label change event  (#4557)
 - Fixes/modifications to nested list model and Group in prep for layergroups (#4560)
+- [Automatic] Update albertosottile/darkdetect vendored module (#4561)
 - Add option to use npe2 shim/adaptor for npe1 plugins (#4564)
 - Update base docker image to ubuntu 22.04, optimize container size. (#4568)
 - Fix Auto-open trans issue. (#4586)
