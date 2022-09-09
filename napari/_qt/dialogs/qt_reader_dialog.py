@@ -28,20 +28,34 @@ class QtReaderDialog(QDialog):
         parent: QWidget = None,
         readers: Dict[str, str] = {},
         error_message: str = '',
+        persist_checked: bool = True,
     ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
 
-        if os.path.isdir(pth) and str(pth).endswith('/'):
-            pth = os.path.dirname(pth)
         self._extension = os.path.splitext(pth)[1]
+        self._persist_text = trans._(
+            'Remember this choice for files with a {extension} extension',
+            extension=self._extension,
+        )
+
+        if os.path.isdir(pth):
+            self._extension = os.path.realpath(pth)
+            if not self._extension.endswith(
+                '.zarr'
+            ) and not self._extension.endswith(os.sep):
+                self._extension = self._extension + os.sep
+                self._persist_text = trans._(
+                    'Remember this choice for folders labeled as {extension}.',
+                    extension=self._extension,
+                )
 
         self._reader_buttons = []
-        self.setup_ui(error_message, readers)
+        self.setup_ui(error_message, readers, persist_checked)
 
-    def setup_ui(self, error_message, readers):
+    def setup_ui(self, error_message, readers, persist_checked):
         """Build UI using given error_messsage and readers dict"""
 
         # add instruction label
@@ -65,27 +79,37 @@ class QtReaderDialog(QDialog):
         self.btn_box.accepted.connect(self.accept)
         self.btn_box.rejected.connect(self.reject)
 
-        # checkbox to remember the choice (doesn't pop up for folders with no extension)
-        if self._extension:
-
+        # checkbox to remember the choice
+        if os.path.isdir(self._current_file):
+            existing_pref = get_settings().plugins.extension2reader.get(
+                self._extension
+            )
+            isdir = True
+        else:
             existing_pref = get_settings().plugins.extension2reader.get(
                 '*' + self._extension
             )
-            if existing_pref:
-                warn_message = trans._(
+            isdir = False
+
+        if existing_pref:
+            if isdir:
+                self._persist_text = trans._(
+                    'Override existing preference for folders labeled as {extension}: {pref}',
+                    extension=self._extension,
+                    pref=existing_pref,
+                )
+
+            else:
+                self._persist_text = trans._(
                     'Override existing preference for files with a {extension} extension: {pref}',
                     extension=self._extension,
                     pref=existing_pref,
                 )
-            else:
-                warn_message = trans._(
-                    'Remember this choice for files with a {extension} extension',
-                    extension=self._extension,
-                )
 
-            self.persist_checkbox = QCheckBox(warn_message)
-            self.persist_checkbox.toggle()
-            layout.addWidget(self.persist_checkbox)
+        self.persist_checkbox = QCheckBox(self._persist_text)
+        self.persist_checkbox.toggle()
+        self.persist_checkbox.setChecked(persist_checked)
+        layout.addWidget(self.persist_checkbox)
 
         layout.addWidget(self.btn_box)
         self.setLayout(layout)
@@ -131,6 +155,7 @@ def handle_gui_reading(
     stack: Union[bool, List[List[str]]],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
+    plugin_override: bool = False,
     **kwargs,
 ):
     """Present reader dialog to choose reader and open paths based on result.
@@ -155,6 +180,9 @@ def handle_gui_reading(
         name of plugin already tried, if any
     error : ReaderPluginError | None
         previous error raised in the process of opening
+    plugin_override: bool
+        True when user is forcing a plugin choice, otherwise False.
+        Dictates whether checkbox to remember choice is unchecked by default
     """
     _path = paths[0]
     readers = prepare_remaining_readers(paths, plugin_name, error)
@@ -164,6 +192,7 @@ def handle_gui_reading(
         pth=_path,
         error_message=error_message,
         readers=readers,
+        persist_checked=not plugin_override,
     )
     display_name, persist = readerDialog.get_user_choices()
     if display_name:
@@ -263,7 +292,9 @@ def open_with_dialog_choices(
     qt_viewer.viewer.open(paths, stack=stack, plugin=plugin_name, **kwargs)
 
     if persist:
+        if not extension.endswith(os.sep):
+            extension = '*' + extension
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            f'*{extension}': plugin_name,
+            extension: plugin_name,
         }
