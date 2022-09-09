@@ -12,6 +12,38 @@ https://github.com/napari/napari
 
 ## Highlights
 
+### Minimum blending for a better light theme experience
+
+TODO
+
+### Added `napari.imshow` as a convenient one-liner
+
+TODO
+
+### Versioned docs
+
+TODO
+
+### Multi-color text
+
+We added support for assigning colors for text annotations of individual points and shapes in #4464.
+
+This uses the API that we intend to spread elsewhere (e.g. for things like `Points.face_color`), so if you are a heavy user of those style attributes and parameters, you might want to try this out and leave some feedback on Zulip or create issues on GitHub.
+
+
+### Experimental support for PyQt6
+
+We added some basic support for PyQt6 in #3707, though we expect some issues. If you need to use Qt6 or just want to live on the edge, please try this out and report any bugs you find.
+
+
+### Optimized points and vector slicing
+
+TODO: probably omit this one and just classify it as an improvement.
+
+We optimized slicing for the Points (#4648) and Vectors (#4794) layers.
+
+With these changes, doing something like slicing 3D points for 2D display should be ~10x faster when dealing with large numbers of points.
+
 
 ## New Features
 
