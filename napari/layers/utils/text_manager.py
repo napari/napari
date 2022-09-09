@@ -76,6 +76,12 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
+    class Config:
+        # override EventedModel which defaults to 2 (inplace mutation)
+        # note that if we wanted some fields to have inplace mutations and some not,
+        # we would still have to set this to 1 or the global setting would win
+        allow_mutation = 1
+
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
@@ -329,14 +335,14 @@ class TextManager(EventedModel):
         # before actually making the update. This does not need to be a
         # deep copy because update will only try to reassign fields and
         # should not mutate any existing fields in-place.
-        # Avoid recursion because some fields are also models that may
+        # Avoid recursion (thanks to allow_mutation=1) because some fields are also models that may
         # not share field names/types (e.g. string).
         current_manager = self.copy()
-        current_manager.update(new_manager, recurse=False)
+        current_manager.update(new_manager)
 
         # If we got here, then there were no errors, so update for real.
         # Connected callbacks may raise errors, but those are bugs.
-        self.update(new_manager, recurse=False)
+        self.update(new_manager)
 
         # Some of the encodings may have changed, so ensure they encode new
         # values if needed.

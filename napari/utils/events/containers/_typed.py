@@ -219,7 +219,6 @@ class TypedMutableSequence(MutableSequence[_T]):
             stop += len(self)
 
         convert = self._lookup.get(type(value), _noop)
-
         for i in self._iter_indices(start, stop):
             v = convert(self[i])
             if v is value or v == value:

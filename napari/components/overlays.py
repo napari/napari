@@ -14,6 +14,4 @@ class Overlays(EventedModel):
     """
 
     # fields
-    interaction_box: InteractionBox = Field(
-        default_factory=InteractionBox, allow_mutation=False
-    )
+    interaction_box: InteractionBox = Field(default_factory=InteractionBox)

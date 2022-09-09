@@ -25,7 +25,7 @@ from .color_transformations import (
 )
 
 
-@dataclass(eq=False, order=False)
+@dataclass
 class ColorProperties:
     """The property values that are used for setting colors in ColorMode.COLORMAP
     and ColorMode.CYCLE.
@@ -141,6 +141,12 @@ class ColorManager(EventedModel):
     colors : np.ndarray
         The colors in a Nx4 color array, where N is the number of colors.
     """
+
+    class Config:
+        # override EventedModel which defaults to 2 (inplace mutation)
+        # note that if we wanted some fields to have inplace mutations and some not,
+        # we would still have to set this to 1 or the global setting would win
+        allow_mutation = 1
 
     # fields
     current_color: Optional[Array[float, (4,)]] = None

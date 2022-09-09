@@ -21,6 +21,7 @@ interface, and call one of those 4 methods.  So if you override a method, you
 MUST make sure that all the appropriate events are emitted.  (Tests should
 cover this in test_evented_list.py)
 """
+from __future__ import annotations
 
 import contextlib
 import logging
@@ -150,7 +151,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple['EventedList[_T]', int]]:
+    ) -> Iterable[Tuple[EventedList[_T], int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
@@ -356,3 +357,15 @@ class EventedList(TypedMutableSequence[_T]):
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
+
+    def _update_inplace(self, other):
+        self[:] = list(other)
+
+    def _uneventful(self):
+        ret = list()
+        for el in self:
+            if isinstance(el, self.__class__):
+                ret.append(el._uneventful())
+            else:
+                ret.append(el)
+        return ret

@@ -10,7 +10,7 @@ from dask import delayed
 from dask.delayed import Delayed
 from pydantic import Field
 
-from napari.utils.events import EmitterGroup, EventedModel
+from napari.utils.events import EmitterGroup, EventedList, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 
@@ -249,10 +249,14 @@ def test_update_with_inner_model_union():
         y: int
         z: Union[Inner, AltInner]
 
+        class Config:
+            # disallow inplace update
+            allow_mutation = 1
+
     original = Outer(y=1, z=Inner(w='a'))
     updated = Outer(y=2, z=AltInner(x='b'))
 
-    original.update(updated, recurse=False)
+    original.update(updated)
 
     assert original == updated
 
@@ -288,10 +292,14 @@ def test_update_with_inner_model_protocol():
         y: int
         z: InnerProtocol
 
+        class Config:
+            # disallow inplace update
+            allow_mutation = 1
+
     original = Outer(y=1, z=Inner(w='a'))
     updated = Outer(y=2, z=AltInner(x='b'))
 
-    original.update(updated, recurse=False)
+    original.update(updated)
 
     assert original == updated
 
@@ -489,3 +497,73 @@ def test_evented_model_with_property_setters_events():
     t.events.c.assert_called_with(value=[5, 20])
     t.events.b.assert_not_called()
     assert t.c == [5, 20]
+
+
+def test_nested_model():
+    class N(EventedModel):
+        x: int = 1
+
+    class M(EventedModel):
+        ls: EventedList = [1, 2, 3]
+        n: N = N()
+
+    m = M()
+    assert m.ls == [1, 2, 3]
+    assert m.n == N()
+    assert isinstance(m.ls, EventedList)
+    assert isinstance(m.n, N)
+
+    m = M(ls=[4, 5, 6], n=N(x=12))
+    assert m.ls == [4, 5, 6]
+    assert isinstance(m.ls, EventedList)
+    assert m.n == N(x=12)
+
+    # check inplace update
+    ls = m.ls
+    n = m.n
+    m.ls = [10, 11]
+    m.n = {'x': 3}
+    assert m.ls is ls
+    assert m.n is n
+
+
+# def test_events_stay_working():
+#     class SimpleCamera(EventedModel):
+#         zoom: int
+#
+#     class SimpleViewer(EventedModel):
+#         camera: SimpleCamera
+#
+#     # simple mock to get things done
+#     called = []
+#
+#     simple_viewer = SimpleViewer(camera=SimpleCamera(zoom=2))
+#     simple_viewer.events.camera.connect(lambda x: called.append(x))
+#
+#     new_camera = SimpleCamera(zoom=3)
+#
+#     # update inplace should fire events
+#     simple_viewer.camera = new_camera
+#     assert len(called) == 1
+#     # TODO: make this actually fire Event(type='zoom', value=4)
+#     assert called[0].type.zoom == 3
+#
+#     simple_viewer.camera.zoom = 4
+#     assert len(called) == 2
+#     assert called[1].value == 4
+#
+#
+# def test_events_are_fired_only_if_changed():
+#     class A(EventedModel):
+#         ls: EventedList = [1, 2]
+#
+#     a = A()
+#
+#     # TODO: this currently fires a million events because EventedList
+#     # adds/removes values one by one! Maybe this should change...
+#     a.events.ls = Mock(a.events.ls)
+#
+#     a.ls = [3, 4]
+#
+#     a.events.ls.assert_called_once()
+#     a.events.ls.assert_called_with(ls=[3, 4])

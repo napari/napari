@@ -114,25 +114,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Contains axes, indices, dimensions and sliders.
     """
 
-    # Using allow_mutation=False means these attributes aren't settable and don't
-    # have an event emitter associated with them
-    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
-    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
-    cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
-    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
-    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
-    layers: LayerList = Field(
-        default_factory=LayerList, allow_mutation=False
-    )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
-    text_overlay: TextOverlay = Field(
-        default_factory=TextOverlay, allow_mutation=False
-    )
-    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
-
+    axes: Axes = Field(default_factory=Axes)
+    camera: Camera = Field(default_factory=Camera)
+    cursor: Cursor = Field(default_factory=Cursor)
+    dims: Dims = Field(default_factory=Dims)
+    grid: GridCanvas = Field(default_factory=GridCanvas)
+    layers: LayerList = []
+    scale_bar: ScaleBar = Field(default_factory=ScaleBar)
+    text_overlay: TextOverlay = Field(default_factory=TextOverlay)
+    overlays: Overlays = Field(default_factory=Overlays)
     help: str = ''
-    status: Union[str, Dict] = 'Ready'
-    tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
+    status: str = 'Ready'
+    tooltip: Tooltip = Field(default_factory=Tooltip)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
