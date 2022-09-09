@@ -12,7 +12,8 @@ from ._plugin_manager import NapariPluginManager
 __all__ = ["plugin_manager", "menu_item_template"]
 
 #: Template to use for namespacing a plugin item in the menu bar
-menu_item_template = '{1}: {0}'
+# widget_name: plugin_name
+menu_item_template = '{1} ({0})'
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = NapariPluginManager()
 
