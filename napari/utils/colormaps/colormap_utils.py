@@ -10,6 +10,7 @@ from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 from ..translations import trans
 from .bop_colors import bopd
 from .colormap import Colormap, ColormapInterpolationMode
+from .inverse_colormaps import inverse_LUT
 from .standardize_color import transform_color
 from .vendored import cm, colorconv
 
@@ -100,6 +101,11 @@ SIMPLE_COLORMAPS = {
 BOP_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in bopd.items()
+}
+
+INVERSE_LUT = {
+    name: Colormap(value, name=name, display_name=display_name)
+    for name, (display_name, value) in inverse_LUT.items()
 }
 
 
@@ -444,6 +450,7 @@ ALL_COLORMAPS = {
 }
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
+ALL_COLORMAPS.update(INVERSE_LUT)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
