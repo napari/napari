@@ -58,7 +58,7 @@ except ModuleNotFoundError:
 
 
 pr_num_pattern = re.compile(r'\(#(\d+)\)[$\n]')
-issue_pattern = re.compile(r'#(\d+)')
+issue_pattern = re.compile(r'[ ^]#(\d+)')
 
 GH = "https://github.com"
 GH_USER = 'napari'
