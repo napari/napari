@@ -124,7 +124,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     text_overlay: TextOverlay = Field(default_factory=TextOverlay)
     overlays: Overlays = Field(default_factory=Overlays)
     help: str = ''
-    status: str = 'Ready'
+    status: Union[
+        Dict, str
+    ] = 'Ready'  # order of union matters (first coercion to pass wins)
     tooltip: Tooltip = Field(default_factory=Tooltip)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
