@@ -431,7 +431,6 @@ class NestableEventedList(EventedList[_T]):
         dest_par = self[dest_par_i]  # grab this before popping src_i
 
         with self.events.blocker_all():
-            dest_par = self[dest_par_i]  # grab this before popping src_i
             value = self[src_par_i].pop(src_i)
             dest_par.insert(dest_i, value)
 

@@ -319,13 +319,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         with self.events.blocker() as block:
             for key, value in values.items():
-                # if:
-                # - the field type (P) is a Protocol
-                # - the passed value was a Model (A) that passes the protocol check
-                # - the type of current field value (B) does not have the same fields as the passed value
-                # then the input gets deconstructed to a dict and A.__dict__ will fail validation for B
-                # so we should always pass the objects themselves (not an already dict-ified version)
-                # and let the lower levels deal with conversion if needed
                 setattr(self, key, value)
 
         if block.count:
