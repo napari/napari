@@ -143,10 +143,10 @@ def test_min_blending_opacity_slider(qtbot):
     assert layer.blending == 'translucent'
     # check that the opacity slider is present by default
     assert qtctrl.opacitySlider.isEnabled()
-    # set minimum blending, the opacity slider should be hidden
+    # set minimum blending, the opacity slider should be disabled
     layer.blending = 'minimum'
     assert not qtctrl.opacitySlider.isEnabled()
-    # set the blending back to 'translucent' confirm the slider is present
+    # set the blending back to 'translucent' confirm the slider is enabled
     layer.blending = 'translucent'
     assert layer.blending == 'translucent'
     assert qtctrl.opacitySlider.isEnabled()
