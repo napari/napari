@@ -47,6 +47,7 @@ https://github.com/napari/napari
 - [Automatic] Update albertosottile/darkdetect vendored module (#4845)
 - Add plugin reader warning dialog (#4852)
 - Fix `python` name in macOS menu bar (#4989)
+- Explicit convert color to string when compile resources (#4997)
 
 ## Bug Fixes
 
@@ -288,7 +289,6 @@ https://github.com/napari/napari
 - Fix: bump app-model, add test for layer buttons (#4972)
 - Add `FUNDING.yml` file to enable sponsor button and increase discoverability of option to sponsor napari (#4978)
 - Start adding a CODEOWNERS file. (#4993)
-- Explicit convert color to string when compile resources (#4997)
 - Add emacs temporary & local files to .gitignore (#4998)
 - Set fixpoint before move for shapes (#4999)
 - Fix sys.path issue with subprocess relaunch in macOS (#5007)
