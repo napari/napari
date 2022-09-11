@@ -8,10 +8,10 @@ from ..translations import trans
 I_Bordeaux = [[1, 1, 1], [204 / 255, 0, 51 / 255]]
 I_Blue = [[1, 1, 1], [0, 51 / 255, 204 / 255]]
 I_Forest = [[1, 1, 1], [0, 153 / 255, 0]]
-I_Orange = [[1, 1, 1], [1, 117 / 255, 0]]
-I_Purple = [[1, 1, 1], [117 / 255, 0, 1]]
+I_Orange = [[1, 1, 1], [1, 117 / 255, 0]]  # inverted ChrisLUT OPF Orange
+I_Purple = [[1, 1, 1], [117 / 255, 0, 1]]  # inverted ChrisLUT OPF Purple
 
-inverse_LUT = {
+inverse_cmaps = {
     "I Bordeaux": (trans._("I Bordeaux"), I_Bordeaux),
     "I Blue": (trans._("I Blue"), I_Blue),
     "I Forest": (trans._("I Forest"), I_Forest),

@@ -4,7 +4,7 @@ from .colormap_utils import (
     ALL_COLORMAPS,
     AVAILABLE_COLORMAPS,
     CYMRGB,
-    INVERSE_LUT,
+    INVERSE_COLORMAPS,
     MAGENTA_GREEN,
     RGB,
     SIMPLE_COLORMAPS,
