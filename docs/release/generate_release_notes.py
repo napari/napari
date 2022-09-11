@@ -57,7 +57,7 @@ except ModuleNotFoundError:
         return i
 
 
-pr_num_pattern = re.compile(r'\(#(\d+)\)[$\n]')
+pr_num_pattern = re.compile(r'\(#(\d+)\)(?:$|\n)')
 issue_pattern = re.compile(r'[ ^]#(\d+)')
 
 GH = "https://github.com"
@@ -172,7 +172,19 @@ highlights['Bug Fixes'] = {}
 highlights['API Changes'] = {}
 highlights['Deprecations'] = {}
 highlights['Build Tools'] = {}
+highlights['Documentation'] = {}
 other_pull_requests = {}
+
+label_to_section = {
+    "bug": "Bug Fixes",
+    "bugfix": "Bug Fixes",
+    "feature": "New Features",
+    "api": "API Changes",
+    "enhancement": "Improvements",
+    "deprecation": "Deprecations",
+    "dependencies": "Build Tools",
+    "documentation": "Documentation",
+}
 
 for pull in tqdm(
     g.search_issues(
@@ -204,18 +216,9 @@ for pull in tqdm(
         if review.user is not None:
             add_to_users(users, review.user)
             reviewers.add(review.user.login)
-    if "bug" in labels:
-        highlights['Bug Fixes'][pull.number] = {"summary": summary}
-        continue
-    if "feature" in labels:
-        highlights['New Features'][pull.number] = {"summary": summary}
-        continue
-    for key, key_dict in highlights.items():
-        pr_title_prefix = f'{key}: '.lower()
-        if summary.lower().startswith(pr_title_prefix):
-            key_dict[pull.number] = {
-                'summary': summary[len(pr_title_prefix) :]
-            }
+    for label_name, section in label_to_section.items():
+        if label_name in labels:
+            highlights[section][pull.number] = {'summary': summary}
             break
     else:
         other_pull_requests[pull.number] = {'summary': summary}
