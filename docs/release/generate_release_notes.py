@@ -27,6 +27,7 @@ https://github.com/scikit-image/scikit-image/issues/3405
 import argparse
 import os
 import re
+import sys
 from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
@@ -218,6 +219,11 @@ for pull in tqdm(
 ):
     if pull.number in consumed_pr:
         continue
+    if pull.milestone is not None and pull.milestone.title != args.version:
+        print(
+            f"PR {pull.number} is assigned to milestone {pull.milestone.title}",
+            file=sys.stderr,
+        )
     pr = repository.get_pull(pull.number)
     if pr.merge_commit_sha not in all_hashes:
         continue
