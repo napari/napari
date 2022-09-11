@@ -107,11 +107,23 @@ previous_tag_date = datetime.strptime(
 )
 
 
+def get_commits_to_ancestor(ancestor, rev="main"):
+    yield from local_repo.iter_commits(f'{ancestor.hexsha}..{rev}')
+
+
+new_commits_count = (
+    len(list(get_commits_to_ancestor(common_ancestor, args.to_commit))) + 1
+)
+release_branch_count = (
+    len(list(get_commits_to_ancestor(common_ancestor, args.from_commit))) + 1
+)
+
 all_commits = list(
     tqdm(
         repository.get_commits(sha=args.to_commit, since=previous_tag_date),
         desc=f'Getting all commits between {remote_commit.sha} '
         f'and {args.to_commit}',
+        total=new_commits_count,
     )
 )
 branch_commit = list(
@@ -122,6 +134,7 @@ branch_commit = list(
         ),
         desc=f'Getting all commits from release branch {args.from_commit} '
         f'and {remote_commit.sha}',
+        total=release_branch_count,
     )
 )
 all_hashes = {c.sha for c in all_commits}
@@ -188,6 +201,12 @@ label_to_section = {
     "documentation": "Documentation",
 }
 
+pr_count = 0
+
+for commit in get_commits_to_ancestor(common_ancestor, args.to_commit):
+    if pr_num_pattern.search(commit.message) is not None:
+        pr_count += 1
+
 for pull in tqdm(
     g.search_issues(
         f'repo:{GH_USER}/{GH_REPO} '
@@ -195,6 +214,7 @@ for pull in tqdm(
         'sort:created-asc'
     ),
     desc='Pull Requests...',
+    total=pr_count,
 ):
     if pull.number in consumed_pr:
         continue
