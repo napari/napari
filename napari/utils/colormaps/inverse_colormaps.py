@@ -16,5 +16,5 @@ inverse_cmaps = {
     "I Blue": (trans._("I Blue"), I_Blue),
     "I Forest": (trans._("I Forest"), I_Forest),
     "I Orange": (trans._("I Orange"), I_Orange),
-    "I_Purple": (trans._("I Purple"), I_Purple),
+    "I Purple": (trans._("I Purple"), I_Purple),
 }
