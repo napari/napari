@@ -1,6 +1,6 @@
-# The full test suite, which will be run anytime anything is merged into main.
+# The Comprehensive test suite, which will be run anytime anything is merged into main.
 # See test_pull_request.yml for the tests that will be run
-name: Full Test
+name: Comprehensive Test
 
 on:
   push:
