@@ -133,13 +133,6 @@ def parse_sys_argv():
         help="increase output verbosity",
     )
     parser.add_argument(
-        '-wh',
-        '--with_help',
-        dest='with_help_',
-        action='store_true',
-        help="Show information about available npe2 plugins",
-    )
-    parser.add_argument(
         '-w',
         '--with',
         dest='with_',
@@ -218,39 +211,7 @@ def parse_sys_argv():
             unknown.append(args.paths.pop(len(args.paths) - idx - 1))
     kwargs = validate_unknown_args(unknown) if unknown else {}
 
-    if args.with_help_:
-        show_plugin_info()
-        sys.exit(0)
-
     return args, kwargs
-
-
-def show_plugin_info():
-    from .plugins import _initialize_plugins, _npe2, plugin_manager
-
-    # if a plugin widget has been requested, this will fail immediately
-    # if the requested plugin/widget is not available.
-    _initialize_plugins()
-    plugin_manager.discover_widgets()
-
-    shared_dict = {}
-    for _key, (_plugin_name, _widget_names) in _npe2.widget_iterator():
-        shared_dict.setdefault(_key, {}).setdefault('npe2', []).append(
-            (_plugin_name, _widget_names)
-        )
-    for _key, (_plugin_name, _widget_dict) in plugin_manager.iter_widgets():
-        shared_dict.setdefault(_key, {}).setdefault(
-            'plugin_manager', []
-        ).append((_plugin_name, list(_widget_dict.keys())))
-
-    print('Available plugins')
-    for key, value in shared_dict.items():
-        for plugin_type, plugins in value.items():
-            print(f"\nTYPE: {key} - {plugin_type.upper()}")
-            for pname, wnames in plugins:
-                print(f"  PLUGIN_NAME: '{pname}'")
-                for wname in wnames:
-                    print(f"    WIDGET_NAME: '{wname}'")
 
 
 def _run():
