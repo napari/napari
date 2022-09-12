@@ -466,12 +466,10 @@ def _write_single_layer_with_plugins(
         )
 
     # Call the hook_caller
-    return (
-        hook_caller(
-            _plugin=plugin_name,
-            path=abspath_or_url(path),
-            data=layer.data,
-            meta=layer._get_state(),
-        ),
-        plugin_name,
-    )
+    written_path = hook_caller(
+        _plugin=plugin_name,
+        path=abspath_or_url(path),
+        data=layer.data,
+        meta=layer._get_state(),
+    )  # type: Optional[str]
+    return (written_path, plugin_name)
