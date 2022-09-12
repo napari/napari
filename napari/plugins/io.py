@@ -472,4 +472,4 @@ def _write_single_layer_with_plugins(
         data=layer.data,
         meta=layer._get_state(),
     )  # type: Optional[str]
-    return (written_path, plugin_name)
+    return (written_path, plugin_name or '')
