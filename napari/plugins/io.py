@@ -6,7 +6,6 @@ import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
-import npe2
 from napari_plugin_engine import HookImplementation, PluginCallError
 
 from ..layers import Layer
@@ -203,10 +202,11 @@ def save_layers(
     path : str
         A filepath, directory, or URL to open.
     layers : List[layers.Layer]
-        List of layers to be saved. If only a single layer is passed then
-        we use the hook specification corresponding to its layer type,
+        Non-empty List of layers to be saved. If only a single layer is passed
+        then we use the hook specification corresponding to its layer type,
         ``napari_write_<layer_type>``. If multiple layers are passed then we
-        use the ``napari_get_writer`` hook specification.
+        use the ``napari_get_writer`` hook specification. Warns when the list
+        of layers is empty.
     plugin : str, optional
         Name of the plugin to use for saving. If None then all plugins
         corresponding to appropriate hook specification will be looped
@@ -218,41 +218,29 @@ def save_layers(
         File paths of any files that were written.
     """
 
+    writer_name = ''
     if len(layers) > 1:
-        written = _write_multiple_layers_with_plugins(
+        written, writer_name = _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin, _writer=_writer
         )
     elif len(layers) == 1:
-        _written = _write_single_layer_with_plugins(
+        _written, writer_name = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin, _writer=_writer
         )
         written = [_written] if _written else []
     else:
-        written = []
+        warnings.warn(trans._("No layers to write."))
+        return []
 
     # If written is empty, something went wrong.
     # Generate a warning to tell the user what it was.
     if not written:
-        if len(layers) == 0:
+        if writer_name:
             warnings.warn(
                 trans._(
-                    f"No layers were provided for the request to write to {path}",
+                    "Plugin \'{name}\' was selected but did not return any written paths.",
                     deferred=True,
-                    path=path,
-                )
-            )
-        elif plugin or _writer:
-            name = plugin
-            if _writer:
-                name = npe2.plugin_manager.get_manifest(
-                    _writer.command
-                ).display_name
-
-            warnings.warn(
-                trans._(
-                    f"Plugin \'{name}\' was selected but did not return any written paths.",
-                    deferred=True,
-                    name=name,
+                    name=writer_name,
                 )
             )
         else:
@@ -297,7 +285,7 @@ def _write_multiple_layers_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> List[str]:
+) -> Tuple[List[str], str]:
     """Write data from multiple layers data with a plugin.
 
     If a ``plugin_name`` is not provided we loop through plugins to find the
@@ -328,14 +316,21 @@ def _write_multiple_layers_with_plugins(
 
     Returns
     -------
-    list of str
-        A list of filenames, if any, that were written.
+    (written paths, writer name) as Tuple[List[str],str]
+
+    written paths: List[str]
+        Empty list when no plugin was found, otherwise a list of file paths,
+        if any, that were written.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
 
     # Try to use NPE2 first
-    written_paths = _npe2.write_layers(path, layers, plugin_name, _writer)
-    if written_paths:
-        return written_paths
+    written_paths, writer_name = _npe2.write_layers(
+        path, layers, plugin_name, _writer
+    )
+    if writer_name:
+        return (written_paths, writer_name)
     logger.debug("Falling back to original plugin engine.")
 
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
@@ -390,7 +385,10 @@ def _write_multiple_layers_with_plugins(
         raise ValueError(msg)
 
     try:
-        return writer_function(abspath_or_url(path), layer_data)
+        return (
+            writer_function(abspath_or_url(path), layer_data),
+            implementation.plugin_name,
+        )
     except Exception as exc:
         raise PluginCallError(implementation, cause=exc)
 
@@ -401,7 +399,7 @@ def _write_single_layer_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     _writer: Optional[WriterContribution] = None,
-) -> Optional[str]:
+) -> Tuple[Optional[str], str]:
     """Write single layer data with a plugin.
 
     If ``plugin_name`` is not provided then we just directly call
@@ -429,15 +427,21 @@ def _write_single_layer_with_plugins(
 
     Returns
     -------
-    path : str or None
+    (written path, writer name) as Tuple[List[str],str]
+
+    written path: Optional[str]
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
 
     # Try to use NPE2 first
-    written_paths = _npe2.write_layers(path, [layer], plugin_name, _writer)
-    if written_paths:
-        return written_paths[0]
+    written_paths, writer_name = _npe2.write_layers(
+        path, [layer], plugin_name, _writer
+    )
+    if writer_name:
+        return (written_paths[0], writer_name)
     logger.debug("Falling back to original plugin engine.")
 
     hook_caller = getattr(
@@ -461,9 +465,12 @@ def _write_single_layer_with_plugins(
         )
 
     # Call the hook_caller
-    return hook_caller(
-        _plugin=plugin_name,
-        path=abspath_or_url(path),
-        data=layer.data,
-        meta=layer._get_state(),
+    return (
+        hook_caller(
+            _plugin=plugin_name,
+            path=abspath_or_url(path),
+            data=layer.data,
+            meta=layer._get_state(),
+        ),
+        plugin_name,
     )
