@@ -522,6 +522,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
             help_li.append(
                 trans._(
                     "use <{shortcut}> for {desc}",
@@ -1078,13 +1080,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-
         added = []
         plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
-
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1101,7 +1101,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     trans._(
-                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
                         path_message=path_message,
                     )

@@ -626,8 +626,12 @@ class QtViewer(QSplitter):
             ),
         )
         logging.debug(
-            f'QFileDialog - filename: {filename or None} '
-            f'selected_filter: {selected_filter or None}'
+            trans._(
+                'QFileDialog - filename: {filename} '
+                'selected_filter: {selected_filter}',
+                filename=filename or None,
+                selected_filter=selected_filter or None,
+            )
         )
 
         if filename:
