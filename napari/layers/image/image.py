@@ -575,7 +575,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = 'linear'
             warnings.warn(
                 trans._(
-                    "'bilinear' interpolation is deprecated. Please use 'linear' instead",
+                    "'bilinear' interpolation is deprecated since napari 0.4.17. Please use 'linear' instead",
                 ),
                 category=DeprecationWarning,
                 stacklevel=2,
