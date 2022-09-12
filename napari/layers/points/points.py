@@ -2,7 +2,7 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -289,9 +289,9 @@ class Points(Layer):
         text=None,
         symbol='o',
         size=10,
-        edge_width=0.1,
+        edge_width=0.05,
         edge_width_is_relative=True,
-        edge_color='black',
+        edge_color='dimgray',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
@@ -831,16 +831,26 @@ class Points(Layer):
     def edge_width(
         self, edge_width: Union[int, float, np.ndarray, list]
     ) -> None:
+        # broadcast to np.array
         edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
-        if self.edge_width_is_relative and np.any(
-            (edge_width > 1) | (edge_width < 0)
-        ):
+
+        # edge width cannot be negative
+        if np.any(edge_width < 0):
             raise ValueError(
                 trans._(
-                    'edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    'All edge_width must be > 0',
                     deferred=True,
                 )
             )
+        # if relative edge width is enabled, edge_width must be between 0 and 1
+        if self.edge_width_is_relative and np.any(edge_width > 1):
+            raise ValueError(
+                trans._(
+                    'All edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    deferred=True,
+                )
+            )
+
         self._edge_width = edge_width
         self.refresh()
 
@@ -1844,29 +1854,59 @@ class Points(Layer):
             self.data = np.delete(self.data, index, axis=0)
             self.selected_data = set()
 
-    def _move(self, index, coord):
-        """Moves points relative drag start location.
+    def _move(
+        self,
+        selection_indices: Sequence[int],
+        position: Sequence[Union[int, float]],
+    ) -> None:
+        """Move points relative to drag start location.
 
         Parameters
         ----------
-        index : list
-            Integer indices of points to move
-        coord : tuple
-            Coordinates to move points to
+        selection_indices : Sequence[int]
+            Integer indices of points to move in self.data
+        position : tuple
+            Position to move points to in data coordinates.
         """
-        if len(index) > 0:
-            index = list(index)
+        if len(selection_indices) > 0:
+            selection_indices = list(selection_indices)
             disp = list(self._dims_displayed)
-            if self._drag_start is None:
-                center = self.data[np.ix_(index, disp)].mean(axis=0)
-                self._drag_start = np.array(coord)[disp] - center
-            center = self.data[np.ix_(index, disp)].mean(axis=0)
-            shift = np.array(coord)[disp] - center - self._drag_start
-            self.data[np.ix_(index, disp)] = (
-                self.data[np.ix_(index, disp)] + shift
+            self._set_drag_start(selection_indices, position)
+            center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
+            shift = np.array(position)[disp] - center - self._drag_start
+            self.data[np.ix_(selection_indices, disp)] = (
+                self.data[np.ix_(selection_indices, disp)] + shift
             )
             self.refresh()
         self.events.data(value=self.data)
+
+    def _set_drag_start(
+        self,
+        selection_indices: Sequence[int],
+        position: Sequence[Union[int, float]],
+        center_by_data: bool = True,
+    ) -> None:
+        """Store the initial position at the start of a drag event.
+
+        Parameters
+        ----------
+        selection_indices : set of int
+            integer indices of selected data used to index into self.data
+        position : Sequence of numbers
+            position of the drag start in data coordinates.
+        center_by_data: bool
+            Center the drag start based on the selected data.
+            Used for modifier drag_box selection.
+        """
+        selection_indices = list(selection_indices)
+        dims_displayed = list(self._dims_displayed)
+        if self._drag_start is None:
+            self._drag_start = np.array(position, dtype=float)[dims_displayed]
+            if len(selection_indices) > 0 and center_by_data:
+                center = self.data[
+                    np.ix_(selection_indices, dims_displayed)
+                ].mean(axis=0)
+                self._drag_start -= center
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""

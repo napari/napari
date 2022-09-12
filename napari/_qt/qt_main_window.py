@@ -35,7 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
-from superqt import ensure_main_thread
+from superqt.utils import QSignalThrottler
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -132,6 +132,20 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        self.status_throttler = QSignalThrottler(parent=self)
+        self.status_throttler.setTimeout(50)
+
+        # In the GUI we expect lots of changes to the cursor position, so
+        # replace the direct connection with a throttled one.
+        with contextlib.suppress(IndexError):
+            viewer.cursor.events.position.disconnect(
+                viewer._update_status_bar_from_cursor
+            )
+        viewer.cursor.events.position.connect(self.status_throttler.throttle)
+        self.status_throttler.triggered.connect(
+            viewer._update_status_bar_from_cursor
+        )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -280,6 +294,8 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
+        if hasattr(self.status_throttler, "_timer"):
+            self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         if (
@@ -650,7 +666,10 @@ class Window:
             self._qt_viewer.dims.play(axis)
 
     def add_plugin_dock_widget(
-        self, plugin_name: str, widget_name: str = None
+        self,
+        plugin_name: str,
+        widget_name: str = None,
+        tabify: bool = False,
     ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
@@ -681,6 +700,7 @@ class Window:
             Widget, dock_kwargs = plugin_manager.get_widget(
                 plugin_name, widget_name
             )
+
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
@@ -700,7 +720,9 @@ class Window:
 
         # Add dock widget
         dock_kwargs.pop('name', None)
-        dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
+        dock_widget = self.add_dock_widget(
+            wdg, name=full_name, tabify=tabify, **dock_kwargs
+        )
         return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
@@ -736,6 +758,7 @@ class Window:
         shortcut=_sentinel,
         add_vertical_stretch=True,
         menu=None,
+        tabify: bool = False,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -808,7 +831,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget, menu=menu)
+        self._add_viewer_dock_widget(dock_widget, menu=menu, tabify=tabify)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -1143,7 +1166,6 @@ class Window:
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
 
-    @ensure_main_thread
     def _status_changed(self, event):
         """Update status bar.
 
@@ -1173,7 +1195,6 @@ class Window:
         """
         self._qt_window.setWindowTitle(event.value)
 
-    @ensure_main_thread
     def _help_changed(self, event):
         """Update help message on status bar.
 
@@ -1221,7 +1242,10 @@ class Window:
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
-                        f'screenshot size must be 2 values, got {len(size)}'
+                        trans._(
+                            'screenshot size must be 2 values, got {len_size}',
+                            len_size=len(size),
+                        )
                     )
                 # Scale the requested size to account for HiDPI
                 size = tuple(

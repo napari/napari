@@ -3,6 +3,8 @@ nD surface
 ==========
 
 Display a 3D surface
+
+.. tags:: visualization-nD
 """
 
 import numpy as np

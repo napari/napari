@@ -1,3 +1,4 @@
+(coc-reporting)=
 # Handling Code of Conduct reports
 
 This is the manual followed by napari's Code of Conduct Committee. It’s used when we respond to an issue to make sure we’re consistent and fair.

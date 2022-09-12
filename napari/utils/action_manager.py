@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from ..utils.events import EmitterGroup
 from .interactions import Shortcut
@@ -81,7 +81,7 @@ class ActionManager:
     def __init__(self):
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
-        self._shortcuts: Dict[str, Set[str]] = defaultdict(set)
+        self._shortcuts: Dict[str, List[str]] = defaultdict(list)
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shorcut_changed=None)
@@ -211,6 +211,10 @@ class ActionManager:
                 )
 
         button.clicked.connect(lambda: self.trigger(name))
+        if name in self._shortcuts:
+            button.setToolTip(
+                f'{self._build_tooltip(name)} {extra_tooltip_text}'
+            )
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
@@ -239,11 +243,13 @@ class ActionManager:
         delayed until the corresponding action is registered.
         """
         self._validate_action_name(name)
-        self._shortcuts[name].add(shortcut)
+        if shortcut in self._shortcuts[name]:
+            return
+        self._shortcuts[name].append(shortcut)
         self._update_shortcut_bindings(name)
         self._emit_shortcut_change(name, shortcut)
 
-    def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
+    def unbind_shortcut(self, name: str) -> Optional[List[str]]:
         """
         Unbind all shortcuts for a given action name.
 
@@ -297,7 +303,7 @@ class ActionManager:
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
             shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
-            ttip += f'({shorts})'
+            ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
         return ttip
@@ -320,10 +326,13 @@ class ActionManager:
         layer_shortcuts = {}
         for layer in layers:
             layer_shortcuts[layer] = {}
-            for name, shortcut in self._shortcuts.items():
+            for name, shortcuts in self._shortcuts.items():
                 action = self._actions.get(name, None)
                 if action and layer == action.keymapprovider:
-                    layer_shortcuts[layer][str(shortcut)] = action.description
+                    for shortcut in shortcuts:
+                        layer_shortcuts[layer][
+                            str(shortcut)
+                        ] = action.description
 
         return layer_shortcuts
 
@@ -364,10 +373,11 @@ class ActionManager:
         """
         active_func_names = [i[1].__name__ for i in active_keymap.items()]
         active_shortcuts = {}
-        for name, shortcut in self._shortcuts.items():
+        for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
             if action and action.command.__name__ in active_func_names:
-                active_shortcuts[str(shortcut)] = action.description
+                for shortcut in shortcuts:
+                    active_shortcuts[str(shortcut)] = action.description
 
         return active_shortcuts
 

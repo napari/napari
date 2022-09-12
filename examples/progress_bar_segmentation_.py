@@ -5,6 +5,7 @@ Progress bar segmentation
 Use napari's tqdm wrapper to display the progress of long-running operations
 in the viewer.
 
+.. tags:: gui
 """
 import numpy as np
 import napari
