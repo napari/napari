@@ -101,9 +101,9 @@ def write_layers(
             paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
-            return paths, writer.display_name
+            return (paths, writer.display_name)
         except ValueError:
-            return [], ''
+            return ([], '')
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)

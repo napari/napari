@@ -59,7 +59,9 @@ def test_write(mock_pm: 'TestPluginManager'):
     writer = mock_pm.get_manifest(PLUGIN_NAME).contributions.writers[0]
     writer = MagicMock(wraps=writer)
     writer.exec.return_value = ['']
-    assert _npe2.write_layers('some_file.tif', [points], writer=writer) == ['']
+    assert _npe2.write_layers('some_file.tif', [points], writer=writer)[0] == [
+        ''
+    ]
     mock_pm.commands.get.assert_not_called()
     writer.exec.assert_called_once()
     assert writer.exec.call_args_list[0].kwargs['args'][0] == 'some_file.tif'
