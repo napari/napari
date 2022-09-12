@@ -239,7 +239,7 @@ def show_plugin_info():
             (_plugin_name, _widget_names)
         )
     for _key, (_plugin_name, _widget_dict) in plugin_manager.iter_widgets():
-        shared_dict.setdefault(_key, []).setdefault(
+        shared_dict.setdefault(_key, {}).setdefault(
             'plugin_manager', []
         ).append((_plugin_name, list(_widget_dict.keys())))
 
