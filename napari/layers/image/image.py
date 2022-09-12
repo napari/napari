@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, List, Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -21,7 +21,7 @@ from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
 from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.layer_utils import calc_data_range, dims_displayed_world_to_layer
+from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
 from ._image_constants import (
     ImageRendering,
@@ -392,27 +392,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             return np.zeros((1,) * self._ndisplay)
 
-    def _get_order(self) -> List[int]:
+    def _get_order(self) -> Tuple[int]:
         """Return the order of the displayed dimensions."""
-        # The return value is used to index the sliced data array.
-        # Slicing does not prepend dimensions to the sliced data array,
-        # (i.e. a 3D slice of 2D layer gives a 2D array), so we need
-        # to use the layer's displayed dimensions as an index rather
-        # than prepending a 0.
-        if self.ndim <= self._ndisplay:
-            order = self._dims_displayed
-        else:
-            order = dims_displayed_world_to_layer(
-                dims_displayed_world=self._dims_displayed,
-                ndim_world=self.ndim,
-                ndim_layer=self._ndisplay,
-            )
-
+        order = self._dims_displayed_order
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return order + [max(order) + 1]
+            return order + (max(order) + 1,)
         else:
             return order
 

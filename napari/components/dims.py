@@ -407,22 +407,36 @@ class Dims(EventedModel):
         self.order = order.tolist()
 
 
-def reorder_after_dim_reduction(order):
+def reorder_after_dim_reduction(order: tuple[int]):
     """Ensure current dimension order is preserved after dims are dropped.
 
     Parameters
     ----------
-    order : tuple
+    order : tuple[int]
         The data to reorder.
 
     Returns
     -------
-    arr : tuple
-        The original array with the unneeded dimension
-        thrown away.
+    tuple[int]
+        A permutation of ``range(len(order))`` that is consistent with the input order.
+
+    Examples
+    --------
+    >>> reorder_after_dim_reduction([2, 0])
+    [1, 0]
+
+    >>> reorder_after_dim_reduction([0, 1, 2])
+    [0, 1, 2]
+
+    >>> reorder_after_dim_reduction([4, 0, 2])
+    [2, 0, 1]
     """
-    arr = sorted(range(len(order)), key=lambda x: order[x])
-    return tuple(arr)
+    return tuple(_argsort(_argsort(order)))
+
+
+def _argsort(values: Sequence[int]) -> list[int]:
+    """Equivalent to numpy.argsort but faster for short sequences."""
+    return sorted(range(len(values)), key=values.__getitem__)
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:
