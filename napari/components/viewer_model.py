@@ -11,6 +11,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -19,7 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
@@ -28,16 +28,20 @@ from ..errors import (
     NoAvailableReaderError,
     ReaderPluginError,
 )
-from ..layers import Image, Layer
+from ..layers import Image, Labels, Layer, Points, Shapes
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
+from ..layers.labels._labels_key_bindings import labels_fun_to_mode
+from ..layers.points._points_key_bindings import points_fun_to_mode
+from ..layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from ..layers.utils.stack_utils import split_channels
 from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
+from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
-from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
@@ -127,20 +131,24 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
-    status: str = 'Ready'
+    status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
-    _ctx: Context
+    _ctx: Mapping
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
+        from .._app_model.context import create_context
+
+        # FIXME: just like the LayerList, this object should ideally be created
+        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
@@ -172,7 +180,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Add extra events - ideally these will be removed too!
-        self.events.add(layers_change=Event, reset_view=Event)
+        self.events.add(
+            layers_change=WarningEmitter(
+                "This event will be removed in 0.5.0. "
+                "Please use viewer.layers.events instead",
+                type="layers_change",
+            ),
+            reset_view=Event,
+        )
 
         # Connect events
         self.grid.events.connect(self.reset_view)
@@ -182,9 +197,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
-        self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
-            throttled(self._update_status_bar_from_cursor, timeout=50)
+            self._update_status_bar_from_cursor
         )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
@@ -386,19 +400,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
-    def _on_cursor_position_change(self):
-        """Set the layer cursor position."""
-        with warnings.catch_warnings():
-            # Catch the deprecation warning on layer.position
-            warnings.filterwarnings(
-                'ignore',
-                message=str(
-                    trans._('layer.position is deprecated', deferred=True)
-                ),
-            )
-            for layer in self.layers:
-                layer.position = self.cursor.position
-
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.
 
@@ -415,6 +416,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
@@ -423,6 +425,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
+        else:
+            self.status = 'Ready'
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
@@ -483,6 +487,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+        if hasattr(layer.events, "mode"):
+            layer.events.mode.connect(self._on_layer_mode_change)
+        self._layer_help_from_mode(layer)
 
         # Update dims and grid model
         self._on_layers_change()
@@ -495,6 +502,42 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
+
+    @staticmethod
+    def _layer_help_from_mode(layer: Layer):
+        """
+        Update layer help text base on layer mode.
+        """
+        layer_to_func_and_mode = {
+            Points: points_fun_to_mode,
+            Labels: labels_fun_to_mode,
+            Shapes: shapes_fun_to_mode,
+        }
+
+        help_li = []
+        shortcuts = get_settings().shortcuts.shortcuts
+
+        for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
+            if mode_ == layer.mode:
+                continue
+            action_name = f"napari:{fun.__name__}"
+            desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
+            help_li.append(
+                trans._(
+                    "use <{shortcut}> for {desc}",
+                    shortcut=shortcuts[action_name][0],
+                    desc=desc,
+                )
+            )
+
+        layer.help = ", ".join(help_li)
+
+    def _on_layer_mode_change(self, event):
+        self._layer_help_from_mode(event.source)
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -612,7 +655,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             If a list then must be same length as the axis that is being
             expanded as channels.
         interpolation : str or list
-            Interpolation mode used by vispy. Must be one of our supported
+            Deprecated, to be removed in 0.6.0
+        interpolation2d : str or list
+            Interpolation mode used by vispy in 2D. Must be one of our supported
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        interpolation3d : str or list
+            Interpolation mode used by vispy in 3D. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
         rendering : str or list
@@ -1031,13 +1080,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-
         added = []
         plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
-
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1054,7 +1101,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     trans._(
-                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
                         path_message=path_message,
                     )

@@ -3,6 +3,8 @@ Xarray example
 ==============
 
 Displays an xarray
+
+.. tags:: visualization-nD
 """
 
 try:

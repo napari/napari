@@ -136,6 +136,8 @@ class QtWelcomeWidget(QWidget):
         """
         self._update_property("drag", True)
         if event.mimeData().hasUrls():
+            viewer = self.parentWidget().nativeParentWidget()._qt_viewer
+            viewer._set_drag_status()
             event.accept()
         else:
             event.ignore()

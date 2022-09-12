@@ -23,7 +23,7 @@ class QtLayerListModel(QtListModel[Layer]):
             # used to populate line edit when editing
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
-            return layer.name
+            return layer.get_source_str()
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item

@@ -2,8 +2,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QAction, QMessageBox
+from qtpy.QtWidgets import QAction
 
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari.errors.reader_errors import MultipleReaderError
@@ -42,6 +41,23 @@ class FileMenu(NapariMenu):
                 'text': trans._('Open Folder...'),
                 'slot': window._qt_viewer._open_folder_dialog,
                 'shortcut': 'Ctrl+Shift+O',
+            },
+            {
+                'menu': trans._('Open with Plugin'),
+                'items': [
+                    {
+                        'text': 'Open File(s)...',
+                        'slot': self._open_files_w_plugin,
+                    },
+                    {
+                        'text': 'Open Files as Stack...',
+                        'slot': self._open_files_as_stack_w_plugin,
+                    },
+                    {
+                        'text': 'Open Folder...',
+                        'slot': self._open_folder_w_plugin,
+                    },
+                ],
             },
             {'menu': self.open_sample_menu},
             {},
@@ -135,46 +151,10 @@ class FileMenu(NapariMenu):
         self.update()
 
     def _close_app(self):
-        if not get_settings().application.confirm_close_window:
-            self._win._qt_window.close(quit_app=True)
-            return
-        message = QMessageBox(
-            QMessageBox.Icon.Warning,
-            trans._("Close application?"),
-            trans._(
-                "Do you want to close the application? ('{shortcut}' to confirm). This will close all Qt Windows in this process",
-                shortcut=QKeySequence('Ctrl+Q').toString(
-                    QKeySequence.NativeText
-                ),
-            ),
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            self._win._qt_window,
-        )
-        close_btn = message.button(QMessageBox.StandardButton.Ok)
-        close_btn.setShortcut(QKeySequence('Ctrl+Q'))
-        if message.exec_() == QMessageBox.StandardButton.Ok:
-            self._win._qt_window.close(quit_app=True)
+        self._win._qt_window.close(quit_app=True, confirm_need=True)
 
     def _close_window(self):
-        if not get_settings().application.confirm_close_window:
-            self._win._qt_window.close(quit_app=False)
-            return
-        message = QMessageBox(
-            QMessageBox.Icon.Question,
-            trans._("Close window?"),
-            trans._(
-                "Confirm to close window (or press '{shortcut}')",
-                shortcut=QKeySequence('Ctrl+W').toString(
-                    QKeySequence.NativeText
-                ),
-            ),
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            self._win._qt_window,
-        )
-        close_btn = message.button(QMessageBox.StandardButton.Ok)
-        close_btn.setShortcut(QKeySequence('Ctrl+W'))
-        if message.exec_() == QMessageBox.StandardButton.Ok:
-            self._win._qt_window.close(quit_app=False)
+        self._win._qt_window.close(quit_app=False, confirm_need=True)
 
     def _layer_count(self, event=None):
         return len(self._win._qt_viewer.viewer.layers)
@@ -247,6 +227,20 @@ class FileMenu(NapariMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
+
+    def _open_files_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog(choose_plugin=True)
+
+    def _open_files_as_stack_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog_as_stack_dialog(
+            choose_plugin=True
+        )
+
+    def _open_folder_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
 @register_viewer_action(trans._("Show all key bindings"))

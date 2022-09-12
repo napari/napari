@@ -1,6 +1,10 @@
+import os
+import os.path as osp
 import re
+from enum import IntFlag
 from fnmatch import fnmatch
-from typing import Dict, Set, Tuple, Union
+from functools import lru_cache
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
@@ -9,14 +13,107 @@ from napari.settings import get_settings
 from . import _npe2, plugin_manager
 
 
-def get_preferred_reader(_path):
-    """Return preferred reader for _path from settings, if one exists."""
+class MatchFlag(IntFlag):
+    NONE = 0
+    SET = 1
+    ANY = 2
+    STAR = 4
+
+
+@lru_cache
+def score_specificity(pattern: str) -> Tuple[bool, int, List[MatchFlag]]:
+    """Score an fnmatch pattern, with higher specificities having lower scores.
+
+    Absolute paths have highest specificity,
+    followed by paths with the most nesting,
+    then by path segments with the least ambiguity.
+
+    Parameters
+    ----------
+    pattern : str
+        Pattern to score.
+
+    Returns
+    -------
+    relpath : boolean
+        Whether the path is relative or absolute.
+    nestedness : negative int
+        Level of nestedness of the path, lower is deeper.
+    score : List[MatchFlag]
+        Path segments scored by ambiguity, higher score is higher ambiguity.
+    """
+    pattern = osp.normpath(pattern)
+
+    segments = pattern.split(osp.sep)
+    score: List[MatchFlag] = []
+    ends_with_star = False
+
+    def add(match_flag):
+        score[-1] |= match_flag
+
+    # built-in fnmatch does not allow you to escape meta-characters
+    # so we don't need to handle them :)
+    for segment in segments:
+        # collapse foo/*/*/*.bar or foo*/*.bar but not foo*bar/*.baz
+        if segment and not (ends_with_star and segment.startswith('*')):
+            score.append(MatchFlag.NONE)
+
+        if '*' in segment:
+            add(MatchFlag.STAR)
+        if '?' in segment:
+            add(MatchFlag.ANY)
+        if '[' in segment and ']' in segment[segment.index('[') :]:
+            add(MatchFlag.SET)
+
+        ends_with_star = segment.endswith('*')
+
+    return not osp.isabs(pattern), 1 - len(score), score
+
+
+def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
+    """Given filepath, find matching readers from preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    filtered_preferences : Iterable[Tuple[str, str]]
+        Filtered patterns and their corresponding readers.
+    """
+
+    if osp.isdir(path):
+        if not path.endswith(os.sep):
+            path = path + os.sep
+
     reader_settings = get_settings().plugins.extension2reader
-    for pattern, reader in reader_settings.items():
-        # TODO: we return the first one we find - more work should be done here
-        # in case other patterns would match - do we return the most specific?
-        if fnmatch(_path, pattern):
-            return reader
+    return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
+
+
+def get_preferred_reader(path: str) -> Optional[str]:
+    """Given filepath, find the best matching reader from the preferences.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+
+    Returns
+    -------
+    reader : str or None
+        Best matching reader, if found.
+    """
+    readers = sorted(
+        _get_preferred_readers(path), key=lambda kv: score_specificity(kv[0])
+    )
+    if readers:
+        preferred = readers[0]
+        _, reader = preferred
+        return reader
+
+    return None
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:

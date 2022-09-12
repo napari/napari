@@ -62,7 +62,7 @@ def test_changing_model_updates_view(qtbot, layer):
 @pytest.mark.parametrize(
     'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
 )
-def test_range_popup_clim_buttons(mock_show, qtbot, layer):
+def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
@@ -75,7 +75,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
         QPushButton, "reset_clims_button"
     )
     reset_button.click()
-    qtbot.wait(20)
+    qapp.processEvents()
     assert tuple(qtctrl.contrastLimitsSlider.value()) == original_clims
 
     rangebtn = qtctrl.clim_popup.findChild(
@@ -86,7 +86,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     if np.issubdtype(layer.dtype, np.integer):
         info = np.iinfo(layer.dtype)
         rangebtn.click()
-        qtbot.wait(20)
+        qapp.processEvents()
         assert tuple(layer.contrast_limits_range) == (info.min, info.max)
         min_ = qtctrl.contrastLimitsSlider.minimum()
         max_ = qtctrl.contrastLimitsSlider.maximum()

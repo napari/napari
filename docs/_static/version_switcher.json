@@ -1,29 +1,17 @@
 [
 	{
-	  "version": "dev"
+		"name": "latest",
+		"version": "dev",
+		"url": "https://napari.org/dev/"
 	},
 	{
-	  "version": "0.4.7"
-	},
+		"name": "stable",
+		"version": "0.4.16",
+		"url": "https://napari.org/stable/"
+	}
 	{
-	  "version": "0.4.6"
-	},
-	{
-	  "version": "0.4.5"
-	},
-	{
-	  "version": "0.4.4"
-	},
-	{
-	  "version": "0.4.3"
-	},
-	{
-	  "version": "0.4.0"
-	},
-	{
-	  "version": "0.3.8"
-	},
-	{
-	  "version": "0.3.7"
-	},
+		"name": "0.4.15",
+		"version": "0.4.15",
+		"url": "https://napari.org/0.4.15/"
+	}
 ]
