@@ -329,7 +329,8 @@ def _write_multiple_layers_with_plugins(
     written_paths, writer_name = _npe2.write_layers(
         path, layers, plugin_name, _writer
     )
-    if writer_name:
+    if written_paths or writer_name:
+        print('XXXXXXXXXX', (written_paths, writer_name))
         return (written_paths, writer_name)
     logger.debug("Falling back to original plugin engine.")
 

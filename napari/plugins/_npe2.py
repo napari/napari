@@ -101,7 +101,7 @@ def write_layers(
             paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
-            return (paths, writer.display_name)
+            return (paths, writer.plugin_name)
         except ValueError:
             return ([], '')
 
@@ -111,8 +111,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return ([res], writer.display_name)
-    return (res or [], writer.display_name)
+        return ([res], writer.plugin_name)
+    return (res or [], writer.plugin_name)
 
 
 def get_widget_contribution(
