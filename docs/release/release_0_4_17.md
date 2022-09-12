@@ -240,6 +240,15 @@ https://github.com/napari/napari
 - Revert "Fix sys.path issue with subprocess relaunch in macOS" (#5027)
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
 - Option to load all dock widgets (#4954)
+- Ensure non-negative edge width (#5035)
+- MAINT: fix a couple of trans._. (#5034)
+- Fix shift selection for points (#5022)
+- Add saving folders to preferences (#4902)
+- Use Source object to track if a layer is duplicated (#5028)
+- Add saving folders to preferences (#4902)
+- Add option to edit second shortcut in settings (#5018)
+- Update viewer screenshot in docs and make more prominent on napari.org (#4988)
+- Small shortcuts preference pane wording update after #5018 (#5049)
 
 ## 40 authors added to this release (alphabetical)
 
