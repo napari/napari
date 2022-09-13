@@ -656,7 +656,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._dims_order[: -self._ndisplay]
 
     @property
-    def _dims_displayed_order(self) -> Tuple[int]:
+    def _dims_displayed_order(self) -> Tuple[int, ...]:
         """To be removed order of displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple

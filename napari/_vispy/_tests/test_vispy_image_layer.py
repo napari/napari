@@ -1,5 +1,5 @@
 from itertools import permutations
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 import pytest
@@ -10,16 +10,15 @@ from napari._vispy.layers.image import VispyImageLayer
 from napari.layers import Image
 
 
-def _node_scene_size(
-    node: Union[ImageVisual, VolumeVisual]
-) -> Tuple[float, float, float, float]:
+def _node_scene_size(node: Union[ImageVisual, VolumeVisual]) -> np.ndarray:
     """Calculates the size of a vispy node in 3D scene homogeneous coordinates."""
     data = node._last_data if isinstance(node, VolumeVisual) else node._data
     # Only use scale to ignore translate offset used to center top-left pixel.
     transform = STTransform(scale=np.diag(node.transform.matrix))
     # Vispy uses an xy-style ordering, whereas numpy uses a rc-style
     # ordering, so reverse the shape before applying the transform.
-    return transform.map(data.shape[::-1])
+    output = transform.map(data.shape[::-1])
+    return output
 
 
 @pytest.mark.parametrize('order', permutations((0, 1, 2)))

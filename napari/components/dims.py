@@ -412,29 +412,29 @@ class Dims(EventedModel):
         self.order = order.tolist()
 
 
-def reorder_after_dim_reduction(order: Tuple[int]):
+def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
     """Ensure current dimension order is preserved after dims are dropped.
 
     Parameters
     ----------
-    order : tuple[int]
+    order : Sequence[int]
         The data to reorder.
 
     Returns
     -------
-    tuple[int]
+    Tuple[int, ...]
         A permutation of ``range(len(order))`` that is consistent with the input order.
 
     Examples
     --------
     >>> reorder_after_dim_reduction([2, 0])
-    [1, 0]
+    (1, 0)
 
     >>> reorder_after_dim_reduction([0, 1, 2])
-    [0, 1, 2]
+    (0, 1, 2)
 
     >>> reorder_after_dim_reduction([4, 0, 2])
-    [2, 0, 1]
+    (2, 0, 1)
     """
     return tuple(_argsort(_argsort(order)))
 
