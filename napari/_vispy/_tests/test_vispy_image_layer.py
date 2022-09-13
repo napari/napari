@@ -17,8 +17,7 @@ def _node_scene_size(node: Union[ImageVisual, VolumeVisual]) -> np.ndarray:
     transform = STTransform(scale=np.diag(node.transform.matrix))
     # Vispy uses an xy-style ordering, whereas numpy uses a rc-style
     # ordering, so reverse the shape before applying the transform.
-    output = transform.map(data.shape[::-1])
-    return output
+    return transform.map(data.shape[::-1])
 
 
 @pytest.mark.parametrize('order', permutations((0, 1, 2)))
