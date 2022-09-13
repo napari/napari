@@ -842,24 +842,3 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
-
-
-def test_3d_slice_of_2d_image_with_order():
-    """See https://github.com/napari/napari/issues/4926"""
-    image = Image(np.zeros((4, 3)))
-    image._slice_dims(point=(0, 0, 0), ndisplay=3, order=(1, 2, 0))
-    assert image._data_view.shape == (4, 3)
-
-
-def test_2d_slice_of_3d_image_with_order():
-    """See https://github.com/napari/napari/issues/4926"""
-    image = Image(np.zeros((4, 3, 2)))
-    image._slice_dims(point=(0, 0, 0), ndisplay=2, order=(1, 2, 0))
-    assert image._data_view.shape == (2, 4)
-
-
-def test_3d_slice_of_3d_image_with_order():
-    """See https://github.com/napari/napari/issues/4926"""
-    image = Image(np.zeros((4, 3, 2)))
-    image._slice_dims(point=(0, 0, 0), ndisplay=3, order=(1, 2, 0))
-    assert image._data_view.shape == (3, 2, 4)
