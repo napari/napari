@@ -330,7 +330,6 @@ def _write_multiple_layers_with_plugins(
         path, layers, plugin_name, _writer
     )
     if written_paths or writer_name:
-        print('XXXXXXXXXX', (written_paths, writer_name))
         return (written_paths, writer_name)
     logger.debug("Falling back to original plugin engine.")
 
