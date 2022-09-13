@@ -1,6 +1,11 @@
 from numbers import Integral
-from typing import Literal  # Added to typing in 3.8
-from typing import Sequence, Tuple, Union
+from typing import (  # Added to typing in 3.8
+    List,
+    Literal,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -434,7 +439,7 @@ def reorder_after_dim_reduction(order: Tuple[int]):
     return tuple(_argsort(_argsort(order)))
 
 
-def _argsort(values: Sequence[int]) -> list[int]:
+def _argsort(values: Sequence[int]) -> List[int]:
     """Equivalent to numpy.argsort but faster for short sequences."""
     return sorted(range(len(values)), key=values.__getitem__)
 
