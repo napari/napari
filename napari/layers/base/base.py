@@ -101,7 +101,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -126,17 +126,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         * ``Blending.TRANSLUCENT``
           Allows for multiple layers to be blended with different opacity and
           corresponds to ``depth_test=True``, ``cull_face=False``,
-          ``blend=True``, ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+          ``blend=True``, ``blend_func=('src_alpha', 'one_minus_src_alpha')``,
+          and ``blend_equation=('func_add')``.
         * ``Blending.TRANSLUCENT_NO_DEPTH``
           Allows for multiple layers to be blended with different opacity, but
           no depth testing is performed. Corresponds to ``depth_test=False``,
           ``cull_face=False``, ``blend=True``,
-          ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+          ``blend_func=('src_alpha', 'one_minus_src_alpha')``, and
+          ``blend_equation=('func_add')``.
         * ``Blending.ADDITIVE``
           Allows for multiple layers to be blended together with different
           colors and opacity. Useful for creating overlays. It corresponds to
           ``depth_test=False``, ``cull_face=False``, ``blend=True``,
-          ``blend_func=('src_alpha', 'one')``.
+          ``blend_func=('src_alpha', 'one')``, and ``blend_equation=('func_add')``.
+        * ``Blending.MINIMUM``
+            Allows for multiple layers to be blended together such that
+            the minimum of each RGB component and alpha are selected.
+            Useful for creating overlays with inverted colormaps. It
+            corresponds to ``depth_test=False``, ``cull_face=False``, ``blend=True``,
+            ``blend_equation=('min')``.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -471,12 +479,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Blending.TRANSLUCENT
             Allows for multiple layers to be blended with different opacity
             and corresponds to depth_test=True, cull_face=False,
-            blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'),
+            and blend_equation=('func_add').
+        Blending.TRANSLUCENT_NO_DEPTH
+          Allows for multiple layers to be blended with different opacity, but
+          no depth testing is performed. Corresponds to ``depth_test=False``,
+          cull_face=False, blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'),
+          and blend_equation=('func_add').
         Blending.ADDITIVE
             Allows for multiple layers to be blended together with
             different colors and opacity. Useful for creating overlays. It
             corresponds to depth_test=False, cull_face=False, blend=True,
-            blend_func=('src_alpha', 'one').
+            blend_func=('src_alpha', 'one'), and blend_equation=('func_add').
+        Blending.MINIMUM
+            Allows for multiple layers to be blended together such that
+            the minimum of each RGB component and alpha are selected.
+            Useful for creating overlays with inverted colormaps. It
+            corresponds to depth_test=False, cull_face=False, blend=True,
+            blend_equation=('min').
         """
         return str(self._blending)
 
