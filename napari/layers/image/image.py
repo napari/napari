@@ -393,8 +393,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             return np.zeros((1,) * self._ndisplay)
 
     def _get_order(self) -> Tuple[int]:
-        """Return the order of the displayed dimensions."""
-        order = self._dims_displayed_order
+        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+        from ...components.dims import reorder_after_dim_reduction
+
+        order = reorder_after_dim_reduction(self._dims_displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many

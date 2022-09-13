@@ -662,10 +662,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # itself so that layers can be sliced in different ways for multiple
         # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
         # for additional discussion.
-        from ...components.dims import reorder_after_dim_reduction
-
         displayed = self._dims_displayed
-        return tuple(reorder_after_dim_reduction(displayed))
+        # equivalent to: order = np.argsort(displayed)
+        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
+        return tuple(order)
 
     def _update_dims(self, event=None):
         """Update the dims model and clear the extent cache.
