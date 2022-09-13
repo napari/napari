@@ -260,7 +260,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.layout().addRow(button_row)
         self.layout().addRow(trans._('label:'), color_layout)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
