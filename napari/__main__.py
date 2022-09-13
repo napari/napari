@@ -367,10 +367,15 @@ def _run():
                             break
 
                 if wnames:
-                    for wname in wnames:
+                    first_dock_widget = viewer.window.add_plugin_dock_widget(
+                        pname, wnames[0], tabify=tabify
+                    )[0]
+                    for wname in wnames[1:]:
                         viewer.window.add_plugin_dock_widget(
                             pname, wname, tabify=tabify
                         )
+                    first_dock_widget.show()
+                    first_dock_widget.raise_()
                 else:
                     viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
 
