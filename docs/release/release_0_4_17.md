@@ -12,19 +12,20 @@ https://github.com/napari/napari
 
 ## Highlights
 
+- Feature: Minimum blending (#4875)
+- Add option to edit second shortcut in settings (#5018)
 
 ## New Features
 
 - Multi-color text with color encodings (#4464)
 - add layer reader in tooltip and info dialog (#4664)
-- Add public API for dims transpose (#4727)
-- Add a public API for the setGeometry method of _qt_window (#4729)
+- Feature: Minimum blending (#4875)
 - Add option for forcing plugin choice when opening files in the GUI (#4882)
 - Add saving folders to preferences (#4902)
 - Add napari.imshow to return viewer and layers (#4928)
 - Option to load all dock widgets (#4954)
-- Add link to docs artifact to pull requests (#5014)
 - Feature: register a keyboard shortcut for `preserve_labels` checkbox (#5017)
+- Add option to edit second shortcut in settings (#5018)
 
 ## Improvements
 
@@ -36,6 +37,10 @@ https://github.com/napari/napari
 - honor confirm close settings when quitting (#4700)
 - Use custom color field classes in all models (#4704)
 - napari.viewer.current_viewer fallback ancestor (#4715)
+- Add public API for dims transpose (#4727)
+- Add a public API for the setGeometry method of _qt_window (#4729)
+- Expose points layer antialiasing control publicly (#4735)
+- Use `npe2 list` to show plugin info (#4739)
 - Allow pandas.Series as properties values (#4755)
 - Allow stack to be specified multiple times (#4783)
 - Refactor: use app-model and in-n-out (#4784)
@@ -48,12 +53,16 @@ https://github.com/napari/napari
 - Add plugin reader warning dialog (#4852)
 - Fix `python` name in macOS menu bar (#4989)
 - Explicit convert color to string when compile resources (#4997)
+- Add link to docs artifact to pull requests (#5014)
+
+## Performance
+
+- Optimization: convert vector slice indices to floats (#4794)
 
 ## Bug Fixes
 
 - Fix: Always save settings after migration (#4490)
 - Make sure reader dialog pops open if File -> Open Sample is compatible with multiple readers (#4500)
-- Add alt_text (#4502)
 - Do not add duplicate layers (#4544)
 - Disconnect a removed slider's _pull_label callback from the axis label change event  (#4557)
 - Clean status message after leave canvas (#4607)
@@ -68,13 +77,11 @@ https://github.com/napari/napari
 - Tracks tail update fix beyond _max_length (#4688)
 - Keep order of layers when select to save multiple selected layers (#4689)
 - Apply shown mask to points._view_size_scale (#4699)
-- add 'napari-xpra' target to dockerfile (#4703)
 - Color edit without tooltip fix (#4717)
 - fix presentation and enablement of npe1 plugins (#4721)
 - fix clim init for dask arrays (#4724)
 - split Image `interpolation` on two properties, `interpoltion2d` and `interpolation3d`  (#4725)
 - Fix bug in deepcopy of utils.context.Expr (#4730)
-- Use `npe2 list` to show plugin info (#4739)
 - Fix `_get_state` for empty Vectors and Points layers (#4748)
 - Stop slider animation on display and dimension changes (#4761)
 - Fix deepcopy for trans objects when passing args (#4786)
@@ -94,16 +101,18 @@ https://github.com/napari/napari
 - Fix resize window problem by to long text in help  (#4981)
 - Fix throttled status updates by ensuring GUI updates occur on the main thread (#4983)
 - Fix throttled status updates by use `QSignalThrottler` in `_QtMainWindow` constructor (#4985)
-- Add option to edit second shortcut in settings (#5018)
 - Ensure non-negative edge width (#5035)
 
 ## API Changes
 
 - Removed unused private Layer._position (#4604)
+- Add public API for dims transpose (#4727)
+- Add a public API for the setGeometry method of _qt_window (#4729)
 - Expose points layer antialiasing control publicly (#4735)
 
 ## Deprecations
 
+- Deprecate layers.move_selected (#4559)
 - Update deprecation warnings with versions (#4757)
 - Make `viewer.events.layers_change` event deprecated (#4895)
 
@@ -137,6 +146,8 @@ https://github.com/napari/napari
 - Update viewer tutorial (#4473)
 - Fix selection events documentation for LayerList  (#4478)
 - add ABRF LMRG workshop recording (#4487)
+- Add alt_text (#4502)
+- DOC: misc syntax updates and typoes (#4517)
 - Start a NAP about conda packaging for napari (#4519)
 - Add CZI as an Institutional and Funding Partner (#4524)
 - add I2K workshop (#4528)
@@ -152,8 +163,11 @@ https://github.com/napari/napari
 - Add NAP-3: Spaces (#4684)
 - Fix NAP-1 status/type (#4685)
 - Add new core devs to docs (#4691)
+- add 'napari-xpra' target to dockerfile (#4703)
+- Fix Image parameter docs (#4750)
 - Make references to examples link there (#4767)
 - Fix documentation link errors. (#4787)
+- Fixing readme typo (#4791)
 - Add Talley to the steering council (#4798)
 - Update documenation : install plugin from URL  (#4799)
 - Accept NAP-2: Distributing napari with conda-based packaging (#4810)
@@ -161,6 +175,7 @@ https://github.com/napari/napari
 - added description of how to save layers without compression (#4832)
 - Add the ability to return a List[Layer] in magicgui (#4851)
 - Fix NAP-3 table of contents (#4872)
+- Feature: Minimum blending (#4875)
 - NAP 4: asynchronous slicing (#4892)
 - Correct minor typo in quick_start.md (#4908)
 - Add Google Calendar ID to directive (#4914)
@@ -172,11 +187,13 @@ https://github.com/napari/napari
 - DOC Fix add image examples (#4932)
 - add SciPy 2022 materials (#4934)
 - Remove repeated items in gallery ToC. (#4936)
+- DOC Remove references to old `add_volume` (#4939)
 - Fix calendar ID (#4944)
 - DOC Add docs on how to run napari headless (#4955)
 - Removes deprecated configuration options for notebooks from docs build (#4958)
 - Update async slicing discussion section with PR feedback (#4959)
 - DOC Add section on downloading CI built docs (#4961)
+- DOC Expand explanation of interaction_box_image example (#4962)
 - DOC: Fix some incorrect parameters names. (#4965)
 - DOC Add headless doc to toc (#4970)
 - Remove preliminary admonition for last two release notes (#4974)
@@ -185,6 +202,7 @@ https://github.com/napari/napari
 - Move the docs downloading screenshots to LFS (#4990)
 - DOC Enable intersphinx linking in examples (#4992)
 - Fix broken links in Napari Code of Conduct (#5005)
+- Add link to docs artifact to pull requests (#5014)
 - Add release notes for 0.4.17 (#5031)
 - add #4954 to release notes (#5038)
 - add new PRs merged for 0.4.17 to release notes (#5045)
@@ -204,7 +222,6 @@ https://github.com/napari/napari
 - Update layer list context keys (#4499)
 - Do not allow None when coercing encodings (#4504)
 - [Automatic] Update albertosottile/darkdetect vendored module (#4508)
-- DOC: misc syntax updates and typoes (#4517)
 - Try to upload pytest json report as artifact. (#4518)
 - Try to speedup tests. (#4521)
 - change default blending mode on image layer to translucent no depth (#4523)
@@ -212,7 +229,6 @@ https://github.com/napari/napari
 - Add explanation what `EmitterGroup.block_all` and `EmitterGroup.unblock_all` do in docstring (#4536)
 - Revert "change default blending mode on image layer to translucent no depth" (#4540)
 - add ci for asv benchmark suite (#4554)
-- Deprecate layers.move_selected (#4559)
 - Fixes/modifications to nested list model and Group in prep for layergroups (#4560)
 - Fix macos release version comparison in __main__ (#4565)
 - Update base docker image to ubuntu 22.04, optimize container size. (#4568)
@@ -255,16 +271,13 @@ https://github.com/napari/napari
 - Update translation documentation link in pull request template (#4728)
 - Cleanup list of non-translatable strings. (#4732)
 - Add mini interactive prompt to edit string_list.json (#4733)
-- Fix Image parameter docs (#4750)
 - Do not inform about coverage untill all CI jobs are done (#4751)
 - Refactor `NapariQtNotification` test for better cleaning Qt objects (#4763)
 - Set focus on `QtViewer` object after creating main window (#4768)
 - Add missed call of `running_as_bundled_app` in `__main__` (#4777)
 - test: fix ability to use posargs with tox (#4788)
-- Fixing readme typo (#4791)
 - Allow dunder methods use in `PublicOnlyProxy` (#4792)
 - add update_mesh method (#4793)
-- Optimization: convert vector slice indices to floats (#4794)
 - mock npe1 plugin manager during tests (fix tests with npe1 plugins installed) (#4806)
 - [Automatic] Update albertosottile/darkdetect vendored module (#4808)
 - Improve using Qt flags by direct use enums. (#4817)
@@ -278,12 +291,10 @@ https://github.com/napari/napari
 - Add perfmon directory for shared configs and tools (#4898)
 - Conda: fix MacOS signing (#4904)
 - Minor type fix (add Optional) (#4916)
-- DOC Remove references to old `add_volume` (#4939)
 - add user keymap (#4946)
 - MAINT: temporary mypy disabling as it's failing everywhere. (#4950)
 - Adjust the slider value to include current_size (#4951)
 - MAINT: re-enable type checking workflow (#4960)
-- DOC Expand explanation of interaction_box_image example (#4962)
 - MAINT: bump napari-console to 0.0.6. (#4967)
 - [pre-commit.ci] pre-commit autoupdate (#4968)
 - Fix: bump app-model, add test for layer buttons (#4972)
@@ -300,6 +311,7 @@ https://github.com/napari/napari
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
 - MAINT: fix a couple of trans._. (#5034)
 - Small shortcuts preference pane wording update after #5018 (#5049)
+- Small changes to points defaults. (#5050)
 
 
 ## 45 authors added to this release (alphabetical)

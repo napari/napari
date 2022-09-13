@@ -184,6 +184,7 @@ highlights = OrderedDict()
 highlights['Highlights'] = {}
 highlights['New Features'] = {}
 highlights['Improvements'] = {}
+highlights["Performance"] = {}
 highlights['Bug Fixes'] = {}
 highlights['API Changes'] = {}
 highlights['Deprecations'] = {}
@@ -196,6 +197,8 @@ label_to_section = {
     "bugfix": "Bug Fixes",
     "feature": "New Features",
     "api": "API Changes",
+    "highlight": "Highlights",
+    "performance": "Performance",
     "enhancement": "Improvements",
     "deprecation": "Deprecations",
     "dependencies": "Build Tools",
@@ -228,6 +231,21 @@ for pull in tqdm(
     if pr.merge_commit_sha not in all_hashes:
         continue
     summary = pull.title
+
+    for review in pr.get_reviews():
+        if review.user is not None:
+            add_to_users(users, review.user)
+            reviewers.add(review.user.login)
+    assigned_to_section = False
+    pr_lables = {label.name.lower() for label in pull.labels}
+    for label_name, section in label_to_section.items():
+        if label_name in pr_lables:
+            highlights[section][pull.number] = {'summary': summary}
+            assigned_to_section = True
+
+    if assigned_to_section:
+        continue
+
     issues_list = []
     if pull.body:
         for x in issue_pattern.findall(pull.body):
@@ -235,17 +253,12 @@ for pull in tqdm(
             if issue.pull_request is None:
                 issues_list.append(issue)
 
-    labels = [
-        label.name
-        for label in chain(pr.labels, *[x.labels for x in issues_list])
+    issue_labels = [
+        label.name for label in chain(*[x.labels for x in issues_list])
     ]
 
-    for review in pr.get_reviews():
-        if review.user is not None:
-            add_to_users(users, review.user)
-            reviewers.add(review.user.login)
     for label_name, section in label_to_section.items():
-        if label_name in labels:
+        if label_name in issue_labels:
             highlights[section][pull.number] = {'summary': summary}
             break
     else:
