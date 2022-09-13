@@ -54,6 +54,7 @@ https://github.com/napari/napari
 - Fix `python` name in macOS menu bar (#4989)
 - Explicit convert color to string when compile resources (#4997)
 - Add link to docs artifact to pull requests (#5014)
+- Reverse order of plugin name and widget name (#5054)
 
 ## Performance
 
@@ -102,6 +103,7 @@ https://github.com/napari/napari
 - Fix throttled status updates by ensuring GUI updates occur on the main thread (#4983)
 - Fix throttled status updates by use `QSignalThrottler` in `_QtMainWindow` constructor (#4985)
 - Ensure non-negative edge width (#5035)
+- Fix the wrong guardian for the build tooltip when bind button (#5075)
 
 ## API Changes
 
@@ -312,6 +314,7 @@ https://github.com/napari/napari
 - MAINT: fix a couple of trans._. (#5034)
 - Small shortcuts preference pane wording update after #5018 (#5049)
 - Small changes to points defaults. (#5050)
+- Try to avoid latest shiboken that break CI (#5073)
 
 
 ## 45 authors added to this release (alphabetical)
