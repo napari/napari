@@ -12,13 +12,20 @@ https://github.com/napari/napari
 
 ## Highlights
 
-### Minimum blending for a better light theme experience (#4875)
+This release is focused on documentation improvements and bug fixes, with few changes to napari’s API.
+We picked out a few highlights, but keep reading below for the full list of changes!
+
+### Minimum blending for a better light theme experience
+
+We added a new minimum blending option in #4875 that is particularly useful for those
+using the napari light theme.
+See [examples/minimum_blending.py](https://github.com/napari/napari/blob/main/examples/minimum_blending.py) for an example.
+
+### Option to edit second shortcut in settings
 
 TODO
 
-### Add option to edit second shortcut in settings (#5018)
-
-### Added `napari.imshow` as a convenient one-liner
+### `napari.imshow` as a convenient one-liner
 
 TODO
 
@@ -26,25 +33,18 @@ TODO
 
 TODO
 
+### Experimental support for Qt6
+
+We added some basic support for PyQt6 and PySide6 in #3707, though we expect some issues.
+If you need or want to use Qt6, please try this out and report any bugs you find.
+
 ### Multi-color text
 
-We added support for assigning colors for text annotations of individual points and shapes in #4464.
-
-This uses the API that we intend to spread elsewhere (e.g. for things like `Points.face_color`), so if you are a heavy user of those style attributes and parameters, you might want to try this out and leave some feedback on Zulip or create issues on GitHub.
-
-
-### Experimental support for PyQt6
-
-We added some basic support for PyQt6 in #3707, though we expect some issues. If you need to use Qt6 or just want to live on the edge, please try this out and report any bugs you find.
-
-
-### Optimized points and vector slicing
-
-TODO: probably omit this one and just classify it as an improvement.
-
-We optimized slicing for the Points (#4648) and Vectors (#4794) layers.
-
-With these changes, doing something like slicing 3D points for 2D display should be ~10x faster when dealing with large numbers of points.
+We added support for assigning multiple colors for text annotations of points and shapes in #4464.
+See [/examples/add_points_with_multicolor_text.py](https://github.com/napari/napari/blob/main/examples/add_points_with_multicolor_text.py)
+This uses the API that we intend to spread elsewhere for other style attributes like `Points.face_color`,
+so if you are a heavy user of those types of attributes you should try this out and leave feedback on Zulip
+or create issues on GitHub.
 
 
 ## New Features
@@ -200,6 +200,7 @@ With these changes, doing something like slicing 3D points for 2D display should
 - add 'napari-xpra' target to dockerfile (#4703)
 - Fix Image parameter docs (#4750)
 - Make references to examples link there (#4767)
+- Add documentation about apply napari style to separate windows (#4780)
 - Fix documentation link errors. (#4787)
 - Fixing readme typo (#4791)
 - Add Talley to the steering council (#4798)
@@ -241,6 +242,7 @@ With these changes, doing something like slicing 3D points for 2D display should
 - add #4954 to release notes (#5038)
 - add new PRs merged for 0.4.17 to release notes (#5045)
 - update core dev group to remove Ziyang and Justine (#5059)
+- Better script for prepare release notes (#5061)
 
 ## Other Pull Requests
 
@@ -318,12 +320,14 @@ With these changes, doing something like slicing 3D points for 2D display should
 - Move searching parent outside NapariQtNotification constructor (#4841)
 - Enable plugin menu contributions with app-model (#4847)
 - Raise better errors from lazy __getattr__ (#4848)
+- Allow to undock docked viewers in multiple viewers example (#4859)
 - MAINT: disable failing conda bundling. (#4878)
 - MAINT: Work around conda bundling issue. (#4883)
 - remove a few more qtbot.wait calls in tests (#4888)
 - use npe2api in plugin install dialog (#4893)
 - Add perfmon directory for shared configs and tools (#4898)
 - Conda: fix MacOS signing (#4904)
+- Improve error message for a failed write (#4913)
 - Minor type fix (add Optional) (#4916)
 - add user keymap (#4946)
 - MAINT: temporary mypy disabling as it's failing everywhere. (#4950)
@@ -347,9 +351,10 @@ With these changes, doing something like slicing 3D points for 2D display should
 - Small shortcuts preference pane wording update after #5018 (#5049)
 - Small changes to points defaults. (#5050)
 - Try to avoid latest shiboken that break CI (#5073)
+- Add new core libraries to napari info (#5077)
 
 
-## 45 authors added to this release (alphabetical)
+## 46 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -384,6 +389,7 @@ With these changes, doing something like slicing 3D points for 2D display should
 - [Markus Stabrin](https://github.com/napari/napari/commits?author=mstabrin) - @mstabrin
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
+- [Nathan Clack](https://github.com/napari/napari/commits?author=nclack) - @nclack
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
@@ -398,7 +404,7 @@ With these changes, doing something like slicing 3D points for 2D display should
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
 
 
-## 29 reviewers added to this release (alphabetical)
+## 30 reviewers added to this release (alphabetical)
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
@@ -406,6 +412,7 @@ With these changes, doing something like slicing 3D points for 2D display should
 - [cnstt](https://github.com/napari/napari/commits?author=cnstt) - @cnstt
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
+- [Gabriel Selzer](https://github.com/napari/napari/commits?author=gselzer) - @gselzer
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Isabela Presedo-Floyd](https://github.com/napari/napari/commits?author=isabela-pf) - @isabela-pf
