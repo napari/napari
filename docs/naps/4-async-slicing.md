@@ -483,6 +483,12 @@ class ViewerModel:
         self._slicer.slice_layers_async(self.layers, self.dims)
 ```
 
+Initially we intend for each instance of `ViewerModel` to own a single
+instance of a `LayerSlicer` for the lifetime of that `ViewerModel` instance.
+That allows the `LayerSlicer` to coordinate slicing of any or all layers
+for a particular viewer instance, while allowing multiple viewer instances
+to slice independently.
+
 The main response to the slice being ready occurs on the `QtViewer`
 because `QtViewer.layer_to_visual` provides a way to map from
 a layer to its corresponding vispy layer.
