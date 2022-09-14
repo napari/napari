@@ -51,6 +51,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
             command=func,
             description=description,
             keymapprovider=keymapprovider,
+            repeatable=False,
         )
         if shortcuts:
             if isinstance(shortcuts, str):

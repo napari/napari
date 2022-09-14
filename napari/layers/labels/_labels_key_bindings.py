@@ -90,6 +90,26 @@ def increase_label_id(layer: Labels):
     layer.selected_label += 1
 
 
+@register_label_action(
+    trans._("Decrease the paint brush size by one."),
+)
+def decrease_brush_size(layer: Labels):
+    """Decrease the brush size"""
+    if layer.brush_size > 1:  # here we should probably add a non-hard-coded
+        # reference to the limit values of brush size?
+        layer.brush_size -= 1
+
+
+@register_label_action(
+    trans._("Increase the paint brush size by one."),
+)
+def increase_brush_size(layer: Labels):
+    """Increase the brush size"""
+    if layer.brush_size < 40:  # here we should probably add a non-hard-coded
+        # reference to the limit values of brush size?
+        layer.brush_size += 1
+
+
 @register_layer_attr_action(
     Labels, trans._("Toggle preserve labels"), "preserve_labels"
 )

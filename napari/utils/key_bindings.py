@@ -44,6 +44,7 @@ from typing import Callable, Dict
 from vispy.util import keys
 
 from ..settings import get_settings
+from ..utils.action_manager import action_manager
 from ..utils.translations import trans
 
 SPECIAL_KEYS = [
@@ -508,24 +509,35 @@ class KeymapHandler:
                 next(val)  # call function
 
     def on_key_press(self, event):
-        """Callback that whenever key pressed in canvas.
+        """Called whenever key pressed in canvas.
 
         Parameters
         ----------
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
+        combo = normalize_key_combo(
+            components_to_key_combo(event.key.name, event.modifiers)
+        )
+
+        repeatables = [
+            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
+            "Up",
+            "Down",
+            "Left",
+            "Right",
+        ]
+
         if (
             event.native is not None
             and event.native.isAutoRepeat()
-            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
+            and combo not in repeatables
         ) or event.key is None:
-            # pass if no key is present or if key is held down, unless the
-            # key being held down is one of the navigation keys
-            # this helps for scrolling, etc.
+            # pass if no key is present or if the shortcut combo is held down,
+            # unless the combo being held down is one of the autorepeatables or
+            # one of the navigation keys (helps with scrolling).
             return
 
-        combo = components_to_key_combo(event.key.name, event.modifiers)
         self.press_key(combo)
 
     def on_key_release(self, event):
