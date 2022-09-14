@@ -25,7 +25,7 @@ We believe working groups are a helpful way to move forward work on particular t
 
 ## How to join an existing working group
 
-Membership is optional and opt-in, and you can join by attending group meetings (which can be found on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule)) and/or reaching out to the working group leads.
+Membership is optional and opt-in, and you can join by attending group meetings (which can be found on the [napari community calendar](https://napari.org/stable/community/meeting_schedule.html)) and/or reaching out to the working group leads.
 
 ## How to start a new working group
 

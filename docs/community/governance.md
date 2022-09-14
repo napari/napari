@@ -75,7 +75,7 @@ in a reasonable timeframe, the SC is the entity that resolves the issue.
 
 Members of the SC also have the "owner" role within the [napari GitHub organization](https://github.com/napari)
 and are ultimately responsible for managing the napari GitHub account, the [@napari_imaging](https://twitter.com/napari_imaging)
-twitter account, the [napari website](http://napari.org), and other similar napari owned resources.
+twitter account, the [napari website](https://napari.org), and other similar napari owned resources.
 
 The SC will be no less than three members and no more than five members,
 with a strong preference for an odd number to ensure a simple majority vote

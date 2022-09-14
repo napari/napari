@@ -100,7 +100,7 @@ how to generate your own
 pyramid](https://scikit-image.org/docs/dev/auto_examples/transform/plot_pyramid.html)
 from `scikit-image`. For large arrays, users may want to look at the
 [`dask.array.coarsen`
-documentation](https://docs.dask.org/en/latest/array-api.html#dask.array.coarsen)
+documentation](https://docs.dask.org/en/stable/generated/dask.array.coarsen.html)
 
 If you submit an image pyramid, napari will automatically detect it as such. To
 turn off automatic detection, you can now pass the `multiscale=True/False`

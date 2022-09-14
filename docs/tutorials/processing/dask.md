@@ -33,7 +33,7 @@ This can be useful if you have a proprietary format that is not immediately reco
 In some cases, data must be further processed prior to viewing,
 such as a deskewing step for images acquired on a stage-scanning light sheet microscope.
 Or perhaps you'd like to apply some basic image corrections or ratiometry prior to viewing.
-The second part of this tutorial demonstrates the use of the [`dask.array.map_blocks`](https://docs.dask.org/en/latest/array-api.html#dask.array.map_blocks) function
+The second part of this tutorial demonstrates the use of the [`dask.array.map_blocks`](https://docs.dask.org/en/stable/generated/dask.array.map_blocks.html) function
 to describe an arbitrary sequence of functions in a declarative manner
 that will be performed *on demand* as you explore the data (i.e. move the sliders) in `napari`.
 

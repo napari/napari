@@ -225,7 +225,7 @@ up to report test coverage, but you can test locally as well, using
    missed. Continue writing tests until everything is covered! If you have
    lines that you *know* never need to be tested (like debugging code) you can
    [exempt specific
-   lines](https://coverage.readthedocs.io/en/coverage-4.3.3/excluding.html#excluding-code-from-coverage-py)
+   lines](https://coverage.readthedocs.io/en/6.4.4/excluding.html#excluding-code-from-coverage-py)
    from coverage with the comment `# pragma: no cover`
 5. In the cookiecutter, coverage tests from github actions will be uploaded to
    codecov.io

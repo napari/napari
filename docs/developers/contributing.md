@@ -3,14 +3,14 @@
 
 We welcome your contributions! Please see the provided steps below and never hesitate to contact us.
 
-If you are a new user, we recommend checking out the detailed [Github Guides](https://guides.github.com).
+If you are a new user, we recommend checking out the detailed [Github Docs](https://docs.github.com/en).
 
 ## Setting up a development installation
 
-In order to make changes to `napari`, you will need to [fork](https://guides.github.com/activities/forking/#fork) the
+In order to make changes to `napari`, you will need to [fork](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository) the
 [repository](https://github.com/napari/napari).
 
-If you are not familiar with `git`, we recommend reading up on [this guide](https://guides.github.com/introduction/git-handbook/#basic-git).
+If you are not familiar with `git`, we recommend reading up on [this guide](https://docs.github.com/en/get-started/using-git/about-git#basic-git-commands).
 
 Clone the forked repository to your local machine and change directories:
 ```sh
@@ -29,10 +29,10 @@ pip install -e ".[dev]"  # (quotes only needed for zsh shell)
 ```
 
 We use [`pre-commit`](https://pre-commit.com) to sort imports with
-[`isort`](https://github.com/timothycrosley/isort), format code with
+[`isort`](https://github.com/PyCQA/isort), format code with
 [`black`](https://github.com/psf/black), and lint with
 [`flake8`](https://github.com/PyCQA/flake8) automatically prior to each commit.
-To minmize test errors when submitting pull requests, please install `pre-commit`
+To minimize test errors when submitting pull requests, please install `pre-commit`
 in your environment as follows:
 
 ```sh
@@ -206,7 +206,7 @@ git push -u origin your-branch-name
 ```
 
 You can then make a
-[pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `main` branch.
+[pull-request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#making-a-pull-request) to `napari`'s `main` branch.
 
 ## Building the docs
 
@@ -229,4 +229,5 @@ Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in yo
 If you have questions, comments, suggestions for improvement, or any other inquiries
 regarding the project, feel free to open an [issue](https://github.com/napari/napari/issues).
 
-Issues and pull-requests are written in [Markdown](https://guides.github.com/features/mastering-markdown/#what). You can find a comprehensive guide [here](https://guides.github.com/features/mastering-markdown/#syntax).
+Issues and pull-requests are written in [Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/about-writing-and-formatting-on-github).
+You can find a comprehensive guide [here](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
