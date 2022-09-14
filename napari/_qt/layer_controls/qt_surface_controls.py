@@ -45,7 +45,7 @@ class QtSurfaceControls(QtBaseImageControls):
         shading_comboBox.currentTextChanged.connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
 
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
