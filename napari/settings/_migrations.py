@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from importlib.metadata import distributions
 from typing import TYPE_CHECKING, Callable, List, NamedTuple
 
+from ..utils.translations import trans
 from ._fields import Version
 
 if TYPE_CHECKING:
@@ -32,15 +33,24 @@ def do_migrations(model: NapariSettings):
                     migration.run(model)
                     model.schema_version = migration.to_
                 except Exception as e:
-                    msg = (
-                        f"Failed to migrate settings from v{migration.from_} "
-                        f"to v{migration.to_}. Error: {e}. "
+                    msg = trans._(
+                        "Failed to migrate settings from v{version_from} to v{version_to}. Error: {error}.",
+                        deferred=True,
+                        version_from=migration.from_,
+                        version_to=migration.to_,
+                        error=e,
                     )
                     try:
                         model.update(backup)
-                        msg += 'You may need to reset your settings with `napari --reset`. '
+                        msg += trans._(
+                            'You may need to reset your settings with `napari --reset`.',
+                            deferred=True,
+                        )
                     except Exception:
-                        msg += 'Settings rollback also failed. Please run `napari --reset`.'
+                        msg += trans._(
+                            'Settings rollback also failed. Please run `napari --reset`.',
+                            deferred=True,
+                        )
                     warnings.warn(msg)
                     return
     model._maybe_save()

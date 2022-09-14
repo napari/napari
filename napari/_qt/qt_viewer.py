@@ -382,7 +382,7 @@ class QtViewer(QSplitter):
 
     def _enter_canvas(self):
         """enable status on canvas enter"""
-        self.viewer.status = "Ready"
+        self.viewer.status = trans._("Ready")
         self.viewer.mouse_over_canvas = True
 
     def _ensure_connect(self):

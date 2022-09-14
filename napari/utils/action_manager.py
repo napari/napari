@@ -207,7 +207,10 @@ class ActionManager:
         if action := self._actions.get(name):
             if isgeneratorfunction(action):
                 raise ValueError(
-                    'bind_button cannot be used with generator functions'
+                    trans._(
+                        '`bind_button` cannot be used with generator functions',
+                        deferred=True,
+                    )
                 )
 
         button.clicked.connect(lambda: self.trigger(name))

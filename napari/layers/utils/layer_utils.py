@@ -103,7 +103,10 @@ def register_layer_attr_action(
             first_variable_name = next(iter(sig.parameters))
         except StopIteration:
             raise RuntimeError(
-                "If actions has no arguments there is no way to know what to set the attribute to."
+                trans._(
+                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    deferred=True,
+                ),
             )
 
         @functools.wraps(func)

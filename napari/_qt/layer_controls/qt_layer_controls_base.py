@@ -6,6 +6,10 @@ from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
+MIN_BLENDING_TOOLTIP = trans._(
+    'Minimum blending mode works best with inverted colormaps with a white background.',
+)
+
 
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
@@ -101,14 +105,12 @@ class QtLayerControls(QFrame):
         self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
 
         self.blendComboBox.setToolTip(
-            "`minimum` blending mode works best with inverted colormaps with a white background."
-            if self.layer.blending == 'minimum'
-            else ""
+            MIN_BLENDING_TOOLTIP if self.layer.blending == 'minimum' else ''
         )
         if self.layer.blending == 'minimum':
-            self.layer.help = "`minimum` blending mode works best with inverted colormaps with a white background"
+            self.layer.help = MIN_BLENDING_TOOLTIP
         else:
-            self.layer.help = ""
+            self.layer.help = ''
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
