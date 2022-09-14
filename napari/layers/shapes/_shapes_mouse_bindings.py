@@ -203,6 +203,10 @@ def add_path_polygon(layer, event):
         vertices = np.concatenate((vertices, [coordinates]), axis=0)
         # Change the selected vertex
         value = layer.get_value(event.position, world=True)
+        # If there was no move event between two clicks value[1] is None
+        # and needs to be taken care of.
+        if value[1] is None:
+            value = layer._moving_value
         layer._value = (value[0], value[1] + 1)
         layer._moving_value = copy(layer._value)
         layer._data_view.edit(index, vertices, new_type=new_type)

@@ -493,6 +493,103 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
     assert len(layer.selected_data) == 0
 
 
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_clicking_the_same_point_is_not_crashing(mode, create_known_shapes_layer, Event):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    for _ in range(2):
+        event = ReadOnlyWrapper(
+            Event(
+                type='mouse_press',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+        mouse_press_callbacks(layer, event)
+
+        event = ReadOnlyWrapper(
+            Event(
+                type='mouse_release',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+        mouse_release_callbacks(layer, event)
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_polygon',
+        'add_path',
+    ],
+)
+def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer, Event):
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = mode
+    position = tuple(layer.data[0][0])
+
+    def is_creating_is_True(event):
+        assert event.source._is_creating
+
+    def is_creating_is_False(event):
+        assert not event.source._is_creating
+
+
+    assert not layer._is_creating
+    layer.events.set_data.connect(is_creating_is_True)
+
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert layer._is_creating
+
+    layer.events.set_data.disconnect(is_creating_is_True)
+    layer.events.set_data.connect(is_creating_is_False)
+    end_click = ReadOnlyWrapper(
+        Event(
+            type='mouse_double_click',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_double_click_callbacks(layer, end_click)
+
+    assert not layer._is_creating
+
+
 @pytest.mark.parametrize('mode', ['select', 'direct'])
 def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
     """Select a shape by clicking on one in select mode."""
