@@ -185,12 +185,12 @@ def add_path_polygon(layer, event):
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Start drawing a path
+        layer._is_creating = True
         data = np.array([coordinates, coordinates])
         layer.add(data, shape_type='path')
         layer.selected_data = {layer.nshapes - 1}
         layer._value = (layer.nshapes - 1, 1)
         layer._moving_value = copy(layer._value)
-        layer._is_creating = True
         layer._set_highlight()
     else:
         # Add to an existing path or polygon
