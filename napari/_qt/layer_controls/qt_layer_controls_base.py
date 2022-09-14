@@ -7,7 +7,7 @@ from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
 MIN_BLENDING_TOOLTIP = trans._(
-    'Minimum blending mode works best with inverted colormaps with a white background.',
+    '`minimum` blending mode works best with inverted colormaps with a white background.',
 )
 
 
