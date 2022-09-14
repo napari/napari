@@ -15,10 +15,9 @@ https://github.com/napari/napari
 This release is focused on documentation improvements and bug fixes, with few changes to napari’s API.
 We picked out a few highlights, but keep reading below for the full list of changes!
 
-### Minimum blending for a better light theme experience
+### Minimum blending and inverted colormaps
 
-We added a new minimum blending option in #4875 that is particularly useful for those
-using the napari light theme.
+We added a new blending mode,  `minimum`,  in #4875,  along with some inverted colormaps by @cleterrier. The new mode and colormaps enable visualizing data as color intensity on white background. This is particularly nice when using the Light theme. For more inspiration see [#invertedLUT on Twitter](https://twitter.com/hashtag/invertedLUT)
 See [examples/minimum_blending.py](https://github.com/napari/napari/blob/main/examples/minimum_blending.py) for an example.
 
 ### Option to edit second shortcut in settings
