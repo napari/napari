@@ -588,12 +588,21 @@ it emits the `slice_ready` event. There are a few reasons for that.
 1. We only use one slicing thread to keep behavior simple and to avoid GIL contention.
 2. It's closer to the existing behavior of napari
 3. Shouldn't introduce any new potential bugs, such as [^issue-2862].
-4. It doesn't need any UX design work to decide what should be shown while we are waiting for slices to be ready.
+4. It needs less UX design work to decide what should be shown while we are waiting for slices to be ready.
 
 In some cases, rendering slices as soon as possible will provide a better user experience,
 especially when some layers are substantially slower than others. Therefore, this should be
-high priority future work. One way to implement this behavior is to emit a `slice_ready`
-event per layer that only contains that layer's slice response.
+high priority future work.
+
+To implement this behavior as a small extension to this proposal, we could do something like the following.
+
+- Use multiple workers in the `LayerSlicer._executor`.
+- Submit each call to `Layer._get_slice` separately.
+- When each call is done, emit a separate `slice_ready` event that only contains each layer's slice response,
+  so that the viewer/vispy can update as soon as possible.
+
+This would cause a [more complex call sequence](https://raw.githubusercontent.com/andy-sweet/napari-diagrams/main/napari-slicing-async-calls-asap.drawio.svg)
+and could make cancellation behavior more complex, but may be worth it regardless.
 
 
 ## Alternatives
