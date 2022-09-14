@@ -35,7 +35,7 @@ project in concrete ways, such as:
   [issues](https://github.com/napari/napari/issues) and
   [pull requests](https://github.com/napari/napari/pulls);
 - discussing examples or use cases on the
-  [image.sc forum](https://forum.image.sc/tags/napari) under the #napari tag; or
+  [image.sc forum](https://forum.image.sc/tag/napari) under the #napari tag; or
 - reviewing [open pull requests](https://github.com/napari/napari/pulls)
 
 among other possibilities. Any community member can become a contributor, and

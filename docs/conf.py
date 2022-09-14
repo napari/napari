@@ -208,3 +208,5 @@ def get_attributes(item, obj, modulename):
 
 
 FILTERS["get_attributes"] = get_attributes
+
+autosummary_ignore_module_all = False
