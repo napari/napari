@@ -23,9 +23,12 @@ This is particularly nice when using the Light theme.
 For more inspiration see [#invertedLUT on Twitter](https://twitter.com/hashtag/invertedLUT)
 and the built-in napari example [examples/minimum_blending.py](https://github.com/napari/napari/blob/main/examples/minimum_blending.py).
 
-### Option to edit second shortcut in settings
+### Option to edit second shortcut in preferences
 
-TODO
+We improved customization of napari preferences by allowing you to define a second,
+alternative shortcut for each napari action.
+This allows you have both numeric (e.g. 1, 2, 3 - related to button positions) and semantic (F - for fill) shortcuts
+defined for use in napari.
 
 ### `napari.imshow` as a convenient one-liner
 
