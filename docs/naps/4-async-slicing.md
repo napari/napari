@@ -186,7 +186,7 @@ solutions for this project may cause this state to be read and write from multip
 Rather than exhaustively list all of the slice state of all layer types and their dependencies [^slice-class-diagram],
 we group and highlight some of the more important state.
 
-### Input state
+#### Input state
 
 Some input state for slicing is directly mutated by `Layer._slice_dims`. 
 
