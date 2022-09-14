@@ -20,7 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
@@ -199,7 +198,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(
-            throttled(self._update_status_bar_from_cursor, timeout=50)
+            self._update_status_bar_from_cursor
         )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
@@ -523,6 +522,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
             help_li.append(
                 trans._(
                     "use <{shortcut}> for {desc}",
@@ -1079,13 +1080,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-
         added = []
         plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
-
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1102,7 +1101,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     trans._(
-                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
                         path_message=path_message,
                     )
