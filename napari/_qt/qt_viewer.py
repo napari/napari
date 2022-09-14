@@ -17,6 +17,7 @@ from napari_builtins.io import imsave_extensions
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
+from ..components._viewer_constants import DEFAULT_STATUS_TEXT
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..errors import MultipleReaderError, ReaderPluginError
@@ -382,7 +383,7 @@ class QtViewer(QSplitter):
 
     def _enter_canvas(self):
         """enable status on canvas enter"""
-        self.viewer.status = trans._("Ready")
+        self.viewer.status = DEFAULT_STATUS_TEXT
         self.viewer.mouse_over_canvas = True
 
     def _ensure_connect(self):

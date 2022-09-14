@@ -255,7 +255,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._blending = Blending(blending)
         self._visible = visible
         self._freeze = False
-        self._status = 'Ready'
+        self._status = ''
         self._help = ''
         self._cursor = 'standard'
         self._cursor_size = 1

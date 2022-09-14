@@ -1,5 +1,9 @@
 from enum import Enum
 
+from napari.utils.translations import trans
+
+DEFAULT_STATUS_TEXT = trans._('Ready')
+
 
 class Position(str, Enum):
     """Position: Position on an object in the canvas.
