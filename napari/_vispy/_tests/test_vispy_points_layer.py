@@ -87,15 +87,13 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
 
 def test_change_canvas_size_limits():
     points = np.random.rand(3, 2)
-    layer = Points(points)
+    layer = Points(points, canvas_size_limits=(0, 10000))
     vispy_layer = VispyPointsLayer(layer)
+    node = vispy_layer.node
 
-    filter = vispy_layer.node.clamp_filter
-    assert filter.min_size == 0
-    assert filter.max_size == 10000
-    layer.experimental_canvas_size_limits = (20, 80)
-    assert filter.min_size == 20
-    assert filter.max_size == 80
+    assert node.canvas_size_limits == (0, 10000)
+    layer.canvas_size_limits = (20, 80)
+    assert node.canvas_size_limits == (20, 80)
 
 
 def test_text_with_non_empty_constant_string():
