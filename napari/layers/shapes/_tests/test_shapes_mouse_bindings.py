@@ -500,7 +500,9 @@ def test_after_in_add_mode_shape(mode, create_known_shapes_layer, Event):
         'add_path',
     ],
 )
-def test_clicking_the_same_point_is_not_crashing(mode, create_known_shapes_layer, Event):
+def test_clicking_the_same_point_is_not_crashing(
+    mode, create_known_shapes_layer, Event
+):
     layer, n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
@@ -535,7 +537,9 @@ def test_clicking_the_same_point_is_not_crashing(mode, create_known_shapes_layer
         'add_path',
     ],
 )
-def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer, Event):
+def test_is_creating_is_false_on_creation(
+    mode, create_known_shapes_layer, Event
+):
     layer, n_shapes, _ = create_known_shapes_layer
 
     layer.mode = mode
@@ -546,7 +550,6 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer, Event
 
     def is_creating_is_False(event):
         assert not event.source._is_creating
-
 
     assert not layer._is_creating
     layer.events.set_data.connect(is_creating_is_True)
