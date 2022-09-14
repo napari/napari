@@ -76,6 +76,7 @@ or create issues on GitHub.
 - Allow pandas.Series as properties values (#4755)
 - Allow stack to be specified multiple times (#4783)
 - Refactor: use app-model and in-n-out (#4784)
+- Fix point `experimental_canvas_size_limits` and set sane defaults (#4790)
 - Improve "select all" logic in points layer, adding "select all across slices" behavior (#4809)
 - Make docked widgets of `qt_viewer` lazy (#4811)
 - Restore Labels, Points and Shapes layer mode after hold key (#4814)
