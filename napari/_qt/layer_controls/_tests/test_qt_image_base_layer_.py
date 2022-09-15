@@ -146,11 +146,11 @@ def test_blending_opacity_slider(qtbot):
     # set minimum blending, the opacity slider should be disabled
     layer.blending = 'minimum'
     assert not qtctrl.opacitySlider.isEnabled()
-    # set the blending back to 'translucent' confirm the slider is enabled
-    layer.blending = 'translucent'
-    assert layer.blending == 'translucent'
+    # set the blending to 'additive' confirm the slider is enabled
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
     assert qtctrl.opacitySlider.isEnabled()
-    # set minimum blending, the opacity slider should be disabled
+    # set opaque blending, the opacity slider should be disabled
     layer.blending = 'opaque'
     assert layer.blending == 'opaque'
     assert not qtctrl.opacitySlider.isEnabled()
