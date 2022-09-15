@@ -56,7 +56,7 @@ All our layers support three blending modes: `translucent`, `additive`, and
 `opaque`. These modes determine how the visuals for this layer get mixed with
 the visuals from the other layers.
 
-* An `opaque` layer renders all the other layers below it invisible.
+* An `opaque` layer hides any layer data below it.
 * A `translucent` setting will cause the layer to blend with the layers below
 it if you decrease its opacity but will fully block those layers if its opacity
 is `1`. This is a reasonable default, useful for many applications.
