@@ -169,11 +169,22 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_colormap_change(self):
         self.node.cmap = VispyColormap(*self.layer.colormap)
 
+    def _update_mip_minip_cutoff(self):
+        if isinstance(self.node, VolumeNode):
+            if self.layer.blending != 'opaque':
+                self.node.mip_cutoff = self.node._texture.clim_normalized[0]
+                self.node.minip_cutoff = self.node._texture.clim_normalized[1]
+            else:
+                self.node.mip_cutoff = None
+                self.node.minip_cutoff = None
+
     def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
-        if isinstance(self.node, VolumeNode):
-            self.node.mip_cutoff = self.node._texture.clim_normalized[0]
-            self.node.minip_cutoff = self.node._texture.clim_normalized[1]
+        self._update_mip_minip_cutoff()
+
+    def _on_blending_change(self):
+        super()._on_blending_change()
+        self._update_mip_minip_cutoff()
 
     def _on_gamma_change(self):
         if len(self.node.shared_program.frag._set_items) > 0:
