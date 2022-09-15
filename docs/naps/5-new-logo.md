@@ -71,7 +71,11 @@ Additionally, the logo looks quite a bit like a dividing budding yeast *(S.
 cerevisiae)*, rather than an amorphous anonymous cell, which anyone with a
 background in biology would appreciate!
 
-Here is the proposed logo:
+Here is the proposed logo together with the old one:
+
+![napari-logo-comparison](../image/napari-logo-old-new.png)
+
+The new logo at 100% scale:
 
 ![napari-logo-3](../images/napari-logo-3.png)
 
