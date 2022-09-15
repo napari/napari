@@ -41,16 +41,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - benchmark-name: Qt
-            asv-command: continuous
-            selection-regex: "^benchmark_qt_.*"
-            runs-on: macos-latest
+          # temporarily disable to make testing easier
+          # - benchmark-name: Qt
+          #   asv-command: continuous
+          #   selection-regex: "^benchmark_qt_.*"
+          #   runs-on: macos-latest
             # Qt tests run on macOS to avoid using Xvfb business
             # xvfb makes everything run, but some tests segfault :shrug:
             # Fortunately, macOS graphics stack does not need xvfb!
           - benchmark-name: non-Qt
             asv-command: continuous
-            selection-regex: "^benchmark_(?!qt_).*"
+            selection-regex: "^benchmark_labels_layer.*"  # temporary
             runs-on: ubuntu-latest
 
     steps:
