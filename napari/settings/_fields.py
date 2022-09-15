@@ -125,9 +125,11 @@ class Version:
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
             raise ValueError(
-                '{version} is not valid SemVer string',
-                deferred=True,
-                version=version,
+                trans._(
+                    '{version} is not valid SemVer string',
+                    deferred=True,
+                    version=version,
+                )
             )
         matched_version_parts: Dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
