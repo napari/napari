@@ -357,9 +357,11 @@ or create issues on GitHub.
 - Revert "Fix sys.path issue with subprocess relaunch in macOS" (#5027)
 - Use Source object to track if a layer is duplicated (#5028)
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
+- update some of the ignored translations (#5032)
 - MAINT: fix a couple of trans._. (#5034)
 - Small shortcuts preference pane wording update after #5018 (#5049)
 - Small changes to points defaults. (#5050)
+- MAINT: Don't deprecate something that was never stable. (#5068)
 - Try to avoid latest shiboken that break CI (#5073)
 - Add new core libraries to napari info (#5077)
 
