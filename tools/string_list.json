@@ -1510,7 +1510,6 @@
     "napari/components/scale_bar.py": [],
     "napari/components/text_overlay.py": [],
     "napari/components/viewer_model.py": [
-      "Ready",
       "_mouse_drag_gen",
       "_mouse_wheel_gen",
       "_persisted_mouse_event",
@@ -1613,7 +1612,6 @@
     "napari/layers/base/base.py": [
       "<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>",
       "Extent",
-      "Ready",
       "_round_index",
       "blending",
       "constant",
@@ -3239,7 +3237,8 @@
       "]",
       "{value:0.3g}",
       "{name} [{' '.join(full_coord)}]",
-      "{name}"
+      "{name}",
+      " [{' '.join(full_coord)}]"
     ],
     "napari/utils/theme.py": [
       "([vh])gradient\\((.+)\\)",
