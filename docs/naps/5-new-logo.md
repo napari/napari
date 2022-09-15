@@ -1,6 +1,4 @@
-:orphan:
-
-(nap-template)=
+(nap-5-new-logo)=
 
 # NAP-5 — New logo (2022)
 
