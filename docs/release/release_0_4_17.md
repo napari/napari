@@ -1,5 +1,9 @@
 # napari 0.4.17
 
+```{note}
+These are preliminary release notes until 0.4.17 is released.
+```
+
 We're happy to announce the release of napari 0.4.17!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
