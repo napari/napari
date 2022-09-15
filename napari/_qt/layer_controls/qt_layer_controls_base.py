@@ -6,6 +6,9 @@ from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
+# opaque and minimum blending do not support changing alpha (opacity)
+NO_OPACITY_BLENDING_MODES = {'minimum', 'opaque'}
+
 
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
@@ -73,10 +76,10 @@ class QtLayerControls(QFrame):
         self.blendComboBox = blend_comboBox
         # opaque and minimum blending do not support changing alpha
         self.opacitySlider.setEnabled(
-            self.layer.blending not in {'minimum', 'opaque'}
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
         self.opacityLabel.setEnabled(
-            self.layer.blending not in {'minimum', 'opaque'}
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
     def changeOpacity(self, value):
@@ -102,10 +105,10 @@ class QtLayerControls(QFrame):
         self.layer.blending = self.blendComboBox.currentData()
         # opaque and minimum blending do not support changing alpha
         self.opacitySlider.setEnabled(
-            self.layer.blending not in {'minimum', 'opaque'}
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
         self.opacityLabel.setEnabled(
-            self.layer.blending not in {'minimum', 'opaque'}
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
         self.blendComboBox.setToolTip(
