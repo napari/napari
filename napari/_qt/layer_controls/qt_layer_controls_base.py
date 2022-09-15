@@ -76,8 +76,7 @@ class QtLayerControls(QFrame):
             self.layer.blending not in {'minimum', 'opaque'}
         )
         self.opacityLabel.setEnabled(
-            self.layer.blending != 'minimum'
-            and self.layer.blending != 'opaque'
+            self.layer.blending not in {'minimum', 'opaque'}
         )
 
     def changeOpacity(self, value):
