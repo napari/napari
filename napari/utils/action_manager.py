@@ -84,7 +84,6 @@ class ActionManager:
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
         self._shortcuts: Dict[str, List[str]] = defaultdict(list)
-        self._repeatable: Dict[str, bool] = repeatable_actions
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shorcut_changed=None)
@@ -102,7 +101,21 @@ class ActionManager:
                 )
             )
 
-    def _is_repeatable(self, name):
+    def _is_repeatable(self, name) -> bool:
+        """
+
+
+        Parameters
+        ----------
+        name : str
+            The description of an action to be checked for repeatability
+
+        Returns
+        -------
+        bool
+            True if repeatable, False if not.
+
+        """
         if name in repeatable_actions.keys():
             return repeatable_actions[name]
         else:
@@ -124,7 +137,7 @@ class ActionManager:
          - a name (unique), usually `packagename:name`
          - a description
          - A keymap provider (easier for focus and backward compatibility).
-         - a boolean repeatability flag, indicating whether it can be auto-
+         - a boolean repeatability flag indicating whether it can be auto-
            repeated (i.e. when a key is held down); defaults to False
 
         Actions can then be later bound/unbound from button elements, and
@@ -147,6 +160,8 @@ class ActionManager:
             KeymapProvider class or instance to use to bind the shortcut(s) when
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
+        repeatable : bool
+            a boolean flag indictation whether the action can be autorepeated.
 
 
         Notes
@@ -164,9 +179,8 @@ class ActionManager:
 
         """
         self._validate_action_name(name)
-        repeatable = self._is_repeatable(name)
         self._actions[name] = Action(
-            command, description, keymapprovider, repeatable
+            command, description, keymapprovider, self._is_repeatable(name)
         )
         self._update_shortcut_bindings(name)
 
