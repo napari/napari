@@ -1179,10 +1179,10 @@ class Window:
         else:
             status_info = event.value
             self._status_bar.setStatusText(
-                layer_base=status_info['layer_base'],
-                source_type=status_info['source_type'],
-                plugin=status_info['plugin'],
-                coordinates=status_info['coordinates'],
+                layer_base=status_info.get('layer_base', None),
+                source_type=status_info.get('source_type', None),
+                plugin=status_info.get('plugin', None),
+                coordinates=status_info.get('coordinates', None),
             )
 
     def _title_changed(self, event):
