@@ -73,8 +73,7 @@ class QtLayerControls(QFrame):
         self.blendComboBox = blend_comboBox
         # opaque and minimum blending do not support changing alpha
         self.opacitySlider.setEnabled(
-            self.layer.blending != 'minimum'
-            and self.layer.blending != 'opaque'
+            self.layer.blending not in {'minimum', 'opaque'}
         )
         self.opacityLabel.setEnabled(
             self.layer.blending != 'minimum'
