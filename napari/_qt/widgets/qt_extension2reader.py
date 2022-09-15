@@ -24,7 +24,7 @@ from napari.plugins.utils import (
 from ...settings import get_settings
 from ...utils.translations import trans
 
-NO_PREFERENCES_FOUND_TEXT = trans._('No filename preferences found.')
+NO_PREFERENCES_FOUND_TEXT = trans._('No filename preferences found')
 
 
 class Extension2ReaderTable(QWidget):
