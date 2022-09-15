@@ -111,8 +111,8 @@ do so.
 
 Other changes may be *nitpicky*: spelling mistakes, formatting,
 etc. Do not insist contributors make these changes, but instead you should offer
-to make these changes by [pushing to their branch](https://help.github.com/articles/committing-changes-to-a-pull-request-branch-created-from-a-fork/), or using GitHub’s [suggestion](https://help.github.com/articles/commenting-on-a-pull-request/)
-[feature](https://help.github.com/articles/incorporating-feedback-in-your-pull-request/), and
+to make these changes by [pushing to their branch](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/committing-changes-to-a-pull-request-branch-created-from-a-fork), or using GitHub’s [suggestion](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/commenting-on-a-pull-request)
+[feature](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/incorporating-feedback-in-your-pull-request), and
 be prepared to make them yourself if needed. Using the suggestion feature is preferred because
 it gives the contributor a choice in whether to accept the changes.
 
@@ -156,7 +156,7 @@ resources such as:
 - [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
 - [`black`](https://github.com/psf/black) autoformatting.
 - [`flake8`](https://github.com/PyCQA/flake8) linting.
-- [#napari on image.sc](https://forum.image.sc/tags/napari).
+- [#napari on image.sc](https://forum.image.sc/tag/napari).
 - [#napari](https://twitter.com/search?q=%23napari&f=live) and [@napari_imaging](https://twitter.com/napari_imaging) on twitter.
 - [napari zulip](https://napari.zulipchat.com/) community chat channel.
 

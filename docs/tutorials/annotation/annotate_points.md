@@ -392,7 +392,7 @@ def next_on_click(layer, event):
 After creating the function, we then add it to the `points_layer` mouse drag callbacks.
 In napari, clicking and dragging events are both handled under the `mouse_drag_callbacks`.
 For more details on how mouse event callbacks work,
-see the examples [[1](https://github.com/napari/napari/blob/master/examples/custom_mouse_functions.py), [2](https://github.com/napari/napari/blob/master/examples/mouse_drag_callback.py)].
+see the examples [[1](https://github.com/napari/napari/blob/main/examples/custom_mouse_functions.py), [2](https://github.com/napari/napari/blob/main/examples/mouse_drag_callback.py)].
 
 ```python
 # bind the callback to the mouse drag event

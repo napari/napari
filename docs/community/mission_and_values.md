@@ -30,7 +30,7 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - being **easy to use and install**. We are careful in taking on new dependencies, sometimes making them optional, and will support a fully packaged installation that works cross-platform.
 
-- being **well-documented** with **comprehensive tutorials and examples**. All functions in our API have thorough docstrings clarifying expected inputs and outputs, and we maintain [tutorials and examples on our website](http://napari.org) to explain different use cases and working modes.
+- being **well-documented** with **comprehensive tutorials and examples**. All functions in our API have thorough docstrings clarifying expected inputs and outputs, and we maintain [tutorials and examples on our website](https://napari.org) to explain different use cases and working modes.
 
 - providing **GUI access** to all critical functionality so napari can be used by people with no coding experience.
 
