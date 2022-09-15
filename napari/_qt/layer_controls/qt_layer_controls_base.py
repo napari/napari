@@ -71,9 +71,15 @@ class QtLayerControls(QFrame):
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
-        # GL minimum blending does not support changing alpha
-        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
-        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending != 'minimum'
+            and self.layer.blending != 'opaque'
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending != 'minimum'
+            and self.layer.blending != 'opaque'
+        )
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -96,9 +102,15 @@ class QtLayerControls(QFrame):
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
         self.layer.blending = self.blendComboBox.currentData()
-        # GL minimum blending does not support changing alpha
-        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
-        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending != 'minimum'
+            and self.layer.blending != 'opaque'
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending != 'minimum'
+            and self.layer.blending != 'opaque'
+        )
 
         self.blendComboBox.setToolTip(
             "`minimum` blending mode works best with inverted colormaps with a white background."
