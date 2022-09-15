@@ -23,13 +23,17 @@ This NAP proposes a new, mathematically-defined logo for napari.
 The original napari logo was simply a square crop of [this
 image](https://en.wikipedia.org/wiki/Napari#/media/File:Tabuaeran_Kiribati.jpg)
 of Tabuaeran, the island containing the village of Napari — the namesake of
-this project. A few months later, Jeremy Freeman, then director of
-Computational Biology at CZI, traced the island and gave us our current,
-stylised version of that image:
+this project:
+
+![Satellite image of Tabuaeran](https://upload.wikimedia.org/wikipedia/commons/d/dc/Tabuaeran_Kiribati.jpg)
+
+A few months later, Jeremy Freeman, then director of Computational Biology at
+CZI, and a bit of a design nerd, traced the island and gave us our current,
+stylised version of that image.
 
 ![napari-logo-2](../images/logo.png)
 
-As a trace, the shape is very irregular — no one knows what it is — and the
+Being, the shape is very irregular — no one knows what it is — and the
 gradients, the border around the logo, and the slightly rounded corners on a
 very square shape all look dated in 2022.
 
@@ -98,7 +102,7 @@ Additionally, napari was used extensively during the development, to debug
 errors in calculating the contact points and so on. 😅
 
 It's very fun to work with powers of $\phi$: $1/\phi = \phi - 1$, which implies
-$1/\phi^2 = 1/\phi(\phi - 1) = 1 - 1/\phi = 2 - \phi$, and so on. Similarly,
+$1/\phi^2 = (\phi - 1)/\phi = 1 - 1/\phi = 2 - \phi$, and so on. Similarly,
 $\phi^2 = 1 + \phi$, which again lets you reduce all polynomials of $\phi$ to
 degree 1.
 
@@ -137,6 +141,14 @@ I will take the opportunity to express two strong opinions:
 If anyone is keen to experiment with different colors I would be glad to pass
 the design baton over.
 
+Other design questions:
+
+- Do we want a slight drop shadow? It is quite standard in macOS icons, and
+  one looks quite sparse without it.
+- Do we want a sunlight reflection/sheen on the ocean part? I'm open to it.
+- For either of those, ideally, we would keep the image processing in Python
+  and napari.
+
 ## Alternatives
 
 We could of course go for a more traditionally developed logo. However, I think
@@ -146,15 +158,17 @@ for the logo, regardless of where this NAP lands.
 
 It's been suggested that the squircle shape might make it harder to tile a
 laptop together with other stickers, or align the edges. However, I think the
-alignment is a red herring because a quick look at the [NumFOCUS sticker
+tiling issue is a red herring because a quick look at the [NumFOCUS sticker
 table](https://twitter.com/NumFOCUS/status/1547651122654916609) shows that most
 related projects have irregularly-shaped stickers anyway. Additionally, I think
-that the squircle provides both a long enough straight edge (1/3 of each side
-is exactly straight) to align things, but the smooth curvature makes slight
-misalignments perceptually harder to notice than a perfect straight edge.
+that the squircle provides both a long enough straight edge (almost 1/3 of each
+side is exactly straight) to align things, but the smooth curvature makes
+slight misalignments perceptually harder to notice than a perfect straight edge.
 
 At any rate, we can provide a variety of background shapes for different
-contexts anyway.
+contexts anyway. I think the squircle shape is indeed more visually appealing
+than a square with rounded corners thanks to its "curvature continuity." If we
+prefer a straighter edge, we can easily increase the degree of the squircle.
 
 ## Discussion
 
