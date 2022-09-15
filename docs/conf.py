@@ -217,7 +217,9 @@ FILTERS["get_attributes"] = get_attributes
 
 autosummary_ignore_module_all = False
 
-linkcheck_anchors_ignore = ["^!", r'L\d+-L\d+', r'r\d+', r'issuecomment-\d+']
+linkcheck_anchors_ignore = [r'^!', r'L\d+-L\d+', r'r\d+', r'issuecomment-\d+']
+
+linkcheck_ignore = ['https://napari.zulipchat.com/']
 
 
 def rewrite_github_anchor(app, uri: str):
