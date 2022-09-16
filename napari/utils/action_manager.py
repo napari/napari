@@ -239,7 +239,7 @@ class ActionManager:
                 )
 
         button.clicked.connect(lambda: self.trigger(name))
-        if name in self._shortcuts:
+        if name in self._actions:
             button.setToolTip(
                 f'{self._build_tooltip(name)} {extra_tooltip_text}'
             )
