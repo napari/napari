@@ -421,7 +421,7 @@ class ActionManager:
         list
             List of shortcuts that are repeatable.
         """
-        active_func_names = set(i[1].__name__ for i in active_keymap.items())
+        active_func_names = {i[1].__name__ for i in active_keymap.items()}
         active_repeatable_shortcuts = []
         for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
@@ -431,7 +431,6 @@ class ActionManager:
                 and action.repeatable
             ):
                 active_repeatable_shortcuts.extend(shortcuts)
-
 
         return active_repeatable_shortcuts
 
