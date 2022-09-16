@@ -35,19 +35,18 @@ class Labels2DSuite:
     #     """Time to update thumbnail."""
     #     self.layer._update_thumbnail()
 
-    def time_get_value(self, n):
-        """Time to get current value."""
+    # def time_get_value(self, n):
+    #     """Time to get current value."""
+    #     self.layer.get_value((0,) * 2)
 
-        self.layer.get_value((0,) * 2)
+    #     def time_raw_to_displayed(self, n):
+    #         """Time to convert raw to displayed."""
+    #         self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
+    def time_paint_circle(self, n):
+        """Time to paint circle."""
+        self.layer.paint((0,) * 2, self.layer.selected_label)
 
-#     def time_raw_to_displayed(self, n):
-#         """Time to convert raw to displayed."""
-#         self.layer._raw_to_displayed(self.layer._slice.image.raw)
-
-#     def time_paint_circle(self, n):
-#         """Time to paint circle."""
-#         self.layer.paint((0,) * 2, self.layer.selected_label)
 
 #     def time_fill(self, n):
 #         """Time to fill."""

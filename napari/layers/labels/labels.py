@@ -1274,6 +1274,10 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        # temporarily cause a test to fail
+        import time
+
+        time.sleep(5)
         shape = self.data.shape
         dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
         dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])

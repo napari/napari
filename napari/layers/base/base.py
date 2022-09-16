@@ -1066,10 +1066,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         value : tuple, None
             Value of the data. If the layer is not visible return None.
         """
-        # temporarily cause a test to fail
-        import time
-
-        time.sleep(5)
         if self.visible:
             if world:
                 ndim_world = len(position)
