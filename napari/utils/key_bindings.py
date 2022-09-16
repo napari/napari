@@ -520,13 +520,13 @@ class KeymapHandler:
             components_to_key_combo(event.key.name, event.modifiers)
         )
 
-        repeatables = [
+        repeatables = {
             *action_manager._get_repeatable_shortcuts(self.keymap_chain),
             "Up",
             "Down",
             "Left",
             "Right",
-        ]
+        }
 
         if (
             event.native is not None

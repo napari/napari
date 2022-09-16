@@ -8,7 +8,6 @@ from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from ..utils.events import EmitterGroup
-from ..utils.repeatable_actions import repeatable_actions
 from .interactions import Shortcut
 from .translations import trans
 
@@ -38,7 +37,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
-    repeatable: bool
+    repeatable: bool = False
 
     @cached_property
     def injected(self) -> Callable:
@@ -116,11 +115,7 @@ class ActionManager:
             True if repeatable, False if not.
 
         """
-        if name in repeatable_actions.keys():
-            return repeatable_actions[name]
-        else:
-            return False
-            # default is non-repeatable
+        return self.actions[name].repeatable
 
     def register_action(
         self,
@@ -180,7 +175,7 @@ class ActionManager:
         """
         self._validate_action_name(name)
         self._actions[name] = Action(
-            command, description, keymapprovider, self._is_repeatable(name)
+            command, description, keymapprovider, repeatable
         )
         self._update_shortcut_bindings(name)
 
@@ -426,7 +421,7 @@ class ActionManager:
         list
             List of shortcuts that are repeatable.
         """
-        active_func_names = [i[1].__name__ for i in active_keymap.items()]
+        active_func_names = set(i[1].__name__ for i in active_keymap.items())
         active_repeatable_shortcuts = []
         for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
@@ -435,8 +430,8 @@ class ActionManager:
                 and action.command.__name__ in active_func_names
                 and action.repeatable
             ):
-                for shortcut in shortcuts:
-                    active_repeatable_shortcuts.append(shortcut)
+                active_repeatable_shortcuts.extend(shortcuts)
+
 
         return active_repeatable_shortcuts
 
