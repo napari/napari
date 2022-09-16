@@ -37,10 +37,7 @@ class Labels2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        # temporarily cause a test to fail
-        import time
 
-        time.sleep(5)
         self.layer.get_value((0,) * 2)
 
 
