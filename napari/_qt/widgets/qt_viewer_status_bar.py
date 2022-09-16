@@ -26,7 +26,7 @@ class ViewerStatusBar(QStatusBar):
 
         layout = QHBoxLayout()
 
-        self._status = QLabel('Ready')
+        self._status = QLabel(trans._('Ready'))
         self._status.setContentsMargins(0, 0, 0, 0)
 
         self._layer_base = QElidingLabel(trans._(''))
@@ -59,9 +59,11 @@ class ViewerStatusBar(QStatusBar):
 
         main_widget.setLayout(layout)
 
-        self.addWidget(main_widget)
-        self._help = QLabel('')
-        self.addPermanentWidget(self._help)
+        self.addWidget(main_widget, 1)
+        self._help = QElidingLabel('')
+        self._help.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self._help.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        layout.addWidget(self._help, 1)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(

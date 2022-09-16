@@ -2,6 +2,7 @@
 bbox annotator
 ==============
 
+.. tags:: gui
 """
 
 from magicgui.widgets import ComboBox, Container
