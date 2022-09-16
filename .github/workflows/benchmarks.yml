@@ -127,7 +127,7 @@ jobs:
           fi
 
       - name: Report Failures as Issue
-        if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }} && failure()
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
