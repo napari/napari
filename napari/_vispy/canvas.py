@@ -1,8 +1,11 @@
 """VispyCanvas class.
 """
+
+import contextlib
 from weakref import WeakSet
 
 from qtpy.QtCore import QSize
+from qtpy.QtWidgets import QWidget
 from vispy.scene import SceneCanvas, Widget
 
 from ..utils.colormaps.standardize_color import transform_color
@@ -41,12 +44,16 @@ class VispyCanvas(SceneCanvas):
         self.max_texture_sizes = get_max_texture_sizes()
 
         self.events.ignore_callback_errors = False
-        self.native.setMinimumSize(QSize(200, 200))
+        with contextlib.suppress(AttributeError):
+            self.native.setMinimumSize(QSize(200, 200))
         self.context.set_depth_func('lequal')
 
     @property
     def destroyed(self):
-        return self._backend.destroyed
+        if hasattr(self._backend, 'destroyed'):
+            return self._backend.destroyed
+
+        return type("Mock", (), {'connect': lambda *_, **__: None})
 
     @property
     def background_color_override(self):
@@ -56,6 +63,10 @@ class VispyCanvas(SceneCanvas):
     def background_color_override(self, value):
         self._background_color_override = value
         self.bgcolor = value or self._last_theme_color
+
+    @property
+    def is_qt(self) -> bool:
+        return isinstance(self._backend, QWidget)
 
     def _on_theme_change(self, event):
         self._set_theme_change(event.value)

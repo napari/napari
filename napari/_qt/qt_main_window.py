@@ -129,9 +129,10 @@ class _QtMainWindow(QMainWindow):
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
-            handle.screenChanged.connect(
-                self._qt_viewer.canvas._backend.screen_changed
-            )
+            with contextlib.suppress(AttributeError):
+                handle.screenChanged.connect(
+                    self._qt_viewer.canvas._backend.screen_changed
+                )
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)

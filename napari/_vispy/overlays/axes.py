@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh, Text
 from vispy.visuals.transforms import STTransform
@@ -204,7 +206,8 @@ class VispyAxesOverlay:
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
 
-        self.node.canvas._backend.destroyed.connect(self._set_canvas_none)
+        with suppress(AttributeError):
+            self.node.canvas._backend.destroyed.connect(self._set_canvas_none)
         # End Note
 
         self._viewer.events.theme.connect(self._on_data_change)

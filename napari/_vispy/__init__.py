@@ -4,8 +4,11 @@ import qtpy
 from vispy import app
 
 # set vispy application to the appropriate qt backend
-app.use_app(qtpy.API_NAME)
-del app
+try:
+    app.use_app(qtpy.API_NAME)
+    del app
+except RuntimeError:
+    pass
 
 # set vispy logger to show warning and errors only
 vispy_logger = logging.getLogger('vispy')

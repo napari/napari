@@ -1,5 +1,6 @@
 """Scale Bar overlay."""
 import bisect
+from contextlib import suppress
 
 import numpy as np
 from vispy.scene.visuals import Line, Rectangle, Text
@@ -59,9 +60,16 @@ class VispyScaleBarOverlay:
         self.rect_node.transform = STTransform()
 
         # the two canvas are not the same object, better be safe.
-        self.rect_node.canvas._backend.destroyed.connect(self._set_canvas_none)
-        self.line_node.canvas._backend.destroyed.connect(self._set_canvas_none)
-        self.text_node.canvas._backend.destroyed.connect(self._set_canvas_none)
+        with suppress(AttributeError):
+            self.rect_node.canvas._backend.destroyed.connect(
+                self._set_canvas_none
+            )
+            self.line_node.canvas._backend.destroyed.connect(
+                self._set_canvas_none
+            )
+            self.text_node.canvas._backend.destroyed.connect(
+                self._set_canvas_none
+            )
         assert self.rect_node.canvas is self.line_node.canvas
         assert self.line_node.canvas is self.text_node.canvas
         # End Note

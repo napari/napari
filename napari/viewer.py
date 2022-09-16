@@ -179,6 +179,15 @@ class Viewer(ViewerModel):
             viewer.close()
         return ret
 
+    def _repr_mimebundle_(self, *a, **k):
+        rep = getattr(
+            self.window._qt_viewer.canvas.native, '_repr_mimebundle_', None
+        )
+        if rep is not None:
+            self.camera.zoom = 1
+            return rep()
+        raise NotImplementedError()
+
 
 def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""

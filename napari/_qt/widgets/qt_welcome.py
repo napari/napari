@@ -184,7 +184,8 @@ class QtWidgetOverlay(QStackedWidget):
         self._overlay = QtWelcomeWidget(self)
 
         # Widget setup
-        self.addWidget(widget)
+        if isinstance(widget, QWidget):
+            self.addWidget(widget)
         self.addWidget(self._overlay)
         self.setCurrentIndex(0)
 
