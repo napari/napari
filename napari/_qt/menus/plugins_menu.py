@@ -5,8 +5,6 @@ from qtpy.QtWidgets import QAction
 
 from ...plugins import _npe2
 from ...utils.translations import trans
-from ..dialogs.qt_plugin_dialog import QtPluginDialog
-from ..dialogs.qt_plugin_report import QtPluginErrReporter
 from ._util import NapariMenu
 
 if TYPE_CHECKING:
@@ -91,11 +89,3 @@ class PluginsMenu(NapariMenu):
             if action.text() not in actions:
                 menu.addAction(action)
             action.triggered.connect(_add_toggle_widget)
-
-    def _show_plugin_install_dialog(self):
-        """Show dialog that allows users to sort the call order of plugins."""
-        QtPluginDialog(self._win._qt_window).exec_()
-
-    def _show_plugin_err_reporter(self):
-        """Show dialog that allows users to review and report plugin errors."""
-        QtPluginErrReporter(parent=self._win._qt_window).exec_()
