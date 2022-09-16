@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
-from ...layers.base._base_constants import BLENDING_TRANSLATIONS, Blending 
+from ...layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
