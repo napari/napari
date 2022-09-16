@@ -7,7 +7,7 @@ from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
 # opaque and minimum blending do not support changing alpha (opacity)
-NO_OPACITY_BLENDING_MODES = {'minimum', 'opaque'}
+NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
 class LayerFormLayout(QFormLayout):
