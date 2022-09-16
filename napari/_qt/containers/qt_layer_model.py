@@ -1,3 +1,5 @@
+import typing
+
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
@@ -13,17 +15,20 @@ class QtLayerListModel(QtListModel[Layer]):
         if not index.isValid():
             return None
         layer = self.getItem(index)
-        if role == Qt.DisplayRole:  # used for item text
+        if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
-        if role == Qt.TextAlignmentRole:  # alignment of the text
+        if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
             return Qt.AlignCenter
-        if role == Qt.EditRole:  # used to populate line edit when editing
+        if role == Qt.ItemDataRole.EditRole:
+            # used to populate line edit when editing
             return layer.name
-        if role == Qt.ToolTipRole:  # for tooltip
-            return layer.name
-        if role == Qt.CheckStateRole:  # the "checked" state of this item
+        if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
+            return layer.get_source_str()
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+        ):  # the "checked" state of this item
             return Qt.Checked if layer.visible else Qt.Unchecked
-        if role == Qt.SizeHintRole:  # determines size of item
+        if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item
             return QSize(200, 34)
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
@@ -35,16 +40,21 @@ class QtLayerListModel(QtListModel[Layer]):
             )
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
-        # if role == Qt.DecorationRole:  # icon to show
+        # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
         #     pass
         return super().data(index, role)
 
-    def setData(self, index: QModelIndex, value, role: int) -> bool:
-        if role == Qt.CheckStateRole:
+    def setData(
+        self,
+        index: QModelIndex,
+        value: typing.Any,
+        role: int = Qt.ItemDataRole.EditRole,
+    ) -> bool:
+        if role == Qt.ItemDataRole.CheckStateRole:
             self.getItem(index).visible = value
-        elif role == Qt.EditRole:
+        elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
-            role = Qt.DisplayRole
+            role = Qt.ItemDataRole.DisplayRole
         else:
             return super().setData(index, value, role=role)
 
@@ -59,9 +69,9 @@ class QtLayerListModel(QtListModel[Layer]):
             return
         role = {
             'thumbnail': ThumbnailRole,
-            'visible': Qt.CheckStateRole,
-            'name': Qt.DisplayRole,
-        }.get(event.type, None)
+            'visible': Qt.ItemDataRole.CheckStateRole,
+            'name': Qt.ItemDataRole.DisplayRole,
+        }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)
         self.dataChanged.emit(row, row, roles)

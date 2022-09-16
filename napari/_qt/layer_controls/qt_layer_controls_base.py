@@ -1,8 +1,9 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
+from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
 
@@ -29,13 +30,13 @@ class QtLayerControls(QFrame):
     Attributes
     ----------
     blendComboBox : qtpy.QtWidgets.QComboBox
-        Drowpdown widget to select blending mode of layer.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
+        Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
+    opacityLabel : qtpy.QtWidgets.QLabel
+        Label for the opacity slider widget.
     """
 
     def __init__(self, layer):
@@ -50,13 +51,15 @@ class QtLayerControls(QFrame):
 
         self.setLayout(LayerFormLayout(self))
 
-        sld = QDoubleSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
+        self.opacityLabel = QLabel(trans._('opacity:'))
+
         self._on_opacity_change()
 
         blend_comboBox = QComboBox(self)
@@ -66,8 +69,11 @@ class QtLayerControls(QFrame):
             if data == self.layer.blending:
                 blend_comboBox.setCurrentIndex(index)
 
-        blend_comboBox.activated[str].connect(self.changeBlending)
+        blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
+        # GL minimum blending does not support changing alpha
+        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
+        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -90,6 +96,19 @@ class QtLayerControls(QFrame):
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
         self.layer.blending = self.blendComboBox.currentData()
+        # GL minimum blending does not support changing alpha
+        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
+        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
+
+        self.blendComboBox.setToolTip(
+            "`minimum` blending mode works best with inverted colormaps with a white background."
+            if self.layer.blending == 'minimum'
+            else ""
+        )
+        if self.layer.blending == 'minimum':
+            self.layer.help = "`minimum` blending mode works best with inverted colormaps with a white background"
+        else:
+            self.layer.help = ""
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""

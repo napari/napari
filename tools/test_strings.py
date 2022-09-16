@@ -4,11 +4,29 @@ Script to check for string in the codebase not using `trans`.
 TODO:
   * Find all logger calls and add to skips
   * Find nested funcs inside if/else
+
+
+Rune manually with
+
+    $ python tools/test_strings.py
+
+To interactively be prompted whether new strings should be ignored or need translations.
+
+
+You can pass a command to also have the option to open your editor.
+Example here to stop in Vim at the right file and linenumber.
+
+
+    $ python tools/test_strings.py "vim {filename} +{linenumber}"
 """
 
 import ast
 import os
+import subprocess
+import sys
+import termios
 import tokenize
+import tty
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Set, Tuple
@@ -557,11 +575,32 @@ def test_translation_errors(checks):
     assert no_trans_errors
 
 
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+
+GREEN = "\x1b[1;32m"
+RED = "\x1b[1;31m"
+NORMAL = "\x1b[1;0m"
+
+
 if __name__ == '__main__':
 
     issues, outdated_strings, trans_errors = _checks()
     import json
     import pathlib
+
+    if len(sys.argv) > 1:
+        edit_cmd = sys.argv[1]
+    else:
+        edit_cmd = None
 
     pth = pathlib.Path(__file__).parent / 'string_list.json'
     data = json.loads(pth.read_text())
@@ -571,6 +610,57 @@ if __name__ == '__main__':
             # files.
             data['SKIP_WORDS'][file].remove(to_remove)
 
-    pth.write_text(json.dumps(data, indent=2, sort_keys=True))
+    break_ = False
+    for file, missing in issues.items():
+        code = Path(file).read_text().splitlines()
+        if break_:
+            break
+        for line, text in missing:
+            # skip current item if it has been added to current list
+            # this happens when a new strings is often added many time
+            # in the same file.
+            if text in data['SKIP_WORDS'].get(file, []):
+                continue
+            print()
+            print(f"{RED}{file}:{line}{NORMAL}", GREEN, repr(text), NORMAL)
+            print()
+            for lt in code[line - 3 : line - 1]:
+                print(' ', lt)
+            print('>', code[line - 1].replace(text, GREEN + text + NORMAL))
+            for lt in code[line : line + 3]:
+                print(' ', lt)
 
+            print()
+            print(
+                f"{RED}i{NORMAL} : ignore –  add to ignored localised strings"
+            )
+            print(f"{RED}q{NORMAL} : quit –  quit w/o saving")
+            print(f"{RED}c{NORMAL} : continue –  go to next")
+            if edit_cmd:
+                print(f"{RED}e{NORMAL} : EDIT – using {edit_cmd!r}")
+            else:
+                print(
+                    "- : Edit not available, call with python tools/test_strings.py  '$COMMAND {filename} {linenumber} '"
+                )
+            print(f"{RED}s{NORMAL} : save and quit")
+            print('> ', end='')
+            sys.stdout.flush()
+            val = getch()
+            if val == 'e' and edit_cmd:
+                subprocess.run(
+                    edit_cmd.format(filename=file, linenumber=line).split(' ')
+                )
+            if val == 'c':
+                continue
+            if val == 'i':
+                data['SKIP_WORDS'].setdefault(file, []).append(text)
+            elif val == 'q':
+                import sys
+
+                sys.exit(0)
+            elif val == 's':
+                break_ = True
+                break
+
+    pth.write_text(json.dumps(data, indent=2, sort_keys=True))
     # test_outdated_string_skips(issues, outdated_strings, trans_errors)

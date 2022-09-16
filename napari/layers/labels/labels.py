@@ -1,7 +1,7 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
@@ -34,30 +34,6 @@ from ._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
-
-_REV_SHAPE_HELP = {
-    trans._('enter paint or fill mode to edit labels'): {
-        Mode.PAN_ZOOM,
-        Mode.TRANSFORM,
-    },
-    trans._('hold <space> to pan/zoom, click to pick a label'): {
-        Mode.PICK,
-        Mode.FILL,
-    },
-    trans._(
-        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
-    ): {Mode.PAINT},
-    trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
-}
-
-# This avoid duplicating the trans._ help messages above
-# as some modes have the same help.
-# while most tooling will recognise identical messages,
-# this can lead to human error.
-_FWD_SHAPE_HELP = {}
-for t, modes in _REV_SHAPE_HELP.items():
-    for m in modes:
-        _FWD_SHAPE_HELP[m] = t
 
 
 class Labels(_ImageBase):
@@ -172,7 +148,9 @@ class Labels(_ImageBase):
         to background.
     color : dict of int to str or array
         Custom label to color mapping. Values must be valid color names or RGBA
-        arrays.
+        arrays. While there is no limit to the number of custom labels, the
+        the layer will render incorrectly if they map to more than 1024 distinct
+        colors.
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -322,7 +300,6 @@ class Labels(_ImageBase):
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
         self._preserve_labels = False
-        self._help = trans._('enter paint or fill mode to edit labels')
 
         self._reset_history()
 
@@ -738,9 +715,7 @@ class Labels(_ImageBase):
         if not changed:
             return
 
-        self.help = _FWD_SHAPE_HELP[mode]
-
-        if mode in (Mode.PAINT, Mode.ERASE):
+        if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
         self.events.mode(mode=mode)
@@ -1385,13 +1360,13 @@ class Labels(_ImageBase):
 
     def get_status(
         self,
-        position,
+        position: Optional[Tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ) -> str:
-        """Status message of the data at a coordinate position.
+    ) -> dict:
+        """Status message information of the data at a coordinate position.
 
         Parameters
         ----------
@@ -1409,16 +1384,23 @@ class Labels(_ImageBase):
 
         Returns
         -------
-        msg : string
-            String containing a message that can be used as a status update.
+        source_info : dict
+            Dict containing a information that can be used in a status update.
         """
-        value = self.get_value(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
+        if position is not None:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        else:
+            value = None
+
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
         )
-        msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1428,9 +1410,9 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            msg += "; " + ", ".join(properties)
+            source_info['coordinates'] += "; " + ", ".join(properties)
 
-        return msg
+        return source_info
 
     def _get_tooltip_text(
         self,

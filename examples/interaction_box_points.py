@@ -3,6 +3,8 @@ Interaction box points
 ======================
 
 Demonstrate interaction box on points layer
+
+.. tags:: experimental
 """
 
 from skimage import data

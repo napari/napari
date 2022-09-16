@@ -119,6 +119,10 @@ BLENDING_MODES = {
         cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation='func_add',  # see vispy/vispy#2324
     ),
     'additive': dict(preset='additive'),
+    'minimum': dict(
+        depth_test=False, cull_face=False, blend=True, blend_equation='min'
+    ),
 }

@@ -70,6 +70,8 @@ the Python ecosystem, **napari** can be easily coupled to leading machine
 learning and image analysis tools (e.g. `scikit-image`, `scikit-learn`,
 `TensorFlow`, `PyTorch`), enabling more user-friendly automated analysis.
 
+![image](./images/multichannel_cells.png)
+
 We're developing **napari** in the open! But the project is in an **alpha**
 stage, and there will still likely be **breaking changes** with each release.
 You can follow progress
@@ -81,10 +83,10 @@ versions as we release them, and contribute ideas and code.
 ### Which distribution to install
 
 If you want to contribute back to the napari codebase, you should install from
-source code: see the [from source](#from-source) section.
+source code: see the [from source](from-source) section.
 
 If you only wish to use napari as GUI app (and not from python code), the
-[bundled app](./tutorials/fundamentals/installation#installing-as-a-bundled-app)
+[bundled app](./tutorials/fundamentals/installation.md#install-as-a-bundled-app)
 is the easiest way to install, it does not require having python pre-installed.
 
 If you are using napari from Python to programmatically interact with the app,
@@ -120,6 +122,7 @@ pip install "napari[all]"
 conda install -c conda-forge napari
 ```
 
+(from-source)=
 ### Current development branch from github
 
 To install the current `main` branch on github (which will usually be ahead

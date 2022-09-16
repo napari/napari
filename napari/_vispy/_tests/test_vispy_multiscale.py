@@ -158,6 +158,39 @@ def test_image_screenshot_zoomed(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_multiscale_zoomed_out(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/4781"""
+    # Need to show viewer to ensure that pixel_scale and physical_size
+    # get set appropriately.
+    viewer = make_napari_viewer(show=True)
+    shapes = [(3200, 3200), (1600, 1600), (800, 800)]
+    data = [np.empty(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True)
+    qt_viewer = viewer.window._qt_viewer
+    # Canvas size is in screen pixels.
+    qt_viewer.canvas.size = (1600, 1600)
+    # The camera rect is (left, top, width, height) in scene coordinates.
+    # In this case scene coordinates are the same as data/world coordinates
+    # the layer is 2D and data-to-world is identity.
+    # We pick a camera rect size that is much bigger than the data extent
+    # to simulate being zoomed out in the viewer.
+    camera_rect_size = 34000
+    camera_rect_center = 1599.5
+    camera_rect_start = camera_rect_center - (camera_rect_size / 2)
+    qt_viewer.view.camera.rect = (
+        camera_rect_start,
+        camera_rect_start,
+        camera_rect_size,
+        camera_rect_size,
+    )
+
+    qt_viewer.on_draw(None)
+
+    assert layer.data_level == 2
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation

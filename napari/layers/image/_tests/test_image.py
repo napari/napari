@@ -307,6 +307,9 @@ def test_blending():
     layer.blending = 'opaque'
     assert layer.blending == 'opaque'
 
+    layer.blending = 'minimum'
+    assert layer.blending == 'minimum'
+
 
 def test_interpolation():
     """Test setting image interpolation mode."""
@@ -323,10 +326,10 @@ def test_interpolation():
     with pytest.deprecated_call():
         assert layer.interpolation == 'bicubic'
 
-    layer.interpolation2d = 'bilinear'
-    assert layer.interpolation2d == 'bilinear'
+    layer.interpolation2d = 'linear'
+    assert layer.interpolation2d == 'linear'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bilinear'
+        assert layer.interpolation == 'linear'
 
 
 def test_colormaps():
@@ -552,7 +555,7 @@ def test_message():
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -564,7 +567,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():

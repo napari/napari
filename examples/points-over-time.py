@@ -2,6 +2,7 @@
 Points over time
 ================
 
+.. tags:: visualization-advanced
 """
 import napari
 import numpy as np

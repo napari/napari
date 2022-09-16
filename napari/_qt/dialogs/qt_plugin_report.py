@@ -66,7 +66,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_manager = plugin_manager
 
         self.setWindowTitle(trans._('Recorded Plugin Exceptions'))
-        self.setWindowModality(Qt.NonModal)
+        self.setWindowModality(Qt.WindowModality.NonModal)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(10, 10, 10, 10)
@@ -77,7 +77,9 @@ class QtPluginErrReporter(QDialog):
         self._highlight = Pylighter(
             self.text_area.document(), "python", theme.syntax_style
         )
-        self.text_area.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.text_area.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.text_area.setMinimumWidth(360)
 
         # Create plugin dropdown menu
@@ -109,10 +111,12 @@ class QtPluginErrReporter(QDialog):
         # plugin_meta contains a URL to the home page, (and/or other details)
         self.plugin_meta = QLabel('', parent=self)
         self.plugin_meta.setObjectName("pluginInfo")
-        self.plugin_meta.setTextFormat(Qt.RichText)
-        self.plugin_meta.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.plugin_meta.setTextFormat(Qt.TextFormat.RichText)
+        self.plugin_meta.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextBrowserInteraction
+        )
         self.plugin_meta.setOpenExternalLinks(True)
-        self.plugin_meta.setAlignment(Qt.AlignRight)
+        self.plugin_meta.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         # make layout
         row_1_layout = QHBoxLayout()

@@ -36,7 +36,7 @@ QMainWindow::separator {
   width: 4px;
   height: 4px;
   border: none;
-  background: transparent;
+  background-color: {{ background }};
 }
 
 QMainWindow::separator:hover {
@@ -44,17 +44,18 @@ QMainWindow::separator:hover {
 }
 
 QMainWindow::separator:horizontal {
-  image: url(":/themes/{{ name }}/horizontal_separator.svg");
+  image: url("theme_{{ name }}:/horizontal_separator.svg");
 }
 
 QMainWindow::separator:vertical {
-  image: url(":/themes/{{ name }}/vertical_separator.svg");
+  image: url("theme_{{ name }}:/vertical_separator.svg");
 }
 
 /* ------------- DockWidgets --------- */
 
 #QtCustomTitleBar {
   padding-top:3px;
+  background-color: {{ background }};
 }
 
 #QtCustomTitleBar:hover {
@@ -84,19 +85,19 @@ QMainWindow::separator:vertical {
     width: 12px;
     height: 12px;
     padding: 0;
-    image: url(":/themes/{{ name }}/delete_shape.svg");
+    image: url("theme_{{ name }}:/delete_shape.svg");
 }
 
 
 #QTitleBarFloatButton{
-    image: url(":/themes/{{ name }}/pop_out.svg");
+    image: url("theme_{{ name }}:/pop_out.svg");
     width: 10px;
     height: 8px;
     padding: 2 1 2 1;
 }
 
 #QTitleBarHideButton{
-    image: url(":/themes/{{ name }}/visibility_off.svg");
+    image: url("theme_{{ name }}:/visibility_off.svg");
     width: 10px;
     height: 8px;
     padding: 2 1 2 1;
@@ -215,11 +216,11 @@ QtLayerWidget > QCheckBox#visibility::indicator{
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/themes/{{ name }}/visibility_off_50.svg");
+  image: url("theme_{{ name }}:/visibility_off_50.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  image: url(":/themes/{{ name }}/visibility.svg");
+  image: url("theme_{{ name }}:/visibility.svg");
 }
 
 
@@ -232,35 +233,35 @@ QLabel[layer_type_label="true"] {
 }
 
 QLabel#Shapes {
-  image: url(":/themes/{{ name }}/new_shapes.svg");
+  image: url("theme_{{ name }}:/new_shapes.svg");
 }
 
 QLabel#Points {
-  image: url(":/themes/{{ name }}/new_points.svg");
+  image: url("theme_{{ name }}:/new_points.svg");
 }
 
 QLabel#Labels {
-  image: url(":/themes/{{ name }}/new_labels.svg");
+  image: url("theme_{{ name }}:/new_labels.svg");
 }
 
 QLabel#Image {
-  image: url(":/themes/{{ name }}/new_image.svg");
+  image: url("theme_{{ name }}:/new_image.svg");
 }
 
 QLabel#Multiscale {
-  image: url(":/themes/{{ name }}/new_image.svg");
+  image: url("theme_{{ name }}:/new_image.svg");
 }
 
 QLabel#Surface {
-  image: url(":/themes/{{ name }}/new_surface.svg");
+  image: url("theme_{{ name }}:/new_surface.svg");
 }
 
 QLabel#Vectors {
-  image: url(":/themes/{{ name }}/new_vectors.svg");
+  image: url("theme_{{ name }}:/new_vectors.svg");
 }
 
 QLabel#logo_silhouette {
-  image: url(":/themes/{{ name }}/logo_silhouette.svg");
+  image: url("theme_{{ name }}:/logo_silhouette.svg");
 }
 
 
@@ -307,6 +308,22 @@ QLabeledRangeSlider > QAbstractSpinBox {
   color: {{ secondary }};
 }
 
+QWidget[emphasized="true"] QDoubleSlider::sub-page:horizontal:disabled {
+    background: {{ primary }};
+}
+
+QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
+    background: {{ primary }};
+}
+
+QWidget[emphasized="true"] SliderLabel:disabled {
+    color: {{ opacity(text, 50) }};
+}
+
+QWidget[emphasized="true"] QLabel:disabled {
+    color: {{ opacity(text, 50) }};
+}
+
 AutoScaleButtons QPushButton {
   font-size: 9pt;
   padding: 4;
@@ -327,11 +344,11 @@ QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
-    image: url(":/themes/{{ name }}/step_left.svg");
+    image: url("theme_{{ name }}:/step_left.svg");
 }
 
 QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
-    image: url(":/themes/{{ name }}/step_right.svg");
+    image: url("theme_{{ name }}:/step_right.svg");
 }
 
 QtDimSliderWidget > QLineEdit {
@@ -355,7 +372,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator {
-   image: url(":/themes/{{ name }}/long_right_arrow.svg");
+   image: url("theme_{{ name }}:/long_right_arrow.svg");
    width: 22px;
    height: 22px;
    padding: 0 6px;
@@ -367,7 +384,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator:checked {
-   image: url(":/themes/{{ name }}/long_left_arrow.svg");
+   image: url("theme_{{ name }}:/long_left_arrow.svg");
 }
 
 #playDirectionCheckBox::indicator:pressed {
@@ -486,17 +503,17 @@ NapariQtNotification #expand_button {
 }
 
 NapariQtNotification[expanded="false"] #expand_button {
-  image: url(":/themes/{{ name }}/chevron_up.svg");
+  image: url("theme_{{ name }}:/chevron_up.svg");
 }
 
 NapariQtNotification[expanded="true"] #expand_button {
-  image: url(":/themes/{{ name }}/chevron_down.svg");
+  image: url("theme_{{ name }}:/chevron_down.svg");
 }
 
 
 NapariQtNotification #close_button {
   background: none;
-  image: url(":/themes/{{ name }}/delete_shape.svg");
+  image: url("theme_{{ name }}:/delete_shape.svg");
   padding: 0px;
   margin: 0px;
   max-width: 20px;
@@ -549,7 +566,7 @@ PluginListItem#unavailable {
 
 PluginListItem QCheckBox::indicator:disabled {
   background-color: {{ opacity(foreground, 127) }};
-  image: url(":/themes/{{ name }}/check_50.svg");
+  image: url("theme_{{ name }}:/check_50.svg");
 }
 
 QPushButton#install_button {
@@ -618,14 +635,14 @@ QPushButton#close_button:disabled {
 }
 
 #info_icon {
-  image: url(":/themes/{{ name }}/info.svg");
+  image: url("theme_{{ name }}:/info.svg");
   min-width: 18px;
   min-height: 18px;
   margin: 2px;
 }
 
 #warning_icon {
-  image: url(":/themes/{{ name }}/warning.svg");
+  image: url("theme_{{ name }}:/warning.svg");
   max-width: 14px;
   max-height: 14px;
   min-width: 14px;
@@ -645,7 +662,7 @@ QPushButton#close_button:disabled {
 }
 
 #error_label {
-  image: url(":/themes/{{ name }}/warning.svg");
+  image: url("theme_{{ name }}:/warning.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -656,7 +673,7 @@ QPushButton#close_button:disabled {
 }
 
 #help_label {
-  image: url(":/themes/{{ name }}/help.svg");
+  image: url("theme_{{ name }}:/help.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -774,14 +791,31 @@ QtLayerList::indicator {
   height: 16px;
   position: absolute;
   left: 0px;
-  image: url(":/themes/{{ name }}/visibility_off.svg");
+  image: url("theme_{{ name }}:/visibility_off.svg");
 }
 
 QtLayerList::indicator:unchecked {
-  image: url(":/themes/{{ name }}/visibility_off_50.svg");
+  image: url("theme_{{ name }}:/visibility_off_50.svg");
   
 }
 
 QtLayerList::indicator:checked {
-  image: url(":/themes/{{ name }}/visibility.svg");
+  image: url("theme_{{ name }}:/visibility.svg");
+}
+
+
+#warning_icon_btn {
+  qproperty-icon: url("theme_{{ name }}:/warning.svg");
+}
+
+#warning_icon_element {
+  image: url("theme_{{ name }}:/warning.svg");
+  min-height: 36px;
+  min-width: 36px;
+}
+
+#error_icon_element {
+  image: url("theme_{{ name }}:/error.svg");
+  min-height: 36px;
+  min-width: 36px;
 }

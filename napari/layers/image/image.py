@@ -26,7 +26,6 @@ from ..utils.plane import SlicingPlane
 from ._image_constants import (
     ImageRendering,
     Interpolation,
-    Interpolation3D,
     Mode,
     VolumeDepiction,
 )
@@ -367,7 +366,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
-        self._interpolation3d = Interpolation3D.NEAREST
+        self._interpolation3d = Interpolation.NEAREST
         self.interpolation2d = interpolation2d
         self.interpolation3d = interpolation3d
         self.rendering = rendering
@@ -529,7 +528,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -540,7 +539,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         warnings.warn(
             trans._(
-                "Interpolation attribute is deprecated. Please use interpolation2d or interpolation3d",
+                "Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
             ),
             category=DeprecationWarning,
             stacklevel=2,
@@ -556,7 +555,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current interpolation mode."""
         warnings.warn(
             trans._(
-                "Interpolation setting is deprecated. Please use interpolation2d or interpolation3d",
+                "Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
             ),
             category=DeprecationWarning,
             stacklevel=2,
@@ -564,6 +563,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self._ndisplay == 3:
             self.interpolation3d = interpolation
         else:
+            if interpolation == 'bilinear':
+                interpolation = 'linear'
+                warnings.warn(
+                    trans._(
+                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
+                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
             self.interpolation2d = interpolation
 
     @property
@@ -572,6 +581,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation2d.setter
     def interpolation2d(self, value):
+        if value == 'bilinear':
+            raise ValueError(
+                trans._(
+                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
+                ),
+            )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
@@ -582,7 +597,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
-        self._interpolation3d = Interpolation3D(value)
+        self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
 

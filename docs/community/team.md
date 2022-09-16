@@ -11,21 +11,20 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - [@GenevieveBuckley](https://github.com/GenevieveBuckley)
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - [@Czaki](https://github.com/Czaki)
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - [@jni](https://github.com/jni)*
-- [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - [@justinelarsen](https://github.com/justinelarsen)
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - [@kevinyamauchi](https://github.com/kevinyamauchi)
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - [@kne42](https://github.com/kne42)
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - [@royerloic](https://github.com/royerloic)*
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - [@brisvag](https://github.com/brisvag)
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn)*
-- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)
-- [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - [@ziyangczi](https://github.com/ziyangczi)
+- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)*
 
 <sub>* on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
 
 ## Emeritus Core Developers
 
 - [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - [@shanaxel42](https://github.com/shanaxel42)
-
+- [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - [@justinelarsen](https://github.com/justinelarsen)
+- [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - [@potating-potato](https://github.com/potating-potato)
 
 ## Project history
 

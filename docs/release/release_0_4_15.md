@@ -1,10 +1,5 @@
 # napari 0.4.15
 
-```{note}
-These are preliminary release notes until 0.4.15 is released. Currently this is
-slated to occur on 2022-03-08.
-```
-
 We're happy to announce the release of napari 0.4.15!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional

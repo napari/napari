@@ -3,6 +3,8 @@ Interactive move point
 ======================
 
 3D click and drag interactivity demo
+
+.. tags:: experimental
 """
 from copy import copy
 

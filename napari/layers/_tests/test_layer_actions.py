@@ -1,53 +1,35 @@
-import ast
-
 import numpy as np
 import pytest
 
 from napari.components.layerlist import LayerList
-from napari.layers import Image, Labels, Shapes
+from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
-    _LAYER_ACTIONS,
-    ContextAction,
-    SubMenu,
     _convert,
     _convert_dtype,
+    _duplicate_layer,
     _project,
 )
-from napari.utils.context._expressions import Expr
-from napari.utils.context._layerlist_context import LayerListContextKeys
 
 
-class assert_expression_variables(ast.NodeVisitor):
-    def __init__(self, expression, names) -> None:
-        self._variables: list[str] = []
-        self.visit(ast.parse(expression))
-        for i in self._variables:
-            assert i in names
+def test_duplicate_layers():
+    def _dummy():
+        pass
 
-    def visit_Name(self, node):
-        self._variables.append(node.id)
-
-
-def test_layer_actions():
-    """Test that all variables used in layer actions expressions are
-    keys in CONTEXT_KEYS.
-    """
-    names = set(LayerListContextKeys.__members__)
-    valid_keys = set.union(
-        set(ContextAction.__annotations__), set(SubMenu.__annotations__)
-    )
-    for action_dict in _LAYER_ACTIONS:
-        for action in action_dict.values():
-            assert set(action).issubset(valid_keys)
-            expr = action.get('enable_when')
-            if not expr:
-                continue
-            assert isinstance(expr, (bool, Expr))
-            if isinstance(expr, Expr):
-                assert_expression_variables(expr, names)
-            expr = action.get('show_when', None)
-            if isinstance(expr, Expr):
-                assert_expression_variables(expr, names)
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.selection.active = layer_list[0]
+    layer_list[0].events.data.connect(_dummy)
+    assert len(layer_list[0].events.data.callbacks) == 2
+    assert len(layer_list) == 1
+    _duplicate_layer(layer_list)
+    assert len(layer_list) == 2
+    assert layer_list[0].name == "test"
+    assert layer_list[1].name == "test copy"
+    assert layer_list[1].events.source is layer_list[1]
+    assert (
+        len(layer_list[1].events.data.callbacks) == 1
+    )  # `events` Event Emitter
+    assert layer_list[1].source.parent() is layer_list[0]
 
 
 @pytest.mark.parametrize(

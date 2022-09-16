@@ -3,6 +3,8 @@ Dask nD image
 =============
 
 Display a dask array
+
+.. tags:: visualization-nD
 """
 
 try:
