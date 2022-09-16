@@ -8,6 +8,9 @@ from ...utils.translations import trans
 from ._labels_constants import Mode
 from .labels import Labels
 
+MIN_BRUSH_SIZE = 1
+MAX_BRUSH_SIZE = 40
+
 
 @Labels.bind_key('Space')
 def hold_to_pan_zoom(layer: Labels):
@@ -23,8 +26,8 @@ def hold_to_pan_zoom(layer: Labels):
         layer.mode = prev_mode
 
 
-def register_label_action(description):
-    return register_layer_action(Labels, description)
+def register_label_action(description: str, repeatable: bool = False):
+    return register_layer_action(Labels, description, repeatable)
 
 
 def register_label_mode_action(description):
@@ -92,20 +95,26 @@ def increase_label_id(layer: Labels):
 
 @register_label_action(
     trans._("Decrease the paint brush size by one."),
+    repeatable=True,
 )
 def decrease_brush_size(layer: Labels):
     """Decrease the brush size"""
-    if layer.brush_size > 1:  # here we should probably add a non-hard-coded
+    if (
+        layer.brush_size > MIN_BRUSH_SIZE
+    ):  # here we should probably add a non-hard-coded
         # reference to the limit values of brush size?
         layer.brush_size -= 1
 
 
 @register_label_action(
     trans._("Increase the paint brush size by one."),
+    repeatable=True,
 )
 def increase_brush_size(layer: Labels):
     """Increase the brush size"""
-    if layer.brush_size < 40:  # here we should probably add a non-hard-coded
+    if (
+        layer.brush_size < MAX_BRUSH_SIZE
+    ):  # here we should probably add a non-hard-coded
         # reference to the limit values of brush size?
         layer.brush_size += 1
 

@@ -157,6 +157,7 @@ class ActionManager:
             instance of this is in focus.
         repeatable : bool
             a boolean flag indictation whether the action can be autorepeated.
+            Defaults to False.
 
 
         Notes
@@ -173,6 +174,7 @@ class ActionManager:
         bind_button, bind_shortcut
 
         """
+
         self._validate_action_name(name)
         self._actions[name] = Action(
             command, description, keymapprovider, repeatable
