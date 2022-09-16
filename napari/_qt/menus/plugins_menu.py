@@ -28,6 +28,9 @@ class PluginsMenu(NapariMenu):
         plugin_manager.events.unregistered.connect(
             self._remove_unregistered_widget
         )
+        self._build()
+
+    def _build(self, event=None):
         # Add a menu item (QAction) for each available plugin widget
         self._add_registered_widget(call_all=True)
 
