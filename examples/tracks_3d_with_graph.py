@@ -2,6 +2,7 @@
 Tracks 3D with graph
 ====================
 
+.. tags:: visualization-advanced
 """
 
 import napari

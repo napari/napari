@@ -563,6 +563,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self._ndisplay == 3:
             self.interpolation3d = interpolation
         else:
+            if interpolation == 'bilinear':
+                interpolation = 'linear'
+                warnings.warn(
+                    trans._(
+                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
+                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
             self.interpolation2d = interpolation
 
     @property
@@ -572,13 +582,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @interpolation2d.setter
     def interpolation2d(self, value):
         if value == 'bilinear':
-            value = 'linear'
-            warnings.warn(
+            raise ValueError(
                 trans._(
-                    "'bilinear' interpolation is deprecated. Please use 'linear' instead",
+                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
-                category=DeprecationWarning,
-                stacklevel=2,
             )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)

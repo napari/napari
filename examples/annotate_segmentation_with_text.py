@@ -4,6 +4,8 @@ Annotate segmentation with text
 
 Perform a segmentation and annotate the results with
 bounding boxes and text
+
+.. tags:: analysis
 """
 import numpy as np
 from skimage import data

@@ -3,6 +3,8 @@ Add 3D image
 ============
 
 Display a 3D image layer using the :meth:`add_image` API.
+
+.. tags:: visualization-nD, layers
 """
 
 from skimage import data

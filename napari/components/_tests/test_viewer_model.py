@@ -785,7 +785,6 @@ def test_status_tooltip(Layer, data, ndim):
     layer = Layer(data)
     viewer.layers.append(layer)
     viewer.cursor.position = (1,) * ndim
-    viewer._on_cursor_position_change()
 
 
 def test_viewer_object_event_sources():
