@@ -629,10 +629,10 @@ class Window:
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = menus.ViewMenu(self)
         self.main_menu.addMenu(self.view_menu)
-        self.window_menu = menus.WindowMenu(self)
-        self.main_menu.addMenu(self.window_menu)
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
+        self.window_menu = menus.WindowMenu(self)
+        self.main_menu.addMenu(self.window_menu)
         self.help_menu = menus.HelpMenu(self)
         self.main_menu.addMenu(self.help_menu)
 
