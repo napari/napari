@@ -9,19 +9,19 @@ from ....utils.translations import trans
 from ...qt_main_window import Window
 
 
-def _show_console(window: Window):
+def _toggle_console(window: Window):
     window._qt_viewer.dockConsole.setVisible(
         not window._qt_viewer.dockConsole.isVisible()
     )
 
 
-def _show_layer_controls(window: Window):
+def _toggle_layer_controls(window: Window):
     window._qt_viewer.dockLayerControls.setVisible(
         not window._qt_viewer.dockLayerControls.isVisible()
     )
 
 
-def _show_layer_list(window: Window):
+def _toggle_layer_list(window: Window):
     window._qt_viewer.dockLayerList.setVisible(
         not window._qt_viewer.dockLayerList.isVisible()
     )
@@ -38,7 +38,7 @@ WINDOW_ACTIONS: List[Action] = [
                 'order': 1,
             }
         ],
-        callback=_show_console,
+        callback=_toggle_console,
         status_tip=trans._('Toggle console panel'),
     ),
     Action(
@@ -51,7 +51,7 @@ WINDOW_ACTIONS: List[Action] = [
                 'order': 2,
             }
         ],
-        callback=_show_layer_controls,
+        callback=_toggle_layer_controls,
         status_tip=trans._('Toggle layer controls panel'),
     ),
     Action(
@@ -64,7 +64,7 @@ WINDOW_ACTIONS: List[Action] = [
                 'order': 3,
             }
         ],
-        callback=_show_layer_list,
+        callback=_toggle_layer_list,
         status_tip=trans._('Toggle layer list panel'),
     ),
 ]
