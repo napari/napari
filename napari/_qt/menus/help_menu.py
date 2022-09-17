@@ -1,4 +1,7 @@
+import webbrowser
 from typing import TYPE_CHECKING
+
+from qtpy.QtWidgets import QAction
 
 from ...utils.translations import trans
 from ..dialogs.qt_about import QtAbout
@@ -22,7 +25,36 @@ class HelpMenu(NapariMenu):
                 'slot': lambda e: QtAbout.showAbout(window._qt_window),
                 'shortcut': 'Ctrl+/',
                 'statusTip': trans._('About napari'),
-            }
+                # on macOS this will be properly placed in the napari menu as:
+                # About napari
+                'menuRole': QAction.AboutRole,
+            },
+            {
+                'text': trans._('Getting started'),
+                'slot': lambda e: webbrowser.open(
+                    'https://napari.org/stable/tutorials/start_index.html'
+                ),
+                'statusTip': trans._('Open Getting started webpage'),
+            },
+            {
+                'text': trans._('Tutorials'),
+                'slot': lambda e: webbrowser.open(
+                    'https://napari.org/stable/tutorials/index.html'
+                ),
+                'statusTip': trans._('Open Tutorials webpage'),
+            },
+            {
+                'text': trans._('Examples Gallery'),
+                'slot': lambda e: webbrowser.open(
+                    'https://napari.org/stable/gallery.html'
+                ),
+                'statusTip': trans._('Open Examples Gallery webpage'),
+            },
+            {
+                'text': trans._('napari website'),
+                'slot': lambda e: webbrowser.open('https://napari.org'),
+                'statusTip': trans._('Open napari.org webpage'),
+            },
         ]
         if ask_opt_in is not None:
             ACTIONS.append(
