@@ -657,6 +657,10 @@ class Window:
         else:
             self._qt_window.showFullScreen()
 
+    def _minimize(self):
+        """Minimize"""
+        self._qt_window.showMinimized()
+
     def _toggle_play(self):
         """Toggle play."""
         if self._qt_viewer.dims.is_playing:

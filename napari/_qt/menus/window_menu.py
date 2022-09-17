@@ -1,3 +1,4 @@
+import platform
 from typing import TYPE_CHECKING
 
 from ...utils.translations import trans
@@ -10,5 +11,14 @@ if TYPE_CHECKING:
 class WindowMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         super().__init__(trans._('&Window'), window._qt_window)
-        ACTIONS = []
+        ACTIONS = [
+            {
+                'when': platform.system() == "Darwin",
+                'text': trans._('Minimize'),
+                'slot': window._minimize,
+                'shortcut': 'Ctrl+M',
+                'statusTip': trans._('Minimize'),
+            },
+            {},
+        ]
         populate_menu(self, ACTIONS)
