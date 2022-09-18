@@ -28,15 +28,6 @@ class HelpMenu(NapariMenu):
         super().__init__(trans._('&Help'), window._qt_window)
         ACTIONS = [
             {
-                'text': trans._('napari Info'),
-                'slot': lambda e: QtAbout.showAbout(window._qt_window),
-                'shortcut': 'Ctrl+/',
-                'statusTip': trans._('About napari'),
-                # on macOS this will be properly placed in the napari menu as:
-                # About napari
-                'menuRole': QAction.AboutRole,
-            },
-            {
                 'text': trans._('Getting started'),
                 'slot': lambda e: webbrowser.open(
                     f'https://napari.org/{VERSION}/tutorials/start_index.html'
@@ -69,6 +60,16 @@ class HelpMenu(NapariMenu):
                 'text': trans._('napari homepage'),
                 'slot': lambda e: webbrowser.open('https://napari.org'),
                 'statusTip': trans._('Open napari.org webpage'),
+            },
+            {},
+            {
+                'text': trans._('napari info'),
+                'slot': lambda e: QtAbout.showAbout(window._qt_window),
+                'shortcut': 'Ctrl+/',
+                'statusTip': trans._('About napari'),
+                # on macOS this will be properly placed in the napari menu as:
+                # About napari
+                'menuRole': QAction.AboutRole,
             },
         ]
         if ask_opt_in is not None:
