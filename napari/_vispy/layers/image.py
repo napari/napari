@@ -4,6 +4,7 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
+from ...layers.base._base_constants import Blending
 from ...utils.translations import trans
 from ..utils.gl import fix_data_dtype, get_gl_extensions
 from ..visuals.image import Image as ImageNode
@@ -170,8 +171,12 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.cmap = VispyColormap(*self.layer.colormap)
 
     def _update_mip_minip_cutoff(self):
+        # discard fragments beyond contrast limits, but only with translucent blending
         if isinstance(self.node, VolumeNode):
-            if self.layer.blending != 'opaque':
+            if self.layer.blending in {
+                Blending.TRANSLUCENT,
+                Blending.TRANSLUCENT_NO_DEPTH,
+            }:
                 self.node.mip_cutoff = self.node._texture.clim_normalized[0]
                 self.node.minip_cutoff = self.node._texture.clim_normalized[1]
             else:
