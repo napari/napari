@@ -63,7 +63,7 @@ class HelpMenu(NapariMenu):
                 'slot': lambda e: webbrowser.open(
                     f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html'
                 ),
-                'statusTip': trans._('Open Examples Gallery webpage'),
+                'statusTip': trans._('Open Release Notes webpage'),
             },
             {
                 'text': trans._('napari homepage'),
