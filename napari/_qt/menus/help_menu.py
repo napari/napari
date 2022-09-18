@@ -58,6 +58,14 @@ class HelpMenu(NapariMenu):
                 'statusTip': trans._('Open Examples Gallery webpage'),
             },
             {
+                'when': VERSION != "dev",
+                'text': trans._('Release Notes'),
+                'slot': lambda e: webbrowser.open(
+                    f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html'
+                ),
+                'statusTip': trans._('Open Examples Gallery webpage'),
+            },
+            {
                 'text': trans._('napari homepage'),
                 'slot': lambda e: webbrowser.open('https://napari.org'),
                 'statusTip': trans._('Open napari.org webpage'),
