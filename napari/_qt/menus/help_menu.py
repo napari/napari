@@ -1,7 +1,10 @@
 import webbrowser
 from typing import TYPE_CHECKING
 
+from packaging.version import parse
 from qtpy.QtWidgets import QAction
+
+from napari import __version__
 
 from ...utils.translations import trans
 from ..dialogs.qt_about import QtAbout
@@ -14,6 +17,10 @@ try:
     from napari_error_reporter import ask_opt_in
 except ModuleNotFoundError:
     ask_opt_in = None
+
+# Get the version for proper links to documentation
+v = parse(__version__)
+VERSION = "dev" if v.is_devrelease else str(v)
 
 
 class HelpMenu(NapariMenu):
@@ -32,26 +39,26 @@ class HelpMenu(NapariMenu):
             {
                 'text': trans._('Getting started'),
                 'slot': lambda e: webbrowser.open(
-                    'https://napari.org/stable/tutorials/start_index.html'
+                    f'https://napari.org/{VERSION}/tutorials/start_index.html'
                 ),
                 'statusTip': trans._('Open Getting started webpage'),
             },
             {
                 'text': trans._('Tutorials'),
                 'slot': lambda e: webbrowser.open(
-                    'https://napari.org/stable/tutorials/index.html'
+                    f'https://napari.org/{VERSION}/tutorials/index.html'
                 ),
                 'statusTip': trans._('Open Tutorials webpage'),
             },
             {
                 'text': trans._('Examples Gallery'),
                 'slot': lambda e: webbrowser.open(
-                    'https://napari.org/stable/gallery.html'
+                    f'https://napari.org/{VERSION}/gallery.html'
                 ),
                 'statusTip': trans._('Open Examples Gallery webpage'),
             },
             {
-                'text': trans._('napari website'),
+                'text': trans._('napari homepage'),
                 'slot': lambda e: webbrowser.open('https://napari.org'),
                 'statusTip': trans._('Open napari.org webpage'),
             },
