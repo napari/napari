@@ -100,23 +100,6 @@ class ActionManager:
                 )
             )
 
-    def _is_repeatable(self, name) -> bool:
-        """
-
-
-        Parameters
-        ----------
-        name : str
-            The description of an action to be checked for repeatability
-
-        Returns
-        -------
-        bool
-            True if repeatable, False if not.
-
-        """
-        return self.actions[name].repeatable
-
     def register_action(
         self,
         name: str,
@@ -156,7 +139,7 @@ class ActionManager:
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
         repeatable : bool
-            a boolean flag indictation whether the action can be autorepeated.
+            a boolean flag indicating whether the action can be autorepeated.
             Defaults to False.
 
 
