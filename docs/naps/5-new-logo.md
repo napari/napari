@@ -73,7 +73,7 @@ background in biology would appreciate!
 
 Here is the proposed logo together with the old one:
 
-![napari-logo-comparison](../image/napari-logo-old-new.png)
+![napari-logo-comparison](../images/napari-logo-old-new.png)
 
 The new logo at 100% scale:
 
