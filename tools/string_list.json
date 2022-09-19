@@ -387,7 +387,7 @@
       "{meta.get(\"url\")}/issues/new?&body={err}",
       "python",
       "NoColor",
-      "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;</span><a href=\"{url}\" style=\"color:#999\">{url}</a>",
+      "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;</span><a href=\"{url}\" style=\"color:#999\">{url}</a>"
     ],
     "napari/_qt/dialogs/qt_reader_dialog.py": [
       "Choose reader",
@@ -453,8 +453,7 @@
     ],
     "napari/_qt/layer_controls/qt_layer_controls_base.py": [
       "close",
-      "layer",
-      "minimum"
+      "layer"
     ],
     "napari/_qt/layer_controls/qt_layer_controls_container.py": [
       "emphasized"
