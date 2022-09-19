@@ -38,6 +38,7 @@ jobs:
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
         with:
           run: make docs
+
       # TODO: enable when the link check passes
       # - name: LinkCheck
       #  run: make linkcheck-files
