@@ -248,5 +248,5 @@ def show_shortcuts(viewer: 'Viewer'):
     viewer.window.file_menu._open_preferences()
     pref_list = viewer.window.file_menu._pref_dialog._list
     for i in range(pref_list.count()):
-        if pref_list.item(i).text() == trans._("Shortcuts"):
+        if pref_list.item(i).text() == "Shortcuts":
             pref_list.setCurrentRow(i)
