@@ -112,7 +112,7 @@ class QtLayerControls(QFrame):
         )
 
         blending_tooltip = ''
-        if self.layer.blending == 'minimum':
+        if self.layer.blending == str(Blending.MINIMUM):
             blending_tooltip = trans._(
                 '`minimum` blending mode works best with inverted colormaps with a white background.',
             )
