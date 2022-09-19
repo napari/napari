@@ -298,7 +298,10 @@ def test_handle_on_release_bindings():
 
     class Baz(KeymapProvider):
         aliiiens = 0
-        class_keymap = {'A': make_42, 'Control-Shift-B': add_then_subtract}
+        class_keymap = {
+            KeyCode.Shift: make_42,
+            'Control-Shift-B': add_then_subtract,
+        }
 
     baz = Baz()
     handler = KeymapHandler()
@@ -306,7 +309,7 @@ def test_handle_on_release_bindings():
 
     # one-statement generator function
     assert not hasattr(baz, 'SPAM')
-    handler.press_key('A')
+    handler.press_key('Shift')
     assert baz.SPAM == 42
 
     # two-statement generator function
