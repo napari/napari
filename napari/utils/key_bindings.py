@@ -37,7 +37,7 @@ import contextlib
 import inspect
 import time
 from collections import ChainMap
-from types import EllipsisType, MethodType
+from types import MethodType
 from typing import Callable, Mapping, Union
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
@@ -46,6 +46,11 @@ from vispy.util import keys
 from ..settings import get_settings
 from ..utils.action_manager import action_manager
 from ..utils.translations import trans
+
+try:  # remove after min py version 3.10+
+    from types import EllipsisType
+except ImportError:
+    EllipsisType = type(Ellipsis)
 
 KeyBindingLike = Union[KeyBinding, str, int]
 Keymap = Mapping[
