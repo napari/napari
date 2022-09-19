@@ -782,7 +782,10 @@ class Points(Layer):
         """
         if value < 0:
             warnings.warn(
-                message='antialiasing value must be positive, value will be set to 0.',
+                message=trans._(
+                    'antialiasing value must be positive, value will be set to 0.',
+                    deferred=True,
+                ),
                 category=RuntimeWarning,
             )
         self._antialiasing = max(0, value)

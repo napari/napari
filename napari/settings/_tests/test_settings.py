@@ -162,7 +162,7 @@ def test_custom_theme_settings(test_settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         test_settings.appearance.theme = custom_theme_name
 
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
