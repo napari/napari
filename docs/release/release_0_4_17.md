@@ -1,5 +1,9 @@
 # napari 0.4.17
 
+```{note}
+These are preliminary release notes until 0.4.17 is released.
+```
+
 We're happy to announce the release of napari 0.4.17!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
@@ -12,8 +16,47 @@ https://github.com/napari/napari
 
 ## Highlights
 
-- Feature: Minimum blending (#4875)
-- Add option to edit second shortcut in settings (#5018)
+This release is focused on documentation improvements and bug fixes, with few changes to napari’s API.
+We picked out a few highlights, but keep reading below for the full list of changes!
+
+### Minimum blending and inverted colormaps
+
+We added a new blending mode, `minimum`, in #4875, along with some inverted colormaps by @cleterrier.
+The new mode and colormaps enable visualizing data as color intensities on a white background.
+This is particularly nice when using the Light theme.
+For more inspiration see [#invertedLUT on Twitter](https://twitter.com/hashtag/invertedLUT)
+and the built-in napari example [examples/minimum_blending.py](https://github.com/napari/napari/blob/main/examples/minimum_blending.py).
+
+### Option to edit second shortcut in preferences
+
+We improved customization of napari preferences by allowing you to define a second,
+alternative shortcut for each napari action.
+This allows you, for example, to have both numeric (e.g. 1, 2, 3 - related to button positions) and semantic (F - for fill) shortcuts
+defined for use in napari.
+
+### One line image loading
+
+We added `napari.imshow` in #4928 as a convenience function to load image data and return both a `Viewer` and the image `Layer` all in one line.
+
+```python
+viewer, layer = napari.imshow(data)
+```
+
+See the docstring of `napari.imshow` for more details.
+
+### Experimental support for Qt6
+
+We added some basic support for PyQt6 and PySide6 in #3707, though we expect some issues.
+If you need or want to use Qt6, please try this out and report any bugs you find.
+
+### Multi-color text
+
+We added support for assigning multiple colors for text annotations of points and shapes in #4464.
+See [examples/add_points_with_multicolor_text.py](https://github.com/napari/napari/blob/main/examples/add_points_with_multicolor_text.py)
+This uses the API that we intend to spread elsewhere for other style attributes like `Points.face_color`,
+so if you are a heavy user of those types of attributes you should try this out and leave feedback on Zulip
+or create issues on GitHub.
+
 
 ## New Features
 
@@ -26,6 +69,7 @@ https://github.com/napari/napari
 - Option to load all dock widgets (#4954)
 - Feature: register a keyboard shortcut for `preserve_labels` checkbox (#5017)
 - Add option to edit second shortcut in settings (#5018)
+- Autorepeatable keybindings & keybindings for label brush size (#5086)
 
 ## Improvements
 
@@ -44,6 +88,7 @@ https://github.com/napari/napari
 - Allow pandas.Series as properties values (#4755)
 - Allow stack to be specified multiple times (#4783)
 - Refactor: use app-model and in-n-out (#4784)
+- Fix point `experimental_canvas_size_limits` and set sane defaults (#4790)
 - Improve "select all" logic in points layer, adding "select all across slices" behavior (#4809)
 - Make docked widgets of `qt_viewer` lazy (#4811)
 - Restore Labels, Points and Shapes layer mode after hold key (#4814)
@@ -104,6 +149,9 @@ https://github.com/napari/napari
 - Fix throttled status updates by use `QSignalThrottler` in `_QtMainWindow` constructor (#4985)
 - Ensure non-negative edge width (#5035)
 - Fix the wrong guardian for the build tooltip when bind button (#5075)
+- disable mip and minip cutoffs if opaque blending (#5085)
+- Fix blending presets. (#5087)
+- Bugfix:  disable opacity slider for opaque blending (#5088)
 
 ## API Changes
 
@@ -168,6 +216,7 @@ https://github.com/napari/napari
 - add 'napari-xpra' target to dockerfile (#4703)
 - Fix Image parameter docs (#4750)
 - Make references to examples link there (#4767)
+- Add documentation about apply napari style to separate windows (#4780)
 - Fix documentation link errors. (#4787)
 - Fixing readme typo (#4791)
 - Add Talley to the steering council (#4798)
@@ -204,11 +253,16 @@ https://github.com/napari/napari
 - Move the docs downloading screenshots to LFS (#4990)
 - DOC Enable intersphinx linking in examples (#4992)
 - Fix broken links in Napari Code of Conduct (#5005)
+- Add linkcheck (#5008)
 - Add link to docs artifact to pull requests (#5014)
 - Add release notes for 0.4.17 (#5031)
 - add #4954 to release notes (#5038)
 - add new PRs merged for 0.4.17 to release notes (#5045)
+- Proposal to accept NAP #4: asynchronous slicing (#5052)
 - update core dev group to remove Ziyang and Justine (#5059)
+- Better script for prepare release notes (#5061)
+- Bugfix:  disable opacity slider for opaque blending (#5088)
+- Update links in NAP-2 (#5099)
 
 ## Other Pull Requests
 
@@ -286,12 +340,14 @@ https://github.com/napari/napari
 - Move searching parent outside NapariQtNotification constructor (#4841)
 - Enable plugin menu contributions with app-model (#4847)
 - Raise better errors from lazy __getattr__ (#4848)
+- Allow to undock docked viewers in multiple viewers example (#4859)
 - MAINT: disable failing conda bundling. (#4878)
 - MAINT: Work around conda bundling issue. (#4883)
 - remove a few more qtbot.wait calls in tests (#4888)
 - use npe2api in plugin install dialog (#4893)
 - Add perfmon directory for shared configs and tools (#4898)
 - Conda: fix MacOS signing (#4904)
+- Improve error message for a failed write (#4913)
 - Minor type fix (add Optional) (#4916)
 - add user keymap (#4946)
 - MAINT: temporary mypy disabling as it's failing everywhere. (#4950)
@@ -311,13 +367,20 @@ https://github.com/napari/napari
 - Revert "Fix sys.path issue with subprocess relaunch in macOS" (#5027)
 - Use Source object to track if a layer is duplicated (#5028)
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
+- update some of the ignored translations (#5032)
 - MAINT: fix a couple of trans._. (#5034)
+- MAINT: Update Future Warning. (#5037)
+- MAINT: Unnecessary formatting of constant. (#5044)
 - Small shortcuts preference pane wording update after #5018 (#5049)
 - Small changes to points defaults. (#5050)
+- MAINT: Don't deprecate something that was never stable. (#5068)
 - Try to avoid latest shiboken that break CI (#5073)
+- Add new core libraries to napari info (#5077)
+- Update config directory paths for perfmon tools (#5081)
+- Update some strings to be translated, some to be ignored (#5082)
 
 
-## 45 authors added to this release (alphabetical)
+## 48 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -346,18 +409,21 @@ https://github.com/napari/napari
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Kushaan Gupta](https://github.com/napari/napari/commits?author=kushaangupta) - @kushaangupta
 - [Kyle I S Harrington](https://github.com/napari/napari/commits?author=kephale) - @kephale
+- [laysa uchoa](https://github.com/napari/napari/commits?author=laysauchoa) - @laysauchoa
 - [Lia Prins](https://github.com/napari/napari/commits?author=liaprins-czi) - @liaprins-czi
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Markus Stabrin](https://github.com/napari/napari/commits?author=mstabrin) - @mstabrin
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
+- [Nathan Clack](https://github.com/napari/napari/commits?author=nclack) - @nclack
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Pierre Thibault](https://github.com/napari/napari/commits?author=pierrethibault) - @pierrethibault
 - [pre-commit-ci[bot]](https://github.com/napari/napari/commits?author=pre-commit-ci[bot]) - @pre-commit-ci[bot]
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
+- [Robin Koch](https://github.com/napari/napari/commits?author=RobAnKo) - @RobAnKo
 - [rwkozar](https://github.com/napari/napari/commits?author=rwkozar) - @rwkozar
 - [Ryan Savill](https://github.com/napari/napari/commits?author=Cryaaa) - @Cryaaa
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
@@ -366,7 +432,7 @@ https://github.com/napari/napari
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
 
 
-## 29 reviewers added to this release (alphabetical)
+## 32 reviewers added to this release (alphabetical)
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
@@ -374,6 +440,7 @@ https://github.com/napari/napari
 - [cnstt](https://github.com/napari/napari/commits?author=cnstt) - @cnstt
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
+- [Gabriel Selzer](https://github.com/napari/napari/commits?author=gselzer) - @gselzer
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Isabela Presedo-Floyd](https://github.com/napari/napari/commits?author=isabela-pf) - @isabela-pf
@@ -385,6 +452,7 @@ https://github.com/napari/napari
 - [Kim Pevey](https://github.com/napari/napari/commits?author=kcpevey) - @kcpevey
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Kushaan Gupta](https://github.com/napari/napari/commits?author=kushaangupta) - @kushaangupta
+- [Kyle I S Harrington](https://github.com/napari/napari/commits?author=kephale) - @kephale
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Markus Stabrin](https://github.com/napari/napari/commits?author=mstabrin) - @mstabrin
@@ -395,6 +463,7 @@ https://github.com/napari/napari
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
+- [Robin Koch](https://github.com/napari/napari/commits?author=RobAnKo) - @RobAnKo
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
 
