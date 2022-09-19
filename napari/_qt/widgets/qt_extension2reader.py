@@ -24,8 +24,6 @@ from napari.plugins.utils import (
 from ...settings import get_settings
 from ...utils.translations import trans
 
-NO_PREFERENCES_FOUND_TEXT = trans._('No filename preferences found.')
-
 
 class Extension2ReaderTable(QWidget):
     """Table showing extension to reader mappings with removal button.
@@ -140,7 +138,7 @@ class Extension2ReaderTable(QWidget):
 
     def _display_no_preferences_found(self):
         self._table.setRowCount(1)
-        item = QTableWidgetItem(NO_PREFERENCES_FOUND_TEXT)
+        item = QTableWidgetItem(trans._('No filename preferences found.'))
         item.setFlags(Qt.ItemFlag.NoItemFlags)
         self._table.setItem(self._fn_pattern_col, 0, item)
 
@@ -225,7 +223,8 @@ class Extension2ReaderTable(QWidget):
 
         if (
             last_row == 1
-            and NO_PREFERENCES_FOUND_TEXT in self._table.item(0, 0).text()
+            and 'No filename preferences found'
+            in self._table.item(0, 0).text()
         ):
             self._table.removeRow(0)
             last_row = 0
