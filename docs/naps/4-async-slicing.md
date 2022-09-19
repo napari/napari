@@ -5,8 +5,8 @@
 ```{eval-rst}
 :Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni, Eric Perlman, Kim Pevey
 :Created: 2022-06-23
-:Resolution: TODO <url>
-:Resolved: TODO <yyyy-mm-dd>
+:Resolution: https://github.com/napari/napari/pull/5052
+:Resolved: 2022-09-19
 :Status: Accepted
 :Type: Standards Track
 :Version effective: 0.5
