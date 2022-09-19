@@ -484,7 +484,13 @@ def is_diagonal(matrix, tol=1e-8):
         True if matrix is diagonal, False otherwise.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(trans._("matrix must be square, not has shape {shape}", deferred=True, shape=matrix.shape))
+        raise ValueError(
+            trans._(
+                "matrix must be square, but shape={shape}",
+                deferred=True,
+                shape=matrix.shape,
+            )
+        )
     non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
     if tol == 0:
         return np.count_nonzero(non_diag) == 0
