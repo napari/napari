@@ -67,7 +67,7 @@ def write_layers(
     layers: List[Layer],
     plugin_name: Optional[str] = None,
     writer: Optional[WriterContribution] = None,
-) -> List[str]:
+) -> Tuple[List[str], str]:
     """
     Write layers to a file using an NPE2 plugin.
 
@@ -86,19 +86,24 @@ def write_layers(
 
     Returns
     -------
-    list of str
+    (written paths, writer name) as Tuple[List[str],str]
+
+    written paths: List[str]
         Empty list when no plugin was found, otherwise a list of file paths,
         if any, that were written.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
 
     if writer is None:
         try:
-            return io_utils.write(
+            paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
+            return (paths, writer.plugin_name)
         except ValueError:
-            return []
+            return ([], '')
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -106,8 +111,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return [res]
-    return res or []
+        return ([res], writer.plugin_name)
+    return (res or [], writer.plugin_name)
 
 
 def get_widget_contribution(
