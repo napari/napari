@@ -34,13 +34,15 @@ alternative shortcut for each napari action.
 This allows you have both numeric (e.g. 1, 2, 3 - related to button positions) and semantic (F - for fill) shortcuts
 defined for use in napari.
 
-### `napari.imshow` as a convenient one-liner
+### One line image loading
 
-TODO
+We added `napari.imshow` in #4928 as a convenience function to load image data and return both a `Viewer` and the image `Layer` all in one line.
 
-### Versioned docs
+```python
+viewer, layer = napari.imshow(data)
+```
 
-TODO
+See the docstring of :func:`napari.imshow` for more details.
 
 ### Experimental support for Qt6
 
@@ -50,7 +52,7 @@ If you need or want to use Qt6, please try this out and report any bugs you find
 ### Multi-color text
 
 We added support for assigning multiple colors for text annotations of points and shapes in #4464.
-See [/examples/add_points_with_multicolor_text.py](https://github.com/napari/napari/blob/main/examples/add_points_with_multicolor_text.py)
+See [examples/add_points_with_multicolor_text.py](https://github.com/napari/napari/blob/main/examples/add_points_with_multicolor_text.py)
 This uses the API that we intend to spread elsewhere for other style attributes like `Points.face_color`,
 so if you are a heavy user of those types of attributes you should try this out and leave feedback on Zulip
 or create issues on GitHub.
@@ -67,6 +69,7 @@ or create issues on GitHub.
 - Option to load all dock widgets (#4954)
 - Feature: register a keyboard shortcut for `preserve_labels` checkbox (#5017)
 - Add option to edit second shortcut in settings (#5018)
+- Autorepeatable keybindings & keybindings for label brush size (#5086)
 
 ## Improvements
 
@@ -146,6 +149,9 @@ or create issues on GitHub.
 - Fix throttled status updates by use `QSignalThrottler` in `_QtMainWindow` constructor (#4985)
 - Ensure non-negative edge width (#5035)
 - Fix the wrong guardian for the build tooltip when bind button (#5075)
+- disable mip and minip cutoffs if opaque blending (#5085)
+- Fix blending presets. (#5087)
+- Bugfix:  disable opacity slider for opaque blending (#5088)
 
 ## API Changes
 
@@ -247,12 +253,16 @@ or create issues on GitHub.
 - Move the docs downloading screenshots to LFS (#4990)
 - DOC Enable intersphinx linking in examples (#4992)
 - Fix broken links in Napari Code of Conduct (#5005)
+- Add linkcheck (#5008)
 - Add link to docs artifact to pull requests (#5014)
 - Add release notes for 0.4.17 (#5031)
 - add #4954 to release notes (#5038)
 - add new PRs merged for 0.4.17 to release notes (#5045)
+- Proposal to accept NAP #4: asynchronous slicing (#5052)
 - update core dev group to remove Ziyang and Justine (#5059)
 - Better script for prepare release notes (#5061)
+- Bugfix:  disable opacity slider for opaque blending (#5088)
+- Update links in NAP-2 (#5099)
 
 ## Other Pull Requests
 
@@ -359,14 +369,18 @@ or create issues on GitHub.
 - Revert "Revert "Fix sys.path issue with subprocess relaunch in macOS"" (#5029)
 - update some of the ignored translations (#5032)
 - MAINT: fix a couple of trans._. (#5034)
+- MAINT: Update Future Warning. (#5037)
+- MAINT: Unnecessary formatting of constant. (#5044)
 - Small shortcuts preference pane wording update after #5018 (#5049)
 - Small changes to points defaults. (#5050)
 - MAINT: Don't deprecate something that was never stable. (#5068)
 - Try to avoid latest shiboken that break CI (#5073)
 - Add new core libraries to napari info (#5077)
+- Update config directory paths for perfmon tools (#5081)
+- Update some strings to be translated, some to be ignored (#5082)
 
 
-## 46 authors added to this release (alphabetical)
+## 48 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -395,6 +409,7 @@ or create issues on GitHub.
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Kushaan Gupta](https://github.com/napari/napari/commits?author=kushaangupta) - @kushaangupta
 - [Kyle I S Harrington](https://github.com/napari/napari/commits?author=kephale) - @kephale
+- [laysa uchoa](https://github.com/napari/napari/commits?author=laysauchoa) - @laysauchoa
 - [Lia Prins](https://github.com/napari/napari/commits?author=liaprins-czi) - @liaprins-czi
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
@@ -408,6 +423,7 @@ or create issues on GitHub.
 - [Pierre Thibault](https://github.com/napari/napari/commits?author=pierrethibault) - @pierrethibault
 - [pre-commit-ci[bot]](https://github.com/napari/napari/commits?author=pre-commit-ci[bot]) - @pre-commit-ci[bot]
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
+- [Robin Koch](https://github.com/napari/napari/commits?author=RobAnKo) - @RobAnKo
 - [rwkozar](https://github.com/napari/napari/commits?author=rwkozar) - @rwkozar
 - [Ryan Savill](https://github.com/napari/napari/commits?author=Cryaaa) - @Cryaaa
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
@@ -416,7 +432,7 @@ or create issues on GitHub.
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
 
 
-## 30 reviewers added to this release (alphabetical)
+## 32 reviewers added to this release (alphabetical)
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
@@ -436,6 +452,7 @@ or create issues on GitHub.
 - [Kim Pevey](https://github.com/napari/napari/commits?author=kcpevey) - @kcpevey
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Kushaan Gupta](https://github.com/napari/napari/commits?author=kushaangupta) - @kushaangupta
+- [Kyle I S Harrington](https://github.com/napari/napari/commits?author=kephale) - @kephale
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Lucy Liu](https://github.com/napari/napari/commits?author=lucyleeow) - @lucyleeow
 - [Markus Stabrin](https://github.com/napari/napari/commits?author=mstabrin) - @mstabrin
@@ -446,6 +463,7 @@ or create issues on GitHub.
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
+- [Robin Koch](https://github.com/napari/napari/commits?author=RobAnKo) - @RobAnKo
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
 
