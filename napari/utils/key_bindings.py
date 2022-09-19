@@ -40,7 +40,7 @@ from collections import ChainMap
 from types import EllipsisType, MethodType
 from typing import Callable, Mapping, Union
 
-from app_model.types import KeyBinding
+from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
 
 from ..settings import get_settings
@@ -93,7 +93,12 @@ _VISPY_SPECIAL_KEYS = [
     keys.TAB,
 ]
 
-_VISPY_MODIFIER_KEYS = [keys.CONTROL, keys.ALT, keys.SHIFT, keys.META]
+_VISPY_MODS = {
+    keys.CONTROL: KeyMod.CtrlCmd,
+    keys.SHIFT: KeyMod.Shift,
+    keys.ALT: KeyMod.Alt,
+    keys.META: KeyMod.WinCtrl,
+}
 
 # TODO: add this to app-model instead
 KeyBinding.__hash__ = lambda self: hash(str(self))
@@ -255,14 +260,12 @@ def _vispy2appmodel(event) -> KeyBinding:
         # note: 'Control' is OSX Command key
         cond = lambda m: m != 'Shift' or 'Control' in modifiers  # noqa: E731
 
-    modifiers = tuple(
-        key.name
-        for key in filter(
-            lambda key: key in modifiers and cond(key), _VISPY_MODIFIER_KEYS
-        )
-    )
+    kb = KeyCode.from_string(key)
 
-    return coerce_keybinding('-'.join(modifiers + (key,)))
+    for key in filter(lambda key: key in modifiers and cond(key), _VISPY_MODS):
+        kb |= _VISPY_MODS[key]
+
+    return coerce_keybinding(kb)
 
 
 class KeybindingDescriptor:
