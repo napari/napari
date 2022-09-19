@@ -1,12 +1,15 @@
 (nap-4-async-slicing)=
 
-# NAP-4: asynchronous slicing
+# NAP-4: Asynchronous slicing
 
 ```{eval-rst}
 :Author: Andy Sweet <andrewdsweet@gmail.com>, Jun Xi Ni, Eric Perlman, Kim Pevey
 :Created: 2022-06-23
-:Status: Draft
+:Resolution: https://github.com/napari/napari/pull/5052
+:Resolved: 2022-09-19
+:Status: Accepted
 :Type: Standards Track
+:Version effective: 0.5
 ```
 
 ## Abstract
@@ -183,7 +186,7 @@ solutions for this project may cause this state to be read and write from multip
 Rather than exhaustively list all of the slice state of all layer types and their dependencies [^slice-class-diagram],
 we group and highlight some of the more important state.
 
-### Input state
+#### Input state
 
 Some input state for slicing is directly mutated by `Layer._slice_dims`. 
 
@@ -306,10 +309,54 @@ At this point `data` should be fast to access either from RAM (e.g. as a numpy
 array) or VRAM (e.g. as a CuPy array), so that it can be consumed on the main
 thread without blocking other operations for long.
 
-For layer types other than images, we need to extend this response to include
-other output, so will likely have type specific responses. For example, a `Points`
-layer likely needs to define a `PointsSliceResponse` that includes the face colors
-for the points in the output slice.
+For each layer type, we need to extend the request and response types to include
+state that is specific to slicing those types of layers. For example, the image
+request type should look something like the following.
+
+```python
+class ImageSliceRequest(LayerSliceRequest):
+    rgb: bool
+    multiscale: bool
+    corner_pixels: np.ndarray
+    data_level: int
+
+class ImageSliceResponse(LayerSliceResponse)
+    thumbnail: np.ndarray
+```
+
+As napari supports RGB and multi-scale images, we need a few more inputs to
+know what data should be accessed to generate the desired slice for the canvas.
+And the thumbnail needs to access the layer data as well, so should do so while
+we are slicing asynchronous to avoid any blocking behavior.
+
+The points request and response types should look something like the following.
+
+```python
+class PointsSliceRequest(LayerSliceRequest):
+    out_of_slice_display: bool
+    size: np.ndarray
+    shown: np.ndarray
+    face_color: np.ndarray
+    edge_color: np.ndarray
+    edge_width: np.ndarray
+
+class PointsSliceResponse(LayerSliceResponse):
+    indices: np.ndarray
+    size: np.ndarray
+    view_size_scale: Union[int, np.ndarray]
+    face_color: np.ndarray
+    edge_color: np.ndarray
+    edge_width: np.ndarray
+```
+
+While the names and typing of some of the points request and response attributes
+are the same (e.g. `face_color`) they differ semantically because the response
+represent the sliced values only. Defining two distinct and explicit request and
+response types gives us more flexibility later in terms of how slicing works.
+For example, we may want to generate point face colors lazily, which could mean
+that `PointsSliceRequest.face_color` would become a callable instead of a
+materialized array as in the response.
+
 
 ### Layer methods
 
@@ -389,7 +436,7 @@ class LayerSlicer:
     def __init__(self, ...):
         self.events = EmitterGroup(source=self, slice_ready=Event)
 
-    def slice_layers_async(self, layers: LayerList, dims: Dims) -> None:
+    def slice_layers_async(self, layers: LayerList, dims: Dims) -> Future[ViewerSliceResponse]:
         if self._task is not None:
             self._task.cancel()
         requests = {
@@ -398,6 +445,7 @@ class LayerSlicer:
         }
         self._task = self._executor.submit(self._slice_layers, request)
         self._task.add_done_callback(self._on_slice_done)
+        return self._task
 
     def slice_layers(self, requests: ViewerSliceRequest) -> ViewerSliceResponse:
         return {layer: layer._get_slice(request) for layer, request in requests.items()}
@@ -415,7 +463,7 @@ to the vispy layers so that the canvas can be updated.
 ### Hooking up the viewer
 
 Using Python's standard library threads in the `ViewerModel`
-mean that we have a portable way to perform asynchronous slicing
+means that we have a portable way to perform asynchronous slicing
 in napari without an explicit dependency on Qt.
 
 ```python
@@ -434,6 +482,12 @@ class ViewerModel:
     def _slice_layers_async(self) -> None:
         self._slicer.slice_layers_async(self.layers, self.dims)
 ```
+
+Initially we intend for each instance of `ViewerModel` to own a single
+instance of a `LayerSlicer` for the lifetime of that `ViewerModel` instance.
+That allows the `LayerSlicer` to coordinate slicing of any or all layers
+for a particular viewer instance, while allowing multiple viewer instances
+to slice independently.
 
 The main response to the slice being ready occurs on the `QtViewer`
 because `QtViewer.layer_to_visual` provides a way to map from
@@ -477,6 +531,15 @@ not work when layer data is mutated.
 There are some other rough edges and plenty of ways to break it, but basic
 functionality should work.
 
+The rough implementation plan is as follows.
+
+- Implement pure refactors related to slicing to support this work (no public API or behavior changes).
+- Implement high-level asynchronous slicing model described here (i.e. add `LayerSlicer`, changes to `ViewerModel`), but with existing layer slicing implementation (i.e. `Layer._set_view_slice`).
+- Incrementally add layer slicing implementation described here (i.e. `Layer._get_slice`) for each layer separately.
+
+This allows us to merge small pieces of work into `main`, testing and fixing
+them as we go. The alternative is to maintain a large branch/fork of napari that
+may be less tested and harder to merge in the end.
 
 ## Backward compatibility
 
@@ -484,8 +547,22 @@ functionality should work.
 
 The main goal of this project is to perform slicing asynchronously, so it's
 natural that we might break anyone that was depending on slicing being synchronous.
-At a minimum, we must provide a public way to achieve the same fundamental goals,
-such as connecting to the `slice_ready` event.
+In particular, users or plugins that rely on `Viewer.screenshot` to capture the
+contents of the canvas after updating things like `Dims.current_step` will be affected.
+
+Our proposal will break that usage in general, but we plan to offer some public way to
+force synchronous slicing. For example, one promising idea is to define a context manager
+that would temporarily force `LayerSlicer` to always wait for asynchronous tasks to finish
+and could be used as follows.
+
+```python
+with viewer.sync_slicing():
+    viewer.dims.current_step = (10, 0, 0)
+viewer.screenshot(...)
+```
+
+Having such a mechanism in `LayerSlicer` also allows us to implement support for
+async slicing incrementally for each layer type.
 
 ### Store existing slice state on layer
 
@@ -511,12 +588,21 @@ it emits the `slice_ready` event. There are a few reasons for that.
 1. We only use one slicing thread to keep behavior simple and to avoid GIL contention.
 2. It's closer to the existing behavior of napari
 3. Shouldn't introduce any new potential bugs, such as [^issue-2862].
-4. It doesn't need any UX design work to decide what should be shown while we are waiting for slices to be ready.
+4. It needs less UX design work to decide what should be shown while we are waiting for slices to be ready.
 
 In some cases, rendering slices as soon as possible will provide a better user experience,
 especially when some layers are substantially slower than others. Therefore, this should be
-high priority future work. One way to implement this behavior is to emit a `slice_ready`
-event per layer that only contains that layer's slice response.
+high priority future work.
+
+To implement this behavior as a small extension to this proposal, we could do something like the following.
+
+- Use multiple workers in the `LayerSlicer._executor`.
+- Submit each call to `Layer._get_slice` separately.
+- When each call is done, emit a separate `slice_ready` event that only contains each layer's slice response,
+  so that the viewer/vispy can update as soon as possible.
+
+This would cause a [more complex call sequence](https://raw.githubusercontent.com/andy-sweet/napari-diagrams/main/napari-slicing-async-calls-asap.drawio.svg)
+and could make cancellation behavior more complex, but may be worth it regardless.
 
 
 ## Alternatives
@@ -557,7 +643,8 @@ event per layer that only contains that layer's slice response.
 - May improve general readability of async code for some.
 - Mostly syntactic sugar on top of `concurrent.futures`.
 - Likely need an `asyncio` event loop distinct from Qt's main event loop, which could be confusing and cause issues.
-
+- [As discussed on Zulip](https://napari.zulipchat.com/#narrow/stream/212875-general/topic/qt-async-threads), `qt-async-threads` is a possible solution,
+  but it is still quite new.
 
 ### Slice from vispy layer instead of viewer model
 
@@ -625,35 +712,51 @@ which might cause issues with things like selection that may depend on that stat
 - [Remove slice state from layer](https://github.com/napari/napari/issues/4682)
     - Feature request to remove slice/render state from the layer types.
     - Motivated by creating multiple slices of the same layers for multiple canvases.
+    - Decision: postpone.
+        - There are too many behaviors that depend on slice state (e.g. `Layer._get_value`) and it's easy enough to set it after an async slicing task is done, so leave it for now.
+        - This work should simplify removing it in the future.
 - [Draft PR on andy-sweet's fork](https://github.com/andy-sweet/napari/pull/16)
     - Initial feedback before sharing more widely.
 - Define a class that encapsulates the slicing bounding box in world coordinates.
     - [Define a class that only encapsulates the dims and camera info needed for slicing](https://github.com/napari/napari/pull/4892/files#r935771292)
     - [Replace `point` and similar with `bbox`](https://github.com/napari/napari/pull/4892/files#r935877117)
     - The idea here is to collapse some of the existing input slicing state like `point` and `dims_displayed` into one class that describes the bounding box for slicing in world coordinates.
-    - This is a good long term goal, especially when we have named dimensions, but may not be worth it yet.
+    - Decision: postpone.
+        - This can be done independently of this work and the order is not important enough to slow this work down. 
 - [Replace layer slice request and response types with a single slice type](https://github.com/napari/napari/pull/4892/files#r935773848)
     - Motivation is make it easier to add a new layer type by reducing the number of class types needed. 
     - Some disagreement here as one type for two purposes (input vs. output) seems confusing.
     - Keeping the request and response types separate may also allow us to better target alternatives to vispy.
-    - Not critical/blocking, especially if we have an explicit class for encapsulate the dims and camera slicing input.
+    - Decision: keep request and response types separate for now.
+        - Adding a new layer type is not a frequent occurrence.
+        - Having one class may reduce the number of classes, but implementing a new layer type is already quite complex.
 - [Slicing in a shader](https://github.com/napari/napari/pull/4892/files#r935322222)
     - How to handle future cases where layer data has been pre-loaded onto the GPU and we want to slice in the shader?
     - Less about large/slow data, and more about not blocking approaches to handling small/fast data efficiently.
     - May be particularly useful for multi-canvas.
-    - Not critical/blocking, but we should consider keeping data types private or vague to not blocking this in the future.
+    - Decision: postpone.
+        - Keep related types private or vague to not blocking this in the future.
 - [Support existing usage and plugins that depends on synchronous slicing](https://github.com/napari/napari/pull/4892/files#r934961214)
     - Main example is [the napari-animation plugin](https://www.napari-hub.org/plugins/napari-animation), but there may be others.
-    - Need to understand if existing proposed design easily supports this usage.
-    - If not, we may need some way to allow users to force slicing to be synchronous.
-    - This is a critical/blocking discussion point that we need to resolve before approval.
+    - This was explored [^pull-4969] with the following main findings.
+        - Forcing synchronous slicing when combining the prototype and `napari-animation` seems to work for the basic examples.
+        - We only need to ensure synchronous slicing before using `Viewer.screenshot`, as keyframes just capture the value of `current_step` and similar.
+        - `screenshot` is only called a few times in `napari-animation`, so wouldn't require large changes if asynchronous slicing was the default.
+    - Decision: always have some way to force synchronous slicing.
+        - But no need to support synchronous slicing by default, which is harder to implement.
+- [What should `Viewer.screenshot` do when the canvas is not fully rendered?](https://github.com/napari/napari/pull/5052#discussion_r966718006)
+    - Initial consensus is that it should wait for pending slicing tasks and for the associated pushes to vispy.
+        - There are some ideas of how to implement that, though it is not straightforward.
+    - In the API, may want a keyword argument to control behavior. In the GUI, could have a dialog if there are pending tasks.
+    = Decision: want to support both, with blocking behavior as default.
+        - No need for a design or prototype before acceptance.
 - Should `Dims.current_step` (and `corner_pixels`) represent the last slice position request or the last slice response?
     - With sync slicing, there is no distinction.
-    - If it represents the last slice response, then what should we connect the sliders to?
-    - [Small consensus around last request](https://github.com/napari/napari/pull/4892/files#r935336654)
-    - May want to store both, but maybe not publicly.
-    - This is a critical/blocking discussion point that we need to resolve before approval.
-
+    - With async slicing, `current` is ambiguous.
+    - [Initial small consensus around last request](https://github.com/napari/napari/pull/4892/files#r935336654)
+    - Decision: last request.
+        - The implementation is simpler if this represents the last request.
+        - Can introduce an additional public attribute later if last response is needed.
 
 ## References and footnotes
 
@@ -678,6 +781,8 @@ CC0+BY [^cc0-by].
 [^issue-2862]: napari issue 2862, <https://github.com/napari/napari/issues/2862>
 
 [^pull-4334]: napari pull request 4334, <https://github.com/napari/napari/pull/4334>
+
+[^pull-4969]: napari pull request 4969, <https://github.com/napari/napari/issues/4969>
 
 [^vispy-faq-threads]: Vispy FAQs: Is VisPy multi-threaded or thread-safe?, <https://vispy.org/faq.html#is-vispy-multi-threaded-or-thread-safe>
 
