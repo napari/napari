@@ -185,10 +185,13 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
+        # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
 
     def _on_blending_change(self):
         super()._on_blending_change()
+        # cutoffs must be updated after blending, so we can know if
+        # the new blending is a translucent one
         self._update_mip_minip_cutoff()
 
     def _on_gamma_change(self):
