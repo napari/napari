@@ -49,7 +49,6 @@ from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
-from ._viewer_constants import DEFAULT_STATUS_TEXT
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -132,7 +131,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
-    status: Union[str, Dict] = DEFAULT_STATUS_TEXT
+    status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -429,7 +428,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     world=True,
                 )
         else:
-            self.status = DEFAULT_STATUS_TEXT
+            self.status = 'Ready'
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""

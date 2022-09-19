@@ -11,7 +11,6 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel
 
-from ...components._viewer_constants import DEFAULT_STATUS_TEXT
 from ...utils.translations import trans
 from ..dialogs.qt_activity_dialog import ActivityToggleItem
 
@@ -27,7 +26,7 @@ class ViewerStatusBar(QStatusBar):
 
         layout = QHBoxLayout()
 
-        self._status = QLabel(DEFAULT_STATUS_TEXT)
+        self._status = QLabel(trans._('Ready'))
         self._status.setContentsMargins(0, 0, 0, 0)
 
         self._layer_base = QElidingLabel(trans._(''))
