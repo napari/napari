@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
-from ...layers.base._base_constants import BLENDING_TRANSLATIONS
+from ...layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
@@ -9,6 +9,9 @@ from ..widgets._slider_compat import QDoubleSlider
 MIN_BLENDING_TOOLTIP = trans._(
     '`minimum` blending mode works best with inverted colormaps with a white background.',
 )
+
+# opaque and minimum blending do not support changing alpha (opacity)
+NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
 class LayerFormLayout(QFormLayout):
@@ -75,9 +78,13 @@ class QtLayerControls(QFrame):
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
-        # GL minimum blending does not support changing alpha
-        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
-        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -100,9 +107,13 @@ class QtLayerControls(QFrame):
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
         self.layer.blending = self.blendComboBox.currentData()
-        # GL minimum blending does not support changing alpha
-        self.opacitySlider.setEnabled(self.layer.blending != 'minimum')
-        self.opacityLabel.setEnabled(self.layer.blending != 'minimum')
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
 
         self.blendComboBox.setToolTip(
             MIN_BLENDING_TOOLTIP if self.layer.blending == 'minimum' else ''

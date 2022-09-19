@@ -15,7 +15,12 @@ from ...utils.transforms import Affine
 from ...utils.translations import trans
 
 
-def register_layer_action(keymapprovider, description: str, shortcuts=None):
+def register_layer_action(
+    keymapprovider,
+    description: str,
+    repeatable: bool = False,
+    shortcuts: str = None,
+):
     """
     Convenient decorator to register an action with the current Layers
 
@@ -31,6 +36,8 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     description : str
         The description of the action, this will typically be translated and
         will be what will be used in tooltips.
+    repeatable : bool
+        A flag indicating whether the action autorepeats when key is held
     shortcuts : str | List[str]
         Shortcut to bind by default to the action we are registering.
 
@@ -51,6 +58,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
             command=func,
             description=description,
             keymapprovider=keymapprovider,
+            repeatable=repeatable,
         )
         if shortcuts:
             if isinstance(shortcuts, str):
@@ -123,7 +131,10 @@ def register_layer_attr_action(
 
             return _callback
 
-        register_layer_action(keymapprovider, description, shortcuts)(_wrapper)
+        repeatable = False  # attribute actions are always non-repeatable
+        register_layer_action(
+            keymapprovider, description, repeatable, shortcuts
+        )(_wrapper)
         return func
 
     return _handle
