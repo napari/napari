@@ -111,15 +111,13 @@ class QtLayerControls(QFrame):
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
-        self.blendComboBox.setToolTip(
-            "`minimum` blending mode works best with inverted colormaps with a white background."
-            if self.layer.blending == 'minimum'
-            else ""
-        )
-        if self.layer.blending == 'minimum':
-            self.layer.help = "`minimum` blending mode works best with inverted colormaps with a white background"
-        else:
-            self.layer.help = ""
+        blending_tooltip = ''
+        if self.layer.blending == str(Blending.MINIMUM):
+            blending_tooltip = trans._(
+                '`minimum` blending mode works best with inverted colormaps with a white background.',
+            )
+        self.blendComboBox.setToolTip(blending_tooltip)
+        self.layer.help = blending_tooltip
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
