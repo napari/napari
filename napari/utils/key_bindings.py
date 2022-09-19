@@ -41,6 +41,7 @@ from types import EllipsisType, MethodType
 from typing import Callable, Mapping, Union
 
 from app_model.types import KeyBinding
+from vispy.util import keys
 
 from ..settings import get_settings
 from ..utils.action_manager import action_manager
@@ -57,6 +58,42 @@ USER_KEYMAP: Mapping[str, Callable] = {}
 KEY_SUBS = {'Control': 'Ctrl'}
 
 UNDEFINED = object()
+
+_VISPY_SPECIAL_KEYS = [
+    keys.SHIFT,
+    keys.CONTROL,
+    keys.ALT,
+    keys.META,
+    keys.UP,
+    keys.DOWN,
+    keys.LEFT,
+    keys.RIGHT,
+    keys.PAGEUP,
+    keys.PAGEDOWN,
+    keys.INSERT,
+    keys.DELETE,
+    keys.HOME,
+    keys.END,
+    keys.ESCAPE,
+    keys.BACKSPACE,
+    keys.F1,
+    keys.F2,
+    keys.F3,
+    keys.F4,
+    keys.F5,
+    keys.F6,
+    keys.F7,
+    keys.F8,
+    keys.F9,
+    keys.F10,
+    keys.F11,
+    keys.F12,
+    keys.SPACE,
+    keys.ENTER,
+    keys.TAB,
+]
+
+_VISPY_MODIFIER_KEYS = [keys.CONTROL, keys.ALT, keys.SHIFT, keys.META]
 
 # TODO: add this to app-model instead
 KeyBinding.__hash__ = lambda self: hash(str(self))
@@ -203,9 +240,29 @@ def _bind_user_key(key: KeyBindingLike, func=UNDEFINED, *, overwrite=False):
 
 
 def _vispy2appmodel(event) -> KeyBinding:
-    return coerce_keybinding(
-        '-'.join(component.name for component in (*event.modifiers, event.key))
+    key, modifiers = event.key.name, event.modifiers
+    if len(key) == 1 and key.isalpha():  # it's a letter
+        key = key.upper()
+        cond = lambda m: True  # noqa: E731
+    elif key in _VISPY_SPECIAL_KEYS:
+        # remove redundant information i.e. an output of 'Shift-Shift'
+        cond = lambda m: m != key  # noqa: E731
+    else:
+        # Shift is consumed to transform key
+
+        # bug found on OSX: Command will cause Shift to not
+        # transform the key so do not consume it
+        # note: 'Control' is OSX Command key
+        cond = lambda m: m != 'Shift' or 'Control' in modifiers  # noqa: E731
+
+    modifiers = tuple(
+        key.name
+        for key in filter(
+            lambda key: key in modifiers and cond(key), _VISPY_MODIFIER_KEYS
+        )
     )
+
+    return coerce_keybinding('-'.join(modifiers + (key,)))
 
 
 class KeybindingDescriptor:
