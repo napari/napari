@@ -31,7 +31,7 @@ and the built-in napari example [examples/minimum_blending.py](https://github.co
 
 We improved customization of napari preferences by allowing you to define a second,
 alternative shortcut for each napari action.
-This allows you have both numeric (e.g. 1, 2, 3 - related to button positions) and semantic (F - for fill) shortcuts
+This allows you, for example, to have both numeric (e.g. 1, 2, 3 - related to button positions) and semantic (F - for fill) shortcuts
 defined for use in napari.
 
 ### One line image loading
