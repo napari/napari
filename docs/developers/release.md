@@ -52,7 +52,7 @@ Additional `release` dependencies (`pip install -e .[release]`) are required to 
 The `napari/napari` repository must have a PyPI API token as a GitHub secret.
 This likely has been done already, but if it has not, follow
 [this guide](https://pypi.org/help/#apitoken) to gain a token and
-[this guide](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+[this guide](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 to add it as a secret.
 
 ## Determining the version
