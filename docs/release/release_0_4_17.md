@@ -42,7 +42,7 @@ We added `napari.imshow` in #4928 as a convenience function to load image data a
 viewer, layer = napari.imshow(data)
 ```
 
-See the docstring of :func:`napari.imshow` for more details.
+See the docstring of `napari.imshow` for more details.
 
 ### Experimental support for Qt6
 
