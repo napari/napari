@@ -388,7 +388,6 @@
       "python",
       "NoColor",
       "<span style=\"color:#999;\">plugin home page:&nbsp;&nbsp;</span><a href=\"{url}\" style=\"color:#999\">{url}</a>",
-      "<!--Provide detail on the error here-->\n\n\n\n<details>\n<summary>Traceback from napari</summary>\n\n```\n{err}\n```\n</details>"
     ],
     "napari/_qt/dialogs/qt_reader_dialog.py": [
       "Choose reader",
@@ -1201,14 +1200,8 @@
       "u_threshold"
     ],
     "napari/benchmarks/__init__.py": [],
-    "napari/benchmarks/benchmark_image_layer.py": [
-      "CI",
-      "Skip on CI (not enough memory)"
-    ],
-    "napari/benchmarks/benchmark_labels_layer.py": [
-      "CI",
-      "Skip on CI (not enough memory)"
-    ],
+    "napari/benchmarks/benchmark_image_layer.py": [],
+    "napari/benchmarks/benchmark_labels_layer.py": [],
     "napari/benchmarks/benchmark_points_layer.py": [
       "mask_shape",
       "num_points",
@@ -1599,9 +1592,6 @@
       "rotate",
       "shear",
       "affine"
-    ],
-    "napari/layers/_multiscale_data.py": [
-      "<MultiScaleData at {hex(id(self))}. {len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
     ],
     "napari/layers/_source.py": [
       "_LAYER_SOURCE",
@@ -2494,7 +2484,6 @@
     ],
     "napari/settings/_migrations.py": [
       "NapariSettings",
-      "Migrator must increase the version.",
       "0.3.0",
       "0.4.0",
       "napari.manifest",
