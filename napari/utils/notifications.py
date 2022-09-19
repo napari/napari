@@ -37,7 +37,9 @@ __all__ = [
     'ErrorNotification',
     'WarningNotification',
     'NotificationManager',
+    'show_debug',
     'show_info',
+    'show_warning',
     'show_error',
     'show_console_notification',
 ]
@@ -334,6 +336,15 @@ class NotificationManager:
 
 
 notification_manager = NotificationManager()
+
+
+def show_debug(message: str):
+    """
+    Show a debug message in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.DEBUG)
+    )
 
 
 def show_info(message: str):
