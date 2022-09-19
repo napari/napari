@@ -744,6 +744,12 @@ which might cause issues with things like selection that may depend on that stat
         - `screenshot` is only called a few times in `napari-animation`, so wouldn't require large changes if asynchronous slicing was the default.
     - Decision: always have some way to force synchronous slicing.
         - But no need to support synchronous slicing by default, which is harder to implement.
+- [What should `Viewer.screenshot` do when the canvas is not fully rendered?](https://github.com/napari/napari/pull/5052#discussion_r966718006)
+    - Initial consensus is that it should wait for pending slicing tasks and for the associated pushes to vispy.
+        - There are some ideas of how to implement that, though it is not straightforward.
+    - In the API, may want a keyword argument to control behavior. In the GUI, could have a dialog if there are pending tasks.
+    = Decision: want to support both, with blocking behavior as default.
+        - No need for a design or prototype before acceptance.
 - Should `Dims.current_step` (and `corner_pixels`) represent the last slice position request or the last slice response?
     - With sync slicing, there is no distinction.
     - With async slicing, `current` is ambiguous.
