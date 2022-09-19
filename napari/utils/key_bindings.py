@@ -46,9 +46,10 @@ from ..settings import get_settings
 from ..utils.action_manager import action_manager
 from ..utils.translations import trans
 
-
 KeyBindingLike = Union[KeyBinding, str, int]
-Keymap = Mapping[Union[KeyBinding, EllipsisType], Union[Callable, EllipsisType]]
+Keymap = Mapping[
+    Union[KeyBinding, EllipsisType], Union[Callable, EllipsisType]
+]
 
 # global user keymap; to be made public later in refactoring process
 USER_KEYMAP: Mapping[str, Callable] = {}

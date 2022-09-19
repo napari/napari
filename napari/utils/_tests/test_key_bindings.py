@@ -4,6 +4,7 @@ import types
 from unittest.mock import patch
 
 import pytest
+from app_model.types import KeyCode, KeyMod
 
 from .. import key_bindings
 from ..key_bindings import (
@@ -49,8 +50,15 @@ def test_bind_key():
     bind_key(kb, ..., ...)
     assert kb == {'A': ..., ...: ...}
 
+    # typecheck
     with pytest.raises(TypeError):
         bind_key(kb, 'B', 'not a callable')
+
+    # app-model representation
+    kb = {}
+    bind_key(kb, KeyMod.Shift | KeyCode.KeyA, ...)
+    (key,) = kb.keys()
+    assert key == 'Shift-A'
 
 
 def test_bind_key_decorator():
