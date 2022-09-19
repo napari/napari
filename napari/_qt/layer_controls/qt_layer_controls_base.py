@@ -6,10 +6,6 @@ from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
-MIN_BLENDING_TOOLTIP = trans._(
-    '`minimum` blending mode works best with inverted colormaps with a white background.',
-)
-
 # opaque and minimum blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
@@ -115,13 +111,13 @@ class QtLayerControls(QFrame):
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
-        self.blendComboBox.setToolTip(
-            MIN_BLENDING_TOOLTIP if self.layer.blending == 'minimum' else ''
-        )
+        blending_tooltip = ''
         if self.layer.blending == 'minimum':
-            self.layer.help = MIN_BLENDING_TOOLTIP
-        else:
-            self.layer.help = ''
+            blending_tooltip = trans._(
+                '`minimum` blending mode works best with inverted colormaps with a white background.',
+            )
+        self.blendComboBox.setToolTip(blending_tooltip)
+        self.layer.help = blending_tooltip
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
