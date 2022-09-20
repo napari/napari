@@ -1,10 +1,9 @@
 from enum import Enum, auto
-from typing import Union
 
 from pydantic import Field
 
+from ...utils.color import ColorValue
 from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
 
 
 class NormalMode(Enum):
@@ -34,7 +33,7 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
+    color: ColorValue
     width: float = 1
     length: float = 5
 
