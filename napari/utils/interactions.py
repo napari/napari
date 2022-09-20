@@ -218,6 +218,7 @@ def mouse_release_callbacks(obj, event):
 
 
 KEY_SYMBOLS = {
+    'Ctrl': 'Ctrl',
     'Shift': '⇧',
     'Alt': 'Alt',
     'Meta': '⊞',
