@@ -152,6 +152,7 @@ or create issues on GitHub.
 - disable mip and minip cutoffs if opaque blending (#5085)
 - Fix blending presets. (#5087)
 - Bugfix:  disable opacity slider for opaque blending (#5088)
+- Add extra garbage collection for some viewer tests (#5108)
 
 ## API Changes
 
@@ -259,6 +260,7 @@ or create issues on GitHub.
 - add #4954 to release notes (#5038)
 - add new PRs merged for 0.4.17 to release notes (#5045)
 - Proposal to accept NAP #4: asynchronous slicing (#5052)
+- Update v0.4.17.rc0 release notes (#5058)
 - update core dev group to remove Ziyang and Justine (#5059)
 - Better script for prepare release notes (#5061)
 - Bugfix:  disable opacity slider for opaque blending (#5088)
