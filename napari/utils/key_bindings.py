@@ -43,8 +43,6 @@ from typing import Callable, Mapping, Union
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
 
-from ..settings import get_settings
-from ..utils.action_manager import action_manager
 from ..utils.translations import trans
 
 try:  # remove after min py version 3.10+
@@ -60,7 +58,14 @@ Keymap = Mapping[
 # global user keymap; to be made public later in refactoring process
 USER_KEYMAP: Mapping[str, Callable] = {}
 
-KEY_SUBS = {'Control': 'Ctrl'}
+KEY_SUBS = {
+    'Control': 'Ctrl',
+    'Option': 'Alt',
+    'Up': 'UpArrow',
+    'Down': 'DownArrow',
+    'Left': 'LeftArrow',
+    'Right': 'RightArrow',
+}
 
 UNDEFINED = object()
 
@@ -444,6 +449,8 @@ class KeymapHandler:
         kb : keybinding-like
             Key combination.
         """
+        from ..settings import get_settings
+
         kb = coerce_keybinding(kb)
         key = str(kb.parts[-1].key)
         with contextlib.suppress(KeyError, StopIteration):
@@ -469,6 +476,8 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
+        from ..utils.action_manager import action_manager
+
         if event.key is None:
             # TODO determine when None key could be sent.
             return

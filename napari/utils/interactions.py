@@ -1,10 +1,11 @@
 import inspect
-import re
 import sys
 import warnings
+from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
+from ..utils.key_bindings import KeyBindingLike, KeyCode, coerce_keybinding
 from ..utils.translations import trans
 
 
@@ -217,10 +218,8 @@ def mouse_release_callbacks(obj, event):
 
 
 KEY_SYMBOLS = {
-    'Control': 'Ctrl',
     'Shift': '⇧',
     'Alt': 'Alt',
-    'Option': 'Opt',
     'Meta': '⊞',
     'Left': '←',
     'Right': '→',
@@ -238,12 +237,36 @@ KEY_SYMBOLS = {
 
 joinchar = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update(
-        {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
-    )
+    KEY_SYMBOLS.update({'Ctrl': '⌘', 'Alt': '⌥', 'Meta': '⌃'})
     joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
+
+
+KEY_SUBS = {
+    'UpArrow': 'Up',
+    'DownArrow': 'Down',
+    'LeftArrow': 'Left',
+    'RightArrow': 'Right',
+}
+
+
+def key2str(key) -> str:
+    k = str(key)
+    return KEY_SUBS.get(k, k)
+
+
+def kb2mods(kb) -> List[str]:
+    mods = []
+    if kb.ctrl:
+        mods.append('Ctrl')
+    if kb.shift:
+        mods.append('Shift')
+    if kb.alt:
+        mods.append('Alt')
+    if kb.meta:
+        mods.append('Meta')
+    return mods
 
 
 class Shortcut:
@@ -258,18 +281,20 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: str):
+    def __init__(self, shortcut: KeyBindingLike):
         """
         Parameters
         ----------
-        shortcut : string
-            shortcut to format in the form of dash separated keys to press
+        shortcut : keybinding-like
+            shortcut to format
 
         """
-        self._values = re.split('-(?=.+)', shortcut)
-        for shortcut_key in self._values:
+        self._kb = coerce_keybinding(shortcut)
+        for part in self._kb.parts:
+            shortcut_key = key2str(part.key)
             if (
-                len(shortcut_key) > 1
+                part.key == KeyCode.UNKOWN
+                or len(shortcut_key) > 1
                 and shortcut_key not in KEY_SYMBOLS.keys()
             ):
 
@@ -284,7 +309,10 @@ class Shortcut:
 
     @property
     def qt(self) -> str:
-        return '+'.join(self._values)
+        return ' '.join(
+            '+'.join(kb2mods(part) + [key2str(part.key)])
+            for part in self._kb.parts
+        )
 
     @property
     def platform(self) -> str:
@@ -299,8 +327,13 @@ class Shortcut:
         string
             Shortcut formatted to be displayed on current paltform.
         """
-
-        return joinchar.join(KEY_SYMBOLS.get(x, x) for x in self._values)
+        return ' '.join(
+            joinchar.join(
+                KEY_SYMBOLS.get(x, x)
+                for x in (kb2mods(part) + [key2str(part.key)])
+            )
+            for part in self._kb.parts
+        )
 
     def __str__(self):
         return self.platform
