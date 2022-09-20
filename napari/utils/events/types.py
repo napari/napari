@@ -13,7 +13,15 @@ class SupportsEvents(Protocol):
 
 class EventedMutable(SupportsEvents, Protocol):
     def _update_inplace(self, other: Any) -> None:
-        ...
+        """
+        Update inplace the contents of the EventedMutable to match `other`.
+        """
 
     def _uneventful(self) -> Any:
+        """
+        Return a non-evented version of self. For example:
+        - EventedList -> List
+        - EventedDict and EventedModel -> Dict
+        - ...
+        """
         ...
