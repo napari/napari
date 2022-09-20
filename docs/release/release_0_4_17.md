@@ -153,6 +153,7 @@ or create issues on GitHub.
 - Fix blending presets. (#5087)
 - Bugfix:  disable opacity slider for opaque blending (#5088)
 - Add extra garbage collection for some viewer tests (#5108)
+- Fix typestub and check manifest problems with build package (#5112)
 
 ## API Changes
 
