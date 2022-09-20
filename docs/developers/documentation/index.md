@@ -5,12 +5,29 @@ This guide will teach you how to submit new documents to napari's usage document
 
 ## Prerequisites
 
-- Familiarity with `git`
+Prerequisites depend on the type of contribution you wish to make. In general
+you will require:
+
+- Some familiarity with [`git`](https://git-scm.com)
 - A [GitHub](https://github.com) account
-- A clean conda environment with napari docs dependencies installed
+
+If you wish to simply add documentation that does not contain code or amend an
+existing documentation page with no changes to code, you will also require:
+
+- A clean conda environment with napari docs dependencies installed:
+
     - You can install these with `pip install "napari[docs]"`
     - These dependencies will allow you to preview your document locally, as it would appear on `napari.org`
     - They will also install `jupytext`, which you will need to contribute documents containing code or viewer interactions
+
+If you wish to add documentation that does contain code, you will also require:
+
+- A clean conda environment with a development installation of napari, see
+  the [contributor guide](napari-contributing#setting-up-a-development-installation)
+  for details.
+- [Jupyter notebook](https://jupyter.org/) installed
+- Familiarity with Jupyter notebooks (code cells and markdown cells)
+- Familiarity with using napari through a Jupyter notebook
 
 ## 0. Before you start
 
@@ -21,10 +38,14 @@ existing documents that could be expanded to include the content you think is la
 
 Examples of documents you might want to contribute are:
 
-- **Explanations** (in `napari/docs/guides`): in depth content about napari architecture, development choices and some complex features
-- **Tutorials** (in `napari/docs/tutorials`): detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
-- **How-tos** (in `napari/docs/howtos/`): simple step by step guides demonstrating the use of common features
-- **Getting started** (in `napari/docs/tutorials/fundamentals`): these documents are a mix of tutorials and how-tos covering the fundamentals of installing and working with napari for beginners
+- **Explanations** (in [`napari/docs/guides`](https://github.com/napari/napari/tree/main/docs/guides)):
+  in depth content about napari architecture, development choices and some complex features
+- **Tutorials** (in [`napari/docs/tutorials`](https://github.com/napari/napari/tree/main/docs/tutorials)):
+  detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
+- **How-tos** (in [`napari/docs/howtos/`](https://github.com/napari/napari/tree/main/docs/howtos)):
+  simple step by step guides demonstrating the use of common features
+- **Getting started** (in [`napari/docs/tutorials/fundamentals`](https://github.com/napari/napari/tree/main/docs/tutorials/fundamentals):
+  these documents are a mix of tutorials and how-tos covering the fundamentals of installing and working with napari for beginners
 
 ```{admonition} Got materials for a workshop?
 :class: tip
@@ -33,6 +54,9 @@ If you already have teaching materials e.g. recordings, slide decks or jupyter n
 hosted somewhere, you can add links to these on our [napari workshops](../../further-resources/napari-workshops.md) page.
 ```
 
+* Add new documentation
+* 
+
 If you are amending an existing document, make your changes and skip straight
 to [Step #4 - Preview your document](#4-preview-your-document).
 If you are writing a document whose content is mostly text,
@@ -40,13 +64,14 @@ you can write a plain markdown document and skip straight to [Step #3 - Update T
 If you are writing a how-to guide or tutorial that requires executing code or working with the napari viewer, follow
 the steps below to prepare your document.
 
-### Prerequisites for contributing documentation with code
+## 1. Fork and clone napari
 
-- [Jupyter notebook](https://jupyter.org/) installed
-- Familiarity with Jupyter notebooks (code cells and markdown cells)
-- Familiarity with using napari through a Jupyter notebook
+Fork and clone [our repository](https://github.com/napari/napari).
 
-## 1. Download our template
+
+### Use our tutorial/how-to template
+
+If you wish to add a new tutorial or a how-to, 
 
 Our goal is that all tutorials and how-tos are easily downloadable and executable by our users.
 This helps ensure that they are reproducible and makes them easier to maintain.
