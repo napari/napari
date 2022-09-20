@@ -20,16 +20,3 @@ jobs:
 
       - name: Run mypy on typed modules
         run: make typecheck
-  typestub:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e .[build]  # need full install so we can build type stubs
-      - name: run type stub generation
-        run: make typestubs
