@@ -183,7 +183,7 @@ class Viewer(ViewerModel):
 def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
-        from napari._qt.qt_main_window import _QtMainWindow
+        from ._qt.qt_main_window import _QtMainWindow
 
         return _QtMainWindow.current_viewer()
     except ImportError:

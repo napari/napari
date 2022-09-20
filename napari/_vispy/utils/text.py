@@ -3,8 +3,8 @@ from typing import Union
 import numpy as np
 from vispy.scene.visuals import Text
 
-from napari.layers import Points, Shapes
-from napari.layers.utils.string_encoding import ConstantStringEncoding
+from ...layers import Points, Shapes
+from ...layers.utils.string_encoding import ConstantStringEncoding
 
 
 def update_text(

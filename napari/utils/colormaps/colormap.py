@@ -4,8 +4,7 @@ from typing import Optional
 import numpy as np
 from pydantic import PrivateAttr, validator
 
-from napari.utils.color import ColorArray
-
+from ...utils.color import ColorArray
 from ..events import EventedModel
 from ..events.custom_types import Array
 from ..translations import trans

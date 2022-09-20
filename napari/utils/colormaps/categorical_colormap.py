@@ -2,8 +2,7 @@ from typing import Any, Dict, Union
 
 import numpy as np
 
-from napari.utils.color import ColorValue
-
+from ...utils.color import ColorValue
 from ...utils.events import EventedModel
 from ..translations import trans
 from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts

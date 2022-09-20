@@ -12,10 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.errors import ReaderPluginError
-from napari.plugins.utils import get_potential_readers
-from napari.settings import get_settings
-
+from ...errors import ReaderPluginError
+from ...plugins.utils import get_potential_readers
+from ...settings import get_settings
 from ...utils.translations import trans
 
 

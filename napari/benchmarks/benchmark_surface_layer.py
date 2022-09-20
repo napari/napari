@@ -4,7 +4,7 @@
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import numpy as np
 
-from napari.layers import Surface
+from ..layers import Surface
 
 
 class Surface2DSuite:

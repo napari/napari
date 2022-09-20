@@ -19,7 +19,7 @@ from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
 
 if TYPE_CHECKING:
-    from napari.layers import Image
+    from ...layers import Image
 
 
 class _QDoubleRangeSlider(QDoubleRangeSlider):

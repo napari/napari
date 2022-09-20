@@ -1,5 +1,4 @@
-from napari.utils.color import ColorValue
-
+from ...utils.color import ColorValue
 from ...utils.events import EventedModel
 
 

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from napari.utils.notifications import show_info
-
 from ...layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
+from ...utils.notifications import show_info
 from ...utils.translations import trans
 from ._points_constants import Mode
 from .points import Points

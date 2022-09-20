@@ -9,8 +9,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.settings import get_settings
-from napari.utils.translations import trans
+from ...settings import get_settings
+from ...utils.translations import trans
 
 
 class ConfirmCloseDialog(QDialog):

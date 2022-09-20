@@ -11,9 +11,8 @@ from typing import (
 import numpy as np
 from pydantic import Field, parse_obj_as, validator
 
-from napari.utils.color import ColorArray, ColorValue
-
 from ...utils import Colormap
+from ...utils.color import ColorArray, ColorValue
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.translations import trans

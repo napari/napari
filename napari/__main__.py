@@ -21,7 +21,7 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         from npe2 import cli
 
-        from napari.utils import sys_info
+        from .utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
@@ -47,7 +47,7 @@ class PluginInfoAction(argparse.Action):
 class CitationAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --citation"
-        from napari.utils import citation_text
+        from .utils import citation_text
 
         logging.basicConfig(level=logging.WARNING)
         print(citation_text)

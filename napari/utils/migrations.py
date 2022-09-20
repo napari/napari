@@ -1,7 +1,7 @@
 import warnings
 from functools import wraps
 
-from napari.utils.translations import trans
+from .translations import trans
 
 
 def rename_argument(from_name: str, to_name: str, version: str):

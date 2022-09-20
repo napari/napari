@@ -225,7 +225,7 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
         parent = widget.native.parent()
     else:
         parent = widget.parent()
-    from napari.viewer import current_viewer
+    from ..viewer import current_viewer
 
     while parent:
         if hasattr(parent, '_qt_viewer'):  # QMainWindow

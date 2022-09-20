@@ -15,12 +15,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.plugins.utils import (
+from ...plugins.utils import (
     get_all_readers,
     get_filename_patterns_for_reader,
     get_potential_readers,
 )
-
 from ...settings import get_settings
 from ...utils.translations import trans
 

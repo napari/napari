@@ -4,7 +4,7 @@ from typing import Union
 
 import numpy as np
 
-from napari.utils.colormaps.standardize_color import transform_color
+from ..utils.colormaps.standardize_color import transform_color
 
 
 class ColorValue(np.ndarray):

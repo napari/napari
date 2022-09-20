@@ -1,8 +1,7 @@
 """Scale bar model."""
 from typing import Optional
 
-from napari.utils.color import ColorValue
-
+from ..utils.color import ColorValue
 from ..utils.events import EventedModel
 from ._viewer_constants import Position
 

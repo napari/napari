@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction
 
-from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
-from napari.errors.reader_errors import MultipleReaderError
-
+from ..._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from ...components._viewer_key_bindings import register_viewer_action
+from ...errors.reader_errors import MultipleReaderError
 from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
 from ...utils.misc import running_as_bundled_app

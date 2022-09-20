@@ -17,9 +17,8 @@ from typing import Any, List, Tuple
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
-from napari.components.dims import Dims
-from napari.layers import Image
-
+from .components.dims import Dims
+from .layers import Image
 from .viewer import Viewer
 
 __all__ = [

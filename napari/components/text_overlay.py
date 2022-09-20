@@ -1,6 +1,5 @@
 """Text label model."""
-from napari.utils.color import ColorValue
-
+from ..utils.color import ColorValue
 from ..utils.events import EventedModel
 from ._viewer_constants import TextOverlayPosition
 

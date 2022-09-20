@@ -169,7 +169,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def destroyOnClose(self):
         """Destroys dock plugin dock widget when 'x' is clicked."""
-        from napari.viewer import Viewer
+        from ...viewer import Viewer
 
         viewer = self._ref_qt_viewer().viewer
         if isinstance(viewer, Viewer):
@@ -253,7 +253,7 @@ class QtViewerDockWidget(QDockWidget):
         return self.size().height() > self.size().width()
 
     def _on_visibility_changed(self, visible):
-        from napari.viewer import Viewer
+        from ...viewer import Viewer
 
         with contextlib.suppress(AttributeError, ValueError):
             viewer = self._ref_qt_viewer().viewer

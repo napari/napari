@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
-from napari.utils.misc import _is_array_type
-
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -19,6 +17,7 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.misc import _is_array_type
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_coords_status
 from ...utils.translations import trans

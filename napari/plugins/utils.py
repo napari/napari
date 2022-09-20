@@ -8,8 +8,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
-from napari.settings import get_settings
-
+from ..settings import get_settings
 from . import _npe2, plugin_manager
 
 
