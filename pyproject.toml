@@ -68,6 +68,7 @@ ignore = [
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
+  "napari/resources/icons/_themes/*/*.svg"
 ]
 
 [tool.isort]
