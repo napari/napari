@@ -327,19 +327,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _update_inplace(self, other):
         self.update(other)
 
-    def _uneventful(self):
-        return self.dict()
-
     def _validate(self, new_values):
         """
         validate values against the current model. This differs from pydantic's public
         validate method because it won't return an instance of Self (expensive for evented models)
         """
-        # use non-evented versions of object so we don't trigger anything
-        values = {
-            k: (v._uneventful() if isinstance(v, EventedMutable) else v)
-            for k, v in self.dict().items()
-        }
+        # __dict__ is faster than dict() and preserves inner types (see below)
+        values = self.__dict__.copy()
         values.update(new_values)
         values, _, error = validate_model(self.__class__, values)
         if error:

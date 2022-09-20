@@ -360,12 +360,3 @@ class EventedList(TypedMutableSequence[_T]):
 
     def _update_inplace(self, other):
         self[:] = list(other)
-
-    def _uneventful(self):
-        ret = list()
-        for el in self:
-            if isinstance(el, self.__class__):
-                ret.append(el._uneventful())
-            else:
-                ret.append(el)
-        return ret

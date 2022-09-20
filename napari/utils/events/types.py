@@ -16,12 +16,3 @@ class EventedMutable(SupportsEvents, Protocol):
         """
         Update inplace the contents of the EventedMutable to match `other`.
         """
-
-    def _uneventful(self) -> Any:
-        """
-        Return a non-evented version of self. For example:
-        - EventedList -> List
-        - EventedDict and EventedModel -> Dict
-        - ...
-        """
-        ...

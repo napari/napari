@@ -158,12 +158,3 @@ class EventedSet(MutableSet[_T]):
     def _update_inplace(self, other):
         self.clear()
         self.update(other)
-
-    def _uneventful(self):
-        ret = set()
-        for el in self:
-            if isinstance(el, self.__class__):
-                ret.add(el._uneventful())
-            else:
-                ret.add(el)
-        return ret

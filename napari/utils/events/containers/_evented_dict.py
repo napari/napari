@@ -114,12 +114,3 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _update_inplace(self, other):
         self.clear()
         self.update(other)
-
-    def _uneventful(self):
-        ret = dict()
-        for k, v in self.items():
-            if isinstance(v, self.__class__):
-                ret[k] = v._uneventful()
-            else:
-                ret[k] = v
-        return ret
