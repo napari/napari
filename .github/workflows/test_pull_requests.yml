@@ -21,6 +21,8 @@ jobs:
       - name: Check Manifest
         run: |
           pip install --upgrade pip
+          pip install -e .
+          python -c 'import napari.view_layers'
           pip install check-manifest
           check-manifest
 
