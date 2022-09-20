@@ -278,11 +278,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         self.events.source = self
         for name in self.__fields__:
             child = getattr(self, name)
-            if isinstance(child, EventedModel):
-                # TODO: this isinstance check should be EventedMutables in the future
-                child._reset_event_source()
-            elif name in self.events.emitters:
-                getattr(self.events, name).source = self
+            if name in self.events.emitters:
+                # EventedModel fields call this method recursively
+                if isinstance(child, EventedModel):
+                    child._reset_event_source()
+                # connect child events to the self event of the same child
+                if isinstance(child, EventedMutable):
+                    child.events.connect(getattr(self.events, name))
+                    # ensure the source of child event is self as well
+                    getattr(self.events, name).source = self
 
     @property
     def _defaults(self):
