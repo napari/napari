@@ -30,6 +30,6 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .  # need full install so we can build type stubs
+          python -m pip install -e .[build]  # need full install so we can build type stubs
       - name: rub type stub generation
         run: make typestubs
