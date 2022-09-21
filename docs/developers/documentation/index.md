@@ -165,9 +165,9 @@ subtrees:
 ## 3. Preview your document
 
 If your documentation change includes code, it is important that you ensure
-the code is executable. This is why you will need to have a development
-installation of napari installed. [Examples](..../examples/README) are
-automatically executed when the documentation is built and code problems can
+the code is working and executable. This is why you will need to have a
+development installation of napari installed. [Examples](..../examples/README)
+are automatically executed when the documentation is built and code problems can
 also be caught when previewing the built documentation. If your documentation
 change does not include code, you only need the napari docs dependencies
 installed.
