@@ -40,7 +40,7 @@ Examples of documents you might want to contribute are:
 
 - [**Explanations**](in-depth-explanations) (in [`napari/docs/guides`](https://github.com/napari/napari/tree/main/docs/guides)):
   in depth content about napari architecture, development choices and some complex features
-1- [**Tutorials**](../../tutorials/index) (in [`napari/docs/tutorials`](https://github.com/napari/napari/tree/main/docs/tutorials)):
+- [**Tutorials**](../../tutorials/index) (in [`napari/docs/tutorials`](https://github.com/napari/napari/tree/main/docs/tutorials)):
   detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
 - [**How-tos**](.../howtos/index) (in [`napari/docs/howtos/`](https://github.com/napari/napari/tree/main/docs/howtos)):
   simple step by step guides demonstrating the use of common features
