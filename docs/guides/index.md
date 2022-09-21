@@ -1,3 +1,5 @@
+(in-depth-explanations)=
+
 # In-depth explanations
 
 ```{note}
