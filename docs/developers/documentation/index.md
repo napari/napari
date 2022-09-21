@@ -60,7 +60,8 @@ hosted somewhere, you can add links to these on our [napari workshops](../../fur
 
 Fork and clone [our repository](https://github.com/napari/napari). If you are
 amending existing documentation, you can do so in your preferred text editor.
-If you wish to add a new tutorial or a how-to, we recommend you use our template.
+If you wish to add a new tutorial or a how-to, we recommend you use our
+[template](./docs_template).
 
 Our goal is that all tutorials and how-tos are easily downloadable and executable by our users.
 This helps ensure that they are reproducible and makes them easier to maintain.
