@@ -11,8 +11,8 @@ you will require:
 - Some familiarity with [`git`](https://git-scm.com)
 - A [GitHub](https://github.com) account
 
-If you wish to simply add documentation that does not contain code or amend an
-existing documentation page with no changes to code, you will also require:
+If you wish to simply add/amend documentation that does not contain code, you
+will also require:
 
 - A clean conda environment with napari docs dependencies installed:
 
@@ -20,11 +20,11 @@ existing documentation page with no changes to code, you will also require:
     - These dependencies will allow you to preview your document locally, as it would appear on `napari.org`
     - They will also install `jupytext`, which you will need to contribute documents containing code or viewer interactions
 
-If you wish to add documentation that does contain code, you will also require:
+If you wish to add/amend documentation that does contain code, you will also require:
 
 - A clean conda environment with a development installation of napari, see
   the [contributor guide](napari-contributing#setting-up-a-development-installation)
-  for details.
+  for details
 - [Jupyter notebook](https://jupyter.org/) installed
 - Familiarity with Jupyter notebooks (code cells and markdown cells)
 - Familiarity with using napari through a Jupyter notebook
@@ -38,13 +38,15 @@ existing documents that could be expanded to include the content you think is la
 
 Examples of documents you might want to contribute are:
 
-- **Explanations** (in [`napari/docs/guides`](https://github.com/napari/napari/tree/main/docs/guides)):
+- [**Explanations**](.../guides/index) (in [`napari/docs/guides`](https://github.com/napari/napari/tree/main/docs/guides)):
   in depth content about napari architecture, development choices and some complex features
-- **Tutorials** (in [`napari/docs/tutorials`](https://github.com/napari/napari/tree/main/docs/tutorials)):
+- [**Tutorials**](.../tutorials/index) (in [`napari/docs/tutorials`](https://github.com/napari/napari/tree/main/docs/tutorials)):
   detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
-- **How-tos** (in [`napari/docs/howtos/`](https://github.com/napari/napari/tree/main/docs/howtos)):
+- [**How-tos**](.../howtos/index) (in [`napari/docs/howtos/`](https://github.com/napari/napari/tree/main/docs/howtos)):
   simple step by step guides demonstrating the use of common features
-- **Getting started** (in [`napari/docs/tutorials/fundamentals`](https://github.com/napari/napari/tree/main/docs/tutorials/fundamentals):
+- [**Examples**](..../examples/README) (in [`napari/examples/`](https://github.com/napari/napari/tree/main/examples)):
+  code examples of how to use napari
+- [**Getting started**](.../tutorials/start_index) (in [`napari/docs/tutorials/fundamentals`](https://github.com/napari/napari/tree/main/docs/tutorials/fundamentals):
   these documents are a mix of tutorials and how-tos covering the fundamentals of installing and working with napari for beginners
 
 ```{admonition} Got materials for a workshop?
@@ -54,33 +56,22 @@ If you already have teaching materials e.g. recordings, slide decks or jupyter n
 hosted somewhere, you can add links to these on our [napari workshops](../../further-resources/napari-workshops.md) page.
 ```
 
-* Add new documentation
-* 
+## 1. Write your documentation
 
-If you are amending an existing document, make your changes and skip straight
-to [Step #4 - Preview your document](#4-preview-your-document).
-If you are writing a document whose content is mostly text,
-you can write a plain markdown document and skip straight to [Step #3 - Update TOC](#3-update-toc).
-If you are writing a how-to guide or tutorial that requires executing code or working with the napari viewer, follow
-the steps below to prepare your document.
-
-## 1. Fork and clone napari
-
-Fork and clone [our repository](https://github.com/napari/napari).
-
-
-### Use our tutorial/how-to template
-
-If you wish to add a new tutorial or a how-to, 
+Fork and clone [our repository](https://github.com/napari/napari). If you are
+amending existing documentation, you can do so in your preferred text editor.
+If you wish to add a new tutorial or a how-to, we recommend you use our template.
 
 Our goal is that all tutorials and how-tos are easily downloadable and executable by our users.
 This helps ensure that they are reproducible and makes them easier to maintain.
-We therefore provide a notebook template for our documents.
+We therefore provide a notebook template for our documents. Inside the template
+you'll find handy tips for taking screenshots of the viewer, hiding code cells,
+using style guides and what to include in the required prerequisites section.
 
 [Jupyter notebooks](https://jupyter.org/) are a great option for our documents, because they allow you to easily combine code and well formatted text in markdown.
 However, their [raw JSON format](https://numpy.org/numpy-tutorials/content/pairing.html#background) is not great for version control, so we use [MyST Markdown](https://myst-parser.readthedocs.io/en/latest/) documents in our repository and on napari.org.
 
-Fork and clone [our repository](https://github.com/napari/napari), and make a copy of `napari/docs/developers/documentation/docs_template.md`.
+Make a copy of `napari/docs/developers/documentation/docs_template.md`.
 You can edit the template directly in Jupyter notebook, or in your preferred text editor.
 
 ```{admonition} Already have a notebook?
@@ -89,17 +80,28 @@ You can edit the template directly in Jupyter notebook, or in your preferred tex
 If you have an existing `.ipynb` Jupyter notebook that you'd like to contribute, you can convert it to MyST markdown
 and then edit the `.md` file to prepare it for contributing.
 
-Run `jupytext your-notebook.ipynb --to myst` to create a new file, `your-notebook.md`. Edit this file to
-include the relevant sections from the docs template.
+Run `jupytext your-notebook.ipynb --to myst` to create a new MyST version of your file,
+`your-notebook.md`. Edit this file to include the relevant sections from the docs template.
 ```
-## 2. Write your document
 
-Follow the template to write your document. Inside the template you'll also find handy tips for taking screenshots of the viewer,
-hiding code cells, using style guides and what to include in the required prerequisites section.
+### Next steps
 
-## 3. Update TOC
+Depending on the type of contribution you are making, you may be able to skip
+some steps:
 
-Add your document to the correct folder based on its content (see the [list above](#0-before-you-start) for common locations), and update `napari/docs/_toc.yml`.
+* If you are amending an existing document you can skip straight
+  to [Step #3 - Preview your document](#4-preview-your-document)
+* If you are adding new documentation and would prefer a simplier workflow,
+  you can also skip straight to
+  [Step #3 - Preview your document](#4-preview-your-document) and ask the
+  napari team to update the TOC for you when you open your pull request
+* For all other documentation changes, follow the steps below
+
+## 2. Update TOC
+
+If you are adding a new documentation file, you will need to add your document
+to the correct folder based on its content (see the [list above](#0-before-you-start)
+for common locations), and update `napari/docs/_toc.yml`.
 
 If you're adding a document
 to an existing group, simply add a new `- file:` entry in the appropriate spot. For example, if I wanted to add
@@ -159,10 +161,19 @@ subtrees:
         - file: tutorials/geosciences/geo_tutorial2     # added
 ```
 
-## 4. Preview your document
+## 3. Preview your document
 
-Once you've added your document to the `docs` folder and updated the `_toc.yml`, you can preview the website
- locally by running `make docs` from the root of
+If your documentation change includes code, it is important that you ensure
+the code is executable. This is why you will need to have a development
+installation of napari installed. [Examples](..../examples/README) are
+automatically executed when the documentation is built so code problems can be
+caught when previewing the built documentation.
+
+There are two ways you can preview the documentation website, building locally
+or downloading the GitHub Actions built documentation when you submit your
+pull request.
+
+To build the documentation locally, run `make docs` from the root of
 the `napari` repository (assuming you've installed the [docs prerequisites](#prerequisites)).
 
 ```bash
@@ -172,11 +183,11 @@ make docs
 The rendered HTML will be placed in `napari/docs/_build`. Find `index.html` in this folder and drag it
 into a browser to preview the website with your new document.
 
-Napari continuous integration includes a GitHub action that builds the
-documentation and saves the artifact for you to download. This is another way
-to check that your built documentation looks as you expect. To download the
-built documentation, go to your PR, scroll down to the continuous integration
-tests, then:
+Alternatively, When you submit your pull request, napari continuous integration
+includes a GitHub action that builds the documentation and saves the artifact
+for you to download. This is another way to check that your built documentation
+looks as you expect. To download the built documentation, go to your PR, scroll
+down to the continuous integration tests, then:
 
 1. click on 'details' next to 'Build Docs / Build & Upload Artifact (pull_request)'
 
@@ -190,10 +201,16 @@ tests, then:
 
 ![doc-continuous-integration-1](images/doc-ci-3.png)
 
-## 5. Submit your pull request
+## 4. Submit your pull request
 
 Once you have written and previewed your document, it's time to open a pull request to [napari's main repository](https://github.com/napari/napari) and contribute it to our codebase.
-If you've never opened a Pull Request, you may find [this guide](https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github) useful.
+
+If you are simply contribution one file (e.g., a tutorial or how-to page) you
+can use the [GitHub web interface to open your pull request](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository). Ensure you
+document is added to the correct folder based on its content (see the
+[list above](#0-before-you-start) for common locations).
+
+To open a pull request via git and the command line, follow [this guide](https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github).
 You can also reach out to us on [zulip](https://napari.zulipchat.com/#narrow/stream/212875-general) for assistance!
 
 Not sure where to place your document or update `_toc.yml`? Make a best guess and open the pull request - the napari team will
