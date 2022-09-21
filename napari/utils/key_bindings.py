@@ -516,6 +516,9 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
+        if event.key is None:
+            return
+
         combo = normalize_key_combo(
             components_to_key_combo(event.key.name, event.modifiers)
         )
