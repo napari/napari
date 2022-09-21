@@ -746,7 +746,9 @@ class QtViewer(QSplitter):
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
                 self._qt_open(
-                    [filename], stack=False, choose_plugin=choose_plugin
+                    [filename.lower()],
+                    stack=False,
+                    choose_plugin=choose_plugin,
                 )
             update_open_history(filenames[0])
 

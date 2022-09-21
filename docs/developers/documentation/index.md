@@ -38,7 +38,7 @@ existing documents that could be expanded to include the content you think is la
 
 Examples of documents you might want to contribute are:
 
-- [**Explanations**](/docs/guides/index.md) (in [`napari/docs/guides`](https://github.com/napari/napari/tree/main/docs/guides)):
+- [**Explanations**](/docs/guides/index) (in [`napari/docs/guides`](https://github.com/napari/napari/tree/main/docs/guides)):
   in depth content about napari architecture, development choices and some complex features
 - [**Tutorials**](.../tutorials/index) (in [`napari/docs/tutorials`](https://github.com/napari/napari/tree/main/docs/tutorials)):
   detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
