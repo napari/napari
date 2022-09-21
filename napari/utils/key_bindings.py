@@ -517,6 +517,7 @@ class KeymapHandler:
             The vispy key press event that triggered this method.
         """
         if event.key is None:
+            # TODO determine when None key could be sent. 
             return
 
         combo = normalize_key_combo(
