@@ -90,10 +90,10 @@ Depending on the type of contribution you are making, you may be able to skip
 some steps:
 
 * If you are amending an existing document you can skip straight
-  to [Step #3 - Preview your document](#4-preview-your-document)
+  to [Step #3 - Preview your document](#3-preview-your-document)
 * If you are adding new documentation and would prefer a simplier workflow,
   you can also skip straight to
-  [Step #3 - Preview your document](#4-preview-your-document) and ask the
+  [Step #3 - Preview your document](#3-preview-your-document) and ask the
   napari team to update the TOC for you when you open your pull request
 * For all other documentation changes, follow the steps below
 
@@ -166,12 +166,14 @@ subtrees:
 If your documentation change includes code, it is important that you ensure
 the code is executable. This is why you will need to have a development
 installation of napari installed. [Examples](..../examples/README) are
-automatically executed when the documentation is built so code problems can be
-caught when previewing the built documentation.
+automatically executed when the documentation is built and code problems can
+also be caught when previewing the built documentation. If your documentation
+change does not include code, you only need the napari docs dependencies
+installed.
 
-There are two ways you can preview the documentation website, building locally
-or downloading the GitHub Actions built documentation when you submit your
-pull request.
+There are two ways you can preview the documentation website, by building
+locally or downloading the GitHub Actions built documentation when you submit
+your pull request.
 
 To build the documentation locally, run `make docs` from the root of
 the `napari` repository (assuming you've installed the [docs prerequisites](#prerequisites)).
@@ -205,7 +207,7 @@ down to the continuous integration tests, then:
 
 Once you have written and previewed your document, it's time to open a pull request to [napari's main repository](https://github.com/napari/napari) and contribute it to our codebase.
 
-If you are simply contribution one file (e.g., a tutorial or how-to page) you
+If you are simply contributing one file (e.g., a tutorial or how-to page) you
 can use the [GitHub web interface to open your pull request](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository). Ensure you
 document is added to the correct folder based on its content (see the
 [list above](#0-before-you-start) for common locations).
