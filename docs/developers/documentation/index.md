@@ -11,7 +11,7 @@ you will require:
 - Some familiarity with [`git`](https://git-scm.com)
 - A [GitHub](https://github.com) account
 
-If you wish to simply add/amend documentation that does not contain code, you
+If you wish to add/amend documentation that does not contain code, you
 will also require:
 
 - A clean conda environment with napari docs dependencies installed:
