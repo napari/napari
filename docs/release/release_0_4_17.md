@@ -381,6 +381,7 @@ or create issues on GitHub.
 - Add new core libraries to napari info (#5077)
 - Update config directory paths for perfmon tools (#5081)
 - Update some strings to be translated, some to be ignored (#5082)
+- Fix error with "None" key press (#5115)
 - Fix shortcuts deleting (#5119)
 
 
