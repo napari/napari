@@ -429,9 +429,8 @@ class ShortcutEditor(QWidget):
 
                 self._restore_shortcuts(row)
 
-                if new_value_dict:
-                    # Emit signal when new value set for shortcut.
-                    self.valueChanged.emit(new_value_dict)
+                # Emit signal when new value set for shortcut.
+                self.valueChanged.emit(new_value_dict)
 
     def _show_warning_icons(self, rows):
         """Creates and displays the warning icons.
