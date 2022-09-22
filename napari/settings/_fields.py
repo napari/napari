@@ -132,7 +132,13 @@ class Version:
             version = version.decode("UTF-8")
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
-            raise ValueError(f"{version} is not valid SemVer string")
+            raise ValueError(
+                trans._(
+                    '{version} is not valid SemVer string',
+                    deferred=True,
+                    version=version,
+                )
+            )
         matched_version_parts: Dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
 
@@ -160,8 +166,12 @@ class Version:
             other = Version(*other)
         elif not isinstance(other, Version):
             raise TypeError(
-                f"Expected str, bytes, dict, tuple, list, or {cls} instance, "
-                f"but got {type(other)}"
+                trans._(
+                    "Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}",
+                    deferred=True,
+                    cls=cls,
+                    other_type=type(other),
+                )
             )
         return other
 

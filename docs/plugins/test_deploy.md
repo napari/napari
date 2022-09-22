@@ -153,7 +153,7 @@ forum](https://forum.image.sc/tag/napari).
 [pypi]: https://pypi.org/
 [pypi-upload]: https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives
 [hubguide]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md
-[hub-guide-custom-viz]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md#visibility
+[hub-guide-custom-viz]: https://github.com/chanzuckerberg/napari-hub/wiki/Customizing-your-plugin's-listing#visibility
 [hub-guide-preview]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md
 [autodeploy]: https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments
 
