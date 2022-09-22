@@ -745,6 +745,8 @@ class QtViewer(QSplitter):
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
+                ext = str(Path(filename).suffix).lower()
+                filename = str(Path(filename).with_suffix(ext))
                 self._qt_open(
                     [filename], stack=False, choose_plugin=choose_plugin
                 )

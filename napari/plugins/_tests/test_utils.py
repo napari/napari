@@ -198,6 +198,15 @@ def test_get_potential_readers_finds_readers(tmp_plugin: DynamicPlugin):
     assert len(readers) == 2
 
 
+def test_get_potential_readers_extension_case(tmp_plugin: DynamicPlugin):
+    @tmp_plugin.contribute.reader(filename_patterns=['*.tif'])
+    def read_tif(path):
+        ...
+
+    readers = get_potential_readers('my_file.TIF')
+    assert len(readers) == 2
+
+
 def test_get_potential_readers_none_available():
     assert not get_potential_readers('my_file.fake')
 
