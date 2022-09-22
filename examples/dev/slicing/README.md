@@ -1,14 +1,14 @@
 # Slicing examples
 
 The examples in this directory are for developers to test various aspects
-of layer slicing. These are primarily designed to aide in the async effort ([NAP 4](../../../docs/naps/4-async-slicing.md)).
+of layer slicing. These are primarily designed to aid in the async effort ([NAP 4](../../../docs/naps/4-async-slicing.md)).
 
 ## Examples
 
 ### Examples of desirable behavior
 
 These are a set of examples which are easy and non-frustrating to interact in napari
-without async support. We want to ensure that these examples continue to be peformant.
+without async support. We want to ensure that these examples continue to be performant.
 
 * ebi_empiar_3D_with_labels.py [EMPIAR-10982](https://www.ebi.ac.uk/empiar/EMPIAR-10982/)
   * Real-world image & labels data (downloaded locally)
@@ -22,7 +22,7 @@ Additional examples from the main napari examples:
 ### Examples of undesirable behavior
 
 These are a set of examples which currently cause undesirable behavior in napari, typically
-resulting in non-responsive user interface due to synchornous slicing on large or remote data.
+resulting in non-responsive user interface due to synchronous slicing on large or remote data.
 
 * random_shapes.py
   * A large number of shapes to stress slicing on a shapes layer
