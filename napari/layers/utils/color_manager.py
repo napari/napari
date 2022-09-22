@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import Field, root_validator, validator
+from pydantic import root_validator, validator
 
 from ...utils.colormaps import Colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
@@ -157,9 +157,7 @@ class ColorManager(EventedModel):
     categorical_colormap: CategoricalColormap = CategoricalColormap.from_array(
         [0, 0, 0, 1]
     )
-    colors: Array[float, (-1, 4)] = Field(
-        default_factory=lambda: np.empty((0, 4))
-    )
+    colors: Array[float, (-1, 4)] = np.empty((0, 4))
 
     # validators
     @validator('continuous_colormap', pre=True)

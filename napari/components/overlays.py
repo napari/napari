@@ -1,5 +1,3 @@
-from pydantic import Field
-
 from ..utils.events import EventedModel
 from .interaction_box import InteractionBox
 
@@ -14,4 +12,4 @@ class Overlays(EventedModel):
     """
 
     # fields
-    interaction_box: InteractionBox = Field(default_factory=InteractionBox)
+    interaction_box: InteractionBox = InteractionBox()

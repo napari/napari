@@ -9,7 +9,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Field, parse_obj_as, validator
+from pydantic import parse_obj_as, validator
 
 from napari.utils.color import ColorArray, ColorValue
 
@@ -26,7 +26,7 @@ from .style_encoding import (
 )
 
 """The default color to use, which may also be used a safe fallback color."""
-DEFAULT_COLOR = ColorValue.validate('cyan')
+DEFAULT_COLOR = 'cyan'
 
 
 @runtime_checkable
@@ -118,7 +118,7 @@ class ManualColorEncoding(_ManualStyleEncoding[ColorValue, ColorArray]):
 
     encoding_type: Literal['ManualColorEncoding'] = 'ManualColorEncoding'
     array: ColorArray
-    default: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
+    default: ColorValue = DEFAULT_COLOR
 
 
 class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
@@ -135,7 +135,7 @@ class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
 
     encoding_type: Literal['DirectColorEncoding'] = 'DirectColorEncoding'
     feature: str
-    fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
+    fallback: ColorValue = DEFAULT_COLOR
 
     def __call__(self, features: Any) -> ColorArray:
         # A column-like may be a series or have an object dtype (e.g. color names),
@@ -160,7 +160,7 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     encoding_type: Literal['NominalColorEncoding'] = 'NominalColorEncoding'
     feature: str
     colormap: CategoricalColormap
-    fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
+    fallback: ColorValue = DEFAULT_COLOR
 
     def __call__(self, features: Any) -> ColorArray:
         # map is not expecting some column-likes (e.g. pandas.Series), so ensure
@@ -194,7 +194,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     feature: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
-    fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
+    fallback: ColorValue = DEFAULT_COLOR
 
     def __call__(self, features: Any) -> ColorArray:
         values = features[self.feature]
