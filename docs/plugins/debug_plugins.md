@@ -1,6 +1,6 @@
 # Debugging during plugin development
 
-When developing plugins in napari, you may encounter mistakes or bugs in your code. This pages covers some easy ways to debug napari plugins, including:
+When developing plugins in napari, you may encounter mistakes or bugs in your code. This page covers some ways to debug napari plugins, including:
 
 1. Debugging plugin loading.
 2. Seeing plugin errors and warnings.
@@ -20,7 +20,7 @@ npe2 validate YOUR_PLUGIN_NAME
 ```
 
 ```{note}
-In general, `napari --info` is a good first step to debugging any environment issues as well.
+In general, `napari --info` is a good first step to debugging any environment issues.
 ```
 
 ## Seeing plugin errors and warnings
@@ -156,7 +156,7 @@ cd napari-simple-reload
 pip install -e .
 ```
 
-### Using IPython to reload code during plugin development
+## Using IPython to reload code during plugin development
 
 You can use the [autoreload extension](https://ipython.org/ipython-doc/3/config/extensions/autoreload.html) with IPython or a Jupyter notebook to open the napari viewer with the ability to reload the changed plugin code during development. Below, we will open the napari viewer and add our three plugin widgets to the dock. Launch IPython via the `IPython` command in terminal (IPython is installed with napari) and then enter the following into the IPython console:
 
@@ -234,7 +234,7 @@ Running `python reproduce_issue.py`, there are no sneaky bugs this time, but not
 
 ## Isolate the issue from napari
 
-This solution ties in with the idea of test-driven development, see the [napari testing guidelines](./test_deploy.md#prefer-smaller-unit-tests-when-possible). The idea is to trust that napari will provide the information you expect it to, and test your widgets independently of the viewer. In the case above (to verify that some input values work as expected), it would be like so:
+This solution ties in with the idea of test-driven development (see the [napari testing guidelines](./test_deploy.md#prefer-smaller-unit-tests-when-possible)). The idea is to trust that napari will provide the information you expect it to, and test your widgets independently of the viewer. In the case above, to verify that some input values work as expected, it would be like so:
 
 ```Python
 # test_print.py
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     test_false_inputs()
 ```
 
-Then, for `python test_print.py` you can use any of your usual debugging tools - such as the visual debugger provided by your favourite python IDE (e.g. PyCharm, VSCode, or Spyder). Further, an isolated test like this can be integrated into a [testing suite for your napari plugin](https://napari.org/stable/plugins/test_deploy.html).
+Then, for `python test_print.py` you can use any of your usual debugging tools - such as the visual debugger provided by a python IDE (e.g. PyCharm, VSCode, or Spyder). Further, an isolated test like this can be integrated into a [testing suite for your napari plugin](https://napari.org/stable/plugins/test_deploy.html).
 
 ## Logging and user messages in napari
 
@@ -261,7 +261,12 @@ There are, generally speaking, three main methods for notifying users of problem
 2. Use `warnings.warn("some warning")` to indicate something that was handled, but may not be the behaviour the user was expecting.
 3. Show information in napari, use the `napari.utils.notifications.show_info("message")` command.
 
-In addition to these user focused methods, you can use a similar system for plugin debug logs and messages during development - either using built in [napari functions](https://napari.org/dev/api/napari.utils.notifications.html), the [Python logger](https://docs.python.org/3/library/logging.html), or an alternative logging library, like [loguru](https://github.com/Delgan/loguru) (this can be easier to get started with than the built in Python logging library).
+In addition to these user focused methods, you can use a similar system for plugin debug logs and messages during development. You can either use [napari specific functions](https://napari.org/dev/api/napari.utils.notifications.html), or [built in Python logging](https://docs.python.org/3/library/logging.html).
+
+```{tip}
+A logging library, like [loguru](https://github.com/Delgan/loguru), can be easier to get started with than the built in Python logging library.
+```
+
 Below is an example of establishing debug messages / logs in your code and viewing them in napari by setting the preferences for GUI notifications and /or console notifications to be at the debug level. We modify the example function from before to have a debug log message:
 
 ```Python
