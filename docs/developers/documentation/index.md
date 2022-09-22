@@ -44,7 +44,7 @@ Examples of documents you might want to contribute are:
   detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
 - [**How-tos**](../../howtos/index) (in [`napari/docs/howtos/`](https://github.com/napari/napari/tree/main/docs/howtos)):
   simple step by step guides demonstrating the use of common features
-- [**Examples**](https://napari.org/stable/gallery.html) (in [`napari/examples/`](https://github.com/napari/napari/tree/main/examples)):
+- [**Examples**](../../../examples/README.rst) (in [`napari/examples/`](https://github.com/napari/napari/tree/main/examples)):
   code examples of how to use napari
 - [**Getting started**](../../tutorials/start_index) (in [`napari/docs/tutorials/fundamentals`](https://github.com/napari/napari/tree/main/docs/tutorials/fundamentals):
   these documents are a mix of tutorials and how-tos covering the fundamentals of installing and working with napari for beginners
