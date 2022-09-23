@@ -26,15 +26,14 @@ def tmp_virtualenv(tmp_path) -> 'Session':
 def tmp_conda_env(tmp_path):
     import subprocess
 
-    if conda_exe := os.environ.get('CONDA_EXE'):
+    if conda_exe := os.environ.get('CONDA_EXE', ''):
         pass  # in an active conda env, this is set and we take it
     elif conda_dir := os.environ.get('CONDA'):
         # $CONDA is usually defined in GHA, pointing to their bundled conda root
+        conda_exe = os.path.join(conda_dir, 'condabin', 'conda')
         if sys.platform == 'win32':
-            conda_exe = os.path.join(conda_dir, 'Scripts', 'conda.exe')
-        else:
-            conda_exe = os.path.join(conda_dir, 'bin', 'conda')
-    else:
+            conda_exe += '.bat'
+    if not os.path.isfile(conda_exe):
         conda_exe = 'conda'
 
     try:
