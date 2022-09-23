@@ -67,7 +67,7 @@ QtViewerPushButton[mode="grid_view_button"] {
   image: url("theme_{{ name }}:/grid.svg");
 }
 QtViewerPushButton[mode="new_group"] {
-  image: url(":/themes/{{ name }}/folder.svg");
+  image: url("theme_{{ name }}:/folder.svg");
 }
 
 QtModeRadioButton {
