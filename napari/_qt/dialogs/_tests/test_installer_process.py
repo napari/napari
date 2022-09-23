@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -25,16 +26,34 @@ def tmp_virtualenv(tmp_path) -> 'Session':
 def tmp_conda_env(tmp_path):
     import subprocess
 
-    subprocess.check_call(
-        [
-            'conda',
-            'create',
-            '-y',
-            '-p',
-            str(tmp_path),
-            f'python={sys.version_info.major}.{sys.version_info.minor}',
-        ]
-    )
+    if conda_exe := os.environ.get('CONDA_EXE'):
+        pass  # in an active conda env, this is set and we take it
+    elif conda_dir := os.environ.get('CONDA'):
+        # $CONDA is usually defined in GHA, pointing to their bundled conda root
+        if sys.platform == 'win32':
+            conda_exe = os.path.join(conda_dir, 'Scripts', 'conda.exe')
+        else:
+            conda_exe = os.path.join(conda_dir, 'bin', 'conda')
+    else:
+        conda_exe = 'conda'
+
+    try:
+        subprocess.check_output(
+            [
+                conda_exe,
+                'create',
+                '-yq',
+                '-p',
+                str(tmp_path),
+                f'python={sys.version_info.major}.{sys.version_info.minor}',
+            ],
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        print(exc.output)
+        raise
+
     return tmp_path
 
 
