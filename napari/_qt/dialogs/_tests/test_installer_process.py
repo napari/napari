@@ -48,7 +48,7 @@ def tmp_conda_env(tmp_path):
             ],
             stderr=subprocess.STDOUT,
             text=True,
-            timeout=30000,
+            timeout=60,
         )
     except subprocess.CalledProcessError as exc:
         print(exc.output)
