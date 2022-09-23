@@ -13,9 +13,11 @@ from ...layers import (
     Tracks,
     Vectors,
 )
+from ...layers.layergroup import LayerGroup
 from ...utils.config import async_octree
 from ...utils.translations import trans
 from ..layers.base import VispyBaseLayer
+from ..layers.group import VispyLayerGroup
 from ..layers.image import VispyImageLayer
 from ..layers.labels import VispyLabelsLayer
 from ..layers.points import VispyPointsLayer
@@ -32,6 +34,7 @@ layer_to_visual = {
     Surface: VispySurfaceLayer,
     Vectors: VispyVectorsLayer,
     Tracks: VispyTracksLayer,
+    LayerGroup: VispyLayerGroup,
 }
 
 

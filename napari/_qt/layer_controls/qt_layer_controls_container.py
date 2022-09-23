@@ -1,10 +1,12 @@
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
+from ...layers.layergroup import LayerGroup
 from ...utils import config
 from ...utils.translations import trans
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
+from .qt_layergroup_controls import QtLayerGroupControls
 from .qt_points_controls import QtPointsControls
 from .qt_shapes_controls import QtShapesControls
 from .qt_surface_controls import QtSurfaceControls
@@ -19,6 +21,7 @@ layer_to_controls = {
     Surface: QtSurfaceControls,
     Vectors: QtVectorsControls,
     Tracks: QtTracksControls,
+    LayerGroup: QtLayerGroupControls,
 }
 
 if config.async_loading:
