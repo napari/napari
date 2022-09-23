@@ -168,7 +168,7 @@ class PipInstaller(AbstractInstaller):
         cmd = ['-m', 'pip', 'install', '--upgrade']
         if prefix is not None:
             cmd.extend(['--prefix', str(prefix)])
-        if running_as_bundled_app() and sys.platform.startswith('linux'):
+        if running_as_bundled_app(False) and sys.platform.startswith('linux'):
             cmd.extend(
                 ['--no-warn-script-location', '--prefix', user_plugin_dir()]
             )
