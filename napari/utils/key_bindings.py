@@ -38,12 +38,13 @@ import inspect
 import re
 import time
 import types
-import typing
 from collections import ChainMap
+from typing import Callable, Dict
 
 from vispy.util import keys
 
 from ..settings import get_settings
+from ..utils.action_manager import action_manager
 from ..utils.translations import trans
 
 SPECIAL_KEYS = [
@@ -83,6 +84,9 @@ SPECIAL_KEYS = [
 MODIFIER_KEYS = [keys.CONTROL, keys.ALT, keys.SHIFT, keys.META]
 
 KEY_SUBS = {'Ctrl': 'Control'}
+
+# global user keymap; to be made public later in refactoring process
+USER_KEYMAP: Dict[str, Callable] = {}
 
 
 def parse_key_combo(key_combo):
@@ -302,6 +306,25 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     return unbound
 
 
+def _get_user_keymap():
+    """Retrieve the current user keymap. The user keymap is global and takes precedent over all other keymaps.
+
+    Returns
+    -------
+    user_keymap : dict of str: callable
+        User keymap.
+    """
+    return USER_KEYMAP
+
+
+def _bind_user_key(key, func=UNDEFINED, *, overwrite=False):
+    """Bind a key combination to the user keymap.
+
+    See ``bind_key`` docs for details.
+    """
+    return bind_key(_get_user_keymap(), key, func, overwrite=overwrite)
+
+
 class KeybindingDescriptor:
     """Descriptor which transforms ``func`` into a method with the first
     argument bound to ``class_keymap`` or ``keymap`` depending on if it was
@@ -385,7 +408,7 @@ class KeymapHandler:
     @property
     def keymap_chain(self):
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = []
+        maps = [_get_user_keymap()]
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
@@ -454,7 +477,7 @@ class KeymapHandler:
             else:
                 key, _ = parse_key_combo(key_combo)
                 self._key_release_generators[key] = generator_or_callback
-        if isinstance(generator_or_callback, typing.Callable):
+        if isinstance(generator_or_callback, Callable):
             key, _ = parse_key_combo(key_combo)
             self._key_release_generators[key] = (
                 generator_or_callback,
@@ -486,24 +509,39 @@ class KeymapHandler:
                 next(val)  # call function
 
     def on_key_press(self, event):
-        """Callback that whenever key pressed in canvas.
+        """Called whenever key pressed in canvas.
 
         Parameters
         ----------
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
+        if event.key is None:
+            # TODO determine when None key could be sent.
+            return
+
+        combo = normalize_key_combo(
+            components_to_key_combo(event.key.name, event.modifiers)
+        )
+
+        repeatables = {
+            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
+            "Up",
+            "Down",
+            "Left",
+            "Right",
+        }
+
         if (
             event.native is not None
             and event.native.isAutoRepeat()
-            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
+            and combo not in repeatables
         ) or event.key is None:
-            # pass if no key is present or if key is held down, unless the
-            # key being held down is one of the navigation keys
-            # this helps for scrolling, etc.
+            # pass if no key is present or if the shortcut combo is held down,
+            # unless the combo being held down is one of the autorepeatables or
+            # one of the navigation keys (helps with scrolling).
             return
 
-        combo = components_to_key_combo(event.key.name, event.modifiers)
         self.press_key(combo)
 
     def on_key_release(self, event):

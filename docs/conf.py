@@ -14,8 +14,10 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import re
 from importlib import import_module
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
 import qtgallery
 from jinja2.filters import FILTERS
@@ -60,10 +62,16 @@ extensions = [
     "sphinx_panels",
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
+    "sphinx_tags",
 ]
 
 external_toc_path = "_toc.yml"
 external_toc_exclude_missing = False
+
+tags_create_tags = True
+tags_output_dir = "_tags"
+tags_overview_title = "Tags"
+tags_extension = ["md", "rst"]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -174,6 +182,7 @@ sphinx_gallery_conf = {
     'only_warn_on_example_error': True,
     'image_scrapers': (qtgallery.qtscraper,),
     'reset_modules': (reset_napari_theme,),
+    'reference_url': {'napari': None},
 }
 
 
@@ -185,6 +194,7 @@ def setup(app):
 
     """
     app.registry.source_suffix.pop(".ipynb", None)
+    app.connect('linkcheck-process-uri', rewrite_github_anchor)
 
 
 def get_attributes(item, obj, modulename):
@@ -194,6 +204,9 @@ def get_attributes(item, obj, modulename):
 
     """
     module = import_module(modulename)
+    if hasattr(module, "__all__") and obj not in module.__all__:
+        return ""
+
     if hasattr(getattr(module, obj), item):
         return f"~{obj}.{item}"
     else:
@@ -201,3 +214,35 @@ def get_attributes(item, obj, modulename):
 
 
 FILTERS["get_attributes"] = get_attributes
+
+autosummary_ignore_module_all = False
+
+linkcheck_anchors_ignore = [r'^!', r'L\d+-L\d+', r'r\d+', r'issuecomment-\d+']
+
+linkcheck_ignore = ['https://napari.zulipchat.com/']
+
+
+def rewrite_github_anchor(app, uri: str):
+    """Rewrite anchor name of the hyperlink to github.com
+
+    The hyperlink anchors in github.com are dynamically generated.  This rewrites
+    them before checking and makes them comparable.
+    """
+    parsed = urlparse(uri)
+    if parsed.hostname == "github.com" and parsed.fragment:
+        for text in [
+            "L",
+            "readme",
+            "pullrequestreview",
+            "issuecomment",
+            "issue",
+        ]:
+            if parsed.fragment.startswith(text):
+                return None
+        if re.match(r'r\d+', parsed.fragment):
+            return None
+        prefixed = parsed.fragment.startswith('user-content-')
+        if not prefixed:
+            fragment = f'user-content-{parsed.fragment}'
+            return urlunparse(parsed._replace(fragment=fragment))
+    return None

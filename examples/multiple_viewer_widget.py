@@ -8,6 +8,8 @@ Switching to 3D display will only impact the main viewer.
 
 This example also contain option to enable cross that will be moved to the
 current dims point (`viewer.dims.point`).
+
+.. tags:: gui
 """
 
 from copy import deepcopy
@@ -442,6 +444,10 @@ class MultipleViewerWidget(QSplitter):
 
 
 if __name__ == "__main__":
+    from qtpy import QtWidgets, QtCore
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+    # above two lines are needed to allow to undock the widget with
+    # additional viewers
     view = napari.Viewer()
     dock_widget = MultipleViewerWidget(view)
     cross = CrossWidget(view)

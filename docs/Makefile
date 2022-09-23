@@ -1,9 +1,10 @@
 .PHONY: typestubs pre watch dist settings-schema
 
 clean:
-	rm -rf docs/_build/
-	rm -rf docs/api/napari*.rst
-	rm -rf docs/gallery/*
+	rm -rf _build/
+	rm -rf api/napari*.rst
+	rm -rf gallery/*
+	rm -rf _tags
 
 docs:
 	python _scripts/prep_docs.py

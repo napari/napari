@@ -289,31 +289,31 @@ def test_properties():
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith(f'Class {current_label - 1}')
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
     layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
     layer = Labels(data)
     layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
 
 def test_default_properties_assignment():
@@ -350,19 +350,19 @@ def test_multiscale_properties():
 
     current_label = layer.get_value((0, 0))[1]
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith(f'Class {current_label - 1}')
+    assert layer_message['coordinates'].endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
-    assert layer_message.endswith("[No Properties]")
+    assert layer_message['coordinates'].endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
-    assert layer_message.endswith('Class 12')
+    assert layer_message['coordinates'].endswith('Class 12')
 
 
 def test_colormap():
@@ -855,7 +855,7 @@ def test_message():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     msg = layer.get_status((0, 0))
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -1449,9 +1449,17 @@ def test_get_status_with_custom_index():
         {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
     )
     layer.properties = df
-    assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
-    assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
-    assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
+    assert (
+        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+    )
+    assert (
+        layer.get_status((3, 3))['coordinates']
+        == ' [3 3]: 1; text1: 1, text2: 7'
+    )
+    assert (
+        layer.get_status((6, 6))['coordinates']
+        == ' [6 6]: 2; text1: 3, text2: -2'
+    )
 
 
 def test_labels_features_event():

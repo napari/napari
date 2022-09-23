@@ -53,11 +53,13 @@ subtrees:
           - file: howtos/napari_imageJ
           - file: howtos/docker
           - file: howtos/perfmon
+          - file: howtos/headless
       - file: guides/index
         subtrees:
         - entries:
           - file: guides/magicgui
           - file: guides/event_loop
+          - file: guides/napari_models
           - file: guides/threading
           - file: guides/3D_interactivity
           - file: guides/rendering-explanation
@@ -119,6 +121,7 @@ subtrees:
       - file: release/index
         subtrees:
         - entries:
+          - file: release/release_0_4_17
           - file: release/release_0_4_16
           - file: release/release_0_4_15
           - file: release/release_0_4_14

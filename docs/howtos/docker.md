@@ -46,7 +46,7 @@ With this image you don't need X running on the host. A browser is sufficient!
 docker run -it --rm -p 9876:9876 ghcr.io/napari/napari-xpra
 ```
 
-Once that's running, you can open a tab on your browser of choice and go to [localhost:9876](http://localhost:9876).
+Once that's running, you can open a tab on your browser of choice and go to ``http://localhost:9876``.
 You'll be presented with a virtual desktop already running running napari.
 The desktop features a basic menu at the top with some extra items, like a `Xterm` terminal.
 
