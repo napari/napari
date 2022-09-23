@@ -304,6 +304,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             interpolation2d=Event,
             interpolation3d=Event,
             rendering=Event,
+            plane=Event,
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
@@ -373,6 +374,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
+        self.plane.events.connect(lambda: self.events.plane())
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -655,6 +657,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
+        self.events.plane()
 
     @property
     def loaded(self):
