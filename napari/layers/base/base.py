@@ -316,8 +316,11 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
-        self.events = EmitterGroup(
-            source=self,
+        # do not override events if they exist already (layergroup)
+        if not hasattr(self, 'events'):
+            self.events = EmitterGroup(source=self)
+
+        self.events.add(
             refresh=Event,
             set_data=Event,
             blending=Event,
