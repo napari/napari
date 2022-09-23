@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import os
 import shutil
 import sys
@@ -135,6 +136,7 @@ class AbstractInstaller(QProcess):
             self.allFinished.emit()
             return
         self.setArguments(list(self._queue[0]))
+        logging.debug("Starting %s %s", self.program(), self.arguments())
         self.start()
 
     def _on_process_finished(
@@ -142,6 +144,12 @@ class AbstractInstaller(QProcess):
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
+        logging.debug(
+            "Finished with exit code %s and status %s. Output:\n%s",
+            exit_code,
+            exit_status,
+            self.readAll().data().decode(),
+        )
         self._process_queue()
 
 
@@ -225,7 +233,7 @@ class CondaInstaller(AbstractInstaller):
         return self._get_args('remove', pkg_list, prefix)
 
     def _get_args(self, arg0, pkg_list: Sequence[str], prefix: Optional[str]):
-        cmd = [arg0, '-y']
+        cmd = [arg0, '-yq']
         if prefix := str(prefix or self._default_prefix):
             cmd.extend(['--prefix', prefix])
         for channel in self.channels:
