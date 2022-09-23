@@ -22,6 +22,7 @@ MUST make sure that all the appropriate events are emitted.  (Tests should
 cover this in test_evented_list.py)
 """
 
+import contextlib
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
@@ -190,10 +191,8 @@ class EventedList(TypedMutableSequence[_T]):
     def _reemit_child_event(self, event: Event):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
-            try:
+            with contextlib.suppress(ValueError):
                 setattr(event, 'index', self.index(event.source))
-            except ValueError:
-                pass
         # reemit with this object's EventEmitter of the same type if present
         # otherwise just emit with the EmitterGroup itself
         getattr(self.events, event.type, self.events)(event)

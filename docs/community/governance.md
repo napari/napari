@@ -35,7 +35,7 @@ project in concrete ways, such as:
   [issues](https://github.com/napari/napari/issues) and
   [pull requests](https://github.com/napari/napari/pulls);
 - discussing examples or use cases on the
-  [image.sc forum](https://forum.image.sc/tags/napari) under the #napari tag; or
+  [image.sc forum](https://forum.image.sc/tag/napari) under the #napari tag; or
 - reviewing [open pull requests](https://github.com/napari/napari/pulls)
 
 among other possibilities. Any community member can become a contributor, and
@@ -75,7 +75,7 @@ in a reasonable timeframe, the SC is the entity that resolves the issue.
 
 Members of the SC also have the "owner" role within the [napari GitHub organization](https://github.com/napari)
 and are ultimately responsible for managing the napari GitHub account, the [@napari_imaging](https://twitter.com/napari_imaging)
-twitter account, the [napari website](http://napari.org), and other similar napari owned resources.
+twitter account, the [napari website](https://napari.org), and other similar napari owned resources.
 
 The SC will be no less than three members and no more than five members,
 with a strong preference for an odd number to ensure a simple majority vote
@@ -83,7 +83,7 @@ outcome is always possible, and a preference for five members to ensure a
 diversity of voices. All deadlocked votes of the SC will be postponed until
 there is an odd number of members and another vote can be held. A majority of the
 SC will not be employed by the same entity. One seat on the SC is reserved
-for a member elected by the [Institutional and Funding Partner Advisory Council](institutional-and-funding-partners),
+for a member elected by the [Institutional and Funding Partner Advisory Council](#institutional-and-funding-partners),
 as detailed below. This member need not be an existing core developer.
 
 The SC membership, including the Institutional and Funding Partner (IFP) seat, is revisited every January.

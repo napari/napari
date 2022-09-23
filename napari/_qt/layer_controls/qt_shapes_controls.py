@@ -38,18 +38,12 @@ class QtShapesControls(QtLayerControls):
         Button to delete selected shapes
     direct_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select individual vertices in shapes.
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
-        Thumbnail display of points edge color.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
-        Drop down list allowing user to set edge color of points.
+    edgeColorEdit : QColorSwatchEdit
+        Widget allowing user to set edge color of points.
     ellipse_button : qtpy.QtWidgets.QtModeRadioButton
         Button to add ellipses to shapes layer.
-    faceColorSwatch : qtpy.QtWidgets.QFrame
-        Thumbnail display of points face color.
-    faceComboBox : qtpy.QtWidgets.QComboBox
-        Drop down list allowing user to set face color of points.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
+    faceColorEdit : QColorSwatchEdit
+        Widget allowing user to set face color of points.
     layer : napari.layers.Shapes
         An instance of a napari Shapes layer.
     line_button : qtpy.QtWidgets.QtModeRadioButton
@@ -97,8 +91,8 @@ class QtShapesControls(QtLayerControls):
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
-        sld = QSlider(Qt.Horizontal)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(40)
         sld.setSingleStep(1)
@@ -149,7 +143,7 @@ class QtShapesControls(QtLayerControls):
             When shortcuts are modifed/added/removed via the action manager, the
             tooltip will be updated to reflect the new shortcut.
             """
-            action_name = 'napari:' + action_name
+            action_name = f'napari:{action_name}'
             btn = QtModeRadioButton(parent, btn_name, mode, **kwargs)
             action_manager.bind_button(
                 action_name,
@@ -294,7 +288,7 @@ class QtShapesControls(QtLayerControls):
         self.textDispCheckBox = text_disp_cb
 
         self.layout().addRow(button_grid)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('edge width:'), self.widthSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('face color:'), self.faceColorEdit)
@@ -341,9 +335,7 @@ class QtShapesControls(QtLayerControls):
 
         if event.mode in mode_buttons:
             mode_buttons[event.mode].setChecked(True)
-        elif event.mode == Mode.TRANSFORM:
-            pass
-        else:
+        elif event.mode != Mode.TRANSFORM:
             raise ValueError(
                 trans._("Mode '{mode}'not recognized", mode=event.mode)
             )
@@ -390,10 +382,7 @@ class QtShapesControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        if state == Qt.Checked:
-            self.layer.text.visible = True
-        else:
-            self.layer.text.visible = False
+        self.layer.text.visible = state == Qt.CheckState.Checked
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""

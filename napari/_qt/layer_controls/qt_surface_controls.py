@@ -20,8 +20,6 @@ class QtSurfaceControls(QtBaseImageControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : napari.layers.Surface
         An instance of a napari Surface layer.
 
@@ -44,10 +42,10 @@ class QtSurfaceControls(QtBaseImageControls):
             SHADING_TRANSLATION[self.layer.shading]
         )
         shading_comboBox.setCurrentIndex(index)
-        shading_comboBox.activated[str].connect(self.changeShading)
+        shading_comboBox.currentTextChanged.connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
 
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )

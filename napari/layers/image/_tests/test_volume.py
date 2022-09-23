@@ -160,7 +160,7 @@ def test_message():
     layer = Image(data)
     layer._slice_dims(ndisplay=3)
     msg = layer.get_status((0,) * 3)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_plane_drag_callback():

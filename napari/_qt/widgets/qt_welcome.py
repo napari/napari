@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -46,8 +46,8 @@ class QtWelcomeWidget(QWidget):
         # Widget setup
         self.setAutoFillBackground(True)
         self.setAcceptDrops(True)
-        self._image.setAlignment(Qt.AlignCenter)
-        self._label.setAlignment(Qt.AlignCenter)
+        self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()
@@ -82,6 +82,12 @@ class QtWelcomeWidget(QWidget):
         action_manager.events.shorcut_changed.connect(
             self._show_shortcuts_updated
         )
+
+    def minimumSizeHint(self):
+        """
+        Overwrite minimum size to allow creating small viewer instance
+        """
+        return QSize(100, 100)
 
     def _show_shortcuts_updated(self):
         shortcut_list = list(
@@ -125,11 +131,13 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragEnterEvent
             Event from the Qt context.
         """
         self._update_property("drag", True)
         if event.mimeData().hasUrls():
+            viewer = self.parentWidget().nativeParentWidget()._qt_viewer
+            viewer._set_drag_status()
             event.accept()
         else:
             event.ignore()
@@ -141,7 +149,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragLeaveEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)
@@ -153,7 +161,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)

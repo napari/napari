@@ -31,8 +31,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
         self.layer.events.shading.connect(self._on_shading_change)
-        self.layer.events._antialias.connect(self._on_antialias_change)
-        self.layer.events.experimental_canvas_size_limits.connect(
+        self.layer.events.antialiasing.connect(self._on_antialiasing_change)
+        self.layer.events.canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
 
@@ -163,8 +163,8 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _on_antialias_change(self):
-        self.node.antialias = self.layer._antialias
+    def _on_antialiasing_change(self):
+        self.node.antialias = self.layer.antialiasing
 
     def _on_shading_change(self):
         shading = self.layer.shading
@@ -174,16 +174,14 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node.spherical = False
 
     def _on_canvas_size_limits_change(self):
-        min_size, max_size = self.layer.experimental_canvas_size_limits
-        self.node.clamp_filter.min_size = min_size
-        self.node.clamp_filter.max_size = max_size
+        self.node.canvas_size_limits = self.layer.canvas_size_limits
 
     def reset(self):
         super().reset()
         self._update_text(update_node=False)
         self._on_symbol_change()
         self._on_highlight_change()
-        self._on_antialias_change()
+        self._on_antialiasing_change()
         self._on_shading_change()
         self._on_canvas_size_limits_change()
 

@@ -2,8 +2,10 @@
 Add points with features
 ========================
 
-Display a points layer on top of an image layer using the add_points and
-add_image APIs
+Display a points layer on top of an image layer using the ``add_points`` and
+``add_image`` APIs
+
+.. tags:: visualization-basic
 """
 
 import numpy as np

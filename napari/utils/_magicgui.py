@@ -58,7 +58,7 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: Type):
     ...     return np.random.rand(256, 256)
 
     """
-    from ..utils._injection._processors import _add_layer_data_to_viewer
+    from .._app_model.injection._processors import _add_layer_data_to_viewer
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
         _add_layer_data_to_viewer(
@@ -102,7 +102,9 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-    from ..utils._injection._processors import _add_layer_data_tuples_to_viewer
+    from .._app_model.injection._processors import (
+        _add_layer_data_tuples_to_viewer,
+    )
 
     if viewer := find_viewer_ancestor(gui):
         _add_layer_data_tuples_to_viewer(
@@ -186,7 +188,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
     """
-    from ..utils._injection._processors import _add_future_data
+    from .._app_model.injection._processors import _add_future_data
 
     if viewer := find_viewer_ancestor(gui):
         _add_future_data(
@@ -358,7 +360,37 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     ...     return napari.layers.Image(np.random.rand(64, 64))
 
     """
-    from ..utils._injection._processors import _add_layer_to_viewer
+    add_layers_to_viewer(gui, [result], List[return_type])
 
-    if result is not None and (viewer := find_viewer_ancestor(gui)):
-        _add_layer_to_viewer(result, viewer=viewer, source={'widget': gui})
+
+def add_layers_to_viewer(gui, result: Any, return_type: List[Layer]) -> None:
+    """Show a magicgui result in the viewer.
+
+    Parameters
+    ----------
+    gui : MagicGui or QWidget
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    result : Any
+        The result of the function call.
+    return_type : type
+        The return annotation that was used in the decorated function.
+
+    Examples
+    --------
+    This allows the user to do this, and add the resulting layer to the viewer.
+
+    >>> @magicgui
+    ... def make_layer() -> List[napari.layers.Layer]:
+    ...     return napari.layers.Image(np.random.rand(64, 64))
+
+    """
+    from .._app_model.injection._processors import _add_layer_to_viewer
+
+    viewer = find_viewer_ancestor(gui)
+    if not viewer:
+        return
+
+    for item in result:
+        if item is not None:
+            _add_layer_to_viewer(item, viewer=viewer, source={'widget': gui})

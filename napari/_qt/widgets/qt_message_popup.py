@@ -15,7 +15,7 @@ class WarnPopup(QDialog):
     ):
         super().__init__(parent)
 
-        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
 
         # Widgets
         self._message = QLabel()

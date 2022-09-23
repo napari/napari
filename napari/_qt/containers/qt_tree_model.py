@@ -33,9 +33,10 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         A given class:`QModelIndex` can store multiple types of data, each with
         its own "ItemDataRole".
         """
-        if role == Qt.DisplayRole:
-            return self.getItem(index)._node_name()
-        if role == Qt.UserRole:
+        item = self.getItem(index)
+        if role == Qt.ItemDataRole.DisplayRole:
+            return item._node_name()
+        if role == Qt.ItemDataRole.UserRole:
             return self.getItem(index)
         if role == SortRole:
             return index.row()
@@ -152,7 +153,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         bool ``True`` if the `data` and `action` were handled by the model;
             otherwise returns ``False``.
         """
-        if not data or action != Qt.MoveAction:
+        if not data or action != Qt.DropAction.MoveAction:
             return False
         if not data.hasFormat(self.mimeTypes()[0]):
             return False

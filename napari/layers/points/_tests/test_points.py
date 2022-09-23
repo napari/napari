@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import cycle, islice
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from napari._tests.utils import (
     check_layer_world_data_extent,
 )
 from napari.layers import Points
+from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -637,8 +639,8 @@ def test_properties(properties):
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
 
-    assert layer.get_status(data[0]).endswith("point_type: B")
-    assert layer.get_status(data[1]).endswith("point_type: A")
+    assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
+    assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -883,7 +885,7 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    np.testing.assert_array_equal(layer.edge_width, 0.1)
+    np.testing.assert_array_equal(layer.edge_width, 0.05)
 
     layer.edge_width = 0.5
     np.testing.assert_array_equal(layer.edge_width, 0.5)
@@ -904,6 +906,34 @@ def test_edge_width():
     layer = Points(data, edge_width=3, edge_width_is_relative=False)
     np.testing.assert_array_equal(layer.edge_width, 3)
     assert layer.edge_width_is_relative is False
+    with pytest.raises(ValueError):
+        layer.edge_width = -2
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+)
+def test_edge_width_types(edge_width):
+    """Test edge_width dtypes with valid values"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, edge_width)
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+)
+def test_edge_width_types_negative(edge_width):
+    """Test negative values in all edge_width dtypes"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    with pytest.raises(ValueError):
+        Points(data, edge_width=edge_width, edge_width_is_relative=False)
 
 
 def test_out_of_slice_display():
@@ -1608,7 +1638,7 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -1620,7 +1650,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -2418,3 +2448,57 @@ def test_empty_data_from_tuple():
     layer = Points(name="points")
     layer2 = Points.create(*layer.as_layer_data_tuple())
     assert layer2.data.size == 0
+
+
+@pytest.mark.parametrize(
+    'attribute, new_value',
+    [
+        ("size", [20, 20]),
+        ("face_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_color", np.asarray([0.0, 0.0, 1.0, 1.0])),
+        ("edge_width", np.asarray([0.2])),
+    ],
+)
+def test_new_point_size_editable(attribute, new_value):
+    """tests the newly placed points may be edited without re-selecting"""
+    layer = Points()
+    layer.mode = Mode.ADD
+    layer.add((0, 0))
+
+    setattr(layer, f"current_{attribute}", new_value)
+    np.testing.assert_allclose(getattr(layer, attribute)[0], new_value)
+
+
+def test_antialiasing_setting_and_event_emission():
+    """Antialiasing changing should cause event emission."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    layer.events.antialiasing = Mock()
+    layer.antialiasing = 5
+    assert layer.antialiasing == 5
+    layer.events.antialiasing.assert_called_once()
+
+
+def test_antialiasing_value_clipping():
+    """Antialiasing can only be set to positive values."""
+    data = [[0, 0, 0], [1, 1, 1]]
+    layer = Points(data)
+    with pytest.warns(RuntimeWarning):
+        layer.antialiasing = -1
+    assert layer.antialiasing == 0
+
+
+def test_set_drag_start():
+    """Drag start should only change when currently None."""
+    data = [[0, 0], [1, 1]]
+    layer = Points(data)
+    assert layer._drag_start is None
+    position = (0, 1)
+    layer._set_drag_start({0}, position=position)
+    assert all(
+        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    )
+    layer._set_drag_start({0}, position=(1, 2))
+    assert all(
+        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    )

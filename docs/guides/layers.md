@@ -56,11 +56,12 @@ All our layers support three blending modes: `translucent`, `additive`, and
 `opaque`. These modes determine how the visuals for this layer get mixed with
 the visuals from the other layers.
 
-* An `opaque` layer renders all the other layers below it invisible and will
-fade to black as you decrease its opacity.
+* An `opaque` layer hides any layer data below it.
 * A `translucent` setting will cause the layer to blend with the layers below
 it if you decrease its opacity but will fully block those layers if its opacity
 is `1`. This is a reasonable default, useful for many applications.
+* A `minimum` blending mode will cause the layer to blend using the minimum of each pixel's R, G, and B values. This mode is uniquely useful for
+blending multiple layers with inverted colormaps/LUTs, which represent measured signal with color on a white background. For some inspiration, see the twitter hashtag [#invertedLUT](https://twitter.com/hashtag/invertedLUT).
 * An `additive` blending mode will cause the layer to blend with the layers
 below even when it has full opacity. This mode is especially useful for
 visualizing multiple layers at the same time, such as cell biology applications

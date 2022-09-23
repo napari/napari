@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 import numpy as np
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
-from qtpy.QtGui import QColor, QKeyEvent
+from qtpy.QtGui import QColor, QKeyEvent, QMouseEvent
 from qtpy.QtWidgets import (
     QColorDialog,
     QCompleter,
@@ -154,7 +154,7 @@ class QColorSwatch(QFrame):
         super().__init__(parent)
         self.setObjectName('colorSwatch')
         self.setToolTip(tooltip or trans._('click to set color'))
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.color_changed.connect(self._update_swatch_style)
         self._color: np.ndarray = TRANSPARENT
@@ -172,9 +172,9 @@ class QColorSwatch(QFrame):
         rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
-    def mouseReleaseEvent(self, event: QEvent):
+    def mouseReleaseEvent(self, event: QMouseEvent):
         """Show QColorPopup picker when the user clicks on the swatch."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             initial = QColor(*(255 * self._color).astype('int'))
             popup = QColorPopup(self, initial)
             popup.colorSelected.connect(self.setColor)
@@ -306,8 +306,8 @@ class QColorPopup(QtPopup):
         event : QKeyEvent
             The keypress event that triggered this method.
         """
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             return self.color_dialog.accept()
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             return self.color_dialog.reject()
         self.color_dialog.keyPressEvent(event)

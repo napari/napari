@@ -67,7 +67,7 @@ napari can take any numpy-like array as input for its image layer. A numpy-like
 array can just be a
 [numpy array](https://numpy.org/doc/stable/reference/generated/numpy.array.html),
 a [dask array](https://docs.dask.org/en/stable/array.html), an
-[xarray](http://xarray.pydata.org/en/stable/generated/xarray.DataArray.html), a
+[xarray](https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html), a
 [zarr array](https://zarr.readthedocs.io/en/stable/api/core.html), or any other
 object that you can index into and when you call
 [`np.asarray`](https://numpy.org/doc/stable/reference/generated/numpy.asarray.html)
@@ -293,3 +293,13 @@ can.
 
 Currently if you pass contrast limits as a keyword argument to a layer then full
 extent of the contrast limits range slider will be set to those values.
+
+## Saving without image compression
+
+When saving an image layer, lossless zlib compression is applied by default. 
+ To save with a different level of compression, consider using 
+ [imageio.imwrite](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.v3.imwrite.html).  
+Adjusting compression can be accomplished by including the appropriate kwargs 
+as outlined in the following locations for 
+[tiff](https://imageio.readthedocs.io/en/stable/_autosummary/imageio.plugins.tifffile.html#metadata-for-writing) or 
+[png](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png) files. 

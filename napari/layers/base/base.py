@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import os.path
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
@@ -10,10 +11,16 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+from npe2 import plugin_manager as pm
 
 from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import add_layer_to_viewer, get_layers
-from ...utils.events.event import EmitterGroup, Event, WarningEmitter
+from ...utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
+)
+from ...utils.events import EmitterGroup, Event
+from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -21,11 +28,10 @@ from ...utils.geometry import (
 from ...utils.key_bindings import KeymapProvider
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_status
+from ...utils.status_messages import generate_layer_coords_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from ...utils.tree import Node
-from .._source import current_source
 from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
     coerce_affine,
@@ -96,7 +102,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', 'translucent_no_depth', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', 'additive', and 'minimum'}.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -121,17 +127,25 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         * ``Blending.TRANSLUCENT``
           Allows for multiple layers to be blended with different opacity and
           corresponds to ``depth_test=True``, ``cull_face=False``,
-          ``blend=True``, ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+          ``blend=True``, ``blend_func=('src_alpha', 'one_minus_src_alpha')``,
+          and ``blend_equation=('func_add')``.
         * ``Blending.TRANSLUCENT_NO_DEPTH``
           Allows for multiple layers to be blended with different opacity, but
           no depth testing is performed. Corresponds to ``depth_test=False``,
           ``cull_face=False``, ``blend=True``,
-          ``blend_func=('src_alpha', 'one_minus_src_alpha')``.
+          ``blend_func=('src_alpha', 'one_minus_src_alpha')``, and
+          ``blend_equation=('func_add')``.
         * ``Blending.ADDITIVE``
           Allows for multiple layers to be blended together with different
           colors and opacity. Useful for creating overlays. It corresponds to
           ``depth_test=False``, ``cull_face=False``, ``blend=True``,
-          ``blend_func=('src_alpha', 'one')``.
+          ``blend_func=('src_alpha', 'one')``, and ``blend_equation=('func_add')``.
+        * ``Blending.MINIMUM``
+            Allows for multiple layers to be blended together such that
+            the minimum of each RGB component and alpha are selected.
+            Useful for creating overlays with inverted colormaps. It
+            corresponds to ``depth_test=False``, ``cull_face=False``, ``blend=True``,
+            ``blend_equation=('min')``.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -160,15 +174,11 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         Currently, this only applies to dask arrays.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
-    coordinates : tuple of float
-        Cursor position in data coordinates.
     corner_pixels : array
         Coordinates of the top-left and bottom-right canvas pixels in the data
         coordinates of each layer. For multiscale data the coordinates are in
         the space of the currently viewed data level, not the highest resolution
         level.
-    position : tuple
-        Cursor position in world coordinates.
     ndim : int
         Dimensionality of the layer.
     thumbnail : (N, M, 4) array
@@ -225,6 +235,19 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
 
         if name is None and data is not None:
             name = magic_name(data)
+
+        if scale is not None and not np.all(scale):
+            raise ValueError(
+                trans._(
+                    "Layer {name} is invalid because it has scale values of 0. The layer's scale is currently {scale}",
+                    deferred=True,
+                    name=repr(name),
+                    scale=repr(scale),
+                )
+            )
+
+        # Needs to be imported here to avoid circular import in _source
+        from .._source import current_source
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -293,55 +316,44 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
-        _events = dict.fromkeys(
-            (
-                'refresh',
-                'set_data',
-                'blending',
-                'opacity',
-                'visible',
-                'scale',
-                'translate',
-                'rotate',
-                'shear',
-                'affine',
-                'data',
-                'name',
-                'thumbnail',
-                'status',
-                'help',
-                'interactive',
-                'cursor',
-                'cursor_size',
-                'editable',
-                'loaded',
-                '_ndisplay',
-            )
-        )
-        _events['select'] = WarningEmitter(
-            trans._(
-                "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
-                deferred=True,
+        self.events = EmitterGroup(
+            source=self,
+            refresh=Event,
+            set_data=Event,
+            blending=Event,
+            opacity=Event,
+            visible=Event,
+            scale=Event,
+            translate=Event,
+            rotate=Event,
+            shear=Event,
+            affine=Event,
+            data=Event,
+            name=Event,
+            thumbnail=Event,
+            status=Event,
+            help=Event,
+            interactive=Event,
+            cursor=Event,
+            cursor_size=Event,
+            editable=Event,
+            loaded=Event,
+            _ndisplay=Event,
+            select=WarningEmitter(
+                trans._(
+                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
+                    deferred=True,
+                ),
+                type='select',
             ),
-            type='select',
-        )
-        _events['deselect'] = WarningEmitter(
-            trans._(
-                "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
-                deferred=True,
+            deselect=WarningEmitter(
+                trans._(
+                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
+                    deferred=True,
+                ),
+                type='deselect',
             ),
-            type='deselect',
         )
-
-        # For inheritance: If the mro already provides an EmitterGroup, add...
-        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
-            self.events.add(**_events)
-        else:
-            # otherwise create a new one
-            self.events = EmitterGroup(
-                source=self, auto_connect=False, **_events
-            )
-
         self.name = name
 
     def __str__(self):
@@ -407,7 +419,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         return f'{cls.__name__}'
 
     @property
-    def name(self) -> str:
+    def name(self):
         """str: Unique name of the layer."""
         return self._name
 
@@ -473,12 +485,24 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         Blending.TRANSLUCENT
             Allows for multiple layers to be blended with different opacity
             and corresponds to depth_test=True, cull_face=False,
-            blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'),
+            and blend_equation=('func_add').
+        Blending.TRANSLUCENT_NO_DEPTH
+          Allows for multiple layers to be blended with different opacity, but
+          no depth testing is performed. Corresponds to ``depth_test=False``,
+          cull_face=False, blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'),
+          and blend_equation=('func_add').
         Blending.ADDITIVE
             Allows for multiple layers to be blended together with
             different colors and opacity. Useful for creating overlays. It
             corresponds to depth_test=False, cull_face=False, blend=True,
-            blend_func=('src_alpha', 'one').
+            blend_func=('src_alpha', 'one'), and blend_equation=('func_add').
+        Blending.MINIMUM
+            Allows for multiple layers to be blended together such that
+            the minimum of each RGB component and alpha are selected.
+            Useful for creating overlays with inverted colormaps. It
+            corresponds to depth_test=False, cull_face=False, blend=True,
+            blend_equation=('min').
         """
         return str(self._blending)
 
@@ -1019,7 +1043,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
 
     def get_value(
         self,
-        position,
+        position: Tuple[float],
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
@@ -1031,7 +1055,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
 
         Parameters
         ----------
-        position : tuple
+        position : tuple of float
             Position in either data or world coordinates.
         view_direction : Optional[np.ndarray]
             A unit vector giving the direction of the ray in nD world coordinates.
@@ -1566,28 +1590,27 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         )
 
         # find the maximal data-axis-aligned bounding box containing all four
-        # canvas corners
+        # canvas corners and round them to ints
         data_bbox = np.stack(
             [np.min(data_corners, axis=0), np.max(data_corners, axis=0)]
         )
-        # round and clip the bounding box values
         data_bbox_int = np.stack(
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
-        displayed_extent = self.extent.data[:, displayed_axes]
-        data_bbox_clipped = np.clip(
-            data_bbox_int, displayed_extent[0], displayed_extent[1]
-        )
 
         if self._ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
-                data_bbox_clipped,
+                data_bbox_int,
                 shape_threshold,
                 self.downsample_factors[:, displayed_axes],
             )
-            corners = np.zeros((2, self.ndim))
-            corners[:, displayed_axes] = scaled_corners
-            corners = corners.astype(int)
+            corners = np.zeros((2, self.ndim), dtype=int)
+            # The corner_pixels attribute stores corners in the data
+            # space of the selected level. Using the level's data
+            # shape only works for images, but that's the only case we
+            # handle now and downsample_factors is also only on image layers.
+            max_coords = np.take(self.data[level].shape, displayed_axes)
+            corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
             display_shape = tuple(
                 corners[1, displayed_axes] - corners[0, displayed_axes]
             )
@@ -1601,24 +1624,77 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
                 self.refresh()
 
         else:
+            # The stored corner_pixels attribute must contain valid indices.
+            displayed_extent = self.extent.data[:, displayed_axes]
+            data_bbox_clipped = np.clip(
+                data_bbox_int, displayed_extent[0], displayed_extent[1]
+            )
             corners = np.zeros((2, self.ndim), dtype=int)
             corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
+    def _get_source_info(self):
+        components = {}
+        if self.source.reader_plugin:
+            components['layer_base'] = os.path.basename(self.source.path or '')
+            components['source_type'] = 'plugin'
+            try:
+                components['plugin'] = pm.get_manifest(
+                    self.source.reader_plugin
+                ).display_name
+            except KeyError:
+                components['plugin'] = self.source.reader_plugin
+            return components
+
+        elif self.source.sample:
+            components['layer_base'] = self.name
+            components['source_type'] = 'sample'
+            try:
+                components['plugin'] = pm.get_manifest(
+                    self.source.sample[0]
+                ).display_name
+            except KeyError:
+                components['plugin'] = self.source.sample[0]
+            return components
+
+        elif self.source.widget:
+            components['layer_base'] = self.name
+            components['source_type'] = 'widget'
+            components['plugin'] = self.source.widget._function.__name__
+            return components
+
+        else:
+            components['layer_base'] = self.name
+            components['source_type'] = ''
+            components['plugin'] = ''
+            return components
+
+    def get_source_str(self):
+
+        source_info = self._get_source_info()
+
+        return (
+            source_info['layer_base']
+            + ', '
+            + source_info['source_type']
+            + ' : '
+            + source_info['plugin']
+        )
+
     def get_status(
         self,
-        position: np.ndarray,
+        position: Optional[Tuple[float, ...]] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world=False,
     ):
         """
-        Status message of the data at a coordinate position.
+        Status message information of the data at a coordinate position.
 
         Parameters
         ----------
-        position : tuple
+        position : tuple of float
             Position in either data or world coordinates.
         view_direction : Optional[np.ndarray]
             A unit vector giving the direction of the ray in nD world coordinates.
@@ -1632,16 +1708,24 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
 
         Returns
         -------
-        msg : string
-            String containing a message that can be used as a status update.
+        source_info : dict
+            Dictionary containing a information that can be used as a status update.
         """
-        value = self.get_value(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
+        if position is not None:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        else:
+            value = None
+
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position, value
         )
-        return generate_layer_status(self.name, position, value)
+        return source_info
 
     def _get_tooltip_text(
         self,
@@ -1790,3 +1874,6 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
                     layer_type=layer_type,
                 )
             ) from exc
+
+
+mgui.register_type(type_=List[Layer], return_callback=add_layers_to_viewer)

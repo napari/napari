@@ -22,8 +22,6 @@ class QtTracksControls(QtLayerControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : layers.Tracks
         An instance of a Tracks layer.
 
@@ -53,22 +51,22 @@ class QtTracksControls(QtLayerControls):
             self.colormap_combobox.addItem(display_name, name)
 
         # slider for track head length
-        self.head_length_slider = QSlider(Qt.Horizontal)
-        self.head_length_slider.setFocusPolicy(Qt.NoFocus)
+        self.head_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.head_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.head_length_slider.setMinimum(0)
         self.head_length_slider.setMaximum(self.layer._max_length)
         self.head_length_slider.setSingleStep(1)
 
         # slider for track tail length
-        self.tail_length_slider = QSlider(Qt.Horizontal)
-        self.tail_length_slider.setFocusPolicy(Qt.NoFocus)
+        self.tail_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_length_slider.setMinimum(1)
         self.tail_length_slider.setMaximum(self.layer._max_length)
         self.tail_length_slider.setSingleStep(1)
 
         # slider for track edge width
-        self.tail_width_slider = QSlider(Qt.Horizontal)
-        self.tail_width_slider.setFocusPolicy(Qt.NoFocus)
+        self.tail_width_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_width_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_width_slider.setMinimum(1)
         self.tail_width_slider.setMaximum(int(2 * self.layer._max_width))
         self.tail_width_slider.setSingleStep(1)
@@ -92,7 +90,7 @@ class QtTracksControls(QtLayerControls):
         self.layout().addRow(trans._('color by:'), self.color_by_combobox)
         self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
         self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
         self.layout().addRow(trans._('head length:'), self.head_length_slider)
@@ -144,7 +142,7 @@ class QtTracksControls(QtLayerControls):
             color_by = self.layer.color_by
 
             idx = self.color_by_combobox.findText(
-                color_by, Qt.MatchFixedString
+                color_by, Qt.MatchFlag.MatchFixedString
             )
             self.color_by_combobox.setCurrentIndex(idx)
 

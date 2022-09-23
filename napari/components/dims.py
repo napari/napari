@@ -1,9 +1,9 @@
 from numbers import Integral
+from typing import Literal  # Added to typing in 3.8
 from typing import Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
-from typing_extensions import Literal  # Added to typing in 3.8
 
 from ..utils.events import EventedModel
 from ..utils.translations import trans
@@ -155,7 +155,7 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[int, ...]:
         """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
-            int((max_val - min_val) // step_size)
+            int((max_val - min_val) / step_size)
             for min_val, max_val, step_size in self.range
         )
 

@@ -2,7 +2,7 @@
 
 ImageJ is a Java-based image processing program that provides extensibility via Java plugins and recordable macros. It can display, edit, analyze, process, save, and print 8-bit color and grayscale, 16-bit integer, and 32-bit floating point images. It can read many image file formats, including TIFF, PNG, GIF, JPEG, BMP, DICOM, and FITS, as well as raw formats. It has a plethora of features that can be checked out [here](https://en.wikipedia.org/wiki/ImageJ#Features).
 
-People who wish to try their hands on ImageJ can do so by downloading and installing it using this [link](https://imagej.net/Fiji/Downloads)
+People who wish to try their hands on ImageJ can do so by downloading and installing it using this [link](https://imagej.net/software/fiji/downloads)
 
 ## Reading images with ImageJ and viewing them with napari
 
@@ -101,7 +101,7 @@ To fix this we can use either of these 3 following methods :
     ij.script().run('.groovy', "#@ ImageJ ij\nij.ui().showDialog('hello')", True)
     ```
 
-3. Using ImageJ’s [Script Editor](https://imagej.net/Using_the_Script_Editor)
+3. Using ImageJ’s [Script Editor](https://imagej.net/scripting/script-editor)
 
 #### 2. Starting napari + ImageJ from plain Python (without napari's Qt Console)
 Here is a plain Python script that starts up Qt and spins up ImageJ without use of napari's Qt Console. 

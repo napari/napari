@@ -4,6 +4,8 @@ Add points with multicolor text
 
 Display a points layer on top of an image layer with text using
 multiple face colors mapped from features for the points and text.
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
