@@ -36,6 +36,7 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_canvas_size_limits_change
         )
 
+        self.reset()
         self._on_data_change()
 
     def _on_data_change(self):
@@ -79,7 +80,7 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=face_color,
         )
 
-        self.reset()
+        self._update_text(update_node=False)
 
     def _on_symbol_change(self):
         self.node.symbol = self.layer.symbol
