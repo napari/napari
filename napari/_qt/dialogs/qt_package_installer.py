@@ -148,7 +148,7 @@ class AbstractInstaller(QProcess):
             "Finished with exit code %s and status %s. Output:\n%s",
             exit_code,
             exit_status,
-            self.readAll().data().decode(),
+            "this makes Windows hang?" # self.readAll().data().decode(),
         )
         self._process_queue()
 
