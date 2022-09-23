@@ -138,6 +138,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
+    custom_interpolation_kernel : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Attributes
     ----------
@@ -197,6 +199,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         {'position', 'normal', 'thickness'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
+    custom_interpolation_kernel : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Notes
     -----
@@ -239,6 +243,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
+        custom_interpolation_kernel=None,
     ):
         if name is None and data is not None:
             name = magic_name(data)
@@ -307,6 +312,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
+            custom_interpolation_kernel=Event,
         )
 
         self._array_like = True
@@ -373,6 +379,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
+        self.custom_interpolation_kernel = custom_interpolation_kernel
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -597,6 +604,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
+        if value == 'custom':
+            raise NotImplementedError(
+                'custom interpolation is not implemented yet for 3D rendering'
+            )
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
@@ -655,6 +666,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
+
+    @property
+    def custom_interpolation_kernel(self):
+        return self._custom_interpolation_kernel
+
+    @custom_interpolation_kernel.setter
+    def custom_interpolation_kernel(self, value):
+        if value is None:
+            value = [[1]]
+        self._custom_interpolation_kernel = np.array(value, np.float32)
+        self.events.custom_interpolation_kernel()
 
     @property
     def loaded(self):

@@ -80,6 +80,9 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_plane_thickness_change
         )
         self.layer.plane.events.normal.connect(self._on_plane_normal_change)
+        self.layer.events.custom_interpolation_kernel.connect(
+            self._on_custom_interpolation_kernel_change
+        )
 
         # display_change is special (like data_change) because it requires a self.reset()
         # this means that we have to call it manually. Also, it must be called before reset
@@ -157,6 +160,10 @@ class VispyImageLayer(VispyBaseLayer):
             else self.layer.interpolation3d
         )
 
+    def _on_custom_interpolation_kernel_change(self):
+        if self.layer._ndisplay == 2:
+            self.node.custom_kernel = self.layer.custom_interpolation_kernel
+
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.method = self.layer.rendering
@@ -229,6 +236,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_plane_position_change()
         self._on_plane_normal_change()
         self._on_plane_thickness_change()
+        self._on_custom_interpolation_kernel_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
