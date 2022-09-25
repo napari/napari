@@ -71,6 +71,8 @@ def _add_layer_data_to_viewer(
         if layer_name:
             with suppress(KeyError):
                 viewer.layers[layer_name].data = data
+                viewer.layers[layer_name].reset_contrast_limits_range()
+                viewer.layers[layer_name].reset_contrast_limits()
                 return
         layer_type = return_type.__name__.replace("Data", "").lower()
         with layer_source(**source) if source else nullcontext():
