@@ -8,7 +8,7 @@ import napari.viewer
 """
 This example generates many random shapes.
 
-There currently is a bug in traingulation that requires this additional step of sanitizing the shape data: https://github.com/orgs/napari/projects/18/views/2
+There currently is a bug in triangulation that requires this additional step of sanitizing the shape data: https://github.com/orgs/napari/projects/18/views/2
 """
 
 
