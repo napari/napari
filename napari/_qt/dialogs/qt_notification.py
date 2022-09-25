@@ -358,38 +358,7 @@ class NapariQtNotification(QDialog):
         if isinstance(notification, ErrorNotification):
 
             def show_tb(parent_):
-                tbdialog = QDialog(parent=parent_.parent())
-                tbdialog.setModal(True)
-                # this is about the minimum width to not get rewrap
-                # and the minimum height to not have scrollbar
-                tbdialog.resize(650, 270)
-                tbdialog.setLayout(QVBoxLayout())
-
-                text = QTextEdit()
-                theme = get_theme(
-                    get_settings().appearance.theme, as_dict=False
-                )
-                _highlight = Pylighter(  # noqa: F841
-                    text.document(), "python", theme.syntax_style
-                )
-                text.setText(notification.as_text())
-                text.setReadOnly(True)
-                btn = QPushButton(trans._('Enter Debugger'))
-
-                def _enter_debug_mode():
-                    btn.setText(
-                        trans._(
-                            'Now Debugging. Please quit debugger in console to continue'
-                        )
-                    )
-                    _debug_tb(notification.exception.__traceback__)
-                    btn.setText(trans._('Enter Debugger'))
-
-                btn.clicked.connect(_enter_debug_mode)
-                tbdialog.layout().addWidget(text)
-                tbdialog.layout().addWidget(
-                    btn, 0, Qt.AlignmentFlag.AlignRight
-                )
+                tbdialog = TracebackDialog(notification, parent_.parent())
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
@@ -436,3 +405,32 @@ def _debug_tb(tb):
         print("Entering debugger. Type 'q' to return to napari.\n")
         pdb.post_mortem(tb)
         print("\nDebugging finished.  Napari active again.")
+
+
+class TracebackDialog(QDialog):
+    def __init__(self, exception, parent=None):
+        super().__init__(parent=parent)
+        self.exception = exception
+        self.setModal(True)
+        self.setLayout(QVBoxLayout())
+        self.resize(650, 270)
+        text = QTextEdit()
+        theme = get_theme(get_settings().appearance.theme, as_dict=False)
+        _highlight = Pylighter(  # noqa: F841
+            text.document(), "python", theme.syntax_style
+        )
+        text.setText(exception.as_text())
+        text.setReadOnly(True)
+        self.btn = QPushButton(trans._('Enter Debugger'))
+        self.btn.clicked.connect(self._enter_debug_mode)
+        self.layout().addWidget(text)
+        self.layout().addWidget(self.btn, 0, Qt.AlignmentFlag.AlignRight)
+
+    def _enter_debug_mode(self):
+        self.btn.setText(
+            trans._(
+                'Now Debugging. Please quit debugger in console to continue'
+            )
+        )
+        _debug_tb(self.exception.__traceback__)
+        self.btn.setText(trans._('Enter Debugger'))

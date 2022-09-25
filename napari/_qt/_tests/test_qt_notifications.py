@@ -192,8 +192,14 @@ def test_notification_error(mock_show, monkeypatch, qtbot):
     except ValueError as e:
         notif = ErrorNotification(e)
 
-    dialog = NapariQtNotification.from_notification(notif)
-    qtbot.add_widget(dialog)
+    # This test creates TracebackDialog which is not added to qtbot
+    # but its parent is same as parent of NapariQtNotification.
+    # so create dummy parent allow to not leak widget.
+    widget = QWidget()
+    qtbot.add_widget(widget)
+
+    dialog = NapariQtNotification.from_notification(notif, parent=widget)
+
     bttn = dialog.row2_widget.findChild(QPushButton)
     assert bttn.text() == 'View Traceback'
     mock_show.assert_not_called()
