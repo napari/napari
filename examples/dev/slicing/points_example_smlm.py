@@ -17,6 +17,7 @@ More information is available here: http://www.neurocytolab.org/tscolumns/
 storm_path = pooch.retrieve(
     url='http://www.neurocytolab.org/wp-content/uploads/2018/06/ThunderSTORM_TS3D.csv',
     known_hash='665a28b2fad69dbfd902e4945df04667f876d33a91167614c280065212041a29',
+    progressbar=True
 )
 
 with open(storm_path) as csvfile:

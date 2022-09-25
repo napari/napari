@@ -3,7 +3,11 @@
 The examples in this directory are for developers to test various aspects
 of layer slicing. These are primarily designed to aid in the async effort ([NAP 4](../../../docs/naps/4-async-slicing.md)).
 
+
 ## Examples
+
+Examples using [pooch](https://pypi.org/project/pooch/) will cache data locally, with an [OS-dependant path](https://www.fatiando.org/pooch/latest/api/generated/pooch.os_cache.html?highlight=cache#pooch.os_cache).
+
 
 ### Examples of desirable behavior
 
