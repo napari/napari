@@ -175,7 +175,7 @@ def test_notification_display(
     assert not dialog.property('expanded')
 
 
-@patch('napari._qt.dialogs.qt_notification.QDialog.show')
+@patch('napari._qt.dialogs.qt_notification.TracebackDialog.show')
 def test_notification_error(mock_show, monkeypatch, qtbot):
     from napari.settings import get_settings
 
