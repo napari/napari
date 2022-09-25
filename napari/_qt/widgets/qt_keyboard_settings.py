@@ -409,36 +409,28 @@ class ShortcutEditor(QWidget):
                 elif ind < len(shortcuts_list):
                     shortcuts_list.pop(col - self._shortcut_col)
                 new_value_dict = {}
-                if new_shortcut != "":
-                    # Bind the new shortcut.
-                    try:
-                        for short in shortcuts_list:
-                            action_manager.bind_shortcut(current_action, short)
-                    except TypeError:
-                        self._show_bind_shortcut_error(
-                            current_action,
-                            current_shortcuts,
-                            row,
-                            new_shortcut,
-                        )
-                        return
+                # Bind the new shortcut.
+                try:
+                    for short in shortcuts_list:
+                        action_manager.bind_shortcut(current_action, short)
+                except TypeError:
+                    self._show_bind_shortcut_error(
+                        current_action,
+                        current_shortcuts,
+                        row,
+                        new_shortcut,
+                    )
+                    return
 
-                    # The new shortcut is valid and can be displayed in widget.
+                # The new shortcut is valid and can be displayed in widget.
 
-                    # Keep track of what changed.
-                    new_value_dict = {current_action: shortcuts_list}
-
-                    # Format new shortcut.
-
-                elif action_manager._shortcuts[current_action]:
-                    # There is not a new shortcut to bind.  Keep track of it.
-                    new_value_dict = {current_action: shortcuts_list}
+                # Keep track of what changed.
+                new_value_dict = {current_action: shortcuts_list}
 
                 self._restore_shortcuts(row)
 
-                if new_value_dict:
-                    # Emit signal when new value set for shortcut.
-                    self.valueChanged.emit(new_value_dict)
+                # Emit signal when new value set for shortcut.
+                self.valueChanged.emit(new_value_dict)
 
     def _show_warning_icons(self, rows):
         """Creates and displays the warning icons.

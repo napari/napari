@@ -22,11 +22,11 @@ https://napari.org
 After the 0.2.5 release, which was our first publicly-announced release, we
 worked to rapidly turn napari into a mature library in the scientific Python
 ecosystem. We added a [code of
-conduct](https://napari.org/community/code_of_conduct.html), a [mission
+conduct](https://napari.org/stable/community/code_of_conduct.html), a [mission
 and values
-document](https://napari.org/docs/community/mission_and_values.html), and
+document](https://napari.org/stable/community/mission_and_values.html), and
 adopted a [community governance
-model](https://napari.org/docs/community/governance.html) (based on
+model](https://napari.org/stable/community/governance.html) (based on
 scikit-image's, and since adopted with modifications by zarr). These are
 accessible from our [developer resources
 page](https://napari.org/developers/index.html), together with a [public
@@ -42,7 +42,7 @@ or as an issue in our [issue tracker](https://github.com/napari/napari/issues).
 ### Getting in touch
 
 We joined the [image.sc forum](https://forum.image.sc) and actively monitor it
-([under the "napari" tag](https://forum.image.sc/tags/napari)) to help users
+([under the "napari" tag](https://forum.image.sc/tag/napari)) to help users
 with any issues they might have using napari and have discussions about
 exciting ways to use napari. If you're new to napari and getting started this
 is the first place you should go for help.
@@ -100,7 +100,7 @@ how to generate your own
 pyramid](https://scikit-image.org/docs/dev/auto_examples/transform/plot_pyramid.html)
 from `scikit-image`. For large arrays, users may want to look at the
 [`dask.array.coarsen`
-documentation](https://docs.dask.org/en/latest/array-api.html#dask.array.coarsen)
+documentation](https://docs.dask.org/en/stable/generated/dask.array.coarsen.html)
 
 If you submit an image pyramid, napari will automatically detect it as such. To
 turn off automatic detection, you can now pass the `multiscale=True/False`

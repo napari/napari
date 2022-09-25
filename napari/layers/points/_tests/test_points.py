@@ -885,7 +885,7 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    np.testing.assert_array_equal(layer.edge_width, 0.1)
+    np.testing.assert_array_equal(layer.edge_width, 0.05)
 
     layer.edge_width = 0.5
     np.testing.assert_array_equal(layer.edge_width, 0.5)

@@ -202,7 +202,7 @@ class VispyAxesOverlay:
         self.text_node = self.node._subvisuals[2]
         self.text_node.font_size = 10
         self.text_node.anchors = ('center', 'center')
-        self.text_node.text = f'{1}'
+        self.text_node.text = '1'
 
         self.node.canvas._backend.destroyed.connect(self._set_canvas_none)
         # End Note

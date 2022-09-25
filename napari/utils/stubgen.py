@@ -86,6 +86,9 @@ def generate_function_stub(func) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
 
+    if hasattr(func, "__wrapped__"):
+        # unwrap @wraps decorated functions
+        func = func.__wrapped__
     globalns = {**getattr(func, '__globals__', {})}
     globalns.update(vars(typing))
     globalns.update(getattr(func, '_forwardrefns_', {}))
