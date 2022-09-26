@@ -127,10 +127,16 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
-        layer = event.value
-        controls = create_qt_layer_controls(layer)
-        self.addWidget(controls)
-        self.widgets[layer] = controls
+
+        def add_children(layer):
+            if layer.is_group():
+                for child in layer:
+                    add_children(child)
+            controls = create_qt_layer_controls(layer)
+            self.addWidget(controls)
+            self.widgets[layer] = controls
+
+        add_children(event.value)
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -140,11 +146,17 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
-        layer = event.value
-        controls = self.widgets[layer]
-        self.removeWidget(controls)
-        # controls.close()
-        controls.hide()
-        controls.deleteLater()
-        controls = None
-        del self.widgets[layer]
+
+        def remove_children(layer):
+            if layer.is_group():
+                for child in layer:
+                    remove_children(child)
+            controls = self.widgets[layer]
+            self.removeWidget(controls)
+            # controls.close()
+            controls.hide()
+            controls.deleteLater()
+            controls = None
+            del self.widgets[layer]
+
+        remove_children(event.value)
