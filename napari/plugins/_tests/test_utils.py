@@ -204,7 +204,7 @@ def test_get_potential_readers_extension_case(tmp_plugin: DynamicPlugin):
         ...
 
     readers = get_potential_readers('my_file.TIF')
-    assert len(readers) == 2
+    assert len(readers) == 1
 
 
 def test_get_potential_readers_none_available():
