@@ -154,7 +154,7 @@ class VispyBaseLayer(ABC):
         self._master_transform.matrix = affine_matrix
 
     def _on_experimental_clipping_planes_change(self):
-        # this check is necessary until vispy #2383 comes to napari
+        # TODO: this check is only necessary until vispy #2383 comes to napari
         if hasattr(self.node, 'clipping_planes') and hasattr(
             self.layer, 'experimental_clipping_planes'
         ):
