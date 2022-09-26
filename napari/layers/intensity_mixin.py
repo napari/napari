@@ -126,9 +126,14 @@ class IntensityVisualizationMixin:
         # and updating the views/controllers
         if hasattr(self, '_contrast_limits') and any(self._contrast_limits):
             cur_min, cur_max = self.contrast_limits
-            new_min = min(max(value[0], cur_min), value[1])
-            new_max = max(min(value[1], cur_max), value[0])
-            self.contrast_limits = (new_min, new_max)
+            # if range limits are outside of current limits, override
+            if value[0] > cur_max or value[1] < cur_min:
+                self.contrast_limits = tuple(value)
+            # if there is some overlap, clip to range
+            else:
+                new_min = min(max(value[0], cur_min), value[1])
+                new_max = max(min(value[1], cur_max), value[0])
+                self.contrast_limits = (new_min, new_max)
 
     @property
     def gamma(self):
