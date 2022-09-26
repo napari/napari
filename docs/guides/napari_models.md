@@ -210,8 +210,7 @@ the function `_on_ndisplay_change`:
 
 ```python
 class VispyCamera:
-    """Vipsy camera for both 2D and 3D rendering.
-    """
+    """Vipsy camera for both 2D and 3D rendering."""
 
     def __init__(self, dims: Dims):
         self._dims = dims
@@ -221,3 +220,22 @@ class VispyCamera:
             self._on_ndisplay_change, position='first'
         )
 ```
+
+## Event diagram
+
+Using the code examples above, we can map out how information flows between the
+classes when the `ndisplay` attribute is changed via the Python model (e.g.,
+using the console) and when changed via the napari GUI.
+
+When `ndisplay` is changed in the Python model, an event is emitted. Both the
+`QtDims` class and the `VispyCamera` class have registered callbacks to
+this event and can take the appropriate action.
+
+![]
+
+When `ndisplay` is changed via the napari GUI, the `Dims` object is updated
+directly as `QtDims` was instantiated with a reference to it. Updating the
+`Dims` object emits an event resulting in `VispyCamera` registered callback
+to run.
+
+![]
