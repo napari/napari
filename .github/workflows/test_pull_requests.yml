@@ -126,6 +126,7 @@ jobs:
       # see tox.ini for more
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
+        timeout-minutes: 30  # temporary
         with:
           run: python -m tox
         env:
