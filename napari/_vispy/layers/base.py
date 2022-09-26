@@ -154,11 +154,14 @@ class VispyBaseLayer(ABC):
         self._master_transform.matrix = affine_matrix
 
     def _on_experimental_clipping_planes_change(self):
-        if hasattr(self.node, 'clipping_planes'):
+        # this check is necessary until vispy #2383 comes to napari
+        if hasattr(self.node, 'clipping_planes') and hasattr(
+            self.layer, 'experimental_clipping_planes'
+        ):
             prev = self.node.clipping_planes
             # invert axes because vispy uses xyz but napari zyx
             new = self.layer.experimental_clipping_planes.as_array()[..., ::-1]
-            if prev != new:
+            if not np.array_equal(prev, new):
                 self.node.clipping_planes = new
 
     def reset(self):
