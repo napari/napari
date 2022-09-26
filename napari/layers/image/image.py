@@ -14,6 +14,7 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
+from ...utils.events.event_utils import connect_no_arg
 from ...utils.migrations import rename_argument
 from ...utils.naming import magic_name
 from ...utils.translations import trans
@@ -374,7 +375,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
-        self.plane.events.connect(self.events.plane)
+        connect_no_arg(self.plane.events, self.events, 'plane')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
