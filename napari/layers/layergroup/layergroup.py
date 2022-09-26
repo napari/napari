@@ -22,7 +22,7 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         self, children: Iterable[Layer] = (), name: str = 'LayerGroup'
     ) -> None:
         Group.__init__(self, children, name=name, basetype=Layer)
-        Layer.__init__(self, None, 2, name=name)
+        Layer.__init__(self, None, self._get_ndim(), name=name)
 
         # avoid circular import
         from ..._app_model.context import create_context
@@ -89,6 +89,19 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
 
+    def _update_ndim(self):
+        ndim = self._get_ndim()
+        if ndim == self._ndim:
+            return
+        self._construct_transform_chain(
+            ndim=ndim,
+            scale=None,
+            translate=None,
+            rotate=None,
+            shear=None,
+            affine=None,
+        )
+
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
         # temporarily disabled while we work on nested selection bug and
@@ -107,11 +120,13 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)
+        self._update_ndim()
         self._update_thumbnail()
 
     def __delitem__(self, key):
         """Remove item at `key`."""
         super().__delitem__(key)
+        self._update_ndim()
         self._update_thumbnail()
 
     def _extent_data(self):

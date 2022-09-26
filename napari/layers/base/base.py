@@ -270,39 +270,13 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         self._ndisplay = 2
         self._dims_order = list(range(ndim))
 
-        # Create a transform chain consisting of four transforms:
-        # 1. `tile2data`: An initial transform only needed to display tiles
-        #   of an image. It maps pixels of the tile into the coordinate space
-        #   of the full resolution data and can usually be represented by a
-        #   scale factor and a translation. A common use case is viewing part
-        #   of lower resolution level of a multiscale image, another is using a
-        #   downsampled version of an image when the full image size is larger
-        #   than the maximum allowed texture size of your graphics card.
-        # 2. `data2physical`: The main transform mapping data to a world-like
-        #   physical coordinate that may also encode acquisition parameters or
-        #   sample spacing.
-        # 3. `physical2world`: An extra transform applied in world-coordinates that
-        #   typically aligns this layer with another.
-        # 4. `world2grid`: An additional transform mapping world-coordinates
-        #   into a grid for looking at layers side-by-side.
-        if scale is None:
-            scale = [1] * ndim
-        if translate is None:
-            translate = [0] * ndim
-        self._transforms = TransformChain(
-            [
-                Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
-                CompositeAffine(
-                    scale,
-                    translate,
-                    rotate=rotate,
-                    shear=shear,
-                    ndim=ndim,
-                    name='data2physical',
-                ),
-                coerce_affine(affine, ndim=ndim, name='physical2world'),
-                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
-            ]
+        self._construct_transform_chain(
+            ndim=ndim,
+            scale=scale,
+            translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
         )
 
         self._dims_point = [0] * ndim
@@ -538,6 +512,46 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         self._editable = editable
         self._set_editable(editable=editable)
         self.events.editable()
+
+    def _construct_transform_chain(
+        self, ndim, scale, translate, rotate, shear, affine
+    ):
+        """
+        Create a transform chain consisting of four transforms:
+        1. `tile2data`: An initial transform only needed to display tiles
+          of an image. It maps pixels of the tile into the coordinate space
+          of the full resolution data and can usually be represented by a
+          scale factor and a translation. A common use case is viewing part
+          of lower resolution level of a multiscale image, another is using a
+          downsampled version of an image when the full image size is larger
+          than the maximum allowed texture size of your graphics card.
+        2. `data2physical`: The main transform mapping data to a world-like
+          physical coordinate that may also encode acquisition parameters or
+          sample spacing.
+        3. `physical2world`: An extra transform applied in world-coordinates that
+          typically aligns this layer with another.
+        4. `world2grid`: An additional transform mapping world-coordinates
+          into a grid for looking at layers side-by-side.
+        """
+        if scale is None:
+            scale = [1] * ndim
+        if translate is None:
+            translate = [0] * ndim
+        self._transforms = TransformChain(
+            [
+                Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
+                CompositeAffine(
+                    scale,
+                    translate,
+                    rotate=rotate,
+                    shear=shear,
+                    ndim=ndim,
+                    name='data2physical',
+                ),
+                coerce_affine(affine, ndim=ndim, name='physical2world'),
+                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
+            ]
+        )
 
     @property
     def scale(self):
