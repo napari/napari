@@ -14,9 +14,9 @@ When developing plugins in napari, you may encounter mistakes or bugs in your co
 It is possible that after installing your plugin, napari will fail to launch - or your plugin won't show up. 
 The following commands will report any issues napari detects with your plugin that may prevent napari from launching or prevent napari from discovering your plugin:
 
-* `napari --plugin-info -v` - prints installed napari plugins, what they provide, and any issues related to these plugins.
-* `napari --info` - prints key environment information related to napari, and the version of installed plugins.
-* `npe2 validate YOUR_PLUGIN_NAME` - ensures that your plugin has a valid manifest file.
+* `napari --plugin-info -v` prints installed napari plugins, what they provide, and any issues related to these plugins.
+* `napari --info` prints key environment information related to napari, and the version of installed plugins.
+* `npe2 validate YOUR_PLUGIN_NAME` ensures that your plugin has a valid manifest file.
 
 ```{note}
 In general, `napari --info` is a good first step to debugging any environment issues and providing the output from this command is useful when raising bugs.
@@ -314,9 +314,9 @@ def show_debug(message: str):
     """
     notification_ = Notification(
         message, severity=NotificationSeverity.DEBUG)
-    # Show message in the console only ->
+    # Show message in the console only
     show_console_notification(notification_)
-    # Show message in console and the napari GUI ->
+    # Show message in console and the napari GUI
     notification_manager.dispatch(notification_)
     # Control level of shown messages via napari preferences
 
