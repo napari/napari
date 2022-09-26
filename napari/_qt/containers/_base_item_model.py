@@ -27,14 +27,6 @@ _BASE_FLAGS = (
     | Qt.ItemFlag.ItemIsEnabled
 )
 
-_BASE_FLAGS = (
-    Qt.ItemFlag.ItemIsSelectable
-    | Qt.ItemFlag.ItemIsEditable
-    | Qt.ItemFlag.ItemIsUserCheckable
-    | Qt.ItemFlag.ItemIsDragEnabled
-    | Qt.ItemFlag.ItemIsEnabled
-)
-
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     """A QAbstractItemModel desigend to work with `SelectableEventedList`.
