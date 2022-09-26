@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QImage
 
 from ...layers import Layer
-from ._base_item_model import ThumbnailRole
+from ._base_item_model import ItemRole, ThumbnailRole
 from ._layer_delegate import LayerDelegate
 
 # from .qt_layer_list import ReverseProxyModel
@@ -30,24 +30,30 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
     # condense...
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
+        if not index.isValid():
+            return None
         layer = self.getItem(index)
-        if role == Qt.DisplayRole:  # used for item text
+        if role == ItemRole:  # custom role: return the layer
+            return layer
+        if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
-        if role == Qt.TextAlignmentRole:  # alignment of the text
+        if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
             return Qt.AlignCenter
-        if role == Qt.EditRole:  # used to populate line edit when editing
+        if role == Qt.ItemDataRole.EditRole:
+            # used to populate line edit when editing
             return layer.name
-        if role == Qt.ToolTipRole:  # for tooltip
-            return layer.name
-        if role == Qt.CheckStateRole:  # the "checked" state of this item
-            layer_visible = layer._visible
-            parents_visible = all(p._visible for p in layer.iter_parents())
-            if layer_visible:
+        if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
+            return layer.get_source_str()
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+        ):  # the "checked" state of this item
+            if layer.visible:
+                parents_visible = all(p._visible for p in layer.iter_parents())
                 return Qt.Checked if parents_visible else Qt.PartiallyChecked
             else:
                 return Qt.Unchecked
-        if role == Qt.SizeHintRole:  # determines size of item
-            return QSize(228, 38)
+        if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item
+            return QSize(200, 34)
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
@@ -58,16 +64,21 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
             )
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
-        # if role == Qt.DecorationRole:  # icon to show
+        # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
         #     pass
         return super().data(index, role)
 
-    def setData(self, index: QModelIndex, value, role: int) -> bool:
-        if role == Qt.CheckStateRole:
+    def setData(
+        self,
+        index: QModelIndex,
+        value: Any,
+        role: int = Qt.ItemDataRole.EditRole,
+    ) -> bool:
+        if role == Qt.ItemDataRole.CheckStateRole:
             self.getItem(index).visible = value
-        elif role == Qt.EditRole:
+        elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
-            role = Qt.DisplayRole
+            role = Qt.ItemDataRole.DisplayRole
         else:
             return super().setData(index, value, role=role)
 
@@ -85,8 +96,8 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
             return
         role = {
             'thumbnail': ThumbnailRole,
-            'visible': Qt.CheckStateRole,
-            'name': Qt.DisplayRole,
+            'visible': Qt.ItemDataRole.CheckStateRole,
+            'name': Qt.ItemDataRole.DisplayRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         top = self.nestedIndex(event.index)
