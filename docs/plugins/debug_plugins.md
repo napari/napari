@@ -1,8 +1,8 @@
 # Debugging during plugin development
 
-When developing plugins in napari, you may encounter mistakes or bugs in your code. This page covers some ways to debug napari plugins, including:
+When developing plugins in napari, you may encounter mistakes or bugs in your code. This page covers some ways to debug napari plugins during development, including:
 
-1. Debugging plugin loading.
+1. Debugging plugin start-up issues.
 2. Seeing plugin errors and warnings.
 3. Debugging plugin functionality.
 4. Reloading code during plugin development.
@@ -11,29 +11,29 @@ When developing plugins in napari, you may encounter mistakes or bugs in your co
 
 ## Debugging plugin start-up issues
 
-It is possible that after installing your plugin, napari will fail to launch - or your plugin won't show up. Some good commands to get started with for identifying the issue here are:
+It is possible that after installing your plugin, napari will fail to launch - or your plugin won't show up. 
+The following commands will report any issues napari detects with your plugin that may prevent napari from launching or prevent napari from discovering your plugin:
 
-```sh
-napari --plugin-info -v
-napari --info
-npe2 validate YOUR_PLUGIN_NAME
-```
+* `napari --plugin-info -v` - prints installed napari plugins, what they provide, and any issues related to these plugins.
+* `napari --info` - prints key environment information related to napari, and the version of installed plugins.
+* `npe2 validate YOUR_PLUGIN_NAME` - ensures that your plugin has a valid manifest file.
 
 ```{note}
-In general, `napari --info` is a good first step to debugging any environment issues.
+In general, `napari --info` is a good first step to debugging any environment issues and providing the output from this command is useful when raising bugs.
 ```
 
 ## Seeing plugin errors and warnings
 
-Once the plugin has been successfully loaded, you can view any warnings or errors related to the plugin from the napari viewer menu bar at `Plugins - Plugin Errors... - <YOUR_PLUGIN_NAME>`. If your plugin name does not show in the list, then there are no errors related to your plugin at start up. During plugin execution, some errors or warnings related to your plugin may also be reported here.
+Once the plugin has been successfully loaded, you can view any warnings or errors related to the plugin from the napari viewer menu bar at `Plugins -> Plugin Errors... -> <YOUR_PLUGIN_NAME>`. If your plugin name does not show in the list, then there are no errors related to your plugin at start up. During plugin execution, some errors or warnings related to your plugin may also be reported here.
 
 ### Seeing tracebacks from plugin errors
 
 By default, napari will output any traceback information from plugin related errors to the console or jupyter notebook that napari was launched from.
-Additionally, a popup menu should show in the bottom right corner of the napari viewer with a `View Traceback` button.
-Inside of this text box, the full traceback can be seen, along with the option to drop into the debugger from here.
-This will open the built in [python debugger](https://docs.python.org/3/library/pdb.html).
-However, if neither of these tracebacks work for some reason, you can request napari to not catch error messages, or to set napari exit on error via the following environment variables, respectively:
+Additionally, a popup will show in the bottom right corner of the napari viewer with a `View Traceback` button.
+Inside of this popup, the full traceback can be seen, along with the option to drop into the debugger from here.
+Dropping into the debugger will open the built in [python debugger](https://docs.python.org/3/library/pdb.html) at the point of failure.
+
+You can also set napari not to catch error messages, or set napari exit on error via the following environment variables, respectively:
 
 ```sh
 NAPARI_CATCH_ERRORS=0 
@@ -44,15 +44,15 @@ NAPARI_EXIT_ON_ERROR=1
 
 ### Reload code as you change it with IPython
 
-Reloading code as it changes with IPython provides an easy way to see the immediate impacts of code development - no need to relaunch the viewer and set it up multiple times.
+Reloading code as it changes with IPython provides an easy way to see the immediate impacts of code development without the need to relaunch the viewer multiple times.
 
 ### Write a script to setup the plugin without user interaction
 
-If reloading the code from IPython does not suit for any reason, a valid method is to write a setup script. This script places your napari viewer at the state of problems for debugging, without having to perform user interaction in the GUI.
+Writing a setup script reproducibly places your napari viewer at the state of problems, without having to perform user interaction in the GUI to get back to the problem state.
 
 ### Isolate the plugin functionality from napari
 
-Since napari plugins are just Python functions, it can be easiest to isolate the issues from napari in some circumstances. For example, in the case of a widget, the widget could be isolated from napari and run separately as a PyQt widget for debugging purposes. In this way, the usual debugging tools, such as those provided by an IDE, can be applied.
+Since napari plugins are just Python functions, it can be easiest to isolate the issues from napari in some circumstances. For example, in the case of a widget, the widget could be isolated from napari and run separately as a PyQt widget for debugging purposes. In this way, the usual debugging tools, such as those provided by an IDE, can be applied. This method has the additional benefit of aligning with test driven development.
 
 ## A simple plugin for following examples
 
@@ -61,6 +61,7 @@ To demonstrate these debugging options, we will create a small plugin that print
 ### Plugin contents
 
 ```
+# project structure
 ~/napari-simple-reload/
 ├── napari_simple_reload/
 │   ├── __init__.py
@@ -158,7 +159,11 @@ pip install -e .
 
 ## Using IPython to reload code during plugin development
 
-You can use the [autoreload extension](https://ipython.org/ipython-doc/3/config/extensions/autoreload.html) with IPython or a Jupyter notebook to open the napari viewer with the ability to reload the changed plugin code during development. Below, we will open the napari viewer and add our three plugin widgets to the dock. Launch IPython via the `IPython` command in terminal (IPython is installed with napari) and then enter the following into the IPython console:
+Here, we demonstrate using the [autoreload extension](https://ipython.org/ipython-doc/3/config/extensions/autoreload.html) with IPython or a Jupyter notebook to open the napari viewer with the ability to reload the changed plugin code during development.
+
+### Launch IPython and set up the viewer
+
+First, we open the napari viewer and add our three plugin widgets to the dock. Launch IPython via the `IPython` command in terminal (IPython is installed with napari) and then enter the following into the IPython console:
 
 ```IPython
 In [1]: %load_ext autoreload
@@ -173,41 +178,50 @@ In [5]: viewer = Viewer()
 
 In [6]: from napari_simple_reload._widget import example
 
-In [7]: viewer.window.add_plugin_dock_widget("napari-simple-reload", "Autogenerated")
+In [7]: viewer.window.add_plugin_dock_widget(
+    "napari-simple-reload", "Autogenerated")
 
-In [8]: viewer.window.add_plugin_dock_widget("napari-simple-reload", "Factory")
+In [8]: viewer.window.add_plugin_dock_widget(
+    "napari-simple-reload", "Factory")
 
-In [9]: viewer.window.add_plugin_dock_widget("napari-simple-reload", "QWidget")
+In [9]: viewer.window.add_plugin_dock_widget(
+    "napari-simple-reload", "QWidget")
 ```
+
+### Changing the code with IPython running
 
 Currently, clicking on the run button for any of these widgets in the napari viewer outputs "You entered **YOUR_ENTRY**!". However, we would like to change the behaviour such that a special message is printed if nothing is entered. So let's change our `example` function to:
 
 ```Python
 def example(input_string: str) -> str:
-    output_string = f"You entered {input_string}!" if input_string else "Please enter something in the text box."
+    output_string = (
+        f"You entered {input_string}!"
+        if input_string
+        else "Please enter something in the text box."
+    )
     print(output_string)
     return output_string
 ```
 
-Notice how the widgets in the viewer currently has the same behaviour as before, despite the code update. This is because the code won't immediately update, as IPython does not know that it should update that module. To trigger the code update, just type the name of your changed code into IPython, or reference it in some way:
+Notice how the widgets in the viewer currently have the same behaviour as before, despite the code update. This is because the code won't immediately update, as IPython does not yet know that it should update that code. To trigger the code update, just type the name of your changed function into IPython, or reference it in some way:
 
 ```IPython
-# Before changing the code
+# Run before changing the code
 You entered !
 
-# After changing the code, but before triggering an update
+# Run after changing the code, but before triggering an update
 You entered !
 
-In [10]: example # anything in Ipython to reload that code
+In [10]: example # anything in IPython to reload that code
 
-# Now the code is reloaded
+# Now the code is reloaded, run outputs as expected
 Please enter something in the text box.
 ```
 
 ## Write a setup script to avoid GUI interaction
 
 The key here is to use `viewer.window.add_plugin_dock_widget()` and then programmatically add the required information to your plugin so that when napari is launched, it launches with the required information to reproduce the problem, without having to click through the UI each time.
-To continue with the example plugin shown in the last step, we want to make sure we have no sneaky bugs if the user enters text such as "None", "0", or "False". Let's create a setup script `reproduce_issue.py` and try to check this for the autogenerated widget:
+To continue with the example plugin shown in the last step, we want to make sure we have no sneaky bugs if the user enters text such as None, 0, or False (which all evaluate to False in Python when converted to a bool). Let's create a setup script `reproduce_issue.py` and check this for the autogenerated widget:
 
 ```Python
 # reproduce_issue.py
@@ -224,13 +238,13 @@ for value in values_to_test:
 
 run()
 
-# Ouput is:
+# Output is:
 # You entered False!
 # You entered 0!
 # You entered None!
 ```
 
-Running `python reproduce_issue.py`, there are no sneaky bugs this time, but notice how the viewer remains at the state of the last entered value of None in the text box in the GUI. This same idea can be used to set up the GUI to a point of failure without having to manually input all the user interactions - and can help better identify the issue.
+Running `python reproduce_issue.py` will run our widget for the inputs `False, 0, None`. The output shows that there are no sneaky bugs, but notice how the viewer remains at the state of the last entered value of None in the text box in the GUI. This same idea can be used to set up the GUI to a point of failure without having to manually input all the user interactions - and can help better identify the issue.
 
 ## Isolate the issue from napari
 
@@ -251,28 +265,37 @@ if __name__ == "__main__":
     test_false_inputs()
 ```
 
-Then, for `python test_print.py` you can use any of your usual debugging tools - such as the visual debugger provided by a python IDE (e.g. PyCharm, VSCode, or Spyder). Further, an isolated test like this can be integrated into a [testing suite for your napari plugin](https://napari.org/stable/plugins/test_deploy.html).
+Then, for `python test_print.py` you can use any of your usual debugging tools - such as the visual debugger provided by a Python IDE (e.g. PyCharm, VSCode, or Spyder). Further, an isolated test like this can be integrated into a [testing suite for your napari plugin](https://napari.org/stable/plugins/test_deploy.html).
 
 ## Logging and user messages in napari
+
+### Set up plugin user messages and notifications
 
 There are, generally speaking, three main methods for notifying users of problems in napari.
 
 1. Raise an exception to indicate a breaking problem in the code (e.g. unexpected user input `raise ValueError("some error")`).
-2. Use `warnings.warn("some warning")` to indicate something that was handled, but may not be the behaviour the user was expecting.
-3. Show information in napari, use the `napari.utils.notifications.show_info("message")` command.
+2. Indicate that something that was handled, but may not be the behaviour the user was expecting using `warnings.warn("some warning")`.
+3. Show an information popup in the napari GUI by using the `napari.utils.notifications.show_info("message")` command.
 
-In addition to these user focused methods, you can use a similar system for plugin debug logs and messages during development. You can either use [napari specific functions](https://napari.org/dev/api/napari.utils.notifications.html), or [built in Python logging](https://docs.python.org/3/library/logging.html).
+### Set up plugin log messages
+
+In addition to these user focused methods, you can set up plugin debug logs and messages during development. You can either use [napari specific functions](https://napari.org/dev/api/napari.utils.notifications.html), or [built in Python logging](https://docs.python.org/3/library/logging.html).
 
 ```{tip}
 A logging library, like [loguru](https://github.com/Delgan/loguru), can be easier to get started with than the built in Python logging library.
 ```
 
-Below is an example of establishing debug messages / logs in your code and viewing them in napari by setting the preferences for GUI notifications and /or console notifications to be at the debug level. We modify the example function from before to have a debug log message:
+Below is an example of establishing debug messages and logs in your code and viewing them in napari by setting the preferences for GUI notifications and console notifications to be at the debug level. We modify the example function from before to have a debug log message:
 
 ```Python
 import logging
 import sys
-from napari.utils.notifications import notification_manager, Notification, NotificationSeverity, show_console_notification
+from napari.utils.notifications import (
+    notification_manager,
+    Notification,
+    NotificationSeverity,
+    show_console_notification,
+)
 
 my_plugin_logger = logging.getLogger("napari_simple_reload")
 stdout_handler = logging.StreamHandler(sys.stderr)
@@ -289,22 +312,30 @@ def show_debug(message: str):
     """
     Show a debug message in the notification manager.
     """
-    notification_ = Notification(message, severity=NotificationSeverity.DEBUG)
-    # This goes to the console only ->
+    notification_ = Notification(
+        message, severity=NotificationSeverity.DEBUG)
+    # Show message in the console only ->
     show_console_notification(notification_)
-    # This goes to the console and the napari GUI ->
+    # Show message in console and the napari GUI ->
     notification_manager.dispatch(notification_)
-    # You can control what level of these messages is shown via napari preferences
+    # Control level of shown messages via napari preferences
 
 def example(input_string: str) -> str:
-    output_string = f"You entered {input_string}!" if input_string else "Please enter something in the text box."
+    output_string = (
+        f"You entered {input_string}!"
+        if input_string
+        else "Please enter something in the text box."
+    )
     show_debug(f"The input string was (napari): {input_string}")
-    my_plugin_logger.debug(f"The input string was (logging): {input_string}")
+    my_plugin_logger.debug(
+        f"The input string was (logging): {input_string}")
     print(output_string)
     return output_string
 ```
 
-Then launch the viewer with the napari notification levels set to debug and your plugin logger level set to debug:
+### Viewing plugin log messages
+
+Launch the viewer with the napari notification levels set to debug and your plugin logger level set to debug:
 
 ```Python
 # example_notication.py
