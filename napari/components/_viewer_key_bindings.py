@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..settings import get_settings
 from ..utils.action_manager import action_manager
-from ..utils.theme import available_themes
+from ..utils.theme import available_themes, get_system_theme
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
 
@@ -59,15 +58,20 @@ def toggle_ndisplay(viewer: Viewer):
 @register_viewer_action(trans._("Toggle theme."))
 def toggle_theme(viewer: Viewer):
     """Toggle theme for viewer"""
-    settings = get_settings()
     themes = available_themes()
-    current_theme = settings.appearance.theme
+    current_theme = viewer.theme
+    # Check what the system theme is, to toggle properly
+    if current_theme == 'system':
+        current_theme = get_system_theme()
     idx = themes.index(current_theme)
     idx += 1
-    if idx == len(themes):
+    # Don't toggle to system, just among actual themes
+    if themes[idx] == 'system':
+        idx += 1
+    if idx >= len(themes):
         idx = 0
 
-    settings.appearance.theme = themes[idx]
+    viewer.theme = themes[idx]
 
 
 @register_viewer_action(trans._("Reset view to original state."))
