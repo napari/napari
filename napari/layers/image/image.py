@@ -374,7 +374,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
-        self.plane.events.connect(self._plane_event)
+        self.plane.events.connect(self.events.plane)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -657,11 +657,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
-        self.events.plane()
-
-    def _plane_event(self):
-        # connecting lambdas can cause objects to stick around too long
-        # and cause crashes, so we use this dummy method instead
         self.events.plane()
 
     @property
