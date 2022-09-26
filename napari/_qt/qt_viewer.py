@@ -555,7 +555,11 @@ class QtViewer(QSplitter):
             if vispy_layer.events is not None:
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
-        vispy_layer.node.parent = self.view.scene
+        if layer.parent is self.viewer.layers:
+            parent_node = self.view.scene
+        else:
+            parent_node = self.layer_to_visual[layer.parent].node
+        vispy_layer.node.parent = parent_node
         self.layer_to_visual[layer] = vispy_layer
         self._reorder_layers()
 
@@ -567,18 +571,32 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+
+        def remove_children(layer):
+            if layer.is_group():
+                for child in layer:
+                    remove_children(child)
+
+            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer.close()
+            del vispy_layer
+            del self.layer_to_visual[layer]
+
         layer = event.value
-        vispy_layer = self.layer_to_visual[layer]
-        vispy_layer.close()
-        del vispy_layer
-        del self.layer_to_visual[layer]
+        remove_children(layer)
         self._reorder_layers()
 
     def _reorder_layers(self):
         """When the list is reordered, propagate changes to draw order."""
-        for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self.layer_to_visual[layer]
-            vispy_layer.order = i
+
+        def reorder_children(layer):
+            for i, child in enumerate(layer):
+                vispy_layer = self.layer_to_visual[child]
+                vispy_layer.order = i
+                if child.is_group():
+                    reorder_children(child)
+
+        reorder_children(self.viewer.layers)
         self.canvas._draw_order.clear()
         self.canvas.update()
 
