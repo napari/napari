@@ -541,26 +541,35 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_visual(layer)
 
-        # QtPoll is experimental.
-        if self._qt_poll is not None:
-            # QtPoll will call VipyBaseImage._on_poll() when the camera
-            # moves or the timer goes off.
-            self._qt_poll.events.poll.connect(vispy_layer._on_poll)
+        def add_children(layer):
+            vispy_layer = create_vispy_visual(layer)
 
-            # In the other direction, some visuals need to tell QtPoll to
-            # start polling. When they receive new data they need to be
-            # polled to load it, even if the camera is not moving.
-            if vispy_layer.events is not None:
-                vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
+            # QtPoll is experimental.
+            if self._qt_poll is not None:
+                # QtPoll will call VipyBaseImage._on_poll() when the camera
+                # moves or the timer goes off.
+                self._qt_poll.events.poll.connect(vispy_layer._on_poll)
 
-        if layer.parent is self.viewer.layers:
-            parent_node = self.view.scene
-        else:
-            parent_node = self.layer_to_visual[layer.parent].node
-        vispy_layer.node.parent = parent_node
-        self.layer_to_visual[layer] = vispy_layer
+                # In the other direction, some visuals need to tell QtPoll to
+                # start polling. When they receive new data they need to be
+                # polled to load it, even if the camera is not moving.
+                if vispy_layer.events is not None:
+                    vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
+
+            if layer.parent is self.viewer.layers:
+                parent_node = self.view.scene
+            else:
+                parent_node = self.layer_to_visual[layer.parent].node
+            vispy_layer.node.parent = parent_node
+
+            self.layer_to_visual[layer] = vispy_layer
+
+            if layer.is_group():
+                for child in layer:
+                    add_children(child)
+
+        add_children(layer)
         self._reorder_layers()
 
     def _remove_layer(self, event):
