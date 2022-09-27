@@ -91,7 +91,6 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         # creating a __newlike__ when objects are lists. We cannot override this behaviour, otherwise
         # every time element types are checked, things get reparented (at best a million events, at
         # worst everything breaks). To fix this, we recursively reparent children after insertion.
-        print(self, item)
         Group._reparent(item, self)
 
     def is_group(self) -> bool:
