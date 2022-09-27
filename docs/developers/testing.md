@@ -72,7 +72,7 @@ In general, it pays to learn a few of the [tips and tricks](https://docs.pytest.
 
 ### Testing coverage locally
 
-We always aim for good [test coverage](https://en.wikipedia.org/wiki/Code_coverage) and we use [codecov](https://codecov.io/gh/napari/napari) during continuous integration to make sure we maintain good coverage.  If you'd like to test coverage locally as you develop new code, you can install [`pytest-cov`](https://github.com/pytest-dev/pytest-cov) and take advantage of a few handy commands:
+We always aim for good [test coverage](https://en.wikipedia.org/wiki/Code_coverage) and we use [codecov](https://app.codecov.io/gh/napari/napari) during continuous integration to make sure we maintain good coverage.  If you'd like to test coverage locally as you develop new code, you can install [`pytest-cov`](https://github.com/pytest-dev/pytest-cov) and take advantage of a few handy commands:
 
 ```sh
 # run the full test suite with coverage
@@ -99,7 +99,7 @@ integration tests where there are simple properties like `x == load(save(x))` or
 when Napari implements a function we can check against the equivalent in a trusted
 library for at least some inputs.
 
-See also [this paper on property-based testing in science](http://conference.scipy.org/proceedings/scipy2020/zac_hatfield-dodds.html),
+See also [this paper on property-based testing in science](https://conference.scipy.org/proceedings/scipy2020/zac_hatfield-dodds.html),
 [issue #2444](https://github.com/napari/napari/issues/2444), and
 [the Hypothesis documentation](https://hypothesis.readthedocs.io/en/latest/)
 (including [Numpy support](https://hypothesis.readthedocs.io/en/latest/numpy.html)).
@@ -140,7 +140,7 @@ you create during testing are cleaned up at the end of each test:
     ```
 
 2. When writing a test that requires a `napari.Viewer` object, we provide a
-   [pytest fixture](https://docs.pytest.org/en/stable/fixture.html) called
+   [pytest fixture](https://docs.pytest.org/en/stable/explanation/fixtures.html) called
    `make_napari_viewer` that will take care of creating a viewer and cleaning up
    at the end of the test.  When using this function, it is **not** necessary to
    use a `qtbot` fixture, nor should you do any additional cleanup (such as

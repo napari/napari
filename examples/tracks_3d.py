@@ -2,6 +2,7 @@
 Tracks 3D
 =========
 
+.. tags:: visualization-advanced
 """
 
 import napari

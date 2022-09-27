@@ -7,6 +7,8 @@ Demonstrates the `link_layers` function.
 This function takes a list of layers and an optional list of attributes, and
 links them such that when one of the linked attributes changes on any of the
 linked layers, all of the other layers follow.
+
+.. tags:: experimental
 """
 import napari
 from napari.experimental import link_layers

@@ -2,6 +2,7 @@
 nD shapes with text
 ===================
 
+.. tags:: visualization-nD
 """
 from skimage import data
 import napari

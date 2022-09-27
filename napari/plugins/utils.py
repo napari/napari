@@ -1,8 +1,10 @@
+import os
 import os.path as osp
 import re
 from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
@@ -82,8 +84,12 @@ def _get_preferred_readers(path: str) -> Iterable[Tuple[str, str]]:
     filtered_preferences : Iterable[Tuple[str, str]]
         Filtered patterns and their corresponding readers.
     """
-    reader_settings = get_settings().plugins.extension2reader
 
+    if osp.isdir(path):
+        if not path.endswith(os.sep):
+            path = path + os.sep
+
+    reader_settings = get_settings().plugins.extension2reader
     return filter(lambda kv: fnmatch(path, kv[0]), reader_settings.items())
 
 
@@ -103,7 +109,6 @@ def get_preferred_reader(path: str) -> Optional[str]:
     readers = sorted(
         _get_preferred_readers(path), key=lambda kv: score_specificity(kv[0])
     )
-
     if readers:
         preferred = readers[0]
         _, reader = preferred
@@ -126,6 +131,9 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     """
     readers = {}
     hook_caller = plugin_manager.hook.napari_get_reader
+    # lower case file extension
+    ext = str(Path(filename).suffix).lower()
+    filename = str(Path(filename).with_suffix(ext))
     for impl in hook_caller.get_hookimpls():
         reader = hook_caller._call_plugin(impl.plugin_name, path=filename)
         if callable(reader):

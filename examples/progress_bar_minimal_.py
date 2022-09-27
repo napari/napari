@@ -5,6 +5,7 @@ Progress bar minimal
 This file provides minimal working examples of progress bars in
 the napari viewer.
 
+.. tags:: gui
 """
 
 import napari

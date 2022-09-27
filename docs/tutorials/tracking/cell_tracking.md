@@ -8,7 +8,7 @@ This application note covers two examples:
 
 ## 1. Cell tracking challenge data
 
-The first example of track visualization uses data from the [cell tracking challenge](http://celltrackingchallenge.net/3d-datasets/). We will use the *C. elegans* developing embryo [dataset](http://data.celltrackingchallenge.net/training-datasets/Fluo-N3DH-CE.zip) which consists of 3D+t volumetric imaging data, manually annotated tracks and cell lineage information.
+The first example of track visualization uses data from the [cell tracking challenge](http://celltrackingchallenge.net/3d-datasets/). We will use the *C. elegans* developing embryo [dataset](https://data.celltrackingchallenge.net/training-datasets/Fluo-N3DH-CE.zip) which consists of 3D+t volumetric imaging data, manually annotated tracks and cell lineage information.
 
 A full description of the data format can be found [here](https://public.celltrackingchallenge.net/documents/Naming%20and%20file%20content%20conventions.pdf).
 
@@ -215,7 +215,7 @@ with btrack.BayesianTracker() as tracker:
     data, properties, graph = tracker.to_napari(ndim=2)
 ```
 
-We set the configuration of the tracker using a configuration file using the `.configure_from_file()` method. An example configuration file can be found [here](https://github.com/quantumjot/BayesianTracker/blob/master/models/cell_config.json).
+We set the configuration of the tracker using a configuration file using the `.configure_from_file()` method. An example configuration file can be found [here](https://github.com/quantumjot/BayesianTracker/blob/main/models/cell_config.json).
 
 Next, the objects are linked into tracks using the `.track_interactive()` method. The `step_size` argument specifies how many steps are taken before reporting the tracking statistics. The `.optimize()` method then performs a global optimization on the dataset and creates lineage trees automatically.
 
@@ -243,4 +243,4 @@ References for cell tracking challenge:
 
 For a more advanced example of visualizing cell tracking data with napari, please see the Arboretum plugin for napari:
 + [btrack](https://github.com/quantumjot/BayesianTracker)
-+ [arboretum](https://github.com/quantumjot/arboretum)
++ [arboretum](https://github.com/lowe-lab-ucl/arboretum)
