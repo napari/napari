@@ -59,7 +59,7 @@ hosted somewhere, you can add links to these on our [napari workshops](../../fur
 ## 1. Write your documentation
 
 Fork and clone [our repository](https://github.com/napari/napari). If you are
-a0mending existing documentation, you can do so in your preferred text editor.
+amending existing documentation, you can do so in your preferred text editor.
 If you wish to add a new tutorial or a how-to, we recommend you use our
 [template](./docs_template).
 
@@ -90,12 +90,15 @@ Run `jupytext your-notebook.ipynb --to myst` to create a new MyST version of you
 Depending on the type of contribution you are making, you may be able to skip
 some steps:
 
+* If you are adding new documentation and would prefer a simpler workflow,
+  you can you can use the
+  [GitHub web interface to open your pull request](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository). A member of the maintenance
+  team will help with updating TOC and making sure your documentation has built
+  correctly. You will also be able to preview the documentation yourself by
+  downloading the built documentation via a link provided by a comment from the
+  'github-actions' bot.
 * If you are amending an existing document you can skip straight
   to [Step #3 - Preview your document](#3-preview-your-document)
-* If you are adding new documentation and would prefer a simplier workflow,
-  you can also skip straight to
-  [Step #3 - Preview your document](#3-preview-your-document) and ask the
-  napari team to update the TOC for you when you open your pull request
 * For all other documentation changes, follow the steps below
 
 ## 2. Update TOC
