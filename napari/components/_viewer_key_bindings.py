@@ -67,9 +67,7 @@ def toggle_theme(viewer: Viewer):
     idx = (idx + 1) % len(themes)
     # Don't toggle to system, just among actual themes
     if themes[idx] == 'system':
-        idx += 1
-        if idx == len(themes):
-            idx = 0
+        idx = (idx + 1) % len(themes)
 
     viewer.theme = themes[idx]
 
