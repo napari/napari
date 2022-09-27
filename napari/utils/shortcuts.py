@@ -21,6 +21,8 @@ default_shortcuts = {
     'napari:new_label': ['M'],
     'napari:decrease_label_id': ['-'],
     'napari:increase_label_id': ['='],
+    'napari:decrease_brush_size': ['['],
+    'napari:increase_brush_size': [']'],
     'napari:toggle_preserve_labels': ['P'],
     'napari:activate_points_add_mode': ['2'],
     'napari:activate_points_select_mode': ['3'],

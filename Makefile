@@ -17,10 +17,12 @@ typestubs:
 typecheck:
 	mypy napari/settings napari/types.py napari/plugins
 
-dist:
-	pip install -U check-manifest build
-	make typestubs
+check-manifest:
+	pip install -U check-manifest
 	check-manifest
+
+dist: typestubs check-manifest
+	pip install -U build
 	python -m build
 
 settings-schema:
@@ -49,3 +51,6 @@ watch:
 			--signal SIGKILL \
 			napari -- $(WATCH_ARGS) || \
 		echo "please run 'pip install watchdog[watchmedo]'"
+
+linkcheck-files:
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0 sphinx-build -b linkcheck -D plot_gallery=0 --color docs/ docs/_build

@@ -320,7 +320,7 @@ a high-level list of the main changes introduced in the stack.
 [4]: https://github.com/pypa/gh-action-pypi-publish
 [5]: https://github.com/beeware/briefcase
 [6]: https://github.com/conda/constructor
-[7]: https://github.com/conda/constructor/blob/master/CONSTRUCT.md
+[7]: https://github.com/conda/constructor/blob/main/CONSTRUCT.md
 [8]: https://conda-forge.org/docs/maintainer/updating_pkgs.html#rerendering-feedstocks
 [9]: https://github.com/jaimergp/constructor/tree/menuinst+branding
 [10]: https://github.com/jaimergp/conda/tree/cep-menuinst

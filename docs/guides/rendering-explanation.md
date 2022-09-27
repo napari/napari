@@ -43,7 +43,7 @@ consistently fast.
 
 Napari renders data out of an array-like interface. The data can be owned
 by any object that supports `NumPy`'s slicing syntax. One common such
-object is a [Dask](https://dask.org/) array. The fact that napari can
+object is a [Dask](https://www.dask.org/) array. The fact that napari can
 render out of any array-like data is flexible and powerful, but it means
 that simple array accesses can result in the execution of arbitrary code.
 For example, an array access might result disk IO or network IO, or even a
@@ -306,7 +306,7 @@ something we can use down the road.
 ### D. VRAM and Vispy
 
 With OpenGL you cannot directly manage VRAM. Instead we will implicitly
-control what's in VRAM based on what [vispy](http://vispy.org/) objects
+control what's in VRAM based on what [vispy](https://vispy.org/) objects
 exist and what objects we are drawing.
 
 For example, if we page data into memory, but do not draw it, then it's in
