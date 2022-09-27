@@ -33,7 +33,7 @@ Additionally, a popup will show in the bottom right corner of the napari viewer 
 Inside of this popup, the full traceback can be seen, along with the option to drop into the debugger from here.
 Dropping into the debugger will open the built in [python debugger](https://docs.python.org/3/library/pdb.html) at the point of failure.
 
-You can also set napari not to catch error messages, or set napari exit on error via the following environment variables, respectively:
+You can also configure napari not to catch error messages, or force napari to exit on error via the following environment variables, respectively:
 
 ```sh
 NAPARI_CATCH_ERRORS=0 
@@ -52,7 +52,7 @@ Writing a setup script reproducibly places your napari viewer at the state of pr
 
 ### Isolate the plugin functionality from napari
 
-Since napari plugins are just Python functions, it can be easiest to isolate the issues from napari in some circumstances. For example, in the case of a widget, the widget could be isolated from napari and run separately as a PyQt widget for debugging purposes. In this way, the usual debugging tools, such as those provided by an IDE, can be applied. This method has the additional benefit of aligning with test driven development.
+To simplify the debugging process, it can be useful to isolate the execution of your plugin code from executing napari itself. For example, in the case of a widget, the widget could be isolated from napari and run separately as a PyQt widget for debugging purposes. In this way, the usual debugging tools, such as those provided by an IDE, can be applied. This method has the additional benefit of aligning with test driven development.
 
 ## A simple plugin for following examples
 
@@ -150,7 +150,7 @@ napari.manifest =
 * = *.yaml
 ```
 
-Then install the package by:
+Then install the package into an environment already containing `napari` by:
 
 ```bash
 cd napari-simple-reload
@@ -190,7 +190,7 @@ In [9]: viewer.window.add_plugin_dock_widget(
 
 ### Changing the code with IPython running
 
-Currently, clicking on the run button for any of these widgets in the napari viewer outputs "You entered **YOUR_ENTRY**!". However, we would like to change the behaviour such that a special message is printed if nothing is entered. So let's change our `example` function to:
+Currently, clicking on the run button for any of these widgets in the napari viewer outputs "You entered **YOUR_ENTRY**!". However, we would like to change the behaviour such that a special message is printed if nothing is entered. So let's change our `example` function in `_widget.py` to:
 
 ```Python
 def example(input_string: str) -> str:
@@ -203,7 +203,7 @@ def example(input_string: str) -> str:
     return output_string
 ```
 
-Notice how the widgets in the viewer currently have the same behaviour as before, despite the code update. This is because the code won't immediately update, as IPython does not yet know that it should update that code. To trigger the code update, just type the name of your changed function into IPython, or reference it in some way:
+To see the updated behavior in action, just type the name of your changed function into IPython, or reference it in some way:
 
 ```IPython
 # Run before changing the code
@@ -248,7 +248,7 @@ Running `python reproduce_issue.py` will run our widget for the inputs `False, 0
 
 ## Isolate the issue from napari
 
-This solution ties in with the idea of test-driven development (see the [napari testing guidelines](./test_deploy.md#prefer-smaller-unit-tests-when-possible)). The idea is to trust that napari will provide the information you expect it to, and test your widgets independently of the viewer. In the case above, to verify that some input values work as expected, it would be like so:
+This solution ties in with the idea of test-driven development (see the [napari testing guidelines](./test_deploy.md#prefer-smaller-unit-tests-when-possible)). The idea is to trust that napari will provide the information you expect it to, and test your widgets independently of the viewer. In the case above we can verify that input values work as expected like so:
 
 ```Python
 # test_print.py
@@ -274,7 +274,7 @@ Then, for `python test_print.py` you can use any of your usual debugging tools -
 There are, generally speaking, three main methods for notifying users of problems in napari.
 
 1. Raise an exception to indicate a breaking problem in the code (e.g. unexpected user input `raise ValueError("some error")`).
-2. Indicate that something that was handled, but may not be the behaviour the user was expecting using `warnings.warn("some warning")`.
+2. Indicate that something was handled, but may not be the behaviour the user was expecting using `warnings.warn("some warning")`.
 3. Show an information popup in the napari GUI by using the `napari.utils.notifications.show_info("message")` command.
 
 ### Set up plugin log messages
