@@ -268,6 +268,7 @@ or create issues on GitHub.
 - Bugfix:  disable opacity slider for opaque blending (#5088)
 - Update links in NAP-2 (#5099)
 - Update release notes for v0.4.17rc1 (#5110)
+- Update release notes for v0.4.17rc3 (#5147)
 
 ## Other Pull Requests
 
