@@ -357,8 +357,10 @@ class NapariQtNotification(QDialog):
 
         if isinstance(notification, ErrorNotification):
 
-            def show_tb(parent_):
-                tbdialog = TracebackDialog(notification, parent_.parent())
+            def show_tb(notification_dialog):
+                tbdialog = TracebackDialog(
+                    notification, notification_dialog.parent()
+                )
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
