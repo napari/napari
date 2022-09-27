@@ -32,7 +32,7 @@ from ...utils.translations import trans
 from ..code_syntax_highlight import Pylighter
 from ..qt_resources import QColoredSVGIcon
 
-ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
 
 
 class NapariQtNotification(QDialog):
