@@ -182,8 +182,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add extra events - ideally these will be removed too!
         self.events.add(
             layers_change=WarningEmitter(
-                "This event will be removed in 0.5.0. "
-                "Please use viewer.layers.events instead",
+                trans._(
+                    "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
+                    deferred=True,
+                ),
                 type="layers_change",
             ),
             reset_view=Event,
@@ -973,8 +975,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         if plugin == 'builtins':
             warnings.warn(
-                'The "builtins" plugin name is deprecated and will not work in a '
-                'future version. Please use "napari" instead.',
+                trans._(
+                    'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+                    deferred=True,
+                ),
             )
             plugin = 'napari'
 

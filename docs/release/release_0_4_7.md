@@ -13,7 +13,7 @@ https://github.com/napari/napari
 ## Highlights
 
 After nearly a year of planning, thanks to help from the fine folks at
-[Quansight](http://labs.quansight.org/), napari now has a preferences dialog!
+[Quansight](https://labs.quansight.org/), napari now has a preferences dialog!
 (#2211). It's a little sparse at the moment but we look forward to meeting all
 your customization needs!
 

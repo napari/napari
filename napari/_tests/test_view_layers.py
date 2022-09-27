@@ -3,6 +3,7 @@ Ensure that layers and their convenience methods on the viewer
 have the same signatures and docstrings.
 """
 
+import gc
 import inspect
 import re
 from unittest.mock import MagicMock, call
@@ -190,6 +191,10 @@ def test_imshow_multichannel(qtbot, napari_plugin_manager):
     for i in range(data.shape[-1]):
         assert np.all(layers[i].data == data.take(i, axis=-1))
     viewer.close()
+    # Run a full garbage collection here so that any remaining viewer
+    # and related instances are removed for future tests that may use
+    # make_napari_viewer.
+    gc.collect()
 
 
 # plugin_manager fixture is added to prevent errors due to installed plugins

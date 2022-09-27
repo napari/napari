@@ -80,7 +80,7 @@ then run your script from the command line to launch the viewer with your data:
 python my_example_script.py
 ```
 
-See the scripts inside the [`examples`](https://github.com/napari/napari/tree/master/examples) in the main repository for examples of using napari this way.
+See the scripts inside the [`examples`](https://github.com/napari/napari/tree/main/examples) in the main repository for examples of using napari this way.
 
 ![image: napari launched from a python script](../assets/tutorials/launch_script.png)
 
@@ -113,7 +113,7 @@ and where data changed in the GUI will be accessible in the console.
 ### Jupyter notebook usage
 
 You can also launch napari from a jupyter notebook,
-such as [`examples/notebook.ipynb`](https://github.com/napari/napari/tree/master/examples/notebook.ipynb)
+such as [`examples/notebook.ipynb`](https://github.com/napari/napari/tree/main/examples/notebook.ipynb)
 
 ![image: napari launched from a jupyter notebook](../assets/tutorials/launch_jupyter.png)
 
