@@ -27,7 +27,7 @@ def _toggle_layer_list(window: Window):
     )
 
 
-WINDOW_ACTIONS: List[Action] = [
+Q_WINDOW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_CONSOLE,
         title=CommandId.TOGGLE_CONSOLE.title,

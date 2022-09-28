@@ -13,7 +13,7 @@ def init_qactions():
     from napari._app_model import get_app
 
     from ...qt_main_window import Window, _QtMainWindow
-    from ._window import WINDOW_ACTIONS
+    from ._window import Q_WINDOW_ACTIONS
 
     # Qt-specific providers/processors
     def _provide_window() -> Optional[Window]:
@@ -27,5 +27,5 @@ def init_qactions():
     store.register_provider(_provide_window)
 
     # register actions
-    for action in chain(WINDOW_ACTIONS):
+    for action in chain(Q_WINDOW_ACTIONS):
         app.register_action(action)
