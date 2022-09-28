@@ -1,9 +1,5 @@
 # napari 0.4.17
 
-```{note}
-These are preliminary release notes until 0.4.17 is released.
-```
-
 We're happy to announce the release of napari 0.4.17!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
@@ -154,6 +150,11 @@ or create issues on GitHub.
 - Bugfix:  disable opacity slider for opaque blending (#5088)
 - Add extra garbage collection for some viewer tests (#5108)
 - Fix typestub and check manifest problems with build package (#5112)
+- Fix error with "None" key press (#5115)
+- Fix shortcuts deleting (#5119)
+- Standardise file extension when reading (#5121)
+- Fix slow points (#5133)
+- Use cross shape when cursor is small (#5141)
 
 ## API Changes
 
@@ -266,6 +267,8 @@ or create issues on GitHub.
 - Better script for prepare release notes (#5061)
 - Bugfix:  disable opacity slider for opaque blending (#5088)
 - Update links in NAP-2 (#5099)
+- Update release notes for v0.4.17rc1 (#5110)
+- Update release notes for v0.4.17rc3 (#5147)
 
 ## Other Pull Requests
 

@@ -888,21 +888,24 @@ class QtViewer(QSplitter):
 
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""
+
         cursor = self.viewer.cursor.style
-        # Scale size by zoom if needed
-        if self.viewer.cursor.scaled:
-            size = self.viewer.cursor.size * self.viewer.camera.zoom
-        else:
+        if cursor in {'square', 'circle'}:
+
+            # Scale size by zoom if needed
             size = self.viewer.cursor.size
-        size = int(size)
-        if cursor == 'square':
+            if self.viewer.cursor.scaled:
+                size *= self.viewer.camera.zoom
+
+            size = int(size)
+
             # make sure the square fits within the current canvas
             if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
+            elif cursor == 'circle':
+                q_cursor = QCursor(circle_pixmap(size))
             else:
                 q_cursor = QCursor(square_pixmap(size))
-        elif cursor == 'circle':
-            q_cursor = QCursor(circle_pixmap(size))
         elif cursor == 'crosshair':
             q_cursor = QCursor(crosshair_pixmap())
         else:
