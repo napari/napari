@@ -195,6 +195,10 @@ def test_notification_error(mock_show, monkeypatch, qtbot):
     # This test creates TracebackDialog which is not added to qtbot
     # but its parent is same as parent of NapariQtNotification.
     # so create dummy parent allow to not leak widget.
+    # Current parent structure, where QWidget is controled by qtbot:
+    # QWidget
+    # ├── NapariQtNotification
+    # └── TracebackDialog
     widget = QWidget()
     qtbot.add_widget(widget)
 
