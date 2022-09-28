@@ -72,7 +72,7 @@ Once the file is saved, you can investigate using free tools. Some options inclu
 
 3.  gprof2dot
 
-    You can visualize the call graph with [`graphviz`](https://graphviz.org/),
+    You can visualize the call graph with [`graphviz`](https://www.graphviz.org/),
     a third party graph visualization library.
     You can install graphviz with system package managers:
     

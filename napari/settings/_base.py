@@ -314,7 +314,11 @@ def nested_env_settings(
                         env_val = settings.__config__.json_loads(env_val)
                     except ValueError as e:
                         if not all_json_fail:
-                            msg = f'error parsing JSON for "{env_name}"'
+                            msg = trans._(
+                                'error parsing JSON for "{env_name}"',
+                                deferred=True,
+                                env_name=env_name,
+                            )
                             raise SettingsError(msg) from e
 
                     if isinstance(env_val, dict):
