@@ -624,7 +624,7 @@ def test_message():
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_world_data_extent():

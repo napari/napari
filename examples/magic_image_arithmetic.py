@@ -4,6 +4,7 @@ magicgui Image Arithmetic
 
 Basic example of using magicgui to create an Image Arithmetic GUI in napari.
 
+.. tags:: gui
 """
 
 import enum

@@ -11,6 +11,7 @@ import numpy as np
 
 from ..utils.translations import trans
 from . import Image, Labels, Layer
+from ._source import layer_source
 from .utils import stack_utils
 from .utils._link_layers import get_linked_layers
 
@@ -24,7 +25,8 @@ def _duplicate_layer(ll: LayerList, *, name: str = ''):
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
         state["name"] = trans._('{name} copy', name=lay.name)
-        new = Layer.create(deepcopy(data), state, type_str)
+        with layer_source(parent=lay):
+            new = Layer.create(deepcopy(data), state, type_str)
         ll.insert(ll.index(lay) + 1, new)
 
 

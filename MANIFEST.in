@@ -22,4 +22,3 @@ exclude bundle.py bundle_conda.py
 exclude dockerfile
 exclude EULA.md
 exclude Singularity
-

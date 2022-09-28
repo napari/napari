@@ -1,9 +1,16 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, TypeVar, Union
+from typing import (
+    Any,
+    Generic,
+    List,
+    Protocol,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
-from typing_extensions import Protocol, runtime_checkable
 
 from ...utils.events import EventedModel
 from ...utils.translations import trans

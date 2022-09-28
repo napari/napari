@@ -11,8 +11,8 @@ from ._image_constants import Mode
 from .image import Image
 
 
-def register_image_action(description: str):
-    return register_layer_action(Image, description=description)
+def register_image_action(description: str, repeatable: bool = False):
+    return register_layer_action(Image, description, repeatable)
 
 
 @Image.bind_key('z')
