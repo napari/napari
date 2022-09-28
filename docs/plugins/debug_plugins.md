@@ -25,7 +25,7 @@ In general, `napari --info` is a good first step to debugging any environment is
 You should also ensure that:
 
 1. Your plugin package is visible when you run `pip list` or `conda list` (depending on your environment setup).
-2. Your entry point is correctly configured, see the [first steps](./first_plugin.md#update-setup-cfg) for information.
+2. Your entry point is correctly configured, see the [first steps](./first_plugin#update-setup-cfg) for information.
 
 For example if `pip list` does show the package is installed, and `npe2 validate` reports success, but napari can't see your plugin, your entry point may be ill-configured.
 
