@@ -74,8 +74,6 @@ def napari_plugin_manager(monkeypatch):
     Or, to re-enable global discovery, use:
     `napari_plugin_manager.discovery_blocker.stop()`
     """
-    from unittest.mock import patch
-
     import napari
     import napari.plugins.io
     from napari.plugins._plugin_manager import NapariPluginManager

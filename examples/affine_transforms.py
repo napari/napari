@@ -3,6 +3,8 @@ Affine transforms
 =================
 
 Display an image and its corners before and after an affine transform
+
+.. tags:: visualization-advanced
 """
 import numpy as np
 import napari

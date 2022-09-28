@@ -1,0 +1,48 @@
+name: my-plugin
+display_name: My Plugin
+contributions:
+  commands:
+    - id: my-plugin.hello_world
+      title: Hello World
+    - id: my-plugin.some_reader
+      title: Some Reader
+    - id: my-plugin.my_writer
+      title: Image Writer
+    - id: my-plugin.generate_random_data
+      title: Generate uniform random data
+    - id: my-plugin.some_widget
+      title: Create my widget
+  readers:
+    - command: my-plugin.some_reader
+      filename_patterns: ["*.fzy", "*.fzzy"]
+      accepts_directories: true
+  writers:
+    - command: my-plugin.my_writer
+      filename_extensions: ["*.tif", "*.tiff"]
+      layer_types: ["image"]
+  widgets:
+    - command: my-plugin.some_widget
+      display_name: My Widget
+  menus:
+    napari/layers/context:
+      - submenu: mysubmenu
+      - command: my-plugin.hello_world
+    my-plugin/submenu:
+      - command: my-plugin.hello_world
+  submenus:
+    - id: mysubmenu
+      label: My SubMenu
+  themes:
+    - label: "SampleTheme"
+      id: "sample_theme"
+      type: "dark"
+      colors:
+        background: "#272822"
+        foreground: "#75715e"
+  sample_data:
+    - display_name: Some Random Data (512 x 512)
+      key: random_data
+      command: my-plugin.generate_random_data
+    - display_name: Random internet image
+      key: internet_image
+      uri: https://picsum.photos/1024

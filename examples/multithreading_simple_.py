@@ -2,6 +2,7 @@
 Multithreading simple
 =====================
 
+.. tags:: interactivity
 """
 
 from qtpy.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel

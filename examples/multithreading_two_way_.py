@@ -2,6 +2,7 @@
 Multithreading two-way
 ======================
 
+.. tags:: interactivity
 """
 import time
 

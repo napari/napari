@@ -42,6 +42,23 @@ class FileMenu(NapariMenu):
                 'slot': window._qt_viewer._open_folder_dialog,
                 'shortcut': 'Ctrl+Shift+O',
             },
+            {
+                'menu': trans._('Open with Plugin'),
+                'items': [
+                    {
+                        'text': 'Open File(s)...',
+                        'slot': self._open_files_w_plugin,
+                    },
+                    {
+                        'text': 'Open Files as Stack...',
+                        'slot': self._open_files_as_stack_w_plugin,
+                    },
+                    {
+                        'text': 'Open Folder...',
+                        'slot': self._open_folder_w_plugin,
+                    },
+                ],
+            },
             {'menu': self.open_sample_menu},
             {},
             {
@@ -210,6 +227,20 @@ class FileMenu(NapariMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
+
+    def _open_files_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog(choose_plugin=True)
+
+    def _open_files_as_stack_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog_as_stack_dialog(
+            choose_plugin=True
+        )
+
+    def _open_folder_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
 @register_viewer_action(trans._("Show all key bindings"))

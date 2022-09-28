@@ -16,7 +16,7 @@ This release introduces ways to interact with data in 3D (#3037). Features like
 label picking (#3074) and label painting/erasing (#3108) now work in 3D, but
 these are just the beginning! We're excited to see new ways of annotating 3D
 data appear in napari! For more details, please see the documentation at
-[https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
+[https://napari.org/stable/guides/3D_interactivity.html](https://napari.org/stable/guides/3D_interactivity.html).
 Many thanks to Alister Burt and Kevin Yamauchi for their foundational work
 setting up the infrastructure for these features.
 
