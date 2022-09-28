@@ -110,7 +110,10 @@ def translate_to_vector(translate, *, ndim):
     """
     translate_arr = np.zeros(ndim)
     if translate is not None:
-        translate_arr[-len(translate) :] = translate
+        if len(translate) > ndim:
+            translate_arr[:] = translate[:ndim]
+        else:
+            translate_arr[-len(translate) :] = translate
     return translate_arr
 
 
@@ -328,6 +331,8 @@ def embed_in_identity_matrix(matrix, ndim):
 
     if matrix.shape[0] == ndim:
         return matrix
+    elif matrix.shape[0] > ndim:
+        return matrix[:ndim, :ndim]
     else:
         full_matrix = np.eye(ndim)
         full_matrix[-matrix.shape[0] :, -matrix.shape[1] :] = matrix
