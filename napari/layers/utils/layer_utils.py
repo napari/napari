@@ -1044,16 +1044,16 @@ def combine_extents(extents):
     if len(extents) == 0:
         return []
     extent_arrays = [np.array(ex) for ex in extents]
-    ndims = [arr.shape[0] for arr in extent_arrays]
+    ndims = [arr.shape[1] for arr in extent_arrays]
     required_ndims = max(ndims)
     dims_to_prepend = [required_ndims - d for d in ndims]
     padded_arrays = [
-        np.concatenate((np.zeros((d, 2)), ex), axis=0)
-        for d, ex in zip(dims_to_prepend, extent_arrays)
+        np.pad(ex, ((0, 0), (d, 0)))
+        for ex, d in zip(extent_arrays, dims_to_prepend)
     ]
     big_array = np.stack(padded_arrays, axis=0)
     result = np.stack(
-        [np.min(big_array, axis=0)[:, 0], np.max(big_array, axis=0)[:, 1]],
+        [np.min(big_array[:, 0], axis=0), np.max(big_array[:, 1], axis=0)],
         axis=1,
-    )
-    return list(map(tuple, result))
+    ).T
+    return result

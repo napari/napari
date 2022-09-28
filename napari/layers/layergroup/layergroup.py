@@ -136,6 +136,7 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         super().__delitem__(key)
         self._update_thumbnail()
 
+    @property
     def _extent_data(self):
         """Extent of layer in data coordinates.
 
@@ -143,7 +144,7 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         -------
         extent_data : array, shape (2, D)
         """
-        return combine_extents([c._extent_data() for c in self])
+        return combine_extents([c._extent_data for c in self])
 
     @property
     def _extent_world(self) -> np.ndarray:
