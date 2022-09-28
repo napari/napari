@@ -120,7 +120,7 @@ class Extension2ReaderTable(QWidget):
         ):
             self._add_reader_choice(i, plugin_name, display_name)
 
-        add_btn = QPushButton('Add')
+        add_btn = QPushButton(trans._('Add'))
         add_btn.setToolTip(trans._('Save reader preference for pattern'))
         add_btn.clicked.connect(self._save_new_preference)
 

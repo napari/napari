@@ -148,8 +148,8 @@ provides metadata). From now on we will refer to them as _napari pinnings_.
 > There are precedents in other projects that support the usage of pinnings. For example,
 > Fiji/SciJava [^scijava-pinnings], conda-forge [^conda-forge-pinnings], or Maxiconda [^maxiconda].
 
-A prototype notebook assessing the "installability" of all plugins in the same environment
-is available [here](https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk)
+[A prototype notebook](https://colab.research.google.com/drive/1QxbBZYe9-AThGuRsTfwYzT72_UkamXmk) 
+assessing the "installability" of all plugins in the same environment is available. 
 Results across Python versions show incompatibilities on Linux, possibly even more intricate on macOS
 and Windows. Excerpt for Python 3.9:
 
@@ -423,12 +423,12 @@ Adding the missing pieces to `constructor` involves changes in four different pr
   the installation process.
 
 The full list of PRs is available on
-[this issue comment](https://github.com/napari/napari/issues/4248#issuecomment-1066574137).
+[this issue comment](https://github.com/napari/packaging/issues/15#issuecomment-1203806825).
 A complete list of features can be found in the packaging documentation [^napari-packaging-docs].
 
 #### Tasks
 
-* [ ] Create `napari/packaging` and migrate the conda bundle CI there, along with the relevant
+* [X] Create `napari/packaging` and migrate the conda bundle CI there, along with the relevant
       metadata
 * [ ] Add detailed documentation about how the installers are structured and how they work
       internally
@@ -591,7 +591,7 @@ CC0+BY [^cc0by].
 
 [^constructor]: <https://github.com/conda/constructor>
 
-[^constructor-upstream]: <https://github.com/napari/napari/issues/4248#issuecomment-1066574137>
+[^constructor-upstream]: <https://github.com/napari/packaging/issues/15#issuecomment-1203806825>
 
 [^menuinst]: <https://github.com/conda/menuinst>
 
@@ -613,7 +613,7 @@ CC0+BY [^cc0by].
 
 [^appimage-crash2]: <https://github.com/napari/napari/issues/3816>
 
-[^napari-packaging-docs]: <https://napari.org/developers/packaging.html>
+[^napari-packaging-docs]: <https://napari.org/stable/developers/packaging.html>
 
 [^napari-hub-api]: https://api.napari-hub.org/plugins
 
@@ -629,7 +629,7 @@ CC0+BY [^cc0by].
 
 [^pypi-parallelism-abi]: https://twitter.com/ralfgommers/status/1517410559972589569
 
-[^release-guide]: https://napari.org/developers/release.html
+[^release-guide]: https://napari.org/stable/developers/release.html
 
 [^scijava-pinnings]: https://github.com/scijava/pom-scijava/blob/ff35ca810a8717c4f461ef24df4986bf1914c673/pom.xml#L307
 
