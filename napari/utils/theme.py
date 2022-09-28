@@ -333,6 +333,11 @@ def _install_npe2_themes(_themes):
         register_theme(theme.id, d)
 
 
+def refresh_themes():
+    """Refresh themes from npe2 plugins."""
+    _install_npe2_themes(_themes)
+
+
 _install_npe2_themes(_themes)
 _themes.events.added.connect(rebuild_theme_settings)
 _themes.events.removed.connect(rebuild_theme_settings)

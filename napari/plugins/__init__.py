@@ -4,6 +4,8 @@ from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
 
+from napari.utils.theme import refresh_themes
+
 from ..settings import get_settings
 from . import _npe2
 from ._plugin_manager import NapariPluginManager
@@ -37,6 +39,7 @@ def _initialize_plugins():
     )
     _npe2pm.events.plugins_registered.connect(_npe2.on_plugins_registered)
     _npe2pm.discover(include_npe1=settings.plugins.use_npe2_adaptor)
+    refresh_themes()
 
     # this is a workaround for the fact that briefcase does not seem to include
     # napari's entry_points.txt in the bundled app, so the builtin plugins
