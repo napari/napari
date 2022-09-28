@@ -6,11 +6,12 @@ from ...utils.translations import trans
 
 
 class VispyBaseOverlay:
-    def __init__(self, overlay, node):
+    def __init__(self, *, overlay, node, parent):
         super().__init__()
         self.overlay = overlay
 
         self.node = node
+        self.node.parent = parent
         self.node.order = self.overlay.order
 
         self.overlay.events.visible.connect(self._on_visible_change)
@@ -33,8 +34,8 @@ class VispyBaseOverlay:
 
 
 class VispyCanvasOverlay(VispyBaseOverlay):
-    def __init__(self, overlay, viewer, node):
-        super().__init__(overlay, node)
+    def __init__(self, *, viewer, **kwargs):
+        super().__init__(**kwargs)
         self.viewer = viewer
 
         self.x_offset = 10
@@ -101,14 +102,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
 
 class VispySceneOverlay(VispyBaseOverlay):
-    def __init__(self, overlay, viewer, node):
-        super().__init__(overlay, node)
+    def __init__(self, *, viewer, **kwargs):
+        super().__init__(**kwargs)
         self.viewer = viewer
         self.node.transform = MatrixTransform()
 
 
 class VispyLayerOverlay(VispyBaseOverlay):
-    def __init__(self, overlay, layer, node):
-        super().__init__(overlay, node)
+    def __init__(self, *, layer, **kwargs):
+        super().__init__(**kwargs)
         self.layer = layer
         self.node.transform = MatrixTransform()

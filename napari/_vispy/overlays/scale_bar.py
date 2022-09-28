@@ -12,12 +12,12 @@ from .base import VispyCanvasOverlay
 class VispyScaleBarOverlay(VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self._target_length = 150
         self._scale = 1
         self._unit = None
 
-        super().__init__(*args, node=ScaleBar(), **kwargs)
+        super().__init__(node=ScaleBar(), **kwargs)
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
@@ -34,10 +34,7 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.camera.events.zoom.connect(self._on_zoom_change)
 
-        self._on_visible_change()
-        self._on_data_change()
-        self._on_unit_change()
-        self._on_position_change()
+        self.reset()
 
     def _on_unit_change(self):
         self._unit = get_unit_registry()(self.overlay.unit)
@@ -134,8 +131,15 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
         self.node.box.color = box_color
 
     def _on_box_change(self):
-        self.node.text.visible = self.overlay.box
+        self.node.box.visible = self.overlay.box
 
     def _on_text_change(self):
         """Update text information"""
         self.node.text.font_size = self.overlay.font_size
+
+    def reset(self):
+        super().reset()
+        self._on_unit_change()
+        self._on_data_change()
+        self._on_box_change()
+        self._on_text_change()

@@ -8,13 +8,13 @@ from .base import VispySceneOverlay
 class VispyAxesOverlay(VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self._scale = 1
 
         # Target axes length in canvas pixels
         self._target_length = 80
 
-        super().__init__(*args, node=Axes(), **kwargs)
+        super().__init__(node=Axes(), **kwargs)
         self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)
@@ -30,11 +30,7 @@ class VispyAxesOverlay(VispySceneOverlay):
             self._on_labels_text_change
         )
 
-        self._on_data_change()
-        self._on_visible_change()
-        self._on_labels_visible_change()
-        self._on_labels_text_change()
-        self._on_zoom_change()
+        self.reset()
 
     def _on_data_change(self):
         # Determine which axes are displayed
@@ -73,3 +69,10 @@ class VispyAxesOverlay(VispySceneOverlay):
         # Update axes scale
         self.node.transform.reset()
         self.node.transform.scale([scale, scale, scale, 1])
+
+    def reset(self):
+        super().reset()
+        self._on_data_change()
+        self._on_labels_visible_change()
+        self._on_labels_text_change()
+        self._on_zoom_change()

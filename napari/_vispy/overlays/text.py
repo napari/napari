@@ -7,21 +7,17 @@ from .base import VispyCanvasOverlay
 class VispyTextOverlay(VispyCanvasOverlay):
     """Text overlay."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, node=Text(pos=(0, 0)), **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(node=Text(pos=(0, 0)), **kwargs)
 
         self.node.font_size = self.overlay.font_size
         self.node.anchors = ("left", "top")
 
         self.overlay.events.text.connect(self._on_text_change)
         self.overlay.events.color.connect(self._on_color_change)
-        self.overlay.events.font_size.connect(self._on_color_change)
+        self.overlay.events.font_size.connect(self._on_font_size_change)
 
-        self._on_visible_change()
-        self._on_text_change()
-        self._on_color_change()
-        self._on_font_size_change()
-        self._on_position_change()
+        self.reset()
 
     def _on_text_change(self):
         self.node.text = self.overlay.text
@@ -32,7 +28,7 @@ class VispyTextOverlay(VispyCanvasOverlay):
     def _on_font_size_change(self):
         self.node.font_size = self.overlay.font_size
 
-    def _on_position_change(self):
+    def _on_position_change(self, event=None):
         super()._on_position_change()
         position = self.overlay.position
 
@@ -50,3 +46,9 @@ class VispyTextOverlay(VispyCanvasOverlay):
             anchors = ("center", "top")
 
         self.node.anchors = anchors
+
+    def reset(self):
+        super().reset()
+        self._on_text_change()
+        self._on_color_change()
+        self._on_font_size_change()
