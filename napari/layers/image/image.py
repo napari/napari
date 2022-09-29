@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, List, Sequence, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -16,6 +17,7 @@ from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
 from ...utils.migrations import rename_argument
 from ...utils.naming import magic_name
+from ...utils.transforms import Affine
 from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
@@ -41,6 +43,14 @@ from ._image_utils import guess_multiscale, guess_rgb
 
 if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
+
+
+@dataclass(frozen=True)
+class _ImageSliceResponse:
+    data: np.ndarray = field(repr=False)
+    tile_to_data: Optional[Affine] = field(repr=False)
+    thumbnail: np.ndarray = field(repr=False)
+    indices: Tuple[Union[int, float, slice], ...] = field(repr=False)
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -724,12 +734,42 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
-        not_disp = self._dims_not_displayed
+        slice_indices = self._slice_indices
+        if self._slice_outside_extent(slice_indices):
+            return
+        self._empty = False
 
+        response = self._get_slice(slice_indices)
+
+        if response.tile_to_data is not None:
+            self._transforms[
+                'tile2data'
+            ].translate = response.tile_to_data.translate
+            self._transforms[
+                'tile2data'
+            ].linear_matrix = response.tile_to_data.linear_matrix
+
+        # Load our images, might be sync or async.
+        data = self._SliceDataClass(
+            self,
+            response.indices,
+            response.data,
+            response.thumbnail,
+        )
+        self._load_slice(data)
+        if self._should_calc_clims:
+            self.reset_contrast_limits_range()
+            self.reset_contrast_limits()
+            self._should_calc_clims = False
+        elif self._keep_auto_contrast:
+            self.reset_contrast_limits()
+
+    def _slice_outside_extent(self, slice_indices):
         # Check if requested slice outside of data range
-        indices = np.array(self._slice_indices)
+        indices = np.array(slice_indices)
+        not_disp = self._dims_not_displayed
         extent = self._extent_data
-        if np.any(
+        return np.any(
             np.less(
                 [indices[ax] for ax in not_disp],
                 [extent[0, ax] for ax in not_disp],
@@ -739,93 +779,93 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 [indices[ax] for ax in not_disp],
                 [extent[1, ax] for ax in not_disp],
             )
-        ):
-            return
-        self._empty = False
-
-        if self.multiscale:
-            if self._ndisplay == 3:
-                # If 3d redering just show lowest level of multiscale
-                warnings.warn(
-                    trans._(
-                        'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
-                )
-                self.data_level = len(self.data) - 1
-
-            # Slice currently viewed level
-            level = self.data_level
-            indices = np.array(self._slice_indices)
-            downsampled_indices = (
-                indices[not_disp] / self.downsample_factors[level, not_disp]
-            )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
-            )
-            indices[not_disp] = downsampled_indices
-
-            scale = np.ones(self.ndim)
-            for d in self._dims_displayed:
-                scale[d] = self.downsample_factors[self.data_level][d]
-            self._transforms['tile2data'].scale = scale
-
-            if self._ndisplay == 2:
-                for d in self._displayed_axes:
-                    indices[d] = slice(
-                        self.corner_pixels[0, d],
-                        self.corner_pixels[1, d],
-                        1,
-                    )
-                self._transforms['tile2data'].translate = (
-                    self.corner_pixels[0] * self._transforms['tile2data'].scale
-                )
-            image = self.data[level][tuple(indices)]
-            image_indices = indices
-
-            # Slice thumbnail
-            indices = np.array(self._slice_indices)
-            downsampled_indices = (
-                indices[not_disp]
-                / self.downsample_factors[self._thumbnail_level, not_disp]
-            )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices,
-                0,
-                self.level_shapes[self._thumbnail_level, not_disp] - 1,
-            )
-            indices[not_disp] = downsampled_indices
-
-            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
-        else:
-            self._transforms['tile2data'].scale = np.ones(self.ndim)
-            image_indices = self._slice_indices
-            image = self.data[image_indices]
-
-            # For single-scale we don't request a separate thumbnail_source
-            # from the ChunkLoader because in ImageSlice.chunk_loaded we
-            # call request.thumbnail_source() and it knows to just use the
-            # image itself is there is no explicit thumbnail_source.
-            thumbnail_source = None
-
-        # Load our images, might be sync or async.
-        data = self._SliceDataClass(
-            self, image_indices, image, thumbnail_source
         )
-        self._load_slice(data)
-        if self._should_calc_clims:
-            self.reset_contrast_limits_range()
-            self.reset_contrast_limits()
-            self._should_calc_clims = False
-        elif self._keep_auto_contrast:
-            self.reset_contrast_limits()
+
+    def _get_slice(self, slice_indices) -> _ImageSliceResponse:
+        data, thumbnail, tile_to_data = (
+            self._get_slice_data_multi_scale(slice_indices)
+            if self.multiscale
+            else self._get_slice_data(slice_indices)
+        )
+        return _ImageSliceResponse(
+            data=data,
+            tile_to_data=tile_to_data,
+            thumbnail=thumbnail,
+            indices=slice_indices,
+        )
+
+    def _get_slice_data(
+        self, slice_indices
+    ) -> Tuple[np.ndarray, np.ndarray, Optional[Affine]]:
+        data = self.data[slice_indices]
+        return data, data, None
+
+    def _get_slice_data_multi_scale(
+        self, slice_indices
+    ) -> Tuple[np.ndarray, np.ndarray, Optional[Affine]]:
+        if self._ndisplay == 3:
+            warnings.warn(
+                trans._(
+                    'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                    deferred=True,
+                ),
+                category=UserWarning,
+            )
+            level = len(self.data) - 1
+        else:
+            level = self.data_level
+
+        level_shapes = self.level_shapes
+        downsample_factors = self.downsample_factors
+
+        indices = Image._get_downsampled_indices(
+            downsample_factors,
+            level_shapes,
+            slice_indices,
+            self._dims_not_displayed,
+            level,
+        )
+
+        scale = np.ones(self.ndim)
+        for d in self._dims_displayed:
+            scale[d] = downsample_factors[level][d]
+
+        # This only needs to be a ScaleTranslate but different types
+        # of transforms in a chain don't play nicely together right now.
+        tile_to_data = Affine(scale=scale)
+        if self._ndisplay == 2:
+            for d in self._dims_displayed:
+                indices[d] = slice(
+                    self.corner_pixels[0, d],
+                    self.corner_pixels[1, d],
+                    1,
+                )
+            tile_to_data.translate = self.corner_pixels[0] * tile_to_data.scale
+
+        thumbnail_indices = Image._get_downsampled_indices(
+            downsample_factors,
+            level_shapes,
+            slice_indices,
+            self._dims_not_displayed,
+            -1,
+        )
+
+        # Don't materialize yet to avoid breaking exp async.
+        data = self.data[level][tuple(indices)]
+        thumbnail = self.data[-1][tuple(thumbnail_indices)]
+
+        return data, thumbnail, tile_to_data
+
+    @staticmethod
+    def _get_downsampled_indices(
+        downsample_factors, level_shapes, indices, not_disp, level
+    ) -> np.ndarray:
+        indices = np.array(indices)
+        ds_indices = indices[not_disp] / downsample_factors[level, not_disp]
+        ds_indices = np.round(ds_indices.astype(float)).astype(int)
+        ds_indices = np.clip(ds_indices, 0, level_shapes[level, not_disp] - 1)
+        indices[not_disp] = ds_indices
+        return indices
 
     @property
     def _SliceDataClass(self):
