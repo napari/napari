@@ -20,6 +20,15 @@ class MenuId(str, Enum):
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
+    TOOLS_ACQUISITION = 'napari/tools/acquisition'
+    TOOLS_CLASSIFICATION = 'napari/tools/classification'
+    TOOLS_FILTERS = 'napari/tools/filters'
+    TOOLS_MEASUREMENT = 'napari/tools/measurement'
+    TOOLS_SEGMENTATION = 'napari/tools/segmentation'
+    TOOLS_PROJECTION = 'napari/tools/projection'
+    TOOLS_TRANSFORM = 'napari/tools/transform'
+    TOOLS_UTILITIES = 'napari/tools/utilities'
+    TOOLS_VISUALIZATION = 'napari/tools/visualization'
 
     def __str__(self) -> str:
         return self.value
@@ -36,7 +45,20 @@ class MenuGroup:
 
 
 # TODO: add these to docs, with a lookup for what each menu is/does.
-_CONTRIBUTABLES = {MenuId.LAYERLIST_CONTEXT.value}
+_CONTRIBUTABLES = {
+    MenuId.LAYERLIST_CONTEXT.value,
+    MenuId.LAYERS_CONVERT_DTYPE .value,
+    MenuId.LAYERS_PROJECT.value,
+    MenuId.TOOLS_ACQUISITION.value,
+    MenuId.TOOLS_CLASSIFICATION.value,
+    MenuId.TOOLS_FILTERS.value,
+    MenuId.TOOLS_MEASUREMENT.value,
+    MenuId.TOOLS_SEGMENTATION.value,
+    MenuId.TOOLS_PROJECTION.value,
+    MenuId.TOOLS_TRANSFORM.value,
+    MenuId.TOOLS_UTILITIES.value,
+    MenuId.TOOLS_VISUALIZATION.value
+}
 """Set of all menu ids that can be contributed to by plugins."""
 
 
