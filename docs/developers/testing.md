@@ -20,7 +20,7 @@ much as we can with unit tests, requiring fewer integration tests, and the least
 of functional tests as depicted in the test pyramid below from
 [softwaretestinghelp.com](https://www.softwaretestinghelp.com/the-difference-between-unit-integration-and-functional-testing/):
 
-![tests](../images/tests.png)
+![tests ](../images/tests.png)
 
 Unit tests are at the base of the pyramid because they are the easiest to write and
 the quickest to run. The time and effort to implement and maintain tests increases

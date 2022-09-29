@@ -110,4 +110,4 @@ the bug report template. If you think something isn't working, don't hesitate to
 
 ## institutional and funding partners
 
-![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)
+![CZI logo ](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)

@@ -66,7 +66,7 @@ viewer.add_tracks(tracks_data, name='tracks')
 napari.run()
 ```
 
-![image: tracks simple demo](../../images/tracks_simple_demo.webm)
+![image: tracks simple demo ](../../images/tracks_simple_demo.webm)
 
 ## Arguments of `view_tracks` and `add_tracks`
 
@@ -230,7 +230,7 @@ viewer.layers["my_tracks"].tail_width = 3
 
 Additionally, we can adjust the width of the track in the GUI using the "tail width" slider in the Tracks layer controls.
 
-![image: tracks tail width](../../images/tracks_tail_width.webm)
+![image: tracks tail width ](../../images/tracks_tail_width.webm)
 
 ## Changing tail length
 
@@ -247,7 +247,7 @@ viewer.layers["my_tracks"].tail_length = 3
 
 Additionally, we can adjust the width of the track in the GUI using the "tail length" slider in the Tracks layer controls.
 
-![image: tracks tail length](../../images/tracks_tail_length.webm)
+![image: tracks tail length ](../../images/tracks_tail_length.webm)
 
 ## Setting the track color with properties
 
@@ -287,10 +287,10 @@ viewer.add_tracks(tracks_data, properties=properties)
 napari.run()
 ```
 
-![image: tracks colored by properties](../../images/tracks_color_by.webm)
+![image: tracks colored by properties ](../../images/tracks_color_by.webm)
 
 ## Putting it all together
 
 Here you can see an example of 3D+t tracks. You can view the source code for this example [here](https://github.com/napari/napari/blob/main/examples/tracks_3d.py)
 
-![image: tracks 3D plus time](../../images/tracks_3d_t.webm)
+![image: tracks 3D plus time ](../../images/tracks_3d_t.webm)

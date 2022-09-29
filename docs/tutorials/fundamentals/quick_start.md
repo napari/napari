@@ -160,11 +160,11 @@ The labels layer allows you to record the segmentation result by assigning backg
 1. Circle the cell
 1. Use "fill" bucket to fill it.
 
-![manual_label](../../images/manual_label.webm)
+![manual_label ](../../images/manual_label.webm)
 
 Several plugins can perform automatic segmentation that takes image layers as input and generates labels layers as output.
 
-Try [cellpose-napari](https://www.napari-hub.org/plugins/cellpose-napari) if you have cell images.
+Try [cellpose-napari ](https://www.napari-hub.org/plugins/cellpose-napari) if you have cell images.
 
 +++
 
@@ -193,7 +193,7 @@ viewer.close_all()
 ### Next steps
 - napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view.
 
-![ndisplay](../../images/ndisplay.png)
+![ndisplay ](../../images/ndisplay.png)
 
 - Test some [examples](https://github.com/napari/napari/tree/main/examples) to see how to add different layer types and add your own widgets to napari. 
 

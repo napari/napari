@@ -100,7 +100,7 @@ Now we will continue exploring the rest of the viewer.
 
 The viewer is organized into a few key areas:
 
-![image: viewer layout](../assets/tutorials/viewer_layout.jpg)
+![image: viewer layout ](../assets/tutorials/viewer_layout.jpg)
 
 We'll go through each of these in the next sections.
 
@@ -118,7 +118,7 @@ performant. You can also return to the original zoom level by clicking the
 
 +++
 
-![image: pan and zoom with napari](../assets/tutorials/viewer_pan_zoom.webm)
+![image: pan and zoom with napari ](../assets/tutorials/viewer_pan_zoom.webm)
 
 +++
 
@@ -335,7 +335,7 @@ viewer as follows:
 
 +++
 
-![image: console within napari](../assets/tutorials/console.png)
+![image: console within napari ](../assets/tutorials/console.png)
 
 +++
 
@@ -355,7 +355,7 @@ viewer.add_labels(labeled, name='blob ID')
 
 ... clicking on the 3D button
 
-![image: 3D_button](../assets/tutorials/3D_button.png)
+![image: 3D_button ](../assets/tutorials/3D_button.png)
 
 and rotating the camera view with the mouse gives something like the following
 view:
