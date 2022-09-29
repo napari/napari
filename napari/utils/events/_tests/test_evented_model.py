@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from dask import delayed
 from dask.delayed import Delayed
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from napari.utils.events import EmitterGroup, EventedList, EventedModel
 from napari.utils.events.custom_types import Array
@@ -525,6 +525,10 @@ def test_nested_model():
     m.n = {'x': 3}
     assert m.ls is ls
     assert m.n is n
+
+    # but failures should raise errors
+    with pytest.raises(ValidationError):
+        m.ls = 1
 
 
 def test_events_stay_working():
