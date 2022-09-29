@@ -47,7 +47,7 @@ class MenuGroup:
 # TODO: add these to docs, with a lookup for what each menu is/does.
 _CONTRIBUTABLES = {
     MenuId.LAYERLIST_CONTEXT.value,
-    MenuId.LAYERS_CONVERT_DTYPE .value,
+    MenuId.LAYERS_CONVERT_DTYPE.value,
     MenuId.LAYERS_PROJECT.value,
     MenuId.TOOLS_ACQUISITION.value,
     MenuId.TOOLS_CLASSIFICATION.value,
@@ -57,7 +57,7 @@ _CONTRIBUTABLES = {
     MenuId.TOOLS_PROJECTION.value,
     MenuId.TOOLS_TRANSFORM.value,
     MenuId.TOOLS_UTILITIES.value,
-    MenuId.TOOLS_VISUALIZATION.value
+    MenuId.TOOLS_VISUALIZATION.value,
 }
 """Set of all menu ids that can be contributed to by plugins."""
 
