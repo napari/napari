@@ -310,20 +310,20 @@ def bundle():
         elif MACOS:
             patch_python_lib_location()
 
-        # # build
-        # cmd = ['briefcase', 'build', '-v'] + (['--no-docker'] if LINUX else [])
-        # subprocess.check_call(cmd)
+        # build
+        cmd = ['briefcase', 'build', '-v'] + (['--no-docker'] if LINUX else [])
+        subprocess.check_call(cmd)
 
-        # # package
-        # cmd = ['briefcase', 'package', '-v']
-        # cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
-        # subprocess.check_call(cmd)
+        # package
+        cmd = ['briefcase', 'package', '-v']
+        cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
+        subprocess.check_call(cmd)
 
-        # # compress
-        # dest = make_zip()
-        # clean()
+        # compress
+        dest = make_zip()
+        clean()
 
-        # return dest
+        return dest
 
 
 if __name__ == "__main__":
