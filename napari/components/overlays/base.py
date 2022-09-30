@@ -2,9 +2,9 @@ from ...utils.events import EventedModel
 from .._viewer_constants import CanvasPosition
 
 
-class Overlay(EventedModel):
+class BaseOverlay(EventedModel):
     """
-    Overlay evented model.
+    Base class for overlay evented models.
 
     An overlay is a renderable entity meant to display additional information
     on top of the layer data, but is not data per se.
@@ -16,18 +16,19 @@ class Overlay(EventedModel):
     order: int = 1e6
 
 
-class CanvasOverlay(Overlay):
+class CanvasOverlay(BaseOverlay):
     """
     Canvas overlay model.
 
-    Canvas overlays live in canvas space; they do not live in the 2- or 3-dimensional scene being rendered, but in the 2D space of the screen.
+    Canvas overlays live in canvas space; they do not live in the 2- or 3-dimensional
+    scene being rendered, but in the 2D space of the screen.
     For example: scale bars, colormap bars, etc.
     """
 
     position: CanvasPosition = CanvasPosition.BOTTOM_RIGHT
 
 
-class SceneOverlay(Overlay):
+class SceneOverlay(BaseOverlay):
     """
     Scene overlay model.
 
