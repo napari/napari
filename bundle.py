@@ -116,42 +116,8 @@ def patched_toml():
         app_table.add('macOS', tomlkit.table())
         app_table['macOS']['support_revision'] = revision
         print(
-            "patching pyproject.toml to pin support package revision:",
+            "patching pyproject.toml to pin support package to revision:",
             revision,
-        )
-        # See https://github.com/napari/napari/pull/5152/#issuecomment-1263385953
-        # and following comments - we can't use `template_branch` because that
-        # is only available in a later briefcase version; we pin to 0.3.1 due to
-        # https://github.com/napari/napari/pull/2980
-        # so we can only use 'template', which supports git urls, archive urls and
-        # paths; we can't use direct URLs because the launcher loses the
-        # executable bits (chmod+x)... so we need to clone and checkout
-        # ourselves, and then provide a path :/
-        # normally we would use the pyver and revision from the dict above, but 3.9b1
-        # has a bug and... whatever comes before b9 works with the pydantic bug :shrug:
-        # b1 to b4: crash with no error
-        # b5 to b8: "Distribution {name!r} exists but does not provide a napari manifest"
-        #   note it does work if launched with the bundled python3 -m napari approach
-        #   (PYTHONPATH needs to be patched though)
-        # b8 and up: pydantic error :/
-        template_path = os.path.join(HERE, 'macOS', 'template')
-        os.makedirs(template_path, exist_ok=True)
-        template_tag = f"3.9-b5"
-        print(f"fetchin template {template_tag}...")
-        subprocess.check_output(
-            [
-                "git",
-                "clone",
-                "--branch",
-                template_tag,
-                "https://github.com/beeware/briefcase-macOS-app-template",
-                template_path,
-            ]
-        )
-        app_table['macOS']['template'] = template_path
-        print(
-            "patching pyproject.toml to pin template to:",
-            template_path,
         )
 
     with open(PYPROJECT_TOML, 'w') as f:
