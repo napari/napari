@@ -119,13 +119,13 @@ def patched_toml():
             "patching pyproject.toml to pin support package revision:",
             revision,
         )
-        # See https://github.com/napari/napari/pull/5152/#issuecomment-1263385953 
+        # See https://github.com/napari/napari/pull/5152/#issuecomment-1263385953
         # and following comments - we can't use `template_branch` because that
         # is only available in a later briefcase version; we pin to 0.3.1 due to
         # https://github.com/napari/napari/pull/2980
         # so we can only use 'template', which supports git urls, archive urls and
-        # paths; we can't use direct URLs because the launcher loses the 
-        # executable bits (chmod+x)... so we need to clone and checkout 
+        # paths; we can't use direct URLs because the launcher loses the
+        # executable bits (chmod+x)... so we need to clone and checkout
         # ourselves, and then provide a path :/
         # normally we would use the pyver and revision from the dict above, but 3.9b1
         # has a bug and... whatever comes before b9 works with the pydantic bug :shrug:
@@ -140,12 +140,12 @@ def patched_toml():
         print(f"fetchin template {template_tag}...")
         subprocess.check_output(
             [
-                "git", 
+                "git",
                 "clone",
-                "--branch", 
-                template_tag, 
+                "--branch",
+                template_tag,
                 "https://github.com/beeware/briefcase-macOS-app-template",
-                template_path
+                template_path,
             ]
         )
         app_table['macOS']['template'] = template_path
@@ -297,7 +297,9 @@ def bundle():
     # the briefcase calls need to happen while the pyproject toml is patched
     with patched_toml(), patched_dmgbuild():
         # create
-        cmd = ['briefcase', 'create', '-v'] + (['--no-docker'] if LINUX else [])
+        cmd = ['briefcase', 'create', '-v'] + (
+            ['--no-docker'] if LINUX else []
+        )
         subprocess.check_call(cmd)
 
         time.sleep(0.5)
