@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from ..utils.events import EmitterGroup
 from .interactions import Shortcut
@@ -38,6 +38,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
+    repeatable: bool = False
 
     @cached_property
     def injected(self) -> Callable[..., Future]:
@@ -82,7 +83,7 @@ class ActionManager:
     def __init__(self):
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
-        self._shortcuts: Dict[str, Set[str]] = defaultdict(set)
+        self._shortcuts: Dict[str, List[str]] = defaultdict(list)
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shorcut_changed=None)
@@ -106,6 +107,7 @@ class ActionManager:
         command: Callable,
         description: str,
         keymapprovider: KeymapProvider,
+        repeatable: bool = False,
     ):
         """
         Register an action for future usage
@@ -114,6 +116,8 @@ class ActionManager:
          - a name (unique), usually `packagename:name`
          - a description
          - A keymap provider (easier for focus and backward compatibility).
+         - a boolean repeatability flag indicating whether it can be auto-
+           repeated (i.e. when a key is held down); defaults to False
 
         Actions can then be later bound/unbound from button elements, and
         shortcuts; and the action manager will take care of modifying the keymap
@@ -135,6 +139,10 @@ class ActionManager:
             KeymapProvider class or instance to use to bind the shortcut(s) when
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
+        repeatable : bool
+            a boolean flag indicating whether the action can be autorepeated.
+            Defaults to False.
+
 
         Notes
         -----
@@ -150,8 +158,11 @@ class ActionManager:
         bind_button, bind_shortcut
 
         """
+
         self._validate_action_name(name)
-        self._actions[name] = Action(command, description, keymapprovider)
+        self._actions[name] = Action(
+            command, description, keymapprovider, repeatable
+        )
         self._update_shortcut_bindings(name)
 
     def _update_shortcut_bindings(self, name: str):
@@ -208,10 +219,17 @@ class ActionManager:
         if action := self._actions.get(name):
             if isgeneratorfunction(action):
                 raise ValueError(
-                    'bind_button cannot be used with generator functions'
+                    trans._(
+                        '`bind_button` cannot be used with generator functions',
+                        deferred=True,
+                    )
                 )
 
         button.clicked.connect(lambda: self.trigger(name))
+        if name in self._actions:
+            button.setToolTip(
+                f'{self._build_tooltip(name)} {extra_tooltip_text}'
+            )
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
@@ -240,11 +258,13 @@ class ActionManager:
         delayed until the corresponding action is registered.
         """
         self._validate_action_name(name)
-        self._shortcuts[name].add(shortcut)
+        if shortcut in self._shortcuts[name]:
+            return
+        self._shortcuts[name].append(shortcut)
         self._update_shortcut_bindings(name)
         self._emit_shortcut_change(name, shortcut)
 
-    def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
+    def unbind_shortcut(self, name: str) -> Optional[List[str]]:
         """
         Unbind all shortcuts for a given action name.
 
@@ -298,12 +318,12 @@ class ActionManager:
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
             shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
-            ttip += f'({shorts})'
+            ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
         return ttip
 
-    def _get_layer_shortcuts(self, layers):
+    def _get_layer_shortcuts(self, layers) -> dict:
         """
         Get shortcuts filtered by the given layers.
 
@@ -321,16 +341,19 @@ class ActionManager:
         layer_shortcuts = {}
         for layer in layers:
             layer_shortcuts[layer] = {}
-            for name, shortcut in self._shortcuts.items():
+            for name, shortcuts in self._shortcuts.items():
                 action = self._actions.get(name, None)
                 if action and layer == action.keymapprovider:
-                    layer_shortcuts[layer][str(shortcut)] = action.description
+                    for shortcut in shortcuts:
+                        layer_shortcuts[layer][
+                            str(shortcut)
+                        ] = action.description
 
         return layer_shortcuts
 
     def _get_layer_actions(self, layer) -> dict:
         """
-        Get actions filtered by the given layers.
+        Get actions filtered by the given layer.
 
         Parameters
         ----------
@@ -365,12 +388,40 @@ class ActionManager:
         """
         active_func_names = [i[1].__name__ for i in active_keymap.items()]
         active_shortcuts = {}
-        for name, shortcut in self._shortcuts.items():
+        for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
             if action and action.command.__name__ in active_func_names:
-                active_shortcuts[str(shortcut)] = action.description
+                for shortcut in shortcuts:
+                    active_shortcuts[str(shortcut)] = action.description
 
         return active_shortcuts
+
+    def _get_repeatable_shortcuts(self, active_keymap) -> list:
+        """
+        Get active, repeatable shortcuts for the given active keymap.
+
+        Parameters
+        ----------
+        active_keymap : KeymapProvider
+            The active keymap provider.
+
+        Returns
+        -------
+        list
+            List of shortcuts that are repeatable.
+        """
+        active_func_names = {i[1].__name__ for i in active_keymap.items()}
+        active_repeatable_shortcuts = []
+        for name, shortcuts in self._shortcuts.items():
+            action = self._actions.get(name, None)
+            if (
+                action
+                and action.command.__name__ in active_func_names
+                and action.repeatable
+            ):
+                active_repeatable_shortcuts.extend(shortcuts)
+
+        return active_repeatable_shortcuts
 
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""

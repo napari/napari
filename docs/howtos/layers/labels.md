@@ -95,7 +95,7 @@ help(napari.view_labels)
 The labels layer is a subclass of the `Image` layer and as such can support the
 same numpy-like arrays, including
 [dask arrays](https://docs.dask.org/en/stable/array.html),
-[xarrays](http://xarray.pydata.org/en/stable/generated/xarray.DataArray.html),
+[xarrays](https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html),
 and [zarr arrays](https://zarr.readthedocs.io/en/stable/api/core.html). A
 `Labels` layer though must be integer valued, and the background label must be
 0.
@@ -180,7 +180,7 @@ The color that each integer gets assigned is random, aside from 0 which always
 gets assigned to be transparent. The colormap we use is designed such that
 nearby integers get assigned distinct colors. The exact colors that get assigned
 as determined by a
-[random seed](https://numpy.org/doc/stable/reference/generated/numpy.random.seed.html)
+[random seed](https://numpy.org/doc/stable/reference/random/generated/numpy.random.seed.html)
 and changing that seed will shuffle the colors that each label gets assigned.
 Changing the seed can be done by clicking on the `shuffle colors` button in the
 layers control panel. Shuffling colors can be useful as some colors may be hard

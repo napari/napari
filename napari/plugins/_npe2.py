@@ -67,7 +67,7 @@ def write_layers(
     layers: List[Layer],
     plugin_name: Optional[str] = None,
     writer: Optional[WriterContribution] = None,
-) -> List[str]:
+) -> Tuple[List[str], str]:
     """
     Write layers to a file using an NPE2 plugin.
 
@@ -75,31 +75,35 @@ def write_layers(
     ----------
     path : str
         The path (file, directory, url) to write.
-    layer_type : str
-        All lower-class name of the layer class to be written.
+    layers : list of Layers
+        The layers to write.
     plugin_name : str, optional
         Name of the plugin to write data with. If None then all plugins
         corresponding to appropriate hook specification will be looped
         through to find the first one that can write the data.
-    command_id : str, optional
-        npe2 command identifier that uniquely identifies the command to ivoke
-        to save layers. If specified, overrides, the plugin_name.
+    writer : WriterContribution, optional
+        Writer contribution to use to write given layers, autodetect if None.
 
     Returns
     -------
-    list of str
+    (written paths, writer name) as Tuple[List[str],str]
+
+    written paths: List[str]
         Empty list when no plugin was found, otherwise a list of file paths,
         if any, that were written.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
 
     if writer is None:
         try:
-            return io_utils.write(
+            paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
+            return (paths, writer.plugin_name)
         except ValueError:
-            return []
+            return ([], '')
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -107,8 +111,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return [res]
-    return res or []
+        return ([res], writer.plugin_name)
+    return (res or [], writer.plugin_name)
 
 
 def get_widget_contribution(
@@ -208,6 +212,7 @@ def get_readers(path: Optional[str] = None) -> Dict[str, str]:
     Dict[str, str]
         Dictionary of plugin_name to display name
     """
+
     if path:
         return {
             reader.plugin_name: pm.get_manifest(reader.command).display_name

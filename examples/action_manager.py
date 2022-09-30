@@ -2,6 +2,7 @@
 Action manager
 ==============
 
+.. tags:: gui, experimental
 """
 from random import shuffle
 
@@ -44,7 +45,7 @@ layer_buttons = viewer.window.qt_viewer.layerButtons
 # Button do not need to do anything, just need to be pretty; all the action
 # binding and (un) binding will be done with the action manager, idem for
 # setting the tooltip.
-rot_button = QtViewerPushButton(None, 'warning')
+rot_button = QtViewerPushButton('warning')
 layer_buttons.layout().insertWidget(3, rot_button)
 
 

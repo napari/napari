@@ -10,7 +10,7 @@ We believe working groups are a helpful way to move forward work on particular t
 - Have a [core developer](https://napari.org/community/team.html#current-core-developers) “sponsor” who is kept aware of work and can help shepherd through PRs as needed. If you don't have a sponsor in mind directly for your proposed working group, please post on the `#general` channel on [Zulip](https://napari.zulipchat.com) and ask whether any core members would like to sponsor your group.
 - Create a readme for your [working groups folder](https://github.com/napari/meeting-notes/tree/main/2021/working-groups) that names leads/sponsor, describes the working group’s core goals/priorities, lists Zulip channel, and links to meeting schedule (see readme template below). 
 - Identify achievable goals and deliverables that map thoughtfully to napari’s larger strategies and [roadmap](https://napari.org/roadmaps/index.html). These goals may focus on specific short-term goals or longer term efforts that still require exploration. 
-- Hold regular public meetings that are listed on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule). Cadence is up to the team, but monthly minimum is recommended.
+- Hold regular public meetings that are listed on the [napari community calendar](https://napari.org/stable/community/meeting_schedule.html). Cadence is up to the team, but monthly minimum is recommended.
 - Maintain and publicly store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
 - Present updates at least once per month at a napari community meeting (done by at least one working group member).
 - Have members actively working towards goals set forth in the group's readme.
@@ -25,7 +25,7 @@ We believe working groups are a helpful way to move forward work on particular t
 
 ## How to join an existing working group
 
-Membership is optional and opt-in, and you can join by attending group meetings (which can be found on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule)) and/or reaching out to the working group leads.
+Membership is optional and opt-in, and you can join by attending group meetings (which can be found on the [napari community calendar](https://napari.org/stable/community/meeting_schedule.html)) and/or reaching out to the working group leads.
 
 ## How to start a new working group
 

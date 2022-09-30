@@ -39,8 +39,13 @@ jobs:
         with:
           run: make docs
 
+      # TODO: enable when the link check passes
+      # - name: LinkCheck
+      #  run: make linkcheck-files
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: docs
           path: docs/_build
+

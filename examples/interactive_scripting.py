@@ -2,6 +2,7 @@
 Interactive scripting
 =====================
 
+.. tags:: interactivity
 """
 
 import numpy as np
