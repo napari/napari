@@ -742,12 +742,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         response = self._get_slice(slice_indices)
 
         if response.tile_to_data is not None:
-            self._transforms[
-                'tile2data'
-            ].translate = response.tile_to_data.translate
-            self._transforms[
-                'tile2data'
-            ].linear_matrix = response.tile_to_data.linear_matrix
+            self._transforms[0] = response.tile_to_data
 
         # Load our images, might be sync or async.
         data = self._SliceDataClass(
@@ -817,13 +812,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         level_shapes = self.level_shapes
         downsample_factors = self.downsample_factors
+        dims_not_displayed = self._dims_not_displayed
 
         indices = Image._get_downsampled_indices(
-            downsample_factors,
-            level_shapes,
-            slice_indices,
-            self._dims_not_displayed,
-            level,
+            indices=slice_indices,
+            axes=dims_not_displayed,
+            downsample_factors=downsample_factors[level],
+            level_shape=level_shapes[level],
         )
 
         scale = np.ones(self.ndim)
@@ -832,7 +827,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.
-        tile_to_data = Affine(scale=scale)
+        tile_to_data = Affine(name='tile2data', scale=scale)
         if self._ndisplay == 2:
             for d in self._dims_displayed:
                 indices[d] = slice(
@@ -840,14 +835,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     self.corner_pixels[1, d],
                     1,
                 )
+            # TODO: why do we only do this for 2D display?
+            # I guess we only support multiscale in 2D anyway, but then why is scale
+            # not in here too?
             tile_to_data.translate = self.corner_pixels[0] * tile_to_data.scale
 
         thumbnail_indices = Image._get_downsampled_indices(
-            downsample_factors,
-            level_shapes,
-            slice_indices,
-            self._dims_not_displayed,
-            -1,
+            indices=slice_indices,
+            axes=dims_not_displayed,
+            downsample_factors=downsample_factors[-1],
+            level_shape=level_shapes[-1],
         )
 
         # Don't materialize yet to avoid breaking exp async.
@@ -858,13 +855,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @staticmethod
     def _get_downsampled_indices(
-        downsample_factors, level_shapes, indices, not_disp, level
+        *,
+        indices,
+        axes,
+        downsample_factors,
+        level_shape,
     ) -> np.ndarray:
         indices = np.array(indices)
-        ds_indices = indices[not_disp] / downsample_factors[level, not_disp]
+        ds_indices = indices[axes] / downsample_factors[axes]
         ds_indices = np.round(ds_indices.astype(float)).astype(int)
-        ds_indices = np.clip(ds_indices, 0, level_shapes[level, not_disp] - 1)
-        indices[not_disp] = ds_indices
+        ds_indices = np.clip(ds_indices, 0, level_shape[axes] - 1)
+        indices[axes] = ds_indices
         return indices
 
     @property
