@@ -244,19 +244,6 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-KEY_SUBS = {
-    'UpArrow': 'Up',
-    'DownArrow': 'Down',
-    'LeftArrow': 'Left',
-    'RightArrow': 'Right',
-}
-
-
-def key2str(key) -> str:
-    k = str(key)
-    return KEY_SUBS.get(k, k)
-
-
 def kb2mods(kb) -> List[str]:
     mods = []
     if kb.ctrl:
@@ -292,9 +279,9 @@ class Shortcut:
         """
         self._kb = coerce_keybinding(shortcut)
         for part in self._kb.parts:
-            shortcut_key = key2str(part.key)
+            shortcut_key = str(part.key)
             if (
-                part.key == KeyCode.UNKOWN
+                part.key == KeyCode.UNKNOWN
                 or len(shortcut_key) > 1
                 and shortcut_key not in KEY_SYMBOLS.keys()
             ):
@@ -310,10 +297,7 @@ class Shortcut:
 
     @property
     def qt(self) -> str:
-        return ' '.join(
-            '+'.join(kb2mods(part) + [key2str(part.key)])
-            for part in self._kb.parts
-        )
+        return str(self._kb)
 
     @property
     def platform(self) -> str:
@@ -331,7 +315,7 @@ class Shortcut:
         return ' '.join(
             joinchar.join(
                 KEY_SYMBOLS.get(x, x)
-                for x in (kb2mods(part) + [key2str(part.key)])
+                for x in (kb2mods(part) + [str(part.key)])
             )
             for part in self._kb.parts
         )

@@ -61,10 +61,6 @@ USER_KEYMAP: Mapping[str, Callable] = {}
 KEY_SUBS = {
     'Control': 'Ctrl',
     'Option': 'Alt',
-    'Up': 'UpArrow',
-    'Down': 'DownArrow',
-    'Left': 'LeftArrow',
-    'Right': 'RightArrow',
 }
 
 UNDEFINED = object()
@@ -270,7 +266,7 @@ def _vispy2appmodel(event) -> KeyBinding:
         # note: 'Control' is OSX Command key
         cond = lambda m: m != 'Shift' or 'Control' in modifiers  # noqa: E731
 
-    kb = KeyCode.from_string(key)
+    kb = KeyCode.from_string(KEY_SUBS.get(key, key))
 
     for key in filter(lambda key: key in modifiers and cond(key), _VISPY_MODS):
         kb |= _VISPY_MODS[key]
