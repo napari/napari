@@ -14,7 +14,7 @@ default_shortcuts = {
     'napari:toggle_grid': ['Control-G'],
     'napari:toggle_selected_visibility': ['V'],
     'napari:activate_label_erase_mode': ['1'],
-    'napari:activate_fill_mode': ['3'],
+    'napari:activate_fill_mode': ['3', 'F'],
     'napari:activate_paint_mode': ['2'],
     'napari:activate_label_pan_zoom_mode': ['5'],
     'napari:activate_label_picker_mode': ['4'],
