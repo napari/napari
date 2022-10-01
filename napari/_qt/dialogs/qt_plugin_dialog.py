@@ -129,7 +129,6 @@ class Installer(QObject):
                 "CONDA_PINNED_PACKAGES",
                 f"napari={napari_version}{system_pins}",
             )
-            env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
             if os.name == "nt":
                 # workaround https://github.com/napari/napari/issues/4247, 4484
                 if not env.contains("TEMP"):
