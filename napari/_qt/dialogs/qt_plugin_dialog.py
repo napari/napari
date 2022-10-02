@@ -42,7 +42,7 @@ import napari.resources
 
 from ...plugins import plugin_manager
 from ...plugins.hub import iter_hub_plugin_info
-from ...plugins.pypi import iter_napari_plugin_info
+from ...plugins.pypi import _user_agent, iter_napari_plugin_info
 from ...plugins.utils import normalized_name
 from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
@@ -105,6 +105,7 @@ class Installer(QObject):
                 ]
             )
             env.insert("PYTHONPATH", combined_paths)
+            env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
         else:
             process.setProgram(installer)
 
