@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -795,13 +795,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _get_slice_data(
         self, slice_indices
-    ) -> Tuple[np.ndarray, np.ndarray, Optional[Affine]]:
+    ) -> Tuple[Any, Optional[Any], Optional[Affine]]:
         data = self.data[slice_indices]
-        return data, data, None
+        return data, None, None
 
     def _get_slice_data_multi_scale(
         self, slice_indices
-    ) -> Tuple[np.ndarray, np.ndarray, Optional[Affine]]:
+    ) -> Tuple[Any, Optional[Any], Optional[Affine]]:
         if self._ndisplay == 3:
             warnings.warn(
                 trans._(
