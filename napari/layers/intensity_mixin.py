@@ -6,7 +6,7 @@ from ..utils._dtype import normalize_dtype
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event
 from ..utils.status_messages import format_float
-from ..utils.validators import validate_increasing, validate_n_seq
+from ..utils.validators import _validate_increasing, validate_n_seq
 
 validate_2_tuple = validate_n_seq(2)
 
@@ -88,7 +88,7 @@ class IntensityVisualizationMixin:
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
         validate_2_tuple(contrast_limits)
-        validate_increasing(contrast_limits)
+        _validate_increasing(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
             + ', '
@@ -112,14 +112,14 @@ class IntensityVisualizationMixin:
     def contrast_limits_range(self, value):
         """Set the valid range of the contrast limits.
         If either value is "None", the current range will be preserved.
-        If the range overlaps the visible contrast limits, the range contrast
-        limits will be clipped to the range of the currently set contrast
-        limits.
+        If the range overlaps the current contrast limits, the range will be set
+        requested and there will be no change the contrast limits.
         If the requested contrast range limits are completely outside the
-        current contrast limits, the contrast limits will be reset to the new range.
+        current contrast limits, the range will be set as requested and the
+        contrast limits will be reset to the new range.
         """
         validate_2_tuple(value)
-        validate_increasing(value)
+        _validate_increasing(value)
         if list(value) == self.contrast_limits_range:
             return
 
