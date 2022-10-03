@@ -1,11 +1,10 @@
 """Layers are the viewable objects that can be added to a viewer.
 
 Custom layers must inherit from Layer and pass along the
-`visual node <http://vispy.org/scene.html#module-vispy.scene.visuals>`_
+`visual node <https://vispy.org/api/vispy.scene.visuals.html>`_
 to the super constructor.
 """
 import inspect as _inspect
-from importlib import import_module as _imp
 
 from ..utils.misc import all_subclasses as _all_subcls
 from .base import Layer

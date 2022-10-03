@@ -26,11 +26,49 @@ https://github.com/scikit-image/scikit-image/issues/3405
 """
 import argparse
 import os
+import re
+import sys
 from collections import OrderedDict
+from contextlib import contextmanager
 from datetime import datetime
+from itertools import chain
+from os.path import abspath
+from pathlib import Path
 from warnings import warn
 
+from git import Repo
 from github import Github
+
+try:
+    import requests
+    import requests_cache
+
+    requests_cache.install_cache(
+        'github_cache', backend='sqlite', expire_after=3600
+    )
+    # setup cache for speedup execution and reduce number of requests to GitHub API
+    # cache will expire after 1h (3600s)
+
+    @contextmanager
+    def short_cache(new_time):
+        if requests_cache.get_cache() is None:
+            yield
+            return
+        session = requests.Session()
+        old_time = session.expire_after
+        session.expire_after = new_time
+        try:
+            yield
+        finally:
+            session.expire_after = old_time
+
+except ImportError:
+
+    @contextmanager
+    def short_cache(new_time):
+        """dummy context manager"""
+        yield
+
 
 try:
     from tqdm import tqdm
@@ -44,6 +82,11 @@ except ModuleNotFoundError:
     def tqdm(i, **kwargs):
         return i
 
+
+pr_num_pattern = re.compile(r'\(#(\d+)\)(?:$|\n)')
+issue_pattern = re.compile(
+    r'(?:Close|Closes|close|closes|Fix|Fixes|fix|fixes|Resolves|resolves) +#(\d+)'
+)
 
 GH = "https://github.com"
 GH_USER = 'napari'
@@ -60,6 +103,8 @@ if GH_TOKEN is None:
 
 g = Github(GH_TOKEN)
 repository = g.get_repo(f'{GH_USER}/{GH_REPO}')
+
+local_repo = Repo(Path(abspath(__file__)).parent.parent.parent)
 
 
 parser = argparse.ArgumentParser(usage=__doc__)
@@ -78,25 +123,62 @@ for tag in repository.get_tags():
 else:
     raise RuntimeError(f'Desired tag ({args.from_commit}) not found')
 
+common_ancestor = local_repo.merge_base(args.to_commit, args.from_commit)[0]
+remote_commit = repository.get_commit(common_ancestor.hexsha)
+
 # For some reason, go get the github commit from the commit to get
 # the correct date
-github_commit = previous_tag.commit.commit
 previous_tag_date = datetime.strptime(
-    github_commit.last_modified, '%a, %d %b %Y %H:%M:%S %Z'
+    remote_commit.last_modified, '%a, %d %b %Y %H:%M:%S %Z'
 )
 
 
-all_commits = list(
+def get_commits_to_ancestor(ancestor, rev="main"):
+    yield from local_repo.iter_commits(f'{ancestor.hexsha}..{rev}')
+
+
+new_commits_count = (
+    len(list(get_commits_to_ancestor(common_ancestor, args.to_commit))) + 1
+)
+release_branch_count = (
+    len(list(get_commits_to_ancestor(common_ancestor, args.from_commit))) + 1
+)
+
+with short_cache(60):
+    all_commits = list(
+        tqdm(
+            repository.get_commits(
+                sha=args.to_commit, since=previous_tag_date
+            ),
+            desc=f'Getting all commits between {remote_commit.sha} '
+            f'and {args.to_commit}',
+            total=new_commits_count,
+        )
+    )
+branch_commit = list(
     tqdm(
-        repository.get_commits(sha=args.to_commit, since=previous_tag_date),
-        desc=f'Getting all commits between {args.from_commit} '
-        f'and {args.to_commit}',
+        repository.get_commits(
+            sha=local_repo.tag(args.from_commit).commit.hexsha,
+            since=previous_tag_date,
+        ),
+        desc=f'Getting all commits from release branch {args.from_commit} '
+        f'and {remote_commit.sha}',
+        total=release_branch_count,
     )
 )
 all_hashes = {c.sha for c in all_commits}
 
+consumed_pr = set()
+
+for commit in branch_commit:
+    if match := pr_num_pattern.search(commit.commit.message):
+        consumed_pr.add(int(match[1]))
+
 
 def add_to_users(users, new_user):
+    if new_user.login in users:
+        # reduce obsolete requests to GitHub API
+        return
     if new_user.name is None:
         users[new_user.login] = new_user.login
     else:
@@ -109,6 +191,11 @@ reviewers = set()
 users = {}
 
 for commit in tqdm(all_commits, desc="Getting committers and authors"):
+    if match := pr_num_pattern.search(commit.commit.message):
+        if int(match[1]) in consumed_pr:
+            continue
+            # omit commits from release branch
+
     if commit.committer is not None:
         add_to_users(users, commit.committer)
         committers.add(commit.committer.login)
@@ -125,11 +212,32 @@ highlights = OrderedDict()
 highlights['Highlights'] = {}
 highlights['New Features'] = {}
 highlights['Improvements'] = {}
+highlights["Performance"] = {}
 highlights['Bug Fixes'] = {}
 highlights['API Changes'] = {}
 highlights['Deprecations'] = {}
 highlights['Build Tools'] = {}
+highlights['Documentation'] = {}
 other_pull_requests = {}
+
+label_to_section = {
+    "bug": "Bug Fixes",
+    "bugfix": "Bug Fixes",
+    "feature": "New Features",
+    "api": "API Changes",
+    "highlight": "Highlights",
+    "performance": "Performance",
+    "enhancement": "Improvements",
+    "deprecation": "Deprecations",
+    "dependencies": "Build Tools",
+    "documentation": "Documentation",
+}
+
+pr_count = 0
+
+for commit in get_commits_to_ancestor(common_ancestor, args.to_commit):
+    if pr_num_pattern.search(commit.message) is not None:
+        pr_count += 1
 
 for pull in tqdm(
     g.search_issues(
@@ -138,23 +246,51 @@ for pull in tqdm(
         'sort:created-asc'
     ),
     desc='Pull Requests...',
+    total=pr_count,
 ):
+    if pull.number in consumed_pr:
+        continue
+    if pull.milestone is not None and pull.milestone.title != args.version:
+        print(
+            f"PR {pull.number} is assigned to milestone {pull.milestone.title}",
+            file=sys.stderr,
+        )
     pr = repository.get_pull(pull.number)
-    if pr.merge_commit_sha in all_hashes:
-        summary = pull.title
-        for review in pr.get_reviews():
-            if review.user is not None:
-                add_to_users(users, review.user)
-                reviewers.add(review.user.login)
-        for key, key_dict in highlights.items():
-            pr_title_prefix = (key + ': ').lower()
-            if summary.lower().startswith(pr_title_prefix):
-                key_dict[pull.number] = {
-                    'summary': summary[len(pr_title_prefix) :]
-                }
-                break
-        else:
-            other_pull_requests[pull.number] = {'summary': summary}
+    if pr.merge_commit_sha not in all_hashes:
+        continue
+    summary = pull.title
+
+    for review in pr.get_reviews():
+        if review.user is not None:
+            add_to_users(users, review.user)
+            reviewers.add(review.user.login)
+    assigned_to_section = False
+    pr_lables = {label.name.lower() for label in pull.labels}
+    for label_name, section in label_to_section.items():
+        if label_name in pr_lables:
+            highlights[section][pull.number] = {'summary': summary}
+            assigned_to_section = True
+
+    if assigned_to_section:
+        continue
+
+    issues_list = []
+    if pull.body:
+        for x in issue_pattern.findall(pull.body):
+            issue = repository.get_issue(int(x))
+            if issue.pull_request is None:
+                issues_list.append(issue)
+
+    issue_labels = [
+        label.name for label in chain(*[x.labels for x in issues_list])
+    ]
+
+    for label_name, section in label_to_section.items():
+        if label_name in issue_labels:
+            highlights[section][pull.number] = {'summary': summary}
+            break
+    else:
+        other_pull_requests[pull.number] = {'summary': summary}
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
@@ -184,10 +320,9 @@ https://github.com/napari/napari
 
 for section, pull_request_dicts in highlights.items():
     print(f'## {section}\n')
-    if len(pull_request_dicts.items()) == 0:
-        print()
     for number, pull_request_info in pull_request_dicts.items():
         print(f'- {pull_request_info["summary"]} (#{number})')
+    print()
 
 
 contributors = OrderedDict()

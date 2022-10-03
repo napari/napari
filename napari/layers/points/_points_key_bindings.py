@@ -11,8 +11,8 @@ from ._points_constants import Mode
 from .points import Points
 
 
-def register_points_action(description):
-    return register_layer_action(Points, description)
+def register_points_action(description: str, repeatable: bool = False):
+    return register_layer_action(Points, description, repeatable)
 
 
 def register_points_mode_action(description):

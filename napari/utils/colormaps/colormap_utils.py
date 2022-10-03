@@ -11,6 +11,7 @@ from vispy.color.colormap import LUT_len
 from ..translations import trans
 from .bop_colors import bopd
 from .colormap import Colormap, ColormapInterpolationMode
+from .inverse_colormaps import inverse_cmaps
 from .standardize_color import transform_color
 from .vendored import cm, colorconv
 
@@ -101,6 +102,11 @@ SIMPLE_COLORMAPS = {
 BOP_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
     for name, (display_name, value) in bopd.items()
+}
+
+INVERSE_COLORMAPS = {
+    name: Colormap(value, name=name, display_name=display_name)
+    for name, (display_name, value) in inverse_cmaps.items()
 }
 
 
@@ -464,9 +470,13 @@ ALL_COLORMAPS = {
 }
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
+ALL_COLORMAPS.update(INVERSE_COLORMAPS)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+AVAILABLE_COLORMAPS = {
+    k: v
+    for k, v in sorted(ALL_COLORMAPS.items(), key=lambda cmap: cmap[0].lower())
+}
 # lock to allow update of AVAILABLE_COLORMAPS in threads
 AVAILABLE_COLORMAPS_LOCK = Lock()
 
