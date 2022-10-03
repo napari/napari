@@ -22,6 +22,9 @@ class IntensityVisualizationMixin:
         class Image(IntensityVisualizationMixin, Layer):
             def __init__(self):
                 ...
+
+    Note: `contrast_limits_range` is range extent available on the widget,
+    and `contrast_limits` is the visible range (the set values on the widget)
     """
 
     def __init__(self, *args, **kwargs):
@@ -107,7 +110,14 @@ class IntensityVisualizationMixin:
 
     @contrast_limits_range.setter
     def contrast_limits_range(self, value):
-        """Set the valid range of the contrast limits"""
+        """Set the valid range of the contrast limits.
+        If either value is "None", the current range will be preserved.
+        If the range overlaps the visible contrast limits, the range contrast
+        limits will be clipped to the range of the currently set contrast
+        limits.
+        If the requested contrast range limits are completely outside the
+        current contrast limits, the contrast limits will be overridden.
+        """
         validate_2_tuple(value)
         validate_increasing(value)
         if list(value) == self.contrast_limits_range:

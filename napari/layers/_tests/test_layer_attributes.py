@@ -57,6 +57,7 @@ def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
 
 
 def test_contrast_limits_must_be_increasing():
+    np.random.seed(0)
     Image(np.random.rand(8, 8), contrast_limits=[0, 1])
     with pytest.raises(ValueError):
         Image(np.random.rand(8, 8), contrast_limits=[1, 1])
