@@ -14,6 +14,7 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
+from ...utils.events.event_utils import connect_no_arg
 from ...utils.migrations import rename_argument
 from ...utils.naming import magic_name
 from ...utils.translations import trans
@@ -304,6 +305,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             interpolation2d=Event,
             interpolation3d=Event,
             rendering=Event,
+            plane=Event,
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
@@ -373,6 +375,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
+        connect_no_arg(self.plane.events, self.events, 'plane')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -563,6 +566,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self._ndisplay == 3:
             self.interpolation3d = interpolation
         else:
+            if interpolation == 'bilinear':
+                interpolation = 'linear'
+                warnings.warn(
+                    trans._(
+                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
+                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
             self.interpolation2d = interpolation
 
     @property
@@ -572,13 +585,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @interpolation2d.setter
     def interpolation2d(self, value):
         if value == 'bilinear':
-            value = 'linear'
-            warnings.warn(
+            raise ValueError(
                 trans._(
-                    "'bilinear' interpolation is deprecated. Please use 'linear' instead",
+                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
-                category=DeprecationWarning,
-                stacklevel=2,
             )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
@@ -648,6 +658,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
+        self.events.plane()
 
     @property
     def loaded(self):

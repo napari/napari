@@ -12,7 +12,6 @@ from napari.layers.utils.layer_utils import (
     dataframe_to_properties,
     dims_displayed_world_to_layer,
     get_current_properties,
-    prepare_properties,
     register_layer_attr_action,
     segment_normal,
 )
@@ -107,71 +106,6 @@ def test_dataframe_to_properties():
     properties_df = pd.DataFrame(properties)
     converted_properties = dataframe_to_properties(properties_df)
     np.testing.assert_equal(converted_properties, properties)
-
-
-def test_prepare_properties_with_empty_properties():
-    assert prepare_properties({}) == ({}, {})
-
-
-def test_prepare_properties_with_empty_properties_and_choices():
-    assert prepare_properties({}, {}) == ({}, {})
-
-
-def test_prepare_properties_with_properties_then_choices_from_properties():
-    properties, choices = prepare_properties({"aa": [1, 2]}, num_data=2)
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 2])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_choices_then_properties_are_none():
-    properties, choices = prepare_properties({}, {"aa": [1, 2]}, num_data=2)
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [None, None])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_properties_and_choices():
-    properties, choices = prepare_properties({"aa": [1, 2, 1]}, num_data=3)
-    assert np.array_equal(properties["aa"], [1, 2, 1])
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_properties_and_choices_then_merge_choice_values():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2]}, num_data=2
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-
-
-def test_prepare_properties_with_properties_and_choices_then_skip_choice_keys():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}, num_data=2
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-
-
-def test_prepare_properties_with_properties_and_choices_and_save_choices():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]},
-        {"aa": [1, 2], "bb": [7, 6]},
-        num_data=2,
-        save_choices=True,
-    )
-    assert list(properties.keys()) == ["aa", "bb"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert np.array_equal(properties["bb"], [None, None])
-    assert list(choices.keys()) == ["aa", "bb"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    assert np.array_equal(choices["bb"], [6, 7])
 
 
 def test_get_current_properties_with_properties_then_last_values():

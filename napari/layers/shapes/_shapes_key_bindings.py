@@ -53,8 +53,8 @@ def hold_to_lock_aspect_ratio(layer: Shapes):
         _move(layer, layer._moving_coordinates)
 
 
-def register_shapes_action(description):
-    return register_layer_action(Shapes, description)
+def register_shapes_action(description: str, repeatable: bool = False):
+    return register_layer_action(Shapes, description, repeatable)
 
 
 def register_shapes_mode_action(description):

@@ -50,15 +50,12 @@ from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
-from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
-from .overlays import Overlays
-from .scale_bar import ScaleBar
-from .text_overlay import TextOverlay
+from .overlays import AxesOverlay, Overlays, ScaleBarOverlay, TextOverlay
 from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
@@ -116,7 +113,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
+    axes: AxesOverlay = Field(
+        default_factory=AxesOverlay, allow_mutation=False
+    )
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
@@ -124,7 +123,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
+    scale_bar: ScaleBarOverlay = Field(
+        default_factory=ScaleBarOverlay, allow_mutation=False
+    )
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
@@ -182,8 +183,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add extra events - ideally these will be removed too!
         self.events.add(
             layers_change=WarningEmitter(
-                "This event will be removed in 0.5.0. "
-                "Please use viewer.layers.events instead",
+                trans._(
+                    "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
+                    deferred=True,
+                ),
                 type="layers_change",
             ),
             reset_view=Event,
@@ -522,6 +525,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
             help_li.append(
                 trans._(
                     "use <{shortcut}> for {desc}",
@@ -800,7 +805,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
             kwargs['blending'] = kwargs['blending'] or 'translucent_no_depth'
-            # Helpful message if someone tries to add mulit-channel kwargs,
+            # Helpful message if someone tries to add multi-channel kwargs,
             # but forget the channel_axis arg
             for k, v in kwargs.items():
                 if k not in iterable_kwargs and is_sequence(v):
@@ -971,8 +976,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         if plugin == 'builtins':
             warnings.warn(
-                'The "builtins" plugin name is deprecated and will not work in a '
-                'future version. Please use "napari" instead.',
+                trans._(
+                    'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+                    deferred=True,
+                ),
             )
             plugin = 'napari'
 
@@ -1078,13 +1085,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-
         added = []
         plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
-
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1101,7 +1106,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     trans._(
-                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
                         path_message=path_message,
                     )

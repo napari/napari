@@ -31,7 +31,7 @@ logging.info(
 {args}'''
 )
 
-perfmon_dir = pathlib.Path(__file__).parent.parent.resolve(strict=True)
+perfmon_dir = pathlib.Path(__file__).parent.resolve(strict=True)
 
 traces_path = perfmon_dir / args.config / f'traces-{args.output}.json'
 

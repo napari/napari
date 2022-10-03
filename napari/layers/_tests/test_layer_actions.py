@@ -29,6 +29,7 @@ def test_duplicate_layers():
     assert (
         len(layer_list[1].events.data.callbacks) == 1
     )  # `events` Event Emitter
+    assert layer_list[1].source.parent() is layer_list[0]
 
 
 @pytest.mark.parametrize(
