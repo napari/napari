@@ -194,6 +194,8 @@ You can rearrange layers by clicking and dragging them.
 viewer.close()
 ```
 
+
+
 ### Layer controls
 
 Above the layers list in the top left corner of the viewer there is a box that
@@ -504,6 +506,8 @@ within **napari** and we hope you take full advantage of them.
 ## Next steps
 
 Hopefully, this tutorial has given you an overview of the functionality
-available on the **napari** viewer, including the `LayerList` and some of the
+available on the **napari** viewer, including the {class}`LayerList` and some of the
 different layer types. To learn more about the different layer types that
 **napari** supports, check out [our guides on using layers](../../howtos/layers/index).
+For a more detailed introduction to layer manipulation see
+[Layers at a glance](../../guides/layers).
