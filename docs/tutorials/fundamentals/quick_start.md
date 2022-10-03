@@ -50,9 +50,9 @@ You will also see some examples of plugins. The core napari viewer focuses on do
 
 - Download the bundled app for simple installation:
 
-    [Linux installation](https://github.com/napari/napari/releases/download/v0.4.14/napari-0.4.14-Linux-x86_64.zip)<br>
-    [macOS installation](https://github.com/napari/napari/releases/download/v0.4.14/napari-0.4.14-macOS-x86_64.zip)<br>
-    [Windows installation](https://github.com/napari/napari/releases/download/v0.4.14/napari-0.4.14-Windows-x86_64.zip)<br>
+    [Linux installation](https://github.com/napari/napari/releases/download/v0.4.16/napari-0.4.16rc7-Linux-x86_64.zip)<br>
+    [macOS installation](https://github.com/napari/napari/releases/download/v0.4.16/napari-0.4.16rc7-macOS-x86_64.zip)<br>
+    [Windows installation](https://github.com/napari/napari/releases/download/v0.4.16/napari-0.4.16rc7-Windows-x86_64.zip)<br>
 
     *Note: for the latest release, please visit [here](https://github.com/napari/napari/releases) and look for Assets.*
 

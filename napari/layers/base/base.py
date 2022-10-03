@@ -237,7 +237,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if scale is not None and not np.all(scale):
             raise ValueError(
-                f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
+                trans._(
+                    "Layer {name} is invalid because it has scale values of 0. The layer's scale is currently {scale}",
+                    deferred=True,
+                    name=repr(name),
+                    scale=repr(scale),
+                )
             )
 
         # Needs to be imported here to avoid circular import in _source

@@ -14,11 +14,11 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari_builtins.io import imsave_extensions
 
-from ..components._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..components.overlays._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
@@ -62,7 +62,7 @@ from .._vispy import (  # isort:skip
     VispyScaleBarOverlay,
     VispyInteractionBox,
     VispyTextOverlay,
-    create_vispy_visual,
+    create_vispy_layer,
 )
 
 
@@ -438,20 +438,20 @@ class QtViewer(QSplitter):
         """Add visuals for axes, scale bar, and welcome text."""
 
         self.axes = VispyAxesOverlay(
-            self.viewer,
+            overlay=self.viewer.axes,
+            viewer=self.viewer,
             parent=self.view.scene,
-            order=1e6,
         )
         self.scale_bar = VispyScaleBarOverlay(
-            self.viewer,
+            overlay=self.viewer.scale_bar,
+            viewer=self.viewer,
             parent=self.view,
-            order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
         self.text_overlay = VispyTextOverlay(
-            self.viewer,
+            overlay=self.viewer.text_overlay,
+            viewer=self.viewer,
             parent=self.view,
-            order=1e6 + 2,
         )
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
@@ -541,7 +541,7 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_visual(layer)
+        vispy_layer = create_vispy_layer(layer)
 
         # QtPoll is experimental.
         if self._qt_poll is not None:
@@ -861,21 +861,24 @@ class QtViewer(QSplitter):
 
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""
+
         cursor = self.viewer.cursor.style
-        # Scale size by zoom if needed
-        if self.viewer.cursor.scaled:
-            size = self.viewer.cursor.size * self.viewer.camera.zoom
-        else:
+        if cursor in {'square', 'circle'}:
+
+            # Scale size by zoom if needed
             size = self.viewer.cursor.size
-        size = int(size)
-        if cursor == 'square':
+            if self.viewer.cursor.scaled:
+                size *= self.viewer.camera.zoom
+
+            size = int(size)
+
             # make sure the square fits within the current canvas
             if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
+            elif cursor == 'circle':
+                q_cursor = QCursor(circle_pixmap(size))
             else:
                 q_cursor = QCursor(square_pixmap(size))
-        elif cursor == 'circle':
-            q_cursor = QCursor(circle_pixmap(size))
         elif cursor == 'crosshair':
             q_cursor = QCursor(crosshair_pixmap())
         else:
@@ -1202,7 +1205,7 @@ class QtViewer(QSplitter):
         self.layers.close()
 
         # if the viewer.QtDims object is playing an axis, we need to terminate
-        # the AnimationThread before close, otherwise it will cauyse a segFault
+        # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
         self.dims.stop()
