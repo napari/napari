@@ -91,7 +91,7 @@ Contributions are encouraged! Please read our [contributing guide](https://napar
 ## governance
 
 You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact the [@napari/steering-council and @napari/core-devs](https://napari.org/community/team.html#current-core-developers).
-
+###update
 ## citing napari
 
 If you find `napari` useful please cite [this repository](https://github.com/napari/napari) using its DOI as follows:
