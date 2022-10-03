@@ -57,7 +57,7 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 viewer.close()
 ```
 
-Calling {func}`napari.view_image` will return a {class}`Viewer` object that is the main
+Calling {func}`napari.view_image` will return a {class}`Viewer<napari.Viewer>` object that is the main
 object inside **napari**. All the data you add to **napari** will be stored
 inside the {class}`Viewer` object and will be accessible from it. This command will
 also open the viewer to create a GUI that you can interact with.
@@ -247,7 +247,7 @@ specific tutorials listed at the bottom of this tutorial.
 
 +++
 
-### layer buttons
+### Layer buttons
 
 New `Points`, `Shapes`, and `Labels` layers can be added to the viewer using the
 layer buttons between the layer controls and layer list. These correspond to
@@ -318,11 +318,11 @@ viewer.add_image(blobs, name='blobs', opacity=0.5, colormap='red')
 nbscreenshot(viewer, alt_text="A 2d view of the moon on top of which is overlaid a 3d volume containing blobs through which you can navigate using the dimension slider.")
 ```
 
-In order to get or to update the current position of the slider, use 
+In order to get or to update the current position of the slider, use
 
 ```viewer.dims.current_step```
 
-that is in integer steps. 
+that is in integer steps.
 
 `viewer.dims.point` contains the position in world coordinates (ie including scale and translate transformations)
 
