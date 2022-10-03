@@ -15,6 +15,7 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
+from ...utils.events.event_utils import connect_no_arg
 from ...utils.migrations import rename_argument
 from ...utils.naming import magic_name
 from ...utils.transforms import Affine
@@ -314,6 +315,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             interpolation2d=Event,
             interpolation3d=Event,
             rendering=Event,
+            plane=Event,
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
@@ -383,6 +385,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
+        connect_no_arg(self.plane.events, self.events, 'plane')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -665,6 +668,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
+        self.events.plane()
 
     @property
     def loaded(self):
