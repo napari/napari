@@ -45,7 +45,7 @@ if async_octree:
     layer_to_visual = new_mapping
 
 
-def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
+def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters

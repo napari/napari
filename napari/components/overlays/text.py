@@ -1,11 +1,10 @@
 """Text label model."""
 from napari.utils.color import ColorValue
 
-from ..utils.events import EventedModel
-from ._viewer_constants import TextOverlayPosition
+from .base import CanvasOverlay
 
 
-class TextOverlay(EventedModel):
+class TextOverlay(CanvasOverlay):
     """Label model to display arbitrary text in the canvas
 
     Attributes
@@ -25,9 +24,6 @@ class TextOverlay(EventedModel):
         Text to be displayed in the canvas.
     """
 
-    # fields
-    visible: bool = False
     color: ColorValue = (0.5, 0.5, 0.5, 1.0)
     font_size: float = 10
-    position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
     text: str = ""

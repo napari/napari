@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..utils.events import EventedModel
-from ..utils.events.custom_types import Array
-from ..utils.transforms import Affine
+from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
+from ...utils.transforms import Affine
 
 
 class InteractionBox(EventedModel):

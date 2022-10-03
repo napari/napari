@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari.components.interaction_box import InteractionBox
+from napari.components.overlays.interaction_box import InteractionBox
 from napari.utils.transforms import Affine
 
 

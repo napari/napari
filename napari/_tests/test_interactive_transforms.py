@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from vispy import keys
 
-from napari.components._interaction_box_constants import Box
+from napari.components.overlays._interaction_box_constants import Box
 from napari.utils.transforms import Affine
 
 
