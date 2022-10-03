@@ -370,13 +370,14 @@ def label_colormap(num_colors=256, seed=0.5):
     ----------
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
+        Colors are in addition to a transparent color 0.
     seed : float or array of float, length 3
         The seed for the random color generator.
 
     Returns
     -------
     colormap : napari.utils.Colormap
-        A colormap for use with labels are remapped to [0, 1].
+        A colormap for use with labels remapped to [0, 1].
 
     Notes
     -----
@@ -384,14 +385,15 @@ def label_colormap(num_colors=256, seed=0.5):
     """
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
-    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors - 1)
+    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors)
     control_points = np.concatenate(([0], midpoints, [1.0]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate(
         (_color_random(num_colors, seed=seed), np.full((num_colors, 1), 1)),
         axis=1,
     )
-    colors[0, :] = 0  # ensure alpha is 0 for label 0
+    # Insert alpha at layer 0
+    colors = np.concatenate((np.full((1, 4), 0.0), colors))
     return Colormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
