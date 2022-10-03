@@ -75,7 +75,7 @@ included in the reported time of the benchmark.
 
 It is also possible to benchmark features such as peak memory usage. To learn
 more about the features of `asv`, please refer to the official
-[airspeed velocity documentation](http://asv.readthedocs.io/en/latest/writing_benchmarks.html).
+[airspeed velocity documentation](https://asv.readthedocs.io/en/latest/writing_benchmarks.html).
 
 ## Testing the benchmarks locally
 

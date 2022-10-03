@@ -67,7 +67,7 @@ napari can take any numpy-like array as input for its image layer. A numpy-like
 array can just be a
 [numpy array](https://numpy.org/doc/stable/reference/generated/numpy.array.html),
 a [dask array](https://docs.dask.org/en/stable/array.html), an
-[xarray](http://xarray.pydata.org/en/stable/generated/xarray.DataArray.html), a
+[xarray](https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html), a
 [zarr array](https://zarr.readthedocs.io/en/stable/api/core.html), or any other
 object that you can index into and when you call
 [`np.asarray`](https://numpy.org/doc/stable/reference/generated/numpy.asarray.html)

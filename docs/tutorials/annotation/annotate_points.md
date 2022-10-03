@@ -3,7 +3,7 @@
 **Note**: this tutorial has been updated and is now compatible with napari > 0.4.5 and magicgui > 0.2.5. For details, see [this pull request](https://github.com/napari/napari.github.io/pull/114).
 
 In this tutorial, we will use napari (requires version 0.3.2 or greater) to make a simple GUI application for annotating points in videos.
-This GUI could be useful for making annotations required to train algorithms for markless tracking of animals (e.g., [DeepLabCut](http://www.mousemotorlab.org/deeplabcut)).
+This GUI could be useful for making annotations required to train algorithms for markless tracking of animals (e.g., [DeepLabCut](http://www.mackenziemathislab.org/deeplabcut)).
 In this tutorial, we will cover creating and interacting with a Points layer with properties (i.e., labels for the points), connecting custom UI elements to events, and creating custom keybindings.
 
 At the end of this tutorial, we will have created a GUI for annotating points in videos that we can simply call by:
@@ -392,7 +392,7 @@ def next_on_click(layer, event):
 After creating the function, we then add it to the `points_layer` mouse drag callbacks.
 In napari, clicking and dragging events are both handled under the `mouse_drag_callbacks`.
 For more details on how mouse event callbacks work,
-see the examples [[1](https://github.com/napari/napari/blob/master/examples/custom_mouse_functions.py), [2](https://github.com/napari/napari/blob/master/examples/mouse_drag_callback.py)].
+see the examples [[1](https://github.com/napari/napari/blob/main/examples/custom_mouse_functions.py), [2](https://github.com/napari/napari/blob/main/examples/mouse_drag_callback.py)].
 
 ```python
 # bind the callback to the mouse drag event
