@@ -31,8 +31,8 @@ jobs:
         include:
           - platform: ubuntu-18.04
             python-version: "3.9"
-#          - platform: macos-latest
-#            python-version: "3.9"
+          - platform: macos-latest
+            python-version: "3.9"
           - platform: windows-latest
             python-version: "3.8"
     steps:
