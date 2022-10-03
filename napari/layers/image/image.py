@@ -16,6 +16,7 @@ from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
 from ...utils.events.event_utils import connect_no_arg
 from ...utils.migrations import rename_argument
+from ...utils.misc import reorder_after_dim_reduction
 from ...utils.naming import magic_name
 from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
@@ -397,8 +398,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
-        from ...components.dims import reorder_after_dim_reduction
-
         order = reorder_after_dim_reduction(self._dims_displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the

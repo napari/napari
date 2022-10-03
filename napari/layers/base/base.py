@@ -26,6 +26,7 @@ from ...utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
+from ...utils.misc import reorder_after_dim_reduction
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_coords_status
@@ -643,7 +644,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._private_is_moving = value
 
     @property
-    def _dims_displayed(self) -> List[int]:
+    def _dims_displayed(self):
         """To be removed displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple
@@ -652,7 +653,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._dims_order[-self._ndisplay :]
 
     @property
-    def _dims_not_displayed(self) -> List[int]:
+    def _dims_not_displayed(self):
         """To be removed not displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple
@@ -661,7 +662,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._dims_order[: -self._ndisplay]
 
     @property
-    def _dims_displayed_order(self) -> Tuple[int, ...]:
+    def _dims_displayed_order(self):
         """To be removed order of displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
         # itself so that layers can be sliced in different ways for multiple
@@ -678,8 +679,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This function needs to be called whenever data or transform information
         changes, and should be called before events get emitted.
         """
-        from ...components.dims import reorder_after_dim_reduction
-
         ndim = self._get_ndim()
 
         old_ndim = self._ndim

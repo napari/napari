@@ -1,16 +1,12 @@
 from numbers import Integral
-from typing import (  # Added to typing in 3.8
-    List,
-    Literal,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Literal  # Added to typing in 3.8
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
 
 from ..utils.events import EventedModel
+from ..utils.misc import reorder_after_dim_reduction
 from ..utils.translations import trans
 
 
@@ -410,38 +406,6 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
-
-
-def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
-    """Ensure current dimension order is preserved after dims are dropped.
-
-    Parameters
-    ----------
-    order : Sequence[int]
-        The data to reorder.
-
-    Returns
-    -------
-    Tuple[int, ...]
-        A permutation of ``range(len(order))`` that is consistent with the input order.
-
-    Examples
-    --------
-    >>> reorder_after_dim_reduction([2, 0])
-    (1, 0)
-
-    >>> reorder_after_dim_reduction([0, 1, 2])
-    (0, 1, 2)
-
-    >>> reorder_after_dim_reduction([4, 0, 2])
-    (2, 0, 1)
-    """
-    return tuple(_argsort(_argsort(order)))
-
-
-def _argsort(values: Sequence[int]) -> List[int]:
-    """Equivalent to numpy.argsort but faster for short sequences."""
-    return sorted(range(len(values)), key=values.__getitem__)
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:
