@@ -116,7 +116,7 @@ class IntensityVisualizationMixin:
         limits will be clipped to the range of the currently set contrast
         limits.
         If the requested contrast range limits are completely outside the
-        current contrast limits, the contrast limits will be overridden.
+        current contrast limits, the contrast limits will be reset to the new range.
         """
         validate_2_tuple(value)
         validate_increasing(value)
