@@ -130,7 +130,7 @@ viewer = napari.Viewer()
 
 from skimage import data
 viewer.add_image(data.cell(), name='cell')
-nbscreenshot(viewer, alt_text="image of a single cell opened in napari viewer")
+nbscreenshot(viewer, alt_text="image of a single cell opened in napari viewer ")
 ```
 
 ### Image display adjustment
@@ -147,7 +147,7 @@ viewer.layers['cell'].colormap = "yellow"
 :tags: [remove-input]
 
 viewer.layers['cell'].colormap = "yellow"
-nbscreenshot(viewer, alt_text="image of singular cell with yellow tint")
+nbscreenshot(viewer, alt_text="image of singular cell with yellow tint ")
 ```
 
 ### Manually label the cell
