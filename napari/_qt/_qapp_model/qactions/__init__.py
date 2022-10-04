@@ -35,15 +35,17 @@ def init_qactions() -> None:
     }
 
     # Qt-specific providers/processors
-    @store.register_provider
+    # @store.register_provider
     def _provide_window() -> Optional[Window]:
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._window
 
-    @store.register_provider
+    # @store.register_provider
     def _provide_qt_viewer() -> Optional[QtViewer]:
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._qt_viewer
+
+    store.register(providers=[(_provide_window,), (_provide_qt_viewer,)])
 
     # register actions
     for action in chain(Q_PLUGINS_ACTIONS):
