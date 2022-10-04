@@ -22,7 +22,7 @@ jobs:
         backend: [pyqt5, pyside2]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
