@@ -702,6 +702,9 @@ def install_certifi_opener():
 def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
     """Ensure current dimension order is preserved after dims are dropped.
 
+    This is similar to :func:`scipy.stats.rankdata`, but only deals with
+    unique integers (like dimension indices), so is simpler and faster.
+
     Parameters
     ----------
     order : Sequence[int]
@@ -723,6 +726,8 @@ def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
     >>> reorder_after_dim_reduction([4, 0, 2])
     (2, 0, 1)
     """
+    # A single argsort works for strictly increasing/decreasing orders,
+    # but not for arbitrary orders.
     return tuple(_argsort(_argsort(order)))
 
 
