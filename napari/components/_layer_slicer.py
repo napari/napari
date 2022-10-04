@@ -18,9 +18,7 @@ class _LayerSlicer:
     def __init__(self):
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._layers_to_task: dict[
-            tuple[Layer], Future["_LayerSliceResponse"]
-        ] = {}
+        self._layers_to_task: dict[tuple[Layer], Future] = {}
         self._force_sync = False
 
     @contextmanager
@@ -34,8 +32,16 @@ class _LayerSlicer:
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> Future["_LayerSliceResponse"]:
-        """This should only be called from the main thread."""
+    ) -> "_LayerSliceResponse":
+        """This should only be called from the main thread.
+
+        Creates a new task and addss it to the _layers_to_task_dict. Cancels
+        all tasks currently running on that layer.
+
+        If force_sync is True, it will submit the task immediately.
+
+        Adds
+        """
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
         # layers with some sensible and not too complex cancellation
@@ -70,7 +76,8 @@ class _LayerSlicer:
         return task
 
     def _slice_layers(
-        self, requests: "_LayerSliceRequest"
+        self,
+        requests: dict[Layer, "_LayerSliceRequest"],
     ) -> "_LayerSliceResponse":
         """This can be called from the main or slicing thread.
         Iterates throught a dictionary of request objects and call the slice
@@ -80,9 +87,11 @@ class _LayerSlicer:
             for layer, request in requests.items()
         }
 
-    def _on_slice_done(self, task: Future["_LayerSliceResponse"]) -> None:
+    def _on_slice_done(self, task: Future) -> None:
         """This can be called from the main or slicing thread.
-        Release the thread."""
+        Release the thread.
+        This is the "done_callback" which is added to each task.
+        """
         # TODO: remove task from _layers_to_task, guarding access to dict with a lock.
         if task.cancelled():
             LOGGER.debug('Cancelled task')

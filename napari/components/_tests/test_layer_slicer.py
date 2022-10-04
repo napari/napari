@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 
@@ -97,8 +99,37 @@ def test_slice_layers(viewer_slice_request):
     assert isinstance(slice_reponse, dict)
 
 
-def test_on_slice_done(viewer_slice_response):
+def test_on_slice_done(layer_slice_response):
+    """TODO to test this properly, it needs to be done at a higher level to
+    check result on the Layer."""
+
+    # test no errors are raised for a simple submit
     layer_slicer = _LayerSlicer()
-    layer_slicer._on_slice_done(
-        task=viewer_slice_response,
-    )
+    with layer_slicer._executor as executor:
+        task = executor.submit(tuple, (1, 2))
+        response = layer_slicer._on_slice_done(
+            task=task,
+        )
+        assert response is None
+        assert task.done()
+
+    # test cancellation of task
+    layer_slicer = _LayerSlicer()
+    with layer_slicer._executor as executor:
+        task = executor.submit(time.sleep, 0.1)
+        task.cancel()
+        response = layer_slicer._on_slice_done(
+            task=task,
+        )
+        assert response is None
+        assert task.done()
+
+
+def test_executor():
+    layer_slicer = _LayerSlicer()
+    with layer_slicer._executor as executor:
+        task1 = executor.submit(time.sleep, 0.1)
+        task2 = executor.submit(time.sleep, 0.2)
+        task1.result()
+    assert not task1.running()
+    assert not task2.running()
