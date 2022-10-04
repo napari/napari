@@ -847,13 +847,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         thumbnail_indices = Image._get_downsampled_indices(
             indices=slice_indices,
             axes=dims_not_displayed,
-            downsample_factors=downsample_factors[-1],
-            level_shape=level_shapes[-1],
+            downsample_factors=downsample_factors[self._thumbnail_level],
+            level_shape=level_shapes[self._thumbnail_level],
         )
 
-        # Don't materialize yet to avoid breaking exp async.
+        # Don't materialize yet to avoid breaking experimental async.
         data = self.data[level][tuple(indices)]
-        thumbnail = self.data[-1][tuple(thumbnail_indices)]
+        thumbnail = self.data[self._thumbnail_level][tuple(thumbnail_indices)]
 
         return data, thumbnail, tile_to_data
 
