@@ -8,7 +8,10 @@ import pytest
 from qtpy.QtCore import Qt, QThread
 from qtpy.QtWidgets import QPushButton, QWidget
 
-from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.dialogs.qt_notification import (
+    NapariQtNotification,
+    TracebackDialog,
+)
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.utils.notifications import (
     ErrorNotification,
@@ -175,8 +178,7 @@ def test_notification_display(
     assert not dialog.property('expanded')
 
 
-@patch('napari._qt.dialogs.qt_notification.TracebackDialog.show')
-def test_notification_error(mock_show, monkeypatch, qtbot):
+def test_notification_error(monkeypatch, qtbot):
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -192,23 +194,23 @@ def test_notification_error(mock_show, monkeypatch, qtbot):
     except ValueError as e:
         notif = ErrorNotification(e)
 
-    # This test creates TracebackDialog which is not added to qtbot
-    # but its parent is same as parent of NapariQtNotification.
-    # so create dummy parent allow to not leak widget.
-    # Current parent structure, where QWidget is controled by qtbot:
-    # QWidget
-    # ├── NapariQtNotification
-    # └── TracebackDialog
-    widget = QWidget()
-    qtbot.add_widget(widget)
+    show_count = 0
 
-    dialog = NapariQtNotification.from_notification(notif, parent=widget)
+    def mock_show_dialog(self):
+        nonlocal show_count
+        show_count += 1
+        qtbot.add_widget(self)
+
+    monkeypatch.setattr(TracebackDialog, "show", mock_show_dialog)
+
+    dialog = NapariQtNotification.from_notification(notif)
+    qtbot.add_widget(dialog)
 
     bttn = dialog.row2_widget.findChild(QPushButton)
     assert bttn.text() == 'View Traceback'
-    mock_show.assert_not_called()
+    assert show_count == 0
     bttn.click()
-    mock_show.assert_called_once()
+    assert show_count == 1
 
 
 @pytest.mark.sync_only
