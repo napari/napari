@@ -19,7 +19,7 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v4
         with:
@@ -65,7 +65,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
@@ -130,7 +130,7 @@ jobs:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: napari-from-github
 
