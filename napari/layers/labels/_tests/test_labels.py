@@ -386,7 +386,7 @@ def test_label_colormap():
     assert not np.any(colormap.map([0.0]))
 
     # Test that out-of-range values map to last value
-    assert np.all(colormap.map([1.0, 1.1, 2.0]) == colormap.colors[3])
+    assert np.all(colormap.map([1.0, 1.1, 2.0]) == colormap.colors[-1])
 
 
 def test_custom_color_dict():
