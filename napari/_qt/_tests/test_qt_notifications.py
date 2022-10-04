@@ -1,7 +1,8 @@
 import threading
 import warnings
 from concurrent.futures import Future
-from unittest.mock import MagicMock, patch
+from dataclasses import dataclass
+from unittest.mock import MagicMock
 
 import dask.array as da
 import pytest
@@ -67,6 +68,25 @@ def clean_current(monkeypatch, qtbot):
     monkeypatch.setattr(_QtMainWindow, "current", mock_current_main_window)
 
 
+@dataclass
+class ShowStatus:
+    show_count: int = 0
+
+
+@pytest.fixture
+def show_dialog_mock(monkeypatch, qtbot):
+
+    stat = ShowStatus()
+
+    def mock_show_dialog(self):
+        stat.show_count += 1
+        qtbot.add_widget(self)
+
+    monkeypatch.setattr(NapariQtNotification, "show", mock_show_dialog)
+
+    return stat
+
+
 def test_clean_current_path_exist(make_napari_viewer):
     """If this test fail then you need to fix also clean_current fixture"""
     assert isinstance(
@@ -104,9 +124,8 @@ def test_notification_manager_via_gui(
             notification_manager.records = []
 
 
-@patch('napari._qt.dialogs.qt_notification.QDialog.show')
 def test_show_notification_from_thread(
-    mock_show, monkeypatch, qtbot, clean_current
+    show_dialog_mock, monkeypatch, qtbot, clean_current
 ):
     from napari.settings import get_settings
 
@@ -128,7 +147,7 @@ def test_show_notification_from_thread(
             res = NapariQtNotification.show_notification(notif)
             assert isinstance(res, Future)
             assert res.result(timeout=DEFAULT_TIMEOUT_SECS) is None
-            mock_show.assert_called_once()
+            assert show_dialog_mock.show_count == 1
 
     thread = CustomThread()
     with qtbot.waitSignal(thread.finished):
@@ -136,9 +155,8 @@ def test_show_notification_from_thread(
 
 
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
-@patch('napari._qt.dialogs.qt_notification.QDialog.show')
 def test_notification_display(
-    mock_show, severity, monkeypatch, qtbot, clean_current
+    show_dialog_mock, severity, monkeypatch, qtbot, clean_current
 ):
     """Test that NapariQtNotification can present a Notification event.
 
@@ -165,9 +183,9 @@ def test_notification_display(
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:
-        mock_show.assert_called_once()
+        assert show_dialog_mock.show_count == 1
     else:
-        mock_show.assert_not_called()
+        assert show_dialog_mock.show_count == 0
 
     dialog = NapariQtNotification.from_notification(notif)
     qtbot.add_widget(dialog)
