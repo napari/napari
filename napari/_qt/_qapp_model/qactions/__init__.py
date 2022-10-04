@@ -20,7 +20,8 @@ def init_qactions() -> None:
     - registering Qt-dependent actions with app-model (i.e. Q_* actions).
     """
 
-    from ...._app_model import get_app
+    from napari._app_model import get_app
+
     from ...qt_main_window import Window, _QtMainWindow
     from ...qt_viewer import QtViewer
     from ._plugins import Q_PLUGINS_ACTIONS
@@ -35,17 +36,15 @@ def init_qactions() -> None:
     }
 
     # Qt-specific providers/processors
-    # @store.register_provider
+    @store.register_provider
     def _provide_window() -> Optional[Window]:
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._window
 
-    # @store.register_provider
+    @store.register_provider
     def _provide_qt_viewer() -> Optional[QtViewer]:
         if _qmainwin := _QtMainWindow.current():
             return _qmainwin._qt_viewer
-
-    store.register(providers=[(_provide_window,), (_provide_qt_viewer,)])
 
     # register actions
     for action in chain(Q_PLUGINS_ACTIONS):
