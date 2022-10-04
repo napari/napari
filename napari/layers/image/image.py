@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import types
 import warnings
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -44,14 +43,6 @@ from ._image_utils import guess_multiscale, guess_rgb
 
 if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
-
-
-@dataclass(frozen=True)
-class _ImageSliceResponse:
-    data: np.ndarray = field(repr=False)
-    tile_to_data: Optional[Affine] = field(repr=False)
-    thumbnail: np.ndarray = field(repr=False)
-    indices: Tuple[Union[int, float, slice], ...] = field(repr=False)
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -735,27 +726,26 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
         slice_indices = self._slice_indices
-        if self._slice_outside_extent(slice_indices):
+        if self._is_slice_outside_extent(slice_indices):
             return
         self._empty = False
 
-        response = self._get_slice(slice_indices)
+        slice_data, tile_to_data = (
+            self._get_slice_data_multiscale(slice_indices)
+            if self.multiscale
+            else self._get_slice_data(slice_indices)
+        )
 
-        if response.tile_to_data is not None:
-            self._transforms[0] = response.tile_to_data
+        if tile_to_data is not None:
+            self._transforms[0] = tile_to_data
 
         # Load our images, might be sync or async.
-        data = self._SliceDataClass(
-            self,
-            response.indices,
-            response.data,
-            response.thumbnail,
-        )
-        self._load_slice(data)
+        self._load_slice(slice_data)
+
         if self._should_calc_clims:
             self.reset_contrast_limits_range()
             self.reset_contrast_limits()
@@ -763,8 +753,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
 
-    def _slice_outside_extent(self, slice_indices):
-        # Check if requested slice outside of data range
+    def _is_slice_outside_extent(self, slice_indices) -> bool:
         indices = np.array(slice_indices)
         not_disp = self._dims_not_displayed
         extent = self._extent_data
@@ -780,28 +769,19 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             )
         )
 
-    def _get_slice(self, slice_indices) -> _ImageSliceResponse:
-        data, thumbnail, tile_to_data = (
-            self._get_slice_data_multi_scale(slice_indices)
-            if self.multiscale
-            else self._get_slice_data(slice_indices)
-        )
-        return _ImageSliceResponse(
-            data=data,
-            tile_to_data=tile_to_data,
-            thumbnail=thumbnail,
+    def _get_slice_data(self, slice_indices) -> Tuple[Any, Optional[Affine]]:
+        image = self.data[slice_indices]
+        slice_data = self._SliceDataClass(
+            layer=self,
             indices=slice_indices,
+            image=image,
+            thumbnail_source=None,
         )
+        return slice_data, None
 
-    def _get_slice_data(
+    def _get_slice_data_multiscale(
         self, slice_indices
-    ) -> Tuple[Any, Optional[Any], Optional[Affine]]:
-        data = self.data[slice_indices]
-        return data, None, None
-
-    def _get_slice_data_multi_scale(
-        self, slice_indices
-    ) -> Tuple[Any, Optional[Any], Optional[Affine]]:
+    ) -> Tuple[Any, Optional[Affine]]:
         if self._ndisplay == 3:
             warnings.warn(
                 trans._(
@@ -814,20 +794,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             level = self.data_level
 
-        level_shapes = self.level_shapes
-        downsample_factors = self.downsample_factors
-        dims_not_displayed = self._dims_not_displayed
-
-        indices = Image._get_downsampled_indices(
+        indices = self._slice_indices_at_level(
             indices=slice_indices,
-            axes=dims_not_displayed,
-            downsample_factors=downsample_factors[level],
-            level_shape=level_shapes[level],
+            level=level,
         )
 
         scale = np.ones(self.ndim)
         for d in self._dims_displayed:
-            scale[d] = downsample_factors[level][d]
+            scale[d] = self.downsample_factors[level][d]
 
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.
@@ -844,31 +818,32 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # not in here too?
             tile_to_data.translate = self.corner_pixels[0] * tile_to_data.scale
 
-        thumbnail_indices = Image._get_downsampled_indices(
+        thumbnail_indices = self._slice_indices_at_level(
             indices=slice_indices,
-            axes=dims_not_displayed,
-            downsample_factors=downsample_factors[self._thumbnail_level],
-            level_shape=level_shapes[self._thumbnail_level],
+            level=self._thumbnail_level,
         )
 
         # Don't materialize yet to avoid breaking experimental async.
-        data = self.data[level][tuple(indices)]
+        image = self.data[level][tuple(indices)]
         thumbnail = self.data[self._thumbnail_level][tuple(thumbnail_indices)]
 
-        return data, thumbnail, tile_to_data
+        slice_data = self._SliceDataClass(
+            layer=self,
+            indices=slice_indices,
+            image=image,
+            thumbnail_source=thumbnail,
+        )
 
-    @staticmethod
-    def _get_downsampled_indices(
-        *,
-        indices,
-        axes,
-        downsample_factors,
-        level_shape,
+        return slice_data, tile_to_data
+
+    def _slice_indices_at_level(
+        self, *, indices: Tuple, level: int
     ) -> np.ndarray:
         indices = np.array(indices)
-        ds_indices = indices[axes] / downsample_factors[axes]
+        axes = self._dims_not_displayed
+        ds_indices = indices[axes] / self.downsample_factors[level][axes]
         ds_indices = np.round(ds_indices.astype(float)).astype(int)
-        ds_indices = np.clip(ds_indices, 0, level_shape[axes] - 1)
+        ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
         indices[axes] = ds_indices
         return indices
 
