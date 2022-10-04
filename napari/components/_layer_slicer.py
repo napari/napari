@@ -1,16 +1,15 @@
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
 
 from . import Dims
 
-# Type annotations cause a cyclic dependency, so omit for now.
-_ViewerSliceRequest = dict  # [Layer, _LayerSliceRequest]
-_ViewerSliceResponse = dict  # [Layer, _LayerSliceResponse]
+if TYPE_CHECKING:
+    from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
 
 LOGGER = logging.getLogger("napari.components._layer_slicer")
 
@@ -20,7 +19,7 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._layers_to_task: dict[
-            tuple[Layer], Future[_ViewerSliceResponse]
+            tuple[Layer], Future["_LayerSliceResponse"]
         ] = {}
         self._force_sync = False
 
@@ -35,7 +34,7 @@ class _LayerSlicer:
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> Future[_ViewerSliceResponse]:
+    ) -> Future["_LayerSliceResponse"]:
         """This should only be called from the main thread."""
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
@@ -71,8 +70,8 @@ class _LayerSlicer:
         return task
 
     def _slice_layers(
-        self, requests: _ViewerSliceRequest
-    ) -> _ViewerSliceResponse:
+        self, requests: "_LayerSliceRequest"
+    ) -> "_LayerSliceResponse":
         """This can be called from the main or slicing thread.
         Iterates throught a dictionary of request objects and call the slice
         on each individual layer."""
@@ -81,7 +80,7 @@ class _LayerSlicer:
             for layer, request in requests.items()
         }
 
-    def _on_slice_done(self, task: Future[_ViewerSliceResponse]) -> None:
+    def _on_slice_done(self, task: Future["_LayerSliceResponse"]) -> None:
         """This can be called from the main or slicing thread.
         Release the thread."""
         # TODO: remove task from _layers_to_task, guarding access to dict with a lock.
