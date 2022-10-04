@@ -771,6 +771,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _get_slice_data(self, slice_indices) -> Tuple[Any, Optional[Affine]]:
         image = self.data[slice_indices]
+        # For single-scale we don't request a separate thumbnail_source
+        # from the ChunkLoader because in ImageSlice.chunk_loaded we
+        # call request.thumbnail_source() and it knows to just use the
+        # image itself is there is no explicit thumbnail_source.
         slice_data = self._SliceDataClass(
             layer=self,
             indices=slice_indices,
