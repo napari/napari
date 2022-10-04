@@ -315,8 +315,8 @@ def test_floating_point_edge_case():
         ((5, 2), (1, 0)),  # 2D, decreasing, non-default range
         ((0, 1, 2), (0, 1, 2)),  # 3D, increasing, default range
         ((3, 4, 6), (0, 1, 2)),  # 3D, increasing, non-default range
-        ((2, 1, 0), (2, 1, 0)),  # 3D, increasing, default range
-        ((4, 2, 0), (2, 1, 0)),  # 3D, increasing, non-default range
+        ((2, 1, 0), (2, 1, 0)),  # 3D, decreasing, default range
+        ((4, 2, 0), (2, 1, 0)),  # 3D, decreasing, non-default range
         ((2, 0, 1), (2, 0, 1)),  # 3D, non-monotonic, default range
         ((4, 0, 1), (2, 0, 1)),  # 3D, non-monotonic, non-default range
     ),
