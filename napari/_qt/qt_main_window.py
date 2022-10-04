@@ -616,7 +616,7 @@ class Window:
         )
 
         self.file_menu = build_qmodel_menu(
-            MenuId.MENUBAR_FILE, title=trans._('File'), parent=self._qt_window
+            MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
         )
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = menus.ViewMenu(self)
