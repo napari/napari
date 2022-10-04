@@ -639,7 +639,7 @@ class Window:
         self.file_menu = menus.FileMenu(self)
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = build_qmodel_menu(
-            MenuId.MENUBAR_VIEW, title=trans._('View'), parent=self._qt_window
+            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.main_menu.addMenu(self.view_menu)
         self.window_menu = menus.WindowMenu(self)
