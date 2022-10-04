@@ -1,7 +1,7 @@
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Dict, Iterable, Tuple
 
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
@@ -18,7 +18,7 @@ class _LayerSlicer:
     def __init__(self):
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._layers_to_task: dict[tuple[Layer], Future] = {}
+        self._layers_to_task: Dict[Tuple[Layer], Future] = {}
         self._force_sync = False
 
     @contextmanager
@@ -77,7 +77,7 @@ class _LayerSlicer:
 
     def _slice_layers(
         self,
-        requests: dict[Layer, "_LayerSliceRequest"],
+        requests: Dict[Layer, "_LayerSliceRequest"],
     ) -> "_LayerSliceResponse":
         """This can be called from the main or slicing thread.
         Iterates throught a dictionary of request objects and call the slice
