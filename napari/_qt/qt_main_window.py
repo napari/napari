@@ -23,6 +23,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+from app_model.backends.qt import QModelMenu
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
@@ -51,6 +52,7 @@ from . import menus
 from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
+from .menus._util import NapariMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
@@ -758,7 +760,7 @@ class Window:
         shortcut=_sentinel,
         add_vertical_stretch=True,
         tabify: bool = False,
-        menu: Optional[] = None,
+        menu: Optional[Union[QModelMenu, NapariMenu]] = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -790,9 +792,10 @@ class Window:
                 The shortcut parameter is deprecated since version 0.4.8, please use
                 the action and shortcut manager APIs. The new action manager and
                 shortcut API allow user configuration and localisation.
-        menu : Optional[]
         tabify : bool
             Flag to tabify dockwidget or not.
+        menu : QModelMenu, NapariMenu, optional
+            Menu bar to add toggle action to. If `None` nothing added to menu.
 
         Returns
         -------
@@ -851,7 +854,10 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify: bool = False, menu: Optional[] =None,
+        self,
+        dock_widget: QtViewerDockWidget,
+        tabify: bool = False,
+        menu: Optional[Union[QModelMenu, NapariMenu]] = None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -863,9 +869,8 @@ class Window:
             `dock_widget` will be added to the main window.
         tabify : bool
             Flag to tabify dockwidget or not.
-        menu : Optional[]
-            If `None` action not added to menu.
-
+        menu : QModelMenu, NapariMenu, optional
+            Menu bar to add toggle action to. If `None` nothing added to menu.
         """
         # Find if any othe dock widgets are currently in area
         current_dws_in_area = [
