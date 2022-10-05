@@ -486,15 +486,16 @@ class Window:
         get_settings().appearance.events.theme.connect(self._update_theme)
 
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockConsole,
+            tabify=False,
         )
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerControls,
             tabify=False,
-            menu=self.window_menu,
         )
         self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockLayerList,
+            tabify=False,
         )
         if perf.USE_PERFMON:
             self._add_viewer_dock_widget(
