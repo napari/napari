@@ -13,10 +13,10 @@ class ViewerToggleAction(Action):
 
     Parameters
     ----------
-    id : CommandId
-        The id of the action.
+    id : str
+        The command id of the action.
     title : str
-        The title of the action.
+        The title of the action. Prefer capital case.
     viewer_attribute : str
         The attribute of the viewer to toggle. (e.g. 'axes')
     sub_attribute : str

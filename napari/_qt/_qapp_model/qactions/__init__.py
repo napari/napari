@@ -19,7 +19,7 @@ def init_qactions() -> None:
       (this is what allows functions to be declared with annotations like
       `def foo(window: Window)` or `def foo(qt_viewer: QtViewer)`)
     - registering provider functions for the names added to the namespace
-    - registering Qt-dependent actions with app-model (i.e. Q_* actions).
+    - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
 
     from ...._app_model import get_app
