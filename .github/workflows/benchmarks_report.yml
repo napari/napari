@@ -1,7 +1,7 @@
 # We need a dual workflow to make sure the token has the needed permissions to post comments
 # See https://stackoverflow.com/a/71683208 for more details
 
-name: Benchmarks - Report
+name: "Benchmarks - Report"
 
 on:
   workflow_run:
