@@ -641,7 +641,7 @@ class Window:
         self.main_menu.addMenu(self.view_menu)
         self.window_menu = build_qmodel_menu(
             MenuId.MENUBAR_WINDOW,
-            title=trans._('Window'),
+            title=trans._('&Window'),
             parent=self._qt_window,
         )
         self.main_menu.addMenu(self.window_menu)
