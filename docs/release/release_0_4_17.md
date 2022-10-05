@@ -155,6 +155,8 @@ or create issues on GitHub.
 - Standardise file extension when reading (#5121)
 - Fix slow points (#5133)
 - Use cross shape when cursor is small (#5141)
+- Fix exception when rendering colorbar from a label_colormap (#5154)
+- Make imshow defaults the same as add_image (#5156)
 
 ## API Changes
 
@@ -191,6 +193,8 @@ or create issues on GitHub.
 - [pre-commit.ci] pre-commit autoupdate (#4779)
 - ci(dependabot): bump toshimaru/auto-author-assign from 1.5.0 to 1.6.1 (#4890)
 - Docker: Update xpra's apt too (#4901)
+- Remove leading b from briefcase macOS support build numbers (#5152)
+- Block imageio 2.22.1 release in setup.cfg (#5168)
 
 ## Documentation
 
