@@ -41,7 +41,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          temporarily disable to make testing easier
           - benchmark-name: Qt
             asv-command: continuous
             selection-regex: "^benchmark_qt_.*"
