@@ -61,6 +61,7 @@ extensions = [
     #    "sphinx_comments",
     "sphinx_panels",
     "sphinx.ext.viewcode",
+    "sphinx-favicon",
     "sphinx_gallery.gen_gallery",
     "sphinx_tags",
 ]
@@ -108,6 +109,28 @@ html_static_path = ['_static']
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ''
 html_title = 'napari'
+
+favicons = [
+    {
+        # the SVG is the "best" and contains code to detect OS light/dark mode
+        "static-file": "favicon/logo-silhouette-dark-light.svg",
+        "type": "image/svg+xml",
+    },
+    {
+        # Safari in Oct. 2022 does not support SVG
+        # an ICO would work as well, but PNG should be just as good
+        # setting sizes="any" is needed for Chrome to prefer the SVG
+        "sizes": "any",
+        "static-file": "favicon/logo-silhouette-192.png",
+    },
+    {
+        # this is used on iPad/iPhone for "Save to Home Screen"
+        # apparently some other apps use it as well
+        "rel": "apple-touch-icon",
+        "sizes": "180x180",
+        "static-file": "favicon/logo-noborder-180.png",
+    },
+]
 
 html_css_files = [
     'custom.css',
