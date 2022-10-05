@@ -1,17 +1,35 @@
 import logging
+from collections import deque
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Iterable, Tuple
+from dataclasses import dataclass
+from functools import partial
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Deque,
+    Dict,
+    Iterable,
+    Tuple,
+    Union,
+)
 
+from napari.components import Dims
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
 
-from . import Dims
-
-if TYPE_CHECKING:
-    from napari.layers.base.base import _LayerSliceRequest, _LayerSliceResponse
-
 LOGGER = logging.getLogger("napari.components._layer_slicer")
+
+
+@dataclass(frozen=True)
+class _SliceRequest:
+    data: Any
+    index: int
+
+
+@dataclass(frozen=True)
+class _SliceResponse:
+    data: Any
 
 
 class _LayerSlicer:
@@ -19,28 +37,14 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
-        self._force_sync = False
-
-    @contextmanager
-    def force_sync(self):
-        """Context manager to allow a forced sync. This method only holds
-        the _force_sync variable as True while the manager is open, then
-        resets it back to False after the manager is closed."""
-        self._force_sync = True
-        yield None
-        self._force_sync = False
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> "_LayerSliceResponse":
+    ) -> "_SliceResponse":
         """This should only be called from the main thread.
 
-        Creates a new task and addss it to the _layers_to_task_dict. Cancels
+        Creates a new task and adds it to the _layers_to_task_dict. Cancels
         all tasks currently running on that layer.
-
-        If force_sync is True, it will submit the task immediately.
-
-        Adds
         """
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
@@ -57,18 +61,14 @@ class _LayerSlicer:
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
         requests = {}
-        force_sync = self._force_sync
         for layer in layers:
             if layer._is_async():
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
-                force_sync = True
         # create task for slicing of each request/layer
         task = self._executor.submit(self._slice_layers, requests)
-        # if not async, run immediately
-        if force_sync:
-            task.result()
+
         # once everything is complete, release the block
         task.add_done_callback(self._on_slice_done)
         # construct dict of layers to layer task
@@ -77,8 +77,8 @@ class _LayerSlicer:
 
     def _slice_layers(
         self,
-        requests: Dict[Layer, "_LayerSliceRequest"],
-    ) -> "_LayerSliceResponse":
+        requests: Dict[Layer, "_SliceRequest"],
+    ) -> "_SliceResponse":
         """This can be called from the main or slicing thread.
         Iterates throught a dictionary of request objects and call the slice
         on each individual layer."""
@@ -98,3 +98,23 @@ class _LayerSlicer:
             return
         result = task.result()
         self.events.ready(Event('ready', value=result))
+
+
+class Task:
+    def __init__(self, func: Callable[[], Any]):
+        self._func = func
+        self._future = Future()
+
+    @property
+    def future(self) -> Future:
+        return self._future
+
+    def run(self):
+        if not self._future.set_running_or_notify_cancel():
+            return
+        try:
+            result = self.func()
+        except Exception as e:
+            self._future.set_exception(e)
+        else:
+            self._future.set_result(result)

@@ -1116,17 +1116,3 @@ class _weakref_hide:
 
     def _raw_to_displayed(self, *args, **kwarg):
         return self.obj()._raw_to_displayed(*args, **kwarg)
-
-
-class AsyncImage(Image):
-    """Temporary extension of Image Layer to use as async slicing is built out.
-    These methods will eventually become part of the Base Layer or individual
-    layers.
-    """
-
-    def _get_slice(self, request):
-        """for future async slicing implementation"""
-        pass
-
-    def _is_async(self):
-        False
