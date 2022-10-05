@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
-import warnings
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import dask
 import numpy as np
@@ -327,79 +326,6 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             return np.right_shift(
                 data, (data.dtype.itemsize - 1) * 8 - 1
             ).astype(out_dtype)
-
-
-def prepare_properties(
-    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
-    choices: Optional[Dict[str, Array]] = None,
-    num_data: int = 0,
-    save_choices: bool = False,
-) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-    """Prepare properties and choices into standard forms.
-    Parameters
-    ----------
-    properties : dict[str, Array] or DataFrame
-        The property values.
-    choices : dict[str, Array]
-        The property value choices.
-    num_data : int
-        The length of data that the properties represent (e.g. number of points).
-    save_choices : bool
-        If true, always return all of the properties in choices.
-    Returns
-    -------
-    properties: dict[str, np.ndarray]
-        A dictionary where the key is the property name and the value
-        is an ndarray of property values.
-    choices: dict[str, np.ndarray]
-        A dictionary where the key is the property name and the value
-        is an ndarray of unique property value choices.
-    """
-    # If there is no data, non-empty properties represent choices as a deprecated behavior.
-    if num_data == 0 and properties:
-        warnings.warn(
-            trans._(
-                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        choices = properties
-        properties = {}
-
-    properties = validate_properties(properties, expected_len=num_data)
-    choices = _validate_property_choices(choices)
-
-    # Populate the new choices by using the property keys and merging the
-    # corresponding unique property and choices values.
-    new_choices = {
-        k: np.unique(np.concatenate((v, choices.get(k, []))))
-        for k, v in properties.items()
-    }
-
-    # If there are no properties, and thus no new choices, populate new choices
-    # from the input choices, and initialize property values as missing or empty.
-    if len(new_choices) == 0:
-        new_choices = {k: np.unique(v) for k, v in choices.items()}
-        if len(new_choices) > 0:
-            if num_data > 0:
-                properties = {
-                    k: np.array([None] * num_data) for k in new_choices
-                }
-            else:
-                properties = {
-                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
-                }
-
-    # For keys that are in the input choices, but not in the new choices,
-    # sometimes add appropriate array values to new choices and properties.
-    if save_choices:
-        for k, v in choices.items():
-            if k not in new_choices:
-                new_choices[k] = np.unique(v)
-                properties[k] = np.array([None] * num_data)
-
-    return properties, new_choices
 
 
 def get_current_properties(
