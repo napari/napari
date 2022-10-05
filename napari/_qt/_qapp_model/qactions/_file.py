@@ -12,7 +12,7 @@ def _restart(window: Window):
     window._qt_window.restart()
 
 
-FILE_ACTIONS: List[Action] = [
+Q_FILE_ACTIONS: List[Action] = [
     Action(
         id=CommandId.DLG_OPEN_FILES,
         title=CommandId.DLG_OPEN_FILES.title,

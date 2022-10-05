@@ -16,7 +16,7 @@ def init_qactions():
 
     from ...qt_main_window import Window, _QtMainWindow
     from ...qt_viewer import QtViewer
-    from ._file import FILE_ACTIONS
+    from ._file import Q_FILE_ACTIONS
 
     # Qt-specific providers/processors
     def _provide_window() -> Optional[Window]:
@@ -38,5 +38,5 @@ def init_qactions():
     store.register(providers=[(_provide_window,), (_provide_qtviewer,)])
 
     # register actions
-    for action in chain(FILE_ACTIONS):
+    for action in chain(Q_FILE_ACTIONS):
         app.register_action(action)
