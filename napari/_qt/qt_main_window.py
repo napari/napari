@@ -757,8 +757,8 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
-        menu=None,
         tabify: bool = False,
+        menu: Optional[] = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -790,6 +790,9 @@ class Window:
                 The shortcut parameter is deprecated since version 0.4.8, please use
                 the action and shortcut manager APIs. The new action manager and
                 shortcut API allow user configuration and localisation.
+        menu : Optional[]
+        tabify : bool
+            Flag to tabify dockwidget or not.
 
         Returns
         -------
@@ -831,7 +834,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget, menu=menu, tabify=tabify)
+        self._add_viewer_dock_widget(dock_widget, tabify=tabify, menu=menu)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -848,7 +851,7 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify=False, menu=None
+        self, dock_widget: QtViewerDockWidget, tabify: bool = False, menu: Optional[] =None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -860,6 +863,9 @@ class Window:
             `dock_widget` will be added to the main window.
         tabify : bool
             Flag to tabify dockwidget or not.
+        menu : Optional[]
+            If `None` action not added to menu.
+
         """
         # Find if any othe dock widgets are currently in area
         current_dws_in_area = [
@@ -899,7 +905,6 @@ class Window:
                 action.setShortcut(shortcut)
 
             menu.addAction(action)
-        # self.window_menu.addAction(action)
 
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
