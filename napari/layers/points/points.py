@@ -1895,7 +1895,7 @@ class Points(Layer):
             integer indices of selected data used to index into self.data
         position : Sequence of numbers
             position of the drag start in data coordinates.
-        center_by_data: bool
+        center_by_data : bool
             Center the drag start based on the selected data.
             Used for modifier drag_box selection.
         """
