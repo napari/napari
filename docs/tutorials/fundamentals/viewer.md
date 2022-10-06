@@ -36,19 +36,19 @@ can be launched from the command-line, a python script, an IPython console, or a
 jupyter notebook. All four methods launch the same viewer, and anything related
 to the interacting with the viewer on the screen applies equally to all of them.
 We will use the python script syntax for any example code which you can copy and
-paste into scripts/console/notebook and run them.
+paste into a script/console/notebook and run them.
 
 Let's get stated by launching a viewer with a simple 2D image.
 
 The fastest way to get the viewer open and throw an image up on the screen is
-using {func}`view_image<napari.view_image>`:
+using {func}`imshow<napari.imshow>`:
 
 
 ```{code-cell} python
 import napari
 from skimage import data
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer, image = napari.imshow(data.astronaut(), rgb=True)
 ```
 
 ```{code-cell} python
@@ -57,11 +57,12 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 viewer.close()
 ```
 
-Calling {func}`view_image<napari.view_image>` will return a {class}`Viewer<napari.Viewer>`
-object that is the main
-object inside **napari**. All the data you add to **napari** will be stored
+Calling {func}`imshow<napari.imshow>` will return a {class}`Viewer<napari.Viewer>`
+object that is the main object inside **napari** and a {class}`Image<napari.layers.Image>`
+layer object. All the data you add to **napari** will be stored
 inside the {class}`Viewer<napari.Viewer>` object and will be accessible from it. This command will
-also open the viewer to create a GUI that you can interact with.
+also open the viewer to create a GUI that you can interact with. The {class}`Image<napari.layers.Image>`
+will contain information about the image and allow you to access image methods.
 
 You can also create an empty {class}`Viewer<napari.Viewer>` directly and then start adding images to
 it. For example:
@@ -71,8 +72,9 @@ viewer = napari.Viewer()
 new_layer = viewer.add_image(data.astronaut(), rgb=True)
 ```
 
-{meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>` accepts the same arguments as {func}`view_image<napari.view_image>` but returns a layer
-rather than a {class}`Viewer<napari.Viewer>`, (as you must already have a viewer to use it).
+{meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>` accepts the same arguments as {func}`imshow<napari.show>` but only returns an {class}`Image<napari.layers.Image>` layer
+instead of both the {class}`Viewer<napari.Viewer>` and
+{class}`Image<napari.layers.Image>` layer (as you must already have a viewer to use it).
 
 After running either of those two commands you should now be able to see the
 photograph of the astronaut in the **napari** viewer as shown below
@@ -90,7 +92,7 @@ nbscreenshot(viewer, alt_text="photograph of an astronaut in napari viewer")
 viewer.close()
 ```
 
-Both the {func}`view_image<napari.view_image>` and the {meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>`
+Both the {func}`imshow<napari.imshow>` and the {meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>`
 methods accept any numpy-array like
 object as an input, including n-dimensional arrays. For more information on
 adding images to the viewer see the [image layer guide](../../howtos/layers/image).
@@ -210,7 +212,7 @@ now see different controls present.
 :tags: [remove-output]
 import numpy as np
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer, image = napari.imshow(data.astronaut(), rgb=True)
 points = np.array([[100, 100], [200, 200], [300, 100]])
 viewer.add_points(points, size=30)
 ```
@@ -353,7 +355,7 @@ running the following code:
 from scipy import ndimage as ndi
 
 blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
-viewer = napari.view_image(blobs.astype(float), name='blobs')
+viewer, image = napari.imshow(blobs.astype(float), name='blobs')
 labeled = ndi.label(blobs)[0]
 viewer.add_labels(labeled, name='blob ID')
 ```
