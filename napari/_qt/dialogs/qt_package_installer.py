@@ -161,7 +161,7 @@ class AbstractInstaller(QProcess):
             "this makes Windows hang?",  # self.readAll().data().decode(),
         )
         self._process_queue()
-    
+
     def _on_stdout_ready(self):
         if self._output_widget:
             text = self.readAllStandardOutput().data().decode()
@@ -215,8 +215,8 @@ class CondaInstaller(AbstractInstaller):
     ) -> None:
         _bat = ".bat" if os.name == "nt" else ""
         self._bin = (
-            f'mamba{_bat}' 
-            if use_mamba and shutil.which(f'mamba{_bat}') 
+            f'mamba{_bat}'
+            if use_mamba and shutil.which(f'mamba{_bat}')
             else f'conda{_bat}'
         )
         super().__init__(parent)
