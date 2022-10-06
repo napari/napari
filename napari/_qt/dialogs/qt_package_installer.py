@@ -73,7 +73,7 @@ class AbstractInstaller(QProcess):
         JobId : int
             ID that can be used to cancel the process.
         """
-        return hash(self._queue_args(self._get_install_args(pkg_list, prefix)))
+        return self._queue_args(self._get_install_args(pkg_list, prefix))
 
     def uninstall(
         self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
@@ -88,11 +88,11 @@ class AbstractInstaller(QProcess):
             Optional prefix from which to uninstall packages.
 
         Returns
-        -------
+        -------x
         JobId : int
             ID that can be used to cancel the process.
         """
-        return hash(self._queue_args(self._get_uninstall_args(pkg_list)))
+        return self._queue_args(self._get_uninstall_args(pkg_list))
 
     def cancel(self, job_id: Optional[JobId] = None):
         """Cancel `job_id` if it is running.
@@ -115,11 +115,9 @@ class AbstractInstaller(QProcess):
                 else:  # still pending, just remove from queue
                     self._queue.remove(args)
                 return
-        raise ValueError(
-            # pragma: no cover
-            f"No job with id {job_id}. Current queue:\n - "
-            "\n - ".join([f"{hash(args)} -> {args}" for args in self._queue])
-        )
+        msg = f"No job with id {job_id}. Current queue:\n - "
+        msg += "\n - ".join([f"{hash(args)} -> {args}" for args in self._queue])
+        raise ValueError(msg)
 
     def waitForFinished(self, msecs: int = 10000) -> bool:
         """Block and wait for all jobs to finish.
@@ -152,8 +150,10 @@ class AbstractInstaller(QProcess):
         if not self._queue:
             self.allFinished.emit()
             return
-        self.setArguments(list(self._queue[0]))
         logging.debug("Starting %s %s", self.program(), self.arguments())
+        # this might throw a warning because the sane process was already running
+        # but it's ok
+        self.setArguments(list(self._queue[0]))
         self.start()
 
     def _on_process_finished(
@@ -204,7 +204,7 @@ class PipInstaller(AbstractInstaller):
         cmd = ['-m', 'pip', 'install', '--upgrade']
         if prefix is not None:
             cmd.extend(['--prefix', str(prefix)])
-        if running_as_bundled_app(False) and sys.platform.startswith('linux'):
+        elif running_as_bundled_app(False) and sys.platform.startswith('linux'):
             cmd.extend(
                 ['--no-warn-script-location', '--prefix', user_plugin_dir()]
             )
