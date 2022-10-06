@@ -119,7 +119,7 @@ class AbstractInstaller(QProcess):
             # pragma: no cover
             f"No job with id {job_id}. Current queue:\n - "
             "\n - ".join([f"{hash(args)} -> {args}" for args in self._queue])
-        )  
+        )
 
     def waitForFinished(self, msecs: int = 10000) -> bool:
         """Block and wait for all jobs to finish.
