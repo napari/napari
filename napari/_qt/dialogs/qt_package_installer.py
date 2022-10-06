@@ -73,7 +73,7 @@ class AbstractInstaller(QProcess):
         JobId : int
             ID that can be used to cancel the process.
         """
-        return self._queue_args(self._get_install_args(pkg_list, prefix))
+        return hash(self._queue_args(self._get_install_args(pkg_list, prefix)))
 
     def uninstall(
         self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
@@ -92,7 +92,7 @@ class AbstractInstaller(QProcess):
         JobId : int
             ID that can be used to cancel the process.
         """
-        return self._queue_args(self._get_uninstall_args(pkg_list))
+        return hash(self._queue_args(self._get_uninstall_args(pkg_list)))
 
     def cancel(self, job_id: Optional[JobId] = None):
         """Cancel `job_id` if it is running.

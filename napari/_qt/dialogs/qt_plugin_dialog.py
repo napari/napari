@@ -365,20 +365,26 @@ class QPluginList(QListWidget):
             else:
                 widget.set_busy(trans._("installing..."), update)
 
-            self.installer.install([pkg_name])
+            job_id = self.installer.install([pkg_name])
+            widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
-            self.installer.uninstall([pkg_name])
+            job_id = self.installer.uninstall([pkg_name])
+            widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "cancel":
             widget.set_busy(trans._("cancelling..."), update)
-            self.installer.cancel((pkg_name,))  # FIXME
+            try:
+                job_id = widget.property("current_job_id")
+                self.installer.cancel(job_id)  # FIXME
+            finally:
+                widget.setProperty("current_job_id", None)
 
     @Slot(PackageMetadata, bool)
     def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
