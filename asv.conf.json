@@ -15,8 +15,8 @@
 
     // Install using default qt install
     "build_command": ["python -V"],  // skip build stage
-    "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all] zarr"],
-    "uninstall_command": ["in-dir={env_dir} python -m pip uninstall -y {project} zarr"],
+    "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all,testing]"],
+    "uninstall_command": ["in-dir={env_dir} python -m pip uninstall -y {project}"],
 
     // List of branches to benchmark
     "branches": ["main"],
