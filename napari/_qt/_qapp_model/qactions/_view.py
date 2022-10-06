@@ -69,7 +69,7 @@ Q_VIEW_ACTIONS: List[Action] = [
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
-                'group': '1_render',
+                'group': MenuGroup.RENDER,
                 'order': 1,
                 'when': get_settings().experimental.octree,
             }
@@ -82,7 +82,9 @@ Q_VIEW_ACTIONS: List[Action] = [
     Action(
         id=CommandId.TOGGLE_ACTIVITY_DOCK,
         title=CommandId.TOGGLE_ACTIVITY_DOCK.title,
-        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 11}],
+        menus=[
+            {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
+        ],
         callback=_toggle_activity_dock,
     ),
 ]
