@@ -126,6 +126,9 @@ and where data changed in the GUI will be accessible in the notebook.
 
 ## Next steps
 
-To learn more about how to use the napari viewer graphical user interface (GUI)
-checkout the [viewer tutorial](./viewer). Then see [layers at a glance](../../guides/layers)
-to learn how to use the napari viewer with different types of napari layers.
+To learn more about:
+
+* how to use the napari viewer graphical user interface (GUI)
+  checkout the [viewer tutorial](./viewer)
+* how to use the napari viewer with different types of napari layers see
+  [layers at a glance](../../guides/layers)
