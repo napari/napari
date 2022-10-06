@@ -786,8 +786,6 @@ class QtPluginDialog(QDialog):
 
         from ...plugins import plugin_manager
 
-        plugin_manager.discover()  # since they might not be loaded yet
-
         self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
@@ -831,6 +829,7 @@ class QtPluginDialog(QDialog):
             npev = 'shim' if manifest.npe1_shim else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
+        plugin_manager.discover()  # since they might not be loaded yet
         for (
             plugin_name,
             _mod_name,
