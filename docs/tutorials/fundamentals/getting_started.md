@@ -37,7 +37,6 @@ or by dragging and dropping images directly on the viewer.
 We currently only support files that can be read with [`skimage.io.imread`](https://scikit-image.org/docs/dev/api/skimage.io.html#skimage.io.imread),
 such as `tif`, `png`, and `jpg`.
 We plan on adding support for more exotic file types shortly - see [issue #379](https://github.com/napari/napari/issues/379) for discussion.
-You can also create new empty `points`, `shapes`, and `labels` layers using the new layer buttons in the bottom right of the viewer.
 
 You can also directly load an image into the viewer from the command line by passing the path to the image as an argument as follows
 
@@ -57,17 +56,18 @@ but we'll be adding support for this functionality soon as discussed in [#379](h
 ### Python script usage
 
 To launch napari from a python script, inside your script you should import `napari`,
-and then create the `Viewer` by adding some data.
+and then create a {class}`Viewer<napari.Viewer>` and {class}`Image<napari.layers.Image>`
+by adding some image data.
 
 For example, to add an image and some points inside your script you should include:
 
 ```python
 import napari
 
-# create a Viewer and add an image here
-viewer = napari.view_image(my_image_data)
+# create a `Viewer` and `Image` here
+viewer, image = napari.imshow(my_image_data)
 
-# custom code to add data here
+# add points layer here
 viewer.add_points(my_points_data)
 
 # start the event loop and show the viewer
@@ -89,14 +89,15 @@ is that you can preprocess your images and add multiple layers before displaying
 
 ### IPython console usage
 
-To launch napari from an IPython console import `napari` and create a `Viewer` object.
+To launch napari from an IPython console import `napari` and create a
+{class}`Viewer<napari.Viewer>` and {class}`Image<napari.layers.Image>` object.
 
 ```python
 import napari
 from skimage.data import astronaut
 
-# create the viewer and display the image
-viewer = napari.view_image(astronaut(), rgb=True)
+# create a `Viewer` and `Image` here
+viewer, image = napari.imshow(astronaut(), rgb=True)
 ```
 
 Napari will automatically use the interactive [`%gui qt` event
@@ -125,5 +126,6 @@ and where data changed in the GUI will be accessible in the notebook.
 
 ## Next steps
 
-To learn more about how to use the napari viewer with different types of napari layers
-checkout the [viewer tutorial](./viewer) and more of our tutorials listed below.
+To learn more about how to use the napari viewer graphical user interface (GUI)
+checkout the [viewer tutorial](./viewer). Then see [layers at a glance](../../guides/layers)
+to learn how to use the napari viewer with different types of napari layers.
