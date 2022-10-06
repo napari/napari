@@ -41,7 +41,7 @@ paste into scripts/console/notebook and run them.
 Let's get stated by launching a viewer with a simple 2D image.
 
 The fastest way to get the viewer open and throw an image up on the screen is
-using {func}`napari.view_image`:
+using {func}`view_image<napari.view_image>`:
 
 
 ```{code-cell} python
@@ -57,12 +57,13 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 viewer.close()
 ```
 
-Calling {func}`napari.view_image` will return a {class}`Viewer<napari.Viewer>` object that is the main
+Calling {func}`view_image<napari.view_image>` will return a {class}`Viewer<napari.Viewer>`
+object that is the main
 object inside **napari**. All the data you add to **napari** will be stored
-inside the {class}`Viewer` object and will be accessible from it. This command will
+inside the {class}`Viewer<napari.Viewer>` object and will be accessible from it. This command will
 also open the viewer to create a GUI that you can interact with.
 
-You can also create an empty {class}`Viewer` directly and then start adding images to
+You can also create an empty {class}`Viewer<napari.Viewer>` directly and then start adding images to
 it. For example:
 
 ```{code-cell} python
@@ -70,8 +71,8 @@ viewer = napari.Viewer()
 new_layer = viewer.add_image(data.astronaut(), rgb=True)
 ```
 
-{meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>` accepts the same arguments as {func}`view_image` but returns a layer
-rather than a {class}`Viewer`, (as you must already have a viewer to use it).
+{meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>` accepts the same arguments as {func}`view_image<napari.view_image>` but returns a layer
+rather than a {class}`Viewer<napari.Viewer>`, (as you must already have a viewer to use it).
 
 After running either of those two commands you should now be able to see the
 photograph of the astronaut in the **napari** viewer as shown below
@@ -89,7 +90,7 @@ nbscreenshot(viewer, alt_text="photograph of an astronaut in napari viewer")
 viewer.close()
 ```
 
-Both the {func}`view_image` and the {meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>`
+Both the {func}`view_image<napari.view_image>` and the {meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>`
 methods accept any numpy-array like
 object as an input, including n-dimensional arrays. For more information on
 adding images to the viewer see the [image layer guide](../../howtos/layers/image).
@@ -168,7 +169,7 @@ layers or just the clicked-on layers respectively.
 You can rearrange the order of the layers by dragging them, including dragging
 multiple layers at the same time.
 
-The {class}`Viewer` object also contains our {class}`LayerList` object that allows you to
+The {class}`Viewer<napari.Viewer>` object also contains our {class}`LayerList` object that allows you to
 access the data of all the layers with
 
 ```{code-cell} python
