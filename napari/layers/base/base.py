@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 import os.path
+import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
@@ -114,6 +115,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     ----------
     name : str
         Unique name of the layer.
+    id : uuid.UUID
+        Unique id of the layer. Generated using UUID version 4.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
@@ -249,6 +252,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # Needs to be imported here to avoid circular import in _source
         from .._source import current_source
 
+        self.id = uuid.uuid4()
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
