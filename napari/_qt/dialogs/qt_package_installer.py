@@ -213,7 +213,12 @@ class CondaInstaller(AbstractInstaller):
     def __init__(
         self, parent: Optional[QObject] = None, use_mamba: bool = True
     ) -> None:
-        self._bin = 'mamba' if use_mamba and shutil.which('mamba') else 'conda'
+        _bat = ".bat" if os.name == "nt" else ""
+        self._bin = (
+            f'mamba{_bat}' 
+            if use_mamba and shutil.which(f'mamba{_bat}') 
+            else f'conda{_bat}'
+        )
         super().__init__(parent)
         self.setProgram(self._bin)
         # TODO: make configurable per install once plugins can request it
@@ -223,9 +228,6 @@ class CondaInstaller(AbstractInstaller):
         )
 
     def _modify_env(self, env: QProcessEnvironment):
-        if self._bin != 'mamba':
-            return
-
         from ..._version import version_tuple
 
         napari_version = ".".join(str(v) for v in version_tuple[:3])
