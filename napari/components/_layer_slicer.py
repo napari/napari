@@ -1,35 +1,12 @@
 import logging
-from collections import deque
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from dataclasses import dataclass
-from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Deque,
-    Dict,
-    Iterable,
-    Tuple,
-    Union,
-)
+from typing import Dict, Iterable, Tuple
 
 from napari.components import Dims
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
 
 LOGGER = logging.getLogger("napari.components._layer_slicer")
-
-
-@dataclass(frozen=True)
-class _SliceRequest:
-    data: Any
-    index: int
-
-
-@dataclass(frozen=True)
-class _SliceResponse:
-    data: Any
 
 
 class _LayerSlicer:
@@ -40,11 +17,11 @@ class _LayerSlicer:
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> "_SliceResponse":
+    ) -> Future[dict]:
         """This should only be called from the main thread.
 
-        Creates a new task and adds it to the _layers_to_task_dict. Cancels
-        all tasks currently running on that layer.
+        Creates a new task and adds it to the _layers_to_task dict. Cancels
+        all tasks currently pending for that layer.
         """
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
@@ -75,10 +52,11 @@ class _LayerSlicer:
         self._layers_to_task[tuple(requests.keys())] = task
         return task
 
-    def _slice_layers(
-        self,
-        requests: Dict[Layer, "_SliceRequest"],
-    ) -> "_SliceResponse":
+    def shutdown(self) -> None:
+        """This should be called from the main thread when this is no longer needed."""
+        self._executor.shutdown()
+
+    def _slice_layers(self, requests: Dict) -> Dict:
         """This can be called from the main or slicing thread.
         Iterates throught a dictionary of request objects and call the slice
         on each individual layer."""
@@ -87,7 +65,7 @@ class _LayerSlicer:
             for layer, request in requests.items()
         }
 
-    def _on_slice_done(self, task: Future) -> None:
+    def _on_slice_done(self, task: Future[Dict]) -> None:
         """This can be called from the main or slicing thread.
         Release the thread.
         This is the "done_callback" which is added to each task.
@@ -98,23 +76,3 @@ class _LayerSlicer:
             return
         result = task.result()
         self.events.ready(Event('ready', value=result))
-
-
-class Task:
-    def __init__(self, func: Callable[[], Any]):
-        self._func = func
-        self._future = Future()
-
-    @property
-    def future(self) -> Future:
-        return self._future
-
-    def run(self):
-        if not self._future.set_running_or_notify_cancel():
-            return
-        try:
-            result = self.func()
-        except Exception as e:
-            self._future.set_exception(e)
-        else:
-            self._future.set_result(result)

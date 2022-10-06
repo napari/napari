@@ -108,9 +108,6 @@ else:
 
 
 ImageData = NewType("ImageData", ArrayBase)
-AsyncimageData = NewType(
-    "AsyncimageData", ArrayBase
-)  # TODO temporary for async buildout
 LabelsData = NewType("LabelsData", ArrayBase)
 PointsData = NewType("PointsData", ArrayBase)
 ShapesData = NewType("ShapesData", List[ArrayBase])

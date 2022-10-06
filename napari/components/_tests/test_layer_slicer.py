@@ -1,206 +1,123 @@
-import time
-from collections import deque
-from concurrent.futures import Executor, Future
 from dataclasses import dataclass
-from functools import partial
-from threading import RLock
-from typing import Any, Callable, Deque, Iterable, Union
-
-import numpy as np
-import pytest
+from threading import RLock, current_thread, main_thread
 
 from napari.components import Dims
-from napari.components._layer_slicer import (
-    Task,
-    _LayerSlicer,
-    _SliceRequest,
-    _SliceResponse,
-)
-from napari.layers._data_protocols import LayerDataProtocol
+from napari.components._layer_slicer import _LayerSlicer
 
+# cases to consider
+# - single + multiple layers that supports async (all of layers do support async)
+# - single + multiple layers that don't support async (all of layers do not support async)
+# - mix of layers that do and don't support async
+#
+# behaviors we want to test
+# scheduling logic of the slicer (and not correctness of the slice response value)
+#
+# - for layers that support async, the slice task should not be run on the main thread (we don't want to block the calling)
+# - for layers that do not support async, slicing should always be done once the method returns
+# - slice requests should be run on the main thread
+# - pending tasks are cancelled (at least when the new task will slice all layers for the pending task)
+#
+# run all tests with:
 # pytest napari/components/_tests/test_layer_slicer.py -svv
 
 
-# @pytest.fixture()
-# def async_layer():
-#     shape = (10, 15)
-#     np.random.seed(0)
-#     data = np.random.random(shape)
-#     layer = AsyncImage(data)
-#     return layer
+@dataclass(frozen=True)
+class FakeSliceRequest:
+    id: int = -1
 
 
-class _TestLayer:
-    """Temporary extension of Image Layer to use as async slicing is built out.
-    These methods will eventually become part of the Base Layer or individual
-    layers.
-    """
+@dataclass(frozen=True)
+class FakeSliceResponse:
+    id: int = -1
 
-    def __init__(self, data: LayerDataProtocol):
-        self._data = data
+
+class FakeAsyncLayer:
+    def __init__(self):
+        self.slice_count = 0
         self.lock = RLock()
 
-    def _make_slice_request(self, dims) -> _SliceRequest:
-        return _SliceRequest(data=self._data, index=dims.current_step[0])
+    def _make_slice_request(self, dims) -> FakeSliceRequest:
+        assert current_thread() == main_thread()
+        self.slice_count += 1
+        request = FakeSliceRequest(id=self.slice_count)
+        return request
 
-    def _get_slice(self, request: _SliceRequest) -> _SliceResponse:
+    def _get_slice(self, request: FakeSliceRequest) -> FakeSliceResponse:
+        assert current_thread() != main_thread()
         with self.lock:
-            return self._data[request.index]
+            return FakeSliceResponse(id=request.id)
 
-    def _is_async(self):
+    def _is_async(self) -> bool:
         return True
 
 
-class TestExecutor(Executor):
+class FakeSyncLayer:
     def __init__(self):
-        self._tasks: Deque[Task] = deque()
+        self.slice_count: int = 0
 
-    def submit(self, fn, *args, **kwargs) -> Future:
-        task = Task(partial(fn, *args, **kwargs))
-        self._tasks.append(task)
-        return task.future
+    def _slice_dims(self, *args, **kwargs) -> None:
+        self.slice_count += 1
 
-    def run_specific(self, future: Future) -> None:
-        for task in self._tasks:
-            if task.future is future:
-                task.run()
-        raise ValueError('future not found')
-
-    def run_oldest(self):
-        task = self._tasks.popleft()
-        task.run()
-
-    def run_newest(self):
-        task = self._tasks.pop()
-        task.run()
-
-    def run_all(self):
-        while len(self._tasks) > 0:
-            self.run_oldest()
-
-    def map(
-        self,
-        func,
-        *iterables,
-        timeout: Union[int, float] = None,
-        chunksize: int = 1,
-    ) -> Iterable[Future]:
-        raise NotImplementedError()
-
-    def shutdown(self, wait=True, *, cancel_futures=False) -> None:
-        self._tasks.clear()
+    def _is_async(self) -> bool:
+        return False
 
 
-@pytest.fixture()
-def async_layer():
-    shape = (10, 15)
-    np.random.seed(0)
-    data = np.random.random(shape)
-    layer = _TestLayer(data)
-    layer._executor = TestExecutor()
-    return layer
+def test_slice_layers_async_with_one_async_layer():
+    layer_slicer = _LayerSlicer()
+    layer = FakeAsyncLayer()
+
+    future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+    assert future.result()[layer].id == 1
+
+    # TODO: make slicer a fixture and shutdown on teardown, using yield
+    layer_slicer.shutdown()
 
 
-@pytest.fixture()
-def viewer_slice_request(layer_slice_request, async_layer):
-    """[Layer, _SliceRequest]"""
+def test_slice_layers_async_emits_ready_event_when_done():
+    layer_slicer = _LayerSlicer()
+    layer = FakeAsyncLayer()
+    event_result = None
 
-    requests = {
-        async_layer: layer_slice_request,
-    }
-    return requests
+    def on_done(event):
+        nonlocal event_result
+        event_result = event.value
 
+    layer_slicer.events.ready.connect(on_done)
 
-@pytest.fixture()
-def viewer_slice_response(layer_slice_response, async_layer):
-    """[Layer, _SliceResponse]
-    slice response should be a future
-    """
-    responses = {
-        async_layer: layer_slice_response,
-    }
-    return responses
+    future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+    actual_result = future.result()
 
+    assert actual_result is event_result
 
-@pytest.fixture()
-def layer_slice_request():
-    return _SliceRequest(
-        data=None,
-        data_to_world=None,
-        ndim=None,
-        ndisplay=None,
-        point=None,
-        dims_order=None,
-        dims_displayed=None,
-        dims_not_displayed=None,
-        multiscale=None,
-        corner_pixels=None,
-        round_index=None,
-    )
+    # TODO: make slicer a fixture and shutdown on teardown, using yield
+    layer_slicer.shutdown()
 
 
-@pytest.fixture()
-def layer_slice_response(layer_slice_request):
-    return _SliceResponse(
-        request=layer_slice_request,
-        data=None,
-        data_to_world=None,
-    )
+def test_slice_layers_async_with_one_sync_layer():
+    layer_slicer = _LayerSlicer()
+    layer = FakeSyncLayer()
+    assert layer.slice_count == 0
+
+    layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+    assert layer.slice_count == 1
+
+    # TODO: make slicer a fixture and shutdown on teardown, using yield
+    layer_slicer.shutdown()
 
 
-def test_slice_layers_async(async_layer):
+def test_slice_layers_async_multiple_calls_cancels_pending():
     layer_slicer = _LayerSlicer()
     dims = Dims()
-    assert dims.ndim == 2
-    slice_reponse = layer_slicer.slice_layers_async(
-        layers=[async_layer],
-        dims=dims,
-    )
-    assert slice_reponse
+    layer = FakeAsyncLayer()
+    with layer.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        pending = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not blocked.done()
 
+    assert pending.cancelled()
 
-# def test_slice_layers(viewer_slice_request):
-#     """requires
-#     Layer._get_slice
-#     """
-#     layer_slicer = _LayerSlicer()
-#     slice_reponse = layer_slicer._slice_layers(
-#         requests=viewer_slice_request,
-#     )
-#     assert isinstance(slice_reponse, dict)
-
-
-# def test_on_slice_done(layer_slice_response):
-#     """TODO to test this properly, it needs to be done at a higher level to
-#     check result on the Layer."""
-
-#     # test no errors are raised for a simple submit
-#     layer_slicer = _LayerSlicer()
-#     with layer_slicer._executor as executor:
-#         task = executor.submit(tuple, (1, 2))
-#         response = layer_slicer._on_slice_done(
-#             task=task,
-#         )
-#         assert response is None
-#         assert task.done()
-
-#     # test cancellation of task
-#     layer_slicer = _LayerSlicer()
-#     with layer_slicer._executor as executor:
-#         task = executor.submit(time.sleep, 0.1)
-#         task.cancel()
-#         response = layer_slicer._on_slice_done(
-#             task=task,
-#         )
-#         assert response is None
-#         assert task.done()
-
-
-def test_executor():
-    layer_slicer = _LayerSlicer()
-    with layer_slicer._executor as executor:
-        task1 = executor.submit(time.sleep, 0.1)
-        task2 = executor.submit(time.sleep, 0.2)
-        task1.result()
-    assert not task1.running()
-    assert not task2.running()
+    # TODO: make slicer a fixture and shutdown on teardown, using yield
+    layer_slicer.shutdown()
