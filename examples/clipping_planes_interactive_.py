@@ -118,7 +118,8 @@ def shift_plane_along_normal(viewer, event):
     plane_position_data_vispy = np.array(volume_layer.experimental_clipping_planes[0].position)[[2, 1, 0]]
 
     # Get transform which maps from data (vispy) to canvas
-    visual2canvas = viewer.window.qt_viewer.layer_to_visual[volume_layer].node.get_transform(
+    # note that we're using a private attribute here, which may not be present in future napari versions
+    visual2canvas = viewer.window._qt_viewer.layer_to_visual[volume_layer].node.get_transform(
         map_from="visual", map_to="canvas"
     )
 

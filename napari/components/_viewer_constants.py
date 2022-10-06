@@ -1,26 +1,10 @@
 from enum import Enum
 
 
-class Position(str, Enum):
-    """Position: Position on an object in the canvas.
+class CanvasPosition(str, Enum):
+    """Canvas overlay position.
 
-    Sets the position of an object (e.g. scale bar) in the canvas
-            * top_left: Top left of the canvas
-            * top_right: Top right of the canvas
-            * bottom_right: Bottom right of the canvas
-            * bottom_left: Bottom left of the canvas
-    """
-
-    TOP_LEFT = 'top_left'
-    TOP_RIGHT = 'top_right'
-    BOTTOM_RIGHT = 'bottom_right'
-    BOTTOM_LEFT = 'bottom_left'
-
-
-class TextOverlayPosition(str, Enum):
-    """Text overlay position: Position of the text overlay in the canvas.
-
-    Sets the position of an object (e.g. scale bar) in the canvas
+    Sets the position of an object in the canvas
             * top_left: Top left of the canvas
             * top_right: Top right of the canvas
             * top_center: Top center of the canvas
@@ -30,11 +14,11 @@ class TextOverlayPosition(str, Enum):
     """
 
     TOP_LEFT = 'top_left'
-    TOP_RIGHT = 'top_right'
     TOP_CENTER = "top_center"
+    TOP_RIGHT = 'top_right'
     BOTTOM_RIGHT = 'bottom_right'
-    BOTTOM_LEFT = 'bottom_left'
     BOTTOM_CENTER = "bottom_center"
+    BOTTOM_LEFT = 'bottom_left'
 
 
 class CursorStyle(str, Enum):

@@ -23,6 +23,8 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -698,3 +700,40 @@ def install_certifi_opener():
     https_handler = request.HTTPSHandler(context=context)
     opener = request.build_opener(https_handler)
     request.install_opener(opener)
+
+
+def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
+    """Ensure current dimension order is preserved after dims are dropped.
+
+    This is similar to :func:`scipy.stats.rankdata`, but only deals with
+    unique integers (like dimension indices), so is simpler and faster.
+
+    Parameters
+    ----------
+    order : Sequence[int]
+        The data to reorder.
+
+    Returns
+    -------
+    Tuple[int, ...]
+        A permutation of ``range(len(order))`` that is consistent with the input order.
+
+    Examples
+    --------
+    >>> reorder_after_dim_reduction([2, 0])
+    (1, 0)
+
+    >>> reorder_after_dim_reduction([0, 1, 2])
+    (0, 1, 2)
+
+    >>> reorder_after_dim_reduction([4, 0, 2])
+    (2, 0, 1)
+    """
+    # A single argsort works for strictly increasing/decreasing orders,
+    # but not for arbitrary orders.
+    return tuple(_argsort(_argsort(order)))
+
+
+def _argsort(values: Sequence[int]) -> List[int]:
+    """Equivalent to :func:`numpy.argsort` but faster in some cases."""
+    return sorted(range(len(values)), key=values.__getitem__)

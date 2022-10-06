@@ -9,6 +9,7 @@ from typing import Deque, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
+from ...plugins.pypi import _user_agent
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
 
@@ -169,6 +170,7 @@ class PipInstaller(AbstractInstaller):
             ]
         )
         env.insert("PYTHONPATH", combined_paths)
+        env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
 
     def _get_install_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
