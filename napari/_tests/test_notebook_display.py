@@ -46,7 +46,6 @@ def test_nbscreenshot(make_napari_viewer):
         ("<script>alert(0)</script>", None),  # script injection 1
         ("&lt;script&gt;alert(&#39;1&#39;);&lt;/script&gt;", None),
         ("<svg><script>123<1>alert(3)</script>", None),
-        ("", None),
     ],
 )
 def test_safe_alt_text(alt_text_input, expected_alt_text):
@@ -61,4 +60,9 @@ def test_invalid_alt_text():
     with pytest.warns(UserWarning):
         # because string with only whitespace messes up with the parser
         display_obj = nbscreenshot(Mock(), alt_text=" ")
+    assert display_obj.alt_text is None
+
+    with pytest.warns(UserWarning):
+        # because string with only whitespace messes up with the parser
+        display_obj = nbscreenshot(Mock(), alt_text="")
     assert display_obj.alt_text is None
