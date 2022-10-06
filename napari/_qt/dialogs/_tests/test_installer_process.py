@@ -31,10 +31,10 @@ def tmp_conda_env(tmp_path):
     elif conda_dir := os.environ.get('CONDA'):
         # $CONDA is usually defined in GHA, pointing to their bundled conda root
         conda_exe = os.path.join(conda_dir, 'condabin', 'conda')
-        if sys.platform == 'win32':
+        if os.name == 'nt':
             conda_exe += '.bat'
     if not os.path.isfile(conda_exe):
-        conda_exe = 'conda'
+        conda_exe = 'conda.bat ' if os.name == 'nt' else 'conda'
 
     try:
         subprocess.check_output(
@@ -48,7 +48,7 @@ def tmp_conda_env(tmp_path):
             ],
             stderr=subprocess.STDOUT,
             text=True,
-            timeout=60,
+            timeout=300,
         )
     except subprocess.CalledProcessError as exc:
         print(exc.output)
@@ -92,14 +92,14 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = CondaInstaller()
-    with qtbot.waitSignal(installer.allFinished, timeout=10000):
+    with qtbot.waitSignal(installer.allFinished, timeout=30000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
         installer.waitForFinished()
 
     assert not installer.hasJobs()
 
     installer = CondaInstaller()
-    with qtbot.waitSignal(installer.allFinished, timeout=10000):
+    with qtbot.waitSignal(installer.allFinished, timeout=30000):
         installer.uninstall(['typing-extensions'], prefix=tmp_conda_env)
         installer.waitForFinished()
 
