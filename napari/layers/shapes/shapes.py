@@ -27,7 +27,7 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
 )
 from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
-from ..utils.layer_utils import _FeatureTable
+from ..utils.layer_utils import _FeatureTable, _unique_element
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import Box, ColorMode, Mode, ShapeType, shape_classes
@@ -1148,42 +1148,40 @@ class Shapes(Layer):
             selected_face_colors = self._data_view._face_color[
                 selected_data_indices
             ]
-            face_colors = np.unique(selected_face_colors, axis=0)
-            if len(face_colors) == 1:
-                face_color = face_colors[0]
+            unique_face_color = _unique_element(selected_face_colors)
+            if unique_face_color is not None:
                 with self.block_update_properties():
-                    self.current_face_color = face_color
+                    self.current_face_color = unique_face_color
 
             selected_edge_colors = self._data_view._edge_color[
                 selected_data_indices
             ]
-            edge_colors = np.unique(selected_edge_colors, axis=0)
-            if len(edge_colors) == 1:
-                edge_color = edge_colors[0]
+            unique_edge_color = _unique_element(selected_edge_colors)
+            if unique_edge_color is not None:
                 with self.block_update_properties():
-                    self.current_edge_color = edge_color
+                    self.current_edge_color = unique_edge_color
 
-            edge_width = list(
-                {self._data_view.shapes[i].edge_width for i in selected_data}
+            unique_edge_width = _unique_element(
+                np.array(
+                    [
+                        self._data_view.shapes[i].edge_width
+                        for i in selected_data
+                    ]
+                )
             )
-            if len(edge_width) == 1:
-                edge_width = edge_width[0]
+            if unique_edge_width is not None:
                 with self.block_update_properties():
-                    self.current_edge_width = edge_width
+                    self.current_edge_width = unique_edge_width
 
-            properties = {}
+            unique_properties = {}
             for k, v in self.properties.items():
-                # pandas uses `object` as dtype for strings by default, which
-                # combined with the axis argument breaks np.unique
-                axis = 0 if v.ndim > 1 else None
-                properties[k] = np.unique(v[selected_data_indices], axis=axis)
+                unique_properties[k] = _unique_element(
+                    v[selected_data_indices]
+                )
 
-            n_unique_properties = np.array(
-                [len(v) for v in properties.values()]
-            )
-            if np.all(n_unique_properties == 1):
+            if all(p is not None for p in unique_properties.values()):
                 with self.block_update_properties():
-                    self.current_properties = properties
+                    self.current_properties = unique_properties
 
     def _set_color(self, color, attribute: str):
         """Set the face_color or edge_color property

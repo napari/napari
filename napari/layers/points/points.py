@@ -21,7 +21,11 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils.layer_utils import _features_to_properties, _FeatureTable
+from ..utils.layer_utils import (
+    _features_to_properties,
+    _FeatureTable,
+    _unique_element,
+)
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -1208,46 +1212,38 @@ class Points(Layer):
             self._set_highlight()
             return
         index = list(self._selected_data)
-        edge_colors = np.unique(self.edge_color[index], axis=0)
-        if len(edge_colors) == 1:
-            edge_color = edge_colors[0]
+        unique_edge_color = _unique_element(self.edge_color[index])
+        if unique_edge_color is not None:
             with self.block_update_properties():
-                self.current_edge_color = edge_color
+                self.current_edge_color = unique_edge_color
 
-        face_colors = np.unique(self.face_color[index], axis=0)
-        if len(face_colors) == 1:
-            face_color = face_colors[0]
+        unique_face_color = _unique_element(self.face_color[index])
+        if unique_face_color is not None:
             with self.block_update_properties():
-                self.current_face_color = face_color
+                self.current_face_color = unique_face_color
 
         # Calculate the mean size across the displayed dimensions for
         # each point to be consistent with `_view_size`.
         mean_size = np.mean(
             self.size[np.ix_(index, self._dims_displayed)], axis=1
         )
-        size = np.unique(mean_size)
-        if len(size) == 1:
-            size = size[0]
+        unique_size = _unique_element(mean_size)
+        if unique_size is not None:
             with self.block_update_properties():
-                self.current_size = size
+                self.current_size = unique_size
 
-        edge_width = np.unique(self.edge_width[index])
-        if len(edge_width) == 1:
-            edge_width = edge_width[0]
+        unique_edge_width = _unique_element(self.edge_width[index])
+        if unique_edge_width is not None:
             with self.block_update_properties():
-                self.current_edge_width = edge_width
+                self.current_edge_width = unique_edge_width
 
-        properties = {}
+        unique_properties = {}
         for k, v in self.properties.items():
-            # pandas uses `object` as dtype for strings by default, which
-            # combined with the axis argument breaks np.unique
-            axis = 0 if v.ndim > 1 else None
-            properties[k] = np.unique(v[index], axis=axis)
+            unique_properties[k] = _unique_element(v[index])
 
-        n_unique_properties = np.array([len(v) for v in properties.values()])
-        if np.all(n_unique_properties == 1):
+        if all(p is not None for p in unique_properties.values()):
             with self.block_update_properties():
-                self.current_properties = properties
+                self.current_properties = unique_properties
         self._set_highlight()
 
     def interaction_box(self, index) -> Optional[np.ndarray]:
