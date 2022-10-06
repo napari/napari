@@ -121,10 +121,11 @@ class Colormap(EventedModel):
             cols = np.stack(cols, axis=1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
+            # Colors beyond max clipped to final bin
             indices = np.clip(
                 np.searchsorted(self.controls, values, side="right") - 1,
                 0,
-                len(self.colors),
+                len(self.colors) - 1,
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
