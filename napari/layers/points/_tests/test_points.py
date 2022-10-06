@@ -324,6 +324,8 @@ def test_selecting_points():
     layer.mode = 'add'
     assert layer.selected_data == set()
 
+    # ensure this works
+
 
 def test_adding_points():
     """Test adding Points data."""
@@ -849,6 +851,15 @@ def test_select_properties_object_dtype():
     """selecting points when they have a property of object dtype should not fail"""
     # pandas uses object as dtype for strings by default
     properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
+def test_select_properties_unsortable():
+    """selecting multiple points when they have properties that cannot be sorted should not fail"""
+    properties = pd.DataFrame({'unsortable': [{}, {}]})
     pl = Points(np.ones((2, 2)), properties=properties)
     selection = {0, 1}
     pl.selected_data = selection
