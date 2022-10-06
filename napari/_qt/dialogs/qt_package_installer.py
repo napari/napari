@@ -110,9 +110,16 @@ class AbstractInstaller(QProcess):
 
         for i, args in enumerate(self._queue):
             if hash(args) == job_id:
-                self.terminate() if i == 0 else self._queue.remove(args)
+                if i == 0:  # first in queue, currently running
+                    self.terminate()
+                else:  # still pending, just remove from queue
+                    self._queue.remove(args)
                 return
-        raise ValueError(f"No job with id {job_id}")  # pragma: no cover
+        raise ValueError(
+            # pragma: no cover
+            f"No job with id {job_id}. Current queue:\n - "
+            "\n - ".join([f"{hash(args)} -> {args}" for args in self._queue])
+        )  
 
     def waitForFinished(self, msecs: int = 10000) -> bool:
         """Block and wait for all jobs to finish.
