@@ -8,6 +8,7 @@ from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
+from qtpy.QtWidgets import QTextEdit
 
 from ...plugins.pypi import _user_agent
 from ...utils._appdirs import user_plugin_dir, user_site_packages
@@ -42,7 +43,11 @@ class AbstractInstaller(QProcess):
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
         self._queue: Deque[Tuple[str, ...]] = Deque()
+        self._output_widget = None
+
         self.setProcessChannelMode(QProcess.MergedChannels)
+        self.readyReadStandardOutput.connect(self._on_stdout_ready)
+        self.readyReadStandardError.connect(self._on_stderr_ready)
 
         env = QProcessEnvironment.systemEnvironment()
         self._modify_env(env)
@@ -125,6 +130,10 @@ class AbstractInstaller(QProcess):
         """True if there are jobs remaining in the queue."""
         return bool(self._queue)
 
+    def set_output_widget(self, output_widget: QTextEdit):
+        if output_widget:
+            self._output_widget = output_widget
+
     # -------------------------- Private methods ------------------------------
 
     def _queue_args(self, args) -> JobId:
@@ -152,6 +161,16 @@ class AbstractInstaller(QProcess):
             "this makes Windows hang?",  # self.readAll().data().decode(),
         )
         self._process_queue()
+    
+    def _on_stdout_ready(self):
+        if self._output_widget:
+            text = self.readAllStandardOutput().data().decode()
+            self._output_widget.append(text)
+
+    def _on_stderr_ready(self):
+        if self._output_widget:
+            text = self.readAllStandardError().data().decode()
+            self._output_widget.append(text)
 
 
 class PipInstaller(AbstractInstaller):

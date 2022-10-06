@@ -629,7 +629,7 @@ QPushButton#close_button:disabled {
   font-style: italic;
 }
 
-#pip_install_status{
+#plugin_manager_process_status{
   background: {{ background }};
   color: {{ opacity(text, 200) }};
 }

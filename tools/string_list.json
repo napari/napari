@@ -345,7 +345,7 @@
       "napari_plugin_engine",
       "outdated",
       "pip",
-      "pip_install_status",
+      "plugin_manager_process_status",
       "remove_button",
       "small_text",
       "summary",

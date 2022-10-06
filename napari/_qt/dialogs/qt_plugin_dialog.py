@@ -464,7 +464,7 @@ class QtPluginDialog(QDialog):
             self.installer = PipInstaller()
 
         self.setup_ui()
-        # self.installer.set_output_widget(self.stdout_text)  # FIXME
+        self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
         self.installer.finished.connect(self._on_installer_done)
         self.refresh()
@@ -630,7 +630,7 @@ class QtPluginDialog(QDialog):
 
         self.stdout_text = QTextEdit(self.v_splitter)
         self.stdout_text.setReadOnly(True)
-        self.stdout_text.setObjectName("pip_install_status")
+        self.stdout_text.setObjectName("plugin_manager_process_status")
         self.stdout_text.hide()
 
         buttonBox = QHBoxLayout()
