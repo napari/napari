@@ -264,9 +264,6 @@ class Installer(QObject):
                 lambda: self._uninstall(pkg_list, installer, channels),
             ),
         )
-        pm2 = PluginManager.instance()
-        for pkg in pkg_list:
-            pm2.unregister(pkg)
         self._handle_action()
 
     def _uninstall(
@@ -296,8 +293,13 @@ class Installer(QObject):
 
         process.start()
 
+        pm2 = PluginManager.instance()
+
         for pkg in pkg_list:
-            plugin_manager.unregister(pkg)
+            if pkg in pm2:
+                pm2.unregister(pkg)
+            else:
+                plugin_manager.unregister(pkg)
 
         return process
 
