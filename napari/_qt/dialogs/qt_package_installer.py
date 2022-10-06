@@ -226,6 +226,8 @@ class CondaInstaller(AbstractInstaller):
             if use_mamba and shutil.which(f'mamba{_bat}')
             else f'conda{_bat}'
         )
+        if os.name == "nt":
+            self._bin == 'conda.bat'  # force temporarily to debug CI
         super().__init__(parent)
         self.setProgram(self._bin)
         # TODO: make configurable per install once plugins can request it
