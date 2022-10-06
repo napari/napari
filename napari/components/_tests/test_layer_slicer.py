@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
 
+import pytest
+
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 
@@ -62,20 +64,32 @@ class FakeSyncLayer:
         return False
 
 
-def test_slice_layers_async_with_one_async_layer():
+@pytest.fixture()
+def layer_slicer():
     layer_slicer = _LayerSlicer()
+    yield layer_slicer
+    layer_slicer.shutdown()
+
+
+def test_slice_layers_async_with_one_async_layer(layer_slicer):
     layer = FakeAsyncLayer()
 
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     assert future.result()[layer].id == 1
 
-    # TODO: make slicer a fixture and shutdown on teardown, using yield
-    layer_slicer.shutdown()
+
+def test_slice_layers_async_with_multiple_async_layer(layer_slicer):
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeAsyncLayer()
+
+    future = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=Dims())
+
+    assert future.result()[layer1].id == 1
+    assert future.result()[layer2].id == 1
 
 
-def test_slice_layers_async_emits_ready_event_when_done():
-    layer_slicer = _LayerSlicer()
+def test_slice_layers_async_emits_ready_event_when_done(layer_slicer):
     layer = FakeAsyncLayer()
     event_result = None
 
@@ -90,27 +104,61 @@ def test_slice_layers_async_emits_ready_event_when_done():
 
     assert actual_result is event_result
 
-    # TODO: make slicer a fixture and shutdown on teardown, using yield
-    layer_slicer.shutdown()
 
-
-def test_slice_layers_async_with_one_sync_layer():
-    layer_slicer = _LayerSlicer()
+def test_slice_layers_async_with_one_sync_layer(layer_slicer):
     layer = FakeSyncLayer()
     assert layer.slice_count == 0
 
-    layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+    future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-
-    # TODO: make slicer a fixture and shutdown on teardown, using yield
-    layer_slicer.shutdown()
+    assert not future.result()
 
 
-def test_slice_layers_async_multiple_calls_cancels_pending():
-    layer_slicer = _LayerSlicer()
+def test_slice_layers_async_with_multiple_sync_layer(layer_slicer):
+    layer1 = FakeSyncLayer()
+    layer2 = FakeSyncLayer()
+    assert layer1.slice_count == 0
+    assert layer2.slice_count == 0
+
+    future = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=Dims())
+
+    assert layer1.slice_count == 1
+    assert layer2.slice_count == 1
+    assert not future.result()
+
+
+def test_slice_layers_async_with_mixed_layers(layer_slicer):
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeSyncLayer()
+    assert layer1.slice_count == 0
+    assert layer2.slice_count == 0
+
+    future = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=Dims())
+
+    assert layer1.slice_count == 1
+    assert layer2.slice_count == 1
+    assert future.result()[layer1].id == 1
+    assert future.result().get(layer2, 999) == 999
+
+
+def test_slice_layers_async_lock_blocking(layer_slicer):
     dims = Dims()
     layer = FakeAsyncLayer()
+
+    assert layer.slice_count == 0
+    with layer.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not blocked.done()
+
+    assert layer.slice_count == 1
+    assert blocked.result()[layer].id == 1
+
+
+def test_slice_layers_async_multiple_calls_cancels_pending(layer_slicer):
+    dims = Dims()
+    layer = FakeAsyncLayer()
+
     with layer.lock:
         blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         pending = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
@@ -119,5 +167,59 @@ def test_slice_layers_async_multiple_calls_cancels_pending():
 
     assert pending.cancelled()
 
-    # TODO: make slicer a fixture and shutdown on teardown, using yield
-    layer_slicer.shutdown()
+
+def test_slice_layers_mixed_allows_sync_to_run(layer_slicer):
+    """ensure that a blocked async slice doesn't block sync slicing"""
+    dims = Dims()
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeSyncLayer()
+    with layer1.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer1], dims=dims)
+        layer_slicer.slice_layers_async(layers=[layer2], dims=dims)
+        assert layer2.slice_count == 1
+        assert not blocked.done()
+
+    assert blocked.result()[layer1].id == 1
+
+
+def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
+    """ensure that a blocked async slice doesn't block sync slicing"""
+    dims = Dims()
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeSyncLayer()
+    with layer1.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=dims)
+
+        assert layer2.slice_count == 1
+        assert not blocked.done()
+
+    assert blocked.result()[layer1].id == 1
+
+
+def test_slice_layers_async_with_multiple_async_layer_with_all_locked(layer_slicer):
+    """ensure that if only one layer has a lock, the nonlocked layer can continue"""
+    dims = Dims()
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeAsyncLayer()
+
+    with layer1.lock, layer2.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=dims)
+
+        assert not blocked.done()
+
+    assert blocked.result()[layer1].id == 1
+    assert blocked.result()[layer2].id == 1
+
+
+def test_slice_layers_async_with_multiple_async_layer_with_one_lock(layer_slicer):
+    """ensure that if only one layer has a lock, the nonlocked layer can continue"""
+    dims = Dims()
+    layer1 = FakeAsyncLayer()
+    layer2 = FakeAsyncLayer()
+
+    with layer1.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=dims)
+
+        assert not blocked.done()
+
+    assert blocked.result()[layer1].id == 1
