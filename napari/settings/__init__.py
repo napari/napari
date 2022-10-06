@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional
 
 from ..utils.translations import trans
 from ._base import _NOT_SET

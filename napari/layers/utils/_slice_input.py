@@ -6,6 +6,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
+from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -48,7 +49,7 @@ class _SliceInput:
         old_ndim = self.ndim
         if old_ndim > ndim:
             point = self.point[-ndim:]
-            order = tuple(np.argsort(self.order[-ndim:]))
+            order = reorder_after_dim_reduction(self.order[-ndim:])
         elif old_ndim < ndim:
             point = (0,) * (ndim - old_ndim) + self.point
             order = tuple(range(ndim - old_ndim)) + tuple(

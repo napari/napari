@@ -19,7 +19,7 @@ from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
-from napari.utils.colormaps import low_discrepancy_image
+from napari.utils.colormaps import label_colormap, low_discrepancy_image
 
 
 def test_random_labels():
@@ -376,6 +376,17 @@ def test_colormap():
     layer.new_colormap()
     assert isinstance(layer.colormap, Colormap)
     assert layer.colormap.name == 'label_colormap'
+
+
+def test_label_colormap():
+    """Test a label colormap."""
+    colormap = label_colormap(num_colors=4)
+
+    # Make sure color 0 is transparent
+    assert not np.any(colormap.map([0.0]))
+
+    # Test that out-of-range values map to last value
+    assert np.all(colormap.map([1.0, 1.1, 2.0]) == colormap.colors[-1])
 
 
 def test_custom_color_dict():

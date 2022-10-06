@@ -14,7 +14,9 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
+from ...utils.events.event_utils import connect_no_arg
 from ...utils.migrations import rename_argument
+from ...utils.misc import reorder_after_dim_reduction
 from ...utils.naming import magic_name
 from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
@@ -304,6 +306,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             interpolation2d=Event,
             interpolation3d=Event,
             rendering=Event,
+            plane=Event,
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
@@ -373,6 +376,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
+        connect_no_arg(self.plane.events, self.events, 'plane')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -393,15 +397,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             return np.zeros((1,) * self._slice_input.ndisplay)
 
     def _get_order(self) -> Tuple[int]:
-        """Return the order of the displayed dimensions."""
-        displayed_order = tuple(np.argsort(self._slice_input.displayed))
+        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+        order = reorder_after_dim_reduction(self._slice_input.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return displayed_order + (max(displayed_order) + 1,)
+            return order + (max(order) + 1,)
         else:
-            return displayed_order
+            return order
 
     @property
     def _data_view(self):
@@ -562,6 +566,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self._slice_input.ndisplay == 3:
             self.interpolation3d = interpolation
         else:
+            if interpolation == 'bilinear':
+                interpolation = 'linear'
+                warnings.warn(
+                    trans._(
+                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
+                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
             self.interpolation2d = interpolation
 
     @property
@@ -571,13 +585,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @interpolation2d.setter
     def interpolation2d(self, value):
         if value == 'bilinear':
-            value = 'linear'
-            warnings.warn(
+            raise ValueError(
                 trans._(
-                    "'bilinear' interpolation is deprecated. Please use 'linear' instead",
+                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
-                category=DeprecationWarning,
-                stacklevel=2,
             )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
@@ -647,6 +658,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
+        self.events.plane()
 
     @property
     def loaded(self):

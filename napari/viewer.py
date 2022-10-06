@@ -20,17 +20,17 @@ class Viewer(ViewerModel):
     Parameters
     ----------
     title : string, optional
-        The title of the viewer window. by default 'napari'.
+        The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. by default 2.
+        Number of displayed dimensions. By default 2.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3. by default None
+        ndisplay is 2 or 3. By default None
     axis_labels : list of str, optional
-        Dimension names. by default they are labeled with sequential numbers
+        Dimension names. By default they are labeled with sequential numbers
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation. By default True.
     """
 
     _window: 'Window' = None  # type: ignore

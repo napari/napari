@@ -217,7 +217,10 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             contrast_limits[0] >= contrast_limits[1]
         ):
             raise ValueError(
-                'contrast_limits must be a strictly increasing pair of values'
+                trans._(
+                    'contrast_limits must be a strictly increasing pair of values',
+                    deferred=True,
+                )
             )
         return contrast_limits
 
