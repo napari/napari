@@ -85,6 +85,9 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
+    # `window` is passed through on construction so it's available to a window
+    # provider for dependency injection
+    # See https://github.com/napari/napari/pull/4826
     def __init__(
         self, viewer: 'Viewer', window: 'Window', parent=None
     ) -> None:
