@@ -116,7 +116,9 @@ class AbstractInstaller(QProcess):
                     self._queue.remove(args)
                 return
         msg = f"No job with id {job_id}. Current queue:\n - "
-        msg += "\n - ".join([f"{hash(args)} -> {args}" for args in self._queue])
+        msg += "\n - ".join(
+            [f"{hash(args)} -> {args}" for args in self._queue]
+        )
         raise ValueError(msg)
 
     def waitForFinished(self, msecs: int = 10000) -> bool:
@@ -204,7 +206,9 @@ class PipInstaller(AbstractInstaller):
         cmd = ['-m', 'pip', 'install', '--upgrade']
         if prefix is not None:
             cmd.extend(['--prefix', str(prefix)])
-        elif running_as_bundled_app(False) and sys.platform.startswith('linux'):
+        elif running_as_bundled_app(False) and sys.platform.startswith(
+            'linux'
+        ):
             cmd.extend(
                 ['--no-warn-script-location', '--prefix', user_plugin_dir()]
             )
