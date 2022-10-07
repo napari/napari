@@ -815,9 +815,9 @@ class QtViewer(QSplitter):
         stack : bool or list[list[str]]
             whether to stack files or not. Can also be a list containing
             files to stack.
-        plugin: str
+        plugin : str
             plugin to use for reading
-        layer_type: str
+        layer_type : str
             layer type for opened layers
         """
         if choose_plugin:
