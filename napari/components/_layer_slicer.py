@@ -1,8 +1,8 @@
 import logging
-from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from typing import Dict, Iterable, Tuple
-from threading import Lock
 import weakref
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
+from threading import Lock
+from typing import Dict, Iterable, Tuple
 
 from napari.components import Dims
 from napari.layers import Layer
@@ -84,7 +84,7 @@ class _LayerSlicer:
         with self.lock:
             # TODO: remove task from _layers_to_task, guarding access to dict with a lock.
             # TODO: is it ever possible to get duplicate tasks? if so, the inverse dict can't handle it
-            # TODO: kcp: I'm not happy with this ordering, it feels like we shouldn't remove it from the dict before 
+            # TODO: kcp: I'm not happy with this ordering, it feels like we shouldn't remove it from the dict before
             #       we actually call result, though I guess it doens't hurt anything to do so
             task_to_layers = {v: k for k, v in self._layers_to_task.items()}
             layers = task_to_layers.get(task, None)

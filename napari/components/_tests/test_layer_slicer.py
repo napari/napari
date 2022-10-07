@@ -83,7 +83,9 @@ def test_slice_layers_async_with_multiple_async_layer(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
 
-    future = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=Dims())
+    future = layer_slicer.slice_layers_async(
+        layers=[layer1, layer2], dims=Dims()
+    )
 
     assert future.result()[layer1].id == 1
     assert future.result()[layer2].id == 1
@@ -121,7 +123,9 @@ def test_slice_layers_async_with_multiple_sync_layer(layer_slicer):
     assert layer1.slice_count == 0
     assert layer2.slice_count == 0
 
-    future = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=Dims())
+    future = layer_slicer.slice_layers_async(
+        layers=[layer1, layer2], dims=Dims()
+    )
 
     assert layer1.slice_count == 1
     assert layer2.slice_count == 1
@@ -134,7 +138,9 @@ def test_slice_layers_async_with_mixed_layers(layer_slicer):
     assert layer1.slice_count == 0
     assert layer2.slice_count == 0
 
-    future = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=Dims())
+    future = layer_slicer.slice_layers_async(
+        layers=[layer1, layer2], dims=Dims()
+    )
 
     assert layer1.slice_count == 1
     assert layer2.slice_count == 1
@@ -188,7 +194,9 @@ def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeSyncLayer()
     with layer1.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=dims)
+        blocked = layer_slicer.slice_layers_async(
+            layers=[layer1, layer2], dims=dims
+        )
 
         assert layer2.slice_count == 1
         assert not blocked.done()
@@ -196,14 +204,18 @@ def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
     assert blocked.result()[layer1].id == 1
 
 
-def test_slice_layers_async_with_multiple_async_layer_with_all_locked(layer_slicer):
+def test_slice_layers_async_with_multiple_async_layer_with_all_locked(
+    layer_slicer,
+):
     """ensure that if only one layer has a lock, the nonlocked layer can continue"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
 
     with layer1.lock, layer2.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=dims)
+        blocked = layer_slicer.slice_layers_async(
+            layers=[layer1, layer2], dims=dims
+        )
 
         assert not blocked.done()
 
@@ -211,14 +223,18 @@ def test_slice_layers_async_with_multiple_async_layer_with_all_locked(layer_slic
     assert blocked.result()[layer2].id == 1
 
 
-def test_slice_layers_async_with_multiple_async_layer_with_one_lock(layer_slicer):
+def test_slice_layers_async_with_multiple_async_layer_with_one_lock(
+    layer_slicer,
+):
     """ensure that if only one layer has a lock, the nonlocked layer can continue"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
 
     with layer1.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer1, layer2], dims=dims)
+        blocked = layer_slicer.slice_layers_async(
+            layers=[layer1, layer2], dims=dims
+        )
         # TODO: kcp: still wish we had finer control here to ensure that layer2
         #       is not blocked, but layer1 is
         assert not blocked.done()
@@ -233,9 +249,13 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
 
     with layer.lock:
         task = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
-        task_to_layers = {v: k for k, v in layer_slicer._layers_to_task.items()}
+        task_to_layers = {
+            v: k for k, v in layer_slicer._layers_to_task.items()
+        }
 
-        assert task_to_layers.get(task, None) == tuple([layer],)  # race condition? or lock not functioning?
+        assert task_to_layers.get(task, None) == tuple(
+            [layer],
+        )  # race condition? or lock not functioning?
 
     assert task.result()[layer].id == 1
 
