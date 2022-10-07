@@ -184,7 +184,7 @@ class Dims(EventedModel):
 
     @property
     def displayed_order(self) -> Tuple[int, ...]:
-        return argsort(self.displayed)
+        return tuple(argsort(self.displayed))
 
     def set_range(
         self,

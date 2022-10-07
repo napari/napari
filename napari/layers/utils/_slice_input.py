@@ -62,7 +62,7 @@ class _SliceInput:
 
     def data_indices(
         self, world_to_data: Affine, round_index: bool = True
-    ) -> Tuple[Union[int, slice]]:
+    ) -> Tuple[Union[int, float, slice]]:
         """Transforms this into indices that can be used to slice layer data.
 
         The elements in non-displayed dimensions will be real numbers.

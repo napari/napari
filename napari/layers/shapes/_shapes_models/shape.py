@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+from ....utils.misc import argsort
 from ....utils.translations import trans
 from .._shapes_utils import (
     is_collinear,
@@ -423,7 +424,7 @@ class Shape(ABC):
                         self.slice_key[0, j], self.slice_key[1, j] + 1
                     )
                 j += 1
-            displayed_order = np.argsort(self.dims_displayed)
+            displayed_order = argsort(self.dims_displayed)
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:
             mask = mask_p
