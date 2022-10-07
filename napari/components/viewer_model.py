@@ -20,7 +20,6 @@ from typing import (
 )
 
 import numpy as np
-from psygnal import throttled
 from pydantic import Extra, Field, validator
 
 from .. import layers
@@ -42,6 +41,7 @@ from ..utils._register import create_func as create_add_method
 from ..utils.action_manager import action_manager
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.migrations import rename_argument
 from ..utils.misc import is_sequence
@@ -50,15 +50,12 @@ from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
-from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
-from .overlays import Overlays
-from .scale_bar import ScaleBar
-from .text_overlay import TextOverlay
+from .overlays import AxesOverlay, Overlays, ScaleBarOverlay, TextOverlay
 from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
@@ -116,7 +113,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
+    axes: AxesOverlay = Field(
+        default_factory=AxesOverlay, allow_mutation=False
+    )
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
@@ -124,14 +123,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
+    scale_bar: ScaleBarOverlay = Field(
+        default_factory=ScaleBarOverlay, allow_mutation=False
+    )
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
-    status: str = 'Ready'
+    status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -180,7 +181,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Add extra events - ideally these will be removed too!
-        self.events.add(layers_change=Event, reset_view=Event)
+        self.events.add(
+            layers_change=WarningEmitter(
+                trans._(
+                    "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
+                    deferred=True,
+                ),
+                type="layers_change",
+            ),
+            reset_view=Event,
+        )
 
         # Connect events
         self.grid.events.connect(self.reset_view)
@@ -190,9 +200,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
-        self.cursor.events.position.connect(self._on_cursor_position_change)
         self.cursor.events.position.connect(
-            throttled(self._update_status_bar_from_cursor, timeout=50)
+            self._update_status_bar_from_cursor
         )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
@@ -394,19 +403,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
-    def _on_cursor_position_change(self):
-        """Set the layer cursor position."""
-        with warnings.catch_warnings():
-            # Catch the deprecation warning on layer.position
-            warnings.filterwarnings(
-                'ignore',
-                message=str(
-                    trans._('layer.position is deprecated', deferred=True)
-                ),
-            )
-            for layer in self.layers:
-                layer.position = self.cursor.position
-
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.
 
@@ -423,6 +419,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
@@ -431,6 +428,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
+        else:
+            self.status = 'Ready'
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
@@ -526,6 +525,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
             help_li.append(
                 trans._(
                     "use <{shortcut}> for {desc}",
@@ -657,7 +658,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             If a list then must be same length as the axis that is being
             expanded as channels.
         interpolation : str or list
-            Interpolation mode used by vispy. Must be one of our supported
+            Deprecated, to be removed in 0.6.0
+        interpolation2d : str or list
+            Interpolation mode used by vispy in 2D. Must be one of our supported
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        interpolation3d : str or list
+            Interpolation mode used by vispy in 3D. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
         rendering : str or list
@@ -798,7 +805,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
             kwargs['blending'] = kwargs['blending'] or 'translucent_no_depth'
-            # Helpful message if someone tries to add mulit-channel kwargs,
+            # Helpful message if someone tries to add multi-channel kwargs,
             # but forget the channel_axis arg
             for k, v in kwargs.items():
                 if k not in iterable_kwargs and is_sequence(v):
@@ -969,8 +976,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         if plugin == 'builtins':
             warnings.warn(
-                'The "builtins" plugin name is deprecated and will not work in a '
-                'future version. Please use "napari" instead.',
+                trans._(
+                    'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+                    deferred=True,
+                ),
             )
             plugin = 'napari'
 
@@ -1076,13 +1085,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-
         added = []
         plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
-
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
@@ -1099,7 +1106,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             warnings.warn(
                 RuntimeWarning(
                     trans._(
-                        f"Can't find {plugin} plugin associated with {path_message} files. ",
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
                         path_message=path_message,
                     )

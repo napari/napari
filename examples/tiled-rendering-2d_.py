@@ -15,6 +15,8 @@ If octree support is *not* enabled, napari will try to load the entire image,
 which may not fit in memory and may bring your computer to a halt. Oops! So, we
 make sure that we enable octree support by setting the NAPARI_OCTREE
 environment variable to 1 if it is not set by the user.
+
+.. tags:: experimental
 """
 
 import os

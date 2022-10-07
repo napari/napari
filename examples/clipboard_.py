@@ -4,6 +4,7 @@ Clipboard
 
 Copy screenshot of the canvas or the whole viewer to clipboard.
 
+.. tags:: gui
 """
 
 from skimage import data

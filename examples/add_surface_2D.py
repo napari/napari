@@ -3,6 +3,8 @@ Add surface 2D
 ==============
 
 Display a 2D surface
+
+.. tags:: visualization-basic
 """
 
 import numpy as np

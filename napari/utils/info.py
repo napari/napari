@@ -111,6 +111,11 @@ def sys_info(as_html=False):
         ('scipy', 'SciPy'),
         ('dask', 'Dask'),
         ('vispy', 'VisPy'),
+        ('magicgui', 'magicgui'),
+        ('superqt', 'superqt'),
+        ('in_n_out', 'in-n-out'),
+        ('app_model', 'app-model'),
+        ('npe2', 'npe2'),
     )
 
     loaded = {}

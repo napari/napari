@@ -35,7 +35,7 @@ project in concrete ways, such as:
   [issues](https://github.com/napari/napari/issues) and
   [pull requests](https://github.com/napari/napari/pulls);
 - discussing examples or use cases on the
-  [image.sc forum](https://forum.image.sc/tags/napari) under the #napari tag; or
+  [image.sc forum](https://forum.image.sc/tag/napari) under the #napari tag; or
 - reviewing [open pull requests](https://github.com/napari/napari/pulls)
 
 among other possibilities. Any community member can become a contributor, and
@@ -75,7 +75,7 @@ in a reasonable timeframe, the SC is the entity that resolves the issue.
 
 Members of the SC also have the "owner" role within the [napari GitHub organization](https://github.com/napari)
 and are ultimately responsible for managing the napari GitHub account, the [@napari_imaging](https://twitter.com/napari_imaging)
-twitter account, the [napari website](http://napari.org), and other similar napari owned resources.
+twitter account, the [napari website](https://napari.org), and other similar napari owned resources.
 
 The SC will be no less than three members and no more than five members,
 with a strong preference for an odd number to ensure a simple majority vote

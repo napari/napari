@@ -225,7 +225,80 @@ up to report test coverage, but you can test locally as well, using
    missed. Continue writing tests until everything is covered! If you have
    lines that you *know* never need to be tested (like debugging code) you can
    [exempt specific
-   lines](https://coverage.readthedocs.io/en/coverage-4.3.3/excluding.html#excluding-code-from-coverage-py)
+   lines](https://coverage.readthedocs.io/en/6.4.4/excluding.html#excluding-code-from-coverage-py)
    from coverage with the comment `# pragma: no cover`
 5. In the cookiecutter, coverage tests from github actions will be uploaded to
    codecov.io
+
+## Set style for additional windows in your plugin
+
+In napari plugins we strongly advise additional widgets be docked in the main napari viewer,
+but sometimes a separate window is required. 
+The best practice is to use [`QDialog`](https://doc.qt.io/qt-5/qdialog.html)
+based windows with parent set to widget
+already docked in the viewer.
+
+```python
+from qtpy.QtWidgets import QDialog, QWidget, QSpinBox, QPushButton, QGridLayout, QLabel
+
+class MyInputDialog(QDialog):
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self.setWindowTitle("My Input Dialog")
+        self.number = QSpinBox()
+        self.ok_btn = QPushButton("OK")
+        self.cancel_btn = QPushButton("Cancel")
+        
+        layout = QGridLayout()
+        layout.addWidget(QLabel("Number:"), 0, 0)
+        layout.addWidget(self.number, 0, 1)
+        layout.addWidget(self.ok_btn, 1, 0)
+        layout.addWidget(self.cancel_btn, 1, 1)
+        self.setLayout(layout)
+        
+        self.ok_btn.clicked.connect(self.accept)
+        self.cancel_btn.clicked.connect(self.reject)
+        
+class MyWidget(QWidget):
+    def __init__(self, viewer: "napari.Viewer"):
+        super().__init__()
+        self.viewer = viewer
+        self.open_dialog = QPushButton("Open dialog")
+        self.open_dialog.clicked.connect(self.open_dialog_clicked)
+        
+    def open_dialog_clicked(self):
+        # setting parent to self allows the dialog to inherit its 
+        # style from the viewer by pass self as argument
+        dialog = MyInputDialog(self)  
+        dialog.exec_()
+        if dialog.result() == QDialog.Accepted:
+            print(dialog.number.value())
+```
+
+If there is a particular reason that you need to use a separate window that
+inherits from `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
+and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) functions from the [`napari.qt`](/api/napari.qt.html) module.
+
+Here is a `magicgui` example (but could be easily generalised to native `qt` based widgets):
+
+```python
+from magicgui import magicgui
+
+from napari.qt import get_current_stylesheet
+from napari.settings import get_settings
+
+def sample_add(a: int, b: int) -> int:
+    return a + b
+
+@magicgui
+def sample_add(a: int, b: int) -> int:
+    return a + b
+
+def change_style():
+    sample_add.native.setStyleSheet(get_current_stylesheet())
+
+
+get_settings().appearance.events.theme.connect(change_style)
+change_style()
+
+```

@@ -2,6 +2,7 @@
 Matplotlib plot
 ===============
 
+.. tags:: gui
 """
 
 import matplotlib.pyplot as plt

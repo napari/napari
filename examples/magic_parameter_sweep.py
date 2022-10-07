@@ -7,6 +7,8 @@ Example showing how to accomplish a napari parameter sweep with magicgui.
 It demonstrates:
 1. overriding the default widget type with a custom class
 2. the `auto_call` option, which calls the function whenever a parameter changes
+
+.. tags:: gui
 """
 import skimage.data
 import skimage.filters
