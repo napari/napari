@@ -6,7 +6,7 @@ napari/_app_model/actions/_view_actions.py.
 
 from typing import List
 
-from app_model.types import Action
+from app_model.types import Action, ToggleRule
 
 from ...settings import get_settings
 from ..constants import CommandId, MenuId
@@ -41,6 +41,11 @@ def _tooltip_visibility_toggle():
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
+# this can be generalised for all boolean settings, similar to `ViewerToggleAction`
+def _get_current_tooltip_visibility():
+    return get_settings().appearance.layer_tooltip_visibility
+
+
 VIEW_ACTIONS.extend(
     [
         # TODO: this could be made into a toggle setting Action subclass
@@ -52,7 +57,7 @@ VIEW_ACTIONS.extend(
                 {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}
             ],
             callback=_tooltip_visibility_toggle,
-            toggled='settings_appearance_layer_tooltip_visibility',  # TODO
+            toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
         ),
     ]
 )

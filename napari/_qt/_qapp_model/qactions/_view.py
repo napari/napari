@@ -1,7 +1,13 @@
 import sys
 from typing import List
 
-from app_model.types import Action, KeyCode, KeyMod, StandardKeyBinding
+from app_model.types import (
+    Action,
+    KeyCode,
+    KeyMod,
+    StandardKeyBinding,
+    ToggleRule,
+)
 
 from ...._app_model.constants import CommandId, MenuGroup, MenuId
 from ....settings import get_settings
@@ -12,6 +18,10 @@ from ...qt_viewer import QtViewer
 
 def _toggle_activity_dock(window: Window):
     window._status_bar._toggle_activity_dock()
+
+
+def _get_current_activity_dock(window: Window):
+    return window._qt_window._activity_dialog.isVisible()
 
 
 Q_VIEW_ACTIONS: List[Action] = [
@@ -86,5 +96,6 @@ Q_VIEW_ACTIONS: List[Action] = [
             {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
         ],
         callback=_toggle_activity_dock,
+        toggled=ToggleRule(get_current=_get_current_activity_dock),
     ),
 ]
