@@ -855,6 +855,18 @@ def test_select_properties_object_dtype():
     assert pl.selected_data == selection
 
 
+def test_select_properties_unsortable():
+    """selecting multiple points when they have properties that cannot be sorted should not fail
+
+    see https://github.com/napari/napari/issues/5174
+    """
+    properties = pd.DataFrame({'unsortable': [{}, {}]})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 2)
