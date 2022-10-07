@@ -70,21 +70,42 @@ def clean_current(monkeypatch, qtbot):
 
 @dataclass
 class ShowStatus:
-    show_count: int = 0
+    show_notification_count: int = 0
+    show_traceback_count: int = 0
 
 
 @pytest.fixture
-def show_dialog_mock(monkeypatch, qtbot):
+def count_show(monkeypatch, qtbot):
 
     stat = ShowStatus()
 
-    def mock_show_dialog(self):
-        stat.show_count += 1
-        qtbot.add_widget(self)
+    def mock_show_notif(_):
+        stat.show_notification_count += 1
 
-    monkeypatch.setattr(NapariQtNotification, "show", mock_show_dialog)
+    def mock_show_traceback(_):
+        stat.show_traceback_count += 1
+
+    monkeypatch.setattr(NapariQtNotification, "show", mock_show_notif)
+    monkeypatch.setattr(TracebackDialog, "show", mock_show_traceback)
 
     return stat
+
+
+@pytest.fixture(autouse=True)
+def ensure_qtbot(monkeypatch, qtbot):
+    old_notif_init = NapariQtNotification.__init__
+    old_traceback_init = TracebackDialog.__init__
+
+    def mock_notif_init(self, *args, **kwargs):
+        old_notif_init(self, *args, **kwargs)
+        qtbot.add_widget(self)
+
+    def mock_traceback_init(self, *args, **kwargs):
+        old_traceback_init(self, *args, **kwargs)
+        qtbot.add_widget(self)
+
+    monkeypatch.setattr(NapariQtNotification, "__init__", mock_notif_init)
+    monkeypatch.setattr(TracebackDialog, "__init__", mock_traceback_init)
 
 
 def test_clean_current_path_exist(make_napari_viewer):
@@ -125,7 +146,7 @@ def test_notification_manager_via_gui(
 
 
 def test_show_notification_from_thread(
-    show_dialog_mock, monkeypatch, qtbot, clean_current
+    count_show, monkeypatch, qtbot, clean_current
 ):
     from napari.settings import get_settings
 
@@ -147,7 +168,7 @@ def test_show_notification_from_thread(
             res = NapariQtNotification.show_notification(notif)
             assert isinstance(res, Future)
             assert res.result(timeout=DEFAULT_TIMEOUT_SECS) is None
-            assert show_dialog_mock.show_count == 1
+            assert count_show.show_notification_count == 1
 
     thread = CustomThread()
     with qtbot.waitSignal(thread.finished):
@@ -156,7 +177,7 @@ def test_show_notification_from_thread(
 
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
 def test_notification_display(
-    show_dialog_mock, severity, monkeypatch, qtbot, clean_current
+    count_show, severity, monkeypatch, clean_current
 ):
     """Test that NapariQtNotification can present a Notification event.
 
@@ -183,12 +204,11 @@ def test_notification_display(
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:
-        assert show_dialog_mock.show_count == 1
+        assert count_show.show_notification_count == 1
     else:
-        assert show_dialog_mock.show_count == 0
+        assert count_show.show_notification_count == 0
 
     dialog = NapariQtNotification.from_notification(notif)
-    qtbot.add_widget(dialog)
     assert not dialog.property('expanded')
     dialog.toggle_expansion()
     assert dialog.property('expanded')
@@ -196,7 +216,7 @@ def test_notification_display(
     assert not dialog.property('expanded')
 
 
-def test_notification_error(monkeypatch, qtbot):
+def test_notification_error(count_show, monkeypatch):
     from napari.settings import get_settings
 
     settings = get_settings()
@@ -212,23 +232,13 @@ def test_notification_error(monkeypatch, qtbot):
     except ValueError as e:
         notif = ErrorNotification(e)
 
-    show_count = 0
-
-    def mock_show_dialog(self):
-        nonlocal show_count
-        show_count += 1
-        qtbot.add_widget(self)
-
-    monkeypatch.setattr(TracebackDialog, "show", mock_show_dialog)
-
     dialog = NapariQtNotification.from_notification(notif)
-    qtbot.add_widget(dialog)
 
     bttn = dialog.row2_widget.findChild(QPushButton)
     assert bttn.text() == 'View Traceback'
-    assert show_count == 0
+    assert count_show.show_traceback_count == 0
     bttn.click()
-    assert show_count == 1
+    assert count_show.show_traceback_count == 1
 
 
 @pytest.mark.sync_only
