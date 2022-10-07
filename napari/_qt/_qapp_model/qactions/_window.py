@@ -1,70 +1,84 @@
-"""Defines window menu actions."""
+"""Actions related to the 'Window' menu that require Qt."""
 
 from typing import List
 
-from app_model.types import Action
+from app_model.types import Action, ToggleRule
 
 from ...._app_model.constants import CommandId, MenuGroup, MenuId
 from ....utils.translations import trans
 from ...qt_main_window import Window
 
 
-def _toggle_console(window: Window):
-    window._qt_viewer.dockConsole.setVisible(
-        not window._qt_viewer.dockConsole.isVisible()
-    )
+class ToggleDockWidgetAction(Action):
+    """`Action` subclass that toggles visibility of a DockWidget.
+
+    Parameters
+    ----------
+    id : str
+        The command id of the action.
+    title : str
+        The title of the action. Prefer capital case.
+    dock_widget: str
+        The DockWidget to toggle.
+    **kwargs
+        Additional keyword arguments to pass to the `Action` constructor.
+
+    Examples
+    --------
+    >>> action = ToggleDockWidgetAction(
+    ...     id='some.command.id',
+    ...     title='Toggle Layer List',
+    ...     dock_widget='dockConsole',
+    ... )
+    """
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        title: str,
+        dock_widget: str,
+        **kwargs,
+    ):
+        def toggle_dock_widget(window: Window):
+            dock_widget_prop = getattr(window._qt_viewer, dock_widget)
+            dock_widget_prop.setVisible(not dock_widget_prop.isVisible())
+
+        def get_current(window: Window):
+            dock_widget_prop = getattr(window._qt_viewer, dock_widget)
+            return dock_widget_prop.isVisible()
+
+        super().__init__(
+            id=id,
+            title=title,
+            toggled=ToggleRule(get_current=get_current),
+            callback=toggle_dock_widget,
+            **kwargs,
+        )
 
 
-def _toggle_layer_controls(window: Window):
-    window._qt_viewer.dockLayerControls.setVisible(
-        not window._qt_viewer.dockLayerControls.isVisible()
-    )
+Q_WINDOW_ACTIONS: List[Action] = []
 
-
-def _toggle_layer_list(window: Window):
-    window._qt_viewer.dockLayerList.setVisible(
-        not window._qt_viewer.dockLayerList.isVisible()
-    )
-
-
-Q_WINDOW_ACTIONS: List[Action] = [
-    Action(
-        id=CommandId.TOGGLE_CONSOLE,
-        title=CommandId.TOGGLE_CONSOLE.title,
-        menus=[
-            {
-                'id': MenuId.MENUBAR_WINDOW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 1,
-            }
-        ],
-        callback=_toggle_console,
-        status_tip=trans._('Toggle console panel'),
+for cmd, dock_widget, status_tip in (
+    (CommandId.TOGGLE_CONSOLE, 'dockConsole', 'Toggle console panel'),
+    (
+        CommandId.TOGGLE_LAYER_CONTROLS,
+        'dockLayerControls',
+        'Toggle layer controls panel',
     ),
-    Action(
-        id=CommandId.TOGGLE_LAYER_CONTROLS,
-        title=CommandId.TOGGLE_LAYER_CONTROLS.title,
-        menus=[
-            {
-                'id': MenuId.MENUBAR_WINDOW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 2,
-            }
-        ],
-        callback=_toggle_layer_controls,
-        status_tip=trans._('Toggle layer controls panel'),
-    ),
-    Action(
-        id=CommandId.TOGGLE_LAYER_LIST,
-        title=CommandId.TOGGLE_LAYER_LIST.title,
-        menus=[
-            {
-                'id': MenuId.MENUBAR_WINDOW,
-                'group': MenuGroup.NAVIGATION,
-                'order': 3,
-            }
-        ],
-        callback=_toggle_layer_list,
-        status_tip=trans._('Toggle layer list panel'),
-    ),
-]
+    (CommandId.TOGGLE_LAYER_LIST, 'dockLayerList', 'Toggle layer list panel'),
+):
+    Q_WINDOW_ACTIONS.append(
+        ToggleDockWidgetAction(
+            id=cmd,
+            title=cmd.title,
+            dock_widget=dock_widget,
+            menus=[
+                {
+                    'id': MenuId.MENUBAR_WINDOW,
+                    'group': MenuGroup.NAVIGATION,
+                }
+            ],
+            status_tip=trans._(status_tip),
+        )
+    )
