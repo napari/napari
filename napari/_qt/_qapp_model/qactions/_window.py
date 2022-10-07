@@ -10,7 +10,7 @@ from ...qt_main_window import Window
 
 
 class ToggleDockWidgetAction(Action):
-    """`Action` subclass that toggles visibility of a DockWidget.
+    """`Action` subclass that toggles visibility of a `QtViewerDockWidget`.
 
     Parameters
     ----------
