@@ -62,10 +62,13 @@ layer by adding some image data.
 For example, to add an image and some points inside your script you should include:
 
 ```python
+# import sample data
+from skimage.data import astronaut
+
 import napari
 
 # create a `Viewer` and `Image` here
-viewer, image_layer = napari.imshow(my_image_data)
+viewer, image_layer = napari.imshow(astronaut())
 
 # add points layer here
 viewer.add_points(my_points_data)
@@ -78,10 +81,13 @@ Note that {func}`imshow<napari.imshow>` is a convenience function that is
 equivalent to:
 
 ```python
+# import sample data
+from skimage.data import astronaut
+
 import napari
 
 viewer = napari.Viewer()
-image_layer = viewer.add_image(image)
+image_layer = viewer.add_image(astronaut())
 ```
 
 You can now run your script from the command line to launch the viewer with your data:
@@ -103,8 +109,10 @@ To launch napari from an IPython console import `napari` and create a
 {class}`Viewer<napari.Viewer>` and {class}`Image<napari.layers.Image>` object.
 
 ```python
-import napari
+# import sample data
 from skimage.data import astronaut
+
+import napari
 
 # create a `Viewer` and `Image` here
 viewer, image_layer = napari.imshow(astronaut(), rgb=True)
@@ -138,7 +146,7 @@ and where data changed in the GUI will be accessible in the notebook.
 
 To learn more about:
 
-* how to use the napari viewer graphical user interface (GUI)
+* how to use the napari viewer graphical user interface (GUI),
   checkout the [viewer tutorial](./viewer)
-* how to use the napari viewer with different types of napari layers see
+* how to use the napari viewer with different types of napari layers, see
   [layers at a glance](../../guides/layers)
