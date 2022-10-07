@@ -244,7 +244,11 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
         (
             plugin_name,
             {
-                c.key: {'data': c.open, 'display_name': c.display_name}
+                c.key: {
+                    'id': c.command,
+                    'data': c.open,
+                    'display_name': c.display_name,
+                }
                 for c in contribs
             },
         )

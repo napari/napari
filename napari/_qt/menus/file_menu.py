@@ -1,13 +1,16 @@
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QAction
+from app_model.types import Action, SubmenuItem
 
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari.errors.reader_errors import MultipleReaderError
 
+from ..._app_model._submenus import SUBMENUS
+from ..._app_model.constants import MenuGroup, MenuId
 from ...components._viewer_key_bindings import register_viewer_action
 from ...utils.translations import trans
+from .._qapp_model.qactions._file import Q_FILE_ACTIONS
 from ._util import NapariMenu
 
 if TYPE_CHECKING:
@@ -41,19 +44,18 @@ class FileMenu(NapariMenu):
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
-                menu = self.open_sample_menu.addMenu(plugin_name)
+                sub_menu_id = f'napari/file/samples/{plugin_name}'
+                sub_menu = (
+                    MenuId.SAMPLES,
+                    SubmenuItem(
+                        submenu=sub_menu_id, title=trans._(plugin_name)
+                    ),
+                )
+                SUBMENUS.append(sub_menu)
             else:
-                menu = self.open_sample_menu
+                sub_menu_id = MenuId.SAMPLES
 
             for samp_name, samp_dict in samples.items():
-                display_name = samp_dict['display_name'].replace("&", "&&")
-                if multiprovider:
-                    action = QAction(display_name, parent=self)
-                else:
-                    full_name = menu_item_template.format(
-                        plugin_name, display_name
-                    )
-                    action = QAction(full_name, parent=self)
 
                 def _add_sample(*args, plg=plugin_name, smp=samp_name):
                     try:
@@ -66,8 +68,23 @@ class FileMenu(NapariMenu):
                             stack=False,
                         )
 
-                menu.addAction(action)
-                action.triggered.connect(_add_sample)
+                display_name = samp_dict['display_name'].replace("&", "&&")
+                if multiprovider:
+                    title = display_name
+                else:
+                    title = menu_item_template.format(
+                        plugin_name, display_name
+                    )
+                action = Action(
+                    id=samp_dict['id'],
+                    title=title,
+                    menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
+                    callback=_add_sample,
+                )
+
+                Q_FILE_ACTIONS.append(action)
+                # menu.addAction(action)
+                # action.triggered.connect(_add_sample)
 
     def _open_files_w_plugin(self):
         """Helper method for forcing plugin choice"""
