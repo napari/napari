@@ -960,7 +960,7 @@ def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     return {name: series.to_numpy() for name, series in features.items()}
 
 
-def _unique_element(array: Array):
+def _unique_element(array: Array) -> Optional[Any]:
     """
     Returns the unique element along the 0th axis, if it exists; otherwise, returns None.
 
