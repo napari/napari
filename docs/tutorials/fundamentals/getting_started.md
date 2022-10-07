@@ -32,7 +32,7 @@ This command will launch an empty viewer:
 
 ![image: an empty napari viewer](../assets/tutorials/launch_cli_empty.png)
 
-Once you have the viewer open you can add images through the `File/Open` dropdown menu
+Once you have the viewer open you can add images through the `File -> Open` dropdown menu
 or by dragging and dropping images directly on the viewer.
 We currently only support files that can be read with [`skimage.io.imread`](https://scikit-image.org/docs/dev/api/skimage.io.html#skimage.io.imread),
 such as `tif`, `png`, and `jpg`.
@@ -63,12 +63,12 @@ For example, to add an image and some points inside your script you should inclu
 
 ```python
 # import sample data
-from skimage.data import astronaut
+from skimage.data import cells3d
 
 import napari
 
 # create a `Viewer` and `Image` here
-viewer, image_layer = napari.imshow(astronaut())
+viewer, image_layer = napari.imshow(cells3d())
 
 # add points layer here
 viewer.add_points(my_points_data)
@@ -82,12 +82,12 @@ equivalent to:
 
 ```python
 # import sample data
-from skimage.data import astronaut
+from skimage.data import cells3d
 
 import napari
 
 viewer = napari.Viewer()
-image_layer = viewer.add_image(astronaut())
+image_layer = viewer.add_image(cells3d())
 ```
 
 You can now run your script from the command line to launch the viewer with your data:
@@ -110,12 +110,12 @@ To launch napari from an IPython console import `napari` and create a
 
 ```python
 # import sample data
-from skimage.data import astronaut
+from skimage.data import cells3d
 
 import napari
 
 # create a `Viewer` and `Image` here
-viewer, image_layer = napari.imshow(astronaut(), rgb=True)
+viewer, image_layer = napari.imshow(cells3d(), rgb=True)
 ```
 
 Napari will automatically use the interactive [`%gui qt` event
