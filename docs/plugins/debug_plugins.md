@@ -25,7 +25,7 @@ In general, `napari --info` is a good first step to debugging any environment is
 You should also ensure that:
 
 1. Your plugin package is visible when you run `pip list` or `conda list` (depending on your environment setup).
-2. Your entry point is correctly configured, see the [first steps](first_plugin.md#update-setup-cfg) for information.
+2. Your entry point is correctly configured, see the [first steps](first_plugin.md#update-setupcfg) for information.
 
 For example if `pip list` does show the package is installed, and `npe2 validate` reports success, but napari can't see your plugin, your entry point may be ill-configured.
 
@@ -130,16 +130,15 @@ To see the updated behavior in action, just type the name of your changed functi
 
 ```IPython
 # Run before changing the code
-You entered !
+'You entered !'
 
 # Run after changing the code, but before triggering an update
-You entered !
+'You entered !'
 
 In [10]: example # anything in IPython to reload that code
 
 # Now the code is reloaded, run outputs as expected
 Please enter something in the text box.
-```
 
 ## Write a setup script to avoid GUI interaction
 
@@ -188,7 +187,7 @@ if __name__ == "__main__":
     test_false_inputs()
 ```
 
-Then, for `python test_print.py` you can use any of your usual debugging tools - such as the visual debugger provided by a Python IDE (e.g. PyCharm, VSCode, or Spyder). Further, an isolated test like this can be integrated into a [testing suite for your napari plugin](https://napari.org/stable/plugins/test_deploy.html).
+Then, for `python test_print.py` you can use any of your usual debugging tools - such as the visual debugger provided by a Python IDE (e.g. PyCharm, VSCode, or Spyder). Further, an isolated test like this can be integrated into a [testing suite for your napari plugin](test_deploy).
 
 ## Logging and user messages in napari
 
@@ -202,7 +201,7 @@ There are, generally speaking, three main methods for notifying users of problem
 
 ### Set up plugin log messages
 
-In addition to these user focused methods, you can set up plugin debug logs and messages during development. You can either use [napari specific functions](https://napari.org/dev/api/napari.utils.notifications.html), or [built in Python logging](https://docs.python.org/3/library/logging.html).
+In addition to these user focused methods, you can set up plugin debug logs and messages during development. You can either use {mod}`napari specific functions <napari.utils.notifications>`, or [built in Python logging](https://docs.python.org/3/library/logging.html).
 
 ```{tip}
 A logging library, like [loguru](https://github.com/Delgan/loguru), can be easier to get started with than the built in Python logging library.
@@ -279,7 +278,6 @@ run()
 
 Running this script with `python example_notification.py` and entering fast into the input text box and clicking run you should then see:
 
-```txt
 DEBUG: The input string was (napari): fast
 # A GUI notification of the same
 DEBUG: The input string was (napari): fast
