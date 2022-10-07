@@ -1148,16 +1148,18 @@ class Shapes(Layer):
             selected_face_colors = self._data_view._face_color[
                 selected_data_indices
             ]
-            unique_face_color = _unique_element(selected_face_colors)
-            if unique_face_color is not None:
+            if (
+                unique_face_color := _unique_element(selected_face_colors)
+            ) is not None:
                 with self.block_update_properties():
                     self.current_face_color = unique_face_color
 
             selected_edge_colors = self._data_view._edge_color[
                 selected_data_indices
             ]
-            unique_edge_color = _unique_element(selected_edge_colors)
-            if unique_edge_color is not None:
+            if (
+                unique_edge_color := _unique_element(selected_edge_colors)
+            ) is not None:
                 with self.block_update_properties():
                     self.current_edge_color = unique_edge_color
 

@@ -1212,13 +1212,15 @@ class Points(Layer):
             self._set_highlight()
             return
         index = list(self._selected_data)
-        unique_edge_color = _unique_element(self.edge_color[index])
-        if unique_edge_color is not None:
+        if (
+            unique_edge_color := _unique_element(self.edge_color[index])
+        ) is not None:
             with self.block_update_properties():
                 self.current_edge_color = unique_edge_color
 
-        unique_face_color = _unique_element(self.face_color[index])
-        if unique_face_color is not None:
+        if (
+            unique_face_color := _unique_element(self.face_color[index])
+        ) is not None:
             with self.block_update_properties():
                 self.current_face_color = unique_face_color
 
@@ -1227,13 +1229,13 @@ class Points(Layer):
         mean_size = np.mean(
             self.size[np.ix_(index, self._dims_displayed)], axis=1
         )
-        unique_size = _unique_element(mean_size)
-        if unique_size is not None:
+        if (unique_size := _unique_element(mean_size)) is not None:
             with self.block_update_properties():
                 self.current_size = unique_size
 
-        unique_edge_width = _unique_element(self.edge_width[index])
-        if unique_edge_width is not None:
+        if (
+            unique_edge_width := _unique_element(self.edge_width[index])
+        ) is not None:
             with self.block_update_properties():
                 self.current_edge_width = unique_edge_width
 

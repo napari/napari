@@ -324,8 +324,6 @@ def test_selecting_points():
     layer.mode = 'add'
     assert layer.selected_data == set()
 
-    # ensure this works
-
 
 def test_adding_points():
     """Test adding Points data."""
@@ -858,7 +856,10 @@ def test_select_properties_object_dtype():
 
 
 def test_select_properties_unsortable():
-    """selecting multiple points when they have properties that cannot be sorted should not fail"""
+    """selecting multiple points when they have properties that cannot be sorted should not fail
+
+    see https://github.com/napari/napari/issues/5174
+    """
     properties = pd.DataFrame({'unsortable': [{}, {}]})
     pl = Points(np.ones((2, 2)), properties=properties)
     selection = {0, 1}
