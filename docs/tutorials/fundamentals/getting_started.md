@@ -55,11 +55,16 @@ but we'll be adding support for this functionality soon as discussed in [#379](h
 
 ### Python script usage
 
-To launch napari from a python script, inside your script you should import `napari`,
+To launch napari from a python script, inside your script you can import `napari`,
 then create a {class}`Viewer<napari.Viewer>` and {class}`Image<napari.layers.Image>`
-layer by adding some image data.
+layer by adding some image data, using {func}`imshow<napari.imshow>`.
+The {class}`Viewer<napari.Viewer>` is representative of the napari viewer GUI
+you launch and stores all the data you add to napari. The
+{class}`Image<napari.layers.Image>` will store information about the image data
+you added.
 
-For example, to add an image and some points inside your script you should include:
+For example, to add an image and print the shape of the image layer data,
+you can use:
 
 ```python
 # import sample data
@@ -67,11 +72,11 @@ from skimage.data import cells3d
 
 import napari
 
-# create a `Viewer` and `Image` here
+# create a `Viewer` and `Image` layer here
 viewer, image_layer = napari.imshow(cells3d())
 
-# add points layer here
-viewer.add_points(my_points_data)
+# print shape of image datas
+print(image_layer.data.shape)
 
 # start the event loop and show the viewer
 napari.run()
@@ -114,8 +119,8 @@ from skimage.data import cells3d
 
 import napari
 
-# create a `Viewer` and `Image` here
-viewer, image_layer = napari.imshow(cells3d(), rgb=True)
+# create a `Viewer` and `Image` layer here
+viewer, image_layer = napari.imshow(cells3d())
 ```
 
 Napari will automatically use the interactive [`%gui qt` event
