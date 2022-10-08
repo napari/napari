@@ -23,7 +23,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from app_model.backends.qt import QModelMenu
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
@@ -32,6 +31,7 @@ from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QMainWindow,
+    QMenu,
     QShortcut,
     QToolTip,
     QWidget,
@@ -52,7 +52,6 @@ from . import menus
 from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
-from .menus._util import NapariMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
@@ -760,7 +759,7 @@ class Window:
         shortcut=_sentinel,
         add_vertical_stretch=True,
         tabify: bool = False,
-        menu: Optional[Union[QModelMenu, NapariMenu]] = None,
+        menu: Optional[QMenu] = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -794,7 +793,7 @@ class Window:
                 shortcut API allow user configuration and localisation.
         tabify : bool
             Flag to tabify dockwidget or not.
-        menu : QModelMenu, NapariMenu, optional
+        menu : QMenu, optional
             Menu bar to add toggle action to. If `None` nothing added to menu.
 
         Returns
@@ -857,7 +856,7 @@ class Window:
         self,
         dock_widget: QtViewerDockWidget,
         tabify: bool = False,
-        menu: Optional[Union[QModelMenu, NapariMenu]] = None,
+        menu: Optional[QMenu] = None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -869,7 +868,7 @@ class Window:
             `dock_widget` will be added to the main window.
         tabify : bool
             Flag to tabify dockwidget or not.
-        menu : QModelMenu, NapariMenu, optional
+        menu : QMenu, optional
             Menu bar to add toggle action to. If `None` nothing added to menu.
         """
         # Find if any othe dock widgets are currently in area
