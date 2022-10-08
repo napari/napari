@@ -19,7 +19,7 @@ If you'd like to contribute a brand new document to our usage section, it might 
 The napari team can also suggest what type of document would be best suited, and whether there are already
 existing documents that could be expanded to include the content you think is lacking.
 
-Go to your local napari folder to find examples of documents you might want to contribute. The paths are listed in parentheses below:
+Go to your local napari folder to find examples of documents you might want to contribute. The paths are listed in parentheses below.
 
 - **Explanations** (in `napari/docs/guides`): in depth content about napari architecture, development choices and some complex features
 - **Tutorials** (in `napari/docs/tutorials`): detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
