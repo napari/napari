@@ -42,26 +42,36 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     __wrapped__: _T
 
-    def __getattr__(self, name: str):
-        if name.startswith("_") and not (
+    @staticmethod
+    def _is_private_attr(name: str) -> bool:
+        return name.startswith("_") and not (
             name.startswith('__') and name.endswith('__')
-        ):
+        )
+
+    @staticmethod
+    def _private_attr_warning(name: str, typ: str):
+        warnings.warn(
+            trans._(
+                "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.5.0",
+                deferred=True,
+                name=name,
+                typ=typ,
+            ),
+            category=FutureWarning,
+            stacklevel=3,
+        )
+
+    def __getattr__(self, name: str):
+        if self._is_private_attr(name):
             # allow napari to access private attributes and get an non-proxy
             frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
             if frame.f_code.co_filename.startswith(misc.ROOT_DIR):
                 return super().__getattr__(name)
 
             typ = type(self.__wrapped__).__name__
-            warnings.warn(
-                trans._(
-                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.5.0",
-                    deferred=True,
-                    name=name,
-                    typ=typ,
-                ),
-                category=FutureWarning,
-                stacklevel=2,
-            )
+
+            self._private_attr_warning(name, typ)
+
             # name = f'{type(self.__wrapped__).__name__}.{name}'
             # raise AttributeError(
             #     trans._(
@@ -72,6 +82,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             #     )
             # )
         return self.create(super().__getattr__(name))
+
+    def __setattr__(self, name: str, value: Any):
+        if self._is_private_attr(name):
+            typ = type(self.__wrapped__).__name__
+            self._private_attr_warning(name, typ)
+            # raise AttributeError
+
+        setattr(self.__wrapped__, name, value)
 
     def __getitem__(self, key):
         return self.create(super().__getitem__(key))
