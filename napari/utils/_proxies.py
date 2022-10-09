@@ -94,8 +94,13 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
                 )
 
         if self._is_private_attr(name):
+            frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
+            if frame.f_code.co_filename.startswith(misc.ROOT_DIR):
+                return super().__setattr__(name, value)
+
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
+
             # raise AttributeError
 
         setattr(self.__wrapped__, name, value)
