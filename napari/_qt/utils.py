@@ -12,11 +12,13 @@ import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
+    QCoreApplication,
     QPoint,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
+    QThread,
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import (
@@ -469,3 +471,14 @@ def qt_might_be_rich_text(text) -> bool:
         return _Qt.mightBeRichText(text)
     except Exception:
         return bool(RICH_TEXT_PATTERN.search(text))
+
+
+def check_if_in_main_thread():
+    """Check if we are in the main thread.
+
+    Returns
+    -------
+    thread_flag : bool
+        True if we are in the main thread, False otherwise.
+    """
+    return QCoreApplication.instance().thread() == QThread.currentThread()

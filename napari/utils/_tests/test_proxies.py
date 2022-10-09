@@ -1,3 +1,4 @@
+from threading import Thread
 from unittest.mock import patch
 
 import numpy as np
@@ -75,6 +76,38 @@ def test_PublicOnlyProxy(patched_root_dir):
 
     assert '_private' not in dir(proxy)
     assert '_private' in dir(t)
+
+
+def test_thread_proxy_guard(monkeypatch, qapp):
+    class X:
+        a = 1
+
+    called = False
+
+    def set_a_attr_ex(o):
+        nonlocal called
+        with pytest.raises(RuntimeError):
+            o.a = 2
+        called = True
+
+    def set_a_attr(o):
+        o.a = 3
+
+    monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+
+    x = X()
+    x_proxy = PublicOnlyProxy(x)
+
+    t = Thread(target=set_a_attr_ex, args=(x_proxy,))
+    t.start()
+    t.join()
+    assert x.a == 1
+    assert called
+
+    t = Thread(target=set_a_attr, args=(x,))
+    t.start()
+    t.join()
+    assert x.a == 3
 
 
 def test_public_proxy_limited_to_napari(patched_root_dir):

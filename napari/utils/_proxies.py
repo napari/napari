@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import warnings
@@ -84,6 +85,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         return self.create(super().__getattr__(name))
 
     def __setattr__(self, name: str, value: Any):
+        if os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", False):
+            from napari._qt.utils import check_if_in_main_thread
+
+            if not check_if_in_main_thread():
+                raise RuntimeError(
+                    "Setting attributes on a napari object is only allowed from the main thread."
+                )
+
         if self._is_private_attr(name):
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
