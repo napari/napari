@@ -108,7 +108,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
 
-            # raise AttributeError
+            # raise AttributeError(
+            #     trans._(
+            #         "Private attribute set ('{typ}.{name}') not allowed in this context.",
+            #         deferred=True,
+            #         name=name,
+            #         typ=typ,
+            #     )
+            # )
 
         setattr(self.__wrapped__, name, value)
 
