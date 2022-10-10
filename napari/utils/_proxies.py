@@ -62,11 +62,19 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             stacklevel=3,
         )
 
+    @staticmethod
+    def _is_called_from_napari():
+        """
+        Check if the getter or setter is called from inner napari.
+        """
+        if hasattr(sys, "_getframe"):
+            frame = sys._getframe(2)
+            return frame.f_code.co_filename.startswith(misc.ROOT_DIR)
+        return False
+
     def __getattr__(self, name: str):
         if self._is_private_attr(name):
-            # allow napari to access private attributes and get an non-proxy
-            frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
-            if frame.f_code.co_filename.startswith(misc.ROOT_DIR):
+            if self._is_called_from_napari():
                 return super().__getattr__(name)
 
             typ = type(self.__wrapped__).__name__
@@ -86,16 +94,15 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     def __setattr__(self, name: str, value: Any):
         if os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", False):
-            from napari._qt.utils import check_if_in_main_thread
+            from napari._qt.utils import in_qt_main_thread
 
-            if not check_if_in_main_thread():
+            if not in_qt_main_thread():
                 raise RuntimeError(
                     "Setting attributes on a napari object is only allowed from the main thread."
                 )
 
         if self._is_private_attr(name):
-            frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
-            if frame.f_code.co_filename.startswith(misc.ROOT_DIR):
+            if self._is_called_from_napari():
                 return super().__setattr__(name, value)
 
             typ = type(self.__wrapped__).__name__
