@@ -379,7 +379,7 @@ def imshow(
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
-    viewer: Viewer object, optional, by default None.
+    viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional

@@ -16,6 +16,7 @@ from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
 from ...utils.events.event_utils import connect_no_arg
 from ...utils.migrations import rename_argument
+from ...utils.misc import reorder_after_dim_reduction
 from ...utils.naming import magic_name
 from ...utils.transforms import Affine
 from ...utils.translations import trans
@@ -396,17 +397,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             return np.zeros((1,) * self._ndisplay)
 
-    def _get_order(self):
-        """Return the order of the displayed dimensions."""
+    def _get_order(self) -> Tuple[int]:
+        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+        order = reorder_after_dim_reduction(self._dims_displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims_displayed_order + (
-                max(self._dims_displayed_order) + 1,
-            )
+            return order + (max(order) + 1,)
         else:
-            return self._dims_displayed_order
+            return order
 
     @property
     def _data_view(self):
