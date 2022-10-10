@@ -171,30 +171,43 @@ class AbstractInstaller(QProcess):
         self.start()
 
     def _on_process_finished(
-        self, 
-        exit_code: Optional[int] = None, 
+        self, exit_code: int, exit_status: QProcess.ExitStatus
+    ):
+        self._on_process_done(exit_code=exit_code, exit_status=exit_status)
+
+    def _on_error_occurred(self, error: QProcess.ProcessError):
+        self._on_process_done(error=error)
+
+    def _on_process_done(
+        self,
+        exit_code: Optional[int] = None,
         exit_status: Optional[QProcess.ExitStatus] = None,
+        error: Optional[QProcess.ProcessError] = None,
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
         if self._output_widget:
-            msg = "Task finished!"
+            msg = "\nTask finished!"
             if exit_code is not None:
                 msg += f" Exit code: {exit_code}."
             if exit_status is not None:
                 msg += f" Exit status: {exit_status}."
+            if error:
+                msg += f" Error code: {error}."
             self._output_widget.append(msg)
         self._process_queue()
 
     def _on_stdout_ready(self):
         if self._output_widget:
             text = self.readAllStandardOutput().data().decode()
-            self._output_widget.append(text)
+            if text:
+                self._output_widget.append(text)
 
     def _on_stderr_ready(self):
         if self._output_widget:
             text = self.readAllStandardError().data().decode()
-            self._output_widget.append(text)
+            if text:
+                self._output_widget.append(text)
 
 
 class PipInstaller(AbstractInstaller):

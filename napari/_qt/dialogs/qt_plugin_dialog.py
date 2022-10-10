@@ -382,7 +382,7 @@ class QPluginList(QListWidget):
             widget.set_busy(trans._("cancelling..."), update)
             try:
                 job_id = widget.property("current_job_id")
-                self.installer.cancel(job_id)  # FIXME
+                self.installer.cancel(job_id)
             finally:
                 widget.setProperty("current_job_id", None)
 
@@ -707,7 +707,12 @@ class QtPluginDialog(QDialog):
     def _end_refresh(self):
         refresh_state = self.refresh_state
         self.refresh_state = RefreshState.DONE
-        if refresh_state == RefreshState.OUTDATED:
+        if (
+            refresh_state == RefreshState.OUTDATED
+            # FIXME: a recursion loop happens in conda mode
+            # because it's always outdated after an uninstall
+            and not running_as_constructor_app()
+        ):
             self.refresh()
 
     def eventFilter(self, watched, event):
