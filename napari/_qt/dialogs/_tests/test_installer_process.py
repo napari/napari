@@ -44,6 +44,9 @@ def tmp_conda_env(tmp_path):
                 '-yq',
                 '-p',
                 str(tmp_path),
+                '--override-channels',
+                '-c',
+                'conda-forge',
                 f'python={sys.version_info.major}.{sys.version_info.minor}',
             ],
             stderr=subprocess.STDOUT,
@@ -91,7 +94,8 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
-    installer = CondaInstaller()
+    # channels match configuration for tmp_conda_env above
+    installer = CondaInstaller(channels=['conda-forge'])
     with qtbot.waitSignal(installer.allFinished, timeout=60000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
 

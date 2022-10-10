@@ -247,8 +247,13 @@ class PipInstaller(AbstractInstaller):
 
 
 class CondaInstaller(AbstractInstaller):
+    default_channels = ('conda-forge',)
+
     def __init__(
-        self, parent: Optional[QObject] = None, use_mamba: bool = True
+        self,
+        parent: Optional[QObject] = None,
+        use_mamba: bool = True,
+        channels: Optional[Sequence[str]] = None,
     ) -> None:
         _bat = ".bat" if os.name == "nt" else ""
         self._bin = (
@@ -259,7 +264,7 @@ class CondaInstaller(AbstractInstaller):
         super().__init__(parent)
         self.setProgram(self._bin)
         # TODO: make configurable per install once plugins can request it
-        self.channels = ('conda-forge',)
+        self.channels = channels or self.default_channels
         self._default_prefix = (
             sys.prefix if (Path(sys.prefix) / "conda-meta").is_dir() else None
         )
@@ -302,7 +307,7 @@ class CondaInstaller(AbstractInstaller):
         return self._get_args('remove', pkg_list, prefix)
 
     def _get_args(self, arg0, pkg_list: Sequence[str], prefix: Optional[str]):
-        cmd = [arg0, '-y']
+        cmd = [arg0, '-y', '--override-channels']
         if prefix := str(prefix or self._default_prefix):
             cmd.extend(['--prefix', prefix])
         for channel in self.channels:
