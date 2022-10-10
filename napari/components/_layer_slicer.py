@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from threading import Lock
+from threading import RLock
 from typing import Dict, Iterable, Tuple
 
 from napari.components import Dims
@@ -15,7 +17,8 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
-        self.lock = Lock()
+        self._futures: Dict[Future, Layer] = {}
+        self.lock = RLock()
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
@@ -36,13 +39,23 @@ class _LayerSlicer:
         # being sliced now. This allows us to slice arbitrary sets of
         # layers with some sensible and not too complex cancellation
         # policy.
-        existing_task = self._find_existing_task(layers)
-        # are the tasks unique?
-        if existing_task:
-            LOGGER.debug('Cancelling task for %s', layers)
-            existing_task.cancel()
-            # # remove task
-            # del self._layers_to_task[layers]
+        # existing_task = self._find_existing_task(layers)
+        # # are the tasks unique?
+        # if existing_task:
+        #     LOGGER.debug('Cancelling task for %s', layers)
+        #     existing_task.cancel()
+        # # remove task
+        # del self._layers_to_task[layers]
+
+        # this is terrible:
+        existing_future = []
+        with self.lock:
+            for layer in layers:
+                for future, future_layer in self._futures.items():
+                    if layer == future_layer:
+                        existing_future.append(layer)
+            for future in existing_future:
+                future.cancel()
 
         # Not all layer types will initially be asynchronously sliceable.
         # The following logic gives us a way to handle those in the short
@@ -57,18 +70,27 @@ class _LayerSlicer:
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
-        # create task for slicing of each request/layer
-        task = self._executor.submit(
-            self._slice_layers, requests
-        )  # TODO: doesn't this submit all the llayer slicing under one thread?
+        # # create task for slicing of each request/layer
+        # task = self._executor.submit(
+        #     self._slice_layers, requests
+        # )  # TODO: doesn't this submit all the llayer slicing under one thread?
 
-        # construct dict of layers to layer task
-        self._layers_to_task[tuple(requests.keys())] = task
+        # new_futures = {future: layer}
+        new_futures = []
+        with self.lock:
+            for layer, request in requests.items():
+                future = self._executor.submit(self._slice_layers, request)
+                future.add_done_callback(self._on_slice_done)
+                self._futures[future] = layer
+                new_futures.append(future)
 
-        # once everything is complete, release the block
-        task.add_done_callback(self._on_slice_done)
+        # # construct dict of layers to layer task
+        # self._layers_to_task[tuple(requests.keys())] = task
 
-        return task
+        # # once everything is complete, release the block
+        # task.add_done_callback(self._on_slice_done)
+
+        return new_futures
 
     def shutdown(self) -> None:
         """This should be called from the main thread when this is no longer needed."""
@@ -93,10 +115,12 @@ class _LayerSlicer:
         #       we actually call result, though I guess it doens't hurt anything to do so
 
         # layers = self._find_layers_for_task(task)
-        task_to_layers = {v: k for k, v in self._layers_to_task.items()}
-        layers = task_to_layers.get(task, None)
+        # task_to_layers = {v: k for k, v in self._layers_to_task.items()}
+        # layers = task_to_layers.get(task, None)
 
-        if not layers:
+        layer = self._futures.get(task)
+
+        if not layer:
             LOGGER.debug('Task not found')
             return
 
@@ -105,7 +129,8 @@ class _LayerSlicer:
         # has replaced the first layer in `_layers_to_task` dict. In this case,
         # layer2 will be the one deleted here.
         # remove task
-        del self._layers_to_task[layers]
+        # del self._layers_to_task[layers]
+        del self._futures[task]
 
         if task.cancelled():
             LOGGER.debug('Cancelled task')
