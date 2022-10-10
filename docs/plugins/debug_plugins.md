@@ -138,7 +138,8 @@ To see the updated behavior in action, just type the name of your changed functi
 In [10]: example # anything in IPython to reload that code
 
 # Now the code is reloaded, run outputs as expected
-Please enter something in the text box.
+'Please enter something in the text box.'
+```
 
 ## Write a setup script to avoid GUI interaction
 
@@ -278,11 +279,12 @@ run()
 
 Running this script with `python example_notification.py` and entering fast into the input text box and clicking run you should then see:
 
+```text
 DEBUG: The input string was (napari): fast
 # A GUI notification of the same
 DEBUG: The input string was (napari): fast
 DEBUG: 20/09/2022 05:59:23 PM The input string was (logging): fast
-You entered fast!
+'You entered fast!'
 ```
 
 The full code changes and new files after applying the changes to the plugin in each step of the examples are [here](https://github.com/seankmartin/napari-plugin-debug/tree/full_code/napari-simple-reload).
