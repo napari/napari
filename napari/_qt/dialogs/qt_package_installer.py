@@ -280,6 +280,7 @@ class CondaInstaller(AbstractInstaller):
         PINNED = 'CONDA_PINNED_PACKAGES'
         system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
         env.insert(PINNED, f"napari={self._napari_pin()}{system_pins}")
+        env.insert('CONDA_VERBOSITY', '3')
 
         if os.name == "nt":
             if not env.contains("TEMP"):
@@ -301,7 +302,7 @@ class CondaInstaller(AbstractInstaller):
         return self._get_args('remove', pkg_list, prefix)
 
     def _get_args(self, arg0, pkg_list: Sequence[str], prefix: Optional[str]):
-        cmd = [arg0, '-yq']
+        cmd = [arg0, '-y']
         if prefix := str(prefix or self._default_prefix):
             cmd.extend(['--prefix', prefix])
         for channel in self.channels:
