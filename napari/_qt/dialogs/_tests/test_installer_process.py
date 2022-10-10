@@ -92,13 +92,17 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = CondaInstaller()
-    with qtbot.waitSignal(installer.allFinished, timeout=30000):
+    with qtbot.waitSignal(installer.allFinished, timeout=60000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
 
-    assert not installer.hasJobs()
+    conda_meta = tmp_conda_env / "conda-meta"
+    glob_pat = "typing-extensions-*.json"
 
-    installer = CondaInstaller()
-    with qtbot.waitSignal(installer.allFinished, timeout=30000):
+    assert not installer.hasJobs()
+    assert list(conda_meta.glob(glob_pat))
+
+    with qtbot.waitSignal(installer.allFinished, timeout=60000):
         installer.uninstall(['typing-extensions'], prefix=tmp_conda_env)
 
     assert not installer.hasJobs()
+    assert not list(conda_meta.glob(glob_pat))
