@@ -10,13 +10,13 @@ Run all the benchmarks:
 
 `asv run`
 
-Do a "quick" run, where each benchmark function is run only once:
+Do a "quick" run in the current environment, where each benchmark function is run only once:
 
-`asv run --environment conda -q`
+`asv run --python=same -q`
 
 To run a single benchmark (Vectors3DSuite.time_refresh) with the environment you are currently in:
 
-`asv run --python=same --bench Vectors3DSuite.time_refresh`
+`asv dev --bench Vectors3DSuite.time_refresh`
 
 To compare benchmarks across branches, run using conda environments (instead of virtualenv), and limit to the `Labels2DSuite` benchmarks:
 
