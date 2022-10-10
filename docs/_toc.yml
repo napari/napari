@@ -107,6 +107,7 @@ subtrees:
               - file: naps/2-conda-based-packaging
               - file: naps/3-spaces
               - file: naps/4-async-slicing
+              - file: naps/5-new-logo
           - file: developers/documentation/index
             subtrees:
             - entries:
