@@ -7,7 +7,6 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
 
-from importlib_metadata import version
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
