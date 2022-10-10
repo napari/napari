@@ -178,14 +178,14 @@ The benchmarks are set to run:
 * On PRs with the `run-benchmark` label
 * On workflow dispatch (manual trigger)
 
-If the benchmarks fail during the scheduled run, an issue is opened in the repo to flag the occurance. 
+If the benchmarks fail during the scheduled run, an issue is opened in the repo to flag the occurrence. 
 If an issue has already been opened, it will add to the existing issue. 
 
-The contender SHA is Github PR merge commit - a fake commit not available to users
-Every time you want the benchmark ci to run in PR, you'll need to remove and re-add the `run-benchmark` label. 
+The contender SHA is a Github PR merge commit - a fake commit not available to users.
+Every time you want the benchmark CI to run in a PR, you'll need to remove and re-add the `run-benchmark` label. 
 
 
 ### Benchmark Reporting Action
 
-The benchmark Reporting Action will only run after the succesful completion of the Benchmark Action 
+The benchmark Reporting Action will only run after the successful completion of the Benchmark Action.
 (regardless of comparison failures).

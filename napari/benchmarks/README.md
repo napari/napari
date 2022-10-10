@@ -18,6 +18,6 @@ To run a single benchmark (Vectors3DSuite.time_refresh) with the environment you
 
 `asv run --python=same --bench Vectors3DSuite.time_refresh`
 
-Compare benchmarks across branches, run using conda environments (instead of vitualenv), and limit to the `Labels2DSuite` benchmarks:
+To compare benchmarks across branches, run using conda environments (instead of virtualenv), and limit to the `Labels2DSuite` benchmarks:
 
 `asv continuous main fix_benchmark_ci -q --environment conda --bench Labels2DSuite`
