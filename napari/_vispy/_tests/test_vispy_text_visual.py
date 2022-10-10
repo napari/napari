@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from napari.components._viewer_constants import TextOverlayPosition
+from napari.components._viewer_constants import CanvasPosition
 
 
 def test_vispy_text_visual(make_napari_viewer):
@@ -16,20 +16,12 @@ def test_vispy_text_visual(make_napari_viewer):
         qt_widget.text_overlay.node.font_size == viewer.text_overlay.font_size
     )
     viewer.text_overlay.font_size = 13
-    assert (
-        qt_widget.text_overlay.node.font_size
-        == viewer.text_overlay.font_size
-        == 13
-    )
+    assert qt_widget.text_overlay.node.font_size == 13
 
     # check text attribute
     assert qt_widget.text_overlay.node.text == viewer.text_overlay.text
     viewer.text_overlay.text = "TEST TEXT"
-    assert (
-        qt_widget.text_overlay.node.text
-        == viewer.text_overlay.text
-        == "TEST TEXT"
-    )
+    assert qt_widget.text_overlay.node.text == "TEST TEXT"
 
     # check visible attribute
     assert qt_widget.text_overlay.node.visible == viewer.text_overlay.visible
@@ -37,7 +29,7 @@ def test_vispy_text_visual(make_napari_viewer):
     assert qt_widget.text_overlay.node.visible == viewer.text_overlay.visible
 
     # check position attribute
-    for position in list(TextOverlayPosition):
+    for position in list(CanvasPosition):
         viewer.text_overlay.position = position
         assert viewer.text_overlay.position == position
     with pytest.raises(ValueError):
