@@ -1,5 +1,4 @@
 import contextlib
-import logging
 import os
 import shutil
 import sys
@@ -54,6 +53,7 @@ class AbstractInstaller(QProcess):
         self.setProcessEnvironment(env)
 
         self.finished.connect(self._on_process_finished)
+        self.errorOccurred.connect(self._on_process_finished)
 
     # -------------------------- Public API ------------------------------
     def install(
@@ -102,16 +102,23 @@ class AbstractInstaller(QProcess):
         job_id : Optional[JobId], optional
             Job ID to cancel.  If not provided, cancel all jobs.
         """
+        def end_process():
+            if os.name == 'nt':
+                self.kill()  
+            else:
+                self.terminate()
+            self._output_widget.append("\nTask was cancelled by the user.")
+
         if job_id is None:
             # cancel all jobs
             self._queue.clear()
-            self.terminate()
+            end_process()
             return
 
         for i, args in enumerate(self._queue):
             if hash(args) == job_id:
                 if i == 0:  # first in queue, currently running
-                    self.terminate()
+                    end_process()
                 else:  # still pending, just remove from queue
                     self._queue.remove(args)
                 return
@@ -152,10 +159,10 @@ class AbstractInstaller(QProcess):
         if not self._queue:
             self.allFinished.emit()
             return
-        logging.debug("Starting %s %s", self.program(), self.arguments())
-        # this might throw a warning because the sane process was already running
-        # but it's ok
         self.setArguments(list(self._queue[0]))
+        # this might throw a warning because the same process
+        # was already running but it's ok
+        self._output_widget.append(f"\nStarting {self.program()} {self.arguments()}")
         self.start()
 
     def _on_process_finished(
@@ -163,10 +170,8 @@ class AbstractInstaller(QProcess):
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
-        logging.debug(
-            "Finished with exit code %s and status %s.",
-            exit_code,
-            exit_status,
+        self._output_widget.append(
+            f"Finished with exit code {exit_code} and status {exit_status}."
         )
         self._process_queue()
 
