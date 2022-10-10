@@ -171,8 +171,8 @@ class AbstractInstaller(QProcess):
         self.start()
 
     def _on_process_finished(
-        self, 
-        exit_code: Optional[int] = None, 
+        self,
+        exit_code: Optional[int] = None,
         exit_status: Optional[QProcess.ExitStatus] = None,
     ):
         with contextlib.suppress(IndexError):
