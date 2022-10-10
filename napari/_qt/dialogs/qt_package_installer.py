@@ -107,7 +107,8 @@ class AbstractInstaller(QProcess):
                 self.kill()  
             else:
                 self.terminate()
-            self._output_widget.append("\nTask was cancelled by the user.")
+            if self._output_widget:
+                self._output_widget.append("\nTask was cancelled by the user.")
 
         if job_id is None:
             # cancel all jobs
@@ -162,7 +163,8 @@ class AbstractInstaller(QProcess):
         self.setArguments(list(self._queue[0]))
         # this might throw a warning because the same process
         # was already running but it's ok
-        self._output_widget.append(f"\nStarting {self.program()} {self.arguments()}")
+        if self._output_widget:
+            self._output_widget.append(f"\nStarting {self.program()} {self.arguments()}")
         self.start()
 
     def _on_process_finished(
@@ -170,9 +172,10 @@ class AbstractInstaller(QProcess):
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
-        self._output_widget.append(
-            f"Finished with exit code {exit_code} and status {exit_status}."
-        )
+        if self._output_widget:
+            self._output_widget.append(
+                f"Finished with exit code {exit_code} and status {exit_status}."
+            )
         self._process_queue()
 
     def _on_stdout_ready(self):
