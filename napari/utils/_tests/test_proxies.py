@@ -1,5 +1,5 @@
 import sys
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 import numpy as np
@@ -84,32 +84,20 @@ def test_thread_proxy_guard(monkeypatch, qapp):
     class X:
         a = 1
 
-    called = False
-
-    def set_a_attr_ex(o):
-        nonlocal called
-        with pytest.raises(RuntimeError):
-            o.a = 2
-        called = True
-
-    def set_a_attr(o):
-        o.a = 3
-
     monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+    single_threaded_executor = ThreadPoolExecutor(max_workers=1)
 
     x = X()
     x_proxy = PublicOnlyProxy(x)
 
-    t = Thread(target=set_a_attr_ex, args=(x_proxy,))
-    t.start()
-    t.join()
-    assert x.a == 1
-    assert called
+    f = single_threaded_executor.submit(x.__setattr__, 'a', 2)
+    f.result()
+    assert x.a == 2
 
-    t = Thread(target=set_a_attr, args=(x,))
-    t.start()
-    t.join()
-    assert x.a == 3
+    f = single_threaded_executor.submit(x_proxy.__setattr__, 'a', 3)
+    with pytest.raises(RuntimeError):
+        f.result()
+    assert x.a == 2
 
 
 def test_public_proxy_limited_to_napari(patched_root_dir):
