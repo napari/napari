@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
+from logging import getLogger
 
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
@@ -14,6 +15,7 @@ from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
 
 JobId = int
+log = getLogger(__name__)
 
 
 class AbstractInstaller(QProcess):
@@ -53,7 +55,7 @@ class AbstractInstaller(QProcess):
         self.setProcessEnvironment(env)
 
         self.finished.connect(self._on_process_finished)
-        self.errorOccurred.connect(self._on_process_finished)
+        self.errorOccurred.connect(self._on_error_occurred)
 
     # -------------------------- Public API ------------------------------
     def install(
@@ -151,6 +153,10 @@ class AbstractInstaller(QProcess):
             self._output_widget = output_widget
 
     # -------------------------- Private methods ------------------------------
+    def _log(self, msg: str):
+        log.debug(msg)
+        if self._output_widget:
+            self._output_widget.append(msg)
 
     def _queue_args(self, args) -> JobId:
         self._queue.append(args)
@@ -164,10 +170,7 @@ class AbstractInstaller(QProcess):
         self.setArguments(list(self._queue[0]))
         # this might throw a warning because the same process
         # was already running but it's ok
-        if self._output_widget:
-            self._output_widget.append(
-                f"\nStarting {self.program()} {self.arguments()}"
-            )
+        self._log(f"Starting '{self.program()}' with args {self.arguments()}")
         self.start()
 
     def _on_process_finished(
@@ -186,28 +189,23 @@ class AbstractInstaller(QProcess):
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
-        if self._output_widget:
-            msg = "\nTask finished!"
-            if exit_code is not None:
-                msg += f" Exit code: {exit_code}."
-            if exit_status is not None:
-                msg += f" Exit status: {exit_status}."
-            if error:
-                msg += f" Error code: {error}."
-            self._output_widget.append(msg)
+        msg = "Task finished with "
+        if error:
+            msg += f"with errors! Code: {error}."
+        else:
+            msg += f"exit code {exit_code} with status {exit_status}."
+        self._log(msg)
         self._process_queue()
 
     def _on_stdout_ready(self):
-        if self._output_widget:
-            text = self.readAllStandardOutput().data().decode()
-            if text:
-                self._output_widget.append(text)
+        text = self.readAllStandardOutput().data().decode()
+        if text:
+            self._log(text)
 
     def _on_stderr_ready(self):
-        if self._output_widget:
-            text = self.readAllStandardError().data().decode()
-            if text:
-                self._output_widget.append(text)
+        text = self.readAllStandardError().data().decode()
+        if text:
+            self._log(text)
 
 
 class PipInstaller(AbstractInstaller):
