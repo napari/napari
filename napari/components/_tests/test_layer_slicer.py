@@ -168,6 +168,8 @@ def test_slice_layers_async_multiple_calls_cancels_pending(layer_slicer):
     with layer.lock:
         blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         pending = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not pending.running()
+        assert pending._state == 'PENDING'
         layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not blocked.done()
 
@@ -255,8 +257,8 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
 
         assert task_to_layers.get(task, None) == tuple(
             [layer],
-        )  # race condition? or lock not functioning?
+        )
 
     assert task.result()[layer].id == 1
-
+    task_to_layers = {v: k for k, v in layer_slicer._layers_to_task.items()}
     assert not task_to_layers.get(task, None)
