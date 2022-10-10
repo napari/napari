@@ -7,6 +7,8 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
 
+from importlib_metadata import version
+
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
@@ -164,10 +166,9 @@ class AbstractInstaller(QProcess):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
         logging.debug(
-            "Finished with exit code %s and status %s. Output:\n%s",
+            "Finished with exit code %s and status %s.",
             exit_code,
             exit_status,
-            "this makes Windows hang?",  # self.readAll().data().decode(),
         )
         self._process_queue()
 
@@ -230,8 +231,6 @@ class CondaInstaller(AbstractInstaller):
             if use_mamba and shutil.which(f'mamba{_bat}')
             else f'conda{_bat}'
         )
-        if os.name == "nt":
-            self._bin == 'conda.bat'  # force temporarily to debug CI
         super().__init__(parent)
         self.setProgram(self._bin)
         # TODO: make configurable per install once plugins can request it
@@ -240,14 +239,21 @@ class CondaInstaller(AbstractInstaller):
             sys.prefix if (Path(sys.prefix) / "conda-meta").is_dir() else None
         )
 
+    def _napari_pin(self):
+        from ..._version import version, version_tuple
+        if "rc" in version or "dev" in version:
+            # dev or rc versions might not be available in public channels
+            # but only installed locally - if we try to pin those, mamba
+            # will fail to pin it because there's no record of that version
+            # in the remote index, only locally; to work around this bug
+            # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
+            return ".".join([str(part) for part in version_tuple[:2]])
+        return ".".join([str(part) for part in version_tuple[:3]])
+
     def _modify_env(self, env: QProcessEnvironment):
-        from ..._version import version_tuple
-
-        napari_version = ".".join(str(v) for v in version_tuple[:3])
-
         PINNED = 'CONDA_PINNED_PACKAGES'
         system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
-        env.insert(PINNED, f"napari={napari_version}{system_pins}")
+        env.insert(PINNED, f"napari={self._napari_pin()}{system_pins}")
 
         if os.name == "nt":
             if not env.contains("TEMP"):
