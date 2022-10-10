@@ -8,7 +8,6 @@ from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
 
 from importlib_metadata import version
-
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
@@ -241,6 +240,7 @@ class CondaInstaller(AbstractInstaller):
 
     def _napari_pin(self):
         from ..._version import version, version_tuple
+
         if "rc" in version or "dev" in version:
             # dev or rc versions might not be available in public channels
             # but only installed locally - if we try to pin those, mamba
