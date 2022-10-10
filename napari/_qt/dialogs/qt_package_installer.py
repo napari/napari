@@ -102,9 +102,10 @@ class AbstractInstaller(QProcess):
         job_id : Optional[JobId], optional
             Job ID to cancel.  If not provided, cancel all jobs.
         """
+
         def end_process():
             if os.name == 'nt':
-                self.kill()  
+                self.kill()
             else:
                 self.terminate()
             self._output_widget.append("\nTask was cancelled by the user.")
@@ -162,7 +163,9 @@ class AbstractInstaller(QProcess):
         self.setArguments(list(self._queue[0]))
         # this might throw a warning because the same process
         # was already running but it's ok
-        self._output_widget.append(f"\nStarting {self.program()} {self.arguments()}")
+        self._output_widget.append(
+            f"\nStarting {self.program()} {self.arguments()}"
+        )
         self.start()
 
     def _on_process_finished(
