@@ -88,7 +88,7 @@ class AbstractInstaller(QProcess):
             Optional prefix from which to uninstall packages.
 
         Returns
-        -------x
+        -------
         JobId : int
             ID that can be used to cancel the process.
         """
@@ -171,14 +171,19 @@ class AbstractInstaller(QProcess):
         self.start()
 
     def _on_process_finished(
-        self, exit_code: int, exit_status: QProcess.ExitStatus
+        self, 
+        exit_code: Optional[int] = None, 
+        exit_status: Optional[QProcess.ExitStatus] = None,
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
         if self._output_widget:
-            self._output_widget.append(
-                f"Finished with exit code {exit_code} and status {exit_status}."
-            )
+            msg = "Task finished!"
+            if exit_code is not None:
+                msg += f" Exit code: {exit_code}."
+            if exit_status is not None:
+                msg += f" Exit status: {exit_status}."
+            self._output_widget.append(msg)
         self._process_queue()
 
     def _on_stdout_ready(self):
