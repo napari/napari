@@ -94,13 +94,11 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = CondaInstaller()
     with qtbot.waitSignal(installer.allFinished, timeout=30000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
-        installer.waitForFinished()
 
     assert not installer.hasJobs()
 
     installer = CondaInstaller()
     with qtbot.waitSignal(installer.allFinished, timeout=30000):
         installer.uninstall(['typing-extensions'], prefix=tmp_conda_env)
-        installer.waitForFinished()
 
     assert not installer.hasJobs()
