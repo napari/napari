@@ -2,10 +2,10 @@ import contextlib
 import os
 import shutil
 import sys
+from logging import getLogger
 from pathlib import Path
 from tempfile import gettempdir
 from typing import Deque, Optional, Sequence, Tuple
-from logging import getLogger
 
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
