@@ -96,7 +96,7 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     # channels match configuration for tmp_conda_env above
     installer = CondaInstaller(channels=['conda-forge'])
-    with qtbot.waitSignal(installer.allFinished, timeout=60000):
+    with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
 
     conda_meta = tmp_conda_env / "conda-meta"
@@ -105,7 +105,7 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
     assert not installer.hasJobs()
     assert list(conda_meta.glob(glob_pat))
 
-    with qtbot.waitSignal(installer.allFinished, timeout=60000):
+    with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.uninstall(['typing-extensions'], prefix=tmp_conda_env)
 
     assert not installer.hasJobs()
