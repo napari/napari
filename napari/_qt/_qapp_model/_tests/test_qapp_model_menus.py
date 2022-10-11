@@ -14,6 +14,9 @@ def test_build_qmodel_menu(qtbot, menu_id):
 
     mock = MagicMock()
     with app.injection_store.register(providers={Viewer: lambda: mock}):
+        print(
+            f'App injection store providers:\n{app._injection_store._providers}'
+        )
         menu = build_qmodel_menu(menu_id)
         qtbot.addWidget(menu)
         assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
