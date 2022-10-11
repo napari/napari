@@ -572,7 +572,19 @@ PluginListItem QCheckBox::indicator:disabled {
   image: url("theme_{{ id }}:/check_50.svg");
 }
 
-QPushButton#install_button {
+QCollapsible#install_info_button {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+QWidget#install_choice_widget {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+QWidget#install_button {
+  background-color: {{ foreground }}
+}
+
+QPushButton#install_choice {
   background-color: {{ current }}
 }
 
