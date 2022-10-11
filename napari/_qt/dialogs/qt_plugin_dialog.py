@@ -111,6 +111,7 @@ class PluginListItem(QFrame):
             # self.info_widget.hide()
             self.info_choice_wdg.show()
             self.install_info_button.hide()
+            self.update_btn.setVisible(False)
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -303,13 +304,13 @@ class PluginListItem(QFrame):
             self.cancel_btn, alignment=Qt.AlignmentFlag.AlignTop
         )
 
-        self.update_btn = QPushButton(self)
+        self.update_btn = QPushButton('Update', self)
         self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.update_btn.setObjectName("install_button")
         self.row2.addWidget(
             self.update_btn, alignment=Qt.AlignmentFlag.AlignTop
         )
-        self.update_btn.setVisible(False)
+        # self.update_btn.setVisible(False)
         self.action_button = QPushButton(self)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
