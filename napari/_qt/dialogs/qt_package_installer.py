@@ -254,13 +254,17 @@ class CondaInstaller(AbstractInstaller):
         parent: Optional[QObject] = None,
         use_mamba: bool = True,
         channels: Optional[Sequence[str]] = None,
+        _conda_exe: Optional[os.PathLike] = None
     ) -> None:
         _bat = ".bat" if os.name == "nt" else ""
-        self._bin = (
-            f'mamba{_bat}'
-            if use_mamba and shutil.which(f'mamba{_bat}')
-            else f'conda{_bat}'
-        )
+        if _conda_exe:
+            self._bin = _conda_exe
+        else:
+            self._bin = (
+                f'mamba{_bat}'
+                if use_mamba and shutil.which(f'mamba{_bat}')
+                else f'conda{_bat}'
+            )
         super().__init__(parent)
         self.setProgram(self._bin)
         # TODO: make configurable per install once plugins can request it

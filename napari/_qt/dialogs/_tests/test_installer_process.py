@@ -22,10 +22,7 @@ def tmp_virtualenv(tmp_path) -> 'Session':
     return virtualenv.cli_run(cmd)
 
 
-@pytest.fixture
-def tmp_conda_env(tmp_path):
-    import subprocess
-
+def conda_exe():
     if conda_exe := os.environ.get('CONDA_EXE', ''):
         pass  # in an active conda env, this is set and we take it
     elif conda_dir := os.environ.get('CONDA'):
@@ -35,11 +32,17 @@ def tmp_conda_env(tmp_path):
             conda_exe += '.bat'
     if not os.path.isfile(conda_exe):
         conda_exe = 'conda.bat ' if os.name == 'nt' else 'conda'
+    return conda_exe
+
+
+@pytest.fixture
+def tmp_conda_env(tmp_path):
+    import subprocess
 
     try:
         subprocess.check_output(
             [
-                conda_exe,
+                conda_exe(),
                 'create',
                 '-yq',
                 '-p',
@@ -95,7 +98,7 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     # channels match configuration for tmp_conda_env above
-    installer = CondaInstaller(channels=['conda-forge'])
+    installer = CondaInstaller(channels=['conda-forge'], _conda_exe=conda_exe())
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
 
