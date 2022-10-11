@@ -226,10 +226,12 @@ class PipInstaller(AbstractInstaller):
         env.insert("PYTHONPATH", combined_paths)
         env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
 
-    def _get_install_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        cmd = ['-m', 'pip', 'install', '--upgrade']
+    def _get_args(
+        self, *arg0, pkg_list: Sequence[str] = (), prefix: Optional[str] = None
+    ):
+        cmd = ['-m', 'pip', *arg0]
+        if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
+            cmd.append('-vvv')
         if prefix is not None:
             cmd.extend(['--prefix', str(prefix)])
         elif running_as_bundled_app(False) and sys.platform.startswith(
@@ -240,10 +242,19 @@ class PipInstaller(AbstractInstaller):
             )
         return tuple(cmd + list(pkg_list))
 
+    def _get_install_args(
+        self, pkg_list: Sequence[str], prefix: Optional[str] = None
+    ) -> Tuple[str, ...]:
+        return self._get_args(
+            'install', '--upgrade', pkg_list=pkg_list, prefix=prefix
+        )
+
     def _get_uninstall_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
-        return tuple(['-m', 'pip', 'uninstall', '-y'] + list(pkg_list))
+        return self._get_args(
+            'uninstall', '-y', pkg_list=pkg_list, prefix=prefix
+        )
 
 
 class CondaInstaller(AbstractInstaller):
@@ -289,7 +300,8 @@ class CondaInstaller(AbstractInstaller):
         PINNED = 'CONDA_PINNED_PACKAGES'
         system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
         env.insert(PINNED, f"napari={self._napari_pin()}{system_pins}")
-        env.insert('CONDA_VERBOSITY', '3')
+        if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
+            env.insert('CONDA_VERBOSITY', '3')
 
         if os.name == "nt":
             if not env.contains("TEMP"):
@@ -300,23 +312,25 @@ class CondaInstaller(AbstractInstaller):
                 env.insert("HOME", os.path.expanduser("~"))
                 env.insert("USERPROFILE", os.path.expanduser("~"))
 
-    def _get_install_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        return self._get_args('install', pkg_list, prefix)
-
-    def _get_uninstall_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        return self._get_args('remove', pkg_list, prefix)
-
-    def _get_args(self, arg0, pkg_list: Sequence[str], prefix: Optional[str]):
+    def _get_args(
+        self, *arg0, pkg_list: Sequence[str] = (), prefix: Optional[str] = None
+    ):
         cmd = [arg0, '-y', '--override-channels']
         if prefix := str(prefix or self._default_prefix):
             cmd.extend(['--prefix', prefix])
         for channel in self.channels:
             cmd.extend(["-c", channel])
         return tuple(cmd + list(pkg_list))
+
+    def _get_install_args(
+        self, pkg_list: Sequence[str], prefix: Optional[str] = None
+    ) -> Tuple[str, ...]:
+        return self._get_args('install', pkg_list=pkg_list, prefix=prefix)
+
+    def _get_uninstall_args(
+        self, pkg_list: Sequence[str], prefix: Optional[str] = None
+    ) -> Tuple[str, ...]:
+        return self._get_args('remove', pkg_list=pkg_list, prefix=prefix)
 
 
 def _get_python_exe():
