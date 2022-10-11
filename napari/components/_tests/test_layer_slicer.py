@@ -209,7 +209,7 @@ def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
 def test_slice_layers_async_with_multiple_async_layer_with_all_locked(
     layer_slicer,
 ):
-    """ensure that if only one layer has a lock, the nonlocked layer can continue"""
+    """ensure that if only all layers are locked, none continue"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
@@ -218,30 +218,10 @@ def test_slice_layers_async_with_multiple_async_layer_with_all_locked(
         blocked = layer_slicer.slice_layers_async(
             layers=[layer1, layer2], dims=dims
         )
-
         assert not blocked.done()
 
     assert blocked.result()[layer1].id == 1
     assert blocked.result()[layer2].id == 1
-
-
-def test_slice_layers_async_with_multiple_async_layer_with_one_lock(
-    layer_slicer,
-):
-    """ensure that if only one layer has a lock, the nonlocked layer can continue"""
-    dims = Dims()
-    layer1 = FakeAsyncLayer()
-    layer2 = FakeAsyncLayer()
-
-    with layer1.lock:
-        blocked = layer_slicer.slice_layers_async(
-            layers=[layer1, layer2], dims=dims
-        )
-        # TODO: kcp: still wish we had finer control here to ensure that layer2
-        #       is not blocked, but layer1 is
-        assert not blocked.done()
-
-    assert blocked.result()[layer1].id == 1
 
 
 def test_slice_layers_async_task_to_layers_lock(layer_slicer):

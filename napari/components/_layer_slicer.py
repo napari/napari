@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from threading import RLock
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
 from napari.components import Dims
 from napari.layers import Layer
@@ -68,7 +68,8 @@ class _LayerSlicer:
 
     def shutdown(self) -> None:
         """This should be called from the main thread when this is no longer needed."""
-        # TODO: kcp: doesn't this make this class instance null? Maybe we need a context manager to handle all instances off this class?
+        # TODO: This makes this class instance null. Consider a context manager
+        #       to handle instances of this class.
         self._executor.shutdown()
 
     def _slice_layers(self, requests: Dict) -> Dict:
@@ -99,8 +100,11 @@ class _LayerSlicer:
         """Attempt to remove task, return false if task not found, return true
         if task removed from layers_to_task dict"""
         with self.lock:
-            task_to_layers = {v: k for k, v in self._layers_to_task.items()}
-            layers = task_to_layers.get(task, None)
+            layers = None
+            for k_layers, v_task in self._layers_to_task.items():
+                if v_task == task:
+                    layers = k_layers
+                    break
 
             if not layers:
                 return False
