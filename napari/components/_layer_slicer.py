@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from threading import Lock
+from threading import RLock
 from typing import Dict, Iterable, Tuple
 
 from napari.components import Dims
@@ -15,7 +17,7 @@ class _LayerSlicer:
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
-        self.lock = Lock()
+        self.lock = RLock()
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
@@ -41,8 +43,6 @@ class _LayerSlicer:
         if existing_task:
             LOGGER.debug('Cancelling task for %s', layers)
             existing_task.cancel()
-            # # remove task
-            # del self._layers_to_task[layers]
 
         # Not all layer types will initially be asynchronously sliceable.
         # The following logic gives us a way to handle those in the short
@@ -58,9 +58,7 @@ class _LayerSlicer:
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
         # create task for slicing of each request/layer
-        task = self._executor.submit(
-            self._slice_layers, requests
-        )  # TODO: doesn't this submit all the llayer slicing under one thread?
+        task = self._executor.submit(self._slice_layers, requests)
 
         # construct dict of layers to layer task
         self._layers_to_task[tuple(requests.keys())] = task
@@ -89,23 +87,11 @@ class _LayerSlicer:
         Release the thread.
         This is the "done_callback" which is added to each task.
         """
-        # TODO: kcp: I'm not happy with this ordering, it feels like we shouldn't remove it from the dict before
-        #       we actually call result, though I guess it doens't hurt anything to do so
+        success = self._try_to_remove_task(task)
 
-        # layers = self._find_layers_for_task(task)
-        task_to_layers = {v: k for k, v in self._layers_to_task.items()}
-        layers = task_to_layers.get(task, None)
-
-        if not layers:
+        if not success:
             LOGGER.debug('Task not found')
             return
-
-        # TODO: What if we submit layer1, then submit layer1 again? The first
-        # layer is complete and is running this. Meanwhile, the second layer
-        # has replaced the first layer in `_layers_to_task` dict. In this case,
-        # layer2 will be the one deleted here.
-        # remove task
-        del self._layers_to_task[layers]
 
         if task.cancelled():
             LOGGER.debug('Cancelled task')
@@ -113,11 +99,17 @@ class _LayerSlicer:
         result = task.result()
         self.events.ready(Event('ready', value=result))
 
-    # def _find_layers_for_task(self, task):
-    #     with self.lock:
-    #         task_to_layers = {v: k for k, v in self._layers_to_task.items()}
-    #         layers = task_to_layers.get(task, None)
-    #     return layers
+    def _try_to_remove_task(self, task):
+        """Attempt to remove task, return false if task not found, return true
+        if task removed from layers_to_task dict"""
+        with self.lock:
+            task_to_layers = {v: k for k, v in self._layers_to_task.items()}
+            layers = task_to_layers.get(task, None)
+
+            if not layers:
+                return False
+            del self._layers_to_task[layers]
+        return True
 
     def _find_existing_task(self, layers):
         with self.lock:
