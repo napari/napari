@@ -141,11 +141,10 @@ def test_notification_manager_via_gui(
     warnButton.clicked.connect(warn_func)
     qtbot.addWidget(errButton)
     qtbot.addWidget(warnButton)
-
+    monkeypatch.setattr(
+        NapariQtNotification, "show_notification", lambda x: None
+    )
     with notification_manager:
-        monkeypatch.setattr(
-            NapariQtNotification, "show_notification", lambda x: None
-        )
         for btt, expected_message in [
             (errButton, 'error!'),
             (warnButton, 'warning!'),
