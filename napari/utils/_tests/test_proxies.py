@@ -1,4 +1,3 @@
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
@@ -79,8 +78,7 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert '_private' in dir(t)
 
 
-@pytest.mark.skipif("qtpy" not in sys.modules, reason="requires Qt")
-def test_thread_proxy_guard(monkeypatch, qapp):
+def test_thread_proxy_guard(monkeypatch):
     class X:
         a = 1
 
