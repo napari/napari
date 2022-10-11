@@ -76,11 +76,23 @@ class ShowStatus:
 
 @pytest.fixture(autouse=True)
 def raise_on_show(monkeypatch, qtbot):
-    def _raise_on_show(self, *args, **kwargs):
-        raise RuntimeError('error!')
+    def raise_prepare(text):
+        def _raise_on_call(self, *args, **kwargs):
+            raise RuntimeError(text)
 
-    monkeypatch.setattr(NapariQtNotification, 'show', _raise_on_show)
-    monkeypatch.setattr(TracebackDialog, 'show', _raise_on_show)
+        return _raise_on_call
+
+    monkeypatch.setattr(
+        NapariQtNotification, 'show', raise_prepare("notification show")
+    )
+    monkeypatch.setattr(
+        TracebackDialog, 'show', raise_prepare("traceback show")
+    )
+    monkeypatch.setattr(
+        NapariQtNotification,
+        'close_with_fade',
+        raise_prepare("close_with_fade"),
+    )
 
 
 @pytest.fixture
@@ -233,6 +245,9 @@ def test_notification_error(count_show, monkeypatch):
     settings = get_settings()
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
+    monkeypatch.setattr(
+        NapariQtNotification, "close_with_fade", lambda x, y: None
+    )
     monkeypatch.setattr(
         settings.application,
         'gui_notification_level',
