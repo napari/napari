@@ -166,3 +166,26 @@ pip install snakeviz
 ```
 
 and we use `--python=same` to profile against our current python environment.
+
+## Running benchmarks on CI
+
+Benchmarking on CI has two main parts - the Benchmark Action and the Benchmark Reporting Action. 
+
+### The Benchmark Action
+
+The benchmarks are set to run:
+* On a schedule: once a week on Sunday
+* On PRs with the `run-benchmark` label
+* On workflow dispatch (manual trigger)
+
+If the benchmarks fail during the scheduled run, an issue is opened in the repo to flag the occurrence. 
+If an issue has already been opened, it will add to the existing issue. 
+
+The contender SHA is a Github PR merge commit - a fake commit not available to users.
+Every time you want the benchmark CI to run in a PR, you'll need to remove and re-add the `run-benchmark` label. 
+
+
+### Benchmark Reporting Action
+
+The benchmark Reporting Action will only run after the successful completion of the Benchmark Action.
+(regardless of comparison failures).
