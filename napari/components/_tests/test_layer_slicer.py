@@ -74,23 +74,21 @@ def layer_slicer():
 def test_slice_layers_async_with_one_async_layer(layer_slicer):
     layer = FakeAsyncLayer()
 
-    futures = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+    future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
-    for future in futures:
-        assert layer_slicer._futures[future] == layer
+    assert future.result()[layer].id == 1
 
 
 def test_slice_layers_async_with_multiple_async_layer(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
 
-    futures = layer_slicer.slice_layers_async(
+    future = layer_slicer.slice_layers_async(
         layers=[layer1, layer2], dims=Dims()
     )
 
-    layer_set = {layer1, layer2}
-    for future in futures:
-        assert layer_slicer._futures[future] in layer_set
+    assert future.result()[layer1].id == 1
+    assert future.result()[layer2].id == 1
 
 
 def test_slice_layers_async_emits_ready_event_when_done(layer_slicer):
