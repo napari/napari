@@ -38,9 +38,7 @@ class _LayerSlicer:
         # being sliced now. This allows us to slice arbitrary sets of
         # layers with some sensible and not too complex cancellation
         # policy.
-        existing_task = self._find_existing_task(layers)
-        # are the tasks unique?
-        if existing_task:
+        if existing_task := self._find_existing_task(layers):
             LOGGER.debug('Cancelling task for %s', layers)
             existing_task.cancel()
 
@@ -87,9 +85,7 @@ class _LayerSlicer:
         Release the thread.
         This is the "done_callback" which is added to each task.
         """
-        success = self._try_to_remove_task(task)
-
-        if not success:
+        if not self._try_to_remove_task(task):
             LOGGER.debug('Task not found')
             return
 
@@ -99,7 +95,7 @@ class _LayerSlicer:
         result = task.result()
         self.events.ready(Event('ready', value=result))
 
-    def _try_to_remove_task(self, task):
+    def _try_to_remove_task(self, task) -> bool:
         """Attempt to remove task, return false if task not found, return true
         if task removed from layers_to_task dict"""
         with self.lock:
@@ -111,7 +107,7 @@ class _LayerSlicer:
             del self._layers_to_task[layers]
         return True
 
-    def _find_existing_task(self, layers):
+    def _find_existing_task(self, layers) -> Optional[Future[Dict]]:
         with self.lock:
             layer_set = set(layers)
             for task_layers, task in self._layers_to_task.items():
@@ -119,4 +115,4 @@ class _LayerSlicer:
                     LOGGER.debug(f'Found existing task for {task_layers}')
                     return task
 
-            return False
+        return None
