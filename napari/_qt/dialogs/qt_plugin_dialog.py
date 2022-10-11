@@ -332,11 +332,13 @@ class PluginListItem(QFrame):
         self.v_lay.addLayout(self.row3)
 
     def _populate_version_dropdown(self, e):
-        pck = self.plugin_name.text()
+        # pck = self.plugin_name.text()
         if e == 'Conda':
-            versions = conda_package_versions(pck)
+            versions = ['v1']
+            # versions = conda_package_versions(pck)
         else:
-            versions = pypi_package_versions(pck)
+            versions = ['v1']
+            # versions = pypi_package_versions(pck)
 
         self.version_choice_dropdown.clear()
         if len(versions) > 0:
