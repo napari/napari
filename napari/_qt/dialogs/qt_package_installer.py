@@ -254,7 +254,7 @@ class CondaInstaller(AbstractInstaller):
         parent: Optional[QObject] = None,
         use_mamba: bool = True,
         channels: Optional[Sequence[str]] = None,
-        _conda_exe: Optional[os.PathLike] = None
+        _conda_exe: Optional[os.PathLike] = None,
     ) -> None:
         _bat = ".bat" if os.name == "nt" else ""
         if _conda_exe:

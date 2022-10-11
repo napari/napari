@@ -98,7 +98,9 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     # channels match configuration for tmp_conda_env above
-    installer = CondaInstaller(channels=['conda-forge'], _conda_exe=conda_exe())
+    installer = CondaInstaller(
+        channels=['conda-forge'], _conda_exe=conda_exe()
+    )
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(['typing-extensions'], prefix=tmp_conda_env)
 
