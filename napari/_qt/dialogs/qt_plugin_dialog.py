@@ -101,14 +101,12 @@ class PluginListItem(QFrame):
             self.enabled_checkbox.show()
             self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
-            # self.info_widget.hide()
             self.info_choice_wdg.hide()
             self.install_info_button.show()
         else:
             self.enabled_checkbox.hide()
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
-            # self.info_widget.hide()
             self.info_choice_wdg.show()
             self.install_info_button.hide()
             self.update_btn.setVisible(False)
@@ -205,7 +203,6 @@ class PluginListItem(QFrame):
         self.row2.setContentsMargins(-1, 4, 0, -1)
         self.summary = QElidingLabel(parent=self)
         self.summary.setWordWrap(True)
-        # print(self.summary.wordWrap())
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
         )
@@ -215,7 +212,6 @@ class PluginListItem(QFrame):
             self.summary.sizePolicy().hasHeightForWidth()
         )
         self.summary.setSizePolicy(sizePolicy)
-        # self.summary.setObjectName("small_text")
         self.row2.addWidget(self.summary, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.package_author = QLabel(self)
@@ -228,7 +224,6 @@ class PluginListItem(QFrame):
             self.package_author.sizePolicy().hasHeightForWidth()
         )
         self.package_author.setSizePolicy(sizePolicy)
-        # self.package_author.setObjectName("small_text")
         self.row2.addWidget(
             self.package_author, alignment=Qt.AlignmentFlag.AlignTop
         )
@@ -247,7 +242,6 @@ class PluginListItem(QFrame):
 
         self.info_choice_wdg = QWidget(self)
         self.info_choice_wdg.setObjectName('install_choice')
-        # self.install_label = QLabel('Installation Info')
         self.install_info_button = QCollapsible("Installation Info")
         sizePolicy = QSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.MinimumExpanding
@@ -258,10 +252,7 @@ class PluginListItem(QFrame):
             self.install_info_button.sizePolicy().hasHeightForWidth()
         )
         self.install_info_button.setSizePolicy(sizePolicy)
-        # self.install_info_button = QPushButton('Installation Info', parent=self)
-        # self.install_info_button.setProperty('show_widget', False)
         self.install_info_button.setObjectName("install_info_button")
-        # self.install_info_button.setProperty('playing', 'False')  # for styling, need to add to list
         self.source_choice_text = QLabel('Install via ')
         self.version_choice_text = QLabel('Version ')
         self.source_choice_dropdown = QComboBox()
@@ -272,14 +263,9 @@ class PluginListItem(QFrame):
         )
         self.version_choice_dropdown = QComboBox()
 
-        # self.version_choice_dropdown.addItem('v1')
-        # self.version_choice_dropdown.addItem('v2')
         self.row2.addWidget(
             self.install_info_button, alignment=Qt.AlignmentFlag.AlignTop
         )
-        # pos = self.mapToGlobal(self.install_info_button.rect().bottomLeft())
-        # self.install_info_button.move(pos)
-        # self.install_info_button.hide()
 
         info_layout = QGridLayout()
         info_layout.addWidget(self.source_choice_text, 0, 0)
@@ -292,10 +278,6 @@ class PluginListItem(QFrame):
             self.info_choice_wdg, alignment=Qt.AlignmentFlag.AlignTop
         )
         self.info_choice_wdg.hide()
-
-        # print('info', self.install_info_button.property('show_widget'))
-
-        # self.row2.addWidget(self.info_widget)
 
         self.cancel_btn = QPushButton("cancel", self)
         self.cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -310,7 +292,6 @@ class PluginListItem(QFrame):
         self.row2.addWidget(
             self.update_btn, alignment=Qt.AlignmentFlag.AlignTop
         )
-        # self.update_btn.setVisible(False)
         self.action_button = QPushButton(self)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -327,10 +308,8 @@ class PluginListItem(QFrame):
         self.v_lay.addLayout(self.row2)
 
         self.row3 = QHBoxLayout()
-        # self.setContentsMargins(1000, 0, -1,0)
 
         self.info_widget = QWidget(self)
-        # self.info_widget = QDialog(self)
 
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -338,20 +317,9 @@ class PluginListItem(QFrame):
         self.info_widget.setSizePolicy(sizePolicy)
         info_layout = QGridLayout()
         self.version_text = QLabel('Version:')
-        # self.vers_col.addWidget(self.version_text)
         self.package_name = QLabel(self)
-        # self.package_name.setAlignment(
-        #     Qt.AlignmentFlag.AlignRight
-        #     | Qt.AlignmentFlag.AlignTrailing
-        #     | Qt.AlignmentFlag.AlignVCenter
-        # )
         self.source_text = QLabel('Source:')
         self.source = QLabel('PyPi')
-        # self.source.setAlignment(
-        #     Qt.AlignmentFlag.AlignRight
-        #     | Qt.AlignmentFlag.AlignTrailing
-        #     | Qt.AlignmentFlag.AlignVCenter
-        # )
 
         info_layout.addWidget(self.version_text, 0, 0)
         info_layout.addWidget(self.package_name, 1, 0)
@@ -360,17 +328,8 @@ class PluginListItem(QFrame):
 
         self.info_widget.setLayout(info_layout)
         self.install_info_button.addWidget(self.info_widget)
-        # self.info_widget.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        # self.row3.addWidget(self.info_widget)
-        # self.info_widget.move(pos)
-        # self.info_widget.show()
-        # self.info_widget.hide()
-        # self.info_widget.resize(100, 3000)
-        # print(self.info_widget.size())
-        # self.info_widget.move(pos)
 
         self.v_lay.addLayout(self.row3)
-        # self.install_info_button.clicked.connect(self._on_show_info_xwidget)
 
     def _populate_version_dropdown(self, e):
         pck = self.plugin_name.text()
@@ -382,18 +341,6 @@ class PluginListItem(QFrame):
         self.version_choice_dropdown.clear()
         if len(versions) > 0:
             self.version_choice_dropdown.addItem(versions[0])
-        # for version in reversed(versions):
-        #     self.version_choice_dropdown.addItem(version)
-
-    # def _on_show_info_widget(self, e):
-    #     if self.install_info_button.property('show_widget'):
-    #         # if true, then need to turn off
-    #         self.install_info_button.setProperty('show_widget', False)
-    #         self.info_widget.hide()
-
-    #     else:
-    #         self.install_info_button.setProperty('show_widget', True)
-    #         self.info_widget.show()
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
