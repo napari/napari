@@ -74,6 +74,15 @@ class ShowStatus:
     show_traceback_count: int = 0
 
 
+@pytest.fixture(autouse=True)
+def raise_on_show(monkeypatch, qtbot):
+    def _raise_on_show(self, *args, **kwargs):
+        raise RuntimeError('error!')
+
+    monkeypatch.setattr(NapariQtNotification, 'show', _raise_on_show)
+    monkeypatch.setattr(TracebackDialog, 'show', _raise_on_show)
+
+
 @pytest.fixture
 def count_show(monkeypatch, qtbot):
 
