@@ -600,7 +600,11 @@ QWidget#install_choice_widget {
   font: 11px;
 }
 
-QPushButton#install_button {
+QWidget#install_button {
+  background-color: {{ foreground }}
+}
+
+QPushButton#install_choice {
   background-color: {{ current }}
 }
 

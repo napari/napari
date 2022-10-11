@@ -3,6 +3,7 @@ import re
 import sys
 from enum import Enum, auto
 from functools import partial
+import sys
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
@@ -75,6 +76,19 @@ def is_conda_package(pkg: str):
         re.match(rf"{pkg}-[^-]+-[^-]+.json", p.name)
         for p in conda_meta_dir.glob(f"{pkg}-*-*.json")
     )
+
+
+def is_conda_package(pkg):
+    conda_meta_dir = Path(sys.prefix) / 'conda-meta'
+    for fname in conda_meta_dir.iterdir():
+        if fname.suffix == '.json':
+            *name, _, _ = fname.name.rsplit('-')
+            name = "-".join(name)
+            # print('conda pcks', name)
+            if pkg == name:
+                return True
+
+    return False
 
 
 class PluginListItem(QFrame):
