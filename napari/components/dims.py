@@ -6,7 +6,7 @@ import numpy as np
 from pydantic import root_validator, validator
 
 from ..utils.events import EventedModel
-from ..utils.misc import reorder_after_dim_reduction
+from ..utils.misc import argsort, reorder_after_dim_reduction
 from ..utils.translations import trans
 
 
@@ -184,10 +184,7 @@ class Dims(EventedModel):
 
     @property
     def displayed_order(self) -> Tuple[int, ...]:
-        displayed = self.displayed
-        # equivalent to: order = np.argsort(self.displayed)
-        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
+        return tuple(argsort(self.displayed))
 
     def set_range(
         self,

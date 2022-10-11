@@ -187,14 +187,14 @@ def mouse_event_to_labels_coordinate(layer, event):
     coordinates : array of int or None
         The data coordinates for the mouse event.
     """
-    ndim = len(layer._dims_displayed)
+    ndim = len(layer._slice_input.displayed)
     if ndim == 2:
         coordinates = layer.world_to_data(event.position)
     else:  # 3d
         start, end = layer.get_ray_intersections(
             position=event.position,
             view_direction=event.view_direction,
-            dims_displayed=layer._dims_displayed,
+            dims_displayed=layer._slice_input.displayed,
             world=True,
         )
         if start is None and end is None:

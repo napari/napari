@@ -34,9 +34,15 @@ def test_display():
     dims = Dims(ndim=4)
     assert dims.order == (0, 1, 2, 3)
     assert dims.ndisplay == 2
+    assert dims.displayed == (2, 3)
+    assert dims.displayed_order == (0, 1)
+    assert dims.not_displayed == (0, 1)
 
     dims.order = (2, 3, 1, 0)
     assert dims.order == (2, 3, 1, 0)
+    assert dims.displayed == (1, 0)
+    assert dims.displayed_order == (1, 0)
+    assert dims.not_displayed == (2, 3)
 
 
 def test_order_with_init():

@@ -26,7 +26,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             self.layer.length,
         )
         face_color = self.layer._view_face_color
-        ndisplay = self.layer._ndisplay
+        ndisplay = self.layer._slice_input.ndisplay
         ndim = self.layer.ndim
 
         if len(vertices) == 0 or len(faces) == 0:

@@ -121,7 +121,8 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     # find cursor-plane intersection in data coordinates
     cursor_position = layer._world_to_displayed_data(
-        position=viewer.cursor.position, dims_displayed=layer._dims_displayed
+        position=viewer.cursor.position,
+        dims_displayed=layer._slice_input.displayed,
     )
     view_direction = layer._world_to_displayed_data_ray(
         viewer.camera.view_direction, dims_displayed=[-3, -2, -1]
@@ -131,7 +132,7 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     )
 
     # check if intersection is within data extents for displayed dimensions
-    bounding_box = layer.extent.data[:, layer._dims_displayed]
+    bounding_box = layer.extent.data[:, layer._slice_input.displayed]
 
     # update plane position
     if point_in_bounding_box(intersection, bounding_box):
@@ -139,7 +140,7 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     # update plane normal
     layer.plane.normal = layer._world_to_displayed_data_ray(
-        plane_normal, dims_displayed=layer._dims_displayed
+        plane_normal, dims_displayed=layer._slice_input.displayed
     )
 
 

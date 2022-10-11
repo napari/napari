@@ -450,7 +450,7 @@ class Shapes(Layer):
         self._allow_thumbnail_update = True
 
         self._display_order_stored = []
-        self._ndisplay_stored = self._ndisplay
+        self._ndisplay_stored = self._slice_input.ndisplay
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -467,9 +467,9 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._data_view = ShapeList(ndisplay=self._ndisplay)
+        self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
-            list(self._dims_not_displayed)
+            self._slice_input.not_displayed
         ]
 
         self._value = (None, None)
@@ -643,7 +643,7 @@ class Shapes(Layer):
                 )
             )
 
-        self._data_view = ShapeList(ndisplay=self._ndisplay)
+        self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self.add(
             data,
             shape_type=shape_type,
@@ -1534,11 +1534,12 @@ class Shapes(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+        ndisplay = self._slice_input.ndisplay
 
         # short circuit if no text present
         if self.text.values.shape == ():
             return self.text.compute_text_coords(
-                np.zeros((0, self._ndisplay)), self._ndisplay
+                np.zeros((0, ndisplay)), ndisplay
             )
 
         # get the coordinates of the vertices for the shapes in view
@@ -1548,13 +1549,11 @@ class Shapes(Layer):
 
         # get the coordinates for the dimensions being displayed
         sliced_in_view_coords = [
-            position[:, self._dims_displayed]
+            position[:, self._slice_input.displayed]
             for position in in_view_shapes_coords
         ]
 
-        return self.text.compute_text_coords(
-            sliced_in_view_coords, self._ndisplay
-        )
+        return self.text.compute_text_coords(sliced_in_view_coords, ndisplay)
 
     @property
     def _view_text_color(self) -> np.ndarray:
@@ -1618,7 +1617,7 @@ class Shapes(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._ndisplay == 3:
+            if self._slice_input.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -2191,8 +2190,8 @@ class Shapes(Layer):
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
 
-        self._display_order_stored = copy(self._dims_order)
-        self._ndisplay_stored = copy(self._ndisplay)
+        self._display_order_stored = copy(self._slice_input.order)
+        self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
 
     def _add_shapes_to_view(self, shape_inputs, data_view):
@@ -2207,8 +2206,8 @@ class Shapes(Layer):
                     d,
                     edge_width=ew,
                     z_index=z,
-                    dims_order=self._dims_order,
-                    ndisplay=self._ndisplay,
+                    dims_order=self._slice_input.order,
+                    ndisplay=self._slice_input.ndisplay,
                 ),
                 ec,
                 fc,
@@ -2249,21 +2248,22 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._ndisplay == self._ndisplay_stored:
+        ndisplay = self._slice_input.ndisplay
+        if not ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(self.ndim, self._ndisplay)
-            self._ndisplay_stored = copy(self._ndisplay)
+            self._data_view.ndisplay = min(self.ndim, ndisplay)
+            self._ndisplay_stored = ndisplay
             self._clipboard = {}
 
-        if not self._dims_order == self._display_order_stored:
+        if not self._slice_input.order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims_order)
-            self._display_order_stored = copy(self._dims_order)
+            self._data_view.update_dims_order(self._slice_input.order)
+            self._display_order_stored = copy(self._slice_input.order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
         slice_key = np.array(self._slice_indices)[
-            list(self._dims_not_displayed)
+            self._slice_input.not_displayed
         ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
@@ -2519,12 +2519,14 @@ class Shapes(Layer):
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
             de = self._extent_data
-            offset = np.array([de[0, d] for d in self._dims_displayed]) + 0.5
+            offset = (
+                np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
+            )
             # calculate range of values for the vertices and pad with 1
             # padding ensures the entire shape can be represented in the thumbnail
             # without getting clipped
             shape = np.ceil(
-                [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
+                [de[1, d] - de[0, d] + 1 for d in self._slice_input.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -2633,13 +2635,13 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._ndisplay == 3:
+        if self._slice_input.ndisplay == 3:
             return (None, None)
 
         if self._is_moving:
             return self._moving_value
 
-        coord = [position[i] for i in self._dims_displayed]
+        coord = [position[i] for i in self._slice_input.displayed]
 
         # Check selected shapes
         value = None
@@ -2861,7 +2863,7 @@ class Shapes(Layer):
             # Calculate offset based on dimension shifts
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
-                for i in self._dims_not_displayed
+                for i in self._slice_input.not_displayed
             ]
 
             self._feature_table.append(self._clipboard['features'])
@@ -2871,9 +2873,8 @@ class Shapes(Layer):
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self._dims_not_displayed] = data[
-                    :, self._dims_not_displayed
-                ] + np.array(offset)
+                not_disp = self._slice_input.not_displayed
+                data[:, not_disp] = data[:, not_disp] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]
                 edge_color = self._clipboard['edge_color'][i]

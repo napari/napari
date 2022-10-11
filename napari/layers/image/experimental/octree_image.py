@@ -361,9 +361,10 @@ class _OctreeImageBase(_ImageBase):
 
         """
         # Compute our 2D corners from the incoming n-d corner_pixels
+        displayed_sorted = sorted(self._slice_input.displayed)
         data_corners = (
             self._transforms[1:]
-            .simplified.set_slice(self._displayed_axes)
+            .simplified.set_slice(displayed_sorted)
             .inverse(corner_pixels_displayed)
         )
 
@@ -395,7 +396,7 @@ class _OctreeImageBase(_ImageBase):
         """
 
         extent = self._extent_data
-        not_disp = self._dims_not_displayed
+        not_disp = self._slice_input.not_displayed
 
         return np.any(
             np.less(
@@ -436,7 +437,7 @@ class _OctreeImageBase(_ImageBase):
 
         # TODO_OCTREE: easier way to do this?
         base_shape = multilevel_data[0].shape
-        base_shape_2d = [base_shape[i] for i in self._dims_displayed]
+        base_shape_2d = [base_shape[i] for i in self._slice_input.displayed]
 
         layer_ref = LayerRef.from_layer(self)
 

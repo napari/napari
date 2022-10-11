@@ -59,7 +59,7 @@ def create_known_points_layer_2d():
 
 @pytest.fixture
 def create_known_points_layer_3d():
-    """Create points layer with known coordinates
+    """Create 3D points layer with known coordinates displayed in 3D.
 
     Returns
     -------
@@ -76,15 +76,11 @@ def create_known_points_layer_3d():
     n_points = len(data)
 
     layer = Points(data, size=1)
-    # extra variables usually set when layer is added to viewer must be declared
-    # for certain 3D related methods.
-    # e.g. Points._display_bounding_box_augmented, Points.get_ray_intersections
-    layer._indices_view = np.array([0, 1, 2, 3])
-    layer._ndisplay = 3
+    layer._slice_dims(ndisplay=3)
 
     assert np.all(layer.data == data)
     assert layer.ndim == 3
-    assert len(layer._dims_displayed) == 3
+    assert len(layer._slice_input.displayed) == 3
     assert len(layer.data) == n_points
     assert len(layer._view_size) == n_points
     assert len(layer.selected_data) == 0

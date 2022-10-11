@@ -2157,12 +2157,12 @@ def test_world_data_extent():
 
 
 def test_set_data_3d():
-    """Test for reproduce https://github.com/napari/napari/issues/4527"""
+    """Test to reproduce https://github.com/napari/napari/issues/4527"""
     lines = [
         np.array([[0, 0, 0], [500, 0, 0]]),
         np.array([[0, 0, 0], [0, 300, 0]]),
         np.array([[0, 0, 0], [0, 0, 200]]),
     ]
     shapes = Shapes(lines, shape_type='line')
-    shapes._ndisplay = 3
+    shapes._slice_dims(ndisplay=3)
     shapes.data = lines

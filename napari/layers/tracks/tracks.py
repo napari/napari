@@ -249,9 +249,10 @@ class Tracks(Layer):
         """Sets the view given the indices to slice with."""
 
         # if the displayed dims have changed, update the shader data
-        if self._dims_displayed != self._current_displayed_dims:
+        dims_displayed = self._slice_input.displayed
+        if dims_displayed != self._current_displayed_dims:
             # store the new dims
-            self._current_displayed_dims = self._dims_displayed
+            self._current_displayed_dims = dims_displayed
             # fire the events to update the shaders
             self.events.rebuild_tracks()
             self.events.rebuild_graph()
@@ -282,9 +283,9 @@ class Tracks(Layer):
 
         if self._view_data is not None and self.track_colors is not None:
             de = self._extent_data
-            min_vals = [de[0, i] for i in self._dims_displayed]
+            min_vals = [de[0, i] for i in self._slice_input.displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self._dims_displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._slice_input.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -334,10 +335,10 @@ class Tracks(Layer):
         if vertices is None:
             return
 
-        data = vertices[:, self._dims_displayed]
+        data = vertices[:, self._slice_input.displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
-        if self._ndisplay == 2:
+        if self._slice_input.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
         else:
@@ -360,7 +361,7 @@ class Tracks(Layer):
     def use_fade(self) -> bool:
         """toggle whether we fade the tail of the track, depending on whether
         the time dimension is displayed"""
-        return 0 in self._dims_not_displayed
+        return 0 in self._slice_input.not_displayed
 
     @property
     def data(self) -> np.ndarray:

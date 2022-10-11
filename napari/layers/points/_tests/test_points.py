@@ -1733,14 +1733,10 @@ def test_view_data():
     layer = Points(coords)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([2], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
@@ -1752,14 +1748,10 @@ def test_view_size():
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([2], [1, 2])])
 
     layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
@@ -2507,10 +2499,6 @@ def test_set_drag_start():
     assert layer._drag_start is None
     position = (0, 1)
     layer._set_drag_start({0}, position=position)
-    assert all(
-        layer._drag_start[i] == position[i] for i in layer._dims_displayed
-    )
+    np.testing.assert_array_equal(layer._drag_start, position)
     layer._set_drag_start({0}, position=(1, 2))
-    assert all(
-        layer._drag_start[i] == position[i] for i in layer._dims_displayed
-    )
+    np.testing.assert_array_equal(layer._drag_start, position)

@@ -222,7 +222,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self._ndisplay))
+        self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
@@ -390,7 +390,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                         deferred=True,
                     )
                 )
-                self._data_view = np.zeros((0, self._ndisplay))
+                self._data_view = np.zeros((0, self._slice_input.ndisplay))
                 self._view_faces = np.zeros((0, 3))
                 self._view_vertex_values = []
                 return
@@ -402,24 +402,26 @@ class Surface(IntensityVisualizationMixin, Layer):
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
-                for d in np.subtract(self._dims_displayed, values_ndim)
+                for d in np.subtract(self._slice_input.displayed, values_ndim)
                 if d >= 0
             ]
             not_disp = [
                 d
-                for d in np.subtract(self._dims_not_displayed, values_ndim)
+                for d in np.subtract(
+                    self._slice_input.not_displayed, values_ndim
+                )
                 if d >= 0
             ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self._dims_not_displayed)
-            disp = list(self._dims_displayed)
+            not_disp = list(self._slice_input.not_displayed)
+            disp = list(self._slice_input.displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif vertex_ndim > self._ndisplay:
+        elif vertex_ndim > self._slice_input.ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))

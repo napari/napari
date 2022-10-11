@@ -461,7 +461,9 @@ class QtLabelsControls(QtLayerControls):
 
         disable_with_opacity(
             self,
-            widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
+            widgets_to_toggle[
+                (self.layer._slice_input.ndisplay, self.layer.editable)
+            ],
             self.layer.editable,
         )
 
@@ -475,7 +477,7 @@ class QtLabelsControls(QtLayerControls):
 
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.renderComboBox.hide()
             self.renderLabel.hide()
         else:

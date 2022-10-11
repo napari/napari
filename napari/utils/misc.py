@@ -728,9 +728,32 @@ def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
     """
     # A single argsort works for strictly increasing/decreasing orders,
     # but not for arbitrary orders.
-    return tuple(_argsort(_argsort(order)))
+    return tuple(argsort(argsort(order)))
 
 
-def _argsort(values: Sequence[int]) -> List[int]:
-    """Equivalent to :func:`numpy.argsort` but faster in some cases."""
+def argsort(values: Sequence[int]) -> List[int]:
+    """Equivalent to :func:`numpy.argsort` but faster in some cases.
+
+    Parameters
+    ----------
+    values : Sequence[int]
+        The integer values to sort.
+
+    Returns
+    -------
+    List[int]
+        The indices that when used to index the input values will produce
+        the values sorted in increasing order.
+
+    Examples
+    --------
+    >>> argsort([2, 0])
+    [1, 0]
+
+    >>> argsort([0, 1, 2])
+    [0, 1, 2]
+
+    >>> argsort([4, 0, 2])
+    [1, 2, 0]
+    """
     return sorted(range(len(values)), key=values.__getitem__)
