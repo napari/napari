@@ -129,7 +129,7 @@ def test_clean_current_path_exist(make_napari_viewer):
     [(_raise, _warn), (_threading_raise, _threading_warn)],
 )
 def test_notification_manager_via_gui(
-    qtbot, raise_func, warn_func, clean_current
+    count_show, qtbot, raise_func, warn_func, clean_current, monkeypatch
 ):
     """
     Test that the notification_manager intercepts `sys.excepthook`` and
@@ -143,6 +143,9 @@ def test_notification_manager_via_gui(
     qtbot.addWidget(warnButton)
 
     with notification_manager:
+        monkeypatch.setattr(
+            NapariQtNotification, "show_notification", lambda x: None
+        )
         for btt, expected_message in [
             (errButton, 'error!'),
             (warnButton, 'warning!'),
@@ -251,9 +254,14 @@ def test_notification_error(count_show, monkeypatch):
 
 
 @pytest.mark.sync_only
-def test_notifications_error_with_threading(make_napari_viewer, clean_current):
+def test_notifications_error_with_threading(
+    make_napari_viewer, clean_current, monkeypatch
+):
     """Test notifications of `threading` threads, using a dask example."""
     random_image = da.random.random((10, 10))
+    monkeypatch.setattr(
+        NapariQtNotification, "show_notification", lambda x: None
+    )
     with notification_manager:
         viewer = make_napari_viewer(strict_qt=False)
         viewer.add_image(random_image)
