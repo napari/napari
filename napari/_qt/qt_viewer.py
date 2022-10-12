@@ -204,6 +204,7 @@ class QtViewer(QSplitter):
         self._viewerButtons = None
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
+        self._console_backlog = None
         self._console = None
 
         self._dockLayerList = None
@@ -475,6 +476,13 @@ class QtViewer(QSplitter):
         return None
 
     @property
+    def console_backlog(self):
+        """List: items to push to console when instantiated."""
+        if self._console_backlog is None:
+            self._console_backlog = []
+        return self._console_backlog
+
+    @property
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
@@ -489,6 +497,8 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
+                    for i in self.console_backlog:
+                        self.console.push(i)
             except ModuleNotFoundError:
                 warnings.warn(
                     trans._(

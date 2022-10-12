@@ -86,6 +86,7 @@ class Viewer(ViewerModel):
             callers frame.
         """
         if self.window._qt_viewer._console is None:
+            self.window._qt_viewer.console_backlog.append(variables)
             return
         else:
             self.window._qt_viewer.console.push(variables)
