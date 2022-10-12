@@ -1,4 +1,6 @@
 from collections.abc import Collection, Generator
+from itertools import tee
+from typing import Iterable
 
 from .translations import trans
 
@@ -82,3 +84,50 @@ def validate_n_seq(n: int, dtype=None):
                     )
 
     return func
+
+
+def _pairwise(iterable: Iterable):
+    """Convert iterable to a zip object containing tuples of pairs along the
+    sequence.
+
+    Examples
+    --------
+    >>> pairwise([1, 2, 3, 4])
+    <zip at 0x10606df80>
+
+    >>> list(pairwise([1, 2, 3, 4]))
+    [(1, 2), (2, 3), (3, 4)]
+    """
+    # duplicate the iterable
+    a, b = tee(iterable)
+    # shift b by one position
+    next(b, None)
+    # create tuple pairs from the values in a and b
+    return zip(a, b)
+
+
+def _validate_increasing(values: Iterable) -> None:
+    """Ensure that values in an iterable are monotocially increasing.
+
+    Examples
+    --------
+    >>> _validate_increasing([1, 2, 3, 4])
+    None
+
+    >>> _validate_increasing([1, 4, 3, 4])
+    ValueError: Sequence [1, 4, 3, 4] must be monotonically increasing.
+
+    Raises
+    ------
+    ValueError
+        If `values` is constant or decreasing from one value to the next.
+    """
+    # convert iterable to pairwise tuples, check each tuple
+    if any(a >= b for a, b in _pairwise(values)):
+        raise ValueError(
+            trans._(
+                "Sequence {sequence} must be monotonically increasing.",
+                deferred=True,
+                sequence=values,
+            )
+        )

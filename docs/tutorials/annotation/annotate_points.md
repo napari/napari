@@ -177,7 +177,7 @@ def point_annotator(
 First, we load the movie to be annotated.
 Since behavior movies can be quite long, we will use a lazy loading strategy (i.e., we will only load the frames as they are used).
 Using [`dask-image`](https://github.com/dask/dask-image), we can construct an object that we can pass to napari for lazy loading in just one line.
-For more explanation on using dask to lazily load images in napari, see [this](https://napari.org/tutorials/applications/dask) tutorial.
+For more explanation on using dask to lazily load images in napari, see [this](../processing/dask) tutorial.
 
 ```python
 stack = imread(im_path)
