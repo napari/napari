@@ -315,7 +315,7 @@ class CondaInstaller(AbstractInstaller):
     def _get_args(
         self, *arg0, pkg_list: Sequence[str] = (), prefix: Optional[str] = None
     ):
-        cmd = [arg0, '-y', '--override-channels']
+        cmd = [*arg0, '-y', '--override-channels']
         if prefix := str(prefix or self._default_prefix):
             cmd.extend(['--prefix', prefix])
         for channel in self.channels:
