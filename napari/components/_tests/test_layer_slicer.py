@@ -6,21 +6,31 @@ import pytest
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 
-# cases to consider
-# - single + multiple layers that supports async (all of layers do support async)
-# - single + multiple layers that don't support async (all of layers do not support async)
-# - mix of layers that do and don't support async
-#
-# behaviors we want to test
-# scheduling logic of the slicer (and not correctness of the slice response value)
-#
-# - for layers that support async, the slice task should not be run on the main thread (we don't want to block the calling)
-# - for layers that do not support async, slicing should always be done once the method returns
-# - slice requests should be run on the main thread
-# - pending tasks are cancelled (at least when the new task will slice all layers for the pending task)
-#
-# run all tests with:
-# pytest napari/components/_tests/test_layer_slicer.py -svv
+"""
+Cases to consider
+- single + multiple layers that supports async (all of layers do support async)
+- single + multiple layers that don't support async (all of layers do not support async)
+- mix of layers that do and don't support async
+
+Behaviors we want to test:
+scheduling logic of the slicer (and not correctness of the slice response value)
+
+- for layers that support async, the slice task should not be run on the main
+  thread (we don't want to block the calling)
+- for layers that do not support async, slicing should always be done once
+  the method returns
+- slice requests should be run on the main thread
+- pending tasks are cancelled (at least when the new task will slice all
+  layers for the pending task)
+
+The fake request, response, and layers exist to give structure against which to
+test (class instances and attributes) and to remain isolated from the existing
+codebase. They represent what will become real classes in the codebase which
+have additional methods and properties that don't currently exist.
+
+Run all tests with:
+pytest napari/components/_tests/test_layer_slicer.py -svv
+"""
 
 
 @dataclass(frozen=True)
@@ -71,7 +81,7 @@ def layer_slicer():
     layer_slicer.shutdown()
 
 
-def test_slice_layers_async_with_one_async_layer(layer_slicer):
+def test_slice_layers_async_with_one_async_layer_no_block(layer_slicer):
     layer = FakeAsyncLayer()
 
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
@@ -79,7 +89,7 @@ def test_slice_layers_async_with_one_async_layer(layer_slicer):
     assert future.result()[layer].id == 1
 
 
-def test_slice_layers_async_with_multiple_async_layer(layer_slicer):
+def test_slice_layers_async_with_multiple_async_layer_no_block(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeAsyncLayer()
 
@@ -157,7 +167,6 @@ def test_slice_layers_async_lock_blocking(layer_slicer):
         blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not blocked.done()
 
-    assert layer.slice_count == 1
     assert blocked.result()[layer].id == 1
 
 
@@ -224,7 +233,8 @@ def test_slice_layers_async_with_multiple_async_layer_with_all_locked(
 
 
 def test_slice_layers_async_task_to_layers_lock(layer_slicer):
-    """ensure that if only one layer has a lock, the nonlocked layer can continue"""
+    """ensure that if only one layer has a lock, the non-locked layer
+    can continue"""
     dims = Dims()
     layer = FakeAsyncLayer()
 
@@ -233,5 +243,4 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
         assert task in layer_slicer._layers_to_task.values()
 
     assert task.result()[layer].id == 1
-    task_to_layers = {v: k for k, v in layer_slicer._layers_to_task.items()}
     assert task not in layer_slicer._layers_to_task
