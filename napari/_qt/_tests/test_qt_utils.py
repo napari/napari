@@ -1,5 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
-
 import pytest
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QMainWindow
@@ -106,12 +104,11 @@ def test_qt_might_be_rich_text(qtbot):
     assert not qt_might_be_rich_text("plain text")
 
 
-def test_thread_proxy_guard(monkeypatch, qapp):
+def test_thread_proxy_guard(monkeypatch, qapp, single_threaded_executor):
     class X:
         a = 1
 
     monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
-    single_threaded_executor = ThreadPoolExecutor(max_workers=1)
 
     x = X()
     x_proxy = PublicOnlyProxy(x)

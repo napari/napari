@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 import numpy as np
@@ -79,12 +78,11 @@ def test_PublicOnlyProxy(patched_root_dir):
 
 
 @pytest.mark.filterwarnings("ignore:Qt libs are available but")
-def test_thread_proxy_guard(monkeypatch):
+def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
     class X:
         a = 1
 
     monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
-    single_threaded_executor = ThreadPoolExecutor(max_workers=1)
 
     x = X()
     x_proxy = PublicOnlyProxy(x)
