@@ -180,6 +180,31 @@ def test_update_console(make_napari_viewer):
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
+def test_update_lazy_console(make_napari_viewer):
+    """Test updating the console with local variables,
+    before console is instantiated."""
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+
+    a = 4
+    b = 5
+    locs = locals()
+    viewer.update_console(locs)
+
+    # Check viewer in console
+    assert view.console.kernel_client is not None
+    assert 'viewer' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['viewer'] == viewer
+
+    assert 'a' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['a'] == a
+    assert 'b' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['b'] == b
+    for k in locs.keys():
+        del viewer.window._qt_viewer.console.shell.user_ns[k]
+
+
 def test_changing_display_surface(make_napari_viewer):
     """Test adding 3D surface and changing its display."""
     viewer = make_napari_viewer()
