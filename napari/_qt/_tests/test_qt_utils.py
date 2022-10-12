@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QMainWindow
@@ -11,6 +13,7 @@ from napari._qt.utils import (
     qt_signals_blocked,
     str_to_qbytearray,
 )
+from napari.utils._proxies import PublicOnlyProxy
 
 
 class Emitter(QObject):
@@ -101,3 +104,23 @@ def test_qt_might_be_rich_text(qtbot):
     qtbot.addWidget(widget)
     assert qt_might_be_rich_text("<b>rich text</b>")
     assert not qt_might_be_rich_text("plain text")
+
+
+def test_thread_proxy_guard(monkeypatch, qapp):
+    class X:
+        a = 1
+
+    monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+    single_threaded_executor = ThreadPoolExecutor(max_workers=1)
+
+    x = X()
+    x_proxy = PublicOnlyProxy(x)
+
+    f = single_threaded_executor.submit(x.__setattr__, 'a', 2)
+    f.result()
+    assert x.a == 2
+
+    f = single_threaded_executor.submit(x_proxy.__setattr__, 'a', 3)
+    with pytest.raises(RuntimeError):
+        f.result()
+    assert x.a == 2
