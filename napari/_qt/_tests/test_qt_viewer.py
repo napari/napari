@@ -66,8 +66,8 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 
 @skip_local_popups
-def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
-    """Test instantiating console from viewer."""
+def test_qt_viewer_console_focus(qtbot, make_napari_viewer, linux_wm):
+    """Test console has focus when instantiating from viewer."""
     viewer = make_napari_viewer(show=True)
     view = viewer.window._qt_viewer
     assert not view.console.hasFocus(), "console has focus before being shown"

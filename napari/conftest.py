@@ -39,6 +39,9 @@ except ModuleNotFoundError:
     pass
 
 import os
+import platform
+import subprocess
+import time
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
