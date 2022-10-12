@@ -277,7 +277,8 @@ class MyWidget(QWidget):
 
 If there is a particular reason that you need to use a separate window that
 inherits from `QWidget`, not `QDialog`, then you could use the `get_current_stylesheet` 
-and [`get_stylesheet`](/api/napari.qt.html#napari.qt.get_stylesheet) functions from the [`napari.qt`](/api/napari.qt.html) module.
+and {func}`get_stylesheet <napari.qt.get_stylesheet>` functions from the
+{mod}`napari.qt <napari.qt>` module.
 
 Here is a `magicgui` example (but could be easily generalised to native `qt` based widgets):
 
