@@ -78,6 +78,7 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert '_private' in dir(t)
 
 
+@pytest.mark.filterwarnings("ignore:Qt libs are available but")
 def test_thread_proxy_guard(monkeypatch):
     class X:
         a = 1
