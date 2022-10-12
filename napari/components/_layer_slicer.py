@@ -31,7 +31,7 @@ class _LayerSlicer:
         but only ONE task.
 
         A slice submitted with multiple layers will only cancel if the same tuple of layers
-        is reubmitted. If a second slice is requested with only one layer from the first
+        is resubmitted. If a second slice is requested with only one layer from the first
         slice, it will not be cancelled.
         """
         # Cancel any tasks that are slicing a subset of the layers
@@ -58,7 +58,7 @@ class _LayerSlicer:
         # create task for slicing of each request/layer
         task = self._executor.submit(self._slice_layers, requests)
 
-        # construct dict of layers to layer task
+        # store task for cancellation logic
         self._layers_to_task[tuple(requests.keys())] = task
 
         # once everything is complete, release the block

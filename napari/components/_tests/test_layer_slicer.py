@@ -114,7 +114,7 @@ def test_slice_layers_async_with_one_sync_layer(layer_slicer):
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-    assert not future.result()
+    assert future.result() == {}
 
 
 def test_slice_layers_async_with_multiple_sync_layer(layer_slicer):
@@ -145,7 +145,7 @@ def test_slice_layers_async_with_mixed_layers(layer_slicer):
     assert layer1.slice_count == 1
     assert layer2.slice_count == 1
     assert future.result()[layer1].id == 1
-    assert future.result().get(layer2, 999) == 999
+    assert layer2 not in future.result()
 
 
 def test_slice_layers_async_lock_blocking(layer_slicer):
@@ -169,7 +169,6 @@ def test_slice_layers_async_multiple_calls_cancels_pending(layer_slicer):
         blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         pending = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not pending.running()
-        assert pending._state == 'PENDING'
         layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not blocked.done()
 
@@ -231,14 +230,8 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
 
     with layer.lock:
         task = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
-        task_to_layers = {
-            v: k for k, v in layer_slicer._layers_to_task.items()
-        }
-
-        assert task_to_layers.get(task, None) == tuple(
-            [layer],
-        )
+        assert task in layer_slicer._layers_to_task.values()
 
     assert task.result()[layer].id == 1
     task_to_layers = {v: k for k, v in layer_slicer._layers_to_task.items()}
-    assert not task_to_layers.get(task, None)
+    assert task not in layer_slicer._layers_to_task
