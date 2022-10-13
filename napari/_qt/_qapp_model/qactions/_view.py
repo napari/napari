@@ -1,7 +1,7 @@
 import sys
 from typing import List
 
-from app_model.types import (  # ToggleRule,
+from app_model.types import (
     Action,
     KeyCode,
     KeyMod,
