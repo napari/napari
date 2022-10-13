@@ -12,11 +12,11 @@ We recommend using
 [pytest](https://docs.pytest.org/en/6.2.x/getting-started.html) for testing your
 plugin. Aim for [100% test coverage](./best_practices.md#how-to-check-test-coverage)!
 
-### The `make_napari_viewer` fixture
+### The `make_napari_viewer_proxy` fixture
 
 Testing a napari `Viewer` requires some setup and teardown each time.  We have
 created a [pytest fixture](https://docs.pytest.org/en/6.2.x/fixture.html) called
-`make_napari_viewer` that you can use (this requires that you have napari
+`make_napari_viewer_proxy` that you can use (this requires that you have napari
 installed in your environment).
 
 To use a fixture in pytest, you simply include the name of the fixture in the
@@ -24,10 +24,13 @@ test parameters (oddly enough, you don't need to import it!).  For example, to
 create a napari viewer for testing:
 
 ```
-def test_something_with_a_viewer(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_something_with_a_viewer(make_napari_viewer_proxy):
+    viewer = make_napari_viewer_proxy()
     ...  # carry on with your test
 ```
+
+If you embed the viewer in own application and need to access to private attributes
+you may use `make_napari_viewer` fixture.
 
 ### Prefer smaller unit tests when possible
 
