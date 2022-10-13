@@ -81,6 +81,7 @@ subtrees:
       - file: plugins/guides
       - file: plugins/test_deploy
       - file: plugins/best_practices
+      - file: plugins/debug_plugins
       - file: plugins/npe2_migration_guide
       - file: plugins/npe1
   - file: community/index
