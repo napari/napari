@@ -42,7 +42,7 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
-from ..utils.misc import in_ipython
+from ..utils.misc import in_ipython, in_jupyter
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
@@ -891,7 +891,7 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
-        if in_ipython():
+        if in_ipython() or in_jupyter():
             return
 
         # force instantiation of console if not already instantiated
