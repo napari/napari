@@ -20,7 +20,7 @@ jobs:
           owner: napari
           repo: docs
           github_token: ${{ secrets.ACTIONS_DEPLOY_DOCS }}
-          github_user: napari
+          github_user: jni
           workflow_file_name: deploy_docs.yml
           trigger_workflow: true
           wait_workflow: true
