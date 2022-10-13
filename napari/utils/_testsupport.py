@@ -262,6 +262,33 @@ def make_napari_viewer(
 
 
 @pytest.fixture
+def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
+    """Fixture that returns a function for creating a napari viewer wrapped in proxy.
+    Use in the same way like `make_napari_viewer` fixture.
+
+    Parameters
+    ----------
+    make_napari_viewer : fixture
+        The make_napari_viewer fixture.
+
+    Returns
+    -------
+    function
+        A function that creates a napari viewer.
+    """
+    from napari.utils._proxies import PublicOnlyProxy
+
+    def actual_factory(*model_args, ensure_main_thread=False, **model_kwargs):
+        monkeypatch.setenv(
+            "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
+        )
+        viewer = make_napari_viewer(*model_args, **model_kwargs)
+        return PublicOnlyProxy(viewer)
+
+    yield actual_factory
+
+
+@pytest.fixture
 def MouseEvent():
     """Create a subclass for simulating vispy mouse events.
 

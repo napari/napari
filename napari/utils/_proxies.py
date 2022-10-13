@@ -95,6 +95,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     def __setattr__(self, name: str, value: Any):
         if (
             os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", False)
+            not in ("0", "False")
             and not in_main_thread()
         ):
             raise RuntimeError(
