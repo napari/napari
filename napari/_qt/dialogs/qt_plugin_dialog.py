@@ -243,6 +243,7 @@ class PluginListItem(QFrame):
         self.info_choice_wdg = QWidget(self)
         self.info_choice_wdg.setObjectName('install_choice')
         self.install_info_button = QCollapsible("Installation Info")
+        self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         sizePolicy = QSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.MinimumExpanding
         )
@@ -268,6 +269,7 @@ class PluginListItem(QFrame):
         )
 
         info_layout = QGridLayout()
+        info_layout.setContentsMargins(0, 0, 0, 0)
         info_layout.addWidget(self.source_choice_text, 0, 0)
         info_layout.addWidget(self.source_choice_dropdown, 1, 0)
         info_layout.addWidget(self.version_choice_text, 0, 1)
@@ -307,8 +309,6 @@ class PluginListItem(QFrame):
 
         self.v_lay.addLayout(self.row2)
 
-        self.row3 = QHBoxLayout()
-
         self.info_widget = QWidget(self)
 
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -328,8 +328,6 @@ class PluginListItem(QFrame):
 
         self.info_widget.setLayout(info_layout)
         self.install_info_button.addWidget(self.info_widget)
-
-        self.v_lay.addLayout(self.row3)
 
     def _populate_version_dropdown(self, e):
         # pck = self.plugin_name.text()
