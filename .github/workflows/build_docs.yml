@@ -11,16 +11,16 @@ on:
 
 jobs:
   build-napari-docs:
-    name: Build docs on napari/napari-docs
+    name: Build docs on napari/docs
     runs-on: ubuntu-latest
     steps:
       - name: Trigger workflow and wait
         uses: convictional/trigger-workflow-and-wait@v1.6.1
         with:
-          owner: melissawm
-          repo: napari-docs
+          owner: napari
+          repo: docs
           github_token: ${{ secrets.DEPLOY_DOCS }}
-          github_user: melissawm
+          github_user: napari
           workflow_file_name: deploy_docs.yml
           trigger_workflow: true
           wait_workflow: true
