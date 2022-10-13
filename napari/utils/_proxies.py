@@ -61,6 +61,16 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             stacklevel=3,
         )
 
+        # This is code prepared for a moment where we want to block access to private attributes
+        # raise AttributeError(
+        #     trans._(
+        #         "Private attribute set/access ('{typ}.{name}') not allowed in this context.",
+        #         deferred=True,
+        #         name=name,
+        #         typ=typ,
+        #     )
+        # )
+
     @staticmethod
     def _is_called_from_napari():
         """
@@ -81,15 +91,6 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
             self._private_attr_warning(name, typ)
 
-            # name = f'{type(self.__wrapped__).__name__}.{name}'
-            # raise AttributeError(
-            #     trans._(
-            #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
-            #         deferred=True,
-            #         name=name,
-            #         typ=typ,
-            #     )
-            # )
         return self.create(super().__getattr__(name))
 
     def __setattr__(self, name: str, value: Any):
@@ -99,15 +100,6 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
             typ = type(self.__wrapped__).__name__
             self._private_attr_warning(name, typ)
-
-            # raise AttributeError(
-            #     trans._(
-            #         "Private attribute set ('{typ}.{name}') not allowed in this context.",
-            #         deferred=True,
-            #         name=name,
-            #         typ=typ,
-            #     )
-            # )
 
         setattr(self.__wrapped__, name, value)
 
