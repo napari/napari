@@ -1,11 +1,10 @@
-from app_model import Application
-
 from napari import Viewer
+from napari._app_model._app import get_app
 from napari._app_model.actions._toggle_action import ViewerToggleAction
 from napari.components import ViewerModel
 
 
-def test_viewer_toggler(app: Application):
+def test_viewer_toggler():
     viewer = ViewerModel()
     action = ViewerToggleAction(
         id='some.command.id',
@@ -13,6 +12,7 @@ def test_viewer_toggler(app: Application):
         viewer_attribute='axes',
         sub_attribute='visible',
     )
+    app = get_app()
     app.register_action(action)
 
     with app.injection_store.register(providers={Viewer: lambda: viewer}):
