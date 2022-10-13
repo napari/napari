@@ -436,23 +436,26 @@ def disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
 
 
-@pytest.fixture
-def app():
-    """Prefer using this fixture for tests instead of `napari._app_model.get_app()`.
+@pytest.fixture(autouse=True)
+def _mock_app():
+    """Mock clean 'test' `NapariApplication`.
 
-    Note that this currently doesn't add all of our actions, but that could be
-    something to add here in the future.
+    This is used whenever `napari._app_model.get_app()` is called to return
+    a 'test' `NapariApplication` instead of the 'napari' `NapariApplication`.
 
-    This could (should?) also be mock.patched into the return value for
-    `napari._app_model.get_app()`.
+    Note that `NapariApplication` does not register Qt related actions or
+    providers. If this is required for a unit test,
+    `napari._qt._qapp_model.qactions.init_qactions()` should be used within
+    the test.
     """
     from app_model import Application
 
-    from napari._app_model._app import _napari_names
+    from napari._app_model._app import NapariApplication, _napari_names
 
-    app = Application("test_app", raise_synchronous_exceptions=True)
+    app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
-    try:
-        yield app
-    finally:
-        Application.destroy("test_app")
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')

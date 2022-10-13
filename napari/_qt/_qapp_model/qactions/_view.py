@@ -17,12 +17,10 @@ from ...qt_viewer import QtViewer
 
 
 def _toggle_activity_dock(window: Window):
-    print('XXXXX Running get toggle activity dock XXXXXXX')
     window._status_bar._toggle_activity_dock()
 
 
 def _get_current_activity_dock(window: Window):
-    print('XXXXX Running get current activity dock XXXXXXX')
     return window._qt_window._activity_dialog.isVisible()
 
 
