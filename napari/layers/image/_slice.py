@@ -4,20 +4,23 @@ from typing import Any, Optional, Tuple
 
 import numpy as np
 
+from napari.layers.utils._slice_input import _SliceInput
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
 
 @dataclass(frozen=True)
+class _ImageSliceResponse:
+    data: Any = field(repr=False)
+    thumbnail: Optional[Any] = field(repr=False)
+    tile_to_data: Optional[Affine] = field(repr=False)
+
+
+@dataclass(frozen=True)
 class _ImageSliceRequest:
+    dims: _SliceInput
     data: Any = field(repr=False)
     data_to_world: Affine = field(repr=False)
-    ndim: int
-    ndisplay: int
-    point: Tuple[float, ...]
-    dims_order: Tuple[int, ...]
-    dims_displayed: Tuple[int, ...] = field(repr=False)
-    dims_not_displayed: Tuple[int, ...] = field(repr=False)
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
@@ -26,13 +29,6 @@ class _ImageSliceRequest:
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
     lazy: bool = field(default=False, repr=False)
-
-
-@dataclass(frozen=True)
-class _ImageSliceResponse:
-    data: Any = field(repr=False)
-    thumbnail: Optional[Any] = field(repr=False)
-    tile_to_data: Optional[Affine] = field(repr=False)
 
 
 def _slice_image(
@@ -59,7 +55,7 @@ def _slice_image_single_scale(
 def _slice_image_multi_scale(
     request: _ImageSliceRequest, slice_indices
 ) -> _ImageSliceResponse:
-    if request.ndisplay == 3:
+    if request.dims.ndisplay == 3:
         warnings.warn(
             trans._(
                 'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
@@ -76,15 +72,15 @@ def _slice_image_multi_scale(
         level=level,
     )
 
-    scale = np.ones(request.ndim)
-    for d in request.dims_displayed:
+    scale = np.ones(request.dims.ndim)
+    for d in request.dims.displayed:
         scale[d] = request.downsample_factors[level][d]
 
     # This only needs to be a ScaleTranslate but different types
     # of transforms in a chain don't play nicely together right now.
     tile_to_data = Affine(name='tile2data', scale=scale)
-    if request.ndisplay == 2:
-        for d in request.dims_displayed:
+    if request.dims.ndisplay == 2:
+        for d in request.dims.displayed:
             indices[d] = slice(
                 request.corner_pixels[0, d],
                 request.corner_pixels[1, d],
@@ -119,7 +115,7 @@ def _slice_indices_at_level(
     *, request: _ImageSliceRequest, indices: Tuple, level: int
 ) -> np.ndarray:
     indices = np.array(indices)
-    axes = request.not_displayed
+    axes = request.dims.displayed
     ds_indices = indices[axes] / request.downsample_factors[level][axes]
     ds_indices = np.round(ds_indices.astype(float)).astype(int)
     ds_indices = np.clip(ds_indices, 0, request.level_shapes[level][axes] - 1)

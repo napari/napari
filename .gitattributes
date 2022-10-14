@@ -1,6 +1,2 @@
 napari_gui/_version.py export-subst
-*.png filter=lfs diff=lfs merge=lfs -text
-*.jpg filter=lfs diff=lfs merge=lfs -text
-*.gif filter=lfs diff=lfs merge=lfs -text
-*.webm filter=lfs diff=lfs merge=lfs -text
-napari/resources/* !filter=lfs !diff=lfs !merge=lfs -text
+
