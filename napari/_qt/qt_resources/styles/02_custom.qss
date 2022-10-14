@@ -599,6 +599,9 @@ QWidget#install_choice_widget {
   padding: 0px;
   font: 11px;
 }
+QLabel#latest_version_text {
+  background-color: {{ darken(foreground, 20) }};
+}
 
 QWidget#install_button {
   background-color: {{ foreground }}

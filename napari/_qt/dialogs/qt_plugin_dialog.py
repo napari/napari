@@ -424,6 +424,8 @@ class PluginListItem(QFrame):
             for version in versions:
                 self.version_choice_dropdown.addItem(version)
 
+        self.latest_version_text.setText(f'to {versions[0]}')
+
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
         enabled = bool(state)
