@@ -129,7 +129,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                 color = $get_data(iloc);
                 color = applyColormap(color.g);
                 if (floatNotEqual(color.a, 0) ) {
-                    // when the non-background value is reached
+                    // when the value mapped to non-transparent color is reached
                     // calculate the color (apply lighting effects)
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
