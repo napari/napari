@@ -209,7 +209,13 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_attenuation_change(self):
         if isinstance(self.node, VolumeNode):
-            self.node.attenuation = self.layer.attenuation
+            if self.node._texture.is_normalized:
+                self.node.attenuation = self.layer.attenuation
+            else:
+                crange_min, crange_max = self.layer.contrast_limits_range
+                self.node.attenuation = self.layer.attenuation / (
+                    crange_max - crange_min
+                )
 
     def _on_plane_thickness_change(self):
         if isinstance(self.node, VolumeNode):
