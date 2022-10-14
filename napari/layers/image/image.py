@@ -334,7 +334,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._data_level = 0
             self._thumbnail_level = 0
-        displayed_axes = self._displayed_axes
+        displayed_axes = self._slice_input.displayed
         self.corner_pixels[1][displayed_axes] = self.level_shapes[
             self._data_level
         ][displayed_axes]
@@ -393,13 +393,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1,) * self._ndisplay + (3,))
+            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
         else:
-            return np.zeros((1,) * self._ndisplay)
+            return np.zeros((1,) * self._slice_input.ndisplay)
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
-        order = reorder_after_dim_reduction(self._dims_displayed)
+        order = reorder_after_dim_reduction(self._slice_input.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
@@ -550,7 +550,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         return str(
             self._interpolation2d
-            if self._ndisplay == 2
+            if self._slice_input.ndisplay == 2
             else self._interpolation3d
         )
 
@@ -564,7 +564,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             category=DeprecationWarning,
             stacklevel=2,
         )
-        if self._ndisplay == 3:
+        if self._slice_input.ndisplay == 3:
             self.interpolation3d = interpolation
         else:
             if interpolation == 'bilinear':
@@ -729,7 +729,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self) -> None:
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
-        slice_indices = self._slice_indices
+        slice_indices = self._slice_input.data_indices(
+            self._data_to_world.inverse
+        )
         if self._is_slice_outside_extent(slice_indices):
             return
         self._empty = False
@@ -755,7 +757,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _is_slice_outside_extent(self, slice_indices) -> bool:
         indices = np.array(slice_indices)
-        not_disp = self._dims_not_displayed
+        not_disp = self._slice_input.not_displayed
         extent = self._extent_data
         return np.any(
             np.less(
@@ -786,7 +788,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _get_slice_data_multiscale(
         self, slice_indices
     ) -> Tuple[Any, Optional[Affine]]:
-        if self._ndisplay == 3:
+        if self._slice_input.ndisplay == 3:
             warnings.warn(
                 trans._(
                     'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
@@ -804,14 +806,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         scale = np.ones(self.ndim)
-        for d in self._dims_displayed:
+        for d in self._slice_input.displayed:
             scale[d] = self.downsample_factors[level][d]
 
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.
         tile_to_data = Affine(name='tile2data', scale=scale)
-        if self._ndisplay == 2:
-            for d in self._dims_displayed:
+        if self._slice_input.ndisplay == 2:
+            for d in self._slice_input.displayed:
                 indices[d] = slice(
                     self.corner_pixels[0, d],
                     self.corner_pixels[1, d],
@@ -844,7 +846,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self, *, indices: Tuple, level: int
     ) -> np.ndarray:
         indices = np.array(indices)
-        axes = self._dims_not_displayed
+        axes = self._slice_input.not_displayed
         ds_indices = indices[axes] / self.downsample_factors[level][axes]
         ds_indices = np.round(ds_indices.astype(float)).astype(int)
         ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
@@ -923,7 +925,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         image = self._slice.thumbnail.view
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
@@ -1008,12 +1010,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
+        dims_displayed = self._slice_input.displayed
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate
             offset = len(coord) - len(shape)
-            coord = coord[[d + offset for d in self._dims_displayed]]
+            coord = coord[[d + offset for d in dims_displayed]]
         else:
-            coord = coord[self._dims_displayed]
+            coord = coord[dims_displayed]
 
         if all(0 <= c < s for c, s in zip(coord, shape)):
             value = raw[tuple(coord)]
