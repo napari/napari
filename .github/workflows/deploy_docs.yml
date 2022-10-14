@@ -1,0 +1,22 @@
+name: Build Docs
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-napari-docs:
+    name: Build docs on napari/docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger workflow and wait
+        uses: convictional/trigger-workflow-and-wait@v1.6.1
+        with:
+          owner: napari
+          repo: docs
+          github_token: ${{ secrets.ACTIONS_DEPLOY_DOCS }}
+          workflow_file_name: deploy_docs.yml
+          trigger_workflow: true
+          wait_workflow: true
