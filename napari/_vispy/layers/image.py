@@ -186,6 +186,9 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.clim = self.layer.contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
+        # iso and attenuated_mip both also (may) depend on contrast limit values
+        self._on_iso_threshold_change()
+        self._on_attenuation_change()
 
     def _on_blending_change(self):
         super()._on_blending_change()
