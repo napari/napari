@@ -18,40 +18,28 @@ class _LayerSlicer:
     submit it (synchronously or asynchronously) to a thread pool, and emit the
     results when complete.
 
-    Attributes
-    ----------
-    events : napari.utils.events.event.EmitterGroup
-        vispy event emitter
-    _executor : concurrent.futures.ThreadPoolExecutor
-        manager for the slicing threading
-    _layers_to_task : dict
-        task storage for cancellation logic
-    lock_layers_to_task : threading.RLock
-        lock to guard against changes to `_layers_to_task` when finding or
-        removing tasks.
-
-    Methods
-    -------
-    slice_layers_async:
-        creates the slice and submits it to be executes
-    shutdown:
-        shutdown the executor on this class. Should only be called when the
-        class is no longer being used
-    _slice_layers:
-        convert request objects to slices
-    _on_slice_done:
-        callback executed when slicing future is complete
-    _try_to_remove_task:
-        utility function to remove a task from `_layers_to_task`
-    _find_existing_task:
-        utility function to find a task in `_layers_to_task`
+    Events
+    ------
+    ready (value: T)
+        emitted after slicing is done
     """
 
     def __init__(self):
+        """
+        Attributes
+        ----------
+        _executor : concurrent.futures.ThreadPoolExecutor
+            manager for the slicing threading
+        _layers_to_task : dict
+            task storage for cancellation logic
+        _lock_layers_to_task : threading.RLock
+            lock to guard against changes to `_layers_to_task` when finding,
+            adding, or removing tasks.
+        """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
-        self.lock_layers_to_task = RLock()
+        self._lock_layers_to_task = RLock()
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
@@ -127,7 +115,7 @@ class _LayerSlicer:
     def _try_to_remove_task(self, task) -> bool:
         """Attempt to remove task, return false if task not found, return true
         if task removed from layers_to_task dict"""
-        with self.lock_layers_to_task:
+        with self._lock_layers_to_task:
             layers = None
             for k_layers, v_task in self._layers_to_task.items():
                 if v_task == task:
@@ -140,7 +128,7 @@ class _LayerSlicer:
         return True
 
     def _find_existing_task(self, layers) -> Optional[Future[Dict]]:
-        with self.lock_layers_to_task:
+        with self._lock_layers_to_task:
             layer_set = set(layers)
             for task_layers, task in self._layers_to_task.items():
                 if set(task_layers).issubset(layer_set):
