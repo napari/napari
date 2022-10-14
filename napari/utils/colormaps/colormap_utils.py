@@ -286,9 +286,11 @@ def color_dict_to_colormap(colors):
         for color, control_point in zip(colormap.colors, colormap.controls)
     }
 
-    control_small_delta = 0.5 / len(control_colors)
+    # control_small_delta = 0.5 / len(control_colors)
     label_color_index = {
-        label: np.float32(control2index[tuple(color)] + control_small_delta)
+        label: np.float32(
+            control2index[tuple(color)]
+        )  # + control_small_delta)
         for label, color in colors.items()
     }
 
