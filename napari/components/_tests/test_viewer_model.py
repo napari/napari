@@ -905,3 +905,24 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
         ReaderPluginError, match='Tried opening with napari, but failed.'
     ):
         viewer._open_or_raise_error([str(pth)])
+
+
+def test_slice_order_with_mixed_dims():
+    viewer = ViewerModel(ndisplay=2)
+    image_2d = viewer.add_image(np.zeros((4, 5)))
+    image_3d = viewer.add_image(np.zeros((3, 4, 5)))
+    image_4d = viewer.add_image(np.zeros((2, 3, 4, 5)))
+
+    # With standard ordering, the shapes of the slices match,
+    # so are trivially numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (4, 5)
+    assert image_4d._slice.image.view.shape == (4, 5)
+
+    viewer.dims.order = (2, 1, 0, 3)
+
+    # With non-standard ordering, the shapes of the slices do not match,
+    # and are not numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (3, 5)
+    assert image_4d._slice.image.view.shape == (2, 5)
