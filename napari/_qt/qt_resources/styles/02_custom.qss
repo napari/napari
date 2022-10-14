@@ -579,6 +579,9 @@ QCollapsible#install_info_button {
 QWidget#install_choice_widget {
   background-color: {{ darken(foreground, 20) }};
 }
+QLabel#latest_version_text {
+  background-color: {{ darken(foreground, 20) }};
+}
 
 QWidget#install_button {
   background-color: {{ foreground }}

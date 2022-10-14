@@ -203,9 +203,15 @@ class PluginListItem(QFrame):
         self.row2.setContentsMargins(-1, 4, 0, -1)
         self.summary = QElidingLabel(parent=self)
         self.summary.setWordWrap(True)
-        sizePolicy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
-        )
+        dlg_width = self.parent().parent().sizeHint().width()
+        self.summary.setFixedWidth(dlg_width)
+
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+
+        # print(dlg_size)
+
+        # self.summary.resize(dlg_width*.3, dlg_height)
+        # self.summary.resiz
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
@@ -242,7 +248,7 @@ class PluginListItem(QFrame):
 
         self.info_choice_wdg = QWidget(self)
         self.info_choice_wdg.setObjectName('install_choice')
-        self.install_info_button = QCollapsible("Installation Info")
+        self.install_info_button = superQCollapsible("Installation Info")
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         sizePolicy = QSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.MinimumExpanding
@@ -254,6 +260,7 @@ class PluginListItem(QFrame):
         )
         self.install_info_button.setSizePolicy(sizePolicy)
         self.install_info_button.setObjectName("install_info_button")
+        # self.install_info_button.toggled.connect(self._resize_pluginlistitem)
         self.source_choice_text = QLabel('Install via ')
         self.version_choice_text = QLabel('Version ')
         self.source_choice_dropdown = QComboBox()
@@ -288,11 +295,18 @@ class PluginListItem(QFrame):
             self.cancel_btn, alignment=Qt.AlignmentFlag.AlignTop
         )
 
+        self.update_wdg = QWidget()
+        update_layout = QVBoxLayout()
+        update_layout.setContentsMargins(0, 0, 0, 0)
         self.update_btn = QPushButton('Update', self)
         self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.update_btn.setObjectName("install_button")
+        self.latest_version_text = QLabel()
+        update_layout.addWidget(self.update_btn)
+        update_layout.addWidget(self.latest_version_text)
+        self.update_wdg.setLayout(update_layout)
         self.row2.addWidget(
-            self.update_btn, alignment=Qt.AlignmentFlag.AlignTop
+            self.update_wdg, alignment=Qt.AlignmentFlag.AlignTop
         )
         self.action_button = QPushButton(self)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -341,6 +355,8 @@ class PluginListItem(QFrame):
         self.version_choice_dropdown.clear()
         if len(versions) > 0:
             self.version_choice_dropdown.addItem(versions[0])
+
+        self.latest_version_text.setText(f'to {versions[0]}')
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
@@ -448,8 +464,16 @@ class QPluginList(QListWidget):
                 self.handle_action, item, pkg_name, InstallerActions.CANCEL
             )
         )
+
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
+        widg.install_info_button.toggled.connect(
+            lambda: self._resize_pluginlistitem(item)
+        )
+
+    def _resize_pluginlistitem(self, item):
+        item.setSizeHint(item.widget.sizeHint())
+        self.setItemWidget(item, item.widget)
 
     def handle_action(
         self,
