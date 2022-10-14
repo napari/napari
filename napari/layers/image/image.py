@@ -488,7 +488,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.refresh()
 
     @property
-    def level_shapes(self):
+    def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the multiscale or just of image."""
         shapes = self.data.shapes if self.multiscale else [self.data.shape]
         if self.rgb:
@@ -496,7 +496,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def downsample_factors(self):
+    def downsample_factors(self) -> np.ndarray:
         """list: Downsample factors for each level of the multiscale."""
         return np.divide(self.level_shapes[0], self.level_shapes)
 
@@ -732,7 +732,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         slice_indices = self._slice_input.data_indices(
             self._data_to_world.inverse
         )
-        if self._is_slice_outside_extent(slice_indices):
+        if self._slice_input.data_indices_out_of_bounds(
+            indices=slice_indices, data_shape=self._extent_data[1]
+        ):
             return
         self._empty = False
 
@@ -754,22 +756,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._should_calc_clims = False
         elif self._keep_auto_contrast:
             self.reset_contrast_limits()
-
-    def _is_slice_outside_extent(self, slice_indices) -> bool:
-        indices = np.array(slice_indices)
-        not_disp = self._slice_input.not_displayed
-        extent = self._extent_data
-        return np.any(
-            np.less(
-                [indices[ax] for ax in not_disp],
-                [extent[0, ax] for ax in not_disp],
-            )
-        ) or np.any(
-            np.greater_equal(
-                [indices[ax] for ax in not_disp],
-                [extent[1, ax] for ax in not_disp],
-            )
-        )
 
     def _get_slice_data(self, slice_indices) -> Tuple[Any, Optional[Affine]]:
         image = self.data[slice_indices]
@@ -800,14 +786,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             level = self.data_level
 
-        indices = self._slice_indices_at_level(
+        downsample_factors = self.downsample_factors
+        downsampled_shapes = self.level_shapes
+        indices = self._slice_input.data_indices_to_downsampled_level(
             indices=slice_indices,
-            level=level,
+            downsample_factors=downsample_factors[level],
+            downsampled_shapes=downsampled_shapes[level],
         )
 
         scale = np.ones(self.ndim)
         for d in self._slice_input.displayed:
-            scale[d] = self.downsample_factors[level][d]
+            scale[d] = downsample_factors[level][d]
 
         # This only needs to be a ScaleTranslate but different types
         # of transforms in a chain don't play nicely together right now.
@@ -824,9 +813,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # not in here too?
             tile_to_data.translate = self.corner_pixels[0] * tile_to_data.scale
 
-        thumbnail_indices = self._slice_indices_at_level(
-            indices=slice_indices,
-            level=self._thumbnail_level,
+        thumbnail_indices = (
+            self._slice_input.data_indices_to_downsampled_level(
+                indices=slice_indices,
+                downsample_factors=downsample_factors[self._thumbnail_level],
+                downsampled_shape=downsampled_shapes[self._thumbnail_level],
+            )
         )
 
         # Don't materialize yet to avoid breaking experimental async.
@@ -841,17 +833,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         return slice_data, tile_to_data
-
-    def _slice_indices_at_level(
-        self, *, indices: Tuple, level: int
-    ) -> np.ndarray:
-        indices = np.array(indices)
-        axes = self._slice_input.not_displayed
-        ds_indices = indices[axes] / self.downsample_factors[level][axes]
-        ds_indices = np.round(ds_indices.astype(float)).astype(int)
-        ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
-        indices[axes] = ds_indices
-        return indices
 
     @property
     def _SliceDataClass(self):

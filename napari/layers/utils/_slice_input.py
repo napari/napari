@@ -90,6 +90,20 @@ class _SliceInput:
 
         return tuple(indices)
 
+    def data_indices_to_downsampled_level(
+        self,
+        *,
+        indices: np.ndarray,
+        downsample_factors: np.ndarray,
+        downsampled_shape: np.ndarray,
+    ) -> np.ndarray:
+        axes = self.not_displayed
+        ds_indices = indices[axes] / downsample_factors[axes]
+        ds_indices = np.round(ds_indices.astype(float)).astype(int)
+        ds_indices = np.clip(ds_indices, 0, downsampled_shape[axes] - 1)
+        indices[axes] = ds_indices
+        return indices
+
     def is_orthogonal(self, world_to_data: Affine) -> bool:
         """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""
         # Subspace spanned by non displayed dimensions
@@ -109,3 +123,15 @@ class _SliceInput:
         )
         # Check that displayed subspace is null
         return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
+
+    def data_indices_out_of_bounds(
+        self,
+        *,
+        indices: np.ndarray,
+        data_shape: Tuple[int, ...],
+    ) -> bool:
+        """Returns True if the given indices are out of bounds of the given shape in the dimensions not displayed by this slice, False otherwise."""
+        for d in self.not_displayed:
+            if (indices[d] < 0) or (indices[d] > data_shape[d]):
+                return True
+        return False
