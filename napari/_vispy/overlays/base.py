@@ -6,7 +6,7 @@ from ...utils.translations import trans
 
 
 class VispyBaseOverlay:
-    def __init__(self, *, overlay, node, parent):
+    def __init__(self, *, overlay, node, parent=None):
         super().__init__()
         self.overlay = overlay
 

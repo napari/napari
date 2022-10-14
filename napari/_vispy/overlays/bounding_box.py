@@ -17,13 +17,15 @@ class VispyBoundingBoxOverlay(VispyLayerOverlay):
         self.overlay.events.point_color.connect(self._on_point_color_change)
 
     def _on_bounds_change(self):
-        bounds = self.layer._display_bounding_box(self.layer._dims_displayed)
+        bounds = self.layer._display_bounding_box(
+            self.layer._slice_input.displayed
+        )
         # invert for vispy
         self.node.set_bounds(bounds[::-1])
         self._on_lines_change()
 
     def _on_lines_change(self):
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.node.line2d.visible = self.overlay.lines
             self.node.line3d.visible = False
         else:
