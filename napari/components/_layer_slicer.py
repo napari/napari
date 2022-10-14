@@ -21,7 +21,7 @@ class _LayerSlicer:
     Events
     ------
     ready
-        emitted after slicing is done with a dict value that maps from layer to slice response 
+        emitted after slicing is done with a dict value that maps from layer to slice response
     """
 
     def __init__(self):
