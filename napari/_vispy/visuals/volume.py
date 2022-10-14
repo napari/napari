@@ -131,7 +131,6 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                 if (floatNotEqual(color.a, 0) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
-                    // color = applyColormap(color.g);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
 
