@@ -240,7 +240,7 @@ def make_napari_viewer(
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
+        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
             msg = f"""The following Widgets leaked!: {leak}.
@@ -278,12 +278,17 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     """
     from napari.utils._proxies import PublicOnlyProxy
 
+    proxies = []
+
     def actual_factory(*model_args, ensure_main_thread=False, **model_kwargs):
         monkeypatch.setenv(
             "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
         )
         viewer = make_napari_viewer(*model_args, **model_kwargs)
-        return PublicOnlyProxy(viewer)
+        proxies.append(PublicOnlyProxy(viewer))
+        return proxies[-1]
+
+    proxies.clear()
 
     yield actual_factory
 
