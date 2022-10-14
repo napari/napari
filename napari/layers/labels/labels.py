@@ -633,11 +633,6 @@ class Labels(_ImageBase):
                 self.color
             )
             super()._set_colormap(custom_colormap)
-            if (
-                self._background_label in label_color_index
-                and self._color[self._background_label][-1] == 0
-            ):
-                label_color_index[self._background_label] = 0
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}

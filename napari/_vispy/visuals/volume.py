@@ -127,10 +127,11 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $get_data(iloc);
-                if (floatNotEqual(color.g, categorical_bg_value) ) {
+                color = applyColormap(color.g);
+                if (floatNotEqual(color.a, 0) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
-                    color = applyColormap(color.g);
+                    // color = applyColormap(color.g);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
 
