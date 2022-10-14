@@ -292,9 +292,6 @@ def color_dict_to_colormap(colors):
         for label, color in colors.items()
     }
 
-    if 0 in label_color_index:
-        label_color_index[0] = 0.0
-
     return colormap, label_color_index
 
 
