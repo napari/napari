@@ -47,7 +47,7 @@ import napari
 viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![napari viewer showing an image of an astronaut.](resources/screenshot-add-image.png)
+![napari viewer showing an image of an astronaut.](https://github.com/napari/docs/blob/main/docs/images/screenshot-add-image.png)
 
 To use napari from inside a script, use `napari.run()`:
 
