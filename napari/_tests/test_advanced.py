@@ -197,6 +197,9 @@ def test_update_lazy_console(make_napari_viewer):
     assert 'viewer' in view.console.shell.user_ns
     assert view.console.shell.user_ns['viewer'] == viewer
 
+    # Check backlog is cleared
+    assert len(view.console_backlog) == 0
+
     assert 'a' in view.console.shell.user_ns
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns

@@ -499,6 +499,7 @@ class QtViewer(QSplitter):
                     )
                     for i in self.console_backlog:
                         self.console.push(i)
+                    self._console_backlog = None
             except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
