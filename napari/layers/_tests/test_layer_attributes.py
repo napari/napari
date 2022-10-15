@@ -136,8 +136,8 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
     _check_subpixel_values(layer, val_dict)
 
 
-@pytest.mark.parametrize('Layer, data', layer_test_data)
-def test_layer_id(Layer, data):
+@pytest.mark.parametrize('Layer, data, _', layer_test_data)
+def test_layer_id(Layer, data, _):
     layer = Layer(data)
     assert layer.id is not None
     assert type(layer.id) is uuid.uuid4
