@@ -438,14 +438,17 @@ def disable_notification_dismiss_timer(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _mock_app():
-    """Mock clean 'test' `NapariApplication`.
+    """Mock clean 'test_app' `NapariApplication` instance.
 
     This is used whenever `napari._app_model.get_app()` is called to return
-    a 'test' `NapariApplication` instead of the 'napari' `NapariApplication`.
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`.
 
-    Note that `NapariApplication` does not register Qt related actions or
-    providers. If this is required for a unit test,
-    `napari._qt._qapp_model.qactions.init_qactions()` should be used within
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers. If this is required for a unit test,
+    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
     the test.
     """
     from app_model import Application
