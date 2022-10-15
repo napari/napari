@@ -19,7 +19,7 @@ viewer = napari.Viewer()
 
 # add the image
 photographer = data.camera()
-image_layer = napari.view_image(photographer, name='photographer')
+image_layer = viewer.add_image(photographer, name='photographer')
 
 # create a list of polygons
 polygons = [
@@ -79,3 +79,4 @@ viewer.update_console(locals())
 
 if __name__ == '__main__':
     napari.run()
+    print(shapes_layer.data)
