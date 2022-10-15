@@ -1,4 +1,5 @@
 import uuid
+
 import numpy as np
 import pytest
 
@@ -134,16 +135,19 @@ def test_get_value_3d_view_of_2d_image(ImageClass):
     }
     _check_subpixel_values(layer, val_dict)
 
+
 @pytest.mark.parametrize('Layer, data', layer_test_data)
 def test_layer_id(Layer, data):
     layer = Layer(data)
     assert layer.id is not None
     assert type(layer.id) is uuid.uuid4
 
+
 def test_layer_id_unique():
     layer1 = Image(np.random.rand(10, 10))
     layer2 = Labels(np.ones((10, 10)))
     assert layer1.id != layer2.id
+
 
 def test_zero_scale_layer():
     with pytest.raises(ValueError, match='scale values of 0'):
