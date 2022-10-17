@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+          cache-dependency-path: setup.cfg
       - name: Check Manifest
         run: |
           pip install --upgrade pip
@@ -96,6 +97,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: "pip"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -159,6 +161,7 @@ jobs:
         with:
           python-version: 3.9
           cache: "pip"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -182,6 +185,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
       - uses: tlambert03/setup-qt-libs@v1
       - name: Install this commit
         run: |

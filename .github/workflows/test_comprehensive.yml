@@ -72,6 +72,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: "pip"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -139,6 +140,7 @@ jobs:
         with:
           python-version: 3.9
           cache: "pip"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
