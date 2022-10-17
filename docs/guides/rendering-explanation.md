@@ -90,7 +90,7 @@ we cannot load data into VRAM in the background. Therefore to prevent
 hurting the framerate we need to budget how much time is spent copying data
 into VRAM, we can only do it for a few milliseconds per frame.
 
-![paging-chunks ](images/paging-chunks.png)
+![A diagram that shows how chunks of data are loaded from storage into RAM then VRAM. Each chunk is a row in a table. Each column represents a memory store or processing context. Paging and compute threads are used to load data from storage to RAM. The GUI thread is used to load data from RAM to VRAM. A subset of the rows are highlighted to show the working set of memory.](images/paging-chunks.png)
 
 ## Chunks
 

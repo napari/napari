@@ -143,7 +143,7 @@ napari
 
 An empty napari viewer should appear as follows.
 
-![image: An empty napari viewer ](../assets/tutorials/launch_cli_empty.png)
+![macOS desktop with a napari viewer window without any image opened in the foreground, and a terminal in the background with the appropriate conda environment activated (if applicable) and the command to open napari entered.](../assets/tutorials/launch_cli_empty.png)
 
 ## Choosing a different Qt backend
 
@@ -190,7 +190,7 @@ are interested in and expand the `assets` tab to get a view that looks like
 this:
 
 ![image: release bundle
-assets ](../assets/tutorials/installation/bundle_assets.png)
+[Cropped screenshot from GitHub with the Assets section (or "tab") expanded, containing links to download the app in the form of zip files for Linux, macOS, Windows, in addition to other links.](../assets/tutorials/installation/bundle_assets.png)
 
 You can then download the appropriate zip file for your platform.
 
@@ -203,14 +203,14 @@ window giving you the option to install napari into your `Applications` folder
 by dragging the `napari` icon onto the `Applications` icon.
 
 ![image: MacOS install to
-Applications ](../assets/tutorials/installation/bundle_install.png)
+![Finder window of the napari bundle dmg file, containing the napari app icon and a shortcut icon to the Applications folder.](../assets/tutorials/installation/bundle_install.png)
 
 After you drag the `napari` icon onto the `Applications` icon napari will be
 installed in your Applications folder and available for opening by double
 clicking on it.
 
 ![image: MacOS Applications folder with
-napari ](../assets/tutorials/installation/bundle_applications_folder.png)
+![Finder window of the Applications folder containing the napari app.](../assets/tutorials/installation/bundle_applications_folder.png)
 
 The first time you try and open napari you will get the "unverified developer
 warning" that appears below:

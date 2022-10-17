@@ -220,7 +220,7 @@ Out[15]: False
 But unlike a simple string, they can also provide type hinting, linting
 capabilities, and IDE autocompletion (for napari developers).
 
-![context_types ](images/context_type_hint.png)
+![An IDE showing a type hint for an attribute of the LayerListContextKeys class.](images/context_type_hint.png)
 
 A record of all registered context keys can be retrieved with the class method
 `ContextKey.info()`

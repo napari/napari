@@ -5,12 +5,12 @@
 ## Coordinate systems in napari
 In napari, there are three main coordinate systems: (1) canvas, (2) world, and (3) layer. The canvas coordinates system is the 2D coordinate system of the canvas on which the scene is rendered. World coordinates are the nD coordinates of the entire scene. As the name suggests, layer coordinates are the nD coordinate system of the data in a given layer. Layer coordinates are specific to each layer's data and are related to the world coordinate system via the layer transforms.
 
-![coordinate-systems ](images/3d_interaction_coordianates.png)
+![A diagram of the coordinate systems and components involved when interacting with layers in napari. The camera faces the 3D scene to generate a 2D image that is presented on the canvas.](images/3d_interaction_coordianates.png)
 
 ## In 3D mode, clicks are lines
 Since the 3D scene is rendered on a 2D surface (your screen), your mouse click does not map to a specific point in space. As the view is a [parallel projection](https://en.wikipedia.org/wiki/Parallel_projection), napari can determine a line through 3D space that intersects the canvas where the user clicked.
 
-![click-line ](images/3d_interaction_click_line.png)
+![A diagram that shows how clicking on a 2D position on the canvas corresponds to a 3D click line in the scene that starts from the 3D camera position.](images/3d_interaction_click_line.png)
 
 When a user clicks or moves the mouse in the canvas, napari emits a mouse event with the following properties:
 
@@ -25,7 +25,7 @@ When a user clicks or moves the mouse in the canvas, napari emits a mouse event 
 ## Determining where the click intersects the data
 Each napari layer has a method called `get_ray_intersections()` that will return the points on the data bounding box that a given line will intersect (`start_point ` and `end_point `). When the click line (`view_direction`) and position (`position`) are used as inputs, `start_point` and `end_point` are the end points of the segment click line that intersects the layer's axis-alinged data bounding box. `start_point` is the end point that is closest to the camera (i.e, the "first" intersection) and `end_point` is the end point that is farthest from the camera (i.e., the "last" intersection). You can use the line segment between `start_point` and `end_point` to interrogate the layer data that is "under" your cursor.
 
-![click-intersection ](images/3d_interaction_ray_intersection.png)
+![A diagram that shows how the 3D click line starting from the camera position intersects with the 3D bounding box associated with a layer's data. There are two intersection points. A start point, which is the first intersection point, and the end point which is the second.](images/3d_interaction_ray_intersection.png)
 
 See the `get_ray_intersection()` docstrings below for details. Note that if the line does not intersect the data bounding box (i.e., the click was outside of the data), `start_point` and `end_point` are `None`. The `position` and `view_direction` should be provided as world coordinates if `world` is set to True and in layer coordinates if `world` is set to `False`.
 

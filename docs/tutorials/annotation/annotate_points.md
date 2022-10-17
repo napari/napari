@@ -15,7 +15,7 @@ point_annotator(im_path, labels=['ear_l', 'ear_r', 'tail'])
 
 The resulting viewer looks like this (images from [Mathis et al., 2018](https://www.nature.com/articles/s41593-018-0209-y), downloaded from [here](https://github.com/DeepLabCut/DeepLabCut/tree/f21321ef8060c537f9df0ce9346189bda07701b5/examples/openfield-Pranav-2018-10-30/labeled-data/m4s1)):
 
-![image: point annotator demo ](../assets/tutorials/point_annotator_demo.webm)
+![Demo of point annotator shows user adding keypoint labels to a video of a mouse, frame by frame. The user navigates the viewer mostly with keyboard shortcuts, and uses the computer mouse to click on keypoints like the mouse's ears and tail.](../assets/tutorials/point_annotator_demo.webm)
 
 You can explore the project in [this repository](https://github.com/kevinyamauchi/PointAnnotator) or check out the main function below.
 We will walk through the code in the following sections.
@@ -417,7 +417,7 @@ Once we are happy with the annotations, we can save them to a CSV file using the
 To do so, first, select the "Points" layer in the layer list and then click "Save Selected layer(s)"  in the "File" menu or press control+S (cmd+S on Mac OS)  to bring up the file save dialog.
 From here you can enter the file path and save the annotation coordinates as a CSV.
 
-![image: points save dialog ](../assets/tutorials/points_save_dialog.png)
+![Viewer with green box around a points layer in layer list. Label in green says "1. Select Points layer in the layer list". Dialog in the middle of the viewer has options to add save file name and choose save location, with Cancel and Save buttons in the bottom right.](../assets/tutorials/points_save_dialog.png)
 
 Alternatively, we can use the `points_layer.save()` method to save the coordinates from the points layer to a CSV file.
 We can enter the command either in the script (e.g., bind a save function to a hot key) or the napari terminal.

@@ -23,9 +23,9 @@ directly from within napari:
 
 1. From the “Plugins” menu, select “Install/Uninstall Plugins...”.
 
-   ![napari viewer's Plugins menu with Install/Uninstall Plugins as thr first item. ](/images/plugin-menu.png)
+   ![napari viewer's Plugins menu with Install/Uninstall Plugins as the first item. ](/images/plugin-menu.png)
 
-2. In the resulting window that opens, where it says “Install by name/URL”,
+2. In the Plugin dialog that opens, where it says “Install by name/URL”,
     enter the name of the plugin you want to install (or *any* valid pip
     [requirement
     specifier](https://pip.pypa.io/en/stable/reference/requirement-specifiers/)
