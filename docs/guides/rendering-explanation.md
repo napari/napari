@@ -140,7 +140,7 @@ memory inside a chunked file format like
 Dask. The purpose of a chunked file format is to spatially organize the
 data so that one chunk can be read with one single read operation.
 
-![chunked-format ](images/chunked-format.png)
+![chunked-format](images/chunked-format.png)
 
 For 2D images "chunks" are 2D tiles. For 3D images the chunks are 3D
 sub-volumes.
@@ -181,7 +181,7 @@ through the paged layers quickly, and then pause a bit to allow the
 computed layer to load in. Asynchronous rendering greatly improves the
 user's experience in this case.
 
-![example-1320 ](images/example-1320.png)
+![example-1320](images/example-1320.png)
 
 ## Octree
 
@@ -198,7 +198,7 @@ An Octree is a hierarchical spatial subdivision datastructure. See Apple's
 nice [illustration of an
 octree](https://developer.apple.com/documentation/gameplaykit/gkoctree):
 
-![octree ](images/octree.png)
+![octree](images/octree.png)
 
 Each level of the Octree contains a depiction of the entire dataset, but at
 a different level of detail. In napari we call the data at full resolution

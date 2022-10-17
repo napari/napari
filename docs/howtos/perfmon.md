@@ -161,7 +161,7 @@ at the **performance** widget, it should show that some events took over
 100ms. The **performance** widget is just to give you a quick idea of what
 is running slow:
 
-![example widget output ](https://user-images.githubusercontent.com/4163446/94198620-898c4c00-fe85-11ea-8769-83f52c0a1aad.png)
+![example widget output](https://user-images.githubusercontent.com/4163446/94198620-898c4c00-fe85-11ea-8769-83f52c0a1aad.png)
 
 The trace file will give you much more information than the **performance**
 widget. Exit napari using the **Quit** command so that it writes the trace
@@ -179,7 +179,7 @@ Press the `AD` keys to move left and right, and press the `WS` keys to zoom
 in or out. Both the `MouseButtonPress` and `MouseMove` events are slow. In
 the lower pane the `Wall Duration` field says it took over 100ms:
 
-![example chrome output ](https://user-images.githubusercontent.com/4163446/94200256-1fc17180-fe88-11ea-9935-bef4f818407d.png)
+![example chrome output](https://user-images.githubusercontent.com/4163446/94200256-1fc17180-fe88-11ea-9935-bef4f818407d.png)
 
 So we can see that some events are running slow. The next questions is
 why are `MouseButtonPress` and `MouseMove` running slow? To answer this
@@ -224,7 +224,7 @@ for most of the time. After clicking on the event press the `m` key, that
 will highlight the event duration with arrows and print the duration right
 on the timeline, in this case it says the event took 106.597ms:
 
-![highlighted event duration showing Labels.paint took 106.597ms to run ](https://user-images.githubusercontent.com/4163446/94201049-66fc3200-fe89-11ea-9720-6a7ff3c7361a.png)
+![highlighted event duration showing Labels.paint took 106.597ms to run](https://user-images.githubusercontent.com/4163446/94201049-66fc3200-fe89-11ea-9720-6a7ff3c7361a.png)
 
 When investigating a real problem we might have to add many functions to
 the config file. It's best to add timers that take a lot of time. If you

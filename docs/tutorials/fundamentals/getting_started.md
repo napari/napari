@@ -30,7 +30,7 @@ napari
 
 This command will launch an empty viewer:
 
-![image: an empty napari viewer ](../assets/tutorials/launch_cli_empty.png)
+![image: an empty napari viewer](../assets/tutorials/launch_cli_empty.png)
 
 Once you have the viewer open you can add images through the `File/Open` dropdown menu
 or by dragging and dropping images directly on the viewer.
@@ -47,7 +47,7 @@ napari my_image.png
 
 If the image is `RGB` or `RGBA` use the `-r` or `--rgb` flag.
 
-![image: napari viewer displaying an image layer ](../assets/tutorials/launch_cli_image.png)
+![image: napari viewer displaying an image layer](../assets/tutorials/launch_cli_image.png)
 
 Launching napari directly from the command line is the simplest and fastest way to open the viewer,
 but it doesn't allow you to preprocess your images before opening them.
@@ -82,7 +82,7 @@ python my_example_script.py
 
 See the scripts inside the [`examples`](https://github.com/napari/napari/tree/main/examples) in the main repository for examples of using napari this way.
 
-![image: napari launched from a python script ](../assets/tutorials/launch_script.png)
+![image: napari launched from a python script](../assets/tutorials/launch_script.png)
 
 An advantage of launching napari from a python script
 is that you can preprocess your images and add multiple layers before displaying the viewer.
@@ -103,7 +103,7 @@ Napari will automatically use the interactive [`%gui qt` event
 loop](https://ipython.readthedocs.io/en/stable/config/eventloops.html#integrating-with-gui-event-loops)
 from IPython
 
-![image: napari launched from ipython ](../assets/tutorials/launch_ipython.png)
+![image: napari launched from ipython](../assets/tutorials/launch_ipython.png)
 
 An advantage of launching napari from an IPython console
 is that the you can continue to programmatically interact with the viewer from the IPython console,
@@ -115,7 +115,7 @@ and where data changed in the GUI will be accessible in the console.
 You can also launch napari from a jupyter notebook,
 such as [`examples/notebook.ipynb`](https://github.com/napari/napari/tree/main/examples/notebook.ipynb)
 
-![image: napari launched from a jupyter notebook ](../assets/tutorials/launch_jupyter.png)
+![image: napari launched from a jupyter notebook](../assets/tutorials/launch_jupyter.png)
 
 Similar to launching from the IPython console,
 an advantage of launching napari from a jupyter notebook

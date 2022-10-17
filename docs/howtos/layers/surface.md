@@ -88,7 +88,7 @@ buttons can toggle between each mode. The number of dimensions sliders will be 2
 or 3 less than the total number of dimensions of the layer. See for example
 these brain surfaces rendered in 3D:
 
-![image: brain surface ](../../images/brain_surface.webm)
+![image: brain surface](../../images/brain_surface.webm)
 
 ## Working with colormaps
 

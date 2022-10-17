@@ -99,7 +99,7 @@ See here for the example from
 [`examples/add_vectors_image.py`](https://github.com/napari/napari/blob/main/examples/add_vectors_image.py)
 of a grid of vectors defined over a random image:
 
-![image: add vectors overlaid on an image ](../../images/add_vectors_image.png)
+![image: add vectors overlaid on an image](../../images/add_vectors_image.png)
 
 Regardless of how the data is passed, we convert it to the `Nx2xD`
 representation internally. This representation is  accessible through the
@@ -117,7 +117,7 @@ or 3 less than the total number of dimensions of the layer. See for example the
 [`examples/nD_vectors.py`](https://github.com/napari/napari/blob/main/examples/nD_vectors.py)
 to see shapes in both 2D and 3D:
 
-![image: nD vectors ](../../images/nD_vectors.webm)
+![image: nD vectors](../../images/nD_vectors.webm)
 
 ## Changing vector length, width, and color
 
