@@ -189,8 +189,7 @@ page](https://github.com/napari/napari/releases) and scroll to the release you
 are interested in and expand the `assets` tab to get a view that looks like
 this:
 
-![image: release bundle
-[Cropped screenshot from GitHub with the Assets section (or "tab") expanded, containing links to download the app in the form of zip files for Linux, macOS, Windows, in addition to other links.](../assets/tutorials/installation/bundle_assets.png)
+![Cropped screenshot from GitHub with the Assets section (or "tab") expanded, containing links to download the app in the form of zip files for Linux, macOS, Windows, in addition to other links.](../assets/tutorials/installation/bundle_assets.png)
 
 You can then download the appropriate zip file for your platform.
 
@@ -202,41 +201,36 @@ name like `napari-0.3.7.dmg`. Double clicking the `dmg` will open a new finder
 window giving you the option to install napari into your `Applications` folder
 by dragging the `napari` icon onto the `Applications` icon.
 
-![image: MacOS install to
 ![Finder window of the napari bundle dmg file, containing the napari app icon and a shortcut icon to the Applications folder.](../assets/tutorials/installation/bundle_install.png)
 
 After you drag the `napari` icon onto the `Applications` icon napari will be
 installed in your Applications folder and available for opening by double
 clicking on it.
 
-![image: MacOS Applications folder with
 ![Finder window of the Applications folder containing the napari app.](../assets/tutorials/installation/bundle_applications_folder.png)
 
 The first time you try and open napari you will get the "unverified developer
 warning" that appears below:
 
-![image: MacOS developer
-warning ](../assets/tutorials/installation/bundle_dev_warning.png)
+![Finder pop up with the warning "napari cannot be opened because the developer cannot be verified" and the options "Move to Trash" or "Cancel."](../assets/tutorials/installation/bundle_dev_warning.png)
 
 Don't be alarmed, this is because the napari team has not yet obtained a
 developer certificate from Apple, but we will be doing this promptly. It is safe
 to click "Cancel". To get napari to open you must enter "Systems Preferences"
 and click the "Security & Privacy" icon, circled in red below:
 
-![image: MacOS Security & Privacy
-settings ](../assets/tutorials/installation/bundle_security_privacy.png)
+![MacOS System Preferences with the Security & Privacy
+settings on the far right of the second row.](../assets/tutorials/installation/bundle_security_privacy.png)
 
 Once inside the "Security & Privacy" tab, you should see a message about napari
 being blocked and an "Open Anyway" button, circled in red below:
 
-![image: MacOS "Open Anyway"
-settings ](../assets/tutorials/installation/bundle_open_anyway.png)
+![System Preferences Security & Privacy section's General tab. At the bottom of the window there is a notification that napari was blocked and the button to "Open Anyway."](../assets/tutorials/installation/bundle_open_anyway.png)
 
 After clicking this button you'll get one final warning about napari not being
 verified, but now you'll have an "Open" button, as seen below:
 
-![image: MacOS open bundle dialog
-box ](../assets/tutorials/installation/bundle_open.png)
+![Finder pop up with the warning "macOS cannot verify the developer of napari. Are you sure you want to open it?" and the options "Move to Trash," "Open," or "Cancel." ](../assets/tutorials/installation/bundle_open.png)
 
 After clicking "Open", the viewer should appear. Don't worry, you only have to
 go through this process once when you install a new bundle.
@@ -250,16 +244,13 @@ file, eg: `napari-0.3.7.msi`
 
 The napari setup wizard will then open. Click "Next" to begin the installation.
 
-![image: Windows napari setup
-wizard ](../assets/tutorials/installation/windows_bundle_installer_start.png)
+![napari Setup window with a welcome message and button to continue with "Next."](../assets/tutorials/installation/windows_bundle_installer_start.png)
 
-![image: Windows napari setup wizard in
-progress ](../assets/tutorials/installation/windows_bundle_installer_progress.png)
+![napari Setup window in the process of installing napari. The progress bar has a Status that describes which step is in progress.](../assets/tutorials/installation/windows_bundle_installer_progress.png)
 
 After the setup wizard has installed napari, click "Finish" to exit.
 
-![image: Windows napari setup wizard
-finished ](../assets/tutorials/installation/windows_bundle_installer_finish.png)
+![napari Setup window success message with the button to "Finish" installation.](../assets/tutorials/installation/windows_bundle_installer_finish.png)
 
 When you launch the bundled napari app on Windows, first you'll see an empty
 command terminal appear (do not close this window - you can ignore it). The
@@ -268,13 +259,11 @@ napari user interface window will appear a few seconds later. Note that errors
 which might occur during your napari session will appear on the command terminal - 
 so if something is not working, it might pay to take a look at the terminal!
 
-![image: Windows command terminal on napari
-launch ](../assets/tutorials/installation/windows_bundle_command_terminal.png)
+![Windows command terminal on napari launch.](../assets/tutorials/installation/windows_bundle_command_terminal.png)
 
 You can launch napari from the Windows start menu.
 
-![image: Windows launch napari from start
-menu ](../assets/tutorials/installation/windows_launch_napari.png)
+![Windows start menu with napari listed as a launchable app.](../assets/tutorials/installation/windows_launch_napari.png)
 
 The very first time you launch napari the startup time will be fairly slow, but
 after that you will find that napari launches more quickly.
