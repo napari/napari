@@ -203,12 +203,10 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_iso_threshold_change(self):
         if isinstance(self.node, VolumeNode):
             if self.node._texture.is_normalized:
-                self.node.threshold = self.layer.iso_threshold
+                cmin, cmax = self.layer.contrast_limits_range
+                self.node.threshold = self.layer.iso_threshold / (cmax - cmin)
             else:
-                cmin, cmax = self.node._texture.clim
-                self.node.threshold = (
-                    self.layer.iso_threshold * (cmax - cmin) + cmin
-                )
+                self.node.threshold = self.layer.iso_threshold
 
     def _on_attenuation_change(self):
         if isinstance(self.node, VolumeNode):
