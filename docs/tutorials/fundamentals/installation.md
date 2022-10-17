@@ -219,8 +219,7 @@ developer certificate from Apple, but we will be doing this promptly. It is safe
 to click "Cancel". To get napari to open you must enter "Systems Preferences"
 and click the "Security & Privacy" icon, circled in red below:
 
-![MacOS System Preferences with the Security & Privacy
-settings on the far right of the second row.](../assets/tutorials/installation/bundle_security_privacy.png)
+![MacOS System Preferences with the Security & Privacy settings on the far right of the second row.](../assets/tutorials/installation/bundle_security_privacy.png)
 
 Once inside the "Security & Privacy" tab, you should see a message about napari
 being blocked and an "Open Anyway" button, circled in red below:
@@ -230,7 +229,7 @@ being blocked and an "Open Anyway" button, circled in red below:
 After clicking this button you'll get one final warning about napari not being
 verified, but now you'll have an "Open" button, as seen below:
 
-![Finder pop up with the warning "macOS cannot verify the developer of napari. Are you sure you want to open it?" and the options "Move to Trash," "Open," or "Cancel." ](../assets/tutorials/installation/bundle_open.png)
+![Finder pop up with the warning "macOS cannot verify the developer of napari. Are you sure you want to open it?" and the options "Move to Trash," "Open," or "Cancel."](../assets/tutorials/installation/bundle_open.png)
 
 After clicking "Open", the viewer should appear. Don't worry, you only have to
 go through this process once when you install a new bundle.
