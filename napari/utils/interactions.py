@@ -5,7 +5,7 @@ from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
-from ..utils.key_bindings import KeyBindingLike, KeyCode, coerce_keybinding
+from ..utils.key_bindings import KeyBindingLike, coerce_keybinding
 from ..utils.translations import trans
 
 
@@ -277,23 +277,27 @@ class Shortcut:
             shortcut to format
 
         """
-        self._kb = coerce_keybinding(shortcut)
-        for part in self._kb.parts:
-            shortcut_key = str(part.key)
-            if (
-                part.key == KeyCode.UNKNOWN
-                or len(shortcut_key) > 1
-                and shortcut_key not in KEY_SYMBOLS.keys()
-            ):
+        error_msg = trans._(
+            "{shortcut} does not seem to be a valid shortcut Key.",
+            shortcut=shortcut,
+        )
+        error = False
 
-                warnings.warn(
-                    trans._(
-                        "{shortcut_key} does not seem to be a valid shortcut Key.",
-                        shortcut_key=shortcut_key,
-                    ),
-                    UserWarning,
-                    stacklevel=2,
-                )
+        try:
+            self._kb = coerce_keybinding(shortcut)
+        except ValueError:
+            error = True
+        else:
+            for part in self._kb.parts:
+                shortcut_key = str(part.key)
+                if (
+                    len(shortcut_key) > 1
+                    and shortcut_key not in KEY_SYMBOLS.keys()
+                ):
+                    error = True
+
+        if error:
+            warnings.warn(error_msg, UserWarning, stacklevel=2)
 
     @property
     def qt(self) -> str:
