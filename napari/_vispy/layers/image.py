@@ -186,9 +186,8 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.clim = self.layer.contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
-        # iso and attenuated_mip both also (may) depend on contrast limit values
+        # iso also may depend on contrast limit values
         self._on_iso_threshold_change()
-        self._on_attenuation_change()
 
     def _on_blending_change(self):
         super()._on_blending_change()
@@ -210,13 +209,7 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_attenuation_change(self):
         if isinstance(self.node, VolumeNode):
-            if self.node._texture.is_normalized:
-                self.node.attenuation = self.layer.attenuation
-            else:
-                crange_min, crange_max = self.layer.contrast_limits_range
-                self.node.attenuation = self.layer.attenuation / (
-                    crange_max - crange_min
-                )
+            self.node.attenuation = self.layer.attenuation
 
     def _on_plane_thickness_change(self):
         if isinstance(self.node, VolumeNode):
