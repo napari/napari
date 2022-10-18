@@ -40,7 +40,7 @@ from ._image_mouse_bindings import (
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
-from ._slice import _ImageSliceRequest, _slice_image
+from ._slice import _ImageSliceRequest
 
 if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
@@ -757,11 +757,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         request = self._make_slice_request()
 
-        response = _slice_image(request, slice_indices)
+        response = request.execute()
 
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=slice_indices,
+            indices=request.slice_indices,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )

@@ -90,20 +90,6 @@ class _SliceInput:
 
         return tuple(indices)
 
-    def data_indices_to_downsampled_level(
-        self,
-        *,
-        indices: np.ndarray,
-        downsample_factors: np.ndarray,
-        downsampled_shape: np.ndarray,
-    ) -> np.ndarray:
-        axes = self.not_displayed
-        ds_indices = indices[axes] / downsample_factors[axes]
-        ds_indices = np.round(ds_indices.astype(float)).astype(int)
-        ds_indices = np.clip(ds_indices, 0, downsampled_shape[axes] - 1)
-        indices[axes] = ds_indices
-        return indices
-
     def is_orthogonal(self, world_to_data: Affine) -> bool:
         """Returns True if this slice represents an orthogonal slice through a layer's data, False otherwise."""
         # Subspace spanned by non displayed dimensions

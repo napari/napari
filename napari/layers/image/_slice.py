@@ -1,6 +1,7 @@
 import warnings
 from dataclasses import dataclass, field
-from typing import Any, Optional, Tuple
+from functools import cached_property
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 
@@ -18,6 +19,15 @@ class _ImageSliceResponse:
 
 @dataclass(frozen=True)
 class _ImageSliceRequest:
+    """Represents a single image slice request.
+
+    This should be treated a deeply immutable structure, even though some
+    fields can be modified in place.
+
+    In general, the execute method may take a long time to run, so you may
+    want to run it once on a worker thread.
+    """
+
     dims: _SliceInput
     data: Any = field(repr=False)
     data_to_world: Affine = field(repr=False)
@@ -30,94 +40,83 @@ class _ImageSliceRequest:
     downsample_factors: np.ndarray = field(repr=False)
     lazy: bool = field(default=False, repr=False)
 
+    @cached_property
+    def slice_indices(self) -> Tuple[Union[int, float, slice], ...]:
+        if len(self.dims.not_displayed) == 0:
+            return (slice(None),) * self.dims.ndim
+        return self.dims.data_indices(self.data_to_world.inverse)
 
-def _slice_image(
-    request: _ImageSliceRequest, slice_indices
-) -> _ImageSliceResponse:
-    if request.multiscale:
-        return _slice_image_multi_scale(request, slice_indices)
-    return _slice_image_single_scale(request, slice_indices)
+    def execute(self) -> _ImageSliceResponse:
+        if self.multiscale:
+            return self._execute_multi_scale()
+        return self._execute_single_scale()
 
-
-def _slice_image_single_scale(
-    request: _ImageSliceRequest, slice_indices
-) -> _ImageSliceResponse:
-    image = request.data[slice_indices]
-    if not request.lazy:
-        image = np.asarray(image)
-    return _ImageSliceResponse(
-        data=image,
-        thumbnail=None,
-        tile_to_data=None,
-    )
-
-
-def _slice_image_multi_scale(
-    request: _ImageSliceRequest, slice_indices
-) -> _ImageSliceResponse:
-    if request.dims.ndisplay == 3:
-        warnings.warn(
-            trans._(
-                'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
-                deferred=True,
-            ),
-            category=UserWarning,
+    def _execute_single_scale(self) -> _ImageSliceResponse:
+        image = self.data[self.slice_indices]
+        if not self.lazy:
+            image = np.asarray(image)
+        return _ImageSliceResponse(
+            data=image,
+            thumbnail=None,
+            tile_to_data=None,
         )
-        level = len(request.data) - 1
-    else:
-        level = request.data_level
 
-    indices = _slice_indices_at_level(
-        indices=slice_indices,
-        level=level,
-    )
-
-    scale = np.ones(request.dims.ndim)
-    for d in request.dims.displayed:
-        scale[d] = request.downsample_factors[level][d]
-
-    # This only needs to be a ScaleTranslate but different types
-    # of transforms in a chain don't play nicely together right now.
-    tile_to_data = Affine(name='tile2data', scale=scale)
-    if request.dims.ndisplay == 2:
-        for d in request.dims.displayed:
-            indices[d] = slice(
-                request.corner_pixels[0, d],
-                request.corner_pixels[1, d],
-                1,
+    def _execute_multi_scale(self) -> _ImageSliceResponse:
+        if self.dims.ndisplay == 3:
+            warnings.warn(
+                trans._(
+                    'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                    deferred=True,
+                ),
+                category=UserWarning,
             )
-        # TODO: why do we only do this for 2D display?
-        # I guess we only support multiscale in 2D anyway, but then why is scale
-        # not in here too?
-        tile_to_data.translate = request.corner_pixels[0] * tile_to_data.scale
+            level = len(self.data) - 1
+        else:
+            level = self.data_level
 
-    thumbnail_indices = _slice_indices_at_level(
-        request=request,
-        indices=slice_indices,
-        level=request.thumbnail_level,
-    )
+        indices = self._slice_indices_at_level(level)
 
-    image = request.data[level][tuple(indices)]
-    thumbnail = request.data[request.thumbnail_level][tuple(thumbnail_indices)]
+        scale = np.ones(self.dims.ndim)
+        for d in self.dims.displayed:
+            scale[d] = self.downsample_factors[level][d]
 
-    if not request.lazy:
-        image = np.asarray(image)
-        thumbnail = np.asarray(thumbnail)
+        # This only needs to be a ScaleTranslate but different types
+        # of transforms in a chain don't play nicely together right now.
+        tile_to_data = Affine(name='tile2data', scale=scale)
+        if self.dims.ndisplay == 2:
+            for d in self.dims.displayed:
+                indices[d] = slice(
+                    self.corner_pixels[0, d],
+                    self.corner_pixels[1, d],
+                    1,
+                )
+            # TODO: why do we only do this for 2D display?
+            # I guess we only support multiscale in 2D anyway, but then why is scale
+            # not in here too?
+            tile_to_data.translate = self.corner_pixels[0] * tile_to_data.scale
 
-    return _ImageSliceResponse(
-        data=image,
-        thumbnail=None,
-        tile_to_data=None,
-    )
+        thumbnail_indices = self._slice_indices_at_level(self.thumbnail_level)
 
+        image = self.data[level][tuple(indices)]
+        thumbnail = self.data[self.thumbnail_level][tuple(thumbnail_indices)]
 
-def _slice_indices_at_level(
-    *, request: _ImageSliceRequest, indices: Tuple, level: int
-) -> np.ndarray:
-    indices = np.array(indices)
-    axes = request.dims.displayed
-    ds_indices = indices[axes] / request.downsample_factors[level][axes]
-    ds_indices = np.round(ds_indices.astype(float)).astype(int)
-    ds_indices = np.clip(ds_indices, 0, request.level_shapes[level][axes] - 1)
-    indices[axes] = ds_indices
-    return indices
+        if not self.lazy:
+            image = np.asarray(image)
+            thumbnail = np.asarray(thumbnail)
+
+        return _ImageSliceResponse(
+            data=image,
+            thumbnail=thumbnail,
+            tile_to_data=tile_to_data,
+        )
+
+    def _slice_indices_at_level(
+        self, level: int
+    ) -> Tuple[Union[int, float, slice], ...]:
+        indices = np.array(self.slice_indices)
+        axes = self.dims.not_displayed
+        ds_indices = indices[axes] / self.downsample_factors[level][axes]
+        ds_indices = np.round(ds_indices.astype(float)).astype(int)
+        ds_indices = np.clip(ds_indices, 0, self.level_shapes[level][axes] - 1)
+        indices[axes] = ds_indices
+        return indices
