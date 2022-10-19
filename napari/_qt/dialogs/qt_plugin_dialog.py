@@ -99,17 +99,19 @@ class PluginListItem(QFrame):
             if is_conda_package(package_name):
                 self.source.setText('Conda')
             self.enabled_checkbox.show()
-            self.action_button.setText(trans._("uninstall"))
+            self.action_button.setText(trans._("Uninstall"))
             self.action_button.setObjectName("remove_button")
             self.info_choice_wdg.hide()
             self.install_info_button.show()
+            self.latest_version_text.show()
         else:
             self.enabled_checkbox.hide()
-            self.action_button.setText(trans._("install"))
+            self.action_button.setText(trans._("Install"))
             self.action_button.setObjectName("install_button")
             self.info_choice_wdg.show()
             self.install_info_button.hide()
             self.update_btn.setVisible(False)
+            self.latest_version_text.hide()
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -202,25 +204,25 @@ class PluginListItem(QFrame):
         )
         self.row2.setContentsMargins(-1, 4, 0, -1)
         self.summary = QElidingLabel(parent=self)
+        self.summary.setObjectName('summary_text')
         self.summary.setWordWrap(True)
         dlg_width = self.parent().parent().sizeHint().width()
-        self.summary.setFixedWidth(dlg_width)
+        self.summary.setFixedWidth(dlg_width * 1.5)
 
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Fixed
+        )
 
-        # print(dlg_size)
-
-        # self.summary.resize(dlg_width*.3, dlg_height)
-        # self.summary.resiz
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.summary.sizePolicy().hasHeightForWidth()
-        )
+        # sizePolicy.setHeightForWidth(
+        #     self.summary.sizePolicy().hasHeightForWidth()
+        # )
         self.summary.setSizePolicy(sizePolicy)
         self.row2.addWidget(self.summary, alignment=Qt.AlignmentFlag.AlignTop)
 
         self.package_author = QLabel(self)
+        self.package_author.setObjectName('author_text')
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
         )
@@ -269,6 +271,7 @@ class PluginListItem(QFrame):
         self.source_choice_dropdown.currentTextChanged.connect(
             self._populate_version_dropdown
         )
+        self.source_choice_dropdown.hide()
         self.version_choice_dropdown = QComboBox()
 
         self.row2.addWidget(
@@ -297,13 +300,15 @@ class PluginListItem(QFrame):
 
         self.update_wdg = QWidget()
         update_layout = QVBoxLayout()
-        update_layout.setContentsMargins(0, 0, 0, 0)
         self.update_btn = QPushButton('Update', self)
         self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.update_btn.setObjectName("install_button")
         self.latest_version_text = QLabel()
+        self.latest_version_text.setObjectName('latest_version_text')
         update_layout.addWidget(self.update_btn)
         update_layout.addWidget(self.latest_version_text)
+        update_layout.setContentsMargins(0, 0, 0, 0)
+
         self.update_wdg.setLayout(update_layout)
         self.row2.addWidget(
             self.update_wdg, alignment=Qt.AlignmentFlag.AlignTop
@@ -467,13 +472,17 @@ class QPluginList(QListWidget):
 
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
+        widg.install_info_button.setDuration(0)
         widg.install_info_button.toggled.connect(
             lambda: self._resize_pluginlistitem(item)
         )
 
     def _resize_pluginlistitem(self, item):
-        item.setSizeHint(item.widget.sizeHint())
-        self.setItemWidget(item, item.widget)
+        if item.widget.install_info_button.isExpanded():
+            item.widget.setFixedHeight(item.widget.height() * 1.5)
+        else:
+            item.widget.setFixedHeight(item.widget.height() / 1.5)
+        item.setSizeHint(item.widget.size())
 
     def handle_action(
         self,
