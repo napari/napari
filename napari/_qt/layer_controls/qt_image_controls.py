@@ -137,10 +137,10 @@ class QtImageControls(QtBaseImageControls):
 
         sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        cmin, cmax = self.layer.contrast_limits
+        cmin, cmax = self.layer.contrast_limits_range
         sld.setMinimum(cmin)
         sld.setMaximum(cmax)
-        sld.setValue(cmin + (cmax - cmin) / 2)
+        sld.setValue(self.layer.iso_threshold)
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
@@ -247,7 +247,7 @@ class QtImageControls(QtBaseImageControls):
 
     def _on_contrast_limits_change(self):
         with self.layer.events.blocker(self._on_iso_threshold_change):
-            cmin, cmax = self.layer.contrast_limits
+            cmin, cmax = self.layer.contrast_limits_range
             self.isoThresholdSlider.setMinimum(cmin)
             self.isoThresholdSlider.setMaximum(cmax)
         return super()._on_contrast_limits_change()

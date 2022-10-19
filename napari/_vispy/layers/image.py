@@ -203,7 +203,9 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             if self.node._texture.is_normalized:
                 cmin, cmax = self.layer.contrast_limits_range
-                self.node.threshold = self.layer.iso_threshold / (cmax - cmin)
+                self.node.threshold = (self.layer.iso_threshold - cmin) / (
+                    cmax - cmin
+                )
             else:
                 self.node.threshold = self.layer.iso_threshold
 

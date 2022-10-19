@@ -361,7 +361,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
         if iso_threshold is None:
-            cmin, cmax = self.contrast_limits
+            cmin, cmax = self.contrast_limits_range
             self._iso_threshold = cmin + (cmax - cmin) / 2
         else:
             self._iso_threshold = iso_threshold
