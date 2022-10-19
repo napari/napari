@@ -722,6 +722,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
+        if len(self._slice_input.not_displayed) == 0:
+            # All dims are displayed dimensions
+            return (slice(None),) * self.ndim
         return self._slice_input.data_indices(
             self._data_to_world.inverse,
             getattr(self, '_round_index', True),
