@@ -21,7 +21,12 @@ class _LayerSlicer:
     Events
     ------
     ready
-        emitted after slicing is done with a dict value that maps from layer to slice response
+        emitted after slicing is done with a dict value that maps from layer
+        to slice response. Note that this may or may not be emitted on a
+        non-main thread. If usage of this event relies on something happening
+        on the main thread, actions should be taken to ensure that the callback
+        is also executed on the main thread (e.g. by decorating the callback
+        with `ensure_main_thread`.
     """
 
     def __init__(self):
@@ -78,29 +83,30 @@ class _LayerSlicer:
         task = self._executor.submit(self._slice_layers, requests)
 
         # store task for cancellation logic
-        self._layers_to_task[tuple(requests.keys())] = task
+        # this is purposefully done before adding the done callback to ensure
+        # that the task is added before the done callback can be executed
+        with self._lock_layers_to_task:
+            self._layers_to_task[tuple(requests.keys())] = task
 
         task.add_done_callback(self._on_slice_done)
 
         return task
 
     def shutdown(self) -> None:
-        """This should be called from the main thread when this is no longer needed."""
+        """Should be called from the main thread when this is no longer needed."""
         self._executor.shutdown()
 
     def _slice_layers(self, requests: Dict) -> Dict:
-        """This can be called from the main or slicing thread.
-        Iterates through a dictionary of request objects and call the slice
-        on each individual layer."""
+        """Iterates through a dictionary of request objects and call the slice
+        on each individual layer. Can be called from the main or slicing thread."""
         return {
             layer: layer._get_slice(request)
             for layer, request in requests.items()
         }
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
-        """This can be called from the main or slicing thread.
-        Release the thread.
-        This is the "done_callback" which is added to each task.
+        """This is the "done_callback" which is added to each task.
+        Can be called from the main or slicing thread.
         """
         if not self._try_to_remove_task(task):
             logger.debug('Task not found')
