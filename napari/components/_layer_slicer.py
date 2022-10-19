@@ -22,7 +22,7 @@ class _LayerSlicer:
     ------
     ready
         emitted after slicing is done with a dict value that maps from layer
-        to slice response. Note that this may or may not be emitted on a
+        to slice response. Note that this may be emitted on a main or
         non-main thread. If usage of this event relies on something happening
         on the main thread, actions should be taken to ensure that the callback
         is also executed on the main thread (e.g. by decorating the callback
