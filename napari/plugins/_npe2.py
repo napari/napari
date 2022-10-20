@@ -422,7 +422,8 @@ def _npe2_manifest_to_actions(
                 else:
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
-    # Do not return sample data submenus/actions as this is done in
+
+    # Filter sample data submenus/actions as this is done in
     # `_build_samples_menu`
     if mf.contributions.commands:
         data_commands = [
