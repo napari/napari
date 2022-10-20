@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
@@ -318,7 +319,8 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
-        v.window.file_menu._rebuild_samples_menu()
+        # v.window.file_menu._rebuild_samples_menu()
+    _build_samples_menu()
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -329,6 +331,60 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     for mf in manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
+    _build_samples_menu()
+
+
+def _build_samples_menu():
+    from app_model import Action
+
+    from .._app_model import get_app
+    from .._app_model.constants import MenuGroup, MenuId
+    from .._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
+    from .._qt.qt_viewer import QtViewer
+    from ..errors.reader_errors import MultipleReaderError
+    from . import menu_item_template, plugin_manager
+
+    app = get_app()
+    for plugin_name, samples in chain(
+        sample_iterator(), plugin_manager._sample_data.items()
+    ):
+        multiprovider = len(samples) > 1
+        if multiprovider:
+            sub_menu_id = f'napari/file/samples/{plugin_name}'
+            sub_menu = [
+                (
+                    MenuId.SAMPLES,
+                    SubmenuItem(
+                        submenu=sub_menu_id, title=trans._(plugin_name)
+                    ),
+                ),
+            ]
+            app.menus.append_menu_items(sub_menu)
+        else:
+            sub_menu_id = MenuId.SAMPLES
+
+        for samp_name, samp_dict in samples.items():
+
+            def _add_sample(
+                *args, qt_viewer: QtViewer, plg=plugin_name, smp=samp_name
+            ):
+                try:
+                    qt_viewer.viewer.open_sample(plg, smp)
+                except MultipleReaderError as e:
+                    qt_viewer._qt_open(e.paths, stack=False, plugin=plg)
+
+            display_name = samp_dict['display_name'].replace("&", "&&")
+            if multiprovider:
+                title = display_name
+            else:
+                title = menu_item_template.format(plugin_name, display_name)
+            action = Action(
+                id=samp_dict['id'],
+                title=title,
+                menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
+                callback=_add_sample,
+            )
+            Q_FILE_ACTIONS.append(action)
 
 
 def _register_manifest_actions(manifest: PluginManifest) -> None:
@@ -368,20 +424,34 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    actions: List[Action] = [
-        Action(
-            id=cmd.id,
-            title=cmd.title,
-            category=cmd.category,
-            tooltip=cmd.short_title or cmd.title,
-            icon=cmd.icon,
-            enablement=cmd.enablement,
-            callback=cmd.python_name or '',
-            menus=cmds.get(cmd.id),
-            keybindings=[],
-        )
-        for cmd in mf.contributions.commands or ()
-    ]
+    if mf.contributions.commands:
+        data_commands = [
+            c.command
+            for _, contribs in pm.iter_sample_data()
+            for c in contribs
+        ]
+        non_data_commands = [
+            cmd
+            for cmd in mf.contributions.commands
+            if cmd.id not in data_commands
+        ]
+        actions: List[Action] = [
+            Action(
+                id=cmd.id,
+                title=cmd.title,
+                category=cmd.category,
+                tooltip=cmd.short_title or cmd.title,
+                icon=cmd.icon,
+                enablement=cmd.enablement,
+                callback=cmd.python_name or '',
+                menus=cmds.get(cmd.id),
+                keybindings=[],
+            )
+            for cmd in non_data_commands
+        ]
+    else:
+        actions = []
+
     return actions, submenus
 
 
