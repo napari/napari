@@ -650,6 +650,10 @@ class Window:
         self.main_menu.addMenu(self.plugins_menu)
         self.help_menu = menus.HelpMenu(self)
         self.main_menu.addMenu(self.help_menu)
+        self.tools_menu = build_qmodel_menu(
+            MenuId.MENUBAR_TOOLS, title=trans._('&Tools'), parent=self._qt_window
+        )
+        self.main_menu.addMenu(self.tools_menu)
 
         if perf.USE_PERFMON:
             self._debug_menu = menus.DebugMenu(self)

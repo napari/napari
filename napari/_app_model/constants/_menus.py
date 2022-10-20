@@ -24,6 +24,8 @@ class MenuId(str, Enum):
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
+
+    MENUBAR_TOOLS = 'napari/tools'
     TOOLS_ACQUISITION = 'napari/tools/acquisition'
     TOOLS_CLASSIFICATION = 'napari/tools/classification'
     TOOLS_FILTERS = 'napari/tools/filters'
