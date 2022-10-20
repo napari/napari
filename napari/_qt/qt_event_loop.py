@@ -146,6 +146,9 @@ def get_app(
             QApplication.setAttribute(
                 Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
             )
+            QApplication.setHighDpiScaleFactorRoundingPolicy(
+                Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+            )
 
         argv = sys.argv.copy()
         if sys.platform == "darwin" and not argv[0].endswith("napari"):
