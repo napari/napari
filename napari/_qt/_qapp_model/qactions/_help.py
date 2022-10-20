@@ -1,4 +1,4 @@
-"""This module defines help menu actions.
+"""Actions related to the 'Help' menu that require Qt."""
 """
 from typing import List
 
