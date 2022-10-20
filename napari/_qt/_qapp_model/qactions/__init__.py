@@ -10,20 +10,22 @@ from typing import Optional
 @lru_cache  # only call once
 def init_qactions() -> None:
     """Initialize all Qt-based Actions with app-model
+
     This function will be called in _QtMainWindow.__init__().  It should only
     be called once (hence the lru_cache decorator).
+
     It is responsible for:
     - injecting Qt-specific names into the application injection_store namespace
       (this is what allows functions to be declared with annotations like
       `def foo(window: Window)` or `def foo(qt_viewer: QtViewer)`)
     - registering provider functions for the names added to the namespace
-    - registering Qt-dependent actions with app-model (i.e. Q_* actions).
+    - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
 
-    from napari._app_model import get_app
-
+    from ...._app_model import get_app
     from ...qt_main_window import Window, _QtMainWindow
     from ...qt_viewer import QtViewer
+    from ._view import Q_VIEW_ACTIONS
     from ._window import Q_WINDOW_ACTIONS
 
     # update the namespace with the Qt-specific types/providers/processors
@@ -47,5 +49,5 @@ def init_qactions() -> None:
             return _qmainwin._qt_viewer
 
     # register actions
-    for action in chain(Q_WINDOW_ACTIONS):
+    for action in chain(Q_VIEW_ACTIONS, Q_WINDOW_ACTIONS):
         app.register_action(action)
