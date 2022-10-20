@@ -18,6 +18,7 @@ from ...utils.translations import trans
 class CommandId(str, Enum):
     """Id representing a napari command."""
 
+    # View menu
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
     TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
     TOGGLE_PLAY = 'napari:window:view:toggle_play'
@@ -34,9 +35,11 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
+    # Help menu
     NAPARI_INFO = 'napari:window:help:info'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
+    # Layer menu
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
@@ -83,6 +86,7 @@ class _i(NamedTuple):
 
 
 _COMMAND_INFO = {
+    # View menu
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen'),),
     CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility'),),
     CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play'),),
@@ -98,9 +102,11 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
 
+    # Help menu
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug reporting opt in/out...'), ),
 
+    # Layer menu
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
