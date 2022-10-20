@@ -377,7 +377,7 @@ def _build_samples_menu():
                 title = display_name
             else:
                 title = menu_item_template.format(plugin_name, display_name)
-            action = Action(
+            action: Action = Action(
                 id=samp_dict['id'],
                 title=title,
                 menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
