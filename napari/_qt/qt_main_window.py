@@ -649,7 +649,9 @@ class Window:
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
         self.tools_menu = build_qmodel_menu(
-            MenuId.MENUBAR_TOOLS, title=trans._('&Tools'), parent=self._qt_window
+            MenuId.MENUBAR_TOOLS,
+            title=trans._('&Tools'),
+            parent=self._qt_window,
         )
         self.main_menu.addMenu(self.tools_menu)
         self.help_menu = menus.HelpMenu(self)
