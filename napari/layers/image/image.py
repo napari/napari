@@ -40,7 +40,7 @@ from ._image_mouse_bindings import (
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
-from ._slice import _ImageSliceRequest
+from ._slice import _ImageSliceRequest, _ImageSliceResponse
 
 if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
@@ -727,6 +727,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return image
 
     def _make_slice_request(self) -> _ImageSliceRequest:
+        """Make an image slice request based on this layer's current state."""
         return _ImageSliceRequest(
             dims=self._slice_input,
             data=self.data,
@@ -744,34 +745,48 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
     def _set_view_slice(self) -> None:
-        """Set the view given the indices to slice with."""
+        """Set the slice output based on this layer's current state."""
+        # Initializes an ImageSlice for the old experimental async code.
         self._new_empty_slice()
-        slice_indices = self._slice_input.data_indices(
-            self._data_to_world.inverse
-        )
-        if self._slice_input.data_indices_out_of_bounds(
-            indices=slice_indices, data_shape=self._extent_data[1]
-        ):
-            return
+
+        # Skip if any data indices are out of bounds.
+        # TODO: this is not new, but would be good to understand when this happens.
+        indices = self._slice_indices
+        for d in self._slice_input.not_displayed:
+            if (indices[d] < 0) or (indices[d] > self._extent_data[1][d]):
+                return
+
+        # For the old experimental async code.
         self._empty = False
 
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request()
-
         response = request.execute()
+        self._set_slice_response(response, indices)
 
+    def _set_slice_response(
+        self, response: _ImageSliceResponse, indices
+    ) -> None:
+        """Set the slice output state currently on the layer."""
+        # For the old experimental async code.
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=request.slice_indices,
+            indices=indices,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )
 
+        # TODO: remove tile2data from the layer's transform chain.
         if response.tile_to_data is not None:
             self._transforms[0] = response.tile_to_data
 
-        # Load our images, might be sync or async.
+        # For the old experimental async code, where loading might be sync
+        # or async.
         self._load_slice(slice_data)
 
+        # Maybe reset the contrast limits based on the new slice.
         if self._should_calc_clims:
             self.reset_contrast_limits_range()
             self.reset_contrast_limits()
@@ -936,13 +951,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        dims_displayed = self._slice_input.displayed
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate
             offset = len(coord) - len(shape)
-            coord = coord[[d + offset for d in dims_displayed]]
+            coord = coord[[d + offset for d in self._slice_input.displayed]]
         else:
-            coord = coord[dims_displayed]
+            coord = coord[self._slice_input.displayed]
 
         if all(0 <= c < s for c, s in zip(coord, shape)):
             value = raw[tuple(coord)]

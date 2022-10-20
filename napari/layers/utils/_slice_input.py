@@ -109,15 +109,3 @@ class _SliceInput:
         )
         # Check that displayed subspace is null
         return all(abs(v) < 1e-8 for v in displayed_mapped_subspace)
-
-    def data_indices_out_of_bounds(
-        self,
-        *,
-        indices: np.ndarray,
-        data_shape: Tuple[int, ...],
-    ) -> bool:
-        """Returns True if the given indices are out of bounds of the given shape in the dimensions not displayed by this slice, False otherwise."""
-        for d in self.not_displayed:
-            if (indices[d] < 0) or (indices[d] > data_shape[d]):
-                return True
-        return False
