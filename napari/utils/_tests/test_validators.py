@@ -17,3 +17,19 @@ def test_sequence_validator():
 
     with pytest.raises(TypeError):
         validate([1.4, 5])  # raises TypeError
+
+
+def test_pairwise():
+    source = [1, 2, 3]
+    output = validators._pairwise(source)
+    assert list(output) == [(1, 2), (2, 3)]
+
+
+def test_validate_increasing():
+    valid_source = [1, 2, 3]
+    validators._validate_increasing(valid_source)
+
+    invalid_sources = [[3, 2, 1], [1, 1, 2]]
+    for source in invalid_sources:
+        with pytest.raises(ValueError):
+            validators._validate_increasing(source)

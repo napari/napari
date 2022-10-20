@@ -43,6 +43,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
+        ndisplay = self.layer._slice_input.ndisplay
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
@@ -58,16 +59,12 @@ class VispySurfaceLayer(VispyBaseLayer):
             faces = self.layer._view_faces[:, ::-1]
             vertex_values = self.layer._view_vertex_values
 
-        if (
-            vertices is not None
-            and self.layer._ndisplay == 3
-            and self.layer.ndim == 2
-        ):
+        if vertices is not None and ndisplay == 3 and self.layer.ndim == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
 
         # manually detach filters when we go to 2D to avoid dimensionality issues
         # see comments in napari#3475. The filter is set again after set_data!
-        if self.layer._ndisplay == 2:
+        if ndisplay == 2:
             filt = self.node.shading_filter
             try:
                 self.node.detach(filt)
@@ -82,7 +79,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
 
         # disable normals in 2D to avoid shape errors
-        if self.layer._ndisplay == 2:
+        if ndisplay == 2:
             meshdata = MeshData()
         else:
             meshdata = self.node.mesh_data
@@ -106,7 +103,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             cmap = VispyColormap(colors)
         else:
             cmap = VispyColormap(*self.layer.colormap)
-        if self.layer._ndisplay == 3:
+        if self.layer._slice_input.ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
             )
@@ -120,7 +117,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def _on_shading_change(self):
         shading = None if self.layer.shading == 'none' else self.layer.shading
-        if self.layer._ndisplay == 3:
+        if self.layer._slice_input.ndisplay == 3:
             self.node.shading = shading
         self.node.update()
 
