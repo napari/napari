@@ -319,7 +319,6 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
-        # v.window.file_menu._rebuild_samples_menu()
     _build_samples_menu()
 
 
