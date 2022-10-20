@@ -800,9 +800,9 @@ class QtViewer(QSplitter):
         stack : bool or list[list[str]]
             whether to stack files or not. Can also be a list containing
             files to stack.
-        plugin: str
+        plugin : str
             plugin to use for reading
-        layer_type: str
+        layer_type : str
             layer type for opened layers
         """
         if choose_plugin:
@@ -1077,20 +1077,26 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
+        # The canvas corners in full world coordinates (i.e. across all layers).
+        canvas_corners_world = self._canvas_corners_in_world
         for layer in self.viewer.layers:
-            if layer.ndim <= self.viewer.dims.ndim:
-                nd = len(layer._displayed_axes)
-                if nd > self.viewer.dims.ndisplay:
-                    displayed_axes = layer._displayed_axes
-                else:
-                    displayed_axes = self.viewer.dims.displayed[-nd:]
-                layer._update_draw(
-                    scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels_displayed=self._canvas_corners_in_world[
-                        :, displayed_axes
-                    ],
-                    shape_threshold=self.canvas.size,
-                )
+            # The following condition should mostly be False. One case when it can
+            # be True is when a callback connected to self.viewer.dims.events.ndisplay
+            # is executed before layer._slice_input has been updated by another callback
+            # (e.g. when changing self.viewer.dims.ndisplay from 3 to 2).
+            displayed_sorted = sorted(layer._slice_input.displayed)
+            nd = len(displayed_sorted)
+            if nd > self.viewer.dims.ndisplay:
+                displayed_axes = displayed_sorted
+            else:
+                displayed_axes = self.viewer.dims.displayed[-nd:]
+            layer._update_draw(
+                scale_factor=1 / self.viewer.camera.zoom,
+                corner_pixels_displayed=canvas_corners_world[
+                    :, displayed_axes
+                ],
+                shape_threshold=self.canvas.size,
+            )
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""

@@ -14,6 +14,7 @@ from typing import NamedTuple, Optional
 from ...utils.translations import trans
 
 
+# fmt: off
 class CommandId(str, Enum):
     """Id representing a napari command."""
 
@@ -29,6 +30,22 @@ class CommandId(str, Enum):
     DLG_CLOSE = 'napari:window:close_dialog'
     DLG_QUIT = 'napari:quit_dialog'
     RESTART = 'napari:restart'
+
+    TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
+    TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
+    TOGGLE_PLAY = 'napari:window:view:toggle_play'
+    TOGGLE_OCTREE_CHUNK_OUTLINES = 'napari:window:view:toggle_octree_chunk_outlines'
+    TOGGLE_LAYER_TOOLTIPS = 'napari:window:view:toggle_layer_tooltips'
+    TOGGLE_ACTIVITY_DOCK = 'napari:window:view:toggle_activity_dock'
+
+    TOGGLE_VIEWER_AXES = 'napari:window:view:toggle_viewer_axes'
+    TOGGLE_VIEWER_AXES_COLORED = 'napari:window:view:toggle_viewer_axes_colored'
+    TOGGLE_VIEWER_AXES_LABELS = 'napari:window:view:toggle_viewer_axes_labels'
+    TOGGLE_VIEWER_AXES_DASHED = 'napari:window:view:toggle_viewer_axesdashed'
+    TOGGLE_VIEWER_AXES_ARROWS = 'napari:window:view:toggle_viewer_axes_arrows'
+    TOGGLE_VIEWER_SCALE_BAR = 'napari:window:view:toggle_viewer_scale_bar'
+    TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
+    TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
@@ -75,7 +92,6 @@ class _i(NamedTuple):
     description: Optional[str] = None
 
 
-# fmt: off
 _COMMAND_INFO = {
     CommandId.DLG_OPEN_FILES: _i(trans._('Open File(s)...')),
     CommandId.DLG_OPEN_FILES_AS_STACK: _i(trans._('Open Files as Stack...')),
@@ -89,6 +105,21 @@ _COMMAND_INFO = {
     CommandId.DLG_CLOSE: _i(trans._('Close Window')),
     CommandId.DLG_QUIT: _i(trans._('Exit')),
     CommandId.RESTART: _i(trans._('Restart')),
+
+    CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen'),),
+    CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility'),),
+    CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play'),),
+    CommandId.TOGGLE_OCTREE_CHUNK_OUTLINES: _i(trans._('Toggle Chunk Outlines'),),
+    CommandId.TOGGLE_LAYER_TOOLTIPS: _i(trans._('Toggle Layer Tooltips'),),
+    CommandId.TOGGLE_ACTIVITY_DOCK: _i(trans._('Toggle Activity Dock'),),
+    CommandId.TOGGLE_VIEWER_AXES: _i(trans._('Axes Visible')),
+    CommandId.TOGGLE_VIEWER_AXES_COLORED: _i(trans._('Axes Colored')),
+    CommandId.TOGGLE_VIEWER_AXES_LABELS: _i(trans._('Axes Labels')),
+    CommandId.TOGGLE_VIEWER_AXES_DASHED: _i(trans._('Axes Dashed')),
+    CommandId.TOGGLE_VIEWER_AXES_ARROWS: _i(trans._('Axes Arrows')),
+    CommandId.TOGGLE_VIEWER_SCALE_BAR: _i(trans._('Scale Bar Visible')),
+    CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
+    CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
 
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),

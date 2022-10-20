@@ -2,10 +2,6 @@
 design:
   - 'napari/_qt/qt_resources/**/*'
 
-documentation:
-  - 'docs/**/*'
-  - 'docs/*'
-
 preferences:
   - 'napari/_qt/**/*/preferences_dialog.py'
   - 'napari/settings/**/*.py'

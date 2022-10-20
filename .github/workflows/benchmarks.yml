@@ -116,7 +116,7 @@ jobs:
           echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
+          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} -v \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
 
@@ -125,7 +125,7 @@ jobs:
               exit 1
           fi
 
-      - name: Report Failures
+      - name: Report Failures as Issue
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
         uses: JasonEtco/create-an-issue@v2
         env:

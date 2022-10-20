@@ -31,6 +31,7 @@ from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QMainWindow,
+    QMenu,
     QShortcut,
     QToolTip,
     QWidget,
@@ -85,6 +86,9 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
+    # `window` is passed through on construction so it's available to a window
+    # provider for dependency injection
+    # See https://github.com/napari/napari/pull/4826
     def __init__(
         self, viewer: 'Viewer', window: 'Window', parent=None
     ) -> None:
@@ -139,6 +143,8 @@ class _QtMainWindow(QMainWindow):
                 self._qt_viewer.canvas._backend.screen_changed
             )
 
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
         self.status_throttler = QSignalThrottler(parent=self)
@@ -636,7 +642,9 @@ class Window:
             MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
         )
         self.main_menu.addMenu(self.file_menu)
-        self.view_menu = menus.ViewMenu(self)
+        self.view_menu = build_qmodel_menu(
+            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+        )
         self.main_menu.addMenu(self.view_menu)
         self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
@@ -766,8 +774,8 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
-        menu=None,
         tabify: bool = False,
+        menu: Optional[QMenu] = None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -799,6 +807,10 @@ class Window:
                 The shortcut parameter is deprecated since version 0.4.8, please use
                 the action and shortcut manager APIs. The new action manager and
                 shortcut API allow user configuration and localisation.
+        tabify : bool
+            Flag to tabify dockwidget or not.
+        menu : QMenu, optional
+            Menu bar to add toggle action to. If `None` nothing added to menu.
 
         Returns
         -------
@@ -840,7 +852,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget, menu=menu, tabify=tabify)
+        self._add_viewer_dock_widget(dock_widget, tabify=tabify, menu=menu)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -857,7 +869,10 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify=False, menu=None
+        self,
+        dock_widget: QtViewerDockWidget,
+        tabify: bool = False,
+        menu: Optional[QMenu] = None,
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -869,6 +884,8 @@ class Window:
             `dock_widget` will be added to the main window.
         tabify : bool
             Flag to tabify dockwidget or not.
+        menu : QMenu, optional
+            Menu bar to add toggle action to. If `None` nothing added to menu.
         """
         # Find if any othe dock widgets are currently in area
         current_dws_in_area = [
@@ -908,7 +925,6 @@ class Window:
                 action.setShortcut(shortcut)
 
             menu.addAction(action)
-        # self.window_menu.addAction(action)
 
         # see #3663, to fix #3624 more generally
         dock_widget.setFloating(False)
