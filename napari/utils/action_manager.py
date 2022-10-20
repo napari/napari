@@ -12,6 +12,7 @@ from .interactions import Shortcut
 from .translations import trans
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
     from typing import Protocol
 
     from .key_bindings import KeymapProvider
@@ -40,7 +41,7 @@ class Action:
     repeatable: bool = False
 
     @cached_property
-    def injected(self) -> Callable:
+    def injected(self) -> Callable[..., Future]:
         """command with napari objects injected.
 
         This will inject things like the current viewer, or currently selected

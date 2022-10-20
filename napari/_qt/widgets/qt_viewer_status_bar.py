@@ -1,5 +1,5 @@
 """Status bar widget on the viewer MainWindow"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -116,8 +116,10 @@ class ViewerStatusBar(QStatusBar):
         else:
             self._coordinates.hide()
 
-    def _toggle_activity_dock(self, visible: bool):
+    def _toggle_activity_dock(self, visible: Optional[bool] = None):
         par: _QtMainWindow = self.parent()
+        if visible is None:
+            visible = not par._activity_dialog.isVisible()
         if visible:
             par._activity_dialog.show()
             par._activity_dialog.raise_()
