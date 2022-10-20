@@ -21,5 +21,10 @@ def test_build_qmodel_menu(qtbot, menu_id):
         init_qactions()
         menu = build_qmodel_menu(menu_id)
         qtbot.addWidget(menu)
+
+        # empty menu not registering actions, for example help menu
+        if not menu.actions():
+            return
+
         # `>=` because separator bars count as actions
         assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
