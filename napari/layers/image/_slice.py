@@ -12,6 +12,24 @@ from napari.utils.translations import trans
 
 @dataclass(frozen=True)
 class _ImageSliceResponse:
+    """Contains all the output data of slicing an image layer.
+
+    Attributes
+    ----------
+    data : Any
+        The sliced image data.
+        In general, if you need this to be a `numpy.ndarray` you should call `np.asarray`.
+        Though if the corresponding request was not lazy, this is likely a `numpy.ndarray`.
+    thumbnail: Optional[Any]
+        The thumbnail image data, which may be a different resolution to the sliced image data
+        for multi-scale images.
+        For single-scale images, this will be `None`, which indicates that the thumbnail data
+        is the same as the sliced image data.
+    tile_to_data: Optional[Affine]
+        The affine transform from the sliced data to the full data at the highest resolution.
+        For single-scale images, this will be `None`.
+    """
+
     data: Any = field(repr=False)
     thumbnail: Optional[Any] = field(repr=False)
     tile_to_data: Optional[Affine] = field(repr=False)
@@ -19,13 +37,48 @@ class _ImageSliceResponse:
 
 @dataclass(frozen=True)
 class _ImageSliceRequest:
-    """Represents a single image slice request.
+    """Contains all the input data needed to slice an image layer.
 
     This should be treated a deeply immutable structure, even though some
     fields can be modified in place.
 
     In general, the execute method may take a long time to run, so you may
     want to run it once on a worker thread.
+
+    Attributes
+    ----------
+    dims : _SliceInput
+        The layer dimensions used for slicing.
+    data : Any
+        The layer's data field.
+    data_to_world: Affine
+        The affine transform from the data at the highest resolution to the
+        layer's world coordinate system.
+    multiscale : bool
+        If True, the data has multiple scale/resolution levels.
+        False otherwise.
+    corner_pixels : np.ndarray
+        The 2xD array of the corner coordinates of the part of the image that
+        is being shown in the canvas, where D is the display/canvas dimensionality.
+        These coordinates are in the layer's data space at the highest resolution.
+    rgb : bool
+        If True, the last dimension of data contains RGB values and will not be sliced.
+        False otherwise.
+    data_level : int
+        The multi-scale level at which to read image data.
+    thumbnail_level : int
+        The multi-scale level at which to read thumbnail data.
+    level_shapes : np.ndarray
+        The LxD array of ints that describe the data shape of each multi-scale level,
+        where L is the number of levels and D is the dimensionality of the layer.
+    downsample_factors : np.ndarray
+        The LxD array of floats that describe the downsample factors from the highest
+        resolution level to all L levels and all D dimensions.
+    lazy : bool
+        If True, do not materialize the data with `np.asarray` during execution.
+        Otherwise, False. This should be True for the experimental async code
+        (as the load occurs on a separate thread) but False for the new async
+        where `execute` is expected to be run on a separate thread.
     """
 
     dims: _SliceInput
