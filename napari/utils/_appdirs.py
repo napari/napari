@@ -5,8 +5,13 @@ from typing import Callable, Optional
 
 import appdirs
 
+from napari._version import __version_tuple__
+
 _appname = 'napari'
 _appauthor = False
+
+version_string = '.'.join(str(x) for x in __version_tuple__[:3])
+
 
 # all of these also take an optional "version" argument ... but if we want
 # to be able to update napari while using data (e.g. plugins, settings) from
@@ -19,7 +24,7 @@ user_config_dir: Callable[[], str] = partial(
     appdirs.user_config_dir, _appname, _appauthor
 )
 user_cache_dir: Callable[[], str] = partial(
-    appdirs.user_cache_dir, _appname, _appauthor
+    appdirs.user_cache_dir, _appname, _appauthor, version_string
 )
 user_state_dir: Callable[[], str] = partial(
     appdirs.user_state_dir, _appname, _appauthor
