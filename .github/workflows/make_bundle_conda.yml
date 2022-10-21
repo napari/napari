@@ -8,11 +8,11 @@ on:
   schedule:
     - cron: "0 0 * * *"
   # workflow_dispatch: # go to napari/packaging to trigger manual runs
-  pull_request:  # temporary
+  pull_request:  # remove before merge
 
 jobs:
   packaging:
-    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@configure-matrix  # revert to main
+    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@main
     secrets: inherit
     with:
       event_name: ${{ github.event_name }}
