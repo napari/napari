@@ -449,7 +449,8 @@ def _mock_app():
     `app_model.Application` in the test. It does not however, register Qt
     related actions or providers. If this is required for a unit test,
     `napari._qt._qapp_model.qactions.init_qactions()` can be used within
-    the test.
+    the test. Please note as `init_qactions()` is `lru_cache` decorated you
+    may need to call `init_qactions.cache_clear()` first.
     """
     from app_model import Application
 
