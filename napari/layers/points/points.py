@@ -498,7 +498,7 @@ class Points(Layer):
                         adding = len(data) - cur_npoints
                         if len(self._size) > 0:
                             new_size = copy(self._size[-1])
-                            for i in self._dims_displayed:
+                            for i in self._slice_input.displayed:
                                 new_size[i] = self.current_size
                         else:
                             # Add the default size, with a value for each dimension
@@ -1227,7 +1227,7 @@ class Points(Layer):
         # Calculate the mean size across the displayed dimensions for
         # each point to be consistent with `_view_size`.
         mean_size = np.mean(
-            self.size[np.ix_(index, self._dims_displayed)], axis=1
+            self.size[np.ix_(index, self._slice_input.displayed)], axis=1
         )
         if (unique_size := _unique_element(mean_size)) is not None:
             with self.block_update_properties():
@@ -1345,10 +1345,12 @@ class Points(Layer):
             Array of coordinates for the N points in view
         """
         if len(self._indices_view) > 0:
-            data = self.data[np.ix_(self._indices_view, self._dims_displayed)]
+            data = self.data[
+                np.ix_(self._indices_view, self._slice_input.displayed)
+            ]
         else:
             # if no points in this slice send dummy data
-            data = np.zeros((0, self._ndisplay))
+            data = np.zeros((0, self._slice_input.ndisplay))
 
         return data
 
@@ -1379,7 +1381,9 @@ class Points(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        return self.text.compute_text_coords(self._view_data, self._ndisplay)
+        return self.text.compute_text_coords(
+            self._view_data, self._slice_input.ndisplay
+        )
 
     @property
     def _view_text_color(self) -> np.ndarray:
@@ -1400,7 +1404,7 @@ class Points(Layer):
             # Get the point sizes and scale for ndim display
             sizes = (
                 self.size[
-                    np.ix_(self._indices_view, self._dims_displayed)
+                    np.ix_(self._indices_view, self._slice_input.displayed)
                 ].mean(axis=1)
                 * self._view_size_scale
             )
@@ -1452,7 +1456,7 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-        if self.ndim < 3 and self._ndisplay == 3:
+        if self.ndim < 3 and self._slice_input.ndisplay == 3:
             # interaction currently does not work for 2D
             # layers being rendered in 3D.
             self.editable = False
@@ -1477,7 +1481,7 @@ class Points(Layer):
             less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the data for the points in this slice
-        not_disp = list(self._dims_not_displayed)
+        not_disp = list(self._slice_input.not_displayed)
         # We want a numpy array so we can use fancy indexing with the non-displayed
         # indices, but as dims_indices can (and often/always does) contain slice
         # objects, the array has dtype=object which is then very slow for the
@@ -1522,7 +1526,9 @@ class Points(Layer):
         view_data = self._view_data
         selection = None
         if len(view_data) > 0:
-            displayed_position = [position[i] for i in self._dims_displayed]
+            displayed_position = [
+                position[i] for i in self._slice_input.displayed
+            ]
             # Get the point sizes
             # TODO: calculate distance in canvas space to account for canvas_size_limits.
             # Without this implementation, point hover and selection (and anything depending
@@ -1601,7 +1607,7 @@ class Points(Layer):
         return selection
 
     def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
-        """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
+        """An augmented, axis-aligned (ndisplay, 2) bounding box.
 
         This bounding box for includes the full size of displayed points
         and enables calculation of intersections in `Layer._get_value_3d()`.
@@ -1778,9 +1784,9 @@ class Points(Layer):
         if len(view_data) > 0:
             # Get the zoom factor required to fit all data in the thumbnail.
             de = self._extent_data
-            min_vals = [de[0, i] for i in self._dims_displayed]
+            min_vals = [de[0, i] for i in self._slice_input.displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self._dims_displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._slice_input.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -1869,7 +1875,7 @@ class Points(Layer):
         """
         if len(selection_indices) > 0:
             selection_indices = list(selection_indices)
-            disp = list(self._dims_displayed)
+            disp = list(self._slice_input.displayed)
             self._set_drag_start(selection_indices, position)
             center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
             shift = np.array(position)[disp] - center - self._drag_start
@@ -1898,7 +1904,7 @@ class Points(Layer):
             Used for modifier drag_box selection.
         """
         selection_indices = list(selection_indices)
-        dims_displayed = list(self._dims_displayed)
+        dims_displayed = list(self._slice_input.displayed)
         if self._drag_start is None:
             self._drag_start = np.array(position, dtype=float)[dims_displayed]
             if len(selection_indices) > 0 and center_by_data:
@@ -1913,7 +1919,7 @@ class Points(Layer):
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            not_disp = self._dims_not_displayed
+            not_disp = self._slice_input.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]

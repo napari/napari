@@ -506,10 +506,7 @@ class QtPluginDialog(QDialog):
 
         # fetch installed
         from npe2 import PluginManager
-
         from ...plugins import plugin_manager
-
-        plugin_manager.discover()  # since they might not be loaded yet
 
         self.already_installed = set()
 
@@ -544,6 +541,7 @@ class QtPluginDialog(QDialog):
             )
 
         pm2 = PluginManager.instance()
+        discovered = pm2.discover()
         for manifest in pm2.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in self.already_installed or distname == 'napari':
@@ -553,11 +551,8 @@ class QtPluginDialog(QDialog):
             npev = 'shim' if manifest.npe1_shim else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
-        for (
-            plugin_name,
-            _mod_name,
-            distname,
-        ) in plugin_manager.iter_available():
+        plugin_manager.discover()  # since they might not be loaded yet
+        for plugin_name, _, distname in plugin_manager.iter_available():
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
@@ -594,6 +589,13 @@ class QtPluginDialog(QDialog):
         self.worker.finished.connect(self._update_count_in_label)
         self.worker.finished.connect(self._end_refresh)
         self.worker.start()
+        if discovered:
+            message = trans._(
+                'When installing/uninstalling npe2 plugins, '
+                'you must restart napari for UI changes to take effect.'
+            )
+            self._warn_dialog = WarnPopup(text=message)
+            self._warn_dialog.exec_()
 
     def setup_ui(self):
         self.resize(1080, 640)
