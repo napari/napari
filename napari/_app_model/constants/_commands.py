@@ -35,7 +35,7 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
-    # Help menu
+    # Help menubar
     NAPARI_INFO = 'napari:window:help:info'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
