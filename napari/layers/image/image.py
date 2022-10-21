@@ -749,11 +749,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Initializes an ImageSlice for the old experimental async code.
         self._new_empty_slice()
 
-        # Skip if any data indices are out of bounds.
-        # TODO: this is not new, but would be good to understand when this happens.
+        # Skip if any non-displayed data indices are out of bounds.
+        # This can happen when slicing layers with different extents.
         indices = self._slice_indices
         for d in self._slice_input.not_displayed:
-            if (indices[d] < 0) or (indices[d] > self._extent_data[1][d]):
+            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
                 return
 
         # For the old experimental async code.

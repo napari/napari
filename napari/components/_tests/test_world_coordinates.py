@@ -104,5 +104,5 @@ def test_warning_affine_slicing():
     assert 'Non-orthogonal slicing is being requested' in str(wrn[0].message)
     with pytest.warns(UserWarning) as recorded_warnings:
         viewer.layers[0].refresh()
-    # note right now refresh tiggers one `_slice_indices` call
-    assert len(recorded_warnings) == 1
+    # note right now refresh tiggers two `_slice_indices` calls
+    assert len(recorded_warnings) == 2

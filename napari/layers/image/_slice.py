@@ -100,9 +100,11 @@ class _ImageSliceRequest:
         return self.dims.data_indices(self.data_to_world.inverse)
 
     def execute(self) -> _ImageSliceResponse:
-        if self.multiscale:
-            return self._execute_multi_scale()
-        return self._execute_single_scale()
+        return (
+            self._execute_multi_scale()
+            if self.multiscale
+            else self._execute_single_scale()
+        )
 
     def _execute_single_scale(self) -> _ImageSliceResponse:
         image = self.data[self.slice_indices]
