@@ -906,6 +906,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
         """
+        slice_input = self._make_slice_input(point, ndisplay, order)
+
+        if self._slice_input == slice_input:
+            return
+
+        old_ndisplay = self._slice_input.ndisplay
+        self._slice_input = slice_input
+
+        if old_ndisplay != ndisplay:
+            self.events._ndisplay()
+
+        # Update the point values
+        self._update_dims()
+        self._set_editable()
+
+    def _make_slice_input(
+        self, point=None, ndisplay=2, order=None
+    ) -> _SliceInput:
         if point is None:
             point = (0,) * self.ndim
         else:
@@ -923,24 +941,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
         )
 
-        slice_input = _SliceInput(
+        return _SliceInput(
             ndisplay=ndisplay,
             point=point,
             order=order,
         )
-
-        if self._slice_input == slice_input:
-            return
-
-        old_ndisplay = self._slice_input.ndisplay
-        self._slice_input = slice_input
-
-        if old_ndisplay != ndisplay:
-            self.events._ndisplay()
-
-        # Update the point values
-        self._update_dims()
-        self._set_editable()
 
     @abstractmethod
     def _update_thumbnail(self):

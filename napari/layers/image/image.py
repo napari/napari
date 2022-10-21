@@ -23,6 +23,7 @@ from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
 from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils._slice_input import _SliceInput
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
 from ._image_constants import (
@@ -43,6 +44,7 @@ from ._image_utils import guess_multiscale, guess_rgb
 from ._slice import _ImageSliceRequest, _ImageSliceResponse
 
 if TYPE_CHECKING:
+    from ...components import Dims
     from ...components.experimental.chunk import ChunkRequest
 
 
@@ -726,24 +728,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
-    def _make_slice_request(self) -> _ImageSliceRequest:
-        """Make an image slice request based on this layer's current state."""
-        return _ImageSliceRequest(
-            dims=self._slice_input,
-            data=self.data,
-            # This is the composition of two affine transforms so is
-            # guaranteed to be affine too.
-            data_to_world=self._transforms[1:3].simplified,
-            multiscale=self.multiscale,
-            corner_pixels=self.corner_pixels,
-            rgb=self.rgb,
-            data_level=self.data_level,
-            thumbnail_level=self._thumbnail_level,
-            level_shapes=self.level_shapes,
-            downsample_factors=self.downsample_factors,
-            lazy=True,
-        )
-
     def _set_view_slice(self) -> None:
         """Set the slice output based on this layer's current state."""
         # Initializes an ImageSlice for the old experimental async code.
@@ -762,9 +746,40 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request()
+        request = self._make_slice_request_internal(self._slice_input)
         response = request.execute()
         self._set_slice_response(response, indices)
+
+    def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
+        """Make an image slice request based on the given dims and this image."""
+        slice_input = self._make_slice_input(
+            dims.point, dims.ndisplay, dims.order
+        )
+        return self._make_slice_request_internal(slice_input)
+
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput
+    ) -> _ImageSliceRequest:
+        """Needed to support old-style sync slicing through set_view_slice."""
+        return _ImageSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            # This is the composition of two affine transforms so is
+            # guaranteed to be affine too.
+            # We don't want the first transform (tile2data) because
+            # that's really just output from slicing.
+            # We don't want the last transform (world2grid) because
+            # that only relates to the displayed dimensions.
+            data_to_world=self._transforms[1:3].simplified,
+            multiscale=self.multiscale,
+            corner_pixels=self.corner_pixels,
+            rgb=self.rgb,
+            data_level=self.data_level,
+            thumbnail_level=self._thumbnail_level,
+            level_shapes=self.level_shapes,
+            downsample_factors=self.downsample_factors,
+            lazy=True,
+        )
 
     def _set_slice_response(
         self, response: _ImageSliceResponse, indices
