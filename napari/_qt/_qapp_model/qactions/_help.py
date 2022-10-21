@@ -1,5 +1,5 @@
 """Actions related to the 'Help' menu that require Qt."""
-"""
+
 from typing import List
 
 from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
