@@ -19,6 +19,8 @@ class MenuId(str, Enum):
 
     MENUBAR_FILE = 'napari/file'
 
+    SAMPLES = 'napari/file/samples'
+
     MENUBAR_VIEW = 'napari/view'
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
@@ -26,7 +28,6 @@ class MenuId(str, Enum):
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
-    SAMPLES = 'napari/file/samples'
 
     def __str__(self) -> str:
         return self.value

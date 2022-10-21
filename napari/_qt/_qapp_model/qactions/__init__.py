@@ -2,8 +2,6 @@ from functools import lru_cache
 from itertools import chain
 from typing import Optional
 
-from napari._qt.qt_viewer import QtViewer
-
 # Submodules should be able to import from most modules, so to
 # avoid circular imports, don't import submodules at the top level here,
 # import them inside the init_qactions function.
@@ -27,6 +25,7 @@ def init_qactions() -> None:
     from ...._app_model import get_app
     from ...qt_main_window import Window, _QtMainWindow
     from ...qt_viewer import QtViewer
+    from ._file import Q_FILE_ACTIONS
     from ._view import Q_VIEW_ACTIONS
 
     # update the namespace with the Qt-specific types/providers/processors
@@ -50,5 +49,5 @@ def init_qactions() -> None:
             return _qmainwin._qt_viewer
 
     # register actions
-    for action in chain(Q_VIEW_ACTIONS):
+    for action in chain(Q_FILE_ACTIONS, Q_VIEW_ACTIONS):
         app.register_action(action)

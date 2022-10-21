@@ -416,7 +416,6 @@ def _build_samples_menu(mf: PluginManifest) -> None:
     for sample in sample_data:
 
         def _add_sample(
-            *args,
             qt_viewer: QtViewer,
             plg=mf.name,
             smp=sample.key,
