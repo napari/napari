@@ -49,12 +49,6 @@ SUBMENUS = [
     (
         MenuId.MENUBAR_TOOLS,
         SubmenuItem(
-            submenu=MenuId.TOOLS_UTILITIES, title=trans._('Utilities')
-        ),
-    ),
-    (
-        MenuId.MENUBAR_TOOLS,
-        SubmenuItem(
             submenu=MenuId.TOOLS_MEASUREMENT, title=trans._('Measurement')
         ),
     ),
@@ -81,6 +75,12 @@ SUBMENUS = [
         MenuId.MENUBAR_TOOLS,
         SubmenuItem(
             submenu=MenuId.TOOLS_VISUALIZATION, title=trans._('Visualization')
+        ),
+    ),
+    (
+        MenuId.MENUBAR_TOOLS,
+        SubmenuItem(
+            submenu=MenuId.TOOLS_UTILITIES, title=trans._('Utilities')
         ),
     ),
 ]
