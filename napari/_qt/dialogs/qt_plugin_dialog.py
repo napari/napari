@@ -506,6 +506,7 @@ class QtPluginDialog(QDialog):
 
         # fetch installed
         from npe2 import PluginManager
+
         from ...plugins import plugin_manager
 
         self.already_installed = set()
