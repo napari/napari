@@ -435,10 +435,10 @@ def test_set_contrast_limits_range():
 @pytest.mark.parametrize(
     'contrast_limits_range',
     (
-        [-2, -1],  # range below lower boundary of (0, 1)
-        [-1, 0],  # range on lower boundary of (0, 1)
-        [1, 2],  # range on upper boundary of (0, 1)
-        [2, 3],  # range above upper boundary of (0, 1)
+        [-2, -1],  # range below lower boundary of [0, 1]
+        [-1, 0],  # range on lower boundary of [0, 1]
+        [1, 2],  # range on upper boundary of [0, 1]
+        [2, 3],  # range above upper boundary of [0, 1]
     ),
 )
 def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
