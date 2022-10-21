@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
@@ -245,11 +244,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
         (
             plugin_name,
             {
-                c.key: {
-                    'id': c.command,
-                    'data': c.open,
-                    'display_name': c.display_name,
-                }
+                c.key: {'data': c.open, 'display_name': c.display_name}
                 for c in contribs
             },
         )
@@ -319,7 +314,7 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     # list them explicitly)
     for v in Viewer._instances:
         v.window.plugins_menu._build()
-    _build_samples_menu()
+    _build_npe1_samples_menu()
 
 
 def on_plugins_registered(manifests: Set[PluginManifest]):
@@ -330,10 +325,13 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     for mf in manifests:
         if not pm.is_disabled(mf.name):
             _register_manifest_actions(mf)
-    _build_samples_menu()
+    _build_npe1_samples_menu()
 
 
-def _build_samples_menu():
+# TODO: This is a separate function from `_build_samples_menu` so it can be more
+# easily deleted when npe1 is no longer supported.
+def _build_npe1_samples_menu():
+    """Builds 'Open Sample' menu for all npe1 plugins."""
     from app_model import Action
 
     from .._app_model import get_app
@@ -344,9 +342,7 @@ def _build_samples_menu():
     from . import menu_item_template, plugin_manager
 
     app = get_app()
-    for plugin_name, samples in chain(
-        sample_iterator(), plugin_manager._sample_data.items()
-    ):
+    for plugin_name, samples in plugin_manager._sample_data.items():
         multiprovider = len(samples) > 1
         if multiprovider:
             sub_menu_id = f'napari/file/samples/{plugin_name}'
@@ -386,7 +382,66 @@ def _build_samples_menu():
             Q_FILE_ACTIONS.append(action)
 
 
-def _register_manifest_actions(manifest: PluginManifest) -> None:
+def _build_samples_menu(mf: PluginManifest) -> None:
+    """Builds 'Open Sample' menu for a single npe2 plugin manifest."""
+    from app_model import Action
+
+    from .._app_model import get_app
+    from .._app_model.constants import MenuGroup, MenuId
+    from .._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
+    from .._qt.qt_viewer import QtViewer
+    from ..errors.reader_errors import MultipleReaderError
+    from . import menu_item_template
+
+    # If no sample data, return
+    if not mf.contributions.sample_data:
+        return
+
+    app = get_app()
+
+    sample_data = mf.contributions.sample_data
+    multiprovider = len(sample_data) > 1
+    if multiprovider:
+        sub_menu_id = f'napari/file/samples/{mf.name}'
+        sub_menu = [
+            (
+                MenuId.SAMPLES,
+                SubmenuItem(submenu=sub_menu_id, title=trans._(mf.name)),
+            ),
+        ]
+        app.menus.append_menu_items(sub_menu)
+    else:
+        sub_menu_id = MenuId.SAMPLES
+
+    for sample in sample_data:
+
+        def _add_sample(
+            *args,
+            qt_viewer: QtViewer,
+            plg=mf.name,
+            smp=sample.key,
+        ):
+            try:
+                qt_viewer.viewer.open_sample(plg, smp)
+            except MultipleReaderError as e:
+                qt_viewer._qt_open(e.paths, stack=False, plugin=plg)
+
+        display_name = sample.display_name.replace("&", "&&")
+        if multiprovider:
+            title = display_name
+        else:
+            title = menu_item_template.format(mf.name, display_name)
+
+        action: Action = Action(
+            id=sample.command,
+            title=title,
+            menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
+            callback=_add_sample,
+        )
+        Q_FILE_ACTIONS.append(action)
+
+
+def _register_manifest_actions(mf: PluginManifest) -> None:
     """Gather and register actions from a manifest.
 
     This is called when a plugin is registered or enabled and it adds the
@@ -395,12 +450,13 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
     from .._app_model import get_app
 
     app = get_app()
-    actions, submenus = _npe2_manifest_to_actions(manifest)
-    context = pm.get_context(cast('PluginName', manifest.name))
+    actions, submenus = _npe2_manifest_to_actions(mf)
+    context = pm.get_context(cast('PluginName', mf.name))
     if actions:
         context.register_disposable(app.register_actions(actions))
     if submenus:
         context.register_disposable(app.menus.append_menu_items(submenus))
+    _build_samples_menu(mf)
 
 
 def _npe2_manifest_to_actions(
@@ -423,18 +479,22 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    # Filter sample data submenus/actions as this is done in
+    # Filter sample data commands as they are registered in
     # `_build_samples_menu`
     if mf.contributions.commands:
-        data_commands = [
-            c.command
-            for _, contribs in pm.iter_sample_data()
-            for c in contribs
-        ]
-        non_data_commands = [
+        if mf.contributions.sample_data:
+            sample_data_commands = [
+                contrib.command
+                for contrib in mf.contributions.sample_data
+                if getattr(contrib, 'command', None)
+            ]
+        else:
+            sample_data_commands = []
+
+        filtered_commands = [
             cmd
             for cmd in mf.contributions.commands
-            if cmd.id not in data_commands
+            if cmd.id not in sample_data_commands
         ]
         actions: List[Action] = [
             Action(
@@ -448,7 +508,7 @@ def _npe2_manifest_to_actions(
                 menus=cmds.get(cmd.id),
                 keybindings=[],
             )
-            for cmd in non_data_commands
+            for cmd in filtered_commands
         ]
     else:
         actions = []
