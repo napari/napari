@@ -221,9 +221,14 @@ class AbstractInstaller(QProcess):
             and exit_code == 0
         ):
             pm2 = PluginManager.instance()
+            npe1_plugins = set(plugin_manager.iter_available())
             for pkg in current.pkgs:
-                manager = pm2 if pkg in pm2 else plugin_manager
-                manager.unregister(pkg)
+                if pkg in pm2:
+                    pm2.unregister(pkg)
+                elif pkg in npe1_plugins:
+                    plugin_manager.unregister(pkg)
+                else:
+                    log.warning('Cannot unregister %s, not a known napari plugin.', pkg)
         self._on_process_done(exit_code=exit_code, exit_status=exit_status)
 
     def _on_error_occurred(self, error: QProcess.ProcessError):
