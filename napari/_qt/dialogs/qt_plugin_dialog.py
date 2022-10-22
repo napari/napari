@@ -464,7 +464,7 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        if 1:  # running_as_constructor_app():
+        if running_as_constructor_app():
             self.installer = CondaInstaller()
         else:
             self.installer = PipInstaller()
