@@ -24,5 +24,8 @@ def test_build_qmodel_menu(qtbot, menu_id):
         menu = build_qmodel_menu(menu_id)
         qtbot.addWidget(menu)
 
-        # `>=` because separator bars count as actions
-        assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
+        # if there is no actions registered for this menu, this is likely a placeholder submenu
+        # for example tools/acquisition, these placeholder submenus do not show up under app.menus
+        if len(menu.actions()) != 0:
+            # `>=` because separator bars count as actions
+            assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
