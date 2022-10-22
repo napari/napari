@@ -87,7 +87,7 @@ class PluginListItem(QFrame):
             self.action_button.setObjectName("install_button")
 
     def _handle_npe2_plugin(self, npe_version):
-        if npe_version == 1:
+        if npe_version in (None, 1):
             return
         opacity = 0.4 if npe_version == 'shim' else 1
         lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
@@ -274,7 +274,7 @@ class QPluginList(QListWidget):
         installed=False,
         plugin_name=None,
         enabled=True,
-        npe_version=1,
+        npe_version=None,
     ):
         pkg_name = project_info.name
         # don't add duplicates
@@ -339,14 +339,14 @@ class QPluginList(QListWidget):
         item.setText(f"0-{item.text()}")
         self._remove_list.append((pkg_name, item))
         self._warn_dialog = None
-        if item.npe_version != 1:
+        # TODO: NPE version unknown before installing
+        if item.npe_version != 1 and action_name == "uninstall":
             # show warning pop up dialog
             message = trans._(
-                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+                'When installing/uninstalling npe2 plugins, you must '
+                'restart napari for UI changes to take effect.'
             )
-            self._warn_dialog = WarnPopup(
-                text=message,
-            )
+            self._warn_dialog = WarnPopup(text=message)
 
             delta_x = 75
             global_point = widget.action_button.mapToGlobal(
@@ -464,11 +464,15 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        if running_as_constructor_app():
+        if 1:  # running_as_constructor_app():
             self.installer = CondaInstaller()
         else:
             self.installer = PipInstaller()
 
+        installer_type = self.installer.__class__.__name__
+        self.setWindowTitle(
+            trans._('Plugin Manager ({installer})', installer=installer_type)
+        )
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
@@ -478,6 +482,7 @@ class QtPluginDialog(QDialog):
     def _on_installer_start(self):
         self.cancel_all_btn.setVisible(True)
         self.working_indicator.show()
+        self.process_success_indicator.hide()
         self.process_error_indicator.hide()
         self.close_btn.setDisabled(True)
 
@@ -485,7 +490,8 @@ class QtPluginDialog(QDialog):
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
-
+        else:
+            self.process_success_indicator.show()
         self.cancel_all_btn.setVisible(False)
         self.close_btn.setDisabled(False)
         self.refresh()
@@ -596,6 +602,11 @@ class QtPluginDialog(QDialog):
                 'you must restart napari for UI changes to take effect.'
             )
             self._warn_dialog = WarnPopup(text=message)
+            global_point = self.process_error_indicator.mapToGlobal(
+                self.process_error_indicator.rect().topLeft()
+            )
+            global_point = QPoint(global_point.x(), global_point.y() - 75)
+            self._warn_dialog.move(global_point)
             self._warn_dialog.exec_()
 
     def setup_ui(self):
@@ -650,6 +661,9 @@ class QtPluginDialog(QDialog):
         self.process_error_indicator = QLabel(self)
         self.process_error_indicator.setObjectName("error_label")
         self.process_error_indicator.hide()
+        self.process_success_indicator = QLabel(self)
+        self.process_success_indicator.setObjectName("success_label")
+        self.process_success_indicator.hide()
         load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
@@ -684,6 +698,7 @@ class QtPluginDialog(QDialog):
         buttonBox.addWidget(self.direct_entry_btn)
         if not visibility_direct_entry:
             buttonBox.addStretch()
+        buttonBox.addWidget(self.process_success_indicator)
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addSpacing(20)
         buttonBox.addWidget(self.cancel_all_btn)
@@ -710,12 +725,7 @@ class QtPluginDialog(QDialog):
     def _end_refresh(self):
         refresh_state = self.refresh_state
         self.refresh_state = RefreshState.DONE
-        if (
-            refresh_state == RefreshState.OUTDATED
-            # FIXME: a recursion loop happens in conda mode
-            # because it's always outdated after an uninstall
-            and not running_as_constructor_app()
-        ):
+        if refresh_state == RefreshState.OUTDATED:
             self.refresh()
 
     def eventFilter(self, watched, event):

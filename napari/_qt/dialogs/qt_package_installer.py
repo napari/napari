@@ -2,20 +2,34 @@ import contextlib
 import os
 import shutil
 import sys
+from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Deque, Optional, Sequence, Tuple
+from typing import Deque, Literal, Optional, Sequence, Tuple, Union
 
+from npe2 import PluginManager
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
+from ...plugins import plugin_manager
 from ...plugins.pypi import _user_agent
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
 
 JobId = int
 log = getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _InstallerAction:
+    action: Union[Literal["install"], Literal["uninstall"]]
+    pkgs: Tuple[str, ...]
+    args: Tuple[str, ...]
+
+    @property
+    def ident(self):
+        return hash(self.args)
 
 
 class AbstractInstaller(QProcess):
@@ -29,6 +43,18 @@ class AbstractInstaller(QProcess):
     def _modify_env(self, env: QProcessEnvironment):
         raise NotImplementedError()
 
+    def _build_queue_item(
+        self,
+        action: Union[Literal["install"], Literal["uninstall"]],
+        pkg_list: Sequence[str],
+        prefix: Optional[str] = None,
+    ) -> _InstallerAction:
+        if action == "install":
+            args = self._get_install_args(pkg_list, prefix)
+        else:
+            args = self._get_uninstall_args(pkg_list, prefix)
+        return _InstallerAction(pkgs=pkg_list, action=action, args=args)
+
     # abstract method
     def _get_install_args(
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
@@ -41,9 +67,13 @@ class AbstractInstaller(QProcess):
     ) -> Tuple[str, ...]:
         raise NotImplementedError()
 
+    # abstract method
+    def _default_prefix(self):
+        raise NotImplementedError()
+
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
-        self._queue: Deque[Tuple[str, ...]] = Deque()
+        self._queue: Deque[_InstallerAction] = Deque()
         self._output_widget = None
 
         self.setProcessChannelMode(QProcess.MergedChannels)
@@ -75,7 +105,9 @@ class AbstractInstaller(QProcess):
         JobId : int
             ID that can be used to cancel the process.
         """
-        return self._queue_args(self._get_install_args(pkg_list, prefix))
+        return self._queue_item(
+            self._build_queue_item("install", pkg_list, prefix)
+        )
 
     def uninstall(
         self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
@@ -94,7 +126,9 @@ class AbstractInstaller(QProcess):
         JobId : int
             ID that can be used to cancel the process.
         """
-        return self._queue_args(self._get_uninstall_args(pkg_list, prefix))
+        return self._queue_item(
+            self._build_queue_item("uninstall", pkg_list, prefix)
+        )
 
     def cancel(self, job_id: Optional[JobId] = None):
         """Cancel `job_id` if it is running.
@@ -119,16 +153,16 @@ class AbstractInstaller(QProcess):
             end_process()
             return
 
-        for i, args in enumerate(self._queue):
-            if hash(args) == job_id:
+        for i, item in enumerate(self._queue):
+            if item.ident == job_id:
                 if i == 0:  # first in queue, currently running
                     end_process()
                 else:  # still pending, just remove from queue
-                    self._queue.remove(args)
+                    self._queue.remove(item)
                 return
         msg = f"No job with id {job_id}. Current queue:\n - "
         msg += "\n - ".join(
-            [f"{hash(args)} -> {args}" for args in self._queue]
+            [f"{item.ident} -> {item.args}" for item in self._queue]
         )
         raise ValueError(msg)
 
@@ -158,16 +192,16 @@ class AbstractInstaller(QProcess):
         if self._output_widget:
             self._output_widget.append(msg)
 
-    def _queue_args(self, args) -> JobId:
-        self._queue.append(args)
+    def _queue_item(self, item: _InstallerAction) -> JobId:
+        self._queue.append(item)
         self._process_queue()
-        return hash(args)
+        return item.ident
 
     def _process_queue(self):
         if not self._queue:
             self.allFinished.emit()
             return
-        self.setArguments(list(self._queue[0]))
+        self.setArguments(list(self._queue[0].args))
         # this might throw a warning because the same process
         # was already running but it's ok
         self._log(f"Starting '{self.program()}' with args {self.arguments()}")
@@ -176,6 +210,20 @@ class AbstractInstaller(QProcess):
     def _on_process_finished(
         self, exit_code: int, exit_status: QProcess.ExitStatus
     ):
+        try:
+            current = self._queue[0]
+        except IndexError:
+            current = None
+        if (
+            current
+            and current.action == "uninstall"
+            and exit_status == QProcess.ExitStatus.NormalExit
+            and exit_code == 0
+        ):
+            pm2 = PluginManager.instance()
+            for pkg in current.pkgs:
+                manager = pm2 if pkg in pm2 else plugin_manager
+                manager.unregister(pkg)
         self._on_process_done(exit_code=exit_code, exit_status=exit_status)
 
     def _on_error_occurred(self, error: QProcess.ProcessError):
@@ -256,6 +304,9 @@ class PipInstaller(AbstractInstaller):
             'uninstall', '-y', pkg_list=pkg_list, prefix=prefix
         )
 
+    def _default_prefix(self):
+        return None
+
 
 class CondaInstaller(AbstractInstaller):
     default_channels = ('conda-forge',)
@@ -331,6 +382,9 @@ class CondaInstaller(AbstractInstaller):
         self, pkg_list: Sequence[str], prefix: Optional[str] = None
     ) -> Tuple[str, ...]:
         return self._get_args('remove', pkg_list=pkg_list, prefix=prefix)
+
+    def _default_prefix(self):
+        return os.environ.get('CONDA_PREFIX', sys.prefix)
 
 
 def _get_python_exe():
