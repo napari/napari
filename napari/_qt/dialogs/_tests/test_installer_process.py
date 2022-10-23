@@ -110,13 +110,14 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
 
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
-    # channels match configuration for tmp_conda_env above
+    conda_executable = conda_exe()
     installer = InstallerQueue()
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(
             task_handler="conda",
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
+            _executable=conda_executable,
         )
 
     conda_meta = tmp_conda_env / "conda-meta"
@@ -130,6 +131,7 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
             task_handler="conda",
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
+            _executable=conda_executable,
         )
 
     assert not installer.hasJobs()
