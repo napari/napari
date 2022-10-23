@@ -42,11 +42,7 @@ from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 from ..widgets.qt_tooltip import QtToolTipLabel
-from .qt_package_installer import (
-    AbstractInstaller,
-    CondaInstaller,
-    PipInstaller,
-)
+from .qt_package_installer import InstallerQueue
 
 
 class PluginListItem(QFrame):
@@ -247,7 +243,7 @@ class PluginListItem(QFrame):
 
 
 class QPluginList(QListWidget):
-    def __init__(self, parent: QWidget, installer: AbstractInstaller):
+    def __init__(self, parent: QWidget, installer: InstallerQueue):
         super().__init__(parent)
         self.installer = installer
         self.setSortingEnabled(True)
@@ -335,6 +331,8 @@ class QPluginList(QListWidget):
         action_name: str,
         update: bool = False,
     ):
+        # TODO: 'task_handler' should be configurable per item, depending on dropdown
+        task_handler = "conda" if running_as_constructor_app() else "pip"
         widget = item.widget
         item.setText(f"0-{item.text()}")
         self._remove_list.append((pkg_name, item))
@@ -365,7 +363,11 @@ class QPluginList(QListWidget):
             else:
                 widget.set_busy(trans._("installing..."), update)
 
-            job_id = self.installer.install([pkg_name])
+            job_id = self.installer.install(
+                task_handler=task_handler,
+                pkgs=[pkg_name],
+                # origins="TODO",
+            )
             widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
@@ -373,7 +375,11 @@ class QPluginList(QListWidget):
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
-            job_id = self.installer.uninstall([pkg_name])
+            job_id = self.installer.uninstall(
+                task_handler=task_handler,
+                pkgs=[pkg_name],
+                # origins="TODO",
+            )
             widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
@@ -457,22 +463,13 @@ class RefreshState(Enum):
 
 
 class QtPluginDialog(QDialog):
-    installer: AbstractInstaller
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        if running_as_constructor_app():
-            self.installer = CondaInstaller()
-        else:
-            self.installer = PipInstaller()
-
-        installer_type = self.installer.__class__.__name__
-        self.setWindowTitle(
-            trans._('Plugin Manager ({installer})', installer=installer_type)
-        )
+        self.installer = InstallerQueue()
+        self.setWindowTitle(trans._('Plugin Manager'))
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)

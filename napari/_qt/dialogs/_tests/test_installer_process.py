@@ -5,10 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from napari._qt.dialogs.qt_package_installer import (
-    CondaInstaller,
-    PipInstaller,
-)
+from napari._qt.dialogs.qt_package_installer import InstallerQueue
 
 if TYPE_CHECKING:
     from virtualenv.run import Session
@@ -63,12 +60,24 @@ def tmp_conda_env(tmp_path):
     return tmp_path
 
 
-def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
-    installer = PipInstaller(python_interpreter=tmp_virtualenv.creator.exe)
+def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
+    installer = InstallerQueue()
     with qtbot.waitSignal(installer.allFinished, timeout=20000):
-        installer.install(['pip-install-test'])
-        installer.install(['typing-extensions'])
-        job_id = installer.install(['requests'])
+        installer.install(
+            task_handler="pip",
+            pkgs=['pip-install-test'],
+            _executable=tmp_virtualenv.creator.exe,
+        )
+        installer.install(
+            task_handler="pip",
+            pkgs=['typing-extensions'],
+            _executable=tmp_virtualenv.creator.exe,
+        )
+        job_id = installer.install(
+            task_handler="pip",
+            pkgs=['requests'],
+            _executable=tmp_virtualenv.creator.exe,
+        )
         assert isinstance(job_id, int)
         installer.cancel(job_id)
 
@@ -87,7 +96,11 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
         raise AssertionError('package was not installed')
 
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
-        job_id = installer.uninstall(['pip-install-test'])
+        job_id = installer.uninstall(
+            task_handler="pip",
+            pkgs=['pip-install-test'],
+            _executable=tmp_virtualenv.creator.exe,
+        )
 
     for pth in tmp_virtualenv.creator.libs:
         if (pth / 'pip_install_test').exists():
@@ -98,11 +111,13 @@ def test_pip_installer(qtbot, tmp_virtualenv: 'Session'):
 
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     # channels match configuration for tmp_conda_env above
-    installer = CondaInstaller(
-        channels=['conda-forge'], _conda_exe=conda_exe()
-    )
+    installer = InstallerQueue()
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
-        installer.install(['typing-extensions'], prefix=tmp_conda_env)
+        installer.install(
+            task_handler="conda",
+            pkgs=['typing-extensions'],
+            prefix=tmp_conda_env,
+        )
 
     conda_meta = tmp_conda_env / "conda-meta"
     glob_pat = "typing-extensions-*.json"
@@ -111,7 +126,11 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
     assert list(conda_meta.glob(glob_pat))
 
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
-        installer.uninstall(['typing-extensions'], prefix=tmp_conda_env)
+        installer.uninstall(
+            task_handler="conda",
+            pkgs=['typing-extensions'],
+            prefix=tmp_conda_env,
+        )
 
     assert not installer.hasJobs()
     assert not list(conda_meta.glob(glob_pat))

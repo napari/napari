@@ -18,105 +18,221 @@ from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
 
 JobId = int
+ActionType = Union[Literal["install"], Literal["uninstall"]]
+TaskHandler = Union[Literal["pip"], Literal["conda"]]
 log = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class _InstallerAction:
-    action: Union[Literal["install"], Literal["uninstall"]]
+class AbstractInstallerTask:
+    action: ActionType
     pkgs: Tuple[str, ...]
-    args: Tuple[str, ...]
+    origins: Tuple[str, ...] = ()
+    prefix: Optional[str] = None
+    _executable: Optional[str] = None
 
     @property
     def ident(self):
-        return hash(self.args)
+        return hash((self.action, *self.pkgs, *self.origins, self.prefix))
+
+    # abstract method
+    def executable(self):
+        raise NotImplementedError()
+
+    # abstract method
+    def arguments(
+        self,
+        action: ActionType,
+        pkgs: Tuple[str, ...],
+        prefix: Optional[str] = None,
+    ):
+        raise NotImplementedError()
+
+    # abstract method
+    def environment(
+        self, env: QProcessEnvironment = None
+    ) -> QProcessEnvironment:
+        raise NotImplementedError()
 
 
-class AbstractInstaller(QProcess):
-    """Abstract base class for package installers (pip, conda, etc)."""
+class PipInstallerTask(AbstractInstallerTask):
+    def executable(self):
+        if self._executable:
+            return str(self._executable)
+        return str(_get_python_exe())
+
+    def arguments(self) -> Tuple[str, ...]:
+        args = ['-m', 'pip']
+        if self.action == "install":
+            args += ['install', '--upgrade']
+            for origin in self.origins:
+                args += ['--extra-index-url', origin]
+        else:
+            args += ['uninstall', '-y']
+        if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
+            args.append('-vvv')
+        if self.prefix is not None:
+            args.extend(['--prefix', str(self.prefix)])
+        elif running_as_bundled_app(False) and sys.platform.startswith(
+            'linux'
+        ):
+            args += [
+                '--no-warn-script-location',
+                '--prefix',
+                user_plugin_dir(),
+            ]
+        return (*args, *self.pkgs)
+
+    def environment(
+        self, env: QProcessEnvironment = None
+    ) -> QProcessEnvironment:
+        if env is None:
+            env = QProcessEnvironment.systemEnvironment()
+        combined_paths = os.pathsep.join(
+            [
+                user_site_packages(),
+                env.systemEnvironment().value("PYTHONPATH"),
+            ]
+        )
+        env.insert("PYTHONPATH", combined_paths)
+        env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
+        return env
+
+
+class CondaInstallerTask(AbstractInstallerTask):
+    def executable(self):
+        if self._executable:
+            return str(self._executable)
+        _bat = ".bat" if os.name == "nt" else ""
+        if exe := os.environ.get("MAMBA_EXE", shutil.which(f'mamba{_bat}')):
+            return exe
+        _exe = ".exe" if os.name == "nt" else ""
+        if exe := os.environ.get("CONDA_EXE", shutil.which(f'conda{_exe}')):
+            return exe
+        return 'conda'  # cross our fingers
+
+    def arguments(self) -> Tuple[str, ...]:
+        prefix = self.prefix or self._default_prefix()
+        args = [self.action, '-y', '--prefix', prefix]
+        args.append('--override-channels')
+        for channel in (*self.origins, *self._default_channels()):
+            args.extend(["-c", channel])
+        return (*args, *self.pkgs)
+
+    def environment(
+        self, env: QProcessEnvironment = None
+    ) -> QProcessEnvironment:
+        if env is None:
+            env = QProcessEnvironment.systemEnvironment()
+        PINNED = 'CONDA_PINNED_PACKAGES'
+        system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
+        env.insert(PINNED, f"napari={self._napari_pin()}{system_pins}")
+        if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
+            env.insert('CONDA_VERBOSITY', '3')
+        if os.name == "nt":
+            if not env.contains("TEMP"):
+                temp = gettempdir()
+                env.insert("TMP", temp)
+                env.insert("TEMP", temp)
+            if not env.contains("USERPROFILE"):
+                env.insert("HOME", os.path.expanduser("~"))
+                env.insert("USERPROFILE", os.path.expanduser("~"))
+        return env
+
+    def _napari_pin(self):
+        from ..._version import version, version_tuple
+
+        if "rc" in version or "dev" in version:
+            # dev or rc versions might not be available in public channels
+            # but only installed locally - if we try to pin those, mamba
+            # will fail to pin it because there's no record of that version
+            # in the remote index, only locally; to work around this bug
+            # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
+            return ".".join([str(part) for part in version_tuple[:2]])
+        return ".".join([str(part) for part in version_tuple[:3]])
+
+    def _default_channels(self):
+        return ('conda-forge',)
+
+    def _default_prefix(self):
+        if (Path(sys.prefix) / "conda-meta").is_dir():
+            return sys.prefix
+        raise ValueError("prefix has not been specified!")
+
+
+class InstallerQueue(QProcess):
+    """Queue for installation and uninstallation tasks in the plugin manager."""
 
     # emitted when all jobs are finished
     # not to be confused with finished, which is emitted when each job is finished
     allFinished = Signal()
 
-    # abstract method
-    def _modify_env(self, env: QProcessEnvironment):
-        raise NotImplementedError()
-
-    def _build_queue_item(
-        self,
-        action: Union[Literal["install"], Literal["uninstall"]],
-        pkg_list: Sequence[str],
-        prefix: Optional[str] = None,
-    ) -> _InstallerAction:
-        if action == "install":
-            args = self._get_install_args(pkg_list, prefix)
-        else:
-            args = self._get_uninstall_args(pkg_list, prefix)
-        return _InstallerAction(pkgs=pkg_list, action=action, args=args)
-
-    # abstract method
-    def _get_install_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        raise NotImplementedError()
-
-    # abstract method
-    def _get_uninstall_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        raise NotImplementedError()
-
-    # abstract method
-    def _default_prefix(self):
-        raise NotImplementedError()
-
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
-        self._queue: Deque[_InstallerAction] = Deque()
+        self._queue: Deque[AbstractInstallerTask] = Deque()
         self._output_widget = None
 
         self.setProcessChannelMode(QProcess.MergedChannels)
         self.readyReadStandardOutput.connect(self._on_stdout_ready)
         self.readyReadStandardError.connect(self._on_stderr_ready)
 
-        env = QProcessEnvironment.systemEnvironment()
-        self._modify_env(env)
-        self.setProcessEnvironment(env)
-
         self.finished.connect(self._on_process_finished)
         self.errorOccurred.connect(self._on_error_occurred)
 
     # -------------------------- Public API ------------------------------
     def install(
-        self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
+        self,
+        task_handler: TaskHandler,
+        pkgs: Sequence[str],
+        *,
+        prefix: Optional[str] = None,
+        origins: Sequence[str] = (),
+        **kwargs,
     ) -> JobId:
-        """Install packages in `pkg_list` into `prefix`.
+        """Install packages in `pkgs` into `prefix` using `task_handler` tool with additional
+        `origins` as source for `pkgs`.
 
         Parameters
         ----------
-        pkg_list : Sequence[str]
+        task_handler : str
+            Which type of installation task_handler to use: pip or conda
+        pkgs : Sequence[str]
             List of packages to install.
         prefix : Optional[str], optional
             Optional prefix to install packages into.
+        origins : Optional[Sequence[str]], optional
+            Additional sources for packages to be downloaded from.
 
         Returns
         -------
         JobId : int
             ID that can be used to cancel the process.
         """
-        return self._queue_item(
-            self._build_queue_item("install", pkg_list, prefix)
+        item = self._build_queue_item(
+            task_handler=task_handler,
+            action="install",
+            pkgs=pkgs,
+            prefix=prefix,
+            origins=origins,
+            **kwargs,
         )
+        return self._queue_item(item)
 
     def uninstall(
-        self, pkg_list: Sequence[str], *, prefix: Optional[str] = None
+        self,
+        task_handler: TaskHandler,
+        pkgs: Sequence[str],
+        *,
+        prefix: Optional[str] = None,
+        **kwargs,
     ) -> JobId:
-        """Uninstall packages in `pkg_list` from `prefix`.
+        """Uninstall packages in `pkgs` from `prefix` using `task_handler` tool.
 
         Parameters
         ----------
-        pkg_list : Sequence[str]
+        task_handler : str
+            Which type of installation task_handler to use: pip or conda
+        pkgs : Sequence[str]
             List of packages to uninstall.
         prefix : Optional[str], optional
             Optional prefix from which to uninstall packages.
@@ -126,9 +242,14 @@ class AbstractInstaller(QProcess):
         JobId : int
             ID that can be used to cancel the process.
         """
-        return self._queue_item(
-            self._build_queue_item("uninstall", pkg_list, prefix)
+        item = self._build_queue_item(
+            task_handler=task_handler,
+            action="uninstall",
+            pkgs=pkgs,
+            prefix=prefix,
+            **kwargs,
         )
+        return self._queue_item(item)
 
     def cancel(self, job_id: Optional[JobId] = None):
         """Cancel `job_id` if it is running.
@@ -141,7 +262,7 @@ class AbstractInstaller(QProcess):
 
         def end_process():
             if os.name == 'nt':
-                self.kill()
+                self.kill()  # this might be too agressive and won't allow rollbacks!
             else:
                 self.terminate()
             if self._output_widget:
@@ -162,7 +283,10 @@ class AbstractInstaller(QProcess):
                 return
         msg = f"No job with id {job_id}. Current queue:\n - "
         msg += "\n - ".join(
-            [f"{item.ident} -> {item.args}" for item in self._queue]
+            [
+                f"{item.ident} -> {item.executable()} {item.arguments()}"
+                for item in self._queue
+            ]
         )
         raise ValueError(msg)
 
@@ -192,7 +316,26 @@ class AbstractInstaller(QProcess):
         if self._output_widget:
             self._output_widget.append(msg)
 
-    def _queue_item(self, item: _InstallerAction) -> JobId:
+    def _build_queue_item(
+        self,
+        task_handler: TaskHandler,
+        action: ActionType,
+        pkgs: Sequence[str],
+        prefix: Optional[str] = None,
+        origins: Sequence[str] = (),
+        **kwargs,
+    ) -> AbstractInstallerTask:
+        if task_handler == "pip":
+            InstallerAction = PipInstallerTask
+        elif task_handler == "conda":
+            InstallerAction = CondaInstallerTask
+        else:
+            raise ValueError(f"Handler {task_handler} not recognized!")
+        return InstallerAction(
+            pkgs=pkgs, action=action, origins=origins, prefix=prefix, **kwargs
+        )
+
+    def _queue_item(self, item: AbstractInstallerTask) -> JobId:
         self._queue.append(item)
         self._process_queue()
         return item.ident
@@ -201,7 +344,10 @@ class AbstractInstaller(QProcess):
         if not self._queue:
             self.allFinished.emit()
             return
-        self.setArguments(list(self._queue[0].args))
+        task = self._queue[0]
+        self.setProgram(str(task.executable()))
+        self.setProcessEnvironment(task.environment())
+        self.setArguments([str(arg) for arg in task.arguments()])
         # this might throw a warning because the same process
         # was already running but it's ok
         self._log(f"Starting '{self.program()}' with args {self.arguments()}")
@@ -228,7 +374,9 @@ class AbstractInstaller(QProcess):
                 elif pkg in npe1_plugins:
                     plugin_manager.unregister(pkg)
                 else:
-                    log.warning('Cannot unregister %s, not a known napari plugin.', pkg)
+                    log.warning(
+                        'Cannot unregister %s, not a known napari plugin.', pkg
+                    )
         self._on_process_done(exit_code=exit_code, exit_status=exit_status)
 
     def _on_error_occurred(self, error: QProcess.ProcessError):
@@ -259,137 +407,6 @@ class AbstractInstaller(QProcess):
         text = self.readAllStandardError().data().decode()
         if text:
             self._log(text)
-
-
-class PipInstaller(AbstractInstaller):
-    def __init__(
-        self, parent: Optional[QObject] = None, python_interpreter: str = ''
-    ) -> None:
-        super().__init__(parent)
-        self.setProgram(str(python_interpreter or _get_python_exe()))
-
-    def _modify_env(self, env: QProcessEnvironment):
-        # patch process path
-        combined_paths = os.pathsep.join(
-            [
-                user_site_packages(),
-                env.systemEnvironment().value("PYTHONPATH"),
-            ]
-        )
-        env.insert("PYTHONPATH", combined_paths)
-        env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
-
-    def _get_args(
-        self, *arg0, pkg_list: Sequence[str] = (), prefix: Optional[str] = None
-    ):
-        cmd = ['-m', 'pip', *arg0]
-        if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
-            cmd.append('-vvv')
-        if prefix is not None:
-            cmd.extend(['--prefix', str(prefix)])
-        elif running_as_bundled_app(False) and sys.platform.startswith(
-            'linux'
-        ):
-            cmd.extend(
-                ['--no-warn-script-location', '--prefix', user_plugin_dir()]
-            )
-        return tuple(cmd + list(pkg_list))
-
-    def _get_install_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        return self._get_args(
-            'install', '--upgrade', pkg_list=pkg_list, prefix=prefix
-        )
-
-    def _get_uninstall_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        return self._get_args(
-            'uninstall', '-y', pkg_list=pkg_list, prefix=prefix
-        )
-
-    def _default_prefix(self):
-        return None
-
-
-class CondaInstaller(AbstractInstaller):
-    default_channels = ('conda-forge',)
-
-    def __init__(
-        self,
-        parent: Optional[QObject] = None,
-        use_mamba: bool = True,
-        channels: Optional[Sequence[str]] = None,
-        _conda_exe: Optional[os.PathLike] = None,
-    ) -> None:
-        _bat = ".bat" if os.name == "nt" else ""
-        if _conda_exe:
-            self._bin = _conda_exe
-        else:
-            self._bin = (
-                f'mamba{_bat}'
-                if use_mamba and shutil.which(f'mamba{_bat}')
-                else f'conda{_bat}'
-            )
-        super().__init__(parent)
-        self.setProgram(self._bin)
-        # TODO: make configurable per install once plugins can request it
-        self.channels = channels or self.default_channels
-        self._default_prefix = (
-            sys.prefix if (Path(sys.prefix) / "conda-meta").is_dir() else None
-        )
-
-    def _napari_pin(self):
-        from ..._version import version, version_tuple
-
-        if "rc" in version or "dev" in version:
-            # dev or rc versions might not be available in public channels
-            # but only installed locally - if we try to pin those, mamba
-            # will fail to pin it because there's no record of that version
-            # in the remote index, only locally; to work around this bug
-            # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
-            return ".".join([str(part) for part in version_tuple[:2]])
-        return ".".join([str(part) for part in version_tuple[:3]])
-
-    def _modify_env(self, env: QProcessEnvironment):
-        PINNED = 'CONDA_PINNED_PACKAGES'
-        system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
-        env.insert(PINNED, f"napari={self._napari_pin()}{system_pins}")
-        if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
-            env.insert('CONDA_VERBOSITY', '3')
-
-        if os.name == "nt":
-            if not env.contains("TEMP"):
-                temp = gettempdir()
-                env.insert("TMP", temp)
-                env.insert("TEMP", temp)
-            if not env.contains("USERPROFILE"):
-                env.insert("HOME", os.path.expanduser("~"))
-                env.insert("USERPROFILE", os.path.expanduser("~"))
-
-    def _get_args(
-        self, *arg0, pkg_list: Sequence[str] = (), prefix: Optional[str] = None
-    ):
-        cmd = [*arg0, '-y', '--override-channels']
-        if prefix := str(prefix or self._default_prefix):
-            cmd.extend(['--prefix', prefix])
-        for channel in self.channels:
-            cmd.extend(["-c", channel])
-        return tuple(cmd + list(pkg_list))
-
-    def _get_install_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        return self._get_args('install', pkg_list=pkg_list, prefix=prefix)
-
-    def _get_uninstall_args(
-        self, pkg_list: Sequence[str], prefix: Optional[str] = None
-    ) -> Tuple[str, ...]:
-        return self._get_args('remove', pkg_list=pkg_list, prefix=prefix)
-
-    def _default_prefix(self):
-        return os.environ.get('CONDA_PREFIX', sys.prefix)
 
 
 def _get_python_exe():
