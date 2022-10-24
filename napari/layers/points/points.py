@@ -18,10 +18,10 @@ from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
+from ..utils._slice_input import _SliceInput
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils._slice_input import _SliceInput
 from ..utils.layer_utils import (
     _features_to_properties,
     _FeatureTable,
@@ -36,7 +36,6 @@ from ._points_utils import (
     fix_data_points,
     points_to_squares,
 )
-
 from ._slice import _PointSliceRequest, _PointSliceResponse
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
