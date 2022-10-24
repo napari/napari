@@ -32,12 +32,11 @@ This command will launch an empty viewer:
 
 ![image: an empty napari viewer](../assets/tutorials/launch_cli_empty.png)
 
-Once you have the viewer open you can add images through the `File/Open` dropdown menu
+Once you have the viewer open you can add images through the `File -> Open` dropdown menu
 or by dragging and dropping images directly on the viewer.
 We currently only support files that can be read with [`skimage.io.imread`](https://scikit-image.org/docs/dev/api/skimage.io.html#skimage.io.imread),
 such as `tif`, `png`, and `jpg`.
 We plan on adding support for more exotic file types shortly - see [issue #379](https://github.com/napari/napari/issues/379) for discussion.
-You can also create new empty `points`, `shapes`, and `labels` layers using the new layer buttons in the bottom right of the viewer.
 
 You can also directly load an image into the viewer from the command line by passing the path to the image as an argument as follows
 
@@ -56,31 +55,54 @@ but we'll be adding support for this functionality soon as discussed in [#379](h
 
 ### Python script usage
 
-To launch napari from a python script, inside your script you should import `napari`,
-and then create the `Viewer` by adding some data.
+To launch napari from a python script, inside your script you can import `napari`,
+then create a {class}`Viewer<napari.Viewer>` and {class}`Image<napari.layers.Image>`
+layer by adding some image data, using {func}`imshow<napari.imshow>`.
+The {class}`Viewer<napari.Viewer>` is representative of the napari viewer GUI
+you launch and stores all the data you add to napari. The
+{class}`Image<napari.layers.Image>` will store information about the image data
+you added.
 
-For example, to add an image and some points inside your script you should include:
+For example, to add an image and print the shape of the image layer data,
+you can use:
 
 ```python
+# import sample data
+from skimage.data import cells3d
+
 import napari
 
-# create a Viewer and add an image here
-viewer = napari.view_image(my_image_data)
+# create a `Viewer` and `Image` layer here
+viewer, image_layer = napari.imshow(cells3d())
 
-# custom code to add data here
-viewer.add_points(my_points_data)
+# print shape of image datas
+print(image_layer.data.shape)
 
 # start the event loop and show the viewer
 napari.run()
 ```
 
-then run your script from the command line to launch the viewer with your data:
+Note that {func}`imshow<napari.imshow>` is a convenience function that is
+equivalent to:
+
+```python
+# import sample data
+from skimage.data import cells3d
+
+import napari
+
+viewer = napari.Viewer()
+image_layer = viewer.add_image(cells3d())
+```
+
+You can now run your script from the command line to launch the viewer with your data:
 
 ```sh
 python my_example_script.py
 ```
 
-See the scripts inside the [`examples`](https://github.com/napari/napari/tree/main/examples) in the main repository for examples of using napari this way.
+The [examples gallery](../../gallery) consists of code examples which can be
+downloaded as `.py` (and `.ipynb` files) and run as above.
 
 ![image: napari launched from a python script](../assets/tutorials/launch_script.png)
 
@@ -89,14 +111,17 @@ is that you can preprocess your images and add multiple layers before displaying
 
 ### IPython console usage
 
-To launch napari from an IPython console import `napari` and create a `Viewer` object.
+To launch napari from an IPython console import `napari` and create a
+{class}`Viewer<napari.Viewer>` and {class}`Image<napari.layers.Image>` object.
 
 ```python
-import napari
-from skimage.data import astronaut
+# import sample data
+from skimage.data import cells3d
 
-# create the viewer and display the image
-viewer = napari.view_image(astronaut(), rgb=True)
+import napari
+
+# create a `Viewer` and `Image` layer here
+viewer, image_layer = napari.imshow(cells3d())
 ```
 
 Napari will automatically use the interactive [`%gui qt` event
@@ -112,18 +137,25 @@ and where data changed in the GUI will be accessible in the console.
 
 ### Jupyter notebook usage
 
-You can also launch napari from a jupyter notebook,
-such as [`examples/notebook.ipynb`](https://github.com/napari/napari/tree/main/examples/notebook.ipynb)
+You can also launch napari from a Jupyter notebook. The
+[examples gallery](../../gallery), as mentioned above, can also be downloaded as
+`.ipynb` which can be run from a Jupyter notebook.
 
-![image: napari launched from a jupyter notebook](../assets/tutorials/launch_jupyter.png)
+Below, we launch the [notebook example](https://github.com/napari/napari/tree/main/examples/notebook.ipynb) from a Jupyter notebook.
+
+![image: napari launched from a Jupyter notebook](../assets/tutorials/launch_jupyter.png)
 
 Similar to launching from the IPython console,
-an advantage of launching napari from a jupyter notebook
-is that you can continue to programmatically interact with the viewer from jupyter notebook,
+an advantage of launching napari from a Jupyter notebook
+is that you can continue to programmatically interact with the viewer from Jupyter notebook,
 including bidirectional communication, where code run in the notebook will update the current viewer
 and where data changed in the GUI will be accessible in the notebook.
 
 ## Next steps
 
-To learn more about how to use the napari viewer with different types of napari layers
-checkout the [viewer tutorial](./viewer) and more of our tutorials listed below.
+To learn more about:
+
+* how to use the napari viewer graphical user interface (GUI),
+  checkout the [viewer tutorial](./viewer)
+* how to use the napari viewer with different types of napari layers, see
+  [layers at a glance](../../guides/layers)
