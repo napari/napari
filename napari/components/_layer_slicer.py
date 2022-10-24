@@ -57,9 +57,11 @@ class _LayerSlicer:
         Submitting multiple layers at one generates multiple requests (stored in a dict),
         but only ONE task.
 
-        A slice submitted with multiple layers will only cancel if the same tuple of layers
-        is resubmitted. If a second slice is requested with only one layer from the first
-        slice, it will not be cancelled.
+        If multiple layers are sliced, any task that contains only one of those
+        layers can safely be cancelled. If a single layer is sliced, it will
+        wait for any existing tasks that include that layer AND another layer,
+        In other words, it will only cancel if the new task will replace the
+        slices of all the layers in the pending task.
         """
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
