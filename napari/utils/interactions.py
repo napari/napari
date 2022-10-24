@@ -5,7 +5,7 @@ from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
-from ..utils.key_bindings import KeyBindingLike, coerce_keybinding
+from ..utils.key_bindings import KeyBinding, KeyBindingLike, coerce_keybinding
 from ..utils.translations import trans
 
 
@@ -244,15 +244,27 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def kb2mods(kb) -> List[str]:
+def _kb2mods(key_bind: KeyBinding) -> List[str]:
+    """Extract list of modifiers from a key binding.
+
+    Parameters
+    ----------
+    key_bind : KeyBinding
+        The key binding whose mods are to be extracted.
+
+    Returns
+    -------
+    list of str
+        The key modifiers used by the key binding.
+    """
     mods = []
-    if kb.ctrl:
+    if key_bind.ctrl:
         mods.append('Ctrl')
-    if kb.shift:
+    if key_bind.shift:
         mods.append('Shift')
-    if kb.alt:
+    if key_bind.alt:
         mods.append('Alt')
-    if kb.meta:
+    if key_bind.meta:
         mods.append('Meta')
     return mods
 
@@ -270,12 +282,10 @@ class Shortcut:
     """
 
     def __init__(self, shortcut: KeyBindingLike):
-        """
-        Parameters
+        """Parameters
         ----------
         shortcut : keybinding-like
             shortcut to format
-
         """
         error_msg = trans._(
             "{shortcut} does not seem to be a valid shortcut Key.",
@@ -290,10 +300,7 @@ class Shortcut:
         else:
             for part in self._kb.parts:
                 shortcut_key = str(part.key)
-                if (
-                    len(shortcut_key) > 1
-                    and shortcut_key not in KEY_SYMBOLS.keys()
-                ):
+                if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
                     error = True
 
         if error:
@@ -301,12 +308,18 @@ class Shortcut:
 
     @property
     def qt(self) -> str:
+        """Representation of the keybinding as it would appear in Qt.
+
+        Returns
+        -------
+        string
+            Shortcut formatted to be used with Qt.
+        """
         return str(self._kb)
 
     @property
     def platform(self) -> str:
-        """
-        Format the given shortcut for the current platform.
+        """Format the given shortcut for the current platform.
 
         Replace Cmd, Ctrl, Meta...etc by appropriate symbols if relevant for the
         given platform.
@@ -319,7 +332,7 @@ class Shortcut:
         return ' '.join(
             joinchar.join(
                 KEY_SYMBOLS.get(x, x)
-                for x in (kb2mods(part) + [str(part.key)])
+                for x in (_kb2mods(part) + [str(part.key)])
             )
             for part in self._kb.parts
         )

@@ -63,7 +63,7 @@ KEY_SUBS = {
     'Option': 'Alt',
 }
 
-UNDEFINED = object()
+_UNDEFINED = object()
 
 _VISPY_SPECIAL_KEYS = [
     keys.SHIFT,
@@ -110,30 +110,30 @@ _VISPY_MODS = {
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
 
-def coerce_keybinding(kb: KeyBindingLike) -> KeyBinding:
+def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
     """Convert a keybinding-like object to a KeyBinding.
 
     Parameters
     ----------
-    kb : keybinding-like
+    key_bind : keybinding-like
         Object to coerce.
 
     Returns
     -------
-    kb : KeyBinding
+    key_bind : KeyBinding
         Object as KeyBinding.
     """
-    if isinstance(kb, str):
+    if isinstance(key_bind, str):
         for k, v in KEY_SUBS.items():
-            kb = kb.replace(k, v)
+            key_bind = key_bind.replace(k, v)
 
-    return KeyBinding.validate(kb)
+    return KeyBinding.validate(key_bind)
 
 
 def bind_key(
     keymap: Keymap,
-    kb: Union[KeyBindingLike, EllipsisType],
-    func=UNDEFINED,
+    key_bind: Union[KeyBindingLike, EllipsisType],
+    func=_UNDEFINED,
     *,
     overwrite=False,
 ):
@@ -143,7 +143,7 @@ def bind_key(
     ----------
     keymap : dict of str: callable
         Keymap to modify.
-    kb : keybinding-like or ...
+    key_bind : keybinding-like or ...
         Key combination.
         ``...`` acts as a wildcard if no key combinations can be matched
         in the keymap (this will overwrite all key combinations
@@ -196,27 +196,27 @@ def bind_key(
 
     To create a keymap that will block others, ``bind_key(..., ...)```.
     """
-    if func is UNDEFINED:
+    if func is _UNDEFINED:
 
         def inner(func):
-            bind_key(keymap, kb, func, overwrite=overwrite)
+            bind_key(keymap, key_bind, func, overwrite=overwrite)
             return func
 
         return inner
 
-    if kb is not Ellipsis:
-        kb = coerce_keybinding(kb)
+    if key_bind is not Ellipsis:
+        key_bind = coerce_keybinding(key_bind)
 
-    if func is not None and kb in keymap and not overwrite:
+    if func is not None and key_bind in keymap and not overwrite:
         raise ValueError(
             trans._(
                 'keybinding {key} already used! specify \'overwrite=True\' to bypass this check',
                 deferred=True,
-                key=str(kb),
+                key=str(key_bind),
             )
         )
 
-    unbound = keymap.pop(kb, None)
+    unbound = keymap.pop(key_bind, None)
 
     if func is not None:
         if func is not Ellipsis and not callable(func):
@@ -226,7 +226,7 @@ def bind_key(
                     deferred=True,
                 )
             )
-        keymap[kb] = func
+        keymap[key_bind] = func
 
     return unbound
 
@@ -242,12 +242,14 @@ def _get_user_keymap() -> Keymap:
     return USER_KEYMAP
 
 
-def _bind_user_key(key: KeyBindingLike, func=UNDEFINED, *, overwrite=False):
+def _bind_user_key(
+    key_bind: KeyBindingLike, func=_UNDEFINED, *, overwrite=False
+):
     """Bind a key combination to the user keymap.
 
     See ``bind_key`` docs for details.
     """
-    return bind_key(_get_user_keymap(), key, func, overwrite=overwrite)
+    return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
 
 
 def _vispy2appmodel(event) -> KeyBinding:
@@ -392,18 +394,18 @@ class KeymapHandler:
 
         return active_keymap_final
 
-    def press_key(self, kb):
+    def press_key(self, key_bind):
         """Simulate a key press to activate a keybinding.
 
         Parameters
         ----------
-        kb : keybinding-like
+        key_bind : keybinding-like
             Key combination.
         """
-        kb = coerce_keybinding(kb)
+        key_bind = coerce_keybinding(key_bind)
         keymap = self.active_keymap
-        if kb in keymap:
-            func = keymap[kb]
+        if key_bind in keymap:
+            func = keymap[key_bind]
         elif Ellipsis in keymap:  # catch-all
             func = keymap[...]
         else:
@@ -422,7 +424,7 @@ class KeymapHandler:
 
         generator_or_callback = func()
 
-        key = str(kb.parts[-1].key)
+        key = str(key_bind.parts[-1].key)
 
         if inspect.isgeneratorfunction(func):
             try:
@@ -437,18 +439,18 @@ class KeymapHandler:
                 time.time(),
             )
 
-    def release_key(self, kb):
+    def release_key(self, key_bind):
         """Simulate a key release for a keybinding.
 
         Parameters
         ----------
-        kb : keybinding-like
+        key_bind : keybinding-like
             Key combination.
         """
         from ..settings import get_settings
 
-        kb = coerce_keybinding(kb)
-        key = str(kb.parts[-1].key)
+        key_bind = coerce_keybinding(key_bind)
+        key = str(key_bind.parts[-1].key)
         with contextlib.suppress(KeyError, StopIteration):
             val = self._key_release_generators[key]
             # val could be callback function with time to check
