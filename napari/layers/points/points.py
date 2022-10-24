@@ -1490,7 +1490,6 @@ class Points(Layer):
             dims_not_displayed=self._slice_input.not_displayed,
             size=self.size,
             out_of_slice_display=self.out_of_slice_display,
-            not_disp=list(self._slice_input.not_displayed),
         )
 
     def _get_value(self, position) -> Union[None, int]:
