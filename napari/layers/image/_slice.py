@@ -48,37 +48,19 @@ class _ImageSliceRequest:
     Attributes
     ----------
     dims : _SliceInput
-        The layer dimensions used for slicing.
+        Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
-        The layer's data field.
+        The layer's data field, which is the main input to slicing.
     data_to_world: Affine
         The affine transform from the data at the highest resolution to the
         layer's world coordinate system.
-    multiscale : bool
-        If True, the data has multiple scale/resolution levels.
-        False otherwise.
-    corner_pixels : np.ndarray
-        The 2xD array of the corner coordinates of the part of the image that
-        is being shown in the canvas, where D is the display/canvas dimensionality.
-        These coordinates are in the layer's data space at the highest resolution.
-    rgb : bool
-        If True, the last dimension of data contains RGB values and will not be sliced.
-        False otherwise.
-    data_level : int
-        The multi-scale level at which to read image data.
-    thumbnail_level : int
-        The multi-scale level at which to read thumbnail data.
-    level_shapes : np.ndarray
-        The LxD array of ints that describe the data shape of each multi-scale level,
-        where L is the number of levels and D is the dimensionality of the layer.
-    downsample_factors : np.ndarray
-        The LxD array of floats that describe the downsample factors from the highest
-        resolution level to all L levels and all D dimensions.
     lazy : bool
         If True, do not materialize the data with `np.asarray` during execution.
         Otherwise, False. This should be True for the experimental async code
         (as the load occurs on a separate thread) but False for the new async
         where `execute` is expected to be run on a separate thread.
+    others
+        See the corresponding attributes in `Layer` and `Image`.
     """
 
     dims: _SliceInput
