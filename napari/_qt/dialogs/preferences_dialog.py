@@ -150,9 +150,13 @@ class PreferencesDialog(QDialog):
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)
+
+        # TODO make custom shortcuts dialog to properly capture new
+        #      functionality once we switch to app-model's keybinding system
+        #      then we can remove the below code used for autogeneration
         if field.name == 'shortcuts':
-            # FIXME hardcode workaround because pydantic's schema generation
-            #       does not allow you to specify custom JSON serialization
+            # hardcode workaround because pydantic's schema generation
+            # does not allow you to specify custom JSON serialization
             schema = {
                 "title": "ShortcutsSettings",
                 "type": "object",
