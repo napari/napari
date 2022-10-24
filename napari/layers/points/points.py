@@ -1655,6 +1655,7 @@ class Points(Layer):
             data=self.data,
             dims_indices=self._slice_indices,
             data_to_world=self._transforms[1:3].simplified,
+            out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )
 
