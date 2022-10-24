@@ -22,6 +22,7 @@ from ..utils._slice_input import _SliceInput
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
+from ..utils._slice_input import _SliceInput
 from ..utils.layer_utils import (
     _features_to_properties,
     _FeatureTable,
@@ -36,6 +37,8 @@ from ._points_utils import (
     fix_data_points,
     points_to_squares,
 )
+from ._slice import _PointSliceRequest, _PointSliceResponse
+
 from ._slice import _PointSliceRequest, _PointSliceResponse
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -1643,6 +1646,7 @@ class Points(Layer):
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
+<<<<<<< HEAD
         request = self._make_slice_request_internal(
             self._slice_input, self._slice_indices
         )
@@ -1662,6 +1666,22 @@ class Points(Layer):
         )
 
     def _update_slice_response(self, response: _PointSliceResponse):
+=======
+        request = self._make_slice_request_internal(self._slice_input)
+        response = request.execute()
+        self._set_slice_response(response)
+
+    def _make_slice_request_internal(self, slice_input: _SliceInput):
+        return _PointSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dims_indices=self._slice_indices,
+            data_to_world=self._transforms[1:3].simplified,
+            size=self.size,
+        )
+
+    def _set_slice_response(self, response: _PointSliceResponse):
+>>>>>>> 29446f6c (Use request/response to slice points)
         """Handle a slicing response."""
         indices = response.indices
         scale = response.scale
