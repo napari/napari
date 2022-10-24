@@ -764,13 +764,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
-            # This is the composition of two affine transforms so is
-            # guaranteed to be affine too.
-            # We don't want the first transform (tile2data) because
-            # that's really just output from slicing.
-            # We don't want the last transform (world2grid) because
-            # that only relates to the displayed dimensions.
-            data_to_world=self._transforms[1:3].simplified,
+            # TODO: slice_indices should be lazily computed on the request itself,
+            # but this introduces some minor peformance issues right now related to
+            # evaluation of the data-to-world transform and its inverse.
+            slice_indices=self._slice_indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -793,9 +790,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_source=response.thumbnail,
         )
 
-        # TODO: remove tile2data from the layer's transform chain.
-        if response.tile_to_data is not None:
-            self._transforms[0] = response.tile_to_data
+        # TODO: remove the tile-to-data transform from the layer.
+        self._transforms[0] = response.tile_to_data
 
         # For the old experimental async code, where loading might be sync
         # or async.

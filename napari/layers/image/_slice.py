@@ -1,6 +1,5 @@
 import warnings
 from dataclasses import dataclass, field
-from functools import cached_property
 from typing import Any, Optional, Tuple, Union
 
 import numpy as np
@@ -25,14 +24,14 @@ class _ImageSliceResponse:
         for multi-scale images.
         For single-scale images, this will be `None`, which indicates that the thumbnail data
         is the same as the sliced image data.
-    tile_to_data: Optional[Affine]
+    tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
-        For single-scale images, this will be `None`.
+        For single-scale images, this will be the identity matrix.
     """
 
     data: Any = field(repr=False)
     thumbnail: Optional[Any] = field(repr=False)
-    tile_to_data: Optional[Affine] = field(repr=False)
+    tile_to_data: Affine = field(repr=False)
 
 
 @dataclass(frozen=True)
@@ -51,9 +50,8 @@ class _ImageSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    data_to_world: Affine
-        The affine transform from the data at the highest resolution to the
-        layer's world coordinate system.
+    slice_indices : Tuple[Union[int, slice], ...]
+        The slice indices in the layer's data space.
     lazy : bool
         If True, do not materialize the data with `np.asarray` during execution.
         Otherwise, False. This should be True for the experimental async code
@@ -65,7 +63,7 @@ class _ImageSliceRequest:
 
     dims: _SliceInput
     data: Any = field(repr=False)
-    data_to_world: Affine = field(repr=False)
+    slice_indices: Tuple[Union[int, slice], ...]
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
@@ -74,12 +72,6 @@ class _ImageSliceRequest:
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
     lazy: bool = field(default=False, repr=False)
-
-    @cached_property
-    def slice_indices(self) -> Tuple[Union[int, float, slice], ...]:
-        if len(self.dims.not_displayed) == 0:
-            return (slice(None),) * self.dims.ndim
-        return self.dims.data_indices(self.data_to_world.inverse)
 
     def execute(self) -> _ImageSliceResponse:
         return (
@@ -92,10 +84,16 @@ class _ImageSliceRequest:
         image = self.data[self.slice_indices]
         if not self.lazy:
             image = np.asarray(image)
+        # `Layer.multiscale` is mutable so we need to pass back the identity
+        # transform to ensure `tile2data` is properly set on the layer.
+        ndim = self.dims.ndim
+        tile_to_data = Affine(
+            name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
+        )
         return _ImageSliceResponse(
             data=image,
             thumbnail=None,
-            tile_to_data=None,
+            tile_to_data=tile_to_data,
         )
 
     def _execute_multi_scale(self) -> _ImageSliceResponse:
@@ -113,13 +111,12 @@ class _ImageSliceRequest:
 
         indices = self._slice_indices_at_level(level)
 
+        # Calculate the tile-to-data transform.
         scale = np.ones(self.dims.ndim)
         for d in self.dims.displayed:
             scale[d] = self.downsample_factors[level][d]
 
-        # This only needs to be a ScaleTranslate but different types
-        # of transforms in a chain don't play nicely together right now.
-        tile_to_data = Affine(name='tile2data', scale=scale)
+        translate = np.zeros(self.dims.ndim)
         if self.dims.ndisplay == 2:
             for d in self.dims.displayed:
                 indices[d] = slice(
@@ -127,10 +124,16 @@ class _ImageSliceRequest:
                     self.corner_pixels[1, d],
                     1,
                 )
-            # TODO: why do we only do this for 2D display?
-            # I guess we only support multiscale in 2D anyway, but then why is scale
-            # not in here too?
-            tile_to_data.translate = self.corner_pixels[0] * tile_to_data.scale
+            translate = self.corner_pixels[0] * scale
+
+        # This only needs to be a ScaleTranslate but different types
+        # of transforms in a chain don't play nicely together right now.
+        tile_to_data = Affine(
+            name='tile2data',
+            scale=scale,
+            translate=translate,
+            ndim=self.dims.ndim,
+        )
 
         thumbnail_indices = self._slice_indices_at_level(self.thumbnail_level)
 
