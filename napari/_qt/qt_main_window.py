@@ -1249,12 +1249,13 @@ class Window:
                     )
                 # Scale the requested size to account for HiDPI
                 size = tuple(
-                    dim / self._qt_window.devicePixelRatio() for dim in size
+                    int(dim / self._qt_window.devicePixelRatio())
+                    for dim in size
                 )
                 canvas.size = size[::-1]  # invert x ad y for vispy
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(dim * scale for dim in canvas.size)
+                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:
