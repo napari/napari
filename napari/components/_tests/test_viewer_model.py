@@ -104,6 +104,21 @@ def test_add_multiscale():
     assert viewer.dims.ndim == 2
 
 
+def test_add_multiscale_image_with_negative_floats():
+    """See https://github.com/napari/napari/issues/5257"""
+    viewer = ViewerModel()
+    shapes = [(20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.float64) for s in shapes]
+    data[0][-4:, -2:] = -1
+    data[1][-2:, -1:] = -1
+
+    viewer.add_image(data, multiscale=True)
+
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
 def test_add_labels():
     """Test adding labels image."""
     viewer = ViewerModel()
