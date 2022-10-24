@@ -28,7 +28,7 @@ class _PointSliceRequest:
 
     dims: _SliceInput
     data: Any = field(repr=False)
-    slice_indices: Any = field(repr=False)
+    dims_indices: Any = field(repr=False)
     data_to_world: Affine = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display = False
@@ -38,7 +38,7 @@ class _PointSliceRequest:
         slice_indices, scale = _PointSliceRequest._get_slice_data(
             data=self.data,
             ndim=self.dims.ndim,
-            dims_indices=self.slice_indices,
+            dims_indices=self.dims_indices,
             dims_not_displayed=self.dims.not_displayed,
             size=self.size,
             out_of_slice_display=self.out_of_slice_display,
@@ -58,14 +58,12 @@ class _PointSliceRequest:
         size,
         out_of_slice_display,
     ):
-        # Get a list of the data for the points in this slice
         not_disp = list(dims_not_displayed)
         # We want a numpy array so we can use fancy indexing with the non-displayed
         # indices, but as dims_indices can (and often/always does) contain slice
         # objects, the array has dtype=object which is then very slow for the
         # arithmetic below. As Points._round_index is always False, we can safely
         # convert to float to get a major performance improvement.
-        print(f"get_slice_data {np.array(dims_indices)} not_disp {not_disp}")
         not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
         if len(data) > 0:
             if out_of_slice_display and ndim > 2:

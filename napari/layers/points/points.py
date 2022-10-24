@@ -21,6 +21,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
+from ..utils._slice_input import _SliceInput
 from ..utils.layer_utils import (
     _features_to_properties,
     _FeatureTable,
@@ -35,6 +36,8 @@ from ._points_utils import (
     fix_data_points,
     points_to_squares,
 )
+
+from ._slice import _PointSliceRequest, _PointSliceResponse
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -1461,44 +1464,6 @@ class Points(Layer):
             # layers being rendered in 3D.
             self.editable = False
 
-    @staticmethod
-    def _get_slice_data(
-        *,
-        data,
-        ndim,
-        dims_indices,
-        dims_not_displayed,
-        size,
-        out_of_slice_display,
-    ):
-        not_disp = list(dims_not_displayed)
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below. As Points._round_index is always False, we can safely
-        # convert to float to get a major performance improvement.
-        not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
-        if len(data) > 0:
-            if out_of_slice_display and ndim > 2:
-                distances = abs(data[:, not_disp] - not_disp_indices)
-                sizes = size[:, not_disp] / 2
-                matches = np.all(distances <= sizes, axis=1)
-                size_match = sizes[matches]
-                size_match[size_match == 0] = 1
-                scale_per_dim = (size_match - distances[matches]) / size_match
-                scale_per_dim[size_match == 0] = 1
-                scale = np.prod(scale_per_dim, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, scale
-            else:
-                data = data[:, not_disp]
-                distances = np.abs(data - not_disp_indices)
-                matches = np.all(distances <= 0.5, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, 1
-        else:
-            return [], np.empty(0)
-
     def _slice_data(
         self, dims_indices
     ) -> Tuple[List[int], Union[float, np.ndarray]]:
@@ -1518,7 +1483,7 @@ class Points(Layer):
             values of 1 corresponds to points located in the slice, and values
             less than 1 correspond to points located in neighboring slices.
         """
-        return Points._get_slice_data(
+        return _PointSliceRequest._get_slice_data(
             data=self.data,
             ndim=self._slice_input.ndim,
             dims_indices=dims_indices,
@@ -1704,8 +1669,27 @@ class Points(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        # get the indices of points in view
-        indices, scale = self._slice_data(self._slice_indices)
+
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self._make_slice_request_internal(self._slice_input)
+        response = request.execute()
+        self._set_slice_response(response)
+
+    def _make_slice_request_internal(self, slice_input: _SliceInput):
+        return _PointSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dims_indices=self._slice_indices,
+            data_to_world=self._transforms[1:3].simplified,
+            size=self.size,
+        )
+
+    def _set_slice_response(self, response: _PointSliceResponse):
+        """Handle a slicing response."""
+        indices = response.indices
+        scale = response.scale
 
         # Update the _view_size_scale in accordance to the self._indices_view setter.
         # If out_of_slice_display is False, scale is a number and not an array.
