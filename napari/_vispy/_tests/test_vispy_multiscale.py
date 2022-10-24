@@ -164,7 +164,7 @@ def test_multiscale_zoomed_out(make_napari_viewer):
     # get set appropriately.
     viewer = make_napari_viewer(show=True)
     shapes = [(3200, 3200), (1600, 1600), (800, 800)]
-    data = [np.empty(s) for s in shapes]
+    data = [np.zeros(s, dtype=np.uint8) for s in shapes]
     layer = viewer.add_image(data, multiscale=True)
     qt_viewer = viewer.window._qt_viewer
     # Canvas size is in screen pixels.
