@@ -1520,11 +1520,12 @@ class Points(Layer):
         """
         return Points._get_slice_data(
             data=self.data,
-            ndim=self.ndim,
+            ndim=self._slice_input.ndim,
             dims_indices=dims_indices,
-            dims_not_displayed=self._dims_not_displayed,
+            dims_not_displayed=self._slice_input.not_displayed,
             size=self.size,
             out_of_slice_display=self.out_of_slice_display,
+            not_disp=list(self._slice_input.not_displayed),
         )
 
     def _get_value(self, position) -> Union[None, int]:
