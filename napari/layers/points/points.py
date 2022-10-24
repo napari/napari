@@ -1463,34 +1463,6 @@ class Points(Layer):
             # layers being rendered in 3D.
             self.editable = False
 
-    def _slice_data(
-        self, dims_indices
-    ) -> Tuple[List[int], Union[float, np.ndarray]]:
-        """Determines the slice of points given the indices.
-
-        Parameters
-        ----------
-        dims_indices : sequence of int or slice
-            Indices to slice with.
-
-        Returns
-        -------
-        slice_indices : list
-            Indices of points in the currently viewed slice.
-        scale : float, (N, ) array
-            If in `out_of_slice_display` mode then the scale factor of points, where
-            values of 1 corresponds to points located in the slice, and values
-            less than 1 correspond to points located in neighboring slices.
-        """
-        return _PointSliceRequest._get_slice_data(
-            data=self.data,
-            ndim=self.ndim,
-            dims_indices=dims_indices,
-            dims_not_displayed=self._dims_not_displayed,
-            size=self.size,
-            out_of_slice_display=self.out_of_slice_display,
-        )
-
     def _get_value(self, position) -> Union[None, int]:
         """Index of the point at a given 2D position in data coordinates.
 
@@ -1681,6 +1653,7 @@ class Points(Layer):
             data=self.data,
             dims_indices=self._slice_indices,
             data_to_world=self._transforms[1:3].simplified,
+            out_of_slice_display=self.out_of_slice_display,
             size=self.size,
         )
 

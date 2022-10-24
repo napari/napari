@@ -1743,6 +1743,10 @@ def test_view_data():
 
 
 def test_view_size():
+    """Test the behavior for:
+    - out of slice point rendering
+    - slicing with no points
+    """
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
@@ -1814,22 +1818,23 @@ def test_world_data_extent():
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
 
 
-def test_slice_data():
-    data = [
-        (10, 2, 4),
-        (10 + 2 * 1e-7, 4, 6),
-        (8, 1, 7),
-        (10.1, 7, 2),
-        (10 - 2 * 1e-7, 1, 6),
-    ]
-    layer = Points(data)
-    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
-    assert (
-        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 4
-    )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
+# TODO migrate this test because _slice_data is being removed
+# def test_slice_data():
+#     data = [
+#         (10, 2, 4),
+#         (10 + 2 * 1e-7, 4, 6),
+#         (8, 1, 7),
+#         (10.1, 7, 2),
+#         (10 - 2 * 1e-7, 1, 6),
+#     ]
+#     layer = Points(data)
+#     assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
+#     assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
+#     assert (
+#         len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
+#         == 4
+#     )
+#     assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
 
 
 def test_scale_init():
