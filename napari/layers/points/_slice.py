@@ -31,7 +31,7 @@ class _PointSliceRequest:
     dims_indices: Any = field(repr=False)
     data_to_world: Affine = field(repr=False)
     size: Any = field(repr=False)
-    out_of_slice_display = False
+    out_of_slice_display: bool = field(repr=False)
 
     def execute(self) -> _PointSliceResponse:
 
