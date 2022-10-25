@@ -279,6 +279,7 @@ or create issues on GitHub.
 - Update release notes for v0.4.17rc1 (#5110)
 - Update release notes for v0.4.17rc3 (#5147)
 - Add Peter Sobolewski (@psobolewskiPhD) to list of Core Developers (#5189)
+- Update release notes for v0.4.17rc5 (#5268)
 
 ## Other Pull Requests
 
