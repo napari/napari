@@ -9,7 +9,6 @@ from napari.utils.transforms import Affine
 
 @dataclass(frozen=True)
 class _PointSliceResponse:
-    data: Any = field(repr=False)
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
 
