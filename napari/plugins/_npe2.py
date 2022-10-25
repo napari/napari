@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
@@ -13,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import urlparse, unquote_plus
 
 from app_model.types import SubmenuItem
 from npe2 import io_utils
@@ -328,8 +330,28 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     _build_npe1_samples_menu()
 
 
-# TODO: This is a separate function from `_build_samples_menu` so it can be more
-# easily deleted when npe1 is no longer supported.
+def _get_sample_data_id(
+    sample: Union[_SampleDataContribution, SampleDict], plugin: Optional[str] = ''
+) -> str:
+    """Get `Action` ID for `SampleDataGenerator` or `SampleDataURI`."""
+    from npe2.manifest.contributions._sample_data import SampleDataGenerator, SampleDataURI
+    if isinstance(sample, SampleDataGenerator):
+        return sample.command
+    elif isinstance(sample, SampleDataURI):
+        URI_filename = Path(unquote_plus(urlparse(sample.uri).path)).name
+        return f'{plugin}.{URI_filename}'
+    elif isinstance(sample, SampleDict):
+        return
+    else:
+        raise TypeError(
+            f"""'Sample' needs to be of type: 'SampleDataGenerator",
+            'SampleDataURI' or '', got: {type(sample)}"""
+    )
+
+
+
+# TODO: This is a separate function from `_build_samples_menu` so it can be
+# easily deleted once npe1 is no longer supported.
 def _build_npe1_samples_menu():
     """Builds 'Open Sample' menu for all npe1 plugins."""
     from app_model import Action
@@ -361,20 +383,23 @@ def _build_npe1_samples_menu():
         for samp_name, samp_dict in samples.items():
 
             def _add_sample(
-                *args, qt_viewer: QtViewer, plg=plugin_name, smp=samp_name
+                qt_viewer: QtViewer,
+                plugin=plugin_name,
+                sample=samp_name,
             ):
                 try:
-                    qt_viewer.viewer.open_sample(plg, smp)
+                    qt_viewer.viewer.open_sample(plugin, sample)
                 except MultipleReaderError as e:
-                    qt_viewer._qt_open(e.paths, stack=False, plugin=plg)
+                    qt_viewer._qt_open(e.paths, stack=False, plugin=plugin)
 
             display_name = samp_dict['display_name'].replace("&", "&&")
             if multiprovider:
                 title = display_name
             else:
                 title = menu_item_template.format(plugin_name, display_name)
+            sample_data_id = _get_sample_data_id(samp_dict)
             action: Action = Action(
-                id=samp_dict['id'],
+                id=sample_data_id,
                 title=title,
                 menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
@@ -398,7 +423,6 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         return
 
     app = get_app()
-
     sample_data = mf.contributions.sample_data
     multiprovider = len(sample_data) > 1
     if multiprovider:
@@ -417,13 +441,13 @@ def _build_samples_menu(mf: PluginManifest) -> None:
 
         def _add_sample(
             qt_viewer: QtViewer,
-            plg=mf.name,
-            smp=sample.key,
+            plugin=mf.name,
+            sample=sample.key,
         ):
             try:
-                qt_viewer.viewer.open_sample(plg, smp)
+                qt_viewer.viewer.open_sample(plugin, sample)
             except MultipleReaderError as e:
-                qt_viewer._qt_open(e.paths, stack=False, plugin=plg)
+                qt_viewer._qt_open(e.paths, stack=False, plugin=plugin)
 
         display_name = sample.display_name.replace("&", "&&")
         if multiprovider:
@@ -431,8 +455,9 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         else:
             title = menu_item_template.format(mf.name, display_name)
 
+        sample_data_id = _get_sample_data_id(sample)
         action: Action = Action(
-            id=sample.command,
+            id=sample_data_id,
             title=title,
             menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
