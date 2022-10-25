@@ -394,15 +394,33 @@ class KeymapHandler:
 
         return active_keymap_final
 
-    def press_key(self, key_bind):
+    def press_key(self, key_bind, is_auto_repeat=False):
         """Simulate a key press to activate a keybinding.
 
         Parameters
         ----------
         key_bind : keybinding-like
             Key combination.
+        is_auto_repeat : bool, optional
+            If this key press was triggered by holding down a key.
         """
+        from ..utils.action_manager import action_manager
+        
         key_bind = coerce_keybinding(key_bind)
+
+        repeatables = {
+            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
+            "Up",
+            "Down",
+            "Left",
+            "Right",
+        }
+
+        if is_auto_repeat and key_bind not in repeatables:
+            # pass if key is held down and not in list of repeatables
+            # e.g. arrow keys used for scrolling
+            return
+
         keymap = self.active_keymap
         if key_bind in keymap:
             func = keymap[key_bind]
@@ -474,33 +492,17 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
-        from napari.utils.action_manager import action_manager
-
         if event.key is None:
             # TODO determine when None key could be sent.
             return
 
         kb = _vispy2appmodel(event)
 
-        repeatables = {
-            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            "Up",
-            "Down",
-            "Left",
-            "Right",
-        }
+        is_auto_repeat = (
+            event.native.isAutoRepeat() if event.native is not None else False
+        )
 
-        if (
-            event.native is not None
-            and event.native.isAutoRepeat()
-            and kb not in repeatables
-        ) or event.key is None:
-            # pass if no key is present or if the shortcut combo is held down,
-            # unless the combo being held down is one of the autorepeatables or
-            # one of the navigation keys (helps with scrolling).
-            return
-
-        self.press_key(kb)
+        self.press_key(kb, is_auto_repeat)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
