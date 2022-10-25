@@ -14,17 +14,24 @@ from typing import (
     Union,
     cast,
 )
-from urllib.parse import urlparse, unquote_plus
+from urllib.parse import unquote_plus, urlparse
 
+from app_model import Action
 from app_model.types import SubmenuItem
 from npe2 import io_utils
 from npe2 import plugin_manager as pm
 from npe2.manifest import contributions
+from npe2.manifest.contributions._sample_data import (
+    SampleDataGenerator,
+    SampleDataURI,
+    _SampleDataContribution,
+)
 
+from ..errors.reader_errors import MultipleReaderError
+from ..types import PathLike
 from ..utils.translations import trans
 
 if TYPE_CHECKING:
-    from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
@@ -331,36 +338,35 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
 
 
 def _get_sample_data_id(
-    sample: Union[_SampleDataContribution, SampleDict], plugin: Optional[str] = ''
+    sample: Union[_SampleDataContribution, SampleDict],
+    plugin: Optional[str] = '',
 ) -> str:
     """Get `Action` ID for `SampleDataGenerator` or `SampleDataURI`."""
-    from npe2.manifest.contributions._sample_data import SampleDataGenerator, SampleDataURI
     if isinstance(sample, SampleDataGenerator):
         return sample.command
     elif isinstance(sample, SampleDataURI):
         URI_filename = Path(unquote_plus(urlparse(sample.uri).path)).name
-        return f'{plugin}.{URI_filename}'
+        return f"{plugin}.{URI_filename}"
     elif isinstance(sample, SampleDict):
-        return
+        if isinstance(sample['data'], PathLike):
+            return f"{plugin}.{sample['data']}"
+        else:
+            return f"{plugin}.{sample['data'].__name__}"
     else:
         raise TypeError(
             f"""'Sample' needs to be of type: 'SampleDataGenerator",
             'SampleDataURI' or '', got: {type(sample)}"""
-    )
-
+        )
 
 
 # TODO: This is a separate function from `_build_samples_menu` so it can be
 # easily deleted once npe1 is no longer supported.
 def _build_npe1_samples_menu():
     """Builds 'Open Sample' menu for all npe1 plugins."""
-    from app_model import Action
-
     from .._app_model import get_app
     from .._app_model.constants import MenuGroup, MenuId
     from .._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
     from .._qt.qt_viewer import QtViewer
-    from ..errors.reader_errors import MultipleReaderError
     from . import menu_item_template, plugin_manager
 
     app = get_app()
@@ -397,7 +403,7 @@ def _build_npe1_samples_menu():
                 title = display_name
             else:
                 title = menu_item_template.format(plugin_name, display_name)
-            sample_data_id = _get_sample_data_id(samp_dict)
+            sample_data_id = _get_sample_data_id(samp_dict, plugin_name)
             action: Action = Action(
                 id=sample_data_id,
                 title=title,
@@ -409,13 +415,10 @@ def _build_npe1_samples_menu():
 
 def _build_samples_menu(mf: PluginManifest) -> None:
     """Builds 'Open Sample' menu for a single npe2 plugin manifest."""
-    from app_model import Action
-
     from .._app_model import get_app
     from .._app_model.constants import MenuGroup, MenuId
     from .._qt._qapp_model.qactions._file import Q_FILE_ACTIONS
     from .._qt.qt_viewer import QtViewer
-    from ..errors.reader_errors import MultipleReaderError
     from . import menu_item_template
 
     # If no sample data, return

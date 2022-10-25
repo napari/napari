@@ -17,7 +17,7 @@ from ...utils.translations import trans
 # fmt: off
 class CommandId(str, Enum):
     """Id representing a napari command."""
-
+    # File menubar
     DLG_OPEN_FILES = 'napari:file:open_files_dialog'
     DLG_OPEN_FILES_AS_STACK = 'napari:file:open_files_as_stack_dialog'
     DLG_OPEN_FOLDER = 'napari:file:open_folder_dialog'
@@ -30,7 +30,7 @@ class CommandId(str, Enum):
     DLG_CLOSE = 'napari:window:close_dialog'
     DLG_QUIT = 'napari:quit_dialog'
     RESTART = 'napari:restart'
-
+    # View menubar
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
     TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
     TOGGLE_PLAY = 'napari:window:view:toggle_play'
