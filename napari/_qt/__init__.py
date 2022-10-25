@@ -6,7 +6,7 @@ from warnings import warn
 from ..utils.translations import trans
 
 try:
-    from qtpy import API_NAME, QtCore
+    from qtpy import API_NAME, QT_VERSION, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         raise type(e)(
@@ -26,6 +26,17 @@ if API_NAME == 'PySide2':
     os.environ['QT_PLUGIN_PATH'] = str(
         Path(PySide2.__file__).parent / 'Qt' / 'plugins'
     )
+
+if API_NAME == 'PySide6' and sys.version_info[:2] < (3, 10):
+    from packaging import version
+
+    if version.parse(QT_VERSION) > version.parse("6.3.1"):
+        raise RuntimeError(
+            trans._(
+                "Napari is not expected to work with PySide6 >= 6.3.2 on Python < 3.10",
+                deferred=True,
+            )
+        )
 
 
 # When QT is not the specific version, we raise a warning:
