@@ -60,8 +60,8 @@ class _PointSliceRequest:
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, scale
             else:
-                self.data = self.data[:, not_disp]
-                distances = np.abs(self.data - not_disp_indices)
+                data = self.data[:, not_disp]
+                distances = np.abs(data - not_disp_indices)
                 matches = np.all(distances <= 0.5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
