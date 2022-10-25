@@ -165,10 +165,6 @@ class PreferencesDialog(QDialog):
                         "title": "shortcuts",
                         "description": "Set keyboard shortcuts for actions.",
                         "type": "object",
-                        "additionalProperties": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
                     }
                 },
             }
