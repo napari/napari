@@ -14,11 +14,11 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari_builtins.io import imsave_extensions
 
-from ..components._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..components.overlays._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
@@ -62,7 +62,7 @@ from .._vispy import (  # isort:skip
     VispyScaleBarOverlay,
     VispyInteractionBox,
     VispyTextOverlay,
-    create_vispy_visual,
+    create_vispy_layer,
 )
 
 
@@ -438,20 +438,20 @@ class QtViewer(QSplitter):
         """Add visuals for axes, scale bar, and welcome text."""
 
         self.axes = VispyAxesOverlay(
-            self.viewer,
+            overlay=self.viewer.axes,
+            viewer=self.viewer,
             parent=self.view.scene,
-            order=1e6,
         )
         self.scale_bar = VispyScaleBarOverlay(
-            self.viewer,
+            overlay=self.viewer.scale_bar,
+            viewer=self.viewer,
             parent=self.view,
-            order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
         self.text_overlay = VispyTextOverlay(
-            self.viewer,
+            overlay=self.viewer.text_overlay,
+            viewer=self.viewer,
             parent=self.view,
-            order=1e6 + 2,
         )
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
@@ -541,7 +541,7 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_visual(layer)
+        vispy_layer = create_vispy_layer(layer)
 
         # QtPoll is experimental.
         if self._qt_poll is not None:
@@ -815,9 +815,9 @@ class QtViewer(QSplitter):
         stack : bool or list[list[str]]
             whether to stack files or not. Can also be a list containing
             files to stack.
-        plugin: str
+        plugin : str
             plugin to use for reading
-        layer_type: str
+        layer_type : str
             layer type for opened layers
         """
         if choose_plugin:
@@ -1092,20 +1092,26 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
+        # The canvas corners in full world coordinates (i.e. across all layers).
+        canvas_corners_world = self._canvas_corners_in_world
         for layer in self.viewer.layers:
-            if layer.ndim <= self.viewer.dims.ndim:
-                nd = len(layer._displayed_axes)
-                if nd > self.viewer.dims.ndisplay:
-                    displayed_axes = layer._displayed_axes
-                else:
-                    displayed_axes = self.viewer.dims.displayed[-nd:]
-                layer._update_draw(
-                    scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels_displayed=self._canvas_corners_in_world[
-                        :, displayed_axes
-                    ],
-                    shape_threshold=self.canvas.size,
-                )
+            # The following condition should mostly be False. One case when it can
+            # be True is when a callback connected to self.viewer.dims.events.ndisplay
+            # is executed before layer._slice_input has been updated by another callback
+            # (e.g. when changing self.viewer.dims.ndisplay from 3 to 2).
+            displayed_sorted = sorted(layer._slice_input.displayed)
+            nd = len(displayed_sorted)
+            if nd > self.viewer.dims.ndisplay:
+                displayed_axes = displayed_sorted
+            else:
+                displayed_axes = self.viewer.dims.displayed[-nd:]
+            layer._update_draw(
+                scale_factor=1 / self.viewer.camera.zoom,
+                corner_pixels_displayed=canvas_corners_world[
+                    :, displayed_axes
+                ],
+                shape_threshold=self.canvas.size,
+            )
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""

@@ -58,19 +58,20 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert proxy.x.method() == 2
 
     assert isinstance(proxy, Tester)
-    with pytest.warns(FutureWarning) as e:
+    with pytest.warns(FutureWarning, match='Private attribute access'):
         proxy._private
-    assert 'Private attribute access' in str(e[0].message)
 
-    with pytest.warns(FutureWarning) as e:
+    with pytest.warns(FutureWarning, match='Private attribute access'):
+        # warns on setattr
+        proxy._private = 4
+
+    with pytest.warns(FutureWarning, match='Private attribute access'):
         # works on sub-objects too
         proxy.x._b
-    assert 'Private attribute access' in str(e[0].message)
 
-    with pytest.warns(FutureWarning) as e:
+    with pytest.warns(FutureWarning, match='Private attribute access'):
         # works on sub-items too
         proxy[0]._b
-    assert 'Private attribute access' in str(e[0].message)
 
     assert '_private' not in dir(proxy)
     assert '_private' in dir(t)

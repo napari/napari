@@ -97,7 +97,7 @@ class ColorArray(np.ndarray):
             passing values like ``['red', [0, 0, 1]]``.
 
         Returns
-        ----------
+        -------
         np.ndarray
             An array of N colors where each row is an RGBA color vector with
             floating point values in [0, 1].

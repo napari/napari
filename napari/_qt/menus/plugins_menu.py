@@ -36,7 +36,7 @@ class PluginsMenu(NapariMenu):
 
     def _remove_unregistered_widget(self, event):
 
-        for idx, action in enumerate(self.actions()):
+        for action in self.actions():
             if event.value in action.text():
                 self.removeAction(action)
                 self._win._remove_dock_widget(event=event)
