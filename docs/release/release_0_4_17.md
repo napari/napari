@@ -157,6 +157,10 @@ or create issues on GitHub.
 - Use cross shape when cursor is small (#5141)
 - Fix exception when rendering colorbar from a label_colormap (#5154)
 - Make imshow defaults the same as add_image (#5156)
+- Remove uninstalled plugin from plugin manager (#5190)
+- In Volume shader for iso surface ommit point that color has alpha equal to 0 (#5227)
+- Move theme files to cache dir (#5248)
+- Fix screenshot size argument (#5251)
 
 ## API Changes
 
@@ -195,6 +199,7 @@ or create issues on GitHub.
 - Docker: Update xpra's apt too (#4901)
 - Remove leading b from briefcase macOS support build numbers (#5152)
 - Block imageio 2.22.1 release in setup.cfg (#5168)
+- Remove osx-arm64 from conda bundle (#5255)
 
 ## Documentation
 
@@ -273,6 +278,8 @@ or create issues on GitHub.
 - Update links in NAP-2 (#5099)
 - Update release notes for v0.4.17rc1 (#5110)
 - Update release notes for v0.4.17rc3 (#5147)
+- Add Peter Sobolewski (@psobolewskiPhD) to list of Core Developers (#5189)
+- Update release notes for v0.4.17rc5 (#5268)
 
 ## Other Pull Requests
 
@@ -388,6 +395,7 @@ or create issues on GitHub.
 - Add new core libraries to napari info (#5077)
 - Update config directory paths for perfmon tools (#5081)
 - Update some strings to be translated, some to be ignored (#5082)
+- Workaround for PySide6 problem (#5244)
 
 
 ## 48 authors added to this release (alphabetical)
