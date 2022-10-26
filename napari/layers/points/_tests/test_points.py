@@ -22,6 +22,8 @@ from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
+from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
+
 
 def _make_cycled_properties(values, length):
     """Helper function to make property values
@@ -2514,9 +2516,7 @@ def test_point_slice_request_response():
     for dims_indices, length_check in zip(
         dims_indices_list, length_check_list
     ):
-        request = layer._make_slice_request_internal(
-            layer._slice_input, dims_indices
-        )
+        request = layer._make_slice_request_internal(layer._slice_input)
         response = request.execute()
 
         assert len(response.indices) == length_check
