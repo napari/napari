@@ -22,8 +22,6 @@ from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
-from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
-
 
 def _make_cycled_properties(values, length):
     """Helper function to make property values
