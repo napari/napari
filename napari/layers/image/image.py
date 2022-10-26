@@ -760,13 +760,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _make_slice_request_internal(
         self, slice_input: _SliceInput
     ) -> _ImageSliceRequest:
-        """Needed to support old-style sync slicing through set_view_slice."""
+        """Needed to support old-style sync slicing through _slice_dims and
+        _set_view_slice.
+
+        This is temporary scaffolding that should go away once we have completed
+        the async slicing project: https://github.com/napari/napari/issues/4795
+        """
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
-            # TODO: slice_indices should be lazily computed on the request itself,
-            # but this introduces some minor peformance issues right now related to
-            # evaluation of the data-to-world transform and its inverse.
+            # TODO: slice_indices should probably be lazily computed on the request
+            # itself, but this introduces some minor performance issues right now
+            # related to the evaluation of the data-to-world transform and its inverse.
             slice_indices=self._slice_indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
@@ -781,7 +786,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _update_slice_response(
         self, response: _ImageSliceResponse, indices
     ) -> None:
-        """Set the slice output state currently on the layer."""
+        """Update the slice output state currently on the layer."""
         # For the old experimental async code.
         slice_data = self._SliceDataClass(
             layer=self,
