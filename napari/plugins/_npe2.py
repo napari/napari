@@ -337,26 +337,26 @@ def on_plugins_registered(manifests: Set[PluginManifest]):
     _build_npe1_samples_menu()
 
 
-def _get_sample_data_id(
-    sample: Union[_SampleDataContribution, SampleDict],
-    plugin: Optional[str] = '',
-) -> str:
-    """Get `Action` ID for `SampleDataGenerator` or `SampleDataURI`."""
-    if isinstance(sample, SampleDataGenerator):
-        return sample.command
-    elif isinstance(sample, SampleDataURI):
-        URI_filename = Path(unquote_plus(urlparse(sample.uri).path)).name
-        return f"{plugin}.{URI_filename}"
-    elif isinstance(sample, SampleDict):
-        if isinstance(sample['data'], PathLike):
-            return f"{plugin}.{sample['data']}"
-        else:
-            return f"{plugin}.{sample['data'].__name__}"
-    else:
-        raise TypeError(
-            f"""'Sample' needs to be of type: 'SampleDataGenerator",
-            'SampleDataURI' or '', got: {type(sample)}"""
-        )
+# def _get_sample_data_id(
+#     sample: Union[_SampleDataContribution, SampleDict],
+#     plugin: Optional[str] = '',
+# ) -> str:
+#     """Get `Action` ID for `SampleDataGenerator` or `SampleDataURI`."""
+#     if isinstance(sample, SampleDataGenerator):
+#         return sample.command
+#     elif isinstance(sample, SampleDataURI):
+#         URI_filename = Path(unquote_plus(urlparse(sample.uri).path)).name
+#         return f"{plugin}.{URI_filename}"
+#     elif isinstance(sample, SampleDict):
+#         if isinstance(sample['data'], PathLike):
+#             return f"{plugin}.{sample['data']}"
+#         else:
+#             return f"{plugin}.{sample['data'].__name__}"
+#     else:
+#         raise TypeError(
+#             f"""'Sample' needs to be of type: 'SampleDataGenerator",
+#             'SampleDataURI' or '', got: {type(sample)}"""
+#         )
 
 
 # TODO: This is a separate function from `_build_samples_menu` so it can be
@@ -403,9 +403,9 @@ def _build_npe1_samples_menu():
                 title = display_name
             else:
                 title = menu_item_template.format(plugin_name, display_name)
-            sample_data_id = _get_sample_data_id(samp_dict, plugin_name)
+
             action: Action = Action(
-                id=sample_data_id,
+                id=samp_dict['display_name'],
                 title=title,
                 menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
                 callback=_add_sample,
@@ -458,9 +458,8 @@ def _build_samples_menu(mf: PluginManifest) -> None:
         else:
             title = menu_item_template.format(mf.name, display_name)
 
-        sample_data_id = _get_sample_data_id(sample)
         action: Action = Action(
-            id=sample_data_id,
+            id=f'{mf.name}.{sample.key}',
             title=title,
             menus=[{'id': sub_menu_id, 'group': MenuGroup.NAVIGATION}],
             callback=_add_sample,
