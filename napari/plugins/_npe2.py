@@ -510,9 +510,9 @@ def _npe2_manifest_to_actions(
     if mf.contributions.commands:
         if mf.contributions.sample_data:
             sample_data_commands = [
-                contrib.command
+                getattr(contrib, 'command')
                 for contrib in mf.contributions.sample_data
-                if getattr(contrib, 'command', None)
+                if hasattr(contrib, 'command')
             ]
         else:
             sample_data_commands = []
