@@ -748,7 +748,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(self._slice_input)
         response = request.execute()
-        self._set_slice_response(response, indices)
+        self._update_slice_response(response, indices)
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
@@ -778,7 +778,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             lazy=True,
         )
 
-    def _set_slice_response(
+    def _update_slice_response(
         self, response: _ImageSliceResponse, indices
     ) -> None:
         """Set the slice output state currently on the layer."""
@@ -790,7 +790,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_source=response.thumbnail,
         )
 
-        # TODO: remove the tile-to-data transform from the layer.
         self._transforms[0] = response.tile_to_data
 
         # For the old experimental async code, where loading might be sync
