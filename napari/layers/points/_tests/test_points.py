@@ -2492,7 +2492,8 @@ def test_set_drag_start():
     np.testing.assert_array_equal(layer._drag_start, position)
 
 
-def test_point_slice_request():
+def test_point_slice_request_response():
+    """Test points slicing with request and response."""
     data = [
         (10, 2, 4),
         (10 + 2 * 1e-7, 4, 6),
@@ -2514,8 +2515,9 @@ def test_point_slice_request():
     for dims_indices, length_check in zip(
         dims_indices_list, length_check_list
     ):
-
-        request = layer._make_slice_request_internal(layer._slice_input)
+        request = layer._make_slice_request_internal(
+            layer._slice_input, dims_indices
+        )
         response = request.execute()
 
         assert len(response.indices) == length_check

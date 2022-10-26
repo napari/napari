@@ -1463,35 +1463,6 @@ class Points(Layer):
             # layers being rendered in 3D.
             self.editable = False
 
-    # TODO remove this function
-    # def _slice_data(
-    #     self, dims_indices
-    # ) -> Tuple[List[int], Union[float, np.ndarray]]:
-    #     """Determines the slice of points given the indices.
-
-    #     Parameters
-    #     ----------
-    #     dims_indices : sequence of int or slice
-    #         Indices to slice with.
-
-    #     Returns
-    #     -------
-    #     slice_indices : list
-    #         Indices of points in the currently viewed slice.
-    #     scale : float, (N, ) array
-    #         If in `out_of_slice_display` mode then the scale factor of points, where
-    #         values of 1 corresponds to points located in the slice, and values
-    #         less than 1 correspond to points located in neighboring slices.
-    #     """
-    #     return _PointSliceRequest._get_slice_data(
-    #         data=self.data,
-    #         ndim=self._slice_input.ndim,
-    #         dims_indices=dims_indices,
-    #         dims_not_displayed=self._slice_input.not_displayed,
-    #         size=self.size,
-    #         out_of_slice_display=self.out_of_slice_display,
-    #     )
-
     def _get_value(self, position) -> Union[None, int]:
         """Index of the point at a given 2D position in data coordinates.
 
@@ -1672,15 +1643,19 @@ class Points(Layer):
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(self._slice_input)
+        request = self._make_slice_request_internal(
+            self._slice_input, self._slice_indices
+        )
         response = request.execute()
         self._set_slice_response(response)
 
-    def _make_slice_request_internal(self, slice_input: _SliceInput):
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, dims_indices
+    ):
         return _PointSliceRequest(
             dims=slice_input,
             data=self.data,
-            dims_indices=self._slice_indices,
+            dims_indices=dims_indices,
             data_to_world=self._transforms[1:3].simplified,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
