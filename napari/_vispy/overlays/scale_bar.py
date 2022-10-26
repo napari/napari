@@ -121,7 +121,8 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
                 if (
-                    hasattr(self.viewer.window, "_qt_viewer")
+                    hasattr(self.viewer, 'window')
+                    and hasattr(self.viewer.window, "_qt_viewer")
                     and self.viewer.window._qt_viewer.canvas.background_color_override
                 ):
                     background_color = transform_color(
