@@ -1,11 +1,10 @@
 import logging
 
+import qtpy
 from vispy import app
 
-from napari._qt import API_NAME
-
 # set vispy application to the appropriate qt backend
-app.use_app(API_NAME)
+app.use_app(qtpy.API_NAME)
 del app
 
 # set vispy logger to show warning and errors only
