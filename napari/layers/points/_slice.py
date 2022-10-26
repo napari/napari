@@ -33,9 +33,7 @@ class _PointSliceRequest:
 
         slice_indices, scale = self._get_slice_data()
 
-        return _PointSliceResponse(
-            data=self.data, indices=slice_indices, scale=scale
-        )
+        return _PointSliceResponse(indices=slice_indices, scale=scale)
 
     def _get_slice_data(self):
         """This method does the actual slicing work."""

@@ -21,6 +21,8 @@ from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
+from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
+
 
 def _make_cycled_properties(values, length):
     """Helper function to make property values
@@ -1818,25 +1820,6 @@ def test_world_data_extent():
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
 
 
-# TODO migrate this test because _slice_data is being removed
-# def test_slice_data():
-#     data = [
-#         (10, 2, 4),
-#         (10 + 2 * 1e-7, 4, 6),
-#         (8, 1, 7),
-#         (10.1, 7, 2),
-#         (10 - 2 * 1e-7, 1, 6),
-#     ]
-#     layer = Points(data)
-#     assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-#     assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
-#     assert (
-#         len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-#         == 4
-#     )
-#     assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
-
-
 def test_scale_init():
     layer = Points(None, scale=(1, 1, 1, 1))
     assert layer.ndim == 4
@@ -2507,3 +2490,32 @@ def test_set_drag_start():
     np.testing.assert_array_equal(layer._drag_start, position)
     layer._set_drag_start({0}, position=(1, 2))
     np.testing.assert_array_equal(layer._drag_start, position)
+
+
+def test_point_slice_request():
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+
+    layer = Points(data)
+
+    dims_indices_list = [
+        (8, slice(None), slice(None)),
+        (10, slice(None), slice(None)),
+        (10 + 2 * 1e-12, slice(None), slice(None)),
+        (10.1, slice(None), slice(None)),
+    ]
+    length_check_list = [1, 4, 4, 4]
+
+    for dims_indices, length_check in zip(
+        dims_indices_list, length_check_list
+    ):
+
+        request = layer._make_slice_request_internal(layer._slice_input)
+        response = request.execute()
+
+        assert len(response.indices) == length_check
