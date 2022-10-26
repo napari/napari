@@ -8,6 +8,7 @@ from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
+
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
@@ -149,6 +150,10 @@ class PluginListItem(QFrame):
             self.install_info_button.addWidget(self.info_choice_wdg)
             self.info_choice_wdg.show()
             self.source_choice_dropdown.show()
+
+    def _handle_yield(self, version, platform):
+        self._versions[platform].append = version
+        self._populate_version_dropdown(platform)
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -420,6 +425,7 @@ class PluginListItem(QFrame):
         else:
             versions = self._versions_conda
         self.version_choice_dropdown.clear()
+
         if len(versions) > 0:
             for version in versions:
                 self.version_choice_dropdown.addItem(version)
