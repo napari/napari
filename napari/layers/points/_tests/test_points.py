@@ -15,13 +15,12 @@ from napari._tests.utils import (
 from napari.layers import Points
 from napari.layers.points._points_constants import Mode
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
-
-from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 
 
 def _make_cycled_properties(values, length):
