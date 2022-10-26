@@ -589,10 +589,19 @@ QLabel#author_text {
   color: {{ darken(text, 35) }};
 }
 
+QWidget#info_widget {
+  background-color: {{ darken(foreground, 20) }};
+  margin: 0px;
+  margin-left: 0px;
+  padding: 0px;
+  padding-left: 0px
+}
+
 QWidget#install_choice_widget {
   background-color: {{ darken(foreground, 20) }};
   color: {{ darken(text, 35) }};
 }
+
 QLabel#latest_version_text {
   background-color: {{ darken(foreground, 20) }};
   background: {{ darken(foreground, 20) }};

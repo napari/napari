@@ -6,6 +6,7 @@ from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Optional, Sequence, Tuple
 
+
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
@@ -84,7 +85,39 @@ class PluginListItem(QFrame):
         super().__init__(parent)
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
-        self._populate_version_dropdown('PyPi')
+
+        # find versions
+        self._versions = {}
+        settings = get_settings()
+        use_hub = (
+            running_as_bundled_app()
+            or running_as_constructor_app()
+            or settings.plugins.plugin_api.name == "napari_hub"
+        )
+        if use_hub:
+            conda_forge = running_as_constructor_app()
+            self.worker_pypi = create_worker(
+                iter_versions('PyPi', package_name), conda_forge=conda_forge
+            )
+            self.worker_conda = create_worker(
+                iter_versions('Conda', package_name), conda_forge=conda_forge
+            )
+        else:
+            self.worker_pypi = create_worker(
+                iter_versions('PyPi', package_name)
+            )
+            self.worker_conda = create_worker(
+                iter_versions('Conda', package_name)
+            )
+
+        # # print(dir(self.worker_pypi))
+        # # self.worker_pypi.yielded.connect(lambda info: self._handle_yield(info, 'PyPi'))
+        # self.worker_pypi.start()
+
+        # self.worker_conda.yielded.connect(lambda info: self._handle_yield(info, 'Conda'))
+        # self.worker_conda.start()
+
+        # self._populate_version_dropdown('PyPi')
         self.package_name.setText(version)
         if summary:
             self.summary.setText(summary)
@@ -112,6 +145,10 @@ class PluginListItem(QFrame):
             self.install_info_button.hide()
             self.update_btn.setVisible(False)
             self.latest_version_text.hide()
+
+    def _handle_yield(self, version, platform):
+        self._versions[platform].append = version
+        self._populate_version_dropdown(platform)
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -334,11 +371,17 @@ class PluginListItem(QFrame):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         self.info_widget.setSizePolicy(sizePolicy)
+        self.info_widget.setObjectName("info_widget")
         info_layout = QGridLayout()
+        info_layout.setContentsMargins(0, 0, 0, 0)
         self.version_text = QLabel('Version:')
-        self.package_name = QLabel(self)
+        self.version_text.setStyleSheet('margin: 0px; padding: 4px;')
+        self.package_name = QLabel()
+        self.package_name.setStyleSheet('margin: 0px; padding: 4px;')
         self.source_text = QLabel('Source:')
+        self.source_text.setStyleSheet('margin: 0px; padding: 0px;')
         self.source = QLabel('PyPi')
+        self.source.setStyleSheet('margin: 0px; padding: 4px;')
 
         info_layout.addWidget(self.version_text, 0, 0)
         info_layout.addWidget(self.package_name, 1, 0)
@@ -350,16 +393,21 @@ class PluginListItem(QFrame):
 
     def _populate_version_dropdown(self, e):
         # pck = self.plugin_name.text()
-        if e == 'Conda':
-            versions = ['v1']
-            # versions = conda_package_versions(pck)
-        else:
-            versions = ['v1']
-            # versions = pypi_package_versions(pck)
+        versions = self._versions[e]
+        # if e == 'Conda':
+        #     versions = ['v1']
+        #     versions = self._versions[e]
+        #     # versions = conda_package_versions(pck)
+        # else:
+        #     versions = ['v1']
+        #     # versions = pypi_package_versions(pck)
 
         self.version_choice_dropdown.clear()
+
         if len(versions) > 0:
-            self.version_choice_dropdown.addItem(versions[0])
+            for version in versions:
+                self.version_choice_dropdown.addItem(version)
+            # self.version_choice_dropdown.addItem(versions[0])
 
         self.latest_version_text.setText(f'to {versions[0]}')
 
