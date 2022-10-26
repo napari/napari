@@ -1643,15 +1643,19 @@ class Points(Layer):
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(self._slice_input)
+        request = self._make_slice_request_internal(
+            self._slice_input, self._slice_indices
+        )
         response = request.execute()
         self._set_slice_response(response)
 
-    def _make_slice_request_internal(self, slice_input: _SliceInput):
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, dims_indices
+    ):
         return _PointSliceRequest(
             dims=slice_input,
             data=self.data,
-            dims_indices=self._slice_indices,
+            dims_indices=dims_indices,
             data_to_world=self._transforms[1:3].simplified,
             out_of_slice_display=self.out_of_slice_display,
             size=self.size,
