@@ -1,7 +1,6 @@
 from napari._app_model._app import get_app
 from napari._qt._qapp_model.qactions._window import ToggleDockWidgetAction
 
-
 # def test_dock_widget_toggler(make_napari_viewer):
 #     """Tests `ToggleDockWidgetAction` toggling works."""
 #     viewer = make_napari_viewer(show=True)
