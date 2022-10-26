@@ -44,6 +44,8 @@ See the docstring of `napari.imshow` for more details.
 
 We added some basic support for PyQt6 and PySide6 in #3707, though we expect some issues.
 If you need or want to use Qt6, please try this out and report any bugs you find.
+If you plan to use PySide6 specifically, please use Python 3.10 to avoid issues with older
+versions of Python.
 
 ### Multi-color text
 
