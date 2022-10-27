@@ -8,7 +8,6 @@ from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
-
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
@@ -151,9 +150,9 @@ class PluginListItem(QFrame):
             self.info_choice_wdg.show()
             self.source_choice_dropdown.show()
 
-    def _handle_yield(self, version, platform):
-        self._versions[platform].append = version
-        self._populate_version_dropdown(platform)
+    # def _handle_yield(self, version, platform):
+    #     self._versions[platform].append = version
+    #     self._populate_version_dropdown(platform)
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -430,7 +429,7 @@ class PluginListItem(QFrame):
             for version in versions:
                 self.version_choice_dropdown.addItem(version)
 
-        self.latest_version_text.setText(f'to {versions[0]}')
+            self.latest_version_text.setText(f'to {versions[0]}')
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""

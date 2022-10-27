@@ -9,11 +9,14 @@ from functools import lru_cache
 from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
 from urllib.request import Request, urlopen
 
+import requests
 from npe2 import PackageMetadata
 
 from napari.plugins.utils import normalized_name
 
 PyPIname = str
+
+DEFAULT_CHANNEL = "conda-forge"
 
 
 @lru_cache
