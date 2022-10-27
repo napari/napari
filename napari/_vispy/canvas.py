@@ -2,7 +2,6 @@
 """
 from weakref import WeakSet
 
-from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas, Widget
 
 from ..utils.colormaps.standardize_color import transform_color
@@ -41,7 +40,6 @@ class VispyCanvas(SceneCanvas):
         self.max_texture_sizes = get_max_texture_sizes()
 
         self.events.ignore_callback_errors = False
-        self.native.setMinimumSize(QSize(200, 200))
         self.context.set_depth_func('lequal')
 
     @property

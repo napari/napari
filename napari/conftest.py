@@ -442,3 +442,31 @@ def single_threaded_executor():
     executor = ThreadPoolExecutor(max_workers=1)
     yield executor
     executor.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def _mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This is used whenever `napari._app_model.get_app()` is called to return
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`.
+
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers. If this is required for a unit test,
+    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
+    the test.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')

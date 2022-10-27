@@ -38,6 +38,7 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import QSignalThrottler
 
+from .._app_model.constants import MenuId
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
@@ -49,6 +50,8 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from ._qapp_model import build_qmodel_menu
+from ._qapp_model.qactions import init_qactions
 from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
@@ -83,9 +86,15 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(self, viewer: 'Viewer', parent=None) -> None:
+    # `window` is passed through on construction so it's available to a window
+    # provider for dependency injection
+    # See https://github.com/napari/napari/pull/4826
+    def __init__(
+        self, viewer: 'Viewer', window: 'Window', parent=None
+    ) -> None:
         super().__init__(parent)
         self._ev = None
+        self._window = window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -133,6 +142,10 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
+        init_qactions()
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
@@ -453,7 +466,6 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
-
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
             str, QtViewerDockWidget
@@ -461,7 +473,7 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer)
+        self._qt_window = _QtMainWindow(viewer, self)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -628,7 +640,9 @@ class Window:
 
         self.file_menu = menus.FileMenu(self)
         self.main_menu.addMenu(self.file_menu)
-        self.view_menu = menus.ViewMenu(self)
+        self.view_menu = build_qmodel_menu(
+            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+        )
         self.main_menu.addMenu(self.view_menu)
         self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
@@ -1258,12 +1272,13 @@ class Window:
                     )
                 # Scale the requested size to account for HiDPI
                 size = tuple(
-                    dim / self._qt_window.devicePixelRatio() for dim in size
+                    int(dim / self._qt_window.devicePixelRatio())
+                    for dim in size
                 )
                 canvas.size = size[::-1]  # invert x ad y for vispy
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(dim * scale for dim in canvas.size)
+                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:

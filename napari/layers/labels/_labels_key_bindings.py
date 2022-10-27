@@ -1,4 +1,5 @@
 import numpy as np
+from app_model.types import KeyCode, KeyMod
 
 from ...layers.utils.layer_utils import (
     register_layer_action,
@@ -12,7 +13,7 @@ MIN_BRUSH_SIZE = 1
 MAX_BRUSH_SIZE = 40
 
 
-@Labels.bind_key('Space')
+@Labels.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer: Labels):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
@@ -126,13 +127,13 @@ def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
 
 
-@Labels.bind_key('Control-Z')
+@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""
     layer.undo()
 
 
-@Labels.bind_key('Control-Shift-Z')
+@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ)
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()

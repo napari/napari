@@ -4,7 +4,8 @@ from itertools import product
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
-from ..utils.translations import trans
+from napari.utils._appdirs import user_cache_dir
+from napari.utils.translations import trans
 
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
 ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
@@ -112,7 +113,7 @@ def generate_colorized_svgs(
     """
 
     # mapping of svg_stem to theme_key
-    theme_override = theme_override or dict()
+    theme_override = theme_override or {}
 
     ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 
@@ -129,7 +130,7 @@ def generate_colorized_svgs(
 
         op_key = "" if op == 1 else f"_{op * 100:.0f}"
         alias = ALIAS_T.format(color=clrkey, svg_stem=svg_stem, opacity=op_key)
-        yield (alias, get_colorized_svg(path, color, op))
+        yield alias, get_colorized_svg(path, color, op)
 
 
 def write_colorized_svgs(
@@ -138,7 +139,7 @@ def write_colorized_svgs(
     colors: Iterable[Union[str, Tuple[str, str]]],
     opacities: Iterable[float] = (1.0,),
     theme_override: Optional[Dict[str, str]] = None,
-) -> Iterator[Tuple[str, str]]:
+):
 
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
@@ -154,7 +155,7 @@ def write_colorized_svgs(
 
 
 def _theme_path(theme_name: str) -> Path:
-    return ICON_PATH / '_themes' / theme_name
+    return Path(user_cache_dir()) / '_themes' / theme_name
 
 
 def build_theme_svgs(theme_name: str) -> str:

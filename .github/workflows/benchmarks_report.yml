@@ -1,3 +1,4 @@
+# Report benchmark results to the PR
 # We need a dual workflow to make sure the token has the needed permissions to post comments
 # See https://stackoverflow.com/a/71683208 for more details
 
@@ -22,7 +23,7 @@ jobs:
                repo: context.repo.repo,
                run_id: context.payload.workflow_run.id,
             });
-            let artifactName = `asv-benchmark-results-${github.event.workflow_run.id}-${github.event.workflow_run.run_number}-${github.event.workflow_run.run_attempt}`
+            let artifactName = `asv-benchmark-results-${context.payload.workflow_run.id}-${context.payload.workflow_run.run_number}-${context.payload.workflow_run.run_attempt}`
             let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name == artifactName
             })[0];
