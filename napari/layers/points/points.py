@@ -1647,7 +1647,7 @@ class Points(Layer):
             self._slice_input, self._slice_indices
         )
         response = request.execute()
-        self._set_slice_response(response)
+        self._update_slice_response(response)
 
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, dims_indices
@@ -1661,7 +1661,7 @@ class Points(Layer):
             size=self.size,
         )
 
-    def _set_slice_response(self, response: _PointSliceResponse):
+    def _update_slice_response(self, response: _PointSliceResponse):
         """Handle a slicing response."""
         indices = response.indices
         scale = response.scale
