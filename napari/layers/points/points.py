@@ -1639,14 +1639,6 @@ class Points(Layer):
         )
         return start_point, end_point
 
-    # TODO this function was only re-added because of tests
-    def _slice_data(self, slice_indices):
-        request = self._make_slice_request_internal(
-            self._slice_input, slice_indices
-        )
-        response = request.execute()
-        return (response.indices, response.scale)
-
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
