@@ -592,7 +592,7 @@ QLabel#author_text {
 QWidget#info_widget {
   background-color: {{ darken(foreground, 20) }};
   margin: 0px;
-  margin-left: 0px;
+  margin-left: -10px;
   padding: 0px;
   padding-left: 0px
 }

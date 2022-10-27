@@ -6,7 +6,6 @@ from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Optional, Sequence, Tuple
 
-
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
@@ -81,43 +80,18 @@ class PluginListItem(QFrame):
         enabled: bool = True,
         installed: bool = False,
         npe_version=1,
+        versions_conda: list = [],
+        versions_pypi: list = [],
     ):
         super().__init__(parent)
+
+        self._versions = {}
+        self._versions['Conda'] = versions_conda
+        self._versions['PyPi'] = versions_pypi
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
 
-        # find versions
-        self._versions = {}
-        settings = get_settings()
-        use_hub = (
-            running_as_bundled_app()
-            or running_as_constructor_app()
-            or settings.plugins.plugin_api.name == "napari_hub"
-        )
-        if use_hub:
-            conda_forge = running_as_constructor_app()
-            self.worker_pypi = create_worker(
-                iter_versions('PyPi', package_name), conda_forge=conda_forge
-            )
-            self.worker_conda = create_worker(
-                iter_versions('Conda', package_name), conda_forge=conda_forge
-            )
-        else:
-            self.worker_pypi = create_worker(
-                iter_versions('PyPi', package_name)
-            )
-            self.worker_conda = create_worker(
-                iter_versions('Conda', package_name)
-            )
-
-        # # print(dir(self.worker_pypi))
-        # # self.worker_pypi.yielded.connect(lambda info: self._handle_yield(info, 'PyPi'))
-        # self.worker_pypi.start()
-
-        # self.worker_conda.yielded.connect(lambda info: self._handle_yield(info, 'Conda'))
-        # self.worker_conda.start()
-
-        # self._populate_version_dropdown('PyPi')
+        self._populate_version_dropdown('PyPi')
         self.package_name.setText(version)
         if summary:
             self.summary.setText(summary)
@@ -135,6 +109,7 @@ class PluginListItem(QFrame):
             self.action_button.setText(trans._("Uninstall"))
             self.action_button.setObjectName("remove_button")
             self.info_choice_wdg.hide()
+            self.source_choice_dropdown.hide()
             self.install_info_button.show()
             self.latest_version_text.show()
         else:
@@ -145,10 +120,11 @@ class PluginListItem(QFrame):
             self.install_info_button.hide()
             self.update_btn.setVisible(False)
             self.latest_version_text.hide()
+            self.source_choice_dropdown.show()
 
-    def _handle_yield(self, version, platform):
-        self._versions[platform].append = version
-        self._populate_version_dropdown(platform)
+    # def _handle_yield(self, version, platform):
+    #     self._versions[platform].append = version
+    #     self._populate_version_dropdown(platform)
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -394,22 +370,14 @@ class PluginListItem(QFrame):
     def _populate_version_dropdown(self, e):
         # pck = self.plugin_name.text()
         versions = self._versions[e]
-        # if e == 'Conda':
-        #     versions = ['v1']
-        #     versions = self._versions[e]
-        #     # versions = conda_package_versions(pck)
-        # else:
-        #     versions = ['v1']
-        #     # versions = pypi_package_versions(pck)
 
         self.version_choice_dropdown.clear()
 
         if len(versions) > 0:
             for version in versions:
                 self.version_choice_dropdown.addItem(version)
-            # self.version_choice_dropdown.addItem(versions[0])
 
-        self.latest_version_text.setText(f'to {versions[0]}')
+            self.latest_version_text.setText(f'to {versions[0]}')
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
@@ -454,12 +422,16 @@ class QPluginList(QListWidget):
     @Slot(PackageMetadata)
     def addItem(
         self,
-        project_info: PackageMetadata,
+        project_info_versions: Tuple[PackageMetadata, list, list],
         installed=False,
         plugin_name=None,
         enabled=True,
         npe_version=None,
     ):
+        project_info = project_info_versions[0]
+        versions_pypi = project_info_versions[1]
+        versions_conda = project_info_versions[2]
+
         pkg_name = project_info.name
         # don't add duplicates
         if (
@@ -485,6 +457,8 @@ class QPluginList(QListWidget):
             enabled=enabled,
             installed=installed,
             npe_version=npe_version,
+            versions_conda=versions_conda,
+            versions_pypi=versions_pypi,
         )
         item.widget = widg
         item.npe_version = npe_version
@@ -742,14 +716,18 @@ class QtPluginDialog(QDialog):
                 meta = {}
 
             self.installed_list.addItem(
-                PackageMetadata(
-                    metadata_version="1.0",
-                    name=norm_name,
-                    version=meta.get('version', ''),
-                    summary=meta.get('summary', ''),
-                    home_page=meta.get('url', ''),
-                    author=meta.get('author', ''),
-                    license=meta.get('license', ''),
+                (
+                    PackageMetadata(
+                        metadata_version="1.0",
+                        name=norm_name,
+                        version=meta.get('version', ''),
+                        summary=meta.get('summary', ''),
+                        home_page=meta.get('url', ''),
+                        author=meta.get('author', ''),
+                        license=meta.get('license', ''),
+                    ),
+                    [],
+                    [],
                 ),
                 installed=True,
                 enabled=enabled,
@@ -969,11 +947,13 @@ class QtPluginDialog(QDialog):
             self.installer.install(packages)
 
     def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
-        project_info, is_available = data
+        project_info, is_available, versions_pypi, versions_conda = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info, is_available)
         else:
-            self.available_list.addItem(project_info)
+            self.available_list.addItem(
+                (project_info, versions_pypi, versions_conda)
+            )
             if not is_available:
                 self.available_list.tag_unavailable(project_info)
 
