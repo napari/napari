@@ -2,7 +2,7 @@ import numpy as np
 from vispy.color.color_array import ColorArray
 from vispy.scene.visuals import Compound, Line, Markers
 
-from ...components._interaction_box_constants import Box
+from ...components.overlays._interaction_box_constants import Box
 
 
 class VispyInteractionBox:

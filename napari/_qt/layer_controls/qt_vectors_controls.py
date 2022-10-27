@@ -104,7 +104,7 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('width:'), self.widthSpinBox)
         self.layout().addRow(trans._('length:'), self.lengthSpinBox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
