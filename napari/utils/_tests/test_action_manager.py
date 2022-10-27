@@ -37,7 +37,7 @@ def test_bind_multiple_action(action_manager):
 
     action_manager.bind_shortcut('napari:test_action_2', 'X')
     action_manager.bind_shortcut('napari:test_action_2', 'Y')
-    assert action_manager._shortcuts['napari:test_action_2'] == {'X', 'Y'}
+    assert action_manager._shortcuts['napari:test_action_2'] == ['X', 'Y']
 
 
 def test_bind_unbind_existing_action(action_manager):
@@ -47,5 +47,5 @@ def test_bind_unbind_existing_action(action_manager):
     )
 
     assert action_manager.bind_shortcut('napari:test_action_1', 'X') is None
-    assert action_manager.unbind_shortcut('napari:test_action_1') == {'X'}
-    assert action_manager._shortcuts['napari:test_action_1'] == set()
+    assert action_manager.unbind_shortcut('napari:test_action_1') == ['X']
+    assert action_manager._shortcuts['napari:test_action_1'] == []

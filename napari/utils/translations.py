@@ -625,7 +625,7 @@ class _Translator:
             if locale.split("_")[0] != _DEFAULT_LOCALE:
                 _Translator._update_env(locale)
 
-            for __, bundle in cls._TRANSLATORS.items():
+            for bundle in cls._TRANSLATORS.values():
                 bundle._update_locale(locale)
 
     @classmethod

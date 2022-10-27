@@ -18,12 +18,12 @@ parser.add_argument(
     help='The name of the sub-directory that contains the perfmon configuration file (e.g. slicing).',
 )
 parser.add_argument(
+    'example_script', help='The example script that should run napari.'
+)
+parser.add_argument(
     '--output',
     default='latest',
     help='The name to add to the output traces file.',
-)
-parser.add_argument(
-    'napari_args', nargs="*", help='The arguments to pass to napari.'
 )
 args = parser.parse_args()
 
@@ -40,9 +40,8 @@ env = os.environ.copy()
 env['NAPARI_PERFMON'] = config_path
 
 subprocess.check_call(
-    'napari ' + ' '.join(args.napari_args),
+    ['python', args.example_script],
     env=env,
-    shell=True,
 )
 
 original_output_path = str(config_dir / 'traces-latest.json')

@@ -5,8 +5,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - 'docs/**'
 
 jobs:
   manifest:
@@ -21,8 +19,9 @@ jobs:
       - name: Check Manifest
         run: |
           pip install --upgrade pip
-          pip install check-manifest
-          check-manifest
+          pip install -e .[build]
+          make typestubs
+          make check-manifest
 
   localization_syntax:
     # make sure all necessary files will be bundled in the release
@@ -79,10 +78,14 @@ jobs:
           - python: 3.9
             platform: ubuntu-latest
             backend: pyside6
+# uncoment when new qtpy is released
+#          - python: '3.10'
+#            platform: ubuntu-latest
+#            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.10.1
         with:
           access_token: ${{ github.token }}
 

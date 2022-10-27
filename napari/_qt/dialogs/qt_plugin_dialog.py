@@ -42,7 +42,7 @@ import napari.resources
 
 from ...plugins import plugin_manager
 from ...plugins.hub import iter_hub_plugin_info
-from ...plugins.pypi import iter_napari_plugin_info
+from ...plugins.pypi import _user_agent, iter_napari_plugin_info
 from ...plugins.utils import normalized_name
 from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
@@ -105,6 +105,7 @@ class Installer(QObject):
                 ]
             )
             env.insert("PYTHONPATH", combined_paths)
+            env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
         else:
             process.setProgram(installer)
 
@@ -292,8 +293,13 @@ class Installer(QObject):
 
         process.start()
 
+        pm2 = PluginManager.instance()
+
         for pkg in pkg_list:
-            plugin_manager.unregister(pkg)
+            if pkg in pm2:
+                pm2.unregister(pkg)
+            else:
+                plugin_manager.unregister(pkg)
 
         return process
 
@@ -780,8 +786,6 @@ class QtPluginDialog(QDialog):
 
         from ...plugins import plugin_manager
 
-        plugin_manager.discover()  # since they might not be loaded yet
-
         self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
@@ -815,6 +819,7 @@ class QtPluginDialog(QDialog):
             )
 
         pm2 = PluginManager.instance()
+        discovered = pm2.discover()
         for manifest in pm2.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in self.already_installed or distname == 'napari':
@@ -824,6 +829,7 @@ class QtPluginDialog(QDialog):
             npev = 'shim' if manifest.npe1_shim else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
+        plugin_manager.discover()  # since they might not be loaded yet
         for (
             plugin_name,
             _mod_name,
@@ -865,6 +871,14 @@ class QtPluginDialog(QDialog):
         self.worker.finished.connect(self._update_count_in_label)
         self.worker.finished.connect(self._end_refresh)
         self.worker.start()
+        if discovered:
+            message = trans._(
+                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            )
+            self._warn_dialog = WarnPopup(
+                text=message,
+            )
+            self._warn_dialog.exec_()
 
     def setup_ui(self):
         self.resize(1080, 640)

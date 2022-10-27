@@ -21,12 +21,8 @@ def test_default_themes():
 
 
 def test_get_theme():
-    theme = get_theme('dark')
-    assert isinstance(theme, dict)
-    assert theme['name'] == 'dark'
-
     # get theme in the old-style dict format
-    theme = get_theme("dark")
+    theme = get_theme("dark", True)
     assert isinstance(theme, dict)
 
     # get theme in the new model-based format
@@ -40,7 +36,7 @@ def test_register_theme():
     assert 'test_blue' not in themes
 
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -56,11 +52,11 @@ def test_register_theme():
     assert 'test_blue' in themes
 
     # Check that the dark theme has not been overwritten
-    dark_theme = get_theme('dark')
+    dark_theme = get_theme('dark', True)
     assert not dark_theme['background'] == blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
-    theme = get_theme('test_blue')
+    theme = get_theme('test_blue', True)
     assert theme['background'] == blue_theme['background']
 
     theme = get_theme("test_blue", False)
@@ -69,7 +65,7 @@ def test_register_theme():
 
 def test_unregister_theme():
     # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -96,7 +92,7 @@ def test_rebuild_theme_settings():
     # theme is not updated
     with pytest.raises(ValidationError):
         settings.appearance.theme = "another-theme"
-    blue_theme = get_theme("dark")
+    blue_theme = get_theme("dark", True)
     register_theme("another-theme", blue_theme)
     settings.appearance.theme = "another-theme"
 

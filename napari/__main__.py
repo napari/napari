@@ -367,10 +367,15 @@ def _run():
                             break
 
                 if wnames:
-                    for wname in wnames:
+                    first_dock_widget = viewer.window.add_plugin_dock_widget(
+                        pname, wnames[0], tabify=tabify
+                    )[0]
+                    for wname in wnames[1:]:
                         viewer.window.add_plugin_dock_widget(
                             pname, wname, tabify=tabify
                         )
+                    first_dock_widget.show()
+                    first_dock_widget.raise_()
                 else:
                     viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
 
@@ -431,6 +436,10 @@ def _maybe_rerun_with_macos_fixes():
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
+    from napari._qt import API_NAME
+
+    # This import mus be here to raise exception about PySide6 problem
+
     if sys.platform != "darwin":
         return
 
@@ -445,8 +454,6 @@ def _maybe_rerun_with_macos_fixes():
     import platform
     import subprocess
     from tempfile import mkdtemp
-
-    from qtpy import API_NAME
 
     # In principle, we will relaunch to the same python we were using
     executable = sys.executable

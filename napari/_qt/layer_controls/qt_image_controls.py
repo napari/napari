@@ -165,7 +165,7 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
@@ -195,7 +195,7 @@ class QtImageControls(QtBaseImageControls):
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
         """
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.layer.interpolation2d = text
         else:
             self.layer.interpolation3d = text
@@ -323,12 +323,13 @@ class QtImageControls(QtBaseImageControls):
     def _toggle_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        if depiction == VolumeDepiction.VOLUME or self.layer._ndisplay == 2:
+        ndisplay = self.layer._slice_input.ndisplay
+        if depiction == VolumeDepiction.VOLUME or ndisplay == 2:
             self.planeNormalButtons.hide()
             self.planeNormalLabel.hide()
             self.planeThicknessSlider.hide()
             self.planeThicknessLabel.hide()
-        if depiction == VolumeDepiction.PLANE and self.layer._ndisplay == 3:
+        if depiction == VolumeDepiction.PLANE and ndisplay == 3:
             self.planeNormalButtons.show()
             self.planeNormalLabel.show()
             self.planeThicknessSlider.show()
@@ -338,7 +339,7 @@ class QtImageControls(QtBaseImageControls):
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
             self.layer.interpolation2d
-            if self.layer._ndisplay == 2
+            if self.layer._slice_input.ndisplay == 2
             else self.layer.interpolation3d
         )
         with qt_signals_blocked(self.interpComboBox):
@@ -350,7 +351,7 @@ class QtImageControls(QtBaseImageControls):
         """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
         self._toggle_plane_parameter_visibility()
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()

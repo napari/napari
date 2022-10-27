@@ -303,7 +303,7 @@ class QtShapesControls(QtLayerControls):
         self.textDispCheckBox = text_disp_cb
 
         self.layout().addRow(button_grid)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('edge width:'), self.widthSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('face color:'), self.faceColorEdit)
