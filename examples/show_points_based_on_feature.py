@@ -2,6 +2,7 @@
 Show points based on feature
 ============================
 
+.. tags:: visualization-advanced
 """
 #!/usr/bin/env python3
 

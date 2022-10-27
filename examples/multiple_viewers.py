@@ -3,6 +3,8 @@ Multiple viewers
 ================
 
 Create multiple viewers from the same script
+
+.. tags:: gui
 """
 
 from skimage import data

@@ -1,10 +1,11 @@
-import warnings
 from pathlib import Path
 from typing import List, Optional
 
+from ...settings import get_settings
 from ._svg import QColoredSVGIcon
 
 __all__ = ['get_stylesheet', 'QColoredSVGIcon']
+
 
 STYLE_PATH = (Path(__file__).parent / 'styles').resolve()
 STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
@@ -46,3 +47,22 @@ def get_stylesheet(
         return template(stylesheet, **get_theme(theme, as_dict=True))
 
     return stylesheet
+
+
+def get_current_stylesheet(extra: Optional[List[str]] = None) -> str:
+    """
+    Return the current stylesheet base on settings. This is wrapper around
+    :py:func:`get_stylesheet` that takes the current theme base on settings.
+
+    Parameters
+    ----------
+    extra : list of str, optional
+        Additional paths to QSS files to include in stylesheet, by default None
+
+    Returns
+    -------
+    css : str
+        The combined stylesheet.
+    """
+    settings = get_settings()
+    return get_stylesheet(settings.appearance.theme, extra)

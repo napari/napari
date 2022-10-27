@@ -35,6 +35,7 @@ from qtpy.QtWidgets import (
     QToolTip,
     QWidget,
 )
+from superqt.utils import QSignalThrottler
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
@@ -47,6 +48,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
+from .dialogs.confirm_close_dialog import ConfirmCloseDialog
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
@@ -130,6 +132,20 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        self.status_throttler = QSignalThrottler(parent=self)
+        self.status_throttler.setTimeout(50)
+
+        # In the GUI we expect lots of changes to the cursor position, so
+        # replace the direct connection with a throttled one.
+        with contextlib.suppress(IndexError):
+            viewer.cursor.events.position.disconnect(
+                viewer._update_status_bar_from_cursor
+            )
+        viewer.cursor.events.position.connect(self.status_throttler.throttle)
+        self.status_throttler.triggered.connect(
+            viewer._update_status_bar_from_cursor
+        )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -276,10 +292,19 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def close(self, quit_app=False):
+    def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        self._quit_app = quit_app
-        return super().close()
+        if hasattr(self.status_throttler, "_timer"):
+            self.status_throttler._timer.stop()
+        if not quit_app and not self._qt_viewer.viewer.layers:
+            return super().close()
+        if (
+            not confirm_need
+            or not get_settings().application.confirm_close_window
+            or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
+        ):
+            self._quit_app = quit_app
+            return super().close()
 
     def close_window(self):
         """Close active dialog or active window."""
@@ -350,6 +375,15 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if (
+            event.spontaneous()
+            and get_settings().application.confirm_close_window
+            and self._qt_viewer.viewer.layers
+            and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
+        ):
+            event.ignore()
+            return
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
@@ -457,11 +491,11 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
-        viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
+        viewer.events.status.connect(self._status_changed)
 
         if show:
             self.show()
@@ -632,7 +666,10 @@ class Window:
             self._qt_viewer.dims.play(axis)
 
     def add_plugin_dock_widget(
-        self, plugin_name: str, widget_name: str = None
+        self,
+        plugin_name: str,
+        widget_name: str = None,
+        tabify: bool = False,
     ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
@@ -663,6 +700,7 @@ class Window:
             Widget, dock_kwargs = plugin_manager.get_widget(
                 plugin_name, widget_name
             )
+
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
@@ -682,7 +720,9 @@ class Window:
 
         # Add dock widget
         dock_kwargs.pop('name', None)
-        dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
+        dock_widget = self.add_dock_widget(
+            wdg, name=full_name, tabify=tabify, **dock_kwargs
+        )
         return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
@@ -718,6 +758,7 @@ class Window:
         shortcut=_sentinel,
         add_vertical_stretch=True,
         menu=None,
+        tabify: bool = False,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -790,7 +831,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget, menu=menu)
+        self._add_viewer_dock_widget(dock_widget, menu=menu, tabify=tabify)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -1133,7 +1174,16 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.value)
+        if isinstance(event.value, str):
+            self._status_bar.setStatusText(event.value)
+        else:
+            status_info = event.value
+            self._status_bar.setStatusText(
+                layer_base=status_info['layer_base'],
+                source_type=status_info['source_type'],
+                plugin=status_info['plugin'],
+                coordinates=status_info['coordinates'],
+            )
 
     def _title_changed(self, event):
         """Update window title.
@@ -1192,7 +1242,10 @@ class Window:
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
-                        f'screenshot size must be 2 values, got {len(size)}'
+                        trans._(
+                            'screenshot size must be 2 values, got {len_size}',
+                            len_size=len(size),
+                        )
                     )
                 # Scale the requested size to account for HiDPI
                 size = tuple(

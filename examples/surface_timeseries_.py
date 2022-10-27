@@ -3,6 +3,8 @@ Surface timeseries
 ==================
 
 Display a surface timeseries using data from nilearn
+
+.. tags:: experimental
 """
 
 try:

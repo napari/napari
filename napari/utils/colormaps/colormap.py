@@ -51,7 +51,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[float, (-1,)] = None
+    controls: Array[np.float32, (-1,)] = None
 
     def __init__(self, colors, display_name: Optional[str] = None, **data):
         if display_name is None:
@@ -68,7 +68,7 @@ class Colormap(EventedModel):
             n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
-            return np.linspace(0, 1, n_controls)
+            return np.linspace(0, 1, n_controls, dtype=np.float32)
 
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
@@ -122,7 +122,9 @@ class Colormap(EventedModel):
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             indices = np.clip(
-                np.searchsorted(self.controls, values) - 1, 0, len(self.colors)
+                np.searchsorted(self.controls, values, side="right") - 1,
+                0,
+                len(self.colors),
             )
             cols = self.colors[indices.astype(np.int32)]
         else:

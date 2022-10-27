@@ -308,6 +308,22 @@ QLabeledRangeSlider > QAbstractSpinBox {
   color: {{ secondary }};
 }
 
+QWidget[emphasized="true"] QDoubleSlider::sub-page:horizontal:disabled {
+    background: {{ primary }};
+}
+
+QWidget[emphasized="true"] QDoubleSlider::handle:disabled {
+    background: {{ primary }};
+}
+
+QWidget[emphasized="true"] SliderLabel:disabled {
+    color: {{ opacity(text, 50) }};
+}
+
+QWidget[emphasized="true"] QLabel:disabled {
+    color: {{ opacity(text, 50) }};
+}
+
 AutoScaleButtons QPushButton {
   font-size: 9pt;
   padding: 4;
@@ -785,4 +801,21 @@ QtLayerList::indicator:unchecked {
 
 QtLayerList::indicator:checked {
   image: url("theme_{{ name }}:/visibility.svg");
+}
+
+
+#warning_icon_btn {
+  qproperty-icon: url("theme_{{ name }}:/warning.svg");
+}
+
+#warning_icon_element {
+  image: url("theme_{{ name }}:/warning.svg");
+  min-height: 36px;
+  min-width: 36px;
+}
+
+#error_icon_element {
+  image: url("theme_{{ name }}:/error.svg");
+  min-height: 36px;
+  min-width: 36px;
 }
