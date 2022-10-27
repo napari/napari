@@ -1,4 +1,5 @@
 import numpy as np
+from app_model.types import KeyCode
 
 from ...layers.utils.layer_utils import (
     register_layer_action,
@@ -10,7 +11,7 @@ from ._shapes_mouse_bindings import _move
 from .shapes import Shapes
 
 
-@Shapes.bind_key('Space')
+@Shapes.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer: Shapes):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
@@ -27,7 +28,7 @@ def hold_to_pan_zoom(layer: Shapes):
         layer._set_highlight()
 
 
-@Shapes.bind_key('Shift')
+@Shapes.bind_key(KeyCode.Shift)
 def hold_to_lock_aspect_ratio(layer: Shapes):
     """Hold to lock aspect ratio when resizing a shape."""
     # on key press
@@ -53,8 +54,8 @@ def hold_to_lock_aspect_ratio(layer: Shapes):
         _move(layer, layer._moving_coordinates)
 
 
-def register_shapes_action(description):
-    return register_layer_action(Shapes, description)
+def register_shapes_action(description: str, repeatable: bool = False):
+    return register_layer_action(Shapes, description, repeatable)
 
 
 def register_shapes_mode_action(description):

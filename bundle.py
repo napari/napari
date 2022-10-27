@@ -107,10 +107,10 @@ def patched_toml():
         # Workaround https://github.com/napari/napari/issues/2965
         # Pin revisions to releases _before_ they switched to static libs
         revision = {
-            (3, 6): 'b11',
-            (3, 7): 'b5',
-            (3, 8): 'b4',
-            (3, 9): 'b1',
+            (3, 6): '11',
+            (3, 7): '5',
+            (3, 8): '4',
+            (3, 9): '1',
         }[sys.version_info[:2]]
         app_table = toml['tool']['briefcase']['app'][APP]
         app_table.add('macOS', tomlkit.table())
@@ -263,7 +263,9 @@ def bundle():
     # the briefcase calls need to happen while the pyproject toml is patched
     with patched_toml(), patched_dmgbuild():
         # create
-        cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
+        cmd = ['briefcase', 'create', '-v'] + (
+            ['--no-docker'] if LINUX else []
+        )
         subprocess.check_call(cmd)
 
         time.sleep(0.5)
@@ -277,11 +279,11 @@ def bundle():
             patch_python_lib_location()
 
         # build
-        cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
+        cmd = ['briefcase', 'build', '-v'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
 
         # package
-        cmd = ['briefcase', 'package']
+        cmd = ['briefcase', 'package', '-v']
         cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
 

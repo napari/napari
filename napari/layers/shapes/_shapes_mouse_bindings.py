@@ -98,7 +98,7 @@ def add_line(layer, event):
     """Add a line."""
     size = layer._vertex_size * layer.scale_factor / 4
     full_size = np.zeros(layer.ndim, dtype=float)
-    for i in layer._dims_displayed:
+    for i in layer._slice_input.displayed:
         full_size[i] = size
 
     coordinates = layer.world_to_data(event.position)
@@ -115,9 +115,9 @@ def add_ellipse(layer, event):
     """Add an ellipse."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
-    size_h[layer._dims_displayed[0]] = size
+    size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
-    size_v[layer._dims_displayed[1]] = size
+    size_v[layer._slice_input.displayed[1]] = size
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
@@ -133,9 +133,9 @@ def add_rectangle(layer, event):
     """Add a rectangle."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
-    size_h[layer._dims_displayed[0]] = size
+    size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
-    size_v[layer._dims_displayed[1]] = size
+    size_v[layer._slice_input.displayed[1]] = size
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
@@ -262,7 +262,7 @@ def vertex_insert(layer, event):
 
     # Determine the closet edge to the current cursor coordinate
     coordinates = layer.world_to_data(event.position)
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
     ind, loc = point_to_lines(coord, all_edges)
     index = all_edges_shape[ind][0]
     ind = all_edges_shape[ind][1] + 1
@@ -357,7 +357,7 @@ def _drag_selection_box(layer, coordinates):
     if len(layer.selected_data) > 0:
         return
 
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
 
     # Create or extend a selection box
     layer._is_selecting = True
@@ -368,7 +368,7 @@ def _drag_selection_box(layer, coordinates):
 
 
 def _set_drag_start(layer, coordinates):
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
     if layer._drag_start is None and len(layer.selected_data) > 0:
         center = layer._selected_box[Box.CENTER]
         layer._drag_start = coord - center
