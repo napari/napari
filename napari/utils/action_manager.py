@@ -316,7 +316,7 @@ class ActionManager:
     def _build_tooltip(self, name: str) -> str:
         """Build tooltip for action `name`."""
         ttip = self._actions[name].description
-        is_toggle_on_long_hold = self._actions[name].is_toggle_on_long_hold
+        repeatable = self._actions[name].repeatable
 
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
@@ -324,11 +324,7 @@ class ActionManager:
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
-        if (
-            is_toggle_on_long_hold
-            and name in self._shortcuts
-            and self._shortcuts[name]
-        ):
+        if repeatable and name in self._shortcuts and self._shortcuts[name]:
             if len(self._shortcuts[name]) > 1:
                 ttip += trans._(
                     "\nHold either shortcut to temporarily activate"

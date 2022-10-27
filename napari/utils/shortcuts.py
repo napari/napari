@@ -28,8 +28,8 @@ default_shortcuts = {
     'napari:decrease_brush_size': [KeyCode.BracketLeft],
     'napari:increase_brush_size': [KeyCode.BracketRight],
     'napari:toggle_preserve_labels': [KeyCode.KeyP],
-    'napari:activate_points_add_mode': [KeyCode.Digit2],
-    'napari:activate_points_select_mode': [KeyCode.Digit3],
+    'napari:activate_points_add_mode': [KeyCode.Digit3],
+    'napari:activate_points_select_mode': [KeyCode.Digit2],
     'napari:activate_points_pan_zoom_mode': [KeyCode.Digit4],
     'napari:select_all_in_slice': [
         KeyCode.KeyA,
