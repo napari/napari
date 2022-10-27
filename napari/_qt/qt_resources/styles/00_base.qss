@@ -147,6 +147,10 @@ QListView {
   border-radius: 2px;
 }
 
+QListView:item:selected {
+    background-color: {{ highlight }};
+}
+
 QWidget[emphasized="true"] QComboBox {
   background-color: {{ primary }};
 }

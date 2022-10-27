@@ -421,14 +421,33 @@ def test_set_contrast_limits_range():
     # clim values should stay within the contrast limits range
     layer.contrast_limits_range = [0, 30]
     assert layer.contrast_limits == [20, 30]
-    # setting contrast limits range should clamp both of the clims values
+    # setting clim range outside of clim should override clim
     layer.contrast_limits_range = [0, 10]
-    assert layer.contrast_limits == [10, 10]
+    assert layer.contrast_limits == [0, 10]
+
     # in both directions...
     layer.contrast_limits_range = [0, 100]
     layer.contrast_limits = [20, 40]
     layer.contrast_limits_range = [60, 100]
-    assert layer.contrast_limits == [60, 60]
+    assert layer.contrast_limits == [60, 100]
+
+
+@pytest.mark.parametrize(
+    'contrast_limits_range',
+    (
+        [-2, -1],  # range below lower boundary of [0, 1]
+        [-1, 0],  # range on lower boundary of [0, 1]
+        [1, 2],  # range on upper boundary of [0, 1]
+        [2, 3],  # range above upper boundary of [0, 1]
+    ),
+)
+def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
+    contrast_limits_range,
+):
+    """See https://github.com/napari/napari/issues/5257"""
+    layer = Image(np.zeros((6, 5)), contrast_limits=[0, 1])
+    layer.contrast_limits_range = contrast_limits_range
+    assert layer.contrast_limits == contrast_limits_range
 
 
 def test_gamma():
@@ -563,7 +582,7 @@ def test_message_3d():
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )

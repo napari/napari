@@ -23,6 +23,8 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -699,3 +701,63 @@ def install_certifi_opener():
 
 def rounded_division(min_val, max_val, precision):
     return int(((min_val + max_val) / 2) / precision) * precision
+
+
+def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
+    """Ensure current dimension order is preserved after dims are dropped.
+
+    This is similar to :func:`scipy.stats.rankdata`, but only deals with
+    unique integers (like dimension indices), so is simpler and faster.
+
+    Parameters
+    ----------
+    order : Sequence[int]
+        The data to reorder.
+
+    Returns
+    -------
+    Tuple[int, ...]
+        A permutation of ``range(len(order))`` that is consistent with the input order.
+
+    Examples
+    --------
+    >>> reorder_after_dim_reduction([2, 0])
+    (1, 0)
+
+    >>> reorder_after_dim_reduction([0, 1, 2])
+    (0, 1, 2)
+
+    >>> reorder_after_dim_reduction([4, 0, 2])
+    (2, 0, 1)
+    """
+    # A single argsort works for strictly increasing/decreasing orders,
+    # but not for arbitrary orders.
+    return tuple(argsort(argsort(order)))
+
+
+def argsort(values: Sequence[int]) -> List[int]:
+    """Equivalent to :func:`numpy.argsort` but faster in some cases.
+
+    Parameters
+    ----------
+    values : Sequence[int]
+        The integer values to sort.
+
+    Returns
+    -------
+    List[int]
+        The indices that when used to index the input values will produce
+        the values sorted in increasing order.
+
+    Examples
+    --------
+    >>> argsort([2, 0])
+    [1, 0]
+
+    >>> argsort([0, 1, 2])
+    [0, 1, 2]
+
+    >>> argsort([4, 0, 2])
+    [1, 2, 0]
+    """
+    return sorted(range(len(values)), key=values.__getitem__)

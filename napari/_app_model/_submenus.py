@@ -22,4 +22,12 @@ SUBMENUS = [
             order=None,
         ),
     ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+    ),
 ]
