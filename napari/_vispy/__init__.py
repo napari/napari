@@ -1,8 +1,7 @@
 import logging
 
+from qtpy import API_NAME
 from vispy import app
-
-from napari._qt import API_NAME
 
 # set vispy application to the appropriate qt backend
 app.use_app(API_NAME)
