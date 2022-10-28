@@ -25,7 +25,6 @@ class _PointSliceRequest:
     dims: _SliceInput
     data: Any = field(repr=False)
     dims_indices: Any = field(repr=False)
-    data_to_world: Affine = field(repr=False)
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
 
