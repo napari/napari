@@ -104,7 +104,7 @@ _COMMAND_INFO = {
 
     # Help menubar
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
-    CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug reporting opt in/out...'), ),
+    CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
 
     # Layer menubar
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
