@@ -150,10 +150,6 @@ class PluginListItem(QFrame):
             self.info_choice_wdg.show()
             self.source_choice_dropdown.show()
 
-    # def _handle_yield(self, version, platform):
-    #     self._versions[platform].append = version
-    #     self._populate_version_dropdown(platform)
-
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
             return
@@ -546,6 +542,7 @@ class QPluginList(QListWidget):
                 pkg_name,
                 InstallerActions.INSTALL,
                 update=True,
+                version=widg.version_choice_dropdown.currentText(),
             )
         )
         widg.cancel_btn.clicked.connect(
