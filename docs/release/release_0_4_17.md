@@ -399,8 +399,8 @@ or create issues on GitHub.
 - Update config directory paths for perfmon tools (#5081)
 - Update some strings to be translated, some to be ignored (#5082)
 - Workaround for PySide6 problem (#5244)
-- Remove obsolete example code (#5274)
 - Revert raising of PySide6 version error (#5272)
+- Remove obsolete example code (#5274)
 
 
 ## 48 authors added to this release (alphabetical)
