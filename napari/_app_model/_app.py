@@ -6,7 +6,7 @@ from typing import Dict
 
 from app_model import Application
 
-from ._submenus import SUBMENUS
+from .constants._menus import MenuId
 from .actions._layer_actions import LAYER_ACTIONS
 from .actions._view_actions import VIEW_ACTIONS
 from .injection._processors import PROCESSORS
@@ -34,7 +34,7 @@ class NapariApplication(Application):
         for action in chain(LAYER_ACTIONS, VIEW_ACTIONS):
             self.register_action(action)
 
-        self.menus.append_menu_items(SUBMENUS)
+        self.menus.append_menu_items(MenuId.sub_menus())
 
     @classmethod
     def get_app(cls) -> NapariApplication:

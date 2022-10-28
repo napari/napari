@@ -12,7 +12,9 @@ menus for plugins to contribute commands and submenu items to.
 """
 
 from enum import Enum
-from typing import Set
+from typing import Set, Sequence, Tuple
+from app_model.types import SubmenuItem
+from ...utils.translations import trans
 
 
 class MenuId(str, Enum):
@@ -60,6 +62,77 @@ class MenuId(str, Enum):
             cls.TOOLS_VISUALIZATION,
         }
         return _contributables
+
+    @classmethod
+    def sub_menus(cls) -> Sequence[Tuple['MenuId', SubmenuItem]]:
+        menu_id_to_sub_menus = {
+            MenuId.LAYERLIST_CONTEXT: [
+                {
+                    'submenu': MenuId.LAYERS_CONVERT_DTYPE,
+                    'title': trans._('Convert data type'),
+                    'group': MenuGroup.LAYERLIST_CONTEXT.CONVERSION,
+                    'order': None
+                },
+                {
+                    'submenu': MenuId.LAYERS_PROJECT,
+                    'title': trans._('Projections'),
+                    'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+                    'order': None
+                },
+            ],
+            MenuId.MENUBAR_VIEW: [
+                {
+                    'submenu': MenuId.VIEW_AXES,
+                    'title': trans._('Axes'),
+                },
+                {
+                    'submenu': MenuId.VIEW_SCALEBAR,
+                    'title': trans._('Scale Bar')
+                }
+            ],
+            MenuId.MENUBAR_TOOLS: [
+                {
+                    'submenu': MenuId.TOOLS_ACQUISITION,
+                    'title': trans._('Acquisition')
+                },
+                {
+                    'submenu': MenuId.TOOLS_FILTERS,
+                    'title': trans._('Filters')
+                },
+                {
+                    'submenu': MenuId.TOOLS_TRANSFORM,
+                    'title': trans._('Transform')
+                },
+                {
+                    'submenu': MenuId.TOOLS_MEASUREMENT,
+                    'title': trans._('Measurement')
+                },
+                {
+                    'submenu': MenuId.TOOLS_CLASSIFICATION,
+                    'title': trans._('Classification')
+                },
+                {
+                    'submenu': MenuId.TOOLS_PROJECTION,
+                    'title': trans._('Projection')
+                },
+                {
+                    'submenu': MenuId.TOOLS_SEGMENTATION,
+                    'title': trans._('Segmentation')
+                },
+                {
+                    'submenu': MenuId.TOOLS_VISUALIZATION,
+                    'title': trans._('Visualization')
+                },
+                {
+                    'submenu': MenuId.TOOLS_UTILITIES,
+                    'title': trans._('Utilities')
+                }
+            ]
+        }
+
+        return [(menu_id, SubmenuItem(**submenu))
+                for menu_id, submenus in menu_id_to_sub_menus.items()
+                for submenu in submenus]
 
 
 # XXX: the structure/usage pattern of this class may change in the future
