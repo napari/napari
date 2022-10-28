@@ -140,7 +140,7 @@ class TransformChain(EventedList, Transform):
             return True
         return getattr(self.simplified, '_is_diagonal', False)
 
-    @property
+    @cached_property
     def simplified(self) -> 'Transform':
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
@@ -181,6 +181,10 @@ class TransformChain(EventedList, Transform):
             Resulting transform chain.
         """
         return TransformChain([tf.expand_dims(axes) for tf in self])
+
+    def _clean_cache(self):
+        cached_properties = ('_is_diagonal',)
+        [self.__dict__.pop(p, None) for p in cached_properties]
 
 
 class ScaleTranslate(Transform):
