@@ -53,11 +53,11 @@ class MenuId(str, Enum):
             cls.TOOLS_CLASSIFICATION,
             cls.TOOLS_FILTERS,
             cls.TOOLS_MEASUREMENT,
-            cls.TOOLS_SEGMENTATION.value,
-            cls.TOOLS_PROJECTION.value,
-            cls.TOOLS_TRANSFORM.value,
-            cls.TOOLS_UTILITIES.value,
-            cls.TOOLS_VISUALIZATION.value,
+            cls.TOOLS_SEGMENTATION,
+            cls.TOOLS_PROJECTION,
+            cls.TOOLS_TRANSFORM,
+            cls.TOOLS_UTILITIES,
+            cls.TOOLS_VISUALIZATION,
         }
         return _contributables
 
