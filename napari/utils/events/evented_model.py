@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
+from app_model.types import KeyBinding
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
@@ -14,7 +15,10 @@ from .event import EmitterGroup, Event
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
 # it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
-_BASE_JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
+_BASE_JSON_ENCODERS = {
+    np.ndarray: lambda arr: arr.tolist(),
+    KeyBinding: lambda v: str(v),
+}
 
 
 @contextmanager
