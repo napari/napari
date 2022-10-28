@@ -84,7 +84,6 @@ def is_conda_package(pkg):
         if fname.suffix == '.json':
             *name, _, _ = fname.name.rsplit('-')
             name = "-".join(name)
-            # print('conda pcks', name)
             if pkg == name:
                 return True
 
@@ -542,7 +541,6 @@ class QPluginList(QListWidget):
                 pkg_name,
                 InstallerActions.INSTALL,
                 update=True,
-                version=widg.version_choice_dropdown.currentText(),
             )
         )
         widg.cancel_btn.clicked.connect(
@@ -1018,6 +1016,7 @@ class QtPluginDialog(QDialog):
         self,
         packages: Sequence[str] = (),
         versions: Optional[Sequence[str]] = None,
+        installer: Optional[InstallerTypes] = None,
     ):
         if not packages:
             _packages = self.direct_entry_edit.text()
