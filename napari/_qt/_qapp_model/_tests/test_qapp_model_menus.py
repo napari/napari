@@ -24,8 +24,9 @@ def test_build_qmodel_menu(qtbot, menu_id):
         menu = build_qmodel_menu(menu_id)
         qtbot.addWidget(menu)
 
-        # if there is no actions registered for this menu, this is likely a placeholder submenu
-        # for example tools/acquisition, these placeholder submenus do not show up under app.menus
-        if len(menu.actions()) != 0:
-            # `>=` because separator bars count as actions
-            assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
+        # tools submenu are placeholders submenus without actions for plugins to register
+        if 'napari/tools/' in menu_id:
+            return
+
+        # `>=` because separator bars count as actions
+        assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
