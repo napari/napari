@@ -42,6 +42,8 @@ class MenuId(str, Enum):
 
     @classmethod
     def contributables(cls) -> Set['MenuId']:
+        """Set of all menu ids that can be contributed to by plugins."""
+
         # TODO: add these to docs, with a lookup for what each menu is/does.
         _contributables = {
             cls.LAYERLIST_CONTEXT,
@@ -69,9 +71,6 @@ class MenuGroup:
         CONVERSION = '1_conversion'
         SPLIT_MERGE = '5_split_merge'
         LINK = '9_link'
-
-
-"""Set of all menu ids that can be contributed to by plugins."""
 
 
 def is_menu_contributable(menu_id: str) -> bool:
