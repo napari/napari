@@ -4,7 +4,6 @@ from typing import Any
 import numpy as np
 
 from napari.layers.utils._slice_input import _SliceInput
-from napari.utils.transforms import Affine
 
 
 @dataclass(frozen=True)
