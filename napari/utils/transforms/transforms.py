@@ -6,6 +6,7 @@ import toolz as tz
 
 from ...utils.translations import trans
 from ..events import EventedList
+from ..events.containers._typed import _T, Index
 from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
@@ -19,7 +20,6 @@ from .transform_utils import (
     shear_to_matrix,
     translate_to_vector,
 )
-from ..events.containers._typed import _T, Index
 
 
 class Transform:
