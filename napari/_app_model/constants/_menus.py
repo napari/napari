@@ -76,5 +76,7 @@ class MenuGroup:
 def is_menu_contributable(menu_id: str) -> bool:
     """Return True if the given menu_id is a menu that plugins can contribute to."""
     return (
-        menu_id in MenuId.contributables() if menu_id.startswith("napari/") else True
+        menu_id in MenuId.contributables()
+        if menu_id.startswith("napari/")
+        else True
     )
