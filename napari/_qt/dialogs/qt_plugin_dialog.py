@@ -58,7 +58,6 @@ def is_conda_package(pkg):
         if fname.suffix == '.json':
             *name, _, _ = fname.name.rsplit('-')
             name = "-".join(name)
-            # print('conda pcks', name)
             if pkg == name:
                 return True
 
@@ -216,7 +215,7 @@ class PluginListItem(QFrame):
         self.summary.setObjectName('summary_text')
         self.summary.setWordWrap(True)
         dlg_width = self.parent().parent().sizeHint().width()
-        self.summary.setFixedWidth(dlg_width * 1.5)
+        self.summary.setFixedWidth(int(dlg_width) * 1.5)
 
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Fixed
@@ -224,9 +223,6 @@ class PluginListItem(QFrame):
 
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(
-        #     self.summary.sizePolicy().hasHeightForWidth()
-        # )
         self.summary.setSizePolicy(sizePolicy)
         self.row2.addWidget(self.summary, alignment=Qt.AlignmentFlag.AlignTop)
 
@@ -271,7 +267,6 @@ class PluginListItem(QFrame):
         )
         self.install_info_button.setSizePolicy(sizePolicy)
         self.install_info_button.setObjectName("install_info_button")
-        # self.install_info_button.toggled.connect(self._resize_pluginlistitem)
         self.source_choice_text = QLabel('Install via ')
         self.version_choice_text = QLabel('Version ')
         self.source_choice_dropdown = QComboBox()
@@ -364,8 +359,7 @@ class PluginListItem(QFrame):
         self.install_info_button.addWidget(self.info_widget)
 
     def _populate_version_dropdown(self, e):
-        # pck = self.plugin_name.text()
-        versions = reversed(self._versions[e])
+        versions = self._versions[e]
 
         self.version_choice_dropdown.clear()
 
@@ -470,9 +464,14 @@ class QPluginList(QListWidget):
             )
         else:
             widg.help_button.setVisible(False)
+
         widg.action_button.clicked.connect(
-            partial(self.handle_action, item, pkg_name, action_name)
+            partial(self.handle_action, item, pkg_name, action_name,
+                version=widg.version_choice_dropdown.currentText(),
+                installer_choice=widg.source_choice_dropdown.currentText()
+            )
         )
+
         widg.update_btn.clicked.connect(
             partial(
                 self.handle_action,
@@ -480,7 +479,6 @@ class QPluginList(QListWidget):
                 pkg_name,
                 InstallerActions.INSTALL,
                 update=True,
-                version=widg.version_choice_dropdown.currentText(),
             )
         )
         widg.cancel_btn.clicked.connect(
@@ -497,10 +495,11 @@ class QPluginList(QListWidget):
         )
 
     def _resize_pluginlistitem(self, item):
+        height = int(item.widget.height())
         if item.widget.install_info_button.isExpanded():
-            item.widget.setFixedHeight(item.widget.height() * 1.5)
+            item.widget.setFixedHeight(height * 1.5)
         else:
-            item.widget.setFixedHeight(item.widget.height() / 1.5)
+            item.widget.setFixedHeight(height / 1.5)
         item.setSizeHint(item.widget.size())
 
     def handle_action(
@@ -509,7 +508,8 @@ class QPluginList(QListWidget):
         pkg_name: str,
         action_name: InstallerActions,
         update: bool = False,
-        version: str = None
+        version: str = None,
+        installer_choice: Optional[str] = None,
     ):
         # TODO: 'tool' should be configurable per item, depending on dropdown
         tool = (
@@ -552,8 +552,6 @@ class QPluginList(QListWidget):
                 pkgs=[pkg_name],
                 # origins="TODO",
             )
-            widget.setProperty("current_job_id", job_id)
-            
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
@@ -939,6 +937,7 @@ class QtPluginDialog(QDialog):
         self,
         packages: Sequence[str] = (),
         versions: Optional[Sequence[str]] = None,
+        installer: Optional[InstallerTypes] = None,
     ):
         if not packages:
             _packages = self.direct_entry_edit.text()
@@ -947,7 +946,9 @@ class QtPluginDialog(QDialog):
             )
             self.direct_entry_edit.clear()
         if packages:
-            self.installer.install(packages, versions=versions)
+            self.installer.install(
+                packages, versions=versions, installer=installer
+            )
 
     def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
         project_info, is_available, versions_pypi, versions_conda = data
