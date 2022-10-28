@@ -6,9 +6,9 @@ from typing import Dict
 
 from app_model import Application
 
-from .constants._menus import MenuId
 from .actions._layer_actions import LAYER_ACTIONS
 from .actions._view_actions import VIEW_ACTIONS
+from .constants._menus import MenuId
 from .injection._processors import PROCESSORS
 from .injection._providers import PROVIDERS
 
