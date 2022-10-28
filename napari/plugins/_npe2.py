@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import (
     TYPE_CHECKING,
     DefaultDict,
@@ -363,6 +364,12 @@ def _npe2_manifest_to_actions(
                 else:
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
+        else:
+            warnings.warn(
+                f"""Menu {menu_id} from Plugin {mf.display_name} is not registered.
+                This id is not considered contributable for napari menus.
+                Please reach out to plugin developer to move this menu.
+                You can also reach out to napari community to suggest marking this ID contributable.""")
 
     actions: List[Action] = [
         Action(
