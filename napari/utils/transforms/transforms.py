@@ -19,6 +19,7 @@ from .transform_utils import (
     shear_to_matrix,
     translate_to_vector,
 )
+from ..events.containers._typed import _T, Index
 
 
 class Transform:
@@ -129,6 +130,21 @@ class TransformChain(EventedList, Transform):
     def __newlike__(self, iterable):
         return TransformChain(iterable)
 
+    # These are overridden to add cache cleaning
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._clean_cache()
+
+    def __delitem__(self, key: Index):
+        super().__delitem__(key)
+        self._clean_cache()
+
+    def insert(self, index: int, value: _T):
+        super().insert(index, value)
+        self._clean_cache()
+
+    # TODO temporary note that there are more super() members that may invalidate cache
+
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
@@ -183,7 +199,8 @@ class TransformChain(EventedList, Transform):
         return TransformChain([tf.expand_dims(axes) for tf in self])
 
     def _clean_cache(self):
-        cached_properties = ('_is_diagonal',)
+        super()._clean_cache()
+        cached_properties = ('simplified',)
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
