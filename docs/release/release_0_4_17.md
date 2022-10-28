@@ -282,6 +282,7 @@ or create issues on GitHub.
 - Update release notes for v0.4.17rc3 (#5147)
 - Add Peter Sobolewski (@psobolewskiPhD) to list of Core Developers (#5189)
 - Update release notes for v0.4.17rc5 (#5268)
+- Update release notes for v0.4.17rc6 (#5280)
 
 ## Other Pull Requests
 
@@ -398,6 +399,8 @@ or create issues on GitHub.
 - Update config directory paths for perfmon tools (#5081)
 - Update some strings to be translated, some to be ignored (#5082)
 - Workaround for PySide6 problem (#5244)
+- Revert raising of PySide6 version error (#5272)
+- Remove obsolete example code (#5274)
 
 
 ## 48 authors added to this release (alphabetical)
