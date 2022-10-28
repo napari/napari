@@ -12,6 +12,7 @@ menus for plugins to contribute commands and submenu items to.
 """
 
 from enum import Enum
+from typing import Set
 
 
 class MenuId(str, Enum):
@@ -39,6 +40,25 @@ class MenuId(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+    @classmethod
+    def contributables(cls) -> Set['MenuId']:
+        # TODO: add these to docs, with a lookup for what each menu is/does.
+        _contributables = {
+            cls.LAYERLIST_CONTEXT,
+            cls.LAYERS_CONVERT_DTYPE,
+            cls.LAYERS_PROJECT,
+            cls.TOOLS_ACQUISITION,
+            cls.TOOLS_CLASSIFICATION,
+            cls.TOOLS_FILTERS,
+            cls.TOOLS_MEASUREMENT,
+            cls.TOOLS_SEGMENTATION.value,
+            cls.TOOLS_PROJECTION.value,
+            cls.TOOLS_TRANSFORM.value,
+            cls.TOOLS_UTILITIES.value,
+            cls.TOOLS_VISUALIZATION.value,
+        }
+        return _contributables
+
 
 # XXX: the structure/usage pattern of this class may change in the future
 class MenuGroup:
@@ -51,26 +71,11 @@ class MenuGroup:
         LINK = '9_link'
 
 
-# TODO: add these to docs, with a lookup for what each menu is/does.
-_CONTRIBUTABLES = {
-    MenuId.LAYERLIST_CONTEXT.value,
-    MenuId.LAYERS_CONVERT_DTYPE.value,
-    MenuId.LAYERS_PROJECT.value,
-    MenuId.TOOLS_ACQUISITION.value,
-    MenuId.TOOLS_CLASSIFICATION.value,
-    MenuId.TOOLS_FILTERS.value,
-    MenuId.TOOLS_MEASUREMENT.value,
-    MenuId.TOOLS_SEGMENTATION.value,
-    MenuId.TOOLS_PROJECTION.value,
-    MenuId.TOOLS_TRANSFORM.value,
-    MenuId.TOOLS_UTILITIES.value,
-    MenuId.TOOLS_VISUALIZATION.value,
-}
 """Set of all menu ids that can be contributed to by plugins."""
 
 
 def is_menu_contributable(menu_id: str) -> bool:
     """Return True if the given menu_id is a menu that plugins can contribute to."""
     return (
-        menu_id in _CONTRIBUTABLES if menu_id.startswith("napari/") else True
+        menu_id in MenuId.contributables() if menu_id.startswith("napari/") else True
     )
