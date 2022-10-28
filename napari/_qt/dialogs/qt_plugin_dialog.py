@@ -122,10 +122,6 @@ class PluginListItem(QFrame):
             self.latest_version_text.hide()
             self.source_choice_dropdown.show()
 
-    # def _handle_yield(self, version, platform):
-    #     self._versions[platform].append = version
-    #     self._populate_version_dropdown(platform)
-
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
             return
@@ -369,7 +365,7 @@ class PluginListItem(QFrame):
 
     def _populate_version_dropdown(self, e):
         # pck = self.plugin_name.text()
-        versions = self._versions[e]
+        versions = reversed(self._versions[e])
 
         self.version_choice_dropdown.clear()
 
@@ -484,6 +480,7 @@ class QPluginList(QListWidget):
                 pkg_name,
                 InstallerActions.INSTALL,
                 update=True,
+                version=widg.version_choice_dropdown.currentText(),
             )
         )
         widg.cancel_btn.clicked.connect(
@@ -512,6 +509,7 @@ class QPluginList(QListWidget):
         pkg_name: str,
         action_name: InstallerActions,
         update: bool = False,
+        version: str = None
     ):
         # TODO: 'tool' should be configurable per item, depending on dropdown
         tool = (
@@ -555,6 +553,7 @@ class QPluginList(QListWidget):
                 # origins="TODO",
             )
             widget.setProperty("current_job_id", job_id)
+            
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
@@ -936,7 +935,11 @@ class QtPluginDialog(QDialog):
             self.show_status_btn.setText(trans._("Show Status"))
             self.stdout_text.hide()
 
-    def _install_packages(self, packages: Sequence[str] = ()):
+    def _install_packages(
+        self,
+        packages: Sequence[str] = (),
+        versions: Optional[Sequence[str]] = None,
+    ):
         if not packages:
             _packages = self.direct_entry_edit.text()
             packages = (
@@ -944,7 +947,7 @@ class QtPluginDialog(QDialog):
             )
             self.direct_entry_edit.clear()
         if packages:
-            self.installer.install(packages)
+            self.installer.install(packages, versions=versions)
 
     def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
         project_info, is_available, versions_pypi, versions_conda = data
