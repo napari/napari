@@ -215,7 +215,7 @@ class PluginListItem(QFrame):
         self.summary.setObjectName('summary_text')
         self.summary.setWordWrap(True)
         dlg_width = self.parent().parent().sizeHint().width()
-        self.summary.setFixedWidth(int(dlg_width) * 1.5)
+        self.summary.setFixedWidth(int(dlg_width * 1.5))
 
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Fixed
@@ -277,7 +277,9 @@ class PluginListItem(QFrame):
         )
         self.source_choice_dropdown.hide()
         self.version_choice_dropdown = QComboBox()
-
+        self.install_info_button.content().layout().setContentsMargins(
+            0, 0, 0, 0
+        )
         self.row2.addWidget(
             self.install_info_button, alignment=Qt.AlignmentFlag.AlignTop
         )
@@ -310,6 +312,7 @@ class PluginListItem(QFrame):
         self.latest_version_text = QLabel()
         self.latest_version_text.setObjectName('latest_version_text')
         update_layout.addWidget(self.update_btn)
+        update_layout.setSpacing(0)
         update_layout.addWidget(self.latest_version_text)
         update_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -495,11 +498,11 @@ class QPluginList(QListWidget):
         )
 
     def _resize_pluginlistitem(self, item):
-        height = int(item.widget.height())
+        height = item.widget.height()
         if item.widget.install_info_button.isExpanded():
-            item.widget.setFixedHeight(height * 1.5)
+            item.widget.setFixedHeight(int(height * 1.5))
         else:
-            item.widget.setFixedHeight(height / 1.5)
+            item.widget.setFixedHeight(int(height / 1.5))
         item.setSizeHint(item.widget.size())
 
     def handle_action(
