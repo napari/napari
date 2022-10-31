@@ -156,7 +156,7 @@ class TransformChain(EventedList, Transform):
             return True
         return getattr(self.simplified, '_is_diagonal', False)
 
-    @cached_property
+    @property
     def simplified(self) -> 'Transform':
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
