@@ -127,9 +127,6 @@ class TransformChain(EventedList, Transform):
     def __call__(self, coords):
         return tz.pipe(coords, *self)
 
-    def __newlike__(self, iterable):
-        return TransformChain(iterable)
-
     # These are overridden to add cache cleaning
     def __setitem__(self, key, value):
         super().__setitem__(key, value)

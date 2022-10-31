@@ -167,7 +167,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         # seperating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
         new._lookup = self._lookup.copy()
-        new.extend(iterable)
+        new._list.extend(iterable)
         return new
 
     def copy(self) -> 'TypedMutableSequence[_T]':
