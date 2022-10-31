@@ -123,21 +123,29 @@ class _LayerSlicer:
         result = task.result()
         self.events.ready(Event('ready', value=result))
 
-    def _try_to_remove_task(self, task) -> bool:
+    def _try_to_remove_task(self, task: Future[Dict]) -> bool:
         """
         Attempt to remove task, return false if task not found, return true
-        if task removed from layers_to_task dict
+        if task is found and removed from layers_to_task dict.
+
+        This function provides a lock to ensure that the layers_to_task dict
+        is unmodified during this process.
         """
         with self._lock_layers_to_task:
-            layers = None
             for k_layers, v_task in self._layers_to_task.items():
                 if v_task == task:
                     del self._layers_to_task[k_layers]
                     return True
-            return False
-        return True
+        return False
 
     def _find_existing_task(self, layers) -> Optional[Future[Dict]]:
+        """Find the task associated with a list of layers. Returns the first
+        task found for which the layers of the task are a subset of the input
+        layers.
+
+        This function provides a lock to ensure that the layers_to_task dict
+        is unmodified during this process.
+        """
         with self._lock_layers_to_task:
             layer_set = set(layers)
             for task_layers, task in self._layers_to_task.items():
