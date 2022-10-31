@@ -1,7 +1,7 @@
-"""Actions related to the view that require Qt.
+"""Actions related to the 'View' menu that do not require Qt.
 
-View actions that do not require Qt should go in
-napari/_app_model/actions/_view_actions.py.
+View actions that do require Qt should go in
+`napari/_qt/_qapp_model/qactions/_view.py`.
 """
 
 from typing import List
