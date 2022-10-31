@@ -99,15 +99,18 @@ class _LayerSlicer:
         self._executor.shutdown()
 
     def _slice_layers(self, requests: Dict) -> Dict:
-        """Iterates through a dictionary of request objects and call the slice
-        on each individual layer. Can be called from the main or slicing thread."""
+        """
+        Iterates through a dictionary of request objects and call the slice
+        on each individual layer. Can be called from the main or slicing thread.
+        """
         return {
             layer: layer._get_slice(request)
             for layer, request in requests.items()
         }
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
-        """This is the "done_callback" which is added to each task.
+        """
+        This is the "done_callback" which is added to each task.
         Can be called from the main or slicing thread.
         """
         if not self._try_to_remove_task(task):
@@ -121,18 +124,17 @@ class _LayerSlicer:
         self.events.ready(Event('ready', value=result))
 
     def _try_to_remove_task(self, task) -> bool:
-        """Attempt to remove task, return false if task not found, return true
-        if task removed from layers_to_task dict"""
+        """
+        Attempt to remove task, return false if task not found, return true
+        if task removed from layers_to_task dict
+        """
         with self._lock_layers_to_task:
             layers = None
             for k_layers, v_task in self._layers_to_task.items():
                 if v_task == task:
-                    layers = k_layers
-                    break
-
-            if not layers:
-                return False
-            del self._layers_to_task[layers]
+                    del self._layers_to_task[k_layers]
+                    return True
+            return False
         return True
 
     def _find_existing_task(self, layers) -> Optional[Future[Dict]]:
