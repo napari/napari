@@ -15,7 +15,7 @@ class _ImageSliceResponse:
 
     Attributes
     ----------
-    data : Any
+    data : array like
         The sliced image data.
         In general, if you need this to be a `numpy.ndarray` you should call `np.asarray`.
         Though if the corresponding request was not lazy, this is likely a `numpy.ndarray`.
