@@ -176,6 +176,7 @@ or create issues on GitHub.
 - Deprecate layers.move_selected (#4559)
 - Update deprecation warnings with versions (#4757)
 - Make `viewer.events.layers_change` event deprecated (#4895)
+- Deprecate moved IO utilities (#5284)
 
 ## Build Tools
 
@@ -283,6 +284,7 @@ or create issues on GitHub.
 - Add Peter Sobolewski (@psobolewskiPhD) to list of Core Developers (#5189)
 - Update release notes for v0.4.17rc5 (#5268)
 - Update release notes for v0.4.17rc6 (#5280)
+- Update release notes for v0.4.17rc7 (#5295)
 
 ## Other Pull Requests
 
