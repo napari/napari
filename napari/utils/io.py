@@ -60,7 +60,7 @@ def __getattr__(name: str):
     }:
         warnings.warn(
             trans._(
-                '{name} was moved from napari.utils.io in 0.4.17. Import it from napari_builtins.io instead.',
+                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
                 deferred=True,
                 name=name,
             ),
