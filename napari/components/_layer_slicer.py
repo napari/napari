@@ -102,6 +102,15 @@ class _LayerSlicer:
         """
         Iterates through a dictionary of request objects and call the slice
         on each individual layer. Can be called from the main or slicing thread.
+
+        Attributes
+        ----------
+        requests: dict[Layer, SliceRequest]
+            Dictionary of request objects to be used for constructing the slice
+
+        Returns
+        -------
+        Dict[Layer, SliceResponse] which contains the results of the slice
         """
         return {
             layer: layer._get_slice(request)
@@ -138,7 +147,9 @@ class _LayerSlicer:
                     return True
         return False
 
-    def _find_existing_task(self, layers) -> Optional[Future[Dict]]:
+    def _find_existing_task(
+        self, layers: Iterable[Layer]
+    ) -> Optional[Future[Dict]]:
         """Find the task associated with a list of layers. Returns the first
         task found for which the layers of the task are a subset of the input
         layers.
