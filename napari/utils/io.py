@@ -54,7 +54,13 @@ def imsave(filename: str, data: np.ndarray):
 
 def __getattr__(name: str):
 
-    if name in {'imsave_extensions', 'write_csv', 'read_csv', 'csv_to_layer_data', 'read_zarr_dataset'}:
+    if name in {
+        'imsave_extensions',
+        'write_csv',
+        'read_csv',
+        'csv_to_layer_data',
+        'read_zarr_dataset',
+    }:
         warnings.warn(
             trans._(
                 '{name} was moved from napari.utils.io in 0.4.17. Import it from napari_builtins.io instead.',
@@ -63,10 +69,9 @@ def __getattr__(name: str):
             ),
             DeprecationWarning,
             stacklevel=2,
-        )        
+        )
         import napari_builtins.io
 
         return getattr(napari_builtins.io, name)
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
