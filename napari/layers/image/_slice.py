@@ -19,7 +19,7 @@ class _ImageSliceResponse:
         The sliced image data.
         In general, if you need this to be a `numpy.ndarray` you should call `np.asarray`.
         Though if the corresponding request was not lazy, this is likely a `numpy.ndarray`.
-    thumbnail: Optional[Any]
+    thumbnail: array like or none
         The thumbnail image data, which may be a different resolution to the sliced image data
         for multi-scale images.
         For single-scale images, this will be `None`, which indicates that the thumbnail data
