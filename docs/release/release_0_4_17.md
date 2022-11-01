@@ -176,6 +176,7 @@ or create issues on GitHub.
 - Deprecate layers.move_selected (#4559)
 - Update deprecation warnings with versions (#4757)
 - Make `viewer.events.layers_change` event deprecated (#4895)
+- Deprecate moved IO utilities (#5284)
 
 ## Build Tools
 
