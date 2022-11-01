@@ -4,6 +4,7 @@ from threading import Lock
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import skimage.color as colorconv
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 from vispy.color.colormap import LUT_len
@@ -13,7 +14,7 @@ from .bop_colors import bopd
 from .colormap import Colormap, ColormapInterpolationMode
 from .inverse_colormaps import inverse_cmaps
 from .standardize_color import transform_color
-from .vendored import cm, colorconv
+from .vendored import cm
 
 # All parsable input color types that a user can provide
 ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]
