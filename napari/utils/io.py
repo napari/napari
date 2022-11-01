@@ -1,10 +1,8 @@
 import os
 import warnings
-from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..types import FullLayerData
 from ..utils.translations import trans
 
 
@@ -53,7 +51,6 @@ def imsave(filename: str, data: np.ndarray):
 
 
 def __getattr__(name: str):
-
     if name in {
         'imsave_extensions',
         'write_csv',
