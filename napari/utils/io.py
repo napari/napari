@@ -64,7 +64,7 @@ def __getattr__(name: str):
                 deferred=True,
                 name=name,
             ),
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         import napari_builtins.io
