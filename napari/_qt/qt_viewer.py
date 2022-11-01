@@ -1137,7 +1137,7 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
+        self._key_map_handler._on_key_press(event)
         event.accept()
 
     def keyReleaseEvent(self, event):
@@ -1148,7 +1148,7 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        self.canvas._backend._keyEvent(self.canvas.events.key_release, event)
+        self._key_map_handler._on_key_release(event)
         event.accept()
 
     def dragEnterEvent(self, event):
