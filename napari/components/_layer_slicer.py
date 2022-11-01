@@ -88,7 +88,7 @@ class _LayerSlicer:
         # this is purposefully done before adding the done callback to ensure
         # that the task is added before the done callback can be executed
         with self._lock_layers_to_task:
-            self._layers_to_task[tuple(requests.keys())] = task
+            self._layers_to_task[tuple(requests)] = task
 
         task.add_done_callback(self._on_slice_done)
 
@@ -110,7 +110,7 @@ class _LayerSlicer:
 
         Returns
         -------
-        Dict[Layer, SliceResponse] which contains the results of the slice
+        dict[Layer, SliceResponse]: which contains the results of the slice
         """
         return {
             layer: layer._get_slice(request)
