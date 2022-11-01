@@ -41,7 +41,10 @@ from collections import ChainMap
 from types import MethodType
 from typing import Callable, Mapping, Union
 
+from app_model.backends.qt import qkey2modelkey, qmods2modelmods
 from app_model.types import KeyBinding, KeyCode, KeyMod
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QKeyEvent
 from vispy.util import keys
 
 from napari.utils.translations import trans
@@ -109,6 +112,12 @@ _VISPY_MODS = {
 
 # TODO: add this to app-model instead
 KeyBinding.__hash__ = lambda self: hash(str(self))
+
+
+def _qkeyevent2keybinding(event: QKeyEvent) -> KeyBinding:
+    return KeyBinding.from_int(
+        qmods2modelmods(event.modifiers() | qkey2modelkey(event.key()))
+    )
 
 
 def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
@@ -406,11 +415,11 @@ class KeymapHandler:
             If this key press was triggered by holding down a key.
         """
         from ..utils.action_manager import action_manager
-        
+
         key_bind = coerce_keybinding(key_bind)
 
         repeatables = {
-            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
+            *action_manager._get_repeatable_shortcuts(self.active_keymap),
             "Up",
             "Down",
             "Left",
@@ -485,6 +494,23 @@ class KeymapHandler:
             else:
                 next(val)  # call function
 
+    def _on_key_press(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_unknown:
+            return
+
+        key_bind = _qkeyevent2keybinding(event)
+
+        self.press_key(key_bind, event.isAutoRepeat())
+
+    def _on_key_release(self, event: QKeyEvent):
+        if event.key == Qt.Key.Key_unknown or event.isAutoRepeat():
+            # on linux press down is treated as multiple press and release
+            return
+
+        key_bind = _qkeyevent2keybinding(event)
+
+        self.release_key(key_bind)
+
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
 
@@ -493,17 +519,8 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
-        if event.key is None:
-            # TODO determine when None key could be sent.
-            return
-
-        kb = _vispy2appmodel(event)
-
-        is_auto_repeat = (
-            event.native.isAutoRepeat() if event.native is not None else False
-        )
-
-        self.press_key(kb, is_auto_repeat)
+        if event.native is not None:
+            self._on_key_press(event.native)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -513,11 +530,5 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key release event that triggered this method.
         """
-        if event.key is None or (
-            # on linux press down is treated as multiple press and release
-            event.native is not None
-            and event.native.isAutoRepeat()
-        ):
-            return
-        kb = _vispy2appmodel(event)
-        self.release_key(kb)
+        if event.native is not None:
+            self._on_key_release(event.native)

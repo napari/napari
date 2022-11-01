@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from vispy import keys
+from app_model.types import KeyCode
 
 from napari.components.overlays._interaction_box_constants import Box
 from napari.utils.transforms import Affine
@@ -119,7 +119,7 @@ def test_panzoom_on_space(make_napari_viewer):
     layer = viewer.add_image(data)
 
     layer.mode = 'transform'
-    view.canvas.events.key_press(key=keys.Key('Space'))
+    view._key_map_handler.press_key(KeyCode.Space)
     assert layer.mode == 'pan_zoom'
     assert viewer.overlays.interaction_box.show is False
 
