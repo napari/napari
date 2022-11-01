@@ -280,7 +280,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
 
     proxies = []
 
-    def actual_factory(*model_args, ensure_main_thread=False, **model_kwargs):
+    def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
         monkeypatch.setenv(
             "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
         )
