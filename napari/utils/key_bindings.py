@@ -42,10 +42,9 @@ from types import MethodType
 from typing import Callable, Mapping, Union
 
 from app_model.backends.qt import qkey2modelkey, qmods2modelmods
-from app_model.types import KeyBinding, KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyCode
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeyEvent
-from vispy.util import keys
 
 from napari.utils.translations import trans
 
@@ -69,54 +68,25 @@ KEY_SUBS = {
 
 _UNDEFINED = object()
 
-_VISPY_SPECIAL_KEYS = [
-    keys.SHIFT,
-    keys.CONTROL,
-    keys.ALT,
-    keys.META,
-    keys.UP,
-    keys.DOWN,
-    keys.LEFT,
-    keys.RIGHT,
-    keys.PAGEUP,
-    keys.PAGEDOWN,
-    keys.INSERT,
-    keys.DELETE,
-    keys.HOME,
-    keys.END,
-    keys.ESCAPE,
-    keys.BACKSPACE,
-    keys.F1,
-    keys.F2,
-    keys.F3,
-    keys.F4,
-    keys.F5,
-    keys.F6,
-    keys.F7,
-    keys.F8,
-    keys.F9,
-    keys.F10,
-    keys.F11,
-    keys.F12,
-    keys.SPACE,
-    keys.ENTER,
-    keys.TAB,
-]
-
-_VISPY_MODS = {
-    keys.CONTROL: KeyMod.CtrlCmd,
-    keys.SHIFT: KeyMod.Shift,
-    keys.ALT: KeyMod.Alt,
-    keys.META: KeyMod.WinCtrl,
-}
-
 # TODO: add this to app-model instead
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
 
 def _qkeyevent2keybinding(event: QKeyEvent) -> KeyBinding:
+    """Extract a Qt key event's information into an app-model keybinding.
+
+    Parameters
+    ----------
+    event : QKeyEvent
+        Triggering event.
+
+    Returns
+    -------
+    KeyBinding
+        Key combination extracted from the event.
+    """
     return KeyBinding.from_int(
-        qmods2modelmods(event.modifiers() | qkey2modelkey(event.key()))
+        qmods2modelmods(event.modifiers()) | qkey2modelkey(event.key())
     )
 
 
@@ -137,7 +107,20 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
         for k, v in KEY_SUBS.items():
             key_bind = key_bind.replace(k, v)
 
-    return KeyBinding.validate(key_bind)
+    key_bind = KeyBinding.validate(key_bind)
+
+    # remove redundant modifiers e.g. Shift+Shift
+    for part in key_bind.parts:
+        if part.key == KeyCode.Ctrl:
+            part.ctrl = False
+        elif part.key == KeyCode.Shift:
+            part.shift = False
+        elif part.key == KeyCode.Alt:
+            part.alt = False
+        elif part.key == KeyCode.Meta:
+            part.meta = False
+
+    return key_bind
 
 
 def bind_key(
@@ -260,30 +243,6 @@ def _bind_user_key(
     See ``bind_key`` docs for details.
     """
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
-
-
-def _vispy2appmodel(event) -> KeyBinding:
-    key, modifiers = event.key.name, event.modifiers
-    if len(key) == 1 and key.isalpha():  # it's a letter
-        key = key.upper()
-        cond = lambda m: True  # noqa: E731
-    elif key in _VISPY_SPECIAL_KEYS:
-        # remove redundant information i.e. an output of 'Shift-Shift'
-        cond = lambda m: m != key  # noqa: E731
-    else:
-        # Shift is consumed to transform key
-
-        # bug found on OSX: Command will cause Shift to not
-        # transform the key so do not consume it
-        # note: 'Control' is OSX Command key
-        cond = lambda m: m != 'Shift' or 'Control' in modifiers  # noqa: E731
-
-    kb = KeyCode.from_string(KEY_SUBS.get(key, key))
-
-    for key in filter(lambda key: key in modifiers and cond(key), _VISPY_MODS):
-        kb |= _VISPY_MODS[key]
-
-    return coerce_keybinding(kb)
 
 
 class KeybindingDescriptor:
@@ -495,6 +454,13 @@ class KeymapHandler:
                 next(val)  # call function
 
     def _on_key_press(self, event: QKeyEvent):
+        """Event handler for Qt's key press events.
+
+        Parameters
+        ----------
+        event : QKeyEvent
+            Triggering event.
+        """
         if event.key() == Qt.Key.Key_unknown:
             return
 
@@ -503,6 +469,13 @@ class KeymapHandler:
         self.press_key(key_bind, event.isAutoRepeat())
 
     def _on_key_release(self, event: QKeyEvent):
+        """Event handler for Qt's key release events.
+
+        Parameters
+        ----------
+        event : QKeyEvent
+            Triggering event.
+        """
         if event.key == Qt.Key.Key_unknown or event.isAutoRepeat():
             # on linux press down is treated as multiple press and release
             return
