@@ -69,7 +69,7 @@ jobs:
         if: runner.os != 'Linux'
         run: python bundle.py
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
