@@ -1,10 +1,10 @@
 import logging
 
-import qtpy
+from qtpy import API_NAME
 from vispy import app
 
 # set vispy application to the appropriate qt backend
-app.use_app(qtpy.API_NAME)
+app.use_app(API_NAME)
 del app
 
 # set vispy logger to show warning and errors only
