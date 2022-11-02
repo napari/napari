@@ -69,6 +69,8 @@ class MenuId(str, Enum):
 
     @classmethod
     def sub_menus(cls) -> Sequence[Tuple['MenuId', SubmenuItem]]:
+        """List of predefined submenu items to construct the default menu structure"""
+
         menu_id_to_sub_menus = {
             MenuId.LAYERLIST_CONTEXT: [
                 {

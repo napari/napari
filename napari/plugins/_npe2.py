@@ -369,7 +369,8 @@ def _npe2_manifest_to_actions(
                 f"""Menu {menu_id} from Plugin {mf.display_name} is not registered.
                 This id is not considered contributable for napari menus.
                 Please reach out to plugin developer to move this menu.
-                You can also reach out to napari community to suggest marking this ID contributable."""
+                You can also reach out to napari community to suggest marking this ID contributable.""",
+                category=UserWarning, stacklevel=2
             )
 
     actions: List[Action] = [
