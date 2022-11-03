@@ -150,7 +150,26 @@ class PreferencesDialog(QDialog):
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)
-        schema = json.loads(ftype.schema_json())
+
+        # TODO make custom shortcuts dialog to properly capture new
+        #      functionality once we switch to app-model's keybinding system
+        #      then we can remove the below code used for autogeneration
+        if field.name == 'shortcuts':
+            # hardcode workaround because pydantic's schema generation
+            # does not allow you to specify custom JSON serialization
+            schema = {
+                "title": "ShortcutsSettings",
+                "type": "object",
+                "properties": {
+                    "shortcuts": {
+                        "title": "shortcuts",
+                        "description": "Set keyboard shortcuts for actions.",
+                        "type": "object",
+                    }
+                },
+            }
+        else:
+            schema = json.loads(ftype.schema_json())
 
         # find enums:
         for name, subfield in ftype.__fields__.items():

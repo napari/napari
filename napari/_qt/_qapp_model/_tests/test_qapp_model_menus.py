@@ -23,5 +23,6 @@ def test_build_qmodel_menu(qtbot, menu_id):
 
         menu = build_qmodel_menu(menu_id)
         qtbot.addWidget(menu)
+
         # `>=` because separator bars count as actions
         assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))

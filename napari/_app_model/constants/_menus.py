@@ -23,8 +23,9 @@ class MenuId(str, Enum):
 
     MENUBAR_WINDOW = 'napari/window'
 
+    MENUBAR_HELP = 'napari/help'
+
     LAYERLIST_CONTEXT = 'napari/layers/context'
-    LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
 
     def __str__(self) -> str:
