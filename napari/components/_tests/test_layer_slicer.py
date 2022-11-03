@@ -1,10 +1,15 @@
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
+from typing import Tuple, Union
 
+import numpy as np
 import pytest
 
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
+from napari.layers import Image
+from napari.layers._data_protocols import Index, LayerDataProtocol
+from napari.types import DTypeLike
 
 """
 Cases to consider
@@ -72,6 +77,32 @@ class FakeSyncLayer:
 
     def _is_async(self) -> bool:
         return False
+
+
+class LockableData:
+    """A wrapper for napari layer data that blocks read-access with a lock.
+
+    This is useful when testing async slicing with real napari layers because
+    it allows us to control when slicing tasks complete.
+    """
+
+    def __init__(self, data: LayerDataProtocol):
+        self.data = data
+        self.lock = RLock()
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return self.data.dtype
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.data.shape
+
+    def __getitem__(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ) -> LayerDataProtocol:
+        with self.lock:
+            return self.data[key]
 
 
 @pytest.fixture()
@@ -244,3 +275,37 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
 
     assert task.result()[layer].id == 1
     assert task not in layer_slicer._layers_to_task
+
+
+def test_slice_layers_async_with_one_2d_image(layer_slicer):
+    np.random.seed(0)
+    data = np.random.rand(8, 7)
+    lockable_data = LockableData(data)
+    layer = Image(data=lockable_data, multiscale=False)
+
+    with lockable_data.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+        assert not blocked.done()
+
+    layer_result = blocked.result()[layer]
+    np.testing.assert_equal(layer_result.data, data)
+
+
+def test_slice_layers_async_with_one_3d_image(layer_slicer):
+    np.random.seed(0)
+    data = np.random.rand(8, 7, 6)
+    lockable_data = LockableData(data)
+    layer = Image(data=lockable_data, multiscale=False)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
+        current_step=(2, 0, 0),
+    )
+
+    with lockable_data.lock:
+        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not blocked.done()
+
+    layer_result = blocked.result()[layer]
+    np.testing.assert_equal(layer_result.data, data[2, :, :])

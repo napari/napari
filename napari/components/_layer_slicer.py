@@ -3,13 +3,35 @@ from __future__ import annotations
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from threading import RLock
-from typing import Dict, Iterable, Optional, Tuple
+from typing import (
+    Dict,
+    Iterable,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    runtime_checkable,
+)
 
 from napari.components import Dims
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
 
 logger = logging.getLogger("napari.components._layer_slicer")
+
+
+_SliceRequest = TypeVar('SliceRequest')
+_SliceResponse = TypeVar('SliceResponse')
+
+
+@runtime_checkable
+class _AsyncSliceable(Protocol[_SliceRequest, _SliceResponse]):
+    def _make_slice_request(self, dims: Dims) -> _SliceRequest:
+        ...
+
+    @staticmethod
+    def _get_slice(request: _SliceRequest) -> _SliceResponse:
+        ...
 
 
 class _LayerSlicer:
@@ -77,7 +99,7 @@ class _LayerSlicer:
         # when we want to perform sync slicing anyway.
         requests = {}
         for layer in layers:
-            if layer._is_async():
+            if isinstance(layer, _AsyncSliceable):
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
@@ -163,5 +185,4 @@ class _LayerSlicer:
                 if set(task_layers).issubset(layer_set):
                     logger.debug(f'Found existing task for {task_layers}')
                     return task
-
         return None
