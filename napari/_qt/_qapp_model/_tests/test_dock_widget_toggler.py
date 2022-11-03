@@ -1,5 +1,6 @@
 from napari._app_model._app import get_app
 from napari._qt._qapp_model.qactions._window import ToggleDockWidgetAction
+from napari._qt.qt_main_window import Window
 
 
 def test_dock_widget_toggler(make_napari_viewer):
@@ -14,9 +15,11 @@ def test_dock_widget_toggler(make_napari_viewer):
     app = get_app()
     app.register_action(action)
 
-    # with app.injection_store.register(providers={Window: lambda: viewer.window}):
-    assert viewer.window._qt_viewer.dockConsole.isVisible() is False
-    app.commands.execute_command('some.command.id')
-    assert viewer.window._qt_viewer.dockConsole.isVisible() is True
-    app.commands.execute_command('some.command.id')
-    assert viewer.window._qt_viewer.dockConsole.isVisible() is False
+    with app.injection_store.register(
+        providers={Window: lambda: viewer.window}
+    ):
+        assert viewer.window._qt_viewer.dockConsole.isVisible() is False
+        app.commands.execute_command('some.command.id')
+        assert viewer.window._qt_viewer.dockConsole.isVisible() is True
+        app.commands.execute_command('some.command.id')
+        assert viewer.window._qt_viewer.dockConsole.isVisible() is False
