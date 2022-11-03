@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import Executor, Future, ThreadPoolExecutor
+from concurrent.futures import Executor, Future, ThreadPoolExecutor, wait
+from contextlib import contextmanager
 from threading import RLock
 from typing import Dict, Iterable, Optional, Tuple
 
@@ -35,6 +36,8 @@ class _LayerSlicer:
         ----------
         _executor : concurrent.futures.ThreadPoolExecutor
             manager for the slicing threading
+        _force_sync: bool
+            if true, forces slicing to execute synchronously
         _layers_to_task : dict
             task storage for cancellation logic
         _lock_layers_to_task : threading.RLock
@@ -43,8 +46,67 @@ class _LayerSlicer:
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
+        self._force_sync = False
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
         self._lock_layers_to_task = RLock()
+
+    @contextmanager
+    def force_sync(self):
+        """Context manager to allow a temporary forced synchronous slice.
+        This method only holds the _force_sync variable as True while the
+        manager is open, then resets it back to False after the manager is
+        closed.
+        """
+        self._force_sync = True
+        yield None
+        self._force_sync = False
+
+    def await_slice(self, future: Future, timeout: float = 5) -> None:
+        """Wait for a single slicing task to complete
+
+        Attributes
+        ----------
+        future: concurrent.futures.Future
+            asynchronous slicing task
+        timeout: float
+            time in seconds to wait before raising TimeoutError, defaults to 5s
+
+        Raises
+        ------
+        TimeoutError: when the timeout limit has been exceeded and the task is
+            not yet complete
+        """
+        done, _ = wait([future], timeout=timeout)
+        if done:
+            return
+        else:
+            raise TimeoutError(
+                f'Slice task did not complete within timeout ({timeout}s).'
+            )
+
+    def wait_until_idle(self, timeout: Optional(float or None) = None) -> None:
+        """Wait for all slicing tasks to complete before returning.
+
+        Attributes
+        ----------
+        timeout: float or None
+            (Optional) time in seconds to wait before raising TimeoutError. If set as None,
+            there is no limit to the wait time. Defaults to None
+
+        Raises
+        ------
+        TimeoutError: when the timeout limit has been exceeded and the task is
+            not yet complete
+        """
+        futures = self._layers_to_task.values()
+        done, _ = wait(futures, timeout=timeout)
+
+        if done or not futures:
+            return
+        else:
+            raise TimeoutError(
+                f'Slicing tasks did not complete within timeout ({timeout}s).'
+            )
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
@@ -77,7 +139,7 @@ class _LayerSlicer:
         # when we want to perform sync slicing anyway.
         requests = {}
         for layer in layers:
-            if layer._is_async():
+            if layer._is_async() and not self._force_sync:
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
