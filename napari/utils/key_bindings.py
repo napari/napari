@@ -41,10 +41,7 @@ from collections import ChainMap
 from types import MethodType
 from typing import Callable, Mapping, Union
 
-from app_model.backends.qt import qkey2modelkey, qmods2modelmods
 from app_model.types import KeyBinding, KeyCode
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QKeyEvent
 
 from napari.utils.translations import trans
 
@@ -70,24 +67,6 @@ _UNDEFINED = object()
 
 # TODO: add this to app-model instead
 KeyBinding.__hash__ = lambda self: hash(str(self))
-
-
-def _qkeyevent2keybinding(event: QKeyEvent) -> KeyBinding:
-    """Extract a Qt key event's information into an app-model keybinding.
-
-    Parameters
-    ----------
-    event : QKeyEvent
-        Triggering event.
-
-    Returns
-    -------
-    KeyBinding
-        Key combination extracted from the event.
-    """
-    return KeyBinding.from_int(
-        qmods2modelmods(event.modifiers()) | qkey2modelkey(event.key())
-    )
 
 
 def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
@@ -452,56 +431,3 @@ class KeymapHandler:
                     callback()
             else:
                 next(val)  # call function
-
-    def _on_key_press(self, event: QKeyEvent):
-        """Event handler for Qt's key press events.
-
-        Parameters
-        ----------
-        event : QKeyEvent
-            Triggering event.
-        """
-        if event.key() == Qt.Key.Key_unknown:
-            return
-
-        key_bind = _qkeyevent2keybinding(event)
-
-        self.press_key(key_bind, event.isAutoRepeat())
-
-    def _on_key_release(self, event: QKeyEvent):
-        """Event handler for Qt's key release events.
-
-        Parameters
-        ----------
-        event : QKeyEvent
-            Triggering event.
-        """
-        if event.key == Qt.Key.Key_unknown or event.isAutoRepeat():
-            # on linux press down is treated as multiple press and release
-            return
-
-        key_bind = _qkeyevent2keybinding(event)
-
-        self.release_key(key_bind)
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-
-        Parameters
-        ----------
-        event : vispy.util.event.Event
-            The vispy key press event that triggered this method.
-        """
-        if event.native is not None:
-            self._on_key_press(event.native)
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-
-        Parameters
-        ----------
-        event : vispy.util.event.Event
-            The vispy key release event that triggered this method.
-        """
-        if event.native is not None:
-            self._on_key_release(event.native)
