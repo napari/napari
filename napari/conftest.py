@@ -30,6 +30,7 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 
 try:
@@ -434,6 +435,13 @@ def disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+
+
+@pytest.fixture()
+def single_threaded_executor():
+    executor = ThreadPoolExecutor(max_workers=1)
+    yield executor
+    executor.shutdown()
 
 
 @pytest.fixture(autouse=True)

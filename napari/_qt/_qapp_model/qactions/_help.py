@@ -1,4 +1,8 @@
-"""Actions related to the 'Help' menu that require Qt."""
+"""Actions related to the 'Help' menu that require Qt.
+
+'Help' actions that do not require Qt should go in a new '_help_actions.py'
+file within `napari/_app_model/actions/`.
+"""
 
 from typing import List
 
