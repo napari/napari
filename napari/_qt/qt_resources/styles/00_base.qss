@@ -83,7 +83,10 @@ QPushButton:checked {
 }
 
 QPushButton:disabled {
-  background-color: {{ background }};
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
 }
 
 QWidget[emphasized="true"] QPushButton {
