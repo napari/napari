@@ -227,7 +227,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         interpolation2d='nearest',
         interpolation3d='linear',
         rendering='mip',
-        iso_threshold=0.5,
+        iso_threshold=None,
         attenuation=0.05,
         name=None,
         metadata=None,
@@ -345,7 +345,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
-        self._iso_threshold = iso_threshold
         self._attenuation = attenuation
         self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
         self._mode = Mode.PAN_ZOOM
@@ -364,6 +363,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
+        if iso_threshold is None:
+            cmin, cmax = self.contrast_limits_range
+            self._iso_threshold = cmin + (cmax - cmin) / 2
+        else:
+            self._iso_threshold = iso_threshold
         # using self.colormap = colormap uses the setter in *derived* classes,
         # where the intention here is to use the base setter, so we use the
         # _set_colormap method. This is important for Labels layers, because
