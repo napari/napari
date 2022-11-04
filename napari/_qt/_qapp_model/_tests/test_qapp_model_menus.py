@@ -24,9 +24,5 @@ def test_build_qmodel_menu(qtbot, menu_id):
         menu = build_qmodel_menu(menu_id)
         qtbot.addWidget(menu)
 
-        # tools submenu are placeholders submenus without actions for plugins to register
-        if 'napari/tools/' in menu_id:
-            return
-
         # `>=` because separator bars count as actions
         assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))

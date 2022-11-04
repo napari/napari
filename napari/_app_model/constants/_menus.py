@@ -32,17 +32,6 @@ class MenuId(str, Enum):
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
 
-    MENUBAR_TOOLS = 'napari/tools'
-    TOOLS_ACQUISITION = 'napari/tools/acquisition'
-    TOOLS_CLASSIFICATION = 'napari/tools/classification'
-    TOOLS_FILTERS = 'napari/tools/filters'
-    TOOLS_MEASUREMENT = 'napari/tools/measurement'
-    TOOLS_SEGMENTATION = 'napari/tools/segmentation'
-    TOOLS_PROJECTION = 'napari/tools/projection'
-    TOOLS_TRANSFORM = 'napari/tools/transform'
-    TOOLS_UTILITIES = 'napari/tools/utilities'
-    TOOLS_VISUALIZATION = 'napari/tools/visualization'
-
     def __str__(self) -> str:
         return self.value
 
@@ -55,15 +44,6 @@ class MenuId(str, Enum):
             cls.LAYERLIST_CONTEXT,
             cls.LAYERS_CONVERT_DTYPE,
             cls.LAYERS_PROJECT,
-            cls.TOOLS_ACQUISITION,
-            cls.TOOLS_CLASSIFICATION,
-            cls.TOOLS_FILTERS,
-            cls.TOOLS_MEASUREMENT,
-            cls.TOOLS_SEGMENTATION,
-            cls.TOOLS_PROJECTION,
-            cls.TOOLS_TRANSFORM,
-            cls.TOOLS_UTILITIES,
-            cls.TOOLS_VISUALIZATION,
         }
         return _contributables
 
@@ -94,41 +74,6 @@ class MenuId(str, Enum):
                 {
                     'submenu': MenuId.VIEW_SCALEBAR,
                     'title': trans._('Scale Bar'),
-                },
-            ],
-            MenuId.MENUBAR_TOOLS: [
-                {
-                    'submenu': MenuId.TOOLS_ACQUISITION,
-                    'title': trans._('Acquisition'),
-                },
-                {'submenu': MenuId.TOOLS_FILTERS, 'title': trans._('Filters')},
-                {
-                    'submenu': MenuId.TOOLS_TRANSFORM,
-                    'title': trans._('Transform'),
-                },
-                {
-                    'submenu': MenuId.TOOLS_MEASUREMENT,
-                    'title': trans._('Measurement'),
-                },
-                {
-                    'submenu': MenuId.TOOLS_CLASSIFICATION,
-                    'title': trans._('Classification'),
-                },
-                {
-                    'submenu': MenuId.TOOLS_PROJECTION,
-                    'title': trans._('Projection'),
-                },
-                {
-                    'submenu': MenuId.TOOLS_SEGMENTATION,
-                    'title': trans._('Segmentation'),
-                },
-                {
-                    'submenu': MenuId.TOOLS_VISUALIZATION,
-                    'title': trans._('Visualization'),
-                },
-                {
-                    'submenu': MenuId.TOOLS_UTILITIES,
-                    'title': trans._('Utilities'),
                 },
             ],
         }
