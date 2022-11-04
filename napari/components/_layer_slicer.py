@@ -21,6 +21,12 @@ from napari.utils.events.event import EmitterGroup, Event
 logger = logging.getLogger("napari.components._layer_slicer")
 
 
+# Layers that can be asynchronously sliced must be able to make
+# a slice request that can be called and will produce a slice
+# response. The request and response types will vary per layer
+# type, which means that the values of the dictionary result of
+# ``_slice_layers`` cannot be fixed to a single type.
+
 _SliceResponse = TypeVar('_SliceResponse')
 _SliceRequest = Callable[[], _SliceResponse]
 
