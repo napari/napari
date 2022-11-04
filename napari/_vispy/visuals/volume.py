@@ -113,6 +113,34 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 }
 """
 
+ATTENUATED_MIP_SNIPPETS = dict(
+    before_loop="""
+        float maxval = u_mip_cutoff; // The maximum encountered value
+        float scaled_sumval = 0.0; // The sum of the encountered values
+        float scaled = 0.0; // The scaled value
+        int maxi = -1;  // Where the maximum value was encountered
+        vec3 max_loc_tex = vec3(0.0);  // Location where the maximum value was encountered
+        """,
+    in_loop="""
+        scaled_sumval += (val - clim.x) / (clim.y - clim.x);
+        scaled = val * exp(-u_attenuation * (scaled_sumval - 1) / u_relative_step_size);
+        if( scaled > maxval ) {
+            maxval = scaled;
+            maxi = iter;
+            max_loc_tex = loc;
+        }
+        """,
+    after_loop="""
+        if ( maxi > -1 ) {
+            frag_depth_point = max_loc_tex * u_shape;
+            gl_FragColor = applyColormap(maxval);
+        }
+        else {
+            discard;
+        }
+        """,
+)
+
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
@@ -157,6 +185,7 @@ shaders['fragment'] = before + FUNCTION_DEFINITIONS + 'void main()' + after
 
 rendering_methods = BaseVolume._rendering_methods.copy()
 rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
+rendering_methods['attenuated_mip'] = ATTENUATED_MIP_SNIPPETS
 
 
 class Volume(BaseVolume):
