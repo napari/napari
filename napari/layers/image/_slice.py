@@ -36,13 +36,14 @@ class _ImageSliceResponse:
 
 @dataclass(frozen=True)
 class _ImageSliceRequest:
-    """Contains all the input data needed to slice an image layer.
+    """A callable that stores all the input data needed to slice an image layer.
 
     This should be treated a deeply immutable structure, even though some
-    fields can be modified in place.
+    fields can be modified in place. It is like a function that has captured
+    all its inputs already.
 
-    In general, the execute method may take a long time to run, so you may
-    want to run it once on a worker thread.
+    In general, the calling an instance of this may take a long time, so you may
+    want to run it off the main thread.
 
     Attributes
     ----------
