@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from napari.layers import Tracks
+from napari.layers.tracks._track_utils import TrackManager
 
 # def test_empty_tracks():
 #     """Test instantiating Tracks layer without data."""
@@ -197,3 +198,27 @@ def test_tracks_length_change():
     layer.head_length = track_length
     assert layer.head_length == track_length
     assert layer._max_length == track_length
+
+
+def test_fast_points_lookup() -> None:
+    # creates sorted points
+    time_points = np.asarray([0, 1, 3, 5, 10])
+    repeats = np.asarray([3, 4, 6, 3, 5])
+    sorted_time = np.repeat(time_points, repeats)
+    end = np.cumsum(repeats)
+    start = np.insert(end[:-1], 0, 0)
+
+    # compute lookup
+    points_lookup = TrackManager._fast_points_lookup(sorted_time)
+
+    assert len(time_points) == len(points_lookup)
+    total_length = 0
+    for s, e, t, r in zip(start, end, time_points, repeats):
+        assert points_lookup[t].start == s
+        assert points_lookup[t].stop == e
+        assert points_lookup[t].stop - points_lookup[t].start == r
+        unique_time = sorted_time[points_lookup[t]]
+        assert np.all(unique_time[0] == unique_time)
+        total_length += len(unique_time)
+
+    assert total_length == len(sorted_time)
