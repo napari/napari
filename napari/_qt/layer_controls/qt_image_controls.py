@@ -19,6 +19,7 @@ from ...layers.image._image_constants import (
 from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
+from ..widgets._slider_compat import QDoubleSlider
 from .qt_image_controls_base import QtBaseImageControls
 
 if TYPE_CHECKING:
@@ -134,12 +135,12 @@ class QtImageControls(QtBaseImageControls):
             self.changePlaneThickness
         )
 
-        sld = QSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(int(self.layer.iso_threshold * 100))
+        cmin, cmax = self.layer.contrast_limits_range
+        sld.setMinimum(cmin)
+        sld.setMaximum(cmax)
+        sld.setValue(self.layer.iso_threshold)
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
@@ -242,14 +243,19 @@ class QtImageControls(QtBaseImageControls):
             Threshold for isosurface.
         """
         with self.layer.events.blocker(self._on_iso_threshold_change):
-            self.layer.iso_threshold = value / 100
+            self.layer.iso_threshold = value
+
+    def _on_contrast_limits_change(self):
+        with self.layer.events.blocker(self._on_iso_threshold_change):
+            cmin, cmax = self.layer.contrast_limits_range
+            self.isoThresholdSlider.setMinimum(cmin)
+            self.isoThresholdSlider.setMaximum(cmax)
+        return super()._on_contrast_limits_change()
 
     def _on_iso_threshold_change(self):
         """Receive layer model isosurface change event and update the slider."""
         with self.layer.events.iso_threshold.blocker():
-            self.isoThresholdSlider.setValue(
-                int(self.layer.iso_threshold * 100)
-            )
+            self.isoThresholdSlider.setValue(self.layer.iso_threshold)
 
     def changeAttenuation(self, value):
         """Change attenuation rate for attenuated maximum intensity projection.
