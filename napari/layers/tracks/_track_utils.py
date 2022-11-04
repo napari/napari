@@ -323,8 +323,8 @@ class TrackManager:
         # if there is a graph, store the vertices and connection arrays,
         # otherwise, clear the vertex arrays
         if graph_vertices:
-            self._graph_vertices = np.asarray(graph_vertices)
-            self._graph_connex = np.asarray(graph_connex)
+            self._graph_vertices = np.concatenate(graph_vertices, axis=0)
+            self._graph_connex = np.concatenate(graph_connex, axis=0)
         else:
             self._graph_vertices = None
             self._graph_connex = None
