@@ -284,10 +284,10 @@ def test_slice_layers_async_with_one_2d_image(layer_slicer):
     layer = Image(data=lockable_data, multiscale=False)
 
     with lockable_data.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
-        assert not blocked.done()
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+        assert not future.done()
 
-    layer_result = blocked.result()[layer]
+    layer_result = future.result()[layer]
     np.testing.assert_equal(layer_result.data, data)
 
 
@@ -304,8 +304,8 @@ def test_slice_layers_async_with_one_3d_image(layer_slicer):
     )
 
     with lockable_data.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
-        assert not blocked.done()
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not future.done()
 
-    layer_result = blocked.result()[layer]
+    layer_result = future.result()[layer]
     np.testing.assert_equal(layer_result.data, data[2, :, :])
