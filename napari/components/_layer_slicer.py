@@ -20,8 +20,8 @@ from napari.utils.events.event import EmitterGroup, Event
 logger = logging.getLogger("napari.components._layer_slicer")
 
 
-_SliceRequest = TypeVar('SliceRequest')
-_SliceResponse = TypeVar('SliceResponse')
+_SliceRequest = TypeVar('_SliceRequest')
+_SliceResponse = TypeVar('_SliceResponse')
 
 
 @runtime_checkable
