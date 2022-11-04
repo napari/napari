@@ -747,7 +747,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(self._slice_input, indices)
-        response = request.execute()
+        response = request()
         self._update_slice_response(response, indices)
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
@@ -788,10 +788,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             downsample_factors=self.downsample_factors,
             lazy=True,
         )
-
-    @staticmethod
-    def _get_slice(request: _ImageSliceRequest) -> _ImageSliceResponse:
-        return request.execute()
 
     def _update_slice_response(
         self, response: _ImageSliceResponse, indices

@@ -73,14 +73,14 @@ class _ImageSliceRequest:
     downsample_factors: np.ndarray = field(repr=False)
     lazy: bool = field(default=False, repr=False)
 
-    def execute(self) -> _ImageSliceResponse:
+    def __call__(self) -> _ImageSliceResponse:
         return (
-            self._execute_multi_scale()
+            self._call_multi_scale()
             if self.multiscale
-            else self._execute_single_scale()
+            else self._call_single_scale()
         )
 
-    def _execute_single_scale(self) -> _ImageSliceResponse:
+    def _call_single_scale(self) -> _ImageSliceResponse:
         image = self.data[self.slice_indices]
         if not self.lazy:
             image = np.asarray(image)
@@ -96,7 +96,7 @@ class _ImageSliceRequest:
             tile_to_data=tile_to_data,
         )
 
-    def _execute_multi_scale(self) -> _ImageSliceResponse:
+    def _call_multi_scale(self) -> _ImageSliceResponse:
         if self.dims.ndisplay == 3:
             warnings.warn(
                 trans._(

@@ -4,6 +4,7 @@ import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from threading import RLock
 from typing import (
+    Callable,
     Dict,
     Iterable,
     Optional,
@@ -20,17 +21,13 @@ from napari.utils.events.event import EmitterGroup, Event
 logger = logging.getLogger("napari.components._layer_slicer")
 
 
-_SliceRequest = TypeVar('_SliceRequest')
 _SliceResponse = TypeVar('_SliceResponse')
+_SliceRequest = Callable[[], _SliceResponse]
 
 
 @runtime_checkable
-class _AsyncSliceable(Protocol[_SliceRequest, _SliceResponse]):
-    def _make_slice_request(self, dims: Dims) -> _SliceRequest:
-        ...
-
-    @staticmethod
-    def _get_slice(request: _SliceRequest) -> _SliceResponse:
+class _AsyncSliceable(Protocol[_SliceResponse]):
+    def _make_slice_request(self, dims: Dims) -> _SliceRequest[_SliceResponse]:
         ...
 
 
@@ -134,10 +131,7 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
-        return {
-            layer: layer._get_slice(request)
-            for layer, request in requests.items()
-        }
+        return {layer: request() for layer, request in requests.items()}
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
         """

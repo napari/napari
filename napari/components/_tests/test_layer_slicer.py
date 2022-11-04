@@ -39,13 +39,19 @@ pytest napari/components/_tests/test_layer_slicer.py -svv
 
 
 @dataclass(frozen=True)
-class FakeSliceRequest:
-    id: int = -1
+class FakeSliceResponse:
+    id: int
 
 
 @dataclass(frozen=True)
-class FakeSliceResponse:
-    id: int = -1
+class FakeSliceRequest:
+    id: int
+    lock: RLock
+
+    def __call__(self) -> FakeSliceResponse:
+        assert current_thread() != main_thread()
+        with self.lock:
+            return FakeSliceResponse(id=self.id)
 
 
 class FakeAsyncLayer:
@@ -56,16 +62,7 @@ class FakeAsyncLayer:
     def _make_slice_request(self, dims) -> FakeSliceRequest:
         assert current_thread() == main_thread()
         self.slice_count += 1
-        request = FakeSliceRequest(id=self.slice_count)
-        return request
-
-    def _get_slice(self, request: FakeSliceRequest) -> FakeSliceResponse:
-        assert current_thread() != main_thread()
-        with self.lock:
-            return FakeSliceResponse(id=request.id)
-
-    def _is_async(self) -> bool:
-        return True
+        return FakeSliceRequest(id=self.slice_count, lock=self.lock)
 
 
 class FakeSyncLayer:
@@ -74,9 +71,6 @@ class FakeSyncLayer:
 
     def _slice_dims(self, *args, **kwargs) -> None:
         self.slice_count += 1
-
-    def _is_async(self) -> bool:
-        return False
 
 
 class LockableData:
@@ -275,20 +269,6 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
 
     assert task.result()[layer].id == 1
     assert task not in layer_slicer._layers_to_task
-
-
-def test_slice_layers_async_with_one_2d_image(layer_slicer):
-    np.random.seed(0)
-    data = np.random.rand(8, 7)
-    lockable_data = LockableData(data)
-    layer = Image(data=lockable_data, multiscale=False)
-
-    with lockable_data.lock:
-        future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
-        assert not future.done()
-
-    layer_result = future.result()[layer]
-    np.testing.assert_equal(layer_result.data, data)
 
 
 def test_slice_layers_async_with_one_3d_image(layer_slicer):
