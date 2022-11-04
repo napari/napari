@@ -52,7 +52,7 @@ class _LayerSlicer:
 
     @contextmanager
     def force_sync(self):
-        """Context manager to allow a temporary forced synchronous slice.
+        """Context manager to temporarily force slicing to be synchronous.
         This method only holds the _force_sync variable as True while the
         manager is open, then resets it back to False after the manager is
         closed.
