@@ -383,13 +383,14 @@ def config_file_settings_source(
                 )
             )
         # Check for parent directory (napari)
-        sources.append(
-            str(
-                Path(config_path).parent.parent.joinpath(
-                    Path(config_path).parts[-1]
-                )
-            ),
-        )
+        else:
+            sources.append(
+                str(
+                    Path(config_path).parent.parent.joinpath(
+                        Path(config_path).parts[-1]
+                    )
+                ),
+            )
     if not sources:
         return {}
 
