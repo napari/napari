@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
+from packaging import version
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
@@ -365,23 +366,29 @@ def config_file_settings_source(
     # if the config has a `sources` list, read those too and merge.
     sources = list(getattr(settings.__config__, 'sources', []))
     if config_path:
-        # Check previous version, else try parent (napari) directory
-        *v, rev = str(Path(config_path).parts[-2]).split('.')
-        prev_v = ".".join(v) + '.' + str(int(rev) - 1)
-        sources.extend(
-            [
-                config_path,
-                str(
-                    Path(config_path).parent.parent.joinpath(
-                        Path(config_path).parts[-1]
-                    )
-                ),
+        sources.append(config_path)
+        # check for previous version directory, but only if after 0.4.17
+        if isinstance(
+            version.parse(str(Path(config_path).parts[-2])), version.Version
+        ) and version.parse(str(Path(config_path).parts[-2])) > version.parse(
+            '0.4.17'
+        ):
+            *v, rev = str(Path(config_path).parts[-2]).split('.')
+            prev_v = ".".join(v) + '.' + str(int(rev) - 1)
+            sources.append(
                 str(
                     Path(config_path).parent.parent.joinpath(
                         prev_v, Path(config_path).parts[-1]
                     )
-                ),
-            ]
+                )
+            )
+        # Check for parent directory (napari)
+        sources.append(
+            str(
+                Path(config_path).parent.parent.joinpath(
+                    Path(config_path).parts[-1]
+                )
+            ),
         )
     if not sources:
         return {}
@@ -433,6 +440,7 @@ def config_file_settings_source(
             continue
         assert isinstance(new_data, dict), _path.read_text()
         deep_update(data, new_data, copy=False)
+        break
 
     try:
         # validate the data, passing config_path=None so we dont recurse
