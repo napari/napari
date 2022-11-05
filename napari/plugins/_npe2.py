@@ -233,9 +233,16 @@ def iter_manifests(
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
+    # Make a dict of display_name matching plugin_name
+    plugin_names = {}
+    for plugin in pm.iter_manifests():
+        plugin_names[plugin.name] = plugin.display_name
+
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in pm.iter_widgets():
-        wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
+        wdgs[plugin_names[wdg_contrib.plugin_name]].append(
+            wdg_contrib.display_name
+        )
     return (('dock', x) for x in wdgs.items())
 
 
