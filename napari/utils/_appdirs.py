@@ -21,7 +21,7 @@ user_data_dir: Callable[[], str] = partial(
     appdirs.user_data_dir, _appname, _appauthor
 )
 user_config_dir: Callable[[], str] = partial(
-    appdirs.user_config_dir, _appname, _appauthor
+    appdirs.user_config_dir, _appname, _appauthor, version_string
 )
 user_cache_dir: Callable[[], str] = partial(
     appdirs.user_cache_dir, _appname, _appauthor, version_string

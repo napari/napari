@@ -365,7 +365,24 @@ def config_file_settings_source(
     # if the config has a `sources` list, read those too and merge.
     sources = list(getattr(settings.__config__, 'sources', []))
     if config_path:
-        sources.append(config_path)
+        # Check previous version, else try parent (napari) directory
+        *v, rev = str(Path(config_path).parts[-2]).split('.')
+        prev_v = ".".join(v) + '.' + str(int(rev) - 1)
+        sources.extend(
+            [
+                config_path,
+                str(
+                    Path(config_path).parent.parent.joinpath(
+                        Path(config_path).parts[-1]
+                    )
+                ),
+                str(
+                    Path(config_path).parent.parent.joinpath(
+                        prev_v, Path(config_path).parts[-1]
+                    )
+                ),
+            ]
+        )
     if not sources:
         return {}
 
