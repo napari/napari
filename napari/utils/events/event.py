@@ -763,13 +763,19 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             self._emitting = False
-            if event._pop_source() != self.source:
-                raise RuntimeError(
-                    trans._(
-                        "Event source-stack mismatch.",
-                        deferred=True,
+            ps = event._pop_source()
+            # INFO: As far as I understand the Python interpreter _should_
+            # test for identity before equality and _if identical_ not test
+            # for equality as identical objects are always equal.
+            # Though it does not appear to be the case here.
+            if ps is not self.source:
+                if ps != self.source:
+                    raise RuntimeError(
+                        trans._(
+                            "Event source-stack mismatch.",
+                            deferred=True,
+                        )
                     )
-                )
 
         return event
 
