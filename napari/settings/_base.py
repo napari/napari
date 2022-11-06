@@ -8,11 +8,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
-import napari
 from packaging import version
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
+
+import napari
 
 from ..utils.events import EmitterGroup, EventedModel
 from ..utils.misc import deep_update
@@ -372,7 +373,8 @@ def config_file_settings_source(
         napari_versions = (
             (version.Version(dir.name), dir)
             for dir in napari_dir.iterdir()
-            if dir.is_dir() and isinstance(version.parse(dir.name), version.Version)
+            if dir.is_dir()
+            and isinstance(version.parse(dir.name), version.Version)
         )
         napari_version = version.parse(napari.__version__)
         napari_lower_version = sorted(
