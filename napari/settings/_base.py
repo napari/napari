@@ -384,7 +384,9 @@ def config_file_settings_source(
         if napari_lower_version:
             # use the path of the most recent version
             sources.append(
-                str(napari_lower_version[0][1].joinpath(Path(config_path).name))
+                str(
+                    napari_lower_version[0][1].joinpath(Path(config_path).name)
+                )
             )
         else:  # Check for parent directory (napari)
             sources.append(str(napari_dir.joinpath(Path(config_path).name)))
