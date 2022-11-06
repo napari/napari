@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
+import napari
 from packaging import version
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.env_settings import SettingsError
@@ -375,7 +376,7 @@ def config_file_settings_source(
         )
         napari_version = version.parse(napari.__version__)
         napari_lower_version = sorted(
-            v, d for v, d in napari_versions if v < napar_version
+            (v, d) for v, d in napari_versions if v < napari_version
         )
         if napari_lower_version:
             # use the path of the most recent version
