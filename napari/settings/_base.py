@@ -368,7 +368,7 @@ def config_file_settings_source(
     if config_path:
         sources.append(config_path)
         # check for previous version directory, but only if after 0.4.17
-        path_varsion = version.parse(str(Path(config_path).parts[-2]))
+        path_version = version.parse(str(Path(config_path).parts[-2]))
         if isinstance(
             path_version, version.Version
         ) and path_version > version.parse('0.4.17'):
