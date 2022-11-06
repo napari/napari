@@ -370,6 +370,7 @@ def config_file_settings_source(
     if config_path:
         sources.append(config_path)
         # check for previous version directory
+        napari_dir = Path(config_path).parent.parent
         napari_versions = (
             (version.Version(dir.name), dir)
             for dir in napari_dir.iterdir()
@@ -383,7 +384,7 @@ def config_file_settings_source(
         if napari_lower_version:
             # use the path of the most recent version
             sources.append(
-                str(version_path_tuples[0][1].joinpath(Path(config_path).name))
+                str(napari_lower_version[0][1].joinpath(Path(config_path).name))
             )
         else:  # Check for parent directory (napari)
             sources.append(str(napari_dir.joinpath(Path(config_path).name)))
