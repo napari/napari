@@ -13,13 +13,12 @@ from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
 
+import napari
+
 from ..utils.events import EmitterGroup, EventedModel
 from ..utils.misc import deep_update
 from ..utils.translations import trans
 from ._yaml import PydanticYamlMixin
-
-# import napari
-
 
 _logger = logging.getLogger(__name__)
 
@@ -378,20 +377,16 @@ def config_file_settings_source(
             if dir.is_dir()
             and isinstance(version.parse(dir.name), version.Version)
         )
-        # napari_version = version.parse(napari.__version__)
-        # napari_lower_version = sorted(
-        #    (v, d) for v, d in napari_versions if v < napari_version
-        # )
-        napari_newest_version = sorted(
-            ((v, d) for v, d in napari_versions), reverse=True
+        napari_version = version.parse(napari.__version__)
+        napari_lower_version = sorted(
+            ((v, d) for v, d in napari_versions if v < napari_version),
+            reverse=True,
         )
-        if napari_newest_version:
+        if napari_lower_version:
             # use the path of the most recent version
             sources.append(
                 str(
-                    napari_newest_version[0][1].joinpath(
-                        Path(config_path).name
-                    )
+                    napari_lower_version[0][1].joinpath(Path(config_path).name)
                 )
             )
         else:  # Check for parent directory (napari)
