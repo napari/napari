@@ -13,7 +13,7 @@ from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
 
-import napari
+import napari.utils._appdirs
 
 from ..utils.events import EmitterGroup, EventedModel
 from ..utils.misc import deep_update
@@ -367,8 +367,9 @@ def config_file_settings_source(
 
     # if the config has a `sources` list, read those too and merge.
     sources = list(getattr(settings.__config__, 'sources', []))
-    if config_path and Path(config_path).parent.parent.exists():
+    if config_path and Path(config_path).exists():
         sources.append(config_path)
+    elif config_path and Path(config_path).parent.parent.exists():
         # check for previous version directory
         napari_dir = Path(config_path).parent.parent
         napari_versions = (
@@ -377,7 +378,7 @@ def config_file_settings_source(
             if dir.is_dir()
             and isinstance(version.parse(dir.name), version.Version)
         )
-        napari_version = version.parse(napari.__version__)
+        napari_version = version.parse(napari.utils._appdirs.version_string)
         napari_lower_version = sorted(
             ((v, d) for v, d in napari_versions if v < napari_version),
             reverse=True,
@@ -391,6 +392,7 @@ def config_file_settings_source(
             )
         else:  # Check for parent directory (napari)
             sources.append(str(napari_dir.joinpath(Path(config_path).name)))
+
     if not sources:
         return {}
 

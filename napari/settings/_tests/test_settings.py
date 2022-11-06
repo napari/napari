@@ -66,9 +66,7 @@ def test_settings_load_invalid_type(tmp_path, caplog):
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
     assert NapariSettings(fake_path).application.save_window_geometry is True
-    # Fake path doesn't match the default config path, which uses version number
-    assert 'Requested config path is not a file' in str(caplog.records[0])
-    assert 'Validation errors in config file' in str(caplog.records[1])
+    assert 'Validation errors in config file' in str(caplog.records[0])
 
 
 def test_settings_load_strict(tmp_path, monkeypatch):
@@ -305,12 +303,12 @@ def test_get_settings(tmp_path):
 
 # test fallback loading from previous version
 def test_get_prev_ver_settings(monkeypatch, tmp_path):
-    import napari
+    import napari.utils._appdirs
 
-    monkeypatch.setattr(napari, '__version__', '0.4.19')
+    monkeypatch.setattr(napari.utils._appdirs, 'version_string', '0.4.19')
     # prep a settings file for the previous version
     data = "appearance:\n   theme: light"
-    prev_path = tmp_path / '0.4.17' / 'settings.yaml'
+    prev_path = tmp_path / '0.4.18' / 'settings.yaml'
     prev_path.parent.mkdir(parents=True, exist_ok=True)
     prev_path.write_text(data)
     # current path based on napari version
