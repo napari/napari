@@ -764,10 +764,8 @@ class EventEmitter:
         finally:
             self._emitting = False
             ps = event._pop_source()
-            # INFO: As far as I understand the Python interpreter _should_
-            # test for identity before equality and _if identical_ not test
-            # for equality as identical objects are always equal.
-            # Though it does not appear to be the case here.
+            # test for identity before equality is faster, and can
+            # shave a non-negligible amount of time.
             if ps is not self.source:
                 if ps != self.source:
                     raise RuntimeError(
