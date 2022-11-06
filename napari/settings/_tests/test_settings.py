@@ -21,7 +21,8 @@ def test_settings(tmp_path):
             env_prefix = 'testnapari_'
 
     return TestSettings(
-        tmp_path / 'test_settings.yml', schema_version=CURRENT_SCHEMA_VERSION
+        tmp_path / '0.4.19' / 'test_settings.yml',
+        schema_version=CURRENT_SCHEMA_VERSION,
     )
 
 
