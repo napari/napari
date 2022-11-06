@@ -300,6 +300,30 @@ def test_get_settings(tmp_path):
     assert str(s.config_path) == str(p)
 
 
+# test fallback loading from previous version
+def test_get_prev_ver_settings(tmp_path):
+    # prep a settings file for the previous version
+    data = "appearance:\n   theme: light"
+    prev_path = tmp_path / '0.4.17' / 'settings.yaml'
+    prev_path.parent.mkdir(parents=True)
+    prev_path.write_text(data)
+    # current path based on napari version
+    current_path = tmp_path / '0.4.18' / 'settings.yaml'
+    assert NapariSettings(current_path).appearance.theme == "light"
+
+
+# test fallback loading from parent (napari) directory
+def test_get_parent_ver_settings(tmp_path):
+    # prep a settings file in the parent directory
+    data = "appearance:\n   theme: dark"
+    prev_path = tmp_path / 'settings.yaml'
+    prev_path.parent.mkdir(parents=True)
+    prev_path.write_text(data)
+    # current path based on napari version
+    current_path = tmp_path / '0.4.18' / 'settings.yaml'
+    assert NapariSettings(current_path).appearance.theme == "dark"
+
+
 def test_get_settings_fails(monkeypatch, tmp_path):
     p = f'{tmp_path}.yaml'
     settings.get_settings(p)
