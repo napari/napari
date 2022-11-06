@@ -307,7 +307,7 @@ def test_get_settings(tmp_path):
 def test_get_prev_ver_settings(tmp_path):
     # prep a settings file for the previous version
     data = "appearance:\n   theme: light"
-    prev_path = tmp_path / '0.4.17' / 'settings.yaml'
+    prev_path = tmp_path / '0.4.16' / 'settings.yaml'
     prev_path.parent.mkdir(parents=True, exist_ok=True)
     prev_path.write_text(data)
     # current path based on napari version
