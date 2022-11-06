@@ -10,7 +10,5 @@ from pathlib import Path
 from ._appdirs import user_config_dir
 
 _FILENAME = "settings.yaml"
-_APPNAME = "Napari"
-_APPAUTHOR = "Napari"
 _DEFAULT_LOCALE = "en"
 _DEFAULT_CONFIG_PATH = Path(user_config_dir(), _FILENAME)
