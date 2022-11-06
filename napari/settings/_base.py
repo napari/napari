@@ -368,24 +368,17 @@ def config_file_settings_source(
     if config_path:
         sources.append(config_path)
         # check for previous version directory
-        napari_dir = Path(config_path).parent.parent
-        napari_dir_contents = list(napari_dir.iterdir())
-        version_dir_paths = [
-            path_name
-            for path_name in napari_dir_contents
-            if path_name.is_dir()
-        ]
-        napari_versions = [
-            version.Version(ver)
-            for ver in [dir.name for dir in version_dir_paths]
-            if isinstance(version.parse(ver), version.Version)
-        ]
-        if bool(napari_versions):
+        napari_versions = (
+            (version.Version(dir.name), dir)
+            for dir in napari_dir.iterdir()
+            if dir.is_dir() and isinstance(version.parse(dir.name), version.Version)
+        )
+        napari_version = version.parse(napari.__version__)
+        napari_lower_version = sorted(
+            v, d for v, d in napari_versions if v < napar_version
+        )
+        if napari_lower_version:
             # use the path of the most recent version
-            version_path_tuples = sorted(
-                dict(zip(napari_versions, version_dir_paths)).items(),
-                reverse=True,
-            )
             sources.append(
                 str(version_path_tuples[0][1].joinpath(Path(config_path).name))
             )
