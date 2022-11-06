@@ -65,7 +65,9 @@ def test_settings_load_invalid_type(tmp_path, caplog):
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
     assert NapariSettings(fake_path).application.save_window_geometry is True
-    assert 'Validation errors in config file' in str(caplog.records[0])
+    # Fake path doesn't match the default config path, which uses version number
+    assert 'Requested config path is not a file' in str(caplog.records[0])
+    assert 'Validation errors in config file' in str(caplog.records[1])
 
 
 def test_settings_load_strict(tmp_path, monkeypatch):

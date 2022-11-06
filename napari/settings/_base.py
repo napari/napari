@@ -367,29 +367,30 @@ def config_file_settings_source(
     sources = list(getattr(settings.__config__, 'sources', []))
     if config_path:
         sources.append(config_path)
-        # check for previous version directory, but only if after 0.4.17
-        path_version = version.parse(str(Path(config_path).parts[-2]))
-        if isinstance(
-            path_version, version.Version
-        ) and path_version > version.parse('0.4.17'):
-            *v, rev = str(Path(config_path).parts[-2]).split('.')
-            prev_v = ".".join(v) + '.' + str(int(rev) - 1)
-            sources.append(
-                str(
-                    Path(config_path).parent.parent.joinpath(
-                        prev_v, Path(config_path).parts[-1]
-                    )
-                )
+        # check for previous version directory
+        napari_dir = Path(config_path).parent.parent
+        napari_dir_contents = list(napari_dir.iterdir())
+        version_dir_paths = [
+            path_name
+            for path_name in napari_dir_contents
+            if path_name.is_dir()
+        ]
+        napari_versions = [
+            version.Version(ver)
+            for ver in [dir.name for dir in version_dir_paths]
+            if isinstance(version.parse(ver), version.Version)
+        ]
+        if bool(napari_versions):
+            # use the path of the most recent version
+            version_path_tuples = sorted(
+                dict(zip(napari_versions, version_dir_paths)).items(),
+                reverse=True,
             )
-        # Check for parent directory (napari)
-        else:
             sources.append(
-                str(
-                    Path(config_path).parent.parent.joinpath(
-                        Path(config_path).parts[-1]
-                    )
-                ),
+                str(version_path_tuples[0][1].joinpath(Path(config_path).name))
             )
+        else:  # Check for parent directory (napari)
+            sources.append(str(napari_dir.joinpath(Path(config_path).name)))
     if not sources:
         return {}
 
@@ -440,7 +441,6 @@ def config_file_settings_source(
             continue
         assert isinstance(new_data, dict), _path.read_text()
         deep_update(data, new_data, copy=False)
-        break
 
     try:
         # validate the data, passing config_path=None so we dont recurse
