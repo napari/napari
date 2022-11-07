@@ -53,38 +53,18 @@ class _LayerSlicer:
     @contextmanager
     def force_sync(self):
         """Context manager to temporarily force slicing to be synchronous.
-        This method only holds the _force_sync variable as True while the
-        manager is open, then resets it back to False after the manager is
-        closed.
+        This should only be called from the main thread.
+
+        >>> layer_slicer = _LayerSlicer()
+        >>> layer = Image(...)  # an async-ready layer
+        >>> with layer_slice.force_sync()
+        >>>     layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
         """
         self._force_sync = True
         yield None
         self._force_sync = False
 
-    def await_slice(self, future: Future, timeout: float = 5) -> None:
-        """Wait for a single slicing task to complete
-
-        Attributes
-        ----------
-        future: concurrent.futures.Future
-            asynchronous slicing task
-        timeout: float
-            time in seconds to wait before raising TimeoutError, defaults to 5s
-
-        Raises
-        ------
-        TimeoutError: when the timeout limit has been exceeded and the task is
-            not yet complete
-        """
-        done, _ = wait([future], timeout=timeout)
-        if done:
-            return
-        else:
-            raise TimeoutError(
-                f'Slice task did not complete within timeout ({timeout}s).'
-            )
-
-    def wait_until_idle(self, timeout: Optional(float or None) = None) -> None:
+    def wait_until_idle(self, timeout: Optional[float]) -> None:
         """Wait for all slicing tasks to complete before returning.
 
         Attributes

@@ -63,6 +63,11 @@ class FakeAsyncLayer:
     def _is_async(self) -> bool:
         return True
 
+    def _slice_dims(self, *args, **kwargs) -> None:
+        raise NotImplementedError(
+            '_slice_dims is not available for async layers.'
+        )
+
 
 class FakeSyncLayer:
     def __init__(self):
@@ -279,29 +284,6 @@ def test_slice_layers_exception_subthread_on_result(layer_slicer):
         raise TimeoutError('Test future did not complete within timeout.')
 
 
-def test_await_slice(layer_slicer):
-    dims = Dims()
-    layer = FakeAsyncLayer()
-
-    with layer.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
-        assert not blocked.done()
-
-    layer_slicer.await_slice(future=blocked, timeout=5)
-    assert blocked.done()
-
-
-def test_await_slice_blocked_timeout(layer_slicer):
-    dims = Dims()
-    layer = FakeAsyncLayer()
-    timeout = 0.5
-
-    with layer.lock:
-        blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
-        with pytest.raises(TimeoutError):
-            layer_slicer.await_slice(future=blocked, timeout=timeout)
-
-
 def test_wait_until_idle(layer_slicer):
     dims = Dims()
     layer = FakeAsyncLayer()
@@ -310,3 +292,23 @@ def test_wait_until_idle(layer_slicer):
     # depending on speed of execution, this may or may not pick up active futures
     layer_slicer.wait_until_idle()
     assert not layer_slicer._layers_to_task
+
+
+def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
+    layer = FakeSyncLayer()
+
+    with layer_slicer.force_sync():
+        assert layer_slicer._force_sync
+        layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+    assert not layer_slicer._force_sync
+
+
+def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
+    layer = FakeAsyncLayer()
+
+    with layer_slicer.force_sync():
+        assert layer_slicer._force_sync
+
+        with pytest.raises(NotImplementedError, match='not available'):
+            layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
