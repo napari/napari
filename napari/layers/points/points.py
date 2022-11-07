@@ -2,13 +2,12 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-from ...components import Dims
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
@@ -38,6 +37,7 @@ from ._points_utils import (
     points_to_squares,
 )
 from ._slice import _PointSliceRequest, _PointSliceResponse
+
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -1650,7 +1650,7 @@ class Points(Layer):
         response = request()
         self._set_slice_response(response)
 
-    def _make_slice_request(self, dims: Dims) -> _PointSliceRequest:
+    def _make_slice_request(self, dims) -> _PointSliceRequest:
         """Make a Points slice request based on the given dims and these data."""
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
