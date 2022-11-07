@@ -331,7 +331,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     request = pts._make_slice_request_internal(
         layer._slice_input, layer._slice_indices
     )
-    response = request.execute()
+    response = request()
     indices = response.indices
     np.testing.assert_equal(indices, [0])
 
