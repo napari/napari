@@ -64,7 +64,7 @@ class _LayerSlicer:
         yield None
         self._force_sync = False
 
-    def wait_until_idle(self, timeout: Optional[float]) -> None:
+    def wait_until_idle(self, timeout: Optional[float] = None) -> None:
         """Wait for all slicing tasks to complete before returning.
 
         Attributes
