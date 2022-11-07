@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/Czaki/absolufy-imports
-    rev: 352a1116d95985559c7b4efdfb5c77f766c5c016
+    rev: v0.3.2-czaki
     hooks:
     -   id: absolufy-imports
         args: [--allow_local]

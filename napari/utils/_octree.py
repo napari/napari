@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 from napari.settings import get_settings
-from napari.utils.translations import trans
+
+from .translations import trans
 
 LOGGER = logging.getLogger("napari.loader")
 DEFAULT_OCTREE_CONFIG = {

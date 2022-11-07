@@ -4,7 +4,10 @@ import numpy as np
 import pytest
 
 from napari import Viewer, layers
-from napari._tests.utils import (
+from napari.utils._tests.test_naming import eval_with_filename
+from napari.utils.action_manager import action_manager
+
+from .utils import (
     add_layer_by_type,
     check_view_transform_consistency,
     check_viewer_functioning,
@@ -12,8 +15,6 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
-from napari.utils._tests.test_naming import eval_with_filename
-from napari.utils.action_manager import action_manager
 
 
 def _get_all_keybinding_methods(type_):

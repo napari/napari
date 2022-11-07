@@ -3,13 +3,14 @@ import collections
 import numpy as np
 import pytest
 
-from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
 )
+
+from .utils import skip_local_popups, skip_on_win_ci
 
 
 @skip_on_win_ci

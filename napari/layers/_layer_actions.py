@@ -49,7 +49,7 @@ def _split_rgb(ll: LayerList):
 
 
 def _convert(ll: LayerList, type_: str):
-    from napari.layers import Shapes
+    from . import Shapes
 
     for lay in list(ll.selection):
         idx = ll.index(lay)

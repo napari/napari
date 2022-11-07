@@ -8,10 +8,11 @@ import pytest
 from magicgui import magicgui
 
 from napari import Viewer, layers, types
-from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.misc import all_subclasses
+
+from .utils import layer_test_data
 
 try:
     import qtpy  # noqa

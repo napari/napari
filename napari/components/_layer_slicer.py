@@ -5,9 +5,10 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from threading import RLock
 from typing import Dict, Iterable, Optional, Tuple
 
-from napari.components import Dims
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
+
+from . import Dims
 
 logger = logging.getLogger("napari.components._layer_slicer")
 

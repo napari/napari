@@ -43,7 +43,7 @@ from typing import Callable, Mapping, Union
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
 
-from napari.utils.translations import trans
+from .translations import trans
 
 try:  # remove after min py version 3.10+
     from types import EllipsisType
@@ -474,7 +474,7 @@ class KeymapHandler:
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
-        from napari.utils.action_manager import action_manager
+        from .action_manager import action_manager
 
         if event.key is None:
             # TODO determine when None key could be sent.

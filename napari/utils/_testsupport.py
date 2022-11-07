@@ -276,7 +276,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     function
         A function that creates a napari viewer.
     """
-    from napari.utils._proxies import PublicOnlyProxy
+    from ._proxies import PublicOnlyProxy
 
     proxies = []
 

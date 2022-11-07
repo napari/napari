@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from typing_extensions import get_args
 
-from napari.utils._proxies import PublicOnlyProxy
+from ._proxies import PublicOnlyProxy
 
 if TYPE_CHECKING:
     from concurrent.futures import Future

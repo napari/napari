@@ -1,13 +1,10 @@
 import numpy as np
 import pytest
 
-from napari._tests.utils import (
-    layer_test_data,
-    skip_local_popups,
-    skip_on_win_ci,
-)
 from napari.layers import Image
 from napari.utils.events.event import WarningEmitter
+
+from .utils import layer_test_data, skip_local_popups, skip_on_win_ci
 
 
 @skip_on_win_ci

@@ -7,8 +7,7 @@ from functools import cached_property
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-from napari.utils.events import EmitterGroup
-
+from .events import EmitterGroup
 from .interactions import Shortcut
 from .translations import trans
 

@@ -10,10 +10,10 @@ from pydantic.color import Color
 
 from napari._vendor import darkdetect
 from napari.resources._icons import build_theme_svgs
-from napari.utils.translations import trans
 
 from .events import EventedModel
 from .events.containers._evented_dict import EventedDict
+from .translations import trans
 
 try:
     from qtpy import QT_VERSION

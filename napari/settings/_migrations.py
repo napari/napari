@@ -110,7 +110,7 @@ def v040_050(model: NapariSettings):
     fnmatch would fail on these so we coerce them to include a *
     e.g. '.csv' becomes '*.csv'
     """
-    from napari.settings._utils import _coerce_extensions_to_globs
+    from ._utils import _coerce_extensions_to_globs
 
     current_settings = model.plugins.extension2reader
     new_settings = _coerce_extensions_to_globs(current_settings)

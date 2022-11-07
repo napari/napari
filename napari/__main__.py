@@ -21,7 +21,7 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         from npe2 import cli
 
-        from napari.utils import sys_info
+        from .utils import sys_info
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
@@ -47,7 +47,7 @@ class PluginInfoAction(argparse.Action):
 class CitationAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --citation"
-        from napari.utils import citation_text
+        from .utils import citation_text
 
         logging.basicConfig(level=logging.WARNING)
         print(citation_text)
@@ -72,7 +72,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
         is a ``literal_eval`` result, or string.
     """
 
-    from napari.components.viewer_model import valid_add_kwargs
+    from .components.viewer_model import valid_add_kwargs
 
     out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
@@ -108,8 +108,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 def parse_sys_argv():
     """Parse command line arguments."""
 
-    from napari import __version__, layers
-    from napari.components.viewer_model import valid_add_kwargs
+    from . import __version__, layers
+    from .components.viewer_model import valid_add_kwargs
 
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
@@ -215,8 +215,8 @@ def parse_sys_argv():
 
 
 def _run():
-    from napari import Viewer, run
-    from napari.settings import get_settings
+    from . import Viewer, run
+    from .settings import get_settings
 
     """Main program."""
     args, kwargs = parse_sys_argv()
@@ -313,7 +313,7 @@ def _run():
                         pname
                     ) or plugin_manager.get_widget(pname)
 
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
+        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
@@ -380,10 +380,7 @@ def _run():
                     viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
 
         # only necessary in bundled app, but see #3596
-        from napari.utils.misc import (
-            install_certifi_opener,
-            running_as_bundled_app,
-        )
+        from .utils.misc import install_certifi_opener, running_as_bundled_app
 
         if running_as_bundled_app():
             install_certifi_opener()
@@ -392,8 +389,8 @@ def _run():
 
 def _run_plugin_module(mod, plugin_name):
     """Register `mod` as a plugin, find/create viewer, and run napari."""
-    from napari import Viewer, run
-    from napari.plugins import plugin_manager
+    from . import Viewer, run
+    from .plugins import plugin_manager
 
     plugin_manager.register(mod, name=plugin_name)
 
@@ -436,7 +433,7 @@ def _maybe_rerun_with_macos_fixes():
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
-    from napari._qt import API_NAME
+    from ._qt import API_NAME
 
     # This import mus be here to raise exception about PySide6 problem
 

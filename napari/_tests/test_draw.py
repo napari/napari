@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pytest
 
-from napari._tests.utils import skip_local_popups
+from .utils import skip_local_popups
 
 
 @skip_local_popups

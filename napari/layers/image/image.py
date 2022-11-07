@@ -1104,7 +1104,7 @@ class Image(_ImageBase):
 
 
 if config.async_octree:
-    from napari.layers.image.experimental.octree_image import _OctreeImageBase
+    from .experimental.octree_image import _OctreeImageBase
 
     class Image(Image, _OctreeImageBase):
         pass

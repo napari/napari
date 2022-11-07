@@ -5,12 +5,8 @@ from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
-from napari.utils.key_bindings import (
-    KeyBinding,
-    KeyBindingLike,
-    coerce_keybinding,
-)
-from napari.utils.translations import trans
+from .key_bindings import KeyBinding, KeyBindingLike, coerce_keybinding
+from .translations import trans
 
 
 def mouse_wheel_callbacks(obj, event):

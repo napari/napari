@@ -49,9 +49,9 @@ import numpy as np
 import pytest
 from IPython.core.history import HistoryManager
 
-from napari.components import LayerList
-from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.utils.config import async_loading
+from .components import LayerList
+from .layers import Image, Labels, Points, Shapes, Vectors
+from .utils.config import async_loading
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -188,7 +188,7 @@ def configure_loading(request):
     """Configure async/async loading."""
     if request.config.getoption("--async_only"):
         # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import synchronous_loading
+        from .components.experimental.chunk import synchronous_loading
 
         with synchronous_loading(False):
             yield
@@ -208,7 +208,7 @@ def _is_async_mode() -> bool:
         return False  # Not enabled at all.
     else:
         # Late import so we don't import experimental code unless using it.
-        from napari.components.experimental.chunk import chunk_loader
+        from .components.experimental.chunk import chunk_loader
 
         return not chunk_loader.force_synchronous
 
@@ -259,8 +259,8 @@ def fresh_settings(monkeypatch):
     and ensures that changes to settings in a test are reverted, and never
     saved to disk.
     """
-    from napari import settings
-    from napari.settings import NapariSettings
+    from . import settings
+    from .settings import NapariSettings
 
     # prevent the developer's config file from being used if it exists
     cp = NapariSettings.__private_attributes__['_config_path']
@@ -336,7 +336,7 @@ def _no_error_reports():
 @pytest.fixture(autouse=True)
 def _npe2pm(npe2pm, monkeypatch):
     """Autouse the npe2 mock plugin manager with no registered plugins."""
-    from napari.plugins import NapariPluginManager
+    from .plugins import NapariPluginManager
 
     monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
     return npe2pm
@@ -430,7 +430,7 @@ def disable_notification_dismiss_timer(monkeypatch):
     """
 
     with suppress(ImportError):
-        from napari._qt.dialogs.qt_notification import NapariQtNotification
+        from ._qt.dialogs.qt_notification import NapariQtNotification
 
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
@@ -461,7 +461,7 @@ def _mock_app():
     """
     from app_model import Application
 
-    from napari._app_model._app import NapariApplication, _napari_names
+    from ._app_model._app import NapariApplication, _napari_names
 
     app = NapariApplication('test_app')
     app.injection_store.namespace = _napari_names
