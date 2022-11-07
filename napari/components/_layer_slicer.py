@@ -57,7 +57,7 @@ class _LayerSlicer:
 
         >>> layer_slicer = _LayerSlicer()
         >>> layer = Image(...)  # an async-ready layer
-        >>> with layer_slice.force_sync()
+        >>> with layer_slice.force_sync():
         >>>     layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
         """
         self._force_sync = True
