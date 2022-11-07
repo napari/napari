@@ -361,7 +361,8 @@ def config_file_settings_source(
     """
     # _config_path is the primary config file on the model (the one to save to)
     config_path = getattr(settings, '_config_path', None)
-    config_path_Path = Path(config_path)
+    if config_path:
+        config_path_Path = Path(config_path)
     default_cfg = type(settings).__private_attributes__.get('_config_path')
     default_cfg = getattr(default_cfg, 'default', None)
 
@@ -371,25 +372,20 @@ def config_file_settings_source(
         sources.append(config_path)
     elif config_path and config_path_Path.parent.parent.exists():
         # check for previous version directory
-        napari_dir = config_path_Path.parent.parent
-        napari_versions = (
-            (version.Version(dir.name), dir)
-            for dir in napari_dir.iterdir()
-            if dir.is_dir()
-            and isinstance(version.parse(dir.name), version.Version)
-        )
-        napari_version = version.parse(napari.utils._appdirs.version_string)
-        napari_lower_version = sorted(
-            ((v, d) for v, d in napari_versions if v < napari_version),
-            reverse=True,
-        )
+        napari_lower_version = _previous_version_subdirectory(config_path_Path)
         if napari_lower_version:
             # use the path of the most recent version
             sources.append(
-                str(napari_lower_version[0][1].joinpath(config_path_Path.name))
+                str(napari_lower_version.joinpath(config_path_Path.name))
             )
         else:  # Check for parent directory (napari)
-            sources.append(str(napari_dir.joinpath(config_path_Path.name)))
+            sources.append(
+                str(
+                    config_path_Path.parent.parent.joinpath(
+                        config_path_Path.name
+                    )
+                )
+            )
 
     if not sources:
         return {}
@@ -541,3 +537,22 @@ def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
         if v == {}:
             del dct[k]
     return dct
+
+
+def _previous_version_subdirectory(root: Path) -> Optional[Path]:
+    napari_dir = root.parent.parent
+    napari_versions = (
+        (version.Version(dir.name), dir)
+        for dir in napari_dir.iterdir()
+        if dir.is_dir()
+        and isinstance(version.parse(dir.name), version.Version)
+    )
+    napari_version = version.parse(napari.utils._appdirs.version_string)
+    napari_lower_version = sorted(
+        ((v, d) for v, d in napari_versions if v < napari_version),
+        reverse=True,
+    )
+    if napari_lower_version:
+        return napari_lower_version[0][1]
+    else:
+        return None
