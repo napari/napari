@@ -1,3 +1,9 @@
+"""Actions related to the 'View' menu that require Qt.
+
+'View' actions that do not require Qt should go in
+`napari/_app_model/actions/_view_actions.py`.
+"""
+
 import sys
 from typing import List
 

@@ -2091,7 +2091,7 @@ class Points(Layer):
 
         source_info = self._get_source_info()
         source_info['coordinates'] = generate_layer_coords_status(
-            position, value
+            position[-self.ndim :], value
         )
 
         # if this points layer has properties

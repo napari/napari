@@ -58,7 +58,7 @@ jobs:
           run: make -C docs docs
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: docs
           path: docs/docs/_build

@@ -15,11 +15,11 @@ class _ImageSliceResponse:
 
     Attributes
     ----------
-    data : Any
+    data : array like
         The sliced image data.
         In general, if you need this to be a `numpy.ndarray` you should call `np.asarray`.
         Though if the corresponding request was not lazy, this is likely a `numpy.ndarray`.
-    thumbnail: Optional[Any]
+    thumbnail: array like or none
         The thumbnail image data, which may be a different resolution to the sliced image data
         for multi-scale images.
         For single-scale images, this will be `None`, which indicates that the thumbnail data
@@ -36,13 +36,14 @@ class _ImageSliceResponse:
 
 @dataclass(frozen=True)
 class _ImageSliceRequest:
-    """Contains all the input data needed to slice an image layer.
+    """A callable that stores all the input data needed to slice an image layer.
 
     This should be treated a deeply immutable structure, even though some
-    fields can be modified in place.
+    fields can be modified in place. It is like a function that has captured
+    all its inputs already.
 
-    In general, the execute method may take a long time to run, so you may
-    want to run it once on a worker thread.
+    In general, the calling an instance of this may take a long time, so you may
+    want to run it off the main thread.
 
     Attributes
     ----------
@@ -73,14 +74,14 @@ class _ImageSliceRequest:
     downsample_factors: np.ndarray = field(repr=False)
     lazy: bool = field(default=False, repr=False)
 
-    def execute(self) -> _ImageSliceResponse:
+    def __call__(self) -> _ImageSliceResponse:
         return (
-            self._execute_multi_scale()
+            self._call_multi_scale()
             if self.multiscale
-            else self._execute_single_scale()
+            else self._call_single_scale()
         )
 
-    def _execute_single_scale(self) -> _ImageSliceResponse:
+    def _call_single_scale(self) -> _ImageSliceResponse:
         image = self.data[self.slice_indices]
         if not self.lazy:
             image = np.asarray(image)
@@ -96,7 +97,7 @@ class _ImageSliceRequest:
             tile_to_data=tile_to_data,
         )
 
-    def _execute_multi_scale(self) -> _ImageSliceResponse:
+    def _call_multi_scale(self) -> _ImageSliceResponse:
         if self.dims.ndisplay == 3:
             warnings.warn(
                 trans._(

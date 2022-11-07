@@ -1635,7 +1635,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         source_info = self._get_source_info()
         source_info['coordinates'] = generate_layer_coords_status(
-            position, value
+            position[-self.ndim :], value
         )
         return source_info
 
