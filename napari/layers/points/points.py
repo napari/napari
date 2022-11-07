@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
+from ...components import Dims
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
@@ -1648,8 +1649,23 @@ class Points(Layer):
         request = self._make_slice_request_internal(
             self._slice_input, self._slice_indices
         )
-        response = request.execute()
+        response = request()
         self._set_slice_response(response)
+
+    def _make_slice_request(self, dims: Dims) -> _PointSliceRequest:
+        """Make a Points slice request based on the given dims and these data."""
+        slice_input = self._make_slice_input(
+            dims.point, dims.ndisplay, dims.order
+        )
+        # TODO: [see Image]
+        #   For the existing sync slicing, slice_indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
+        return self._make_slice_request_internal(slice_input, slice_indices)
 
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, dims_indices

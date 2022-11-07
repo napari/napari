@@ -2516,6 +2516,6 @@ def test_point_slice_request_response():
         request = layer._make_slice_request_internal(
             layer._slice_input, dims_indices
         )
-        response = request.execute()
+        response = request()
 
         assert len(response.indices) == length_check

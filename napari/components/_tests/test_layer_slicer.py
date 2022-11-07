@@ -7,7 +7,7 @@ import pytest
 
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
-from napari.layers import Image
+from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.types import DTypeLike
 
@@ -74,12 +74,6 @@ class FakeSyncLayer:
 
 
 class LockableData:
-    """A wrapper for napari layer data that blocks read-access with a lock.
-
-    This is useful when testing async slicing with real napari layers because
-    it allows us to control when slicing tasks complete.
-    """
-
     def __init__(self, data: LayerDataProtocol):
         self.data = data
         self.lock = RLock()
@@ -97,6 +91,9 @@ class LockableData:
     ) -> LayerDataProtocol:
         with self.lock:
             return self.data[key]
+
+    def __len__(self):
+        return len(self.data)
 
 
 @pytest.fixture()
@@ -289,3 +286,29 @@ def test_slice_layers_async_with_one_3d_image(layer_slicer):
 
     layer_result = future.result()[layer]
     np.testing.assert_equal(layer_result.data, data[2, :, :])
+
+
+def test_slice_layers_async_with_one_3d_points(layer_slicer):
+    np.random.seed(0)
+    num_points = 10_000
+    data = np.rint(2.0 * np.random.rand(num_points, 3))
+    lockable_data = LockableData(data)
+    layer = Points(data=lockable_data)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 3, 1), (0, 3, 1), (0, 3, 1)),
+        current_step=(1, 0, 0),
+    )
+
+    with lockable_data.lock:
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not future.done()
+
+    layer_result = future.result()[layer]
+
+    _indices_view = np.array(layer_result.indices, dtype=int)
+    # get the selected points that are in view
+
+    # Target number of indices manually determined
+    np.testing.assert_equal(len(_indices_view), 4911)

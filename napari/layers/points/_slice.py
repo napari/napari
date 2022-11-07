@@ -8,17 +8,42 @@ from napari.layers.utils._slice_input import _SliceInput
 
 @dataclass(frozen=True)
 class _PointSliceResponse:
+    """Contains all the output data of slicing an image layer.
+
+    Attributes
+    ----------
+    indices : array like
+        Indices of the sliced Points data.
+    scale: array like or none
+    """
+
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
 
 
 @dataclass(frozen=True)
 class _PointSliceRequest:
-    """Represents a single point slice request.
+    """A callable that stores all the input data needed to slice a Points layer.
+
     This should be treated a deeply immutable structure, even though some
-    fields can be modified in place.
-    In general, the execute method may take a long time to run, so you may
-    want to run it once on a worker thread.
+    fields can be modified in place. It is like a function that has captured
+    all its inputs already.
+
+    In general, the calling an instance of this may take a long time, so you may
+    want to run it off the main thread.
+
+    Attributes
+    ----------
+    dims : _SliceInput
+        Describes the slicing plane or bounding box in the layer's dimensions.
+    data : Any
+        The layer's data field, which is the main input to slicing.
+    dims_indices : Tuple[Union[int, slice], ...]
+        The slice indices in the layer's data space.
+    size : array like
+        Size of each point. This is used in calculating visibility.
+    others
+        See the corresponding attributes in `Layer` and `Image`.
     """
 
     dims: _SliceInput
@@ -27,8 +52,7 @@ class _PointSliceRequest:
     size: Any = field(repr=False)
     out_of_slice_display: bool = field(repr=False)
 
-    def execute(self) -> _PointSliceResponse:
-
+    def __call__(self) -> _PointSliceResponse:
         slice_indices, scale = self._get_slice_data()
 
         return _PointSliceResponse(indices=slice_indices, scale=scale)
