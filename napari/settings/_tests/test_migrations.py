@@ -55,7 +55,9 @@ def test_migration_saves(_test_migrator):
     with patch.object(NapariSettings, 'save') as mock:
         mock.assert_not_called()
         settings = NapariSettings(
-            config_path='junk / 0.4.18', schema_version='0.1.0'
+            # the path needs to include a version number, but it's arbitrary
+            config_path='junk / 1.2.3',
+            schema_version='0.1.0',
         )
         assert settings.schema_version == '0.2.0'
         mock.assert_called()

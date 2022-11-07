@@ -21,7 +21,8 @@ def test_settings(tmp_path):
             env_prefix = 'testnapari_'
 
     return TestSettings(
-        tmp_path / '0.4.19' / 'test_settings.yml',
+        # path needs include a version, but it's arbitrary
+        tmp_path / '1.2.3' / 'test_settings.yml',
         schema_version=CURRENT_SCHEMA_VERSION,
     )
 
@@ -301,37 +302,35 @@ def test_get_settings(tmp_path):
     assert str(s.config_path) == str(p)
 
 
-def test_get_prev_ver_settings(monkeypatch, tmp_path):
-    """This test tests fallback to previous version settings"""
+def test_fallback_to_previous_version_settings(monkeypatch, tmp_path):
     import napari.utils._appdirs
 
-    # set the current version to 0.4.19 for testing
-    monkeypatch.setattr(napari.utils._appdirs, 'version_string', '0.4.19')
-    # prep a settings file for the previous version
+    # set the current version to an arbitrary 1.2.3 for testing
+    monkeypatch.setattr(napari.utils._appdirs, 'version_string', '1.2.3')
+    # prep a settings file for a previous version
     data = "appearance:\n   theme: light"
-    prev_path = tmp_path / '0.4.18' / 'settings.yaml'
+    prev_path = tmp_path / '1.2.2' / 'settings.yaml'
     prev_path.parent.mkdir(parents=True, exist_ok=True)
     prev_path.write_text(data)
     # prep a settings file for a newer version than current
     data = "appearance:\n   theme: system"
-    next_path = tmp_path / '0.4.20' / 'settings.yaml'
+    next_path = tmp_path / '1.2.4' / 'settings.yaml'
     next_path.parent.mkdir(parents=True, exist_ok=True)
     next_path.write_text(data)
-    # current path based on napari version
-    current_path = tmp_path / '0.4.19' / 'settings.yaml'
+    # current path based on current version
+    current_path = tmp_path / '1.2.3' / 'settings.yaml'
     # ensure that previous (older) version settings are used
     assert NapariSettings(current_path).appearance.theme == "light"
 
 
-def test_get_parent_ver_settings(tmp_path):
-    """This test tests fallback to the parent directory, napari"""
+def test_fallback_to_parent_directory_version_settings(tmp_path):
     # prep a settings file in the parent directory
     data = "appearance:\n   theme: light"
     prev_path = tmp_path / 'settings.yaml'
     prev_path.parent.mkdir(parents=True, exist_ok=True)
     prev_path.write_text(data)
-    # current path based on napari version
-    current_path = tmp_path / '0.4.18' / 'settings.yaml'
+    # current path based on an arbitrary napari version
+    current_path = tmp_path / '1.2.3' / 'settings.yaml'
     # ensure that the settings in the napari directory are used
     assert NapariSettings(current_path).appearance.theme == "light"
 
