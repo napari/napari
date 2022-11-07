@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSortFilterProxyModel, Qt
 
-from ...layers import Layer
-from ...utils.translations import trans
+from napari.layers import Layer
+from napari.utils.translations import trans
+
 from ._base_item_model import SortRole, _BaseEventedItemModel
 from ._layer_delegate import LayerDelegate
 from .qt_list_view import QtListView
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QKeyEvent
     from qtpy.QtWidgets import QWidget
 
-    from ...components.layerlist import LayerList
+    from napari.components.layerlist import LayerList
 
 
 class ReverseProxyModel(QSortFilterProxyModel):

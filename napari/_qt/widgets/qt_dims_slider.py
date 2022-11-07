@@ -17,12 +17,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...settings import get_settings
-from ...settings._constants import LoopMode
-from ...utils.events.event_utils import connect_setattr_value
-from ...utils.translations import trans
-from ..dialogs.qt_modal import QtPopup
-from ..qthreading import _new_worker_qthread
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.qthreading import _new_worker_qthread
+from napari.settings import get_settings
+from napari.settings._constants import LoopMode
+from napari.utils.events.event_utils import connect_setattr_value
+from napari.utils.translations import trans
+
 from .qt_scrollbar import ModifiedScrollBar
 
 

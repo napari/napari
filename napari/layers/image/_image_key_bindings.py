@@ -3,12 +3,12 @@ from __future__ import annotations
 from app_model.types import KeyCode
 
 import napari
-
-from ...layers.utils.interactivity_utils import (
+from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
 )
-from ...layers.utils.layer_utils import register_layer_action
-from ...utils.translations import trans
+from napari.layers.utils.layer_utils import register_layer_action
+from napari.utils.translations import trans
+
 from ._image_constants import Mode
 from .image import Image
 

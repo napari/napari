@@ -70,7 +70,7 @@ from typing import (
 
 from vispy.util.logs import _handle_exception
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 class Event:

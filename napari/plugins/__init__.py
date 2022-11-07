@@ -4,7 +4,8 @@ from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
 
-from ..settings import get_settings
+from napari.settings import get_settings
+
 from . import _npe2
 from ._plugin_manager import NapariPluginManager
 

@@ -4,8 +4,9 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from ..utils._base import _DEFAULT_CONFIG_PATH
-from ..utils.translations import trans
+from napari.utils._base import _DEFAULT_CONFIG_PATH
+from napari.utils.translations import trans
+
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
 from ._base import _NOT_SET, EventedConfigFileSettings, _remove_empty_dicts

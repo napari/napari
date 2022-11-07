@@ -7,7 +7,8 @@ from typing import List, Optional
 
 import wrapt
 
-from ..translations import trans
+from napari.utils.translations import trans
+
 from ._patcher import patch_callables
 from ._timers import perf_timer
 

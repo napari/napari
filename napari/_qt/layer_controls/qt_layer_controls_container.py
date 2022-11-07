@@ -1,8 +1,17 @@
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
-from ...utils import config
-from ...utils.translations import trans
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
+from napari.utils import config
+from napari.utils.translations import trans
+
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
 from .qt_points_controls import QtPointsControls
@@ -22,7 +31,7 @@ layer_to_controls = {
 }
 
 if config.async_loading:
-    from ...layers.image.experimental.octree_image import _OctreeImageBase
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     # The user visible layer controls for OctreeImage layers are identical
     # to the regular image layer controls, for now.

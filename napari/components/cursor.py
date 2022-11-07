@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 
-from ..utils.events import EventedModel
+from napari.utils.events import EventedModel
+
 from ._viewer_constants import CursorStyle
 
 

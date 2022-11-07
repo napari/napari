@@ -8,8 +8,9 @@ from typing import List
 
 from app_model.types import Action, ToggleRule
 
-from ...settings import get_settings
-from ..constants import CommandId, MenuId
+from napari._app_model.constants import CommandId, MenuId
+from napari.settings import get_settings
+
 from ._toggle_action import ViewerToggleAction
 
 VIEW_ACTIONS: List[Action] = []

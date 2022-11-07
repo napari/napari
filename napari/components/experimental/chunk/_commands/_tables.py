@@ -5,7 +5,8 @@ the IPython console window.
 """
 from typing import Any, List, Tuple, Union
 
-from .....utils.translations import trans
+from napari.utils.translations import trans
+
 from ._utils import highlight
 
 

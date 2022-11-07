@@ -2,8 +2,9 @@ from copy import copy
 
 import numpy as np
 
-from ...layers.utils.layer_utils import segment_normal
-from ..visuals.vectors import VectorsVisual
+from napari._vispy.visuals.vectors import VectorsVisual
+from napari.layers.utils.layer_utils import segment_normal
+
 from .base import VispyBaseLayer
 
 

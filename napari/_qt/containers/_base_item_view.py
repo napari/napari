@@ -15,8 +15,9 @@ if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
 
-    from ...utils.events import Event
-    from ...utils.events.containers import SelectableEventedList
+    from napari.utils.events import Event
+    from napari.utils.events.containers import SelectableEventedList
+
     from ._base_item_model import _BaseEventedItemModel
 
 

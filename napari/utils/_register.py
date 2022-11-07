@@ -66,7 +66,7 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
 
 
 def _register(cls, *, name=None, doc=None):
-    from ..components import ViewerModel
+    from napari.components import ViewerModel
 
     func = create_func(cls, name=name, doc=doc)
     setattr(ViewerModel, func.__name__, func)

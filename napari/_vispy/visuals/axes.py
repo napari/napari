@@ -1,9 +1,9 @@
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh, Text
 
-from ...layers.shapes._shapes_utils import triangulate_ellipse
-from ...utils.colormaps.standardize_color import transform_color
-from ...utils.translations import trans
+from napari.layers.shapes._shapes_utils import triangulate_ellipse
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.translations import trans
 
 
 def make_dashed_line(num_dashes, axis):

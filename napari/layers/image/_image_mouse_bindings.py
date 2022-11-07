@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ...utils.geometry import (
+from napari.utils.geometry import (
     clamp_point_to_bounding_box,
     point_in_bounding_box,
 )
 
 if TYPE_CHECKING:
-    from ...utils.events import Event
+    from napari.utils.events import Event
+
     from .image import Image
 
 

@@ -5,15 +5,16 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..base import Layer
-from ..utils._color_manager_constants import ColorMode
-from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import _FeatureTable
+from napari.layers.base import Layer
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_transformations import ColorType
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.utils.colormaps import Colormap, ValidColormapArg
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
+
 from ._vector_utils import fix_data_vectors
 
 

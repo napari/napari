@@ -1,7 +1,8 @@
 import warnings
 from typing import TypeVar
 
-from ...translations import trans
+from napari.utils.translations import trans
+
 from ._evented_list import EventedList
 from ._nested_list import NestableEventedList
 from ._selection import Selectable

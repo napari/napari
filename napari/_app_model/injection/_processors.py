@@ -4,8 +4,9 @@ from contextlib import nullcontext, suppress
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
-from ... import layers, types, viewer
-from ...layers._source import layer_source
+from napari import layers, types, viewer
+from napari.layers._source import layer_source
+
 from ._providers import _provide_viewer
 
 
@@ -15,7 +16,7 @@ def _add_layer_data_tuples_to_viewer(
     viewer=None,
     source: Optional[dict] = None,
 ):
-    from ...utils.misc import ensure_list_of_layer_data_tuple
+    from napari.utils.misc import ensure_list_of_layer_data_tuple
 
     if viewer is None:
         viewer = _provide_viewer()

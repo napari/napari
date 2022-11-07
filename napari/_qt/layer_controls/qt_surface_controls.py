@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QComboBox, QHBoxLayout
 
-from ...layers.surface._surface_constants import SHADING_TRANSLATION
-from ...utils.translations import trans
+from napari.layers.surface._surface_constants import SHADING_TRANSLATION
+from napari.utils.translations import trans
+
 from .qt_image_controls_base import QtBaseImageControls
 
 if TYPE_CHECKING:

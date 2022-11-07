@@ -1,4 +1,9 @@
 repos:
+-   repo: https://github.com/Czaki/absolufy-imports
+    rev: 352a1116d95985559c7b4efdfb5c77f766c5c016
+    hooks:
+    -   id: absolufy-imports
+        args: [--allow_local]
 -   repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:

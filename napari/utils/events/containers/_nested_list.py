@@ -19,8 +19,9 @@ from typing import (
     overload,
 )
 
-from ...translations import trans
-from ..event import Event
+from napari.utils.events.event import Event
+from napari.utils.translations import trans
+
 from ._evented_list import EventedList, Index
 
 logger = logging.getLogger(__name__)

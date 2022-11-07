@@ -22,9 +22,10 @@ def init_qactions() -> None:
     - registering Qt-dependent actions with app-model (i.e. Q_*_ACTIONS actions).
     """
 
-    from ...._app_model import get_app
-    from ...qt_main_window import Window, _QtMainWindow
-    from ...qt_viewer import QtViewer
+    from napari._app_model import get_app
+    from napari._qt.qt_main_window import Window, _QtMainWindow
+    from napari._qt.qt_viewer import QtViewer
+
     from ._help import Q_HELP_ACTIONS
     from ._view import Q_VIEW_ACTIONS
 

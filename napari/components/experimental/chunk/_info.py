@@ -4,8 +4,9 @@ import logging
 import time
 from enum import Enum
 
-from ....components.experimental.monitor import monitor
-from ....layers.base import Layer
+from napari.components.experimental.monitor import monitor
+from napari.layers.base import Layer
+
 from ._request import ChunkRequest, LayerRef
 from ._utils import StatWindow
 

@@ -5,7 +5,8 @@ This is for pre-Octree Image class only.
 import logging
 from typing import Optional
 
-from .._image_loader import ImageLoader
+from napari.layers.image._image_loader import ImageLoader
+
 from ._chunked_slice_data import ChunkedSliceData
 from ._image_location import ImageLocation
 

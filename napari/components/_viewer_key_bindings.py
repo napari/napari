@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..settings import get_settings
-from ..utils.action_manager import action_manager
-from ..utils.theme import available_themes
-from ..utils.translations import trans
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.theme import available_themes
+from napari.utils.translations import trans
+
 from .viewer_model import ViewerModel
 
 if TYPE_CHECKING:
-    from ..viewer import Viewer
+    from napari.viewer import Viewer
 
 
 def register_viewer_action(description):

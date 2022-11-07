@@ -1,6 +1,7 @@
 from vispy.scene.visuals import Compound, Line, Text
 
-from ..filters.tracks import TracksFilter
+from napari._vispy.filters.tracks import TracksFilter
+
 from .clipping_planes_mixin import ClippingPlanesMixin
 
 

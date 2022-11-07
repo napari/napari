@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
-from ...translations import trans
-from ..event import EmitterGroup
+from napari.utils.events.event import EmitterGroup
+from napari.utils.translations import trans
+
 from ._set import EventedSet
 
 if TYPE_CHECKING:

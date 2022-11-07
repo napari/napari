@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
-from ...utils import config
+from napari.utils import config
+
 from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
@@ -15,7 +16,7 @@ from ._image_view import ImageView
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
-    from ...types import ArrayLike
+    from napari.types import ArrayLike
 
 
 def _create_loader_class() -> ImageLoader:

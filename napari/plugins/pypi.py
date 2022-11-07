@@ -21,8 +21,7 @@ def _user_agent() -> str:
     import platform
 
     from napari import __version__
-
-    from ..utils import misc
+    from napari.utils import misc
 
     if misc.running_as_bundled_app():
         env = 'briefcase'

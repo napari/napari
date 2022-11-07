@@ -2,7 +2,8 @@ from typing import Union
 
 from pydantic import Field
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
+
 from ._base import EventedSettings
 
 

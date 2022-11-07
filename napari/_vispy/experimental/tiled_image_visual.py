@@ -16,9 +16,10 @@ import numpy as np
 from vispy.scene.visuals import Image
 from vispy.visuals.shaders import Function, FunctionChain
 
-from ...layers.image.experimental import OctreeChunk
-from ...types import ArrayLike
-from ...utils.translations import trans
+from napari.layers.image.experimental import OctreeChunk
+from napari.types import ArrayLike
+from napari.utils.translations import trans
+
 from .texture_atlas import TextureAtlas2D
 from .tile_set import TileSet
 

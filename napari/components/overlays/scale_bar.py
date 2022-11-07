@@ -1,7 +1,8 @@
 """Scale bar model."""
 from typing import Optional
 
-from ...utils.color import ColorValue
+from napari.utils.color import ColorValue
+
 from .base import CanvasOverlay
 
 

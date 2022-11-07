@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
-from ..layers import Layer
-from ..types import LayerData
-from ..utils.misc import abspath_or_url
-from ..utils.translations import trans
+from napari.layers import Layer
+from napari.types import LayerData
+from napari.utils.misc import abspath_or_url
+from napari.utils.translations import trans
+
 from . import _npe2, plugin_manager
 
 logger = getLogger(__name__)

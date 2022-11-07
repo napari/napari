@@ -1,7 +1,8 @@
 import numpy as np
 
-from ...utils.theme import get_theme
-from ..visuals.axes import Axes
+from napari._vispy.visuals.axes import Axes
+from napari.utils.theme import get_theme
+
 from .base import VispySceneOverlay
 
 

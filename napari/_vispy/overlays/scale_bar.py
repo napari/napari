@@ -2,10 +2,11 @@ import bisect
 
 import numpy as np
 
-from ...utils._units import PREFERRED_VALUES, get_unit_registry
-from ...utils.colormaps.standardize_color import transform_color
-from ...utils.theme import get_theme
-from ..visuals.scale_bar import ScaleBar
+from napari._vispy.visuals.scale_bar import ScaleBar
+from napari.utils._units import PREFERRED_VALUES, get_unit_registry
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.theme import get_theme
+
 from .base import VispyCanvasOverlay
 
 

@@ -10,7 +10,7 @@ from .qt_list_model import QtListModel
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-    from ...utils.events.containers import SelectableEventedList
+    from napari.utils.events.containers import SelectableEventedList
 
 ItemType = TypeVar("ItemType")
 

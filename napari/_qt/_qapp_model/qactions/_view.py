@@ -15,11 +15,11 @@ from app_model.types import (
     ToggleRule,
 )
 
-from ...._app_model.constants import CommandId, MenuGroup, MenuId
-from ....settings import get_settings
-from ....utils.translations import trans
-from ...qt_main_window import Window
-from ...qt_viewer import QtViewer
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._qt.qt_main_window import Window
+from napari._qt.qt_viewer import QtViewer
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 
 def _toggle_activity_dock(window: Window):

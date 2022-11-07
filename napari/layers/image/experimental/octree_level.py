@@ -14,7 +14,7 @@ from .octree_util import OctreeMetadata
 LOGGER = logging.getLogger("napari.octree")
 
 if TYPE_CHECKING:
-    from ....types import ArrayLike
+    from napari.types import ArrayLike
 
 
 class OctreeLevelInfo:
@@ -156,7 +156,9 @@ class OctreeLevel:
         meta = self.info.meta
         layer_ref = meta.layer_ref
 
-        from ....components.experimental.chunk._request import OctreeLocation
+        from napari.components.experimental.chunk._request import (
+            OctreeLocation,
+        )
 
         location = OctreeLocation(
             layer_ref, self.slice_id, level_index, row, col
@@ -226,7 +228,7 @@ def log_levels(levels: List[OctreeLevel], start_level: int = 0) -> None:
     start_level : int
         Start the indexing at this number, shift the indexes up.
     """
-    from ...._vendor.experimental.humanize.src.humanize import intword
+    from napari._vendor.experimental.humanize.src.humanize import intword
 
     def _dim_str(dim: tuple) -> None:
         return f"({dim[0]}, {dim[1]}) = {intword(dim[0] * dim[1])}"

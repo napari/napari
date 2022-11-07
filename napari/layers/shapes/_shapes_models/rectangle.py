@@ -1,7 +1,8 @@
 import numpy as np
 
-from ....utils.translations import trans
-from .._shapes_utils import find_corners, rectangle_to_box
+from napari.layers.shapes._shapes_utils import find_corners, rectangle_to_box
+from napari.utils.translations import trans
+
 from .shape import Shape
 
 

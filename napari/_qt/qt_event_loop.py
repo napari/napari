@@ -11,17 +11,18 @@ from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .. import Viewer, __version__
-from ..resources._icons import _theme_path
-from ..settings import get_settings
-from ..utils import config, perf
-from ..utils.notifications import (
+from napari import Viewer, __version__
+from napari.resources._icons import _theme_path
+from napari.settings import get_settings
+from napari.utils import config, perf
+from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
 )
-from ..utils.perf import perf_config
-from ..utils.theme import _themes
-from ..utils.translations import trans
+from napari.utils.perf import perf_config
+from napari.utils.theme import _themes
+from napari.utils.translations import trans
+
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
 from .qthreading import (
@@ -246,13 +247,13 @@ def quit_app():
 
     if config.monitor:
         # Stop the monitor service if we were using it
-        from ..components.experimental.monitor import monitor
+        from napari.components.experimental.monitor import monitor
 
         monitor.stop()
 
     if config.async_loading:
         # Shutdown the chunkloader
-        from ..components.experimental.chunk import chunk_loader
+        from napari.components.experimental.chunk import chunk_loader
 
         chunk_loader.shutdown()
 

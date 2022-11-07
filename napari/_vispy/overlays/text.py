@@ -1,6 +1,7 @@
 from vispy.scene.visuals import Text
 
-from ...components._viewer_constants import CanvasPosition
+from napari.components._viewer_constants import CanvasPosition
+
 from .base import VispyCanvasOverlay
 
 

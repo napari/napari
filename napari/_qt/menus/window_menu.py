@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
+
 from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
-    from ..qt_main_window import Window
+    from napari._qt.qt_main_window import Window
 
 
 class WindowMenu(NapariMenu):

@@ -8,8 +8,9 @@ import numpy as np
 from app_model.types import KeyBinding
 from pydantic import BaseModel, PrivateAttr, main, utils
 
-from ...utils.misc import pick_equality_operator
-from ..translations import trans
+from napari.utils.misc import pick_equality_operator
+from napari.utils.translations import trans
+
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder

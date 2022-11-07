@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
-from ...utils.events import Event, EventedModel
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..base._base_constants import Blending
+from napari.layers.base._base_constants import Blending
+from napari.utils.events import Event, EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
+
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .color_encoding import ColorArray, ColorEncoding, ConstantColorEncoding

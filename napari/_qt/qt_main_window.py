@@ -38,17 +38,18 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import QSignalThrottler
 
-from .._app_model.constants import MenuId
-from ..plugins import menu_item_template as plugin_menu_item_template
-from ..plugins import plugin_manager
-from ..settings import get_settings
-from ..utils import perf
-from ..utils._proxies import PublicOnlyProxy
-from ..utils.io import imsave
-from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
-from ..utils.notifications import Notification
-from ..utils.theme import _themes, get_system_theme
-from ..utils.translations import trans
+from napari._app_model.constants import MenuId
+from napari.plugins import menu_item_template as plugin_menu_item_template
+from napari.plugins import plugin_manager
+from napari.settings import get_settings
+from napari.utils import perf
+from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.io import imsave
+from napari.utils.misc import in_ipython, in_jupyter, running_as_bundled_app
+from napari.utils.notifications import Notification
+from napari.utils.theme import _themes, get_system_theme
+from napari.utils.translations import trans
+
 from . import menus
 from ._qapp_model import build_qmodel_menu
 from ._qapp_model.qactions import init_qactions
@@ -71,7 +72,7 @@ if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
-    from ..viewer import Viewer
+    from napari.viewer import Viewer
 
 
 class _QtMainWindow(QMainWindow):
@@ -705,7 +706,7 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from ..plugins import _npe2
+        from napari.plugins import _npe2
 
         Widget = None
         dock_kwargs = {}
@@ -1368,7 +1369,7 @@ class Window:
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.
-    from ..viewer import Viewer
+    from napari.viewer import Viewer
 
     kwargs = {}
     try:

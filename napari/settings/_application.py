@@ -4,11 +4,12 @@ from typing import List, Optional, Tuple
 
 from pydantic import Field, validator
 
-from ..utils._base import _DEFAULT_LOCALE
-from ..utils.events.custom_types import conint
-from ..utils.events.evented_model import EventedModel
-from ..utils.notifications import NotificationSeverity
-from ..utils.translations import trans
+from napari.utils._base import _DEFAULT_LOCALE
+from napari.utils.events.custom_types import conint
+from napari.utils.events.evented_model import EventedModel
+from napari.utils.notifications import NotificationSeverity
+from napari.utils.translations import trans
+
 from ._constants import LoopMode
 from ._fields import Language
 

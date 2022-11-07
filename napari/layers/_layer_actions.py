@@ -9,14 +9,15 @@ from typing import TYPE_CHECKING, List, cast
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
+
 from . import Image, Labels, Layer
 from ._source import layer_source
 from .utils import stack_utils
 from .utils._link_layers import get_linked_layers
 
 if TYPE_CHECKING:
-    from ..components import LayerList
+    from napari.components import LayerList
 
 
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
@@ -48,7 +49,7 @@ def _split_rgb(ll: LayerList):
 
 
 def _convert(ll: LayerList, type_: str):
-    from ..layers import Shapes
+    from napari.layers import Shapes
 
     for lay in list(ll.selection):
         idx = ll.index(lay)

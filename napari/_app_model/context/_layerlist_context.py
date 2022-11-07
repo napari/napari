@@ -5,15 +5,16 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 from app_model.expressions import ContextKey
 
-from ...utils._dtype import normalize_dtype
-from ...utils.translations import trans
+from napari.utils._dtype import normalize_dtype
+from napari.utils.translations import trans
+
 from ._context_keys import ContextNamespace
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
 
-    from ...layers import Layer
-    from ...utils.events import Selection
+    from napari.layers import Layer
+    from napari.utils.events import Selection
 
     LayerSel = Selection[Layer]
 
@@ -23,13 +24,13 @@ def _len(s: LayerSel) -> int:
 
 
 def _all_linked(s: LayerSel) -> bool:
-    from ...layers.utils._link_layers import layer_is_linked
+    from napari.layers.utils._link_layers import layer_is_linked
 
     return bool(s and all(layer_is_linked(x) for x in s))
 
 
 def _n_unselected_links(s: LayerSel) -> int:
-    from ...layers.utils._link_layers import get_linked_layers
+    from napari.layers.utils._link_layers import get_linked_layers
 
     return len(get_linked_layers(*s) - s)
 

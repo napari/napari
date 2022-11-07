@@ -2,8 +2,9 @@
 """
 import logging
 
-from ....utils.events import Event
-from ...layerlist import LayerList
+from napari.components.layerlist import LayerList
+from napari.utils.events import Event
+
 from ._commands import RemoteCommands
 from ._messages import RemoteMessages
 

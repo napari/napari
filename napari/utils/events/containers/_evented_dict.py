@@ -1,8 +1,9 @@
 """MutableMapping that emits events when altered."""
 from typing import Mapping, Sequence, Type, Union
 
-from ..event import EmitterGroup, Event
-from ..types import SupportsEvents
+from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.types import SupportsEvents
+
 from ._dict import _K, _T, TypedMutableMapping
 
 

@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from warnings import warn
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 try:
     from qtpy import API_NAME, QT_VERSION, QtCore

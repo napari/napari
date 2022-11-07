@@ -9,7 +9,8 @@ from vispy.color import BaseColormap as VispyColormap
 from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 from vispy.color.colormap import LUT_len
 
-from ..translations import trans
+from napari.utils.translations import trans
+
 from .bop_colors import bopd
 from .colormap import Colormap, ColormapInterpolationMode
 from .inverse_colormaps import inverse_cmaps

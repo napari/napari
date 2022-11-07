@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
-from ....utils.translations import trans
+from napari.utils.translations import trans
+
 from ._octree_loader import OctreeLoader
 from .octree import Octree
 from .octree_intersection import OctreeIntersection, OctreeView
@@ -20,11 +21,12 @@ from .octree_util import OctreeMetadata
 LOGGER = logging.getLogger("napari.octree.slice")
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import (
+    from napari.components.experimental.chunk import (
         ChunkRequest,
         LayerRef,
         OctreeLocation,
     )
+
     from .octree_chunk import OctreeChunk
 
 

@@ -6,7 +6,7 @@ import bisect
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Dict, List
 
-from ....utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from ._pool import DoneCallback, LoaderPool

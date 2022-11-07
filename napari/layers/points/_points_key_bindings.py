@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from app_model.types import KeyCode, KeyMod
 
-from napari.utils.notifications import show_info
-
-from ...layers.utils.layer_utils import (
+from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from ...utils.translations import trans
+from napari.utils.notifications import show_info
+from napari.utils.translations import trans
+
 from ._points_constants import Mode
 from .points import Points
 

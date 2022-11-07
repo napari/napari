@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
-from ...components.layerlist import LayerList
-from ...utils.events import SelectableEventedList
-from ...utils.translations import trans
-from ...utils.tree import Group
+from napari.components.layerlist import LayerList
+from napari.utils.events import SelectableEventedList
+from napari.utils.translations import trans
+from napari.utils.tree import Group
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget

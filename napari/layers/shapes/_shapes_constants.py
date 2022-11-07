@@ -1,7 +1,8 @@
 import sys
 from enum import auto
 
-from ...utils.misc import StringEnum
+from napari.utils.misc import StringEnum
+
 from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 
 

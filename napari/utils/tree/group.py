@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import Generator, Iterable, List, TypeVar, Union
 
-from ..events.containers._nested_list import MaybeNestedIndex
-from ..events.containers._selectable_list import SelectableNestableEventedList
+from napari.utils.events.containers._nested_list import MaybeNestedIndex
+from napari.utils.events.containers._selectable_list import (
+    SelectableNestableEventedList,
+)
+
 from .node import Node
 
 NodeType = TypeVar("NodeType", bound=Node)

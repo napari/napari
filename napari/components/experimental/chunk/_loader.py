@@ -9,8 +9,9 @@ from concurrent.futures import Future
 from contextlib import contextmanager
 from typing import Callable, Dict, List, Optional, Tuple
 
-from ....utils.config import octree_config
-from ....utils.events import EmitterGroup
+from napari.utils.config import octree_config
+from napari.utils.events import EmitterGroup
+
 from ._cache import ChunkCache
 from ._info import LayerInfo, LoadType
 from ._pool_group import LoaderPoolGroup

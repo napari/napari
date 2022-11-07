@@ -1,4 +1,5 @@
-from ..visuals.tracks import TracksVisual
+from napari._vispy.visuals.tracks import TracksVisual
+
 from .base import VispyBaseLayer
 
 

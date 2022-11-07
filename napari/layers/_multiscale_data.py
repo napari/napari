@@ -4,7 +4,8 @@ from typing import List, Sequence, Tuple, Union
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
+
 from ._data_protocols import LayerDataProtocol, assert_protocol
 
 

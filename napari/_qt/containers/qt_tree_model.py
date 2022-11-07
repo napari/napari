@@ -4,8 +4,9 @@ from typing import List, Optional, Tuple, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ...utils.translations import trans
-from ...utils.tree import Group, Node
+from napari.utils.translations import trans
+from napari.utils.tree import Group, Node
+
 from ._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)

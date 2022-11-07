@@ -2,7 +2,8 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
+
 from ._text_constants import Anchor
 
 

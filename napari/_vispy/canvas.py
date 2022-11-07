@@ -4,7 +4,8 @@ from weakref import WeakSet
 
 from vispy.scene import SceneCanvas, Widget
 
-from ..utils.colormaps.standardize_color import transform_color
+from napari.utils.colormaps.standardize_color import transform_color
+
 from .utils.gl import get_max_texture_sizes
 
 
@@ -59,7 +60,7 @@ class VispyCanvas(SceneCanvas):
         self._set_theme_change(event.value)
 
     def _set_theme_change(self, theme: str):
-        from ..utils.theme import get_theme
+        from napari.utils.theme import get_theme
 
         # Note 1. store last requested theme color, in case we need to reuse it
         # when clearing the background_color_override, without needing to

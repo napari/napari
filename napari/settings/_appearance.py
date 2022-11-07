@@ -1,8 +1,9 @@
 from pydantic import Field
 
-from ..utils.events.evented_model import EventedModel
-from ..utils.theme import available_themes
-from ..utils.translations import trans
+from napari.utils.events.evented_model import EventedModel
+from napari.utils.theme import available_themes
+from napari.utils.translations import trans
+
 from ._fields import Theme
 
 

@@ -12,39 +12,39 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from napari_builtins.io import imsave_extensions
-
-from ..components.camera import Camera
-from ..components.layerlist import LayerList
-from ..components.overlays._interaction_box_mouse_bindings import (
+from napari.components.camera import Camera
+from napari.components.layerlist import LayerList
+from napari.components.overlays._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
-from ..errors import MultipleReaderError, ReaderPluginError
-from ..layers.base.base import Layer
-from ..plugins import _npe2
-from ..settings import get_settings
-from ..utils import config, perf
-from ..utils._proxies import ReadOnlyWrapper
-from ..utils.action_manager import action_manager
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.history import (
+from napari.errors import MultipleReaderError, ReaderPluginError
+from napari.layers.base.base import Layer
+from napari.plugins import _npe2
+from napari.settings import get_settings
+from napari.utils import config, perf
+from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils.action_manager import action_manager
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.history import (
     get_open_history,
     get_save_history,
     update_open_history,
     update_save_history,
 )
-from ..utils.interactions import (
+from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
-from ..utils.io import imsave
-from ..utils.key_bindings import KeymapHandler
-from ..utils.misc import in_ipython
-from ..utils.theme import get_theme
-from ..utils.translations import trans
+from napari.utils.io import imsave
+from napari.utils.key_bindings import KeymapHandler
+from napari.utils.misc import in_ipython
+from napari.utils.theme import get_theme
+from napari.utils.translations import trans
+from napari_builtins.io import imsave_extensions
+
 from .containers import QtLayerList
 from .dialogs.qt_reader_dialog import handle_gui_reading
 from .dialogs.screenshot_dialog import ScreenshotDialog
@@ -55,7 +55,7 @@ from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
 
-from .._vispy import (  # isort:skip
+from napari._vispy import (  # isort:skip
     VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
@@ -69,7 +69,8 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
 
-    from ..components import ViewerModel
+    from napari.components import ViewerModel
+
     from .layer_controls import QtLayerControlsContainer
 
 
@@ -849,7 +850,9 @@ class QtViewer(QSplitter):
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
-        from ..layers.image.experimental.octree_image import _OctreeImageBase
+        from napari.layers.image.experimental.octree_image import (
+            _OctreeImageBase,
+        )
 
         for layer in self.viewer.layers:
             if isinstance(layer, _OctreeImageBase):
@@ -1223,7 +1226,8 @@ class QtViewer(QSplitter):
 
 
 if TYPE_CHECKING:
-    from ..components.experimental.remote import RemoteManager
+    from napari.components.experimental.remote import RemoteManager
+
     from .experimental.qt_poll import QtPoll
 
 
@@ -1277,8 +1281,8 @@ def _create_remote_manager(
     if not config.monitor:
         return None  # Not using the monitor at all
 
-    from ..components.experimental.monitor import monitor
-    from ..components.experimental.remote import RemoteManager
+    from napari.components.experimental.monitor import monitor
+    from napari.components.experimental.remote import RemoteManager
 
     # Start the monitor so we can access its events. The monitor has no
     # dependencies to napari except to utils.Event.

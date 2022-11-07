@@ -4,8 +4,9 @@ from typing import Sequence
 import numpy as np
 import toolz as tz
 
-from ...utils.translations import trans
-from ..events import EventedList
+from napari.utils.events import EventedList
+from napari.utils.translations import trans
+
 from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,

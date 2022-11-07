@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtWidgets import QTreeView
 
-from ...utils.tree import Group, Node
+from napari.utils.tree import Group, Node
+
 from ._base_item_view import _BaseEventedItemView
 from .qt_tree_model import QtNodeTreeModel
 

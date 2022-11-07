@@ -1,6 +1,7 @@
 from pydantic import Field
 
-from ...utils.events import EventedModel
+from napari.utils.events import EventedModel
+
 from .interaction_box import InteractionBox
 
 

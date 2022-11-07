@@ -41,10 +41,11 @@ from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from ..._app_model.constants import MenuId
-from ..._app_model.context import get_context
-from .._qapp_model import build_qmodel_menu
-from ..qt_resources import QColoredSVGIcon
+from napari._app_model.constants import MenuId
+from napari._app_model.context import get_context
+from napari._qt._qapp_model import build_qmodel_menu
+from napari._qt.qt_resources import QColoredSVGIcon
+
 from ._base_item_model import ItemRole
 from .qt_layer_model import ThumbnailRole
 
@@ -53,7 +54,7 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
-    from ...components.layerlist import LayerList
+    from napari.components.layerlist import LayerList
 
 
 class LayerDelegate(QStyledItemDelegate):

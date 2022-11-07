@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from .group import Group

@@ -368,7 +368,7 @@ def show_console_notification(notification: Notification):
     Show a notification in the console.
     """
     try:
-        from ..settings import get_settings
+        from napari.settings import get_settings
 
         if (
             notification.severity

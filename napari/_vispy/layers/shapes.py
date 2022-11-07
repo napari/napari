@@ -1,10 +1,11 @@
 import numpy as np
 
-from ...settings import get_settings
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text
-from ..visuals.shapes import ShapesVisual
+from napari._vispy.utils.gl import BLENDING_MODES
+from napari._vispy.utils.text import update_text
+from napari._vispy.visuals.shapes import ShapesVisual
+from napari.settings import get_settings
+from napari.utils.events import disconnect_events
+
 from .base import VispyBaseLayer
 
 

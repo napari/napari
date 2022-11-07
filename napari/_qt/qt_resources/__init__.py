@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import List, Optional
 
-from ...settings import get_settings
+from napari.settings import get_settings
+
 from ._svg import QColoredSVGIcon
 
 __all__ = ['get_stylesheet', 'QColoredSVGIcon']
@@ -42,7 +43,7 @@ def get_stylesheet(
                 stylesheet += f.read()
 
     if theme:
-        from ...utils.theme import get_theme, template
+        from napari.utils.theme import get_theme, template
 
         return template(stylesheet, **get_theme(theme, as_dict=True))
 

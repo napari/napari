@@ -3,12 +3,13 @@ from typing import Sequence, Union
 
 import numpy as np
 
-from ...utils.geometry import (
+from napari.utils.geometry import (
     inside_triangles,
     intersect_line_with_triangles,
     line_in_triangles_3d,
 )
-from ...utils.translations import trans
+from napari.utils.translations import trans
+
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
 from ._shapes_models import Line, Path, Shape

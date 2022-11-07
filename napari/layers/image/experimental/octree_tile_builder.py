@@ -9,7 +9,8 @@ import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
 
-from ....utils.perf import block_timer
+from napari.utils.perf import block_timer
+
 from .octree_util import NormalNoise
 
 LOGGER = logging.getLogger("napari.octree")
