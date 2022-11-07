@@ -140,13 +140,29 @@ class PluginListItem(QFrame):
             p = p.parent()
         return p
 
-    def set_busy(self, text: str, update: bool = False):
+    def set_busy(
+        self, text: str, action_name: str = None, update: bool = False
+    ):
         self.item_status.setText(text)
-        self.cancel_btn.setVisible(True)
-        if not update:
-            self.action_button.setVisible(False)
-        else:
+        if action_name == 'install' and update is True:
             self.update_btn.setVisible(False)
+            self.cancel_btn.setVisible(True)
+            self.action_button.setVisible(False)
+            self.old_action = 'update'
+        elif (
+            action_name == 'uninstall' or action_name == 'install'
+        ) and update is False:
+            self.update_btn.setVisible(False)
+            self.action_button.setVisible(False)
+            self.cancel_btn.setVisible(True)
+            self.old_action = action_name
+        elif action_name == 'cancel':
+            if self.old_action != 'install':
+                self.update_btn.setVisible(True)
+                self.update_btn.setDisabled(False)
+            self.action_button.setVisible(True)
+            self.action_button.setDisabled(False)
+            self.cancel_btn.setVisible(False)
 
     def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
@@ -296,7 +312,7 @@ class PluginListItem(QFrame):
         )
         self.info_choice_wdg.hide()
 
-        self.cancel_btn = QPushButton("cancel", self)
+        self.cancel_btn = QPushButton("Cancel", self)
         self.cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.cancel_btn.setObjectName("remove_button")
         self.row2.addWidget(
@@ -456,7 +472,8 @@ class QPluginList(QListWidget):
         widg.action_button.clicked.connect(
             partial(self.handle_action, item, pkg_name, action_name,
                 version=widg.version_choice_dropdown.currentText(),
-                installer_choice=widg.source_choice_dropdown.currentText()
+                installer_choice=widg.source_choice_dropdown.currentText(),
+                update=False,
             )
         )
 
@@ -530,10 +547,11 @@ class QPluginList(QListWidget):
                 if hasattr(item, 'latest_version'):
                     pkg_name += f"=={item.latest_version}"
 
-                widget.set_busy(trans._("updating..."), update)
+                widget.set_busy(trans._("updating..."), action_name, update)
                 widget.action_button.setDisabled(True)
             else:
                 widget.set_busy(trans._("installing..."), update)
+                widget.set_busy(trans._("installing..."), action_name, update)
 
             job_id = self.installer.install(
                 tool=tool,
@@ -544,7 +562,7 @@ class QPluginList(QListWidget):
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.UNINSTALL:
-            widget.set_busy(trans._("uninstalling..."), update)
+            widget.set_busy(trans._("uninstalling..."), action_name, False)
             widget.update_btn.setDisabled(True)
             job_id = self.installer.uninstall(
                 tool=tool,
@@ -556,7 +574,7 @@ class QPluginList(QListWidget):
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.CANCEL:
-            widget.set_busy(trans._("cancelling..."), update)
+            widget.set_busy(trans._("cancelling..."), action_name, False)
             try:
                 job_id = widget.property("current_job_id")
                 self.installer.cancel(job_id)
