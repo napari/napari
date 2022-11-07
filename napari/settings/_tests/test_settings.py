@@ -311,6 +311,10 @@ def test_get_prev_ver_settings(monkeypatch, tmp_path):
     prev_path = tmp_path / '0.4.18' / 'settings.yaml'
     prev_path.parent.mkdir(parents=True, exist_ok=True)
     prev_path.write_text(data)
+    data = "appearance:\n   theme: system"
+    next_path = tmp_path / '0.4.20' / 'settings.yaml'
+    next_path.parent.mkdir(parents=True, exist_ok=True)
+    next_path.write_text(data)
     # current path based on napari version
     current_path = tmp_path / '0.4.19' / 'settings.yaml'
     assert NapariSettings(current_path).appearance.theme == "light"
