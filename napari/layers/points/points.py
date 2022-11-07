@@ -38,7 +38,6 @@ from ._points_utils import (
 )
 from ._slice import _PointSliceRequest, _PointSliceResponse
 
-
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
