@@ -301,27 +301,30 @@ def test_get_settings(tmp_path):
     assert str(s.config_path) == str(p)
 
 
-# test fallback loading from previous version
 def test_get_prev_ver_settings(monkeypatch, tmp_path):
+    """This test tests fallback to previous version settings"""
     import napari.utils._appdirs
 
+    # set the current version to 0.4.19 for testing
     monkeypatch.setattr(napari.utils._appdirs, 'version_string', '0.4.19')
     # prep a settings file for the previous version
     data = "appearance:\n   theme: light"
     prev_path = tmp_path / '0.4.18' / 'settings.yaml'
     prev_path.parent.mkdir(parents=True, exist_ok=True)
     prev_path.write_text(data)
+    # prep a settings file for a newer version than current
     data = "appearance:\n   theme: system"
     next_path = tmp_path / '0.4.20' / 'settings.yaml'
     next_path.parent.mkdir(parents=True, exist_ok=True)
     next_path.write_text(data)
     # current path based on napari version
     current_path = tmp_path / '0.4.19' / 'settings.yaml'
+    # ensure that previous (older) version settings are used
     assert NapariSettings(current_path).appearance.theme == "light"
 
 
-# test fallback loading from parent (napari) directory
 def test_get_parent_ver_settings(tmp_path):
+    """This test tests fallback to the parent directory, napari"""
     # prep a settings file in the parent directory
     data = "appearance:\n   theme: light"
     prev_path = tmp_path / 'settings.yaml'
@@ -329,6 +332,7 @@ def test_get_parent_ver_settings(tmp_path):
     prev_path.write_text(data)
     # current path based on napari version
     current_path = tmp_path / '0.4.18' / 'settings.yaml'
+    # ensure that the settings in the napari directory are used
     assert NapariSettings(current_path).appearance.theme == "light"
 
 
