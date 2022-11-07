@@ -361,17 +361,17 @@ def config_file_settings_source(
     """
     # _config_path is the primary config file on the model (the one to save to)
     config_path = getattr(settings, '_config_path', None)
-
+    config_path_Path = Path(config_path)
     default_cfg = type(settings).__private_attributes__.get('_config_path')
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
     sources = list(getattr(settings.__config__, 'sources', []))
-    if config_path and Path(config_path).exists():
+    if config_path and config_path_Path.exists():
         sources.append(config_path)
-    elif config_path and Path(config_path).parent.parent.exists():
+    elif config_path and config_path_Path.parent.parent.exists():
         # check for previous version directory
-        napari_dir = Path(config_path).parent.parent
+        napari_dir = config_path_Path.parent.parent
         napari_versions = (
             (version.Version(dir.name), dir)
             for dir in napari_dir.iterdir()
@@ -386,12 +386,10 @@ def config_file_settings_source(
         if napari_lower_version:
             # use the path of the most recent version
             sources.append(
-                str(
-                    napari_lower_version[0][1].joinpath(Path(config_path).name)
-                )
+                str(napari_lower_version[0][1].joinpath(config_path_Path.name))
             )
         else:  # Check for parent directory (napari)
-            sources.append(str(napari_dir.joinpath(Path(config_path).name)))
+            sources.append(str(napari_dir.joinpath(config_path_Path.name)))
 
     if not sources:
         return {}
