@@ -29,7 +29,10 @@ def _iter_napari_hub_or_pypi_plugin_info(
         "license": "UNKNOWN",
     }
     for i in range(2):
-        yield PackageMetadata(name=f"test-name-{i}", **base_data), bool(i)
+        yield PackageMetadata(name=f"test-name-{i}", **base_data), bool(i), [
+            '1',
+            '2',
+        ], ['3', '4.5']
 
 
 @pytest.fixture
