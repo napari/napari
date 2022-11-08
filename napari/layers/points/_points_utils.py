@@ -262,7 +262,9 @@ def coerce_symbols(array: np.ndarray) -> np.ndarray:
     array : np.ndarray
         Array of strings matching Symbol values.
     """
-    array = array.astype(f'U{SYMBOL_STR_SIZE}')
+    dtype = f'U{SYMBOL_STR_SIZE}'
+    array = array.astype(dtype, copy=True)
     for k, v in SYMBOL_ALIAS.items():
         array[(array == k) | (array == k.upper())] = v
-    return np.vectorize(Symbol.__getitem__)(array).astype(str)
+    # otypes necessary for empty arrays
+    return np.vectorize(Symbol.__getitem__, otypes=[dtype])(array)
