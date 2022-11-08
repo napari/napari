@@ -131,7 +131,7 @@ def select_all_data(layer: Points):
     layer._set_highlight()
 
 
-@register_points_action(trans._('Delete selected points'))
+@register_points_action(trans._('Delete selected points'), repeatable=True)
 def delete_selected_points(layer: Points):
     """Delete all selected points."""
     layer.remove_selected()

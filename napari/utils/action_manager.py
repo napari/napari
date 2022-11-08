@@ -72,7 +72,7 @@ class ActionManager:
 
     >>> action_manager.register_action('bump one', callback,
     ...     'Add one to dims',
-    ...     None)
+    ...     None, False)
 
     The callback signature is going to be inspected and required globals passed
     in.
@@ -86,7 +86,7 @@ class ActionManager:
         self._shortcuts: Dict[str, List[str]] = defaultdict(list)
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
-        self.events = EmitterGroup(source=self, shorcut_changed=None)
+        self.events = EmitterGroup(source=self, shortcut_changed=None)
 
     def _debug(self, val):
         self._tooltip_include_action_name = val
@@ -237,7 +237,9 @@ class ActionManager:
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)
-        self.events.shorcut_changed.connect(_update_tt, until=until)
+        self.events.shortcut_changed.connect(_update_tt, until=until)
+        for shortcut in self._shortcuts[name]:
+            self._emit_shortcut_change(name, shortcut)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
         """
@@ -309,11 +311,12 @@ class ActionManager:
 
     def _emit_shortcut_change(self, name: str, shortcut=''):
         tt = self._build_tooltip(name) if name in self._actions else ''
-        self.events.shorcut_changed(name=name, shortcut=shortcut, tooltip=tt)
+        self.events.shortcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
     def _build_tooltip(self, name: str) -> str:
         """Build tooltip for action `name`."""
         ttip = self._actions[name].description
+        repeatable = self._actions[name].repeatable
 
         if name in self._shortcuts:
             jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
@@ -321,6 +324,18 @@ class ActionManager:
             ttip += f' ({shorts})'
 
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
+        if (
+            not repeatable
+            and name in self._shortcuts
+            and self._shortcuts[name]
+        ):
+            if len(self._shortcuts[name]) > 1:
+                ttip += trans._(
+                    "\nHold either shortcut to temporarily activate"
+                )
+            else:
+                ttip += trans._("\nHold shortcut to temporarily activate")
+
         return ttip
 
     def _get_layer_shortcuts(self, layers) -> dict:

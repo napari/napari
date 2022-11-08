@@ -79,7 +79,7 @@ class QtWelcomeWidget(QWidget):
 
         self.setLayout(layout)
         self._show_shortcuts_updated()
-        action_manager.events.shorcut_changed.connect(
+        action_manager.events.shortcut_changed.connect(
             self._show_shortcuts_updated
         )
 

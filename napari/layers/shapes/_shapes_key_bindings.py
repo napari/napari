@@ -158,7 +158,7 @@ def select_all_shapes(layer: Shapes):
         layer._set_highlight()
 
 
-@register_shapes_action(trans._('Delete any selected shapes'))
+@register_shapes_action(trans._('Delete any selected shapes'), repeatable=True)
 def delete_selected_shapes(layer: Shapes):
     """."""
 

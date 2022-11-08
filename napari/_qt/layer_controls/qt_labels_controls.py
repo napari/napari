@@ -173,17 +173,21 @@ class QtLabelsControls(QtLayerControls):
             checked=True,
         )
         action_manager.bind_button(
-            'napari:activate_label_pan_zoom_mode', self.panzoom_button
+            'napari:activate_label_pan_zoom_mode',
+            self.panzoom_button,
+            extra_tooltip_text=trans._("\n(or Space)"),
         )
 
         self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
         action_manager.bind_button(
-            'napari:activate_label_picker_mode', self.pick_button
+            'napari:activate_label_picker_mode',
+            self.pick_button,
         )
 
         self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
         action_manager.bind_button(
-            'napari:activate_paint_mode', self.paint_button
+            'napari:activate_paint_mode',
+            self.paint_button,
         )
 
         self.fill_button = QtModeRadioButton(
@@ -218,12 +222,12 @@ class QtLabelsControls(QtLayerControls):
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
-        button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
         button_row.addWidget(self.paint_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
+        button_row.addWidget(self.colormapUpdate)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
