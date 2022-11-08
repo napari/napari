@@ -27,6 +27,7 @@ def init_qactions() -> None:
     from ...qt_viewer import QtViewer
     from ._help import Q_HELP_ACTIONS
     from ._view import Q_VIEW_ACTIONS
+    from ._window import Q_WINDOW_ACTIONS
 
     # update the namespace with the Qt-specific types/providers/processors
     app = get_app()
@@ -49,5 +50,5 @@ def init_qactions() -> None:
             return _qmainwin._qt_viewer
 
     # register actions
-    for action in chain(Q_VIEW_ACTIONS, Q_HELP_ACTIONS):
+    for action in chain(Q_VIEW_ACTIONS, Q_WINDOW_ACTIONS, Q_HELP_ACTIONS):
         app.register_action(action)

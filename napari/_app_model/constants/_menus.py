@@ -21,6 +21,8 @@ class MenuId(str, Enum):
     VIEW_AXES = 'napari/view/axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
 
+    MENUBAR_WINDOW = 'napari/window'
+
     MENUBAR_HELP = 'napari/help'
 
     LAYERLIST_CONTEXT = 'napari/layers/context'

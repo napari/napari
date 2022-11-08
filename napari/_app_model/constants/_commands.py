@@ -35,11 +35,16 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
+    # Window menubar
+    TOGGLE_CONSOLE = "napari:window:window:toggle_window_console"
+    TOGGLE_LAYER_CONTROLS = "napari:window:window:toggle_layer_controls"
+    TOGGLE_LAYER_LIST = "napari:window:window:toggle_layer_list"
+
     # Help menubar
     NAPARI_INFO = 'napari:window:help:info'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
-    # Layer menubar
+    # Right click layer menu
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
@@ -101,12 +106,16 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR: _i(trans._('Scale Bar Visible')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
+    # Window menubar
+    CommandId.TOGGLE_CONSOLE: _i(trans._('Console')),
+    CommandId.TOGGLE_LAYER_CONTROLS: _i(trans._('Layer Controls')),
+    CommandId.TOGGLE_LAYER_LIST: _i(trans._('Layer List')),
 
     # Help menubar
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
 
-    # Layer menubar
+    # Right click layer menu
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),
     CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
