@@ -27,10 +27,11 @@ from ..utils.layer_utils import (
     _unique_element,
 )
 from ..utils.text_manager import TextManager
-from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
+from ._points_constants import Mode, Shading
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import (
     _create_box_from_corners_3d,
+    coerce_symbols,
     create_box,
     fix_data_points,
     points_to_squares,
@@ -64,8 +65,8 @@ class Points(Layer):
         A dictionary can be provided with keyword arguments to set the text values
         and display properties. See TextManager.__init__() for the valid keyword arguments.
         For example usage, see /napari/examples/add_points_with_text.py.
-    symbol : str
-        Symbol to be used for the point markers. Must be one of the
+    symbol : str, array
+        Symbols to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
     size : float, array
@@ -171,8 +172,8 @@ class Points(Layer):
         that property will be displayed. Multiple properties can be composed using f-string-like
         syntax (e.g., '{property_1}, {float_property:.2f}).
         For example usage, see /napari/examples/add_points_with_text.py.
-    symbol : str
-        Symbol used for all point markers.
+    symbol : str, array
+        Array of symbols for each point.
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
@@ -204,6 +205,8 @@ class Points(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    current_symbol : Symbol
+        Symbol for the next point to be added or the currently selected points.
     current_size : float
         Size of the marker for the next point to be added or the currently
         selected point.
@@ -261,6 +264,8 @@ class Points(Layer):
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
+    _view_symbol : array (M, )
+        Symbols of the point markers in the currently viewed slice.
     _view_edge_width : array (M, )
         Edge width of the point markers in the currently viewed slice.
     _indices_view : array (M, )
@@ -385,6 +390,13 @@ class Points(Layer):
         self._edge_width_is_relative = False
         self._shown = np.empty(0).astype(bool)
 
+        # Indices of selected points
+        self._selected_data = set()
+        self._selected_data_stored = set()
+        self._selected_data_history = set()
+        # Indices of selected points within the currently viewed slice
+        self._selected_view = []
+
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
@@ -393,12 +405,10 @@ class Points(Layer):
         self._current_edge_width = (
             np.asarray(edge_width) if np.isscalar(edge_width) else 0.1
         )
-        # Indices of selected points
-        self._selected_data = set()
-        self._selected_data_stored = set()
-        self._selected_data_history = set()
-        # Indices of selected points within the currently viewed slice
-        self._selected_view = []
+        self.current_symbol = (
+            np.asarray(symbol) if np.isscalar(symbol) else 'o'
+        )
+
         # Index of hovered point
         self._value = None
         self._value_stored = None
@@ -515,6 +525,12 @@ class Points(Layer):
                             [new_edge_width], adding, axis=0
                         )
 
+                        if len(self._symbol) > 0:
+                            new_symbol = copy(self._symbol[-1])
+                        else:
+                            new_symbol = self.current_symbol
+                        symbol = np.repeat([new_symbol], adding, axis=0)
+
                         # add new colors
                         self._edge._add(n_colors=adding)
                         self._face._add(n_colors=adding)
@@ -527,6 +543,9 @@ class Points(Layer):
                         self.size = np.concatenate((self._size, size), axis=0)
                         self.edge_width = np.concatenate(
                             (self._edge_width, edge_width), axis=0
+                        )
+                        self.symbol = np.concatenate(
+                            (self._symbol, symbol), axis=0
                         )
                         self.selected_data = set(
                             np.arange(cur_npoints, len(data))
@@ -708,21 +727,29 @@ class Points(Layer):
         self.out_of_slice_display = value
 
     @property
-    def symbol(self) -> str:
+    def symbol(self) -> np.ndarray:
         """str: symbol used for all point markers."""
-        return str(self._symbol)
+        return self._symbol
 
     @symbol.setter
-    def symbol(self, symbol: Union[str, Symbol]) -> None:
-        if isinstance(symbol, str):
-            # Convert the alias string to the deduplicated string
-            if symbol in SYMBOL_ALIAS:
-                symbol = SYMBOL_ALIAS[symbol]
-            else:
-                symbol = Symbol(symbol)
-        self._symbol = symbol
+    def symbol(self, symbol: Union[str, np.ndarray, list]) -> None:
+        symbol = np.broadcast_to(symbol, self.data.shape[0])
+        self._symbol = coerce_symbols(symbol)
         self.events.symbol()
         self.events.highlight()
+
+    @property
+    def current_symbol(self) -> Union[int, float]:
+        """float: symbol of marker for the next added point."""
+        return self._current_symbol
+
+    @current_symbol.setter
+    def current_symbol(self, symbol: Union[None, float]) -> None:
+        symbol = coerce_symbols(np.array([symbol]))[0]
+        self._current_symbol = symbol
+        if self._update_properties and len(self.selected_data) > 0:
+            self.symbol[list(self.selected_data)] = symbol
+            self.events.symbol()
 
     @property
     def size(self) -> np.ndarray:
@@ -1238,6 +1265,9 @@ class Points(Layer):
         ) is not None:
             with self.block_update_properties():
                 self.current_edge_width = unique_edge_width
+        if (unique_symbol := _unique_element(self.symbol[index])) is not None:
+            with self.block_update_properties():
+                self.current_symbol = unique_symbol
 
         unique_properties = {}
         for k, v in self.properties.items():
@@ -1413,6 +1443,17 @@ class Points(Layer):
             # if no points, return an empty list
             sizes = np.array([])
         return sizes
+
+    @property
+    def _view_symbol(self) -> np.ndarray:
+        """Get the symbols of the points in view
+
+        Returns
+        -------
+        symbol : (N,) np.ndarray
+            Array of symbol strings for the N points in view
+        """
+        return self.symbol[self._indices_view]
 
     @property
     def _view_edge_width(self) -> np.ndarray:

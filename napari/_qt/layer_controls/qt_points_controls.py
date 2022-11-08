@@ -114,17 +114,23 @@ class QtPointsControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-        self.symbolComboBox = QComboBox()
+        sym_cb = QComboBox()
+        sym_cb.setToolTip(
+            trans._(
+                "Change the symbol of currently selected points and any added afterwards."
+            )
+        )
         current_index = 0
         for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
             data = data.value
-            self.symbolComboBox.addItem(text, data)
+            sym_cb.addItem(text, data)
 
-            if data == self.layer.symbol:
+            if np.all(data == self.layer.symbol):
                 current_index = index
 
-        self.symbolComboBox.setCurrentIndex(current_index)
-        self.symbolComboBox.currentTextChanged.connect(self.changeSymbol)
+        sym_cb.setCurrentIndex(current_index)
+        sym_cb.currentTextChanged.connect(self.changeSymbol)
+        self.symbolComboBox = sym_cb
 
         self.outOfSliceCheckBox = QCheckBox()
         self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
@@ -225,7 +231,7 @@ class QtPointsControls(QtLayerControls):
         text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
-        self.layer.symbol = self.symbolComboBox.currentData()
+        self.layer.current_symbol = text
 
     def changeSize(self, value):
         """Change size of points on the layer model.
@@ -273,7 +279,7 @@ class QtPointsControls(QtLayerControls):
         """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
-                self.symbolComboBox.findData(self.layer.symbol)
+                self.symbolComboBox.findData(self.layer.current_symbol)
             )
 
     def _on_size_change(self):

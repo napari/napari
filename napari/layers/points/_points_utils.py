@@ -4,6 +4,7 @@ import numpy as np
 
 from ...utils.geometry import project_points_onto_plane
 from ...utils.translations import trans
+from ._points_constants import SYMBOL_ALIAS, SYMBOL_STR_SIZE, Symbol
 
 
 def _create_box_from_corners_3d(
@@ -248,3 +249,20 @@ def fix_data_points(
             )
         ndim = data_ndim
     return points, ndim
+
+
+def coerce_symbols(array: np.ndarray) -> np.ndarray:
+    """
+    Parse an array of symbols and convert it to the correct strings.
+
+    Ensures that all strings are valid symbols and converts aliases.
+
+    Parameters
+    ----------
+    array : np.ndarray
+        Array of strings matching Symbol values.
+    """
+    array = array.astype(f'U{SYMBOL_STR_SIZE}')
+    for k, v in SYMBOL_ALIAS.items():
+        array[(array == k) | (array == k.upper())] = v
+    return np.vectorize(Symbol.__getitem__)(array).astype(str)
