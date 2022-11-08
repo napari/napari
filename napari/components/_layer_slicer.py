@@ -80,7 +80,7 @@ class _LayerSlicer:
         """
         futures = self._layers_to_task.values()
         _, not_done_futures = wait(futures, timeout=timeout)
-        
+
         if len(not_done_futures) > 0:
             raise TimeoutError(
                 f'Slicing tasks did not complete within timeout ({timeout}s).'
