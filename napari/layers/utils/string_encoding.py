@@ -167,8 +167,8 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     def __call__(self, features: Any) -> StringArray:
         feature_names = features.columns.to_list()
         values = [
-            self.format.format(**dict(zip(feature_names, tuple_)))
-            for tuple_ in features.itertuples(index=False, name=None)
+            self.format.format(**dict(zip(feature_names, row)))
+            for row in features.itertuples(index=False, name=None)
         ]
         return np.array(values, dtype=str)
 
