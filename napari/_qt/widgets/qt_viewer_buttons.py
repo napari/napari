@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
-from ...utils.misc import in_ipython
+from ...utils.misc import in_ipython, in_jupyter
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from .qt_dims_sorter import QtDimsSorter
@@ -121,7 +121,7 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        if in_ipython():
+        if in_ipython() or in_jupyter():
             self.consoleButton.setEnabled(False)
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
