@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, validator
+from pydantic import Extra, Field, PrivateAttr, validator
 
 from .. import layers
 from ..errors import (
@@ -49,6 +49,7 @@ from ..utils.mouse_bindings import MousemapProvider
 from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
+from ._layer_slicer import _LayerSlicer
 from ._viewer_mouse_bindings import dims_scroll
 from .camera import Camera
 from .cursor import Cursor
@@ -143,6 +144,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
+
+    # Need to use default factory because slicer is not copyable which
+    # is required for default values.
+    _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
@@ -345,10 +350,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-        for layer in layers:
-            layer._slice_dims(
-                self.dims.point, self.dims.ndisplay, self.dims.order
-            )
+        self._layer_slicer.slice_layers_async(layers, self.dims)
+        # TODO: does this need to occur after all slicing has finished?
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
