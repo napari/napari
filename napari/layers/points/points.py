@@ -501,6 +501,7 @@ class Points(Layer):
                         self._shown = self._shown[: len(data)]
                         self._size = self._size[: len(data)]
                         self._edge_width = self._edge_width[: len(data)]
+                        self._symbol = self._symbol[: len(data)]
 
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
@@ -1186,7 +1187,9 @@ class Points(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'symbol': self.symbol,
+                'symbol': self.symbol
+                if self.data.size
+                else [self.current_symbol],
                 'edge_width': self.edge_width,
                 'edge_width_is_relative': self.edge_width_is_relative,
                 'face_color': self.face_color
@@ -1863,14 +1866,15 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def add(self, coord):
-        """Adds point at coordinate.
+    def add(self, coords):
+        """Adds points at coordinates.
 
         Parameters
         ----------
-        coord : sequence of indices to add point at
+        coords : array
+            Point or points to add to the layer data.
         """
-        self.data = np.append(self.data, np.atleast_2d(coord), axis=0)
+        self.data = np.append(self.data, np.atleast_2d(coords), axis=0)
 
     def remove_selected(self):
         """Removes selected points if any."""
@@ -1879,6 +1883,7 @@ class Points(Layer):
         if len(index):
             self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
+            self._symbol = np.delete(self._symbol, index, axis=0)
             self._edge_width = np.delete(self._edge_width, index, axis=0)
             with self._edge.events.blocker_all():
                 self._edge._remove(indices_to_remove=index)
@@ -1974,6 +1979,9 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
+            self._symbol = np.append(
+                self.symbol, deepcopy(self._clipboard['symbol']), axis=0
+            )
 
             self._feature_table.append(self._clipboard['features'])
 
@@ -2015,6 +2023,7 @@ class Points(Layer):
                 'face_color': deepcopy(self.face_color[index]),
                 'shown': deepcopy(self.shown[index]),
                 'size': deepcopy(self.size[index]),
+                'symbol': deepcopy(self.symbol[index]),
                 'edge_width': deepcopy(self.edge_width[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
