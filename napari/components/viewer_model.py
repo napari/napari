@@ -598,7 +598,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         interpolation3d='linear',
         rendering='mip',
         depiction='volume',
-        iso_threshold=0.5,
+        iso_threshold=None,
         attenuation=0.05,
         name=None,
         metadata=None,
