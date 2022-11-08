@@ -272,7 +272,7 @@ class _QtMainWindow(QMainWindow):
 
         # Toggling the console visibility is disabled when it is not
         # available, so ensure that it is hidden.
-        if in_ipython():
+        if in_ipython() or in_jupyter():
             self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
