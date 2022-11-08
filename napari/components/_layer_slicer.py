@@ -53,7 +53,7 @@ class _LayerSlicer:
     @contextmanager
     def force_sync(self):
         """Context manager to temporarily force slicing to be synchronous.
-        This should only be called from the main thread.
+        This should only be used from the main thread.
 
         >>> layer_slicer = _LayerSlicer()
         >>> layer = Image(...)  # an async-ready layer
@@ -79,11 +79,9 @@ class _LayerSlicer:
             not yet complete
         """
         futures = self._layers_to_task.values()
-        done, _ = wait(futures, timeout=timeout)
-
-        if done or not futures:
-            return
-        else:
+        _, not_done_futures = wait(futures, timeout=timeout)
+        
+        if len(not_done_futures) > 0:
             raise TimeoutError(
                 f'Slicing tasks did not complete within timeout ({timeout}s).'
             )
