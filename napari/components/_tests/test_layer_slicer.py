@@ -1,4 +1,4 @@
-from concurrent.futures import wait
+from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
 
@@ -64,9 +64,7 @@ class FakeAsyncLayer:
         return True
 
     def _slice_dims(self, *args, **kwargs) -> None:
-        raise NotImplementedError(
-            '_slice_dims is not available for async layers.'
-        )
+        return None
 
 
 class FakeSyncLayer:
@@ -284,14 +282,33 @@ def test_slice_layers_exception_subthread_on_result(layer_slicer):
         raise TimeoutError('Test future did not complete within timeout.')
 
 
-def test_wait_until_idle(layer_slicer):
+def test_wait_until_idle(layer_slicer, single_threaded_executor):
     dims = Dims()
     layer = FakeAsyncLayer()
 
-    layer_slicer.slice_layers_async(layers=[layer], dims=dims)
-    # depending on speed of execution, this may or may not pick up active futures
-    layer_slicer.wait_until_idle()
-    assert not layer_slicer._layers_to_task
+    with layer.lock:
+        slice_future = layer_slicer.slice_layers_async(
+            layers=[layer], dims=dims
+        )
+        _wait_until_running(slice_future)
+        # The slice task has started, but has not finished yet
+        # because we are holding the layer's slicing lock.
+        assert len(layer_slicer._layers_to_task) > 0
+        # We can't call wait_until_idle on this thread because we're
+        # holding the layer's slice lock, so submit it to be executed
+        # on another thread and also wait for it to start.
+        wait_future = single_threaded_executor.submit(
+            layer_slicer.wait_until_idle
+        )
+        _wait_until_running(wait_future)
+
+    wait_future.result()
+    assert len(layer_slicer._layers_to_task) == 0
+
+
+def _wait_until_running(future: Future):
+    while not future.running():
+        continue
 
 
 def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
@@ -299,8 +316,10 @@ def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
 
     with layer_slicer.force_sync():
         assert layer_slicer._force_sync
-        layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
+    assert layer.slice_count == 1
+    assert future.result() == {}
     assert not layer_slicer._force_sync
 
 
@@ -309,6 +328,7 @@ def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
 
     with layer_slicer.force_sync():
         assert layer_slicer._force_sync
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
-        with pytest.raises(NotImplementedError, match='not available'):
-            layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+    assert layer.slice_count == 0
+    assert future.result() == {}
