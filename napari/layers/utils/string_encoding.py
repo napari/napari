@@ -1,12 +1,5 @@
 from string import Formatter
-from typing import (
-    Any,
-    Literal,
-    Protocol,
-    Sequence,
-    Union,
-    runtime_checkable,
-)
+from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
 
 import numpy as np
 from pydantic import parse_obj_as
