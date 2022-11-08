@@ -1,1 +1,1 @@
-from .surface import Surface
+from napari.layers.surface.surface import Surface

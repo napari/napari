@@ -4,8 +4,8 @@ from typing import Any, Callable
 
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
-from ...utils.misc import in_ipython
-from ...utils.translations import trans
+from napari.utils.misc import in_ipython
+from napari.utils.translations import trans
 
 
 class ScreenshotDialog(QFileDialog):

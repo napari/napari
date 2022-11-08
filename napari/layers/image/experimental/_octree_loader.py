@@ -7,16 +7,16 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, List, Set
 
-from ._chunk_set import ChunkSet
-from .octree import Octree
+from napari.layers.image.experimental._chunk_set import ChunkSet
+from napari.layers.image.experimental.octree import Octree
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import (
+    from napari.components.experimental.chunk import (
         ChunkRequest,
         LayerRef,
         OctreeLocation,
     )
-    from .octree_chunk import OctreeChunk
+    from napari.layers.image.experimental.octree_chunk import OctreeChunk
 
 
 LOGGER = logging.getLogger("napari.octree.loader")
@@ -376,7 +376,7 @@ class OctreeLoader:
         # Mark that this chunk is being loaded.
         octree_chunk.loading = True
 
-        from ....components.experimental.chunk import (
+        from napari.components.experimental.chunk import (
             ChunkRequest,
             chunk_loader,
         )
@@ -418,7 +418,7 @@ class OctreeLoader:
             The set of chunks the loader can see.
         """
 
-        from ....components.experimental.chunk import chunk_loader
+        from napari.components.experimental.chunk import chunk_loader
 
         def _should_cancel(chunk_request: ChunkRequest) -> bool:
             """Cancel if we are no longer seeing this location."""

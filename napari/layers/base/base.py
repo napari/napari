@@ -13,35 +13,37 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import (
-    add_layer_to_viewer,
-    add_layers_to_viewer,
-    get_layers,
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils.interactivity_utils import (
+    drag_data_to_projected_distance,
 )
-from ...utils.events import EmitterGroup, Event
-from ...utils.events.event import WarningEmitter
-from ...utils.geometry import (
-    find_front_back_face,
-    intersect_line_with_axis_aligned_bounding_box_3d,
-)
-from ...utils.key_bindings import KeymapProvider
-from ...utils.mouse_bindings import MousemapProvider
-from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_coords_status
-from ...utils.transforms import Affine, CompositeAffine, TransformChain
-from ...utils.translations import trans
-from ..utils._slice_input import _SliceInput
-from ..utils.interactivity_utils import drag_data_to_projected_distance
-from ..utils.layer_utils import (
+from napari.layers.utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
     get_extent_world,
 )
-from ..utils.plane import ClippingPlane, ClippingPlaneList
-from ._base_constants import Blending
+from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+from napari.utils._dask_utils import configure_dask
+from napari.utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
+)
+from napari.utils.events import EmitterGroup, Event
+from napari.utils.events.event import WarningEmitter
+from napari.utils.geometry import (
+    find_front_back_face,
+    intersect_line_with_axis_aligned_bounding_box_3d,
+)
+from napari.utils.key_bindings import KeymapProvider
+from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.naming import magic_name
+from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.transforms import Affine, CompositeAffine, TransformChain
+from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -247,7 +249,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
 
         # Needs to be imported here to avoid circular import in _source
-        from .._source import current_source
+        from napari.layers._source import current_source
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -1685,7 +1687,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         list of str
             File paths of any files that were written.
         """
-        from ...plugins.io import save_layers
+        from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
 
@@ -1745,8 +1747,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         >>> Layer.create(*data)
 
         """
-        from ... import layers
-        from ..image._image_utils import guess_labels
+        from napari import layers
+        from napari.layers.image._image_utils import guess_labels
 
         layer_type = (layer_type or '').lower()
 

@@ -2,8 +2,8 @@ from typing import Union
 
 from pydantic import Field
 
-from ..utils.translations import trans
-from ._base import EventedSettings
+from napari.settings._base import EventedSettings
+from napari.utils.translations import trans
 
 
 # this class inherits from EventedSettings instead of EventedModel because
