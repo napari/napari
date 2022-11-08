@@ -12,6 +12,6 @@ updates:
   - package-ecosystem: "pip"
     directory: "/resources"
     schedule:
-      interval: "daily"
+      interval: "weekly"
 
     target-branch: "develop"
