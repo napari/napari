@@ -1,0 +1,3 @@
+mypy==0.982
+types-PyYAML==6.0.12.1
+types-setuptools==65.5.0.2
