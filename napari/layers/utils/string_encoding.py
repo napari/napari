@@ -1,7 +1,6 @@
 from string import Formatter
 from typing import (
     Any,
-    Dict,
     Literal,
     Protocol,
     Sequence,
