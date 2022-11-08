@@ -79,6 +79,12 @@ def is_conda_package(pkg: str):
 
 
 def is_conda_package(pkg):
+    """Determines if plugin was installed through conda.
+
+    Returns
+    -------
+    bool: True if a conda package, False if not
+    """
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
     for fname in conda_meta_dir.iterdir():
         if fname.suffix == '.json':
