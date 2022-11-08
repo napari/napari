@@ -40,7 +40,7 @@ from napari.utils.interactions import (
 )
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
-from napari.utils.misc import in_ipython
+from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
@@ -894,7 +894,7 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
-        if in_ipython():
+        if in_ipython() or in_jupyter():
             return
 
         # force instantiation of console if not already instantiated
