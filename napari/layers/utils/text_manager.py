@@ -222,7 +222,7 @@ class TextManager(EventedModel):
         self.color._append(color)
 
     def compute_text_coords(
-        self, view_data: np.ndarray, ndisplay: int
+        self, view_data: np.ndarray, ndisplay: int, order: Tuple[int, ...]
     ) -> Tuple[np.ndarray, str, str]:
         """Calculate the coordinates for each text element in view
 
@@ -232,6 +232,8 @@ class TextManager(EventedModel):
             The in view data from the layer
         ndisplay : int
             The number of dimensions being displayed in the viewer
+        order : Tuple[int, ...]
+            The display order of the dimensions in the layer.
 
         Returns
         -------
@@ -245,7 +247,8 @@ class TextManager(EventedModel):
         anchor_coords, anchor_x, anchor_y = get_text_anchors(
             view_data, ndisplay, self.anchor
         )
-        text_coords = anchor_coords + self.translation
+        displayed_ordered = list(order[-ndisplay:])
+        text_coords = anchor_coords + self.translation[displayed_ordered]
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:

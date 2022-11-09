@@ -121,7 +121,9 @@ def test_text_manager_format():
 
     text_manager.anchor = 'center'
     coords = np.array([[0, 0], [10, 10], [20, 20]])
-    text_coords = text_manager.compute_text_coords(coords, ndisplay=3)
+    text_coords = text_manager.compute_text_coords(
+        coords, ndisplay=3, order=tuple(range(3))
+    )
     np.testing.assert_equal(text_coords, (coords, 'center', 'center'))
 
     # remove the first text element
