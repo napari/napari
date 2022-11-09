@@ -144,7 +144,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
     chunksize = [256, 512, 1024]
     latency = [0.05 * i for i in range(0, 3)]
     params = (n_points, latency, chunksize)
-    timeout = 300
+    timeout = 600
 
     def setup(self, n_points, latency, chunksize):
         store = SlowMemoryStore(load_delay=latency)

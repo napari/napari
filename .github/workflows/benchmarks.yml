@@ -25,7 +25,7 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
-  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300 -q"  # TODO: adding quick temporarily while testing
+  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300"
   # --split -> split final reports in tables
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
