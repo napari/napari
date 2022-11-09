@@ -39,23 +39,22 @@ from qtpy.QtWidgets import (
 from superqt import QElidingLabel
 
 import napari.resources
-
-from ...plugins import plugin_manager
-from ...plugins.hub import iter_hub_plugin_info
-from ...plugins.pypi import _user_agent, iter_napari_plugin_info
-from ...plugins.utils import normalized_name
-from ...settings import get_settings
-from ...utils._appdirs import user_plugin_dir, user_site_packages
-from ...utils.misc import (
+from napari._qt.qt_resources import QColoredSVGIcon
+from napari._qt.qthreading import create_worker
+from napari._qt.widgets.qt_message_popup import WarnPopup
+from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.plugins import plugin_manager
+from napari.plugins.hub import iter_hub_plugin_info
+from napari.plugins.pypi import _user_agent, iter_napari_plugin_info
+from napari.plugins.utils import normalized_name
+from napari.settings import get_settings
+from napari.utils._appdirs import user_plugin_dir, user_site_packages
+from napari.utils.misc import (
     parse_version,
     running_as_bundled_app,
     running_as_constructor_app,
 )
-from ...utils.translations import trans
-from ..qt_resources import QColoredSVGIcon
-from ..qthreading import create_worker
-from ..widgets.qt_message_popup import WarnPopup
-from ..widgets.qt_tooltip import QtToolTipLabel
+from napari.utils.translations import trans
 
 InstallerTypes = Literal['pip', 'mamba']
 
@@ -110,7 +109,7 @@ class Installer(QObject):
             process.setProgram(installer)
 
         if installer == "mamba":
-            from ..._version import version_tuple
+            from napari._version import version_tuple
 
             # To avoid napari version changing when installing a plugin, we
             # add a pin to the current napari version, that way we can
@@ -190,7 +189,7 @@ class Installer(QObject):
             self._processes[pkg_list] = process
 
         if not self._processes:
-            from ...plugins import plugin_manager
+            from napari.plugins import plugin_manager
 
             plugin_manager.discover()
             plugin_manager.prune()
@@ -324,7 +323,7 @@ class Installer(QObject):
         """
         from qtpy import QT_VERSION
 
-        from ..._version import version_tuple
+        from napari._version import version_tuple
 
         parts = [str(part) for part in version_tuple[:3]]
         napari_version_string = f"napari-{'.'.join(parts)}-"
@@ -784,7 +783,7 @@ class QtPluginDialog(QDialog):
         # fetch installed
         from npe2 import PluginManager
 
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         self.already_installed = set()
 

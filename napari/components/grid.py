@@ -2,8 +2,8 @@ from typing import Tuple
 
 import numpy as np
 
-from ..settings._application import GridHeight, GridStride, GridWidth
-from ..utils.events import EventedModel
+from napari.settings._application import GridHeight, GridStride, GridWidth
+from napari.utils.events import EventedModel
 
 
 class GridCanvas(EventedModel):

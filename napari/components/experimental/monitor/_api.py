@@ -6,7 +6,7 @@ from queue import Empty, Queue
 from threading import Event
 from typing import NamedTuple
 
-from ....utils.events import EmitterGroup
+from napari.utils.events import EmitterGroup
 
 LOGGER = logging.getLogger("napari.monitor")
 

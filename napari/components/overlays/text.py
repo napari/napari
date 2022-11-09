@@ -1,7 +1,6 @@
 """Text label model."""
+from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
-
-from .base import CanvasOverlay
 
 
 class TextOverlay(CanvasOverlay):

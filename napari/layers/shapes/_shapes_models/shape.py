@@ -2,15 +2,15 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from ....utils.misc import argsort
-from ....utils.translations import trans
-from .._shapes_utils import (
+from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_mask,
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
 )
+from napari.utils.misc import argsort
+from napari.utils.translations import trans
 
 
 class Shape(ABC):

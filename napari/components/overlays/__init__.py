@@ -1,5 +1,9 @@
-from .axes import AxesOverlay
-from .base import BaseOverlay, CanvasOverlay, SceneOverlay
-from .overlays import Overlays
-from .scale_bar import ScaleBarOverlay
-from .text import TextOverlay
+from napari.components.overlays.axes import AxesOverlay
+from napari.components.overlays.base import (
+    BaseOverlay,
+    CanvasOverlay,
+    SceneOverlay,
+)
+from napari.components.overlays.overlays import Overlays
+from napari.components.overlays.scale_bar import ScaleBarOverlay
+from napari.components.overlays.text import TextOverlay

@@ -5,10 +5,10 @@ import numpy as np
 from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
-from ...components.dims import Dims
-from ...settings._constants import LoopMode
-from ...utils.translations import trans
-from .qt_dims_slider import QtDimSliderWidget
+from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
+from napari.components.dims import Dims
+from napari.settings._constants import LoopMode
+from napari.utils.translations import trans
 
 
 class QtDims(QWidget):

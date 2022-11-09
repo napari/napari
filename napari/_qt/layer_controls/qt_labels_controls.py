@@ -14,20 +14,23 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLargeIntSpinBox
 
-from ...layers.labels._labels_constants import (
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import disable_with_opacity
+from napari._qt.widgets._slider_compat import QSlider
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
     LabelsRendering,
     Mode,
 )
-from ...layers.labels._labels_utils import get_dtype
-from ...utils._dtype import get_dtype_limits
-from ...utils.action_manager import action_manager
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
-from ..utils import disable_with_opacity
-from ..widgets._slider_compat import QSlider
-from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from .qt_layer_controls_base import QtLayerControls
+from napari.layers.labels._labels_utils import get_dtype
+from napari.utils._dtype import get_dtype_limits
+from napari.utils.action_manager import action_manager
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers

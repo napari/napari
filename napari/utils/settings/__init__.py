@@ -1,7 +1,7 @@
 import warnings
 
-from ...settings import *
-from ..translations import trans
+from napari.settings import *
+from napari.utils.translations import trans
 
 warnings.warn(
     trans._(

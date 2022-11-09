@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers

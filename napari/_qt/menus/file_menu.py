@@ -4,21 +4,20 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction
 
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
+from napari._qt.menus._util import NapariMenu, populate_menu
+from napari.components._viewer_key_bindings import register_viewer_action
 from napari.errors.reader_errors import MultipleReaderError
-
-from ...components._viewer_key_bindings import register_viewer_action
-from ...settings import get_settings
-from ...utils.history import get_save_history, update_save_history
-from ...utils.misc import running_as_bundled_app
-from ...utils.translations import trans
-from ..dialogs.preferences_dialog import PreferencesDialog
-from ..dialogs.screenshot_dialog import ScreenshotDialog
-from ._util import NapariMenu, populate_menu
+from napari.settings import get_settings
+from napari.utils.history import get_save_history, update_save_history
+from napari.utils.misc import running_as_bundled_app
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ... import Viewer
-    from ..qt_main_window import Window
+    from napari import Viewer
+    from napari._qt.qt_main_window import Window
 
 
 class FileMenu(NapariMenu):
@@ -141,7 +140,7 @@ class FileMenu(NapariMenu):
 
         self._pref_dialog = None
 
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         plugin_manager.discover_sample_data()
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -191,7 +190,7 @@ class FileMenu(NapariMenu):
         self._pref_dialog = None
 
     def _rebuild_samples_menu(self):
-        from ...plugins import _npe2, menu_item_template, plugin_manager
+        from napari.plugins import _npe2, menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()
 

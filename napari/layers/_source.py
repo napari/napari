@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 from magicgui.widgets import FunctionGui
 from pydantic import BaseModel, validator
 
-from .base.base import Layer
+from napari.layers.base.base import Layer
 
 
 class Source(BaseModel):

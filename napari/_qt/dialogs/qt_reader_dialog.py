@@ -15,8 +15,7 @@ from qtpy.QtWidgets import (
 from napari.errors import ReaderPluginError
 from napari.plugins.utils import get_potential_readers
 from napari.settings import get_settings
-
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtReaderDialog(QDialog):

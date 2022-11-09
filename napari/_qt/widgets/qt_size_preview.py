@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtFontSizePreview(QFrame):

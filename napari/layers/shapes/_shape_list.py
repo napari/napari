@@ -3,16 +3,16 @@ from typing import Sequence, Union
 
 import numpy as np
 
-from ...utils.geometry import (
+from napari.layers.shapes._mesh import Mesh
+from napari.layers.shapes._shapes_constants import ShapeType, shape_classes
+from napari.layers.shapes._shapes_models import Line, Path, Shape
+from napari.layers.shapes._shapes_utils import triangles_intersect_box
+from napari.utils.geometry import (
     inside_triangles,
     intersect_line_with_triangles,
     line_in_triangles_3d,
 )
-from ...utils.translations import trans
-from ._mesh import Mesh
-from ._shapes_constants import ShapeType, shape_classes
-from ._shapes_models import Line, Path, Shape
-from ._shapes_utils import triangles_intersect_box
+from napari.utils.translations import trans
 
 
 class ShapeList:

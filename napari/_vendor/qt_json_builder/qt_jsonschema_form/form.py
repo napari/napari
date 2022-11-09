@@ -2,8 +2,8 @@ from copy import deepcopy
 
 from jsonschema.validators import validator_for
 
-from . import widgets
-from .defaults import compute_defaults
+from napari._vendor.qt_json_builder.qt_jsonschema_form import widgets
+from napari._vendor.qt_json_builder.qt_jsonschema_form.defaults import compute_defaults
 
 
 def get_widget_state(schema, state=None):

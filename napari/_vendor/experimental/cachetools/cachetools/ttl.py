@@ -1,7 +1,7 @@
 import collections
 import time
 
-from .cache import Cache
+from napari._vendor.experimental.cachetools.cachetools.cache import Cache
 
 
 class _Link(object):

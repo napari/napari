@@ -121,7 +121,7 @@ def generate_colorized_svgs(
         clrkey = color
         svg_stem = Path(path).stem
         if isinstance(color, tuple):
-            from ..utils.theme import get_theme
+            from napari.utils.theme import get_theme
 
             clrkey, theme_key = color
             theme_key = theme_override.get(svg_stem, theme_key)

@@ -6,11 +6,11 @@ from typing import Dict
 
 from app_model import Application
 
-from ._submenus import SUBMENUS
-from .actions._layer_actions import LAYER_ACTIONS
-from .actions._view_actions import VIEW_ACTIONS
-from .injection._processors import PROCESSORS
-from .injection._providers import PROVIDERS
+from napari._app_model._submenus import SUBMENUS
+from napari._app_model.actions._layer_actions import LAYER_ACTIONS
+from napari._app_model.actions._view_actions import VIEW_ACTIONS
+from napari._app_model.injection._processors import PROCESSORS
+from napari._app_model.injection._providers import PROVIDERS
 
 APP_NAME = 'napari'
 

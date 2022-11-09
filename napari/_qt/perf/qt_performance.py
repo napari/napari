@@ -16,8 +16,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils import perf
-from ...utils.translations import trans
+from napari.utils import perf
+from napari.utils.translations import trans
 
 
 class TextLog(QTextEdit):

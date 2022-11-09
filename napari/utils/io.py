@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 
 def imsave(filename: str, data: np.ndarray):

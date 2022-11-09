@@ -9,8 +9,8 @@ dockable QtPerformance widget.
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
-from ...utils import perf
-from ...utils.translations import trans
+from napari.utils import perf
+from napari.utils.translations import trans
 
 
 class QApplicationWithTracing(QApplication):

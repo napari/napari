@@ -1,13 +1,13 @@
 import numpy as np
 
-from ....utils.translations import trans
-from .._shapes_utils import (
+from napari.layers.shapes._shapes_models.shape import Shape
+from napari.layers.shapes._shapes_utils import (
     center_radii_to_corners,
     rectangle_to_box,
     triangulate_edge,
     triangulate_ellipse,
 )
-from .shape import Shape
+from napari.utils.translations import trans
 
 
 class Ellipse(Shape):

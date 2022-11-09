@@ -4,9 +4,9 @@ import numpy as np
 from pydantic import validator
 from scipy.spatial.transform import Rotation as R
 
-from ..utils.events import EventedModel
-from ..utils.misc import ensure_n_tuple
-from ..utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.misc import ensure_n_tuple
+from napari.utils.translations import trans
 
 
 class Camera(EventedModel):

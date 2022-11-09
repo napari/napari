@@ -25,12 +25,12 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel, ensure_main_thread
 
-from ...settings import get_settings
-from ...utils.notifications import Notification, NotificationSeverity
-from ...utils.theme import get_theme
-from ...utils.translations import trans
-from ..code_syntax_highlight import Pylighter
-from ..qt_resources import QColoredSVGIcon
+from napari._qt.code_syntax_highlight import Pylighter
+from napari._qt.qt_resources import QColoredSVGIcon
+from napari.settings import get_settings
+from napari.utils.notifications import Notification, NotificationSeverity
+from napari.utils.theme import get_theme
+from napari.utils.translations import trans
 
 ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
 
@@ -110,8 +110,8 @@ class NapariQtNotification(QDialog):
 
     def _update_icon(self, severity: str):
         """Update the icon to match the severity level."""
-        from ...settings import get_settings
-        from ...utils.theme import get_theme
+        from napari.settings import get_settings
+        from napari.utils.theme import get_theme
 
         settings = get_settings()
         theme = settings.appearance.theme
@@ -353,7 +353,7 @@ class NapariQtNotification(QDialog):
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
 
-        from ...utils.notifications import ErrorNotification
+        from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
 
@@ -380,8 +380,8 @@ class NapariQtNotification(QDialog):
     @classmethod
     @ensure_main_thread
     def show_notification(cls, notification: Notification):
-        from ..._qt.qt_main_window import _QtMainWindow
-        from ...settings import get_settings
+        from napari._qt.qt_main_window import _QtMainWindow
+        from napari.settings import get_settings
 
         settings = get_settings()
 
@@ -399,7 +399,7 @@ class NapariQtNotification(QDialog):
 def _debug_tb(tb):
     import pdb
 
-    from ..utils import event_hook_removed
+    from napari._qt.utils import event_hook_removed
 
     QApplication.processEvents()
     QApplication.processEvents()

@@ -1,4 +1,4 @@
-from .base import SceneOverlay
+from napari.components.overlays.base import SceneOverlay
 
 
 class AxesOverlay(SceneOverlay):

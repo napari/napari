@@ -25,20 +25,20 @@ def macos_supported_version():
 
 if sys.platform == "darwin":
     if macos_supported_version():
-        from ._mac_detect import *
+        from napari._vendor.darkdetect._mac_detect import *
     else:
-        from ._dummy import *
+        from napari._vendor.darkdetect._dummy import *
 elif sys.platform == "win32" and platform.release().isdigit() and int(platform.release()) >= 10:
     # Checks if running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER. The getwindowsversion method returns a tuple.
     # The third item is the build number that we can use to check if the user has a new enough version of Windows.
     winver = int(platform.version().split('.')[2])
     if winver >= 14393:
-        from ._windows_detect import *
+        from napari._vendor.darkdetect._windows_detect import *
     else:
-        from ._dummy import *
+        from napari._vendor.darkdetect._dummy import *
 elif sys.platform == "linux":
-    from ._linux_detect import *
+    from napari._vendor.darkdetect._linux_detect import *
 else:
-    from ._dummy import *
+    from napari._vendor.darkdetect._dummy import *
 
 del sys, platform

@@ -8,11 +8,11 @@ from typing import Union
 from pydantic import validator
 from pydantic.color import Color
 
-from .._vendor import darkdetect
-from ..resources._icons import build_theme_svgs
-from ..utils.translations import trans
-from .events import EventedModel
-from .events.containers._evented_dict import EventedDict
+from napari._vendor import darkdetect
+from napari.resources._icons import build_theme_svgs
+from napari.utils.events import EventedModel
+from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.translations import trans
 
 try:
     from qtpy import QT_VERSION
@@ -280,7 +280,7 @@ def rebuild_theme_settings():
     here we simply update the settings to reflect current list of available
     themes.
     """
-    from ..settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.appearance.refresh_themes()

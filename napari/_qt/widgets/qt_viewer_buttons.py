@@ -13,17 +13,17 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.misc import in_ipython, in_jupyter
-from ...utils.translations import trans
-from ..dialogs.qt_modal import QtPopup
-from .qt_dims_sorter import QtDimsSorter
-from .qt_spinbox import QtSpinBox
-from .qt_tooltip import QtToolTipLabel
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
+from napari._qt.widgets.qt_spinbox import QtSpinBox
+from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ...viewer import ViewerModel
+    from napari.viewer import ViewerModel
 
 
 class QtLayerButtons(QFrame):

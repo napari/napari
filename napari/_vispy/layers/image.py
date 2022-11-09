@@ -4,12 +4,12 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
-from ...layers.base._base_constants import Blending
-from ...utils.translations import trans
-from ..utils.gl import fix_data_dtype, get_gl_extensions
-from ..visuals.image import Image as ImageNode
-from ..visuals.volume import Volume as VolumeNode
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
+from napari._vispy.visuals.image import Image as ImageNode
+from napari._vispy.visuals.volume import Volume as VolumeNode
+from napari.layers.base._base_constants import Blending
+from napari.utils.translations import trans
 
 
 class ImageLayerNode:

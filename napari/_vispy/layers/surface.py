@@ -2,8 +2,8 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.geometry import MeshData
 
-from ..visuals.surface import SurfaceVisual
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.visuals.surface import SurfaceVisual
 
 
 class VispySurfaceLayer(VispyBaseLayer):

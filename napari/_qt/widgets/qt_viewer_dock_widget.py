@@ -18,13 +18,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import trans
-from ..utils import combine_widgets, qt_signals_blocked
+from napari._qt.utils import combine_widgets, qt_signals_blocked
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
 
-    from ..qt_viewer import QtViewer
+    from napari._qt.qt_viewer import QtViewer
 
 counter = count()
 _sentinel = object()

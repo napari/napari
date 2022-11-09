@@ -3,8 +3,8 @@ import typing
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
-from ...layers import Layer
-from .qt_list_model import QtListModel
+from napari._qt.containers.qt_list_model import QtListModel
+from napari.layers import Layer
 
 ThumbnailRole = Qt.UserRole + 2
 

@@ -8,10 +8,10 @@ to server as a graphical user interface for napari.
 
 __all__ = ['Window']
 
-from .utils.translations import trans
+from napari.utils.translations import trans
 
 try:
-    from ._qt import Window
+    from napari._qt import Window
 
 except ImportError as e:
 

@@ -2,16 +2,16 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ..utils._dtype import normalize_dtype
-from ..utils.colormaps import ensure_colormap
-from ..utils.events import Event
-from ..utils.status_messages import format_float
-from ..utils.validators import _validate_increasing, validate_n_seq
+from napari.utils._dtype import normalize_dtype
+from napari.utils.colormaps import ensure_colormap
+from napari.utils.events import Event
+from napari.utils.status_messages import format_float
+from napari.utils.validators import _validate_increasing, validate_n_seq
 
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
-    from .image.image import Image
+    from napari.layers.image.image import Image
 
 
 class IntensityVisualizationMixin:

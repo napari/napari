@@ -9,12 +9,12 @@ from vispy.color import BaseColormap as VispyColormap
 from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 from vispy.color.colormap import LUT_len
 
-from ..translations import trans
-from .bop_colors import bopd
-from .colormap import Colormap, ColormapInterpolationMode
-from .inverse_colormaps import inverse_cmaps
-from .standardize_color import transform_color
-from .vendored import cm
+from napari.utils.colormaps.bop_colors import bopd
+from napari.utils.colormaps.colormap import Colormap, ColormapInterpolationMode
+from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.colormaps.vendored import cm
+from napari.utils.translations import trans
 
 # All parsable input color types that a user can provide
 ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]

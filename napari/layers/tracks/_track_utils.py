@@ -5,9 +5,9 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 def connex(vertices: np.ndarray) -> list:

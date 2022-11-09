@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from importlib.metadata import distributions
 from typing import TYPE_CHECKING, Callable, List, NamedTuple
 
-from ._fields import Version
+from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from ._napari_settings import NapariSettings
+    from napari.settings._napari_settings import NapariSettings
 
 _MIGRATORS: List[Migrator] = []
 MigratorF = Callable[['NapariSettings'], None]

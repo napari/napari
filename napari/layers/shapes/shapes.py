@@ -8,30 +8,16 @@ import numpy as np
 import pandas as pd
 from vispy.color import get_color_names
 
-from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
-from ...utils.colormaps.colormap_utils import ColorType
-from ...utils.colormaps.standardize_color import (
-    hex_to_name,
-    rgb_to_hex,
-    transform_color,
+from napari.layers.base import Layer, no_op
+from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._shapes_constants import (
+    Box,
+    ColorMode,
+    Mode,
+    ShapeType,
+    shape_classes,
 )
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.misc import ensure_iterable
-from ...utils.translations import trans
-from ..base import Layer, no_op
-from ..utils.color_manager_utils import guess_continuous, map_property
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
-)
-from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
-from ..utils.layer_utils import _FeatureTable, _unique_element
-from ..utils.text_manager import TextManager
-from ._shape_list import ShapeList
-from ._shapes_constants import Box, ColorMode, Mode, ShapeType, shape_classes
-from ._shapes_mouse_bindings import (
+from napari.layers.shapes._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -43,7 +29,7 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import (
+from napari.layers.shapes._shapes_utils import (
     create_box,
     extract_shape_type,
     get_default_shape_type,
@@ -51,6 +37,31 @@ from ._shapes_utils import (
     number_of_shapes,
     validate_num_vertices,
 )
+from napari.layers.utils.color_manager_utils import (
+    guess_continuous,
+    map_property,
+)
+from napari.layers.utils.color_transformations import (
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
+from napari.layers.utils.interactivity_utils import (
+    nd_line_segment_to_displayed_data_ray,
+)
+from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
+from napari.layers.utils.text_manager import TextManager
+from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.colormap_utils import ColorType
+from napari.utils.colormaps.standardize_color import (
+    hex_to_name,
+    rgb_to_hex,
+    transform_color,
+)
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import ensure_iterable
+from napari.utils.translations import trans
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 

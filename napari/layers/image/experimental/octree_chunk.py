@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, List, NamedTuple
 import numpy as np
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk._request import OctreeLocation
-    from ....types import ArrayLike
+    from napari.components.experimental.chunk._request import OctreeLocation
+    from napari.types import ArrayLike
 
 LOGGER = logging.getLogger("napari.octree")
 

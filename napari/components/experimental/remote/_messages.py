@@ -6,9 +6,9 @@ import logging
 import time
 from typing import Dict
 
-from ....layers.image.experimental.octree_image import _OctreeImageBase
-from ...layerlist import LayerList
-from ..monitor import monitor
+from napari.components.experimental.monitor import monitor
+from napari.components.layerlist import LayerList
+from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
 LOGGER = logging.getLogger("napari.monitor")
 

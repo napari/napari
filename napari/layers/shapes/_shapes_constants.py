@@ -1,8 +1,14 @@
 import sys
 from enum import auto
 
-from ...utils.misc import StringEnum
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.utils.misc import StringEnum
 
 
 class Mode(StringEnum):

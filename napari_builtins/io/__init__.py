@@ -1,4 +1,4 @@
-from ._read import (
+from napari_builtins.io._read import (
     csv_to_layer_data,
     imread,
     magic_imread,
@@ -6,7 +6,7 @@ from ._read import (
     read_csv,
     read_zarr_dataset,
 )
-from ._write import (
+from napari_builtins.io._write import (
     imsave_extensions,
     napari_write_image,
     napari_write_labels,

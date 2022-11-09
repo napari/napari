@@ -1,10 +1,10 @@
 import warnings
 from typing import TypeVar
 
-from ...translations import trans
-from ._evented_list import EventedList
-from ._nested_list import NestableEventedList
-from ._selection import Selectable
+from napari.utils.events.containers._evented_list import EventedList
+from napari.utils.events.containers._nested_list import NestableEventedList
+from napari.utils.events.containers._selection import Selectable
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 

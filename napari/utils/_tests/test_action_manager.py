@@ -3,7 +3,7 @@ This module test some of the behavior of action manager.
 """
 import pytest
 
-from ..action_manager import ActionManager
+from napari.utils.action_manager import ActionManager
 
 
 @pytest.fixture

@@ -8,15 +8,15 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, List
 
-from ...utils.events import EmitterGroup
-from ...utils.perf import block_timer
-from ..layers.image import VispyImageLayer
-from .tile_grid import TileGrid
-from .tiled_image_visual import TiledImageVisual
+from napari._vispy.experimental.tile_grid import TileGrid
+from napari._vispy.experimental.tiled_image_visual import TiledImageVisual
+from napari._vispy.layers.image import VispyImageLayer
+from napari.utils.events import EmitterGroup
+from napari.utils.perf import block_timer
 
 if TYPE_CHECKING:
-    from ...layers.image.experimental import OctreeChunk
-    from ...layers.image.image import Image
+    from napari.layers.image.experimental import OctreeChunk
+    from napari.layers.image.image import Image
 
 
 LOGGER = logging.getLogger("napari.octree.visual")

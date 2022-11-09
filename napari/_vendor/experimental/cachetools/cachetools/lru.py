@@ -1,6 +1,6 @@
 import collections
 
-from .cache import Cache
+from napari._vendor.experimental.cachetools.cachetools.cache import Cache
 
 
 class LRUCache(Cache):

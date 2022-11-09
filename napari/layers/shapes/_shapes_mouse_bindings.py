@@ -2,9 +2,15 @@ from copy import copy
 
 import numpy as np
 
-from ._shapes_constants import Box, Mode
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
-from ._shapes_utils import point_to_lines
+from napari.layers.shapes._shapes_constants import Box, Mode
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.layers.shapes._shapes_utils import point_to_lines
 
 
 def highlight(layer, event):

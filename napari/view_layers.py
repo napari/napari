@@ -19,8 +19,7 @@ from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
 from napari.components.dims import Dims
 from napari.layers import Image
-
-from .viewer import Viewer
+from napari.viewer import Viewer
 
 __all__ = [
     'view_image',
@@ -81,7 +80,7 @@ def _merge_layer_viewer_sigs_docs(func):
     func : callable
         The same function, with merged metadata.
     """
-    from .utils.misc import _combine_signatures
+    from napari.utils.misc import _combine_signatures
 
     # get the `Viewer.add_*` method
     layer_string = func.__name__.replace("view_", "")

@@ -4,7 +4,7 @@ import inspect
 import re
 from collections import ChainMap
 
-from .misc import ROOT_DIR, formatdoc
+from napari.utils.misc import ROOT_DIR, formatdoc
 
 sep = ' '
 start = 1

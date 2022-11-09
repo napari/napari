@@ -9,9 +9,8 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
+from napari.plugins import _npe2, plugin_manager
 from napari.settings import get_settings
-
-from . import _npe2, plugin_manager
 
 
 class MatchFlag(IntFlag):

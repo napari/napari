@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import translator
+from napari.utils.translations import translator
 
 trans = translator.load()
 

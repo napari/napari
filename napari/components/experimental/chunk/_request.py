@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....utils.perf import PerfEvent, block_timer
+from napari.utils.perf import PerfEvent, block_timer
 
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
-    from ....types import ArrayLike
+    from napari.types import ArrayLike
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]

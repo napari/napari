@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from ...utils.events import EventedModel
-from .interaction_box import InteractionBox
+from napari.components.overlays.interaction_box import InteractionBox
+from napari.utils.events import EventedModel
 
 
 class Overlays(EventedModel):

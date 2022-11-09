@@ -13,7 +13,7 @@ from typing import (
     overload,
 )
 
-from ....utils.translations import trans
+from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@
 """
 import os
 
-from ._octree import get_octree_config
+from napari.utils._octree import get_octree_config
 
 
 def _set(env_var: str) -> bool:

@@ -21,12 +21,12 @@ from qtpy.QtWidgets import (
 )
 from vispy.util import keys
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
-from ...settings import get_settings
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
-from ..widgets.qt_message_popup import WarnPopup
+from napari._qt.widgets.qt_message_popup import WarnPopup
+from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 # Dict used to format strings returned from converted key press events.
 # For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.

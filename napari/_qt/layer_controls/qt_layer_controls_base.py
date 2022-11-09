@@ -1,10 +1,10 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
-from ...layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
-from ..widgets._slider_compat import QDoubleSlider
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}

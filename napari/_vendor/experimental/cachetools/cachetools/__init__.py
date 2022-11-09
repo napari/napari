@@ -1,11 +1,11 @@
 """Extensible memoizing collections and decorators."""
 
-from .cache import Cache
-from .decorators import cached, cachedmethod
-from .lfu import LFUCache
-from .lru import LRUCache
-from .rr import RRCache
-from .ttl import TTLCache
+from napari._vendor.experimental.cachetools.cachetools.cache import Cache
+from napari._vendor.experimental.cachetools.cachetools.decorators import cached, cachedmethod
+from napari._vendor.experimental.cachetools.cachetools.lfu import LFUCache
+from napari._vendor.experimental.cachetools.cachetools.lru import LRUCache
+from napari._vendor.experimental.cachetools.cachetools.rr import RRCache
+from napari._vendor.experimental.cachetools.cachetools.ttl import TTLCache
 
 __all__ = (
     'Cache',

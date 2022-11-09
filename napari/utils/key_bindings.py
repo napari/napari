@@ -43,9 +43,9 @@ from typing import Callable, Dict
 
 from vispy.util import keys
 
-from ..settings import get_settings
-from ..utils.action_manager import action_manager
-from ..utils.translations import trans
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.translations import trans
 
 SPECIAL_KEYS = [
     keys.SHIFT,

@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._points_utils import _points_in_box_3d, points_in_box
+from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 
 
 def select(layer, event):

@@ -8,7 +8,7 @@ import types
 from importlib import import_module
 from typing import Callable, List, Set, Tuple, Union
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 # The parent of a callable is a module or a class, class is of type "type".
 CallableParent = Union[types.ModuleType, type]

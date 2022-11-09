@@ -3,11 +3,13 @@ from typing import Any, Dict, Union
 import numpy as np
 
 from napari.utils.color import ColorValue
-
-from ...utils.events import EventedModel
-from ..translations import trans
-from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts
-from .standardize_color import transform_color
+from napari.utils.colormaps.categorical_colormap_utils import (
+    ColorCycle,
+    compare_colormap_dicts,
+)
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import EventedModel
+from napari.utils.translations import trans
 
 
 class CategoricalColormap(EventedModel):

@@ -12,14 +12,14 @@ from typing import (
 import numpy as np
 from pydantic import parse_obj_as
 
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from .style_encoding import (
+from napari.layers.utils.style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
     _ManualStyleEncoding,
 )
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 """A scalar array that represents one string value."""
 StringValue = Array[str, ()]

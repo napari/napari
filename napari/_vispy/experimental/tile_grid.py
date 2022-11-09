@@ -11,7 +11,7 @@ from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 
 if TYPE_CHECKING:
-    from ...layers.image.experimental import OctreeChunk
+    from napari.layers.image.experimental import OctreeChunk
 
 # Grid lines drawn with this width and color.
 GRID_WIDTH = 3

@@ -9,40 +9,40 @@ from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils import config
-from ...utils._dtype import get_dtype_limits, normalize_dtype
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events import Event
-from ...utils.events.event import WarningEmitter
-from ...utils.events.event_utils import connect_no_arg
-from ...utils.migrations import rename_argument
-from ...utils.misc import reorder_after_dim_reduction
-from ...utils.naming import magic_name
-from ...utils.translations import trans
-from .._data_protocols import LayerDataProtocol
-from .._multiscale_data import MultiScaleData
-from ..base import Layer, no_op
-from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.layer_utils import calc_data_range
-from ..utils.plane import SlicingPlane
-from ._image_constants import (
+from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.base import Layer, no_op
+from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
     Mode,
     VolumeDepiction,
 )
-from ._image_mouse_bindings import (
+from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
 )
-from ._image_mouse_bindings import (
+from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
-from ._image_slice import ImageSlice
-from ._image_slice_data import ImageSliceData
-from ._image_utils import guess_multiscale, guess_rgb
+from napari.layers.image._image_slice import ImageSlice
+from napari.layers.image._image_slice_data import ImageSliceData
+from napari.layers.image._image_utils import guess_multiscale, guess_rgb
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.utils.layer_utils import calc_data_range
+from napari.layers.utils.plane import SlicingPlane
+from napari.utils import config
+from napari.utils._dtype import get_dtype_limits, normalize_dtype
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.events import Event
+from napari.utils.events.event import WarningEmitter
+from napari.utils.events.event_utils import connect_no_arg
+from napari.utils.migrations import rename_argument
+from napari.utils.misc import reorder_after_dim_reduction
+from napari.utils.naming import magic_name
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ...components.experimental.chunk import ChunkRequest
+    from napari.components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -839,7 +839,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _SliceDataClass(self):
         # Use special ChunkedSlideData for async.
         if config.async_loading:
-            from .experimental._chunked_slice_data import ChunkedSliceData
+            from napari.layers.image.experimental._chunked_slice_data import (
+                ChunkedSliceData,
+            )
 
             return ChunkedSliceData
         return ImageSliceData
@@ -1103,7 +1105,7 @@ class Image(_ImageBase):
 
 
 if config.async_octree:
-    from ..image.experimental.octree_image import _OctreeImageBase
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     class Image(Image, _OctreeImageBase):
         pass

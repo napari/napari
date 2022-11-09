@@ -7,10 +7,10 @@ from typing import Callable, NamedTuple, Optional, Tuple
 import numpy as np
 from vispy.gloo import Texture2D
 
-from ...layers.image.experimental import OctreeChunk
-from ...types import ArrayLike
-from ...utils.translations import trans
-from ..utils.gl import fix_data_dtype
+from napari._vispy.utils.gl import fix_data_dtype
+from napari.layers.image.experimental import OctreeChunk
+from napari.types import ArrayLike
+from napari.utils.translations import trans
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(

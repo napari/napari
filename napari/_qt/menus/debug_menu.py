@@ -9,13 +9,13 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QFileDialog
 
-from ...utils import perf
-from ...utils.history import get_save_history, update_save_history
-from ...utils.translations import trans
-from ._util import NapariMenu, populate_menu
+from napari._qt.menus._util import NapariMenu, populate_menu
+from napari.utils import perf
+from napari.utils.history import get_save_history, update_save_history
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ..qt_main_window import Window
+    from napari._qt.qt_main_window import Window
 
 
 class DebugMenu(NapariMenu):

@@ -7,9 +7,9 @@ from typing import List, Optional
 
 import wrapt
 
-from ..translations import trans
-from ._patcher import patch_callables
-from ._timers import perf_timer
+from napari.utils.perf._patcher import patch_callables
+from napari.utils.perf._timers import perf_timer
+from napari.utils.translations import trans
 
 PERFMON_ENV_VAR = "NAPARI_PERFMON"
 

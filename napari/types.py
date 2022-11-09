@@ -161,7 +161,7 @@ def _register_types_with_magicgui():
 
     from magicgui import register_type
 
-    from .utils import _magicgui as _mgui
+    from napari.utils import _magicgui as _mgui
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
         register_type(

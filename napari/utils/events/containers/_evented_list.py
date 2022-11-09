@@ -26,10 +26,15 @@ import contextlib
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
-from ...translations import trans
-from ..event import EmitterGroup, Event
-from ..types import SupportsEvents
-from ._typed import _L, _T, Index, TypedMutableSequence
+from napari.utils.events.containers._typed import (
+    _L,
+    _T,
+    Index,
+    TypedMutableSequence,
+)
+from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.types import SupportsEvents
+from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 

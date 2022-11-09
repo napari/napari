@@ -5,7 +5,7 @@ import warnings
 
 from numpydoc.docscrape import FunctionDoc
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 
 def mouse_wheel_callbacks(obj, event):

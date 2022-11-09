@@ -3,7 +3,7 @@ from typing import Callable, Dict, Generator
 
 import numpy as np
 
-from ..types import ExcInfo
+from napari.types import ExcInfo
 
 
 def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:

@@ -98,7 +98,7 @@ import os
 import subprocess
 from multiprocessing.managers import SharedMemoryManager
 
-from ._utils import base64_encoded_json
+from napari.components.experimental.monitor._utils import base64_encoded_json
 
 LOGGER = logging.getLogger("napari.monitor")
 

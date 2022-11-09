@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QAction, QMenu
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
-    from ...utils.events import EventEmitter
+    from napari.utils.events import EventEmitter
 
     try:
         from qtpy.QtCore import SignalInstance

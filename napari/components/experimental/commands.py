@@ -1,6 +1,6 @@
 """ExperimentalNamespace and CommandProcessor classes.
 """
-from .chunk._commands._utils import highlight
+from napari.components.experimental.chunk._commands._utils import highlight
 
 HELP_STR = f"""
 {highlight("Available Commands:")}
@@ -25,7 +25,9 @@ class CommandProcessor:
     @property
     def loader(self):
         """The loader related commands."""
-        from .chunk._commands import LoaderCommands
+        from napari.components.experimental.chunk._commands import (
+            LoaderCommands,
+        )
 
         return LoaderCommands(self.layers)
 

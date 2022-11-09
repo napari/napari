@@ -9,7 +9,7 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 texture_dtypes = [
     np.dtype(np.uint8),

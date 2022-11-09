@@ -1,6 +1,6 @@
 import functools
 
-from .keys import hashkey
+from napari._vendor.experimental.cachetools.cachetools.keys import hashkey
 
 
 def cached(cache, key=hashkey, lock=None):
