@@ -413,7 +413,8 @@ class PluginListItem(QFrame):
         self.package_name.setText(version)
         if summary:
             self.summary.setText(summary)
-        self.package_author.setText(author)
+        if author:
+            self.package_author.setText(author)
         self.package_author.setWordWrap(True)
         self.cancel_btn.setVisible(False)
 
@@ -576,7 +577,7 @@ class PluginListItem(QFrame):
         self.summary.setSizePolicy(sizePolicy)
         self.row2.addWidget(self.summary, alignment=Qt.AlignmentFlag.AlignTop)
 
-        self.package_author = QLabel(self)
+        self.package_author = QElidingLabel(self)
         self.package_author.setObjectName('author_text')
         self.package_author.setWordWrap(True)
         sizePolicy = QSizePolicy(
