@@ -764,7 +764,6 @@ class EventEmitter:
         finally:
             self._emitting = False
             ps = event._pop_source()
-            assert isinstance(ps, EventEmitter), ps
             if ps is not self.source:
 
                 raise RuntimeError(
