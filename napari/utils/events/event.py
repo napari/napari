@@ -766,14 +766,15 @@ class EventEmitter:
             ps = event._pop_source()
             # test for identity before equality is faster, and can
             # shave a non-negligible amount of time.
-            if ps is not self.source:
-                if ps != self.source:
-                    raise RuntimeError(
-                        trans._(
-                            "Event source-stack mismatch.",
-                            deferred=True,
-                        )
+            if ps != self.source:
+                assert isinstance(ps, EventEmitter), ps
+
+                raise RuntimeError(
+                    trans._(
+                        "Event source-stack mismatch.",
+                        deferred=True,
                     )
+                )
 
         return event
 
