@@ -73,6 +73,7 @@ class superQCollapsible(QCollapsible):
 
 # TODO: add error icon and handle pip install errors
 class Installer(QObject):
+
     started = Signal()
     finished = Signal(int)
 
@@ -380,6 +381,9 @@ def is_conda_package(pkg):
 
 
 class PluginListItem(QFrame):
+    """An entry in the plugin dialog.  This will include the package name, summary,
+    author, source, version, and buttons to update, install/uinstall, etc."""
+
     def __init__(
         self,
         package_name: str,
@@ -410,6 +414,7 @@ class PluginListItem(QFrame):
         if summary:
             self.summary.setText(summary)
         self.package_author.setText(author)
+        self.package_author.setWordWrap(True)
         self.cancel_btn.setVisible(False)
 
         self.help_button.setText(trans._("Website"))
@@ -492,6 +497,8 @@ class PluginListItem(QFrame):
             self.cancel_btn.setVisible(False)
 
     def setup_ui(self, enabled=True):
+        """Define the layout of the PluginListItem"""
+
         self.v_lay = QVBoxLayout(self)
         self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
@@ -846,12 +853,15 @@ class QPluginList(QListWidget):
         version: str = None,
         installer_choice: Optional[str] = None,
     ):
+        """Determine which action is called (install, uninstall, update, cancel).
+        Update buttons appropriately and run the action."""
         # TODO: 'tool' should be configurable per item, depending on dropdown
         tool = (
             InstallerTools.CONDA
             if running_as_constructor_app()
             else InstallerTools.PIP
         )
+
         widget = item.widget
         item.setText(f"0-{item.text()}")
         self._remove_list.append((pkg_name, item))
@@ -913,6 +923,8 @@ class QPluginList(QListWidget):
 
     @Slot(PackageMetadata, bool)
     def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
+        """Determines if an installed plugin is up to date with the latest version.
+        If it is not, the latest version will be displayed on the update button."""
         if not is_available:
             return
 
@@ -996,6 +1008,7 @@ class QtPluginDialog(QDialog):
         self.refresh()
 
     def _on_installer_start(self):
+        """Updates dialog buttons and status when installing a plugin."""
         self.cancel_all_btn.setVisible(True)
         self.working_indicator.show()
         self.process_success_indicator.hide()
@@ -1003,6 +1016,7 @@ class QtPluginDialog(QDialog):
         self.close_btn.setDisabled(True)
 
     def _on_installer_done(self, exit_code):
+        """Updates buttons and status when plugin is done installing."""
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
@@ -1130,6 +1144,8 @@ class QtPluginDialog(QDialog):
             self._warn_dialog.exec_()
 
     def setup_ui(self):
+        """Defines the layout for the PluginDialog."""
+
         self.resize(1080, 640)
         vlay_1 = QVBoxLayout(self)
         self.h_splitter = QSplitter(self)
@@ -1237,6 +1253,8 @@ class QtPluginDialog(QDialog):
         self.packages_filter.setFocus()
 
     def _update_count_in_label(self):
+        """Counts all available but not installed plugins. Updates value."""
+
         count = self.available_list.count()
         self.avail_label.setText(
             trans._("Available Plugins ({count})", count=count)
@@ -1286,7 +1304,12 @@ class QtPluginDialog(QDialog):
                 packages, versions=versions, installer=installer
             )
 
-    def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
+    def _handle_yield(
+        self, data: Tuple[PackageMetadata, bool, list[str], list[str]]
+    ):
+        """Output from a worker process.  Includes information about the plugin,
+        including available versions on conda and pypi."""
+
         project_info, is_available, versions_pypi, versions_conda = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info, is_available)
