@@ -766,8 +766,8 @@ class EventEmitter:
             ps = event._pop_source()
             # test for identity before equality is faster, and can
             # shave a non-negligible amount of time.
-            if ps != self.source:
-                assert isinstance(ps, EventEmitter), ps
+            assert isinstance(ps, EventEmitter), ps
+            if ps is not self.source:
 
                 raise RuntimeError(
                     trans._(
