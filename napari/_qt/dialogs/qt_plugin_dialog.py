@@ -578,7 +578,6 @@ class QPluginList(QListWidget):
     ):
         """Determine which action is called (install, uninstall, update, cancel).
         Update buttons appropriately and run the action."""
-
         tool = (
             InstallerTools.CONDA
             if item.widget.source_choice_dropdown.currentText() == 'Conda'
