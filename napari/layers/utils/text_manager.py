@@ -8,6 +8,7 @@ from pydantic import PositiveInt, validator
 
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
+from ...utils.misc import reorder_after_dim_reduction
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
@@ -71,7 +72,7 @@ class TextManager(EventedModel):
         The location of the text origin relative to the bounding box.
         Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
     translation : np.ndarray
-        Offset from the anchor point.
+        Offset from the anchor point in canvas coordinates.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
     """
@@ -247,8 +248,17 @@ class TextManager(EventedModel):
         anchor_coords, anchor_x, anchor_y = get_text_anchors(
             view_data, ndisplay, self.anchor
         )
-        displayed_ordered = list(order[-ndisplay:])
-        text_coords = anchor_coords + self.translation[displayed_ordered]
+        ndim_coords = min(ndisplay, anchor_coords.shape[1])
+        # broadcast in case translation is just a scalar
+        if self.translation.size == 1:
+            translation = np.broadcast_to(self.translation, ndim_coords)
+        else:
+            translation = self.translation
+        # get order of displayed dimensions
+        displayed_ordered = list(
+            reorder_after_dim_reduction(order[-ndim_coords:])
+        )
+        text_coords = anchor_coords + translation[displayed_ordered]
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
