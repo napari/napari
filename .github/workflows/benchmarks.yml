@@ -153,12 +153,11 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
 
           echo "${{ github.event.pull_request.number }}" > .asv/results/pr_number
-          cat <<EOF > .asv/results/message_${{ matrix.benchmark-name }}.txt
-          The ${{ matrix.benchmark-name }} benchmark run requested by $EVENT_NAME ($CONTENDER_REF vs $BASE_REF) has
-          finished with status '${{ steps.run_benchmark.outcome }}'. See the
-          [CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details.
-
-          EOF
+          echo \
+          "The ${{ matrix.benchmark-name }} benchmark run requested by $EVENT_NAME ($CONTENDER_REF vs $BASE_REF) has" \
+          "finished with status '${{ steps.run_benchmark.outcome }}'. See the" \
+          "[CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details." \
+          > .asv/results/message_${{ matrix.benchmark-name }}.txt
 
           fi
 
