@@ -5,9 +5,9 @@
 import re
 from fractions import Fraction
 
-from .i18n import gettext as _
-from .i18n import gettext_noop as N_
-from .i18n import pgettext as P_
+from napari._vendor.experimental.humanize.src.humanize.i18n import gettext as _
+from napari._vendor.experimental.humanize.src.humanize.i18n import gettext_noop as N_
+from napari._vendor.experimental.humanize.src.humanize.i18n import pgettext as P_
 
 
 def ordinal(value):

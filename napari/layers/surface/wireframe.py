@@ -1,6 +1,5 @@
 from napari.utils.color import ColorValue
-
-from ...utils.events import EventedModel
+from napari.utils.events import EventedModel
 
 
 class SurfaceWireframe(EventedModel):

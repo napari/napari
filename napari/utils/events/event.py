@@ -70,7 +70,7 @@ from typing import (
 
 from vispy.util.logs import _handle_exception
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 class Event:
@@ -1235,7 +1235,7 @@ _log_event_stack = _noop
 def set_event_tracing_enabled(enabled=True, cfg=None):
     global _log_event_stack
     if enabled:
-        from .debugging import log_event_stack
+        from napari.utils.events.debugging import log_event_stack
 
         if cfg is not None:
             _log_event_stack = partial(log_event_stack, cfg=cfg)

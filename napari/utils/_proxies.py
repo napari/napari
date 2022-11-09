@@ -6,8 +6,8 @@ from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
-from ..utils import misc
-from ..utils.translations import trans
+from napari.utils import misc
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 

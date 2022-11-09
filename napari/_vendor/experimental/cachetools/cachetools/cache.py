@@ -1,4 +1,4 @@
-from .abc import DefaultMapping
+from napari._vendor.experimental.cachetools.cachetools.abc import DefaultMapping
 
 
 class _DefaultSize(object):
