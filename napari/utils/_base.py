@@ -7,12 +7,12 @@ the translator before the settings manager is created.
 
 from appdirs import user_config_dir
 
-from napari._version import __version_tuple__
+from packaging import version
 
-if 'dev' in str(__version_tuple__):
-    _dev_version_config_dir = 'dev'
-else:
-    _dev_version_config_dir = None
+from napari._version import __version__
+
+_dev_version_config_dir = 'dev' if version.parse(__version__).is_devrelease else None
+
 
 _FILENAME = "settings.yaml"
 _APPNAME = "Napari"
