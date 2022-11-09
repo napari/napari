@@ -49,6 +49,7 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 
 class AsyncImage2DSuite:
     params = get_image_params()
+    timeout = 300
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -80,6 +81,7 @@ class AsyncImage2DSuite:
 
 class QtViewerAsyncImage2DSuite:
     params = get_image_params()
+    timeout = 300
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -142,6 +144,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
     chunksize = [256, 512, 1024]
     latency = [0.05 * i for i in range(0, 3)]
     params = (n_points, latency, chunksize)
+    timeout = 300
 
     def setup(self, n_points, latency, chunksize):
         store = SlowMemoryStore(load_delay=latency)

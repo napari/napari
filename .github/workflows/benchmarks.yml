@@ -25,7 +25,7 @@ env:
   OPENBLAS_NUM_THREADS: "1"
   MKL_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
-  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300"
+  ASV_OPTIONS: "--split --show-stderr --factor 1.5 --attribute timeout=300 -q"  # TODO: adding quick temporarily while testing
   # --split -> split final reports in tables
   # --show-stderr -> print tracebacks if errors occur
   # --factor 1.5 -> report anomaly if tested timings are beyond 1.5x base timings
@@ -116,7 +116,7 @@ jobs:
           echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
 
           # Run benchmarks for current commit against base
-          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} -v \
+          asv continuous $ASV_OPTIONS -b '${{ matrix.selection-regex }}' ${BASE_REF} ${CONTENDER_REF} \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
 
