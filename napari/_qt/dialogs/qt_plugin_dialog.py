@@ -1306,7 +1306,7 @@ class QtPluginDialog(QDialog):
             )
 
     def _handle_yield(
-        self, data: Tuple[PackageMetadata, bool, list[str], list[str]]
+        self, data: Tuple[PackageMetadata, bool, List[str], List[str]]
     ):
         """Output from a worker process.  Includes information about the plugin,
         including available versions on conda and pypi."""
