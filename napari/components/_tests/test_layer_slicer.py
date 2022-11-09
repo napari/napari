@@ -64,7 +64,7 @@ class FakeAsyncLayer:
         return True
 
     def _slice_dims(self, *args, **kwargs) -> None:
-        return None
+        self.slice_count += 1
 
 
 class FakeSyncLayer:
@@ -330,5 +330,5 @@ def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
         assert layer_slicer._force_sync
         future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
-    assert layer.slice_count == 0
+    assert layer.slice_count == 1
     assert future.result() == {}
