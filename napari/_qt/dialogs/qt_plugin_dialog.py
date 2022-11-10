@@ -86,12 +86,15 @@ def is_conda_package(pkg):
     bool: True if a conda package, False if not
     """
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    for fname in conda_meta_dir.iterdir():
-        if fname.suffix == '.json':
-            *name, _, _ = fname.name.rsplit('-')
-            name = "-".join(name)
-            if pkg == name:
-                return True
+    try:
+        for fname in conda_meta_dir.iterdir():
+            if fname.suffix == '.json':
+                *name, _, _ = fname.name.rsplit('-')
+                name = "-".join(name)
+                if pkg == name:
+                    return True
+    except FileNotFoundError:
+        return False
 
     return False
 
