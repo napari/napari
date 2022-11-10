@@ -2490,7 +2490,16 @@ def test_set_drag_start():
     np.testing.assert_array_equal(layer._drag_start, position)
 
 
-def test_point_slice_request_response():
+@pytest.mark.parametrize(
+    "dims_indices,length_check",
+    [
+        ((8, slice(None), slice(None)), 1),
+        ((10, slice(None), slice(None)), 4),
+        ((10 + 2 * 1e-12, slice(None), slice(None)), 4),
+        ((10.1, slice(None), slice(None)), 4),
+    ],
+)
+def test_point_slice_request_response(dims_indices, length_check):
     """Test points slicing with request and response."""
     data = [
         (10, 2, 4),
@@ -2502,20 +2511,9 @@ def test_point_slice_request_response():
 
     layer = Points(data)
 
-    dims_indices_list = [
-        (8, slice(None), slice(None)),
-        (10, slice(None), slice(None)),
-        (10 + 2 * 1e-12, slice(None), slice(None)),
-        (10.1, slice(None), slice(None)),
-    ]
-    length_check_list = [1, 4, 4, 4]
+    request = layer._make_slice_request_internal(
+        layer._slice_input, dims_indices
+    )
+    response = request()
 
-    for dims_indices, length_check in zip(
-        dims_indices_list, length_check_list
-    ):
-        request = layer._make_slice_request_internal(
-            layer._slice_input, dims_indices
-        )
-        response = request()
-
-        assert len(response.indices) == length_check
+    assert len(response.indices) == length_check
