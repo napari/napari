@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from napari._qt.dialogs.qt_package_installer import InstallerQueue, InstallerTools
+from napari._qt.dialogs.qt_package_installer import (
+    InstallerQueue,
+    InstallerTools,
+)
 
 if TYPE_CHECKING:
     from virtualenv.run import Session

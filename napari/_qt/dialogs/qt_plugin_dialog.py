@@ -26,7 +26,15 @@ from qtpy.QtWidgets import (
 from superqt import QElidingLabel
 
 import napari.resources
-
+from napari._qt.dialogs.qt_package_installer import (
+    InstallerActions,
+    InstallerQueue,
+    InstallerTools,
+)
+from napari._qt.qt_resources import QColoredSVGIcon
+from napari._qt.qthreading import create_worker
+from napari._qt.widgets.qt_message_popup import WarnPopup
+from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.plugins import plugin_manager
 from napari.plugins.hub import iter_hub_plugin_info
 from napari.plugins.pypi import iter_napari_plugin_info
@@ -38,11 +46,6 @@ from napari.utils.misc import (
     running_as_constructor_app,
 )
 from napari.utils.translations import trans
-from napari._qt.qt_resources import QColoredSVGIcon
-from napari._qt.qthreading import create_worker
-from napari._qt.widgets.qt_message_popup import WarnPopup
-from napari._qt.widgets.qt_tooltip import QtToolTipLabel
-from napari._qt.dialogs.qt_package_installer import InstallerQueue, InstallerTools, InstallerActions
 
 
 class PluginListItem(QFrame):
@@ -316,7 +319,9 @@ class QPluginList(QListWidget):
             lambda: self.handle_action(item, pkg_name, action_name)
         )
         widg.update_btn.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, InstallerActions.install, update=True)
+            lambda: self.handle_action(
+                item, pkg_name, InstallerActions.install, update=True
+            )
         )
         widg.cancel_btn.clicked.connect(
             lambda: self.handle_action(item, pkg_name, InstallerActions.cancel)
@@ -332,7 +337,11 @@ class QPluginList(QListWidget):
         update: bool = False,
     ):
         # TODO: 'tool' should be configurable per item, depending on dropdown
-        tool = InstallerTools.conda if running_as_constructor_app() else InstallerTools.pip
+        tool = (
+            InstallerTools.conda
+            if running_as_constructor_app()
+            else InstallerTools.pip
+        )
         widget = item.widget
         item.setText(f"0-{item.text()}")
         self._remove_list.append((pkg_name, item))

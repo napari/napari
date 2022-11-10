@@ -24,7 +24,8 @@ from npe2 import PluginManager
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
-from napari._version import version as _napari_version, version_tuple as _napari_version_tuple
+from napari._version import version as _napari_version
+from napari._version import version_tuple as _napari_version_tuple
 from napari.plugins import plugin_manager
 from napari.plugins.pypi import _user_agent
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
@@ -39,7 +40,7 @@ class InstallerActions(Enum):
     "Available actions for the plugin manager"
     install = "install"
     uninstall = "uninstall"
-    cancel = "cancel"  
+    cancel = "cancel"
 
 
 class InstallerTools(Enum):
@@ -98,10 +99,9 @@ class PipInstallerTool(AbstractInstallerTool):
             args.append('-vvv')
         if self.prefix is not None:
             args.extend(['--prefix', str(self.prefix)])
-        elif (
-            running_as_bundled_app(check_conda=False) 
-            and sys.platform.startswith('linux')
-        ):
+        elif running_as_bundled_app(
+            check_conda=False
+        ) and sys.platform.startswith('linux'):
             args += [
                 '--no-warn-script-location',
                 '--prefix',
@@ -165,7 +165,7 @@ class CondaInstallerTool(AbstractInstallerTool):
                 env.insert("USERPROFILE", os.path.expanduser("~"))
         return env
 
-    def _napari_pin(self):        
+    def _napari_pin(self):
         version_lower = _napari_version.lower()
         if "rc" in version_lower or "dev" in version_lower:
             # dev or rc versions might not be available in public channels
@@ -177,7 +177,9 @@ class CondaInstallerTool(AbstractInstallerTool):
         else:
             # pin to x.x.x
             pin_strictness = 3
-        return ".".join([str(part) for part in _napari_version_tuple[:pin_strictness]])
+        return ".".join(
+            [str(part) for part in _napari_version_tuple[:pin_strictness]]
+        )
 
     def _default_channels(self):
         return ('conda-forge',)
@@ -377,16 +379,18 @@ class InstallerQueue(QProcess):
             )
         )
         self.start()
-    
+
     def _end_process(self):
         if os.name == 'nt':
             # TODO: this might be too agressive and won't allow rollbacks!
             # investigate whether we can also do .terminate()
-            self.kill()  
+            self.kill()
         else:
             self.terminate()
         if self._output_widget:
-            self._output_widget.append(trans._("\nTask was cancelled by the user."))
+            self._output_widget.append(
+                trans._("\nTask was cancelled by the user.")
+            )
 
     def _on_process_finished(
         self, exit_code: int, exit_status: QProcess.ExitStatus
@@ -426,10 +430,12 @@ class InstallerQueue(QProcess):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
         if error:
-            msg = trans._("Task finished with errors! Error: {error}.", error=error)
+            msg = trans._(
+                "Task finished with errors! Error: {error}.", error=error
+            )
         else:
             msg = trans._(
-                "Task finished with exit code {exit_code} with status {exit_status}.", 
+                "Task finished with exit code {exit_code} with status {exit_status}.",
                 exit_code=exit_code,
                 exit_status=exit_status,
             )
