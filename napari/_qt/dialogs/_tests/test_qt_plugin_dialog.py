@@ -157,4 +157,17 @@ def test_constructor_visible_widgets(plugin_dialog_constructor):
     assert not plugin_dialog_constructor.direct_entry_btn.isVisible()
 
 
-# def test_version_dropdown(plugin_dialog):
+def test_version_dropdown(plugin_dialog):
+    """
+    Test that when the source drop down is changed, it displays the other versions properly.
+    """
+    plugin_dialog.available_list.item(
+        1
+    ).widget.source_choice_dropdown.setCurrentIndex(1)
+
+    assert (
+        plugin_dialog.available_list.item(
+            1
+        ).widget.version_choice_dropdown.currentText()
+        == '4.5'
+    )
