@@ -24,11 +24,12 @@ from npe2 import PluginManager
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 from qtpy.QtWidgets import QTextEdit
 
-from ...plugins import plugin_manager
-from ...plugins.pypi import _user_agent
-from ...utils._appdirs import user_plugin_dir, user_site_packages
-from ...utils.misc import running_as_bundled_app
-from ...utils.translations import trans
+from napari._version import version as _napari_version, version_tuple as _napari_version_tuple
+from napari.plugins import plugin_manager
+from napari.plugins.pypi import _user_agent
+from napari.utils._appdirs import user_plugin_dir, user_site_packages
+from napari.utils.misc import running_as_bundled_app
+from napari.utils.translations import trans
 
 JobId = int
 log = getLogger(__name__)
@@ -164,10 +165,8 @@ class CondaInstallerTool(AbstractInstallerTool):
                 env.insert("USERPROFILE", os.path.expanduser("~"))
         return env
 
-    def _napari_pin(self):
-        from ..._version import version, version_tuple
-        
-        version_lower = version.lower()
+    def _napari_pin(self):        
+        version_lower = _napari_version.lower()
         if "rc" in version_lower or "dev" in version_lower:
             # dev or rc versions might not be available in public channels
             # but only installed locally - if we try to pin those, mamba
@@ -178,7 +177,7 @@ class CondaInstallerTool(AbstractInstallerTool):
         else:
             # pin to x.x.x
             pin_strictness = 3
-        return ".".join([str(part) for part in version_tuple[:pin_strictness]])
+        return ".".join([str(part) for part in _napari_version_tuple[:pin_strictness]])
 
     def _default_channels(self):
         return ('conda-forge',)
