@@ -65,7 +65,7 @@ import itertools
 import re
 
 import numpy as np
-from ._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
+from napari.utils.colormaps.vendored._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
                           XKCD_COLORS, NTH_COLORS)
 
 

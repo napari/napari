@@ -11,11 +11,11 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel
 
-from ...utils.translations import trans
-from ..dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ..qt_main_window import _QtMainWindow
+    from napari._qt.qt_main_window import _QtMainWindow
 
 
 class ViewerStatusBar(QStatusBar):

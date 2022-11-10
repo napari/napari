@@ -3,18 +3,22 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events import Event
-from ...utils.geometry import find_nearest_triangle_intersection
-from ...utils.translations import trans
-from ..base import Layer
-from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
-from ..utils.layer_utils import calc_data_range
-from ._surface_constants import Shading
-from ._surface_utils import calculate_barycentric_coordinates
-from .normals import SurfaceNormals
-from .wireframe import SurfaceWireframe
+from napari.layers.base import Layer
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.surface._surface_constants import Shading
+from napari.layers.surface._surface_utils import (
+    calculate_barycentric_coordinates,
+)
+from napari.layers.surface.normals import SurfaceNormals
+from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils.interactivity_utils import (
+    nd_line_segment_to_displayed_data_ray,
+)
+from napari.layers.utils.layer_utils import calc_data_range
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.events import Event
+from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.translations import trans
 
 
 # Mixin must come before Layer

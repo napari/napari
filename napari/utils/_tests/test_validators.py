@@ -1,6 +1,6 @@
 import pytest
 
-from .. import validators
+from napari.utils import validators
 
 
 def test_sequence_validator():

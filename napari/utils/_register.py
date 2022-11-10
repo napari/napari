@@ -1,8 +1,8 @@
 import sys
 from inspect import Parameter, getdoc, signature
 
-from .misc import camel_to_snake
-from .translations import trans
+from napari.utils.misc import camel_to_snake
+from napari.utils.translations import trans
 
 template = """def {name}{signature}:
     kwargs = locals()
@@ -66,7 +66,7 @@ def create_func(cls, name=None, doc=None, filename: str = '<string>'):
 
 
 def _register(cls, *, name=None, doc=None):
-    from ..components import ViewerModel
+    from napari.components import ViewerModel
 
     func = create_func(cls, name=name, doc=doc)
     setattr(ViewerModel, func.__name__, func)

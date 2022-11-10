@@ -1,4 +1,4 @@
-from .reader_errors import (
+from napari.errors.reader_errors import (
     MultipleReaderError,
     NoAvailableReaderError,
     ReaderPluginError,

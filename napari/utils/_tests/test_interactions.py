@@ -1,6 +1,6 @@
 import pytest
 
-from ..interactions import Shortcut
+from napari.utils.interactions import Shortcut
 
 
 @pytest.mark.parametrize(
