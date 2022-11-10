@@ -30,10 +30,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.events.custom_types import Array
-from ..utils.misc import is_sequence
-from ..utils.translations import trans
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import is_sequence
+from napari.utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 RICH_TEXT_PATTERN = re.compile("<[^\n]+>")

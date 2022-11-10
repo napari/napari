@@ -4,8 +4,8 @@ from typing import List, Sequence, Tuple, Union
 
 import numpy as np
 
-from ..utils.translations import trans
-from ._data_protocols import LayerDataProtocol, assert_protocol
+from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
+from napari.utils.translations import trans
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.

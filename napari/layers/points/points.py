@@ -8,35 +8,40 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.geometry import project_points_onto_plane, rotate_points
-from ...utils.status_messages import generate_layer_coords_status
-from ...utils.transforms import Affine
-from ...utils.translations import trans
-from ..base import Layer, no_op
-from ..utils._color_manager_constants import ColorMode
-from ..utils._slice_input import _SliceInput
-from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
-from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils.layer_utils import (
-    _features_to_properties,
-    _FeatureTable,
-    _unique_element,
+from napari.layers.base import Layer, no_op
+from napari.layers.points._points_constants import (
+    SYMBOL_ALIAS,
+    Mode,
+    Shading,
+    Symbol,
 )
-from ..utils.text_manager import TextManager
-from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
-from ._points_mouse_bindings import add, highlight, select
-from ._points_utils import (
+from napari.layers.points._points_mouse_bindings import add, highlight, select
+from napari.layers.points._points_utils import (
     _create_box_from_corners_3d,
     create_box,
     fix_data_points,
     points_to_squares,
 )
-from ._slice import _PointSliceRequest, _PointSliceResponse
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_transformations import ColorType
+from napari.layers.utils.interactivity_utils import (
+    displayed_plane_from_nd_line_segment,
+)
+from napari.layers.utils.layer_utils import (
+    _features_to_properties,
+    _FeatureTable,
+    _unique_element,
+)
+from napari.layers.utils.text_manager import TextManager
+from napari.utils.colormaps import Colormap, ValidColormapArg
+from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.geometry import project_points_onto_plane, rotate_points
+from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.transforms import Affine
+from napari.utils.translations import trans
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 

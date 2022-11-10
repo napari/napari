@@ -27,7 +27,7 @@ import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 def transform_color(colors: Any) -> np.ndarray:

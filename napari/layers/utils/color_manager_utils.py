@@ -2,8 +2,8 @@ from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import Colormap
-from ...utils.translations import trans
+from napari.utils.colormaps import Colormap
+from napari.utils.translations import trans
 
 
 def guess_continuous(property: np.ndarray) -> bool:

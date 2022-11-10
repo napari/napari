@@ -7,7 +7,9 @@ import pytest
 
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
+
 from napari.layers import Image, Points
+
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.types import DTypeLike
 
@@ -74,6 +76,12 @@ class FakeSyncLayer:
 
 
 class LockableData:
+    """A wrapper for napari layer data that blocks read-access with a lock.
+
+    This is useful when testing async slicing with real napari layers because
+    it allows us to control when slicing tasks complete.
+    """
+
     def __init__(self, data: LayerDataProtocol):
         self.data = data
         self.lock = RLock()
