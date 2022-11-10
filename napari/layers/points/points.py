@@ -22,7 +22,9 @@ from napari.layers.points._points_utils import (
     fix_data_points,
     points_to_squares,
 )
+from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -42,10 +44,6 @@ from napari.utils.geometry import project_points_onto_plane, rotate_points
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
-
-from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
-from napari.layers.utils._slice_input import _SliceInput
-
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
