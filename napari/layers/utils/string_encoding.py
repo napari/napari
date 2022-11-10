@@ -1,13 +1,5 @@
 from string import Formatter
-from typing import (
-    Any,
-    Dict,
-    Literal,
-    Protocol,
-    Sequence,
-    Union,
-    runtime_checkable,
-)
+from typing import Any, Literal, Protocol, Sequence, Union, runtime_checkable
 
 import numpy as np
 from pydantic import parse_obj_as
@@ -173,16 +165,12 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     encoding_type: Literal['FormatStringEncoding'] = 'FormatStringEncoding'
 
     def __call__(self, features: Any) -> StringArray:
+        feature_names = features.columns.to_list()
         values = [
-            self.format.format(**_get_feature_row(features, i))
-            for i in range(len(features))
+            self.format.format(**dict(zip(feature_names, row)))
+            for row in features.itertuples(index=False, name=None)
         ]
         return np.array(values, dtype=str)
-
-
-def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:
-    """Returns one row of the features table as a dictionary."""
-    return {name: values.iloc[index] for name, values in features.items()}
 
 
 def _is_format_string(string: str) -> bool:
