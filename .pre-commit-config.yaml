@@ -1,4 +1,9 @@
 repos:
+-   repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.1
+    hooks:
+    -   id: absolufy-imports
+        exclude: _vendor|vendored|examples
 -   repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
@@ -19,7 +24,7 @@ repos:
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.0.0
+    rev: v3.2.0
     hooks:
     - id: pyupgrade
       args: ["--py38-plus", "--keep-runtime-typing"]

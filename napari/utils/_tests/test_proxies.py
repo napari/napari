@@ -77,6 +77,26 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert '_private' in dir(t)
 
 
+@pytest.mark.filterwarnings("ignore:Qt libs are available but")
+def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
+    class X:
+        a = 1
+
+    monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+
+    x = X()
+    x_proxy = PublicOnlyProxy(x)
+
+    f = single_threaded_executor.submit(x.__setattr__, 'a', 2)
+    f.result()
+    assert x.a == 2
+
+    f = single_threaded_executor.submit(x_proxy.__setattr__, 'a', 3)
+    with pytest.raises(RuntimeError):
+        f.result()
+    assert x.a == 2
+
+
 def test_public_proxy_limited_to_napari(patched_root_dir):
     """Test that the recursive public proxy goes no farther than napari."""
     viewer = ViewerModel()

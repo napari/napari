@@ -8,11 +8,11 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
-from ...utils.events import Event
-from ...utils.translations import trans
-from ..base import Layer
-from ._track_utils import TrackManager
+from napari.layers.base import Layer
+from napari.layers.tracks._track_utils import TrackManager
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
+from napari.utils.events import Event
+from napari.utils.translations import trans
 
 
 class Tracks(Layer):

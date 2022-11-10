@@ -1,14 +1,14 @@
-from ._dict import TypedMutableMapping
-from ._evented_dict import EventedDict
-from ._evented_list import EventedList
-from ._nested_list import NestableEventedList
-from ._selectable_list import (
+from napari.utils.events.containers._dict import TypedMutableMapping
+from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.events.containers._evented_list import EventedList
+from napari.utils.events.containers._nested_list import NestableEventedList
+from napari.utils.events.containers._selectable_list import (
     SelectableEventedList,
     SelectableNestableEventedList,
 )
-from ._selection import Selectable, Selection
-from ._set import EventedSet
-from ._typed import TypedMutableSequence
+from napari.utils.events.containers._selection import Selectable, Selection
+from napari.utils.events.containers._set import EventedSet
+from napari.utils.events.containers._typed import TypedMutableSequence
 
 __all__ = [
     'EventedList',

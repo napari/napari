@@ -8,10 +8,10 @@ import dask
 import numpy as np
 import pandas as pd
 
-from ...utils.action_manager import action_manager
-from ...utils.events.custom_types import Array
-from ...utils.transforms import Affine
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.events.custom_types import Array
+from napari.utils.transforms import Affine
+from napari.utils.translations import trans
 
 
 def register_layer_action(
