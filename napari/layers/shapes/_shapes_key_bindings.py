@@ -1,14 +1,14 @@
 import numpy as np
 from app_model.types import KeyCode
 
-from ...layers.utils.layer_utils import (
+from napari.layers.shapes._shapes_constants import Box, Mode
+from napari.layers.shapes._shapes_mouse_bindings import _move
+from napari.layers.shapes.shapes import Shapes
+from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from ...utils.translations import trans
-from ._shapes_constants import Box, Mode
-from ._shapes_mouse_bindings import _move
-from .shapes import Shapes
+from napari.utils.translations import trans
 
 
 @Shapes.bind_key(KeyCode.Space)

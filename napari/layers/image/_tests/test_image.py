@@ -496,7 +496,7 @@ def test_iso_threshold():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.iso_threshold == 0.5
+    assert np.min(data) <= layer.iso_threshold <= np.max(data)
 
     # Change iso_threshold property
     iso_threshold = 0.7
