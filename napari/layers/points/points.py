@@ -43,6 +43,14 @@ from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    from napari.layers.utils._slice_input import _SliceInput
+    from napari.layers.points._slice import (
+        _PointSliceRequest,
+        _PointSliceResponse,
+    )
+
+
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
