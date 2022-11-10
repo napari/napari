@@ -1,8 +1,8 @@
 import pkg_resources
-from napari._vendor.experimental.humanize.src.humanize.filesize import naturalsize
-from napari._vendor.experimental.humanize.src.humanize.i18n import activate, deactivate
-from napari._vendor.experimental.humanize.src.humanize.number import apnumber, fractional, intcomma, intword, ordinal, scientific
-from napari._vendor.experimental.humanize.src.humanize.time import (
+from .filesize import naturalsize
+from .i18n import activate, deactivate
+from .number import apnumber, fractional, intcomma, intword, ordinal, scientific
+from .time import (
     naturaldate,
     naturalday,
     naturaldelta,

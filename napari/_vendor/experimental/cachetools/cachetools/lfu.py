@@ -1,6 +1,6 @@
 import collections
 
-from napari._vendor.experimental.cachetools.cachetools.cache import Cache
+from .cache import Cache
 
 
 class LFUCache(Cache):

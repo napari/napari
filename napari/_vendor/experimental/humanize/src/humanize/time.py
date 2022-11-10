@@ -8,8 +8,8 @@ import math
 from enum import Enum
 from functools import total_ordering
 
-from napari._vendor.experimental.humanize.src.humanize.i18n import gettext as _
-from napari._vendor.experimental.humanize.src.humanize.i18n import ngettext
+from .i18n import gettext as _
+from .i18n import ngettext
 
 __all__ = [
     "naturaldelta",
