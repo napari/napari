@@ -7,7 +7,7 @@ import pytest
 
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.types import DTypeLike
 
@@ -83,6 +83,7 @@ class LockableData:
     def __init__(self, data: LayerDataProtocol):
         self.data = data
         self.lock = RLock()
+        self.ndim = data.ndim
 
     @property
     def dtype(self) -> DTypeLike:
@@ -276,6 +277,28 @@ def test_slice_layers_async_with_one_3d_image(layer_slicer):
     data = np.random.rand(8, 7, 6)
     lockable_data = LockableData(data)
     layer = Image(data=lockable_data, multiscale=False)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
+        current_step=(2, 0, 0),
+    )
+
+    with lockable_data.lock:
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not future.done()
+
+    layer_result = future.result()[layer]
+    np.testing.assert_equal(layer_result.data, data[2, :, :])
+
+
+def test_slice_layers_async_with_3d_labels(layer_slicer):
+    shape = (6, 10, 15)
+    np.random.seed(0)
+    data = np.random.randint(20, size=shape)
+    lockable_data = LockableData(data)
+    layer = Labels(lockable_data, multiscale=False)
+
     dims = Dims(
         ndim=3,
         ndisplay=2,

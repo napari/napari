@@ -68,13 +68,13 @@ def test_float_labels():
     """Test instantiating labels layer with floats"""
     np.random.seed(0)
     data = np.random.uniform(0, 20, size=(10, 10))
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match='Only integer types are supported'):
         Labels(data)
 
     data0 = np.random.uniform(20, size=(20, 20))
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match='Only integer types are supported'):
         Labels(data)
 
 

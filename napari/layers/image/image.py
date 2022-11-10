@@ -821,7 +821,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def _SliceDataClass(self):
-        # Use special ChunkedSlideData for async.
+        # Use special ChunkedSliceData for async.
         if config.async_loading:
             from napari.layers.image.experimental._chunked_slice_data import (
                 ChunkedSliceData,
