@@ -1,1 +1,1 @@
-from .cachetools.lru import LRUCache
+from napari._vendor.experimental.cachetools.cachetools.lru import LRUCache

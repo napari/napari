@@ -32,7 +32,7 @@ from typing import (
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import packaging.version

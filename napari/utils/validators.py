@@ -2,7 +2,7 @@ from collections.abc import Collection, Generator
 from itertools import tee
 from typing import Iterable
 
-from .translations import trans
+from napari.utils.translations import trans
 
 
 def validate_n_seq(n: int, dtype=None):

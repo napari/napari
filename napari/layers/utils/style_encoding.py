@@ -12,8 +12,8 @@ from typing import (
 
 import numpy as np
 
-from ...utils.events import EventedModel
-from ...utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.translations import trans
 
 IndicesType = Union[range, List[int], np.ndarray]
 
