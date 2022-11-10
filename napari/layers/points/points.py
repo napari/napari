@@ -2,7 +2,7 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
