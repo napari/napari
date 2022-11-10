@@ -1,12 +1,24 @@
+"""
+A tool-agnostic installation logic for the plugin manager.
+
+The main object is `InstallerQueue`, a `QProcess` subclass
+with the notion of a job queue. The queued jobs are represented
+by a `deque` of `*InstallerTool` dataclasses that contain the
+executable path, arguments and environment modifications.
+Available actions for each tool are `install`, `uninstall`
+and `cancel`.
+"""
 import contextlib
 import os
 import shutil
 import sys
+from collections import deque
 from dataclasses import dataclass
+from enum import Enum
 from logging import getLogger
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Deque, Literal, Optional, Sequence, Tuple, Union
+from typing import Deque, Optional, Sequence, Tuple
 
 from npe2 import PluginManager
 from qtpy.QtCore import QObject, QProcess, QProcessEnvironment, Signal
@@ -16,16 +28,28 @@ from ...plugins import plugin_manager
 from ...plugins.pypi import _user_agent
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
+from ...utils.translations import trans
 
 JobId = int
-ActionType = Union[Literal["install"], Literal["uninstall"]]
-TaskHandler = Union[Literal["pip"], Literal["conda"]]
 log = getLogger(__name__)
 
 
+class InstallerActions(Enum):
+    "Available actions for the plugin manager"
+    install = "install"
+    uninstall = "uninstall"
+    cancel = "cancel"  
+
+
+class InstallerTools(Enum):
+    "Available tools for InstallerQueue jobs"
+    conda = "conda"
+    pip = "pip"
+
+
 @dataclass(frozen=True)
-class AbstractInstallerTask:
-    action: ActionType
+class AbstractInstallerTool:
+    action: InstallerActions
     pkgs: Tuple[str, ...]
     origins: Tuple[str, ...] = ()
     prefix: Optional[str] = None
@@ -42,7 +66,7 @@ class AbstractInstallerTask:
     # abstract method
     def arguments(
         self,
-        action: ActionType,
+        action: InstallerActions,
         pkgs: Tuple[str, ...],
         prefix: Optional[str] = None,
     ):
@@ -55,7 +79,7 @@ class AbstractInstallerTask:
         raise NotImplementedError()
 
 
-class PipInstallerTask(AbstractInstallerTask):
+class PipInstallerTool(AbstractInstallerTool):
     def executable(self):
         if self._executable:
             return str(self._executable)
@@ -63,7 +87,7 @@ class PipInstallerTask(AbstractInstallerTask):
 
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
-        if self.action == "install":
+        if self.action == InstallerActions.install:
             args += ['install', '--upgrade']
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
@@ -73,8 +97,9 @@ class PipInstallerTask(AbstractInstallerTask):
             args.append('-vvv')
         if self.prefix is not None:
             args.extend(['--prefix', str(self.prefix)])
-        elif running_as_bundled_app(False) and sys.platform.startswith(
-            'linux'
+        elif (
+            running_as_bundled_app(check_conda=False) 
+            and sys.platform.startswith('linux')
         ):
             args += [
                 '--no-warn-script-location',
@@ -99,7 +124,7 @@ class PipInstallerTask(AbstractInstallerTask):
         return env
 
 
-class CondaInstallerTask(AbstractInstallerTask):
+class CondaInstallerTool(AbstractInstallerTool):
     def executable(self):
         if self._executable:
             return str(self._executable)
@@ -113,7 +138,7 @@ class CondaInstallerTask(AbstractInstallerTask):
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        args = [self.action, '-y', '--prefix', prefix]
+        args = [self.action.value, '-y', '--prefix', prefix]
         args.append('--override-channels')
         for channel in (*self.origins, *self._default_channels()):
             args.extend(["-c", channel])
@@ -141,15 +166,19 @@ class CondaInstallerTask(AbstractInstallerTask):
 
     def _napari_pin(self):
         from ..._version import version, version_tuple
-
-        if "rc" in version or "dev" in version:
+        
+        version_lower = version.lower()
+        if "rc" in version_lower or "dev" in version_lower:
             # dev or rc versions might not be available in public channels
             # but only installed locally - if we try to pin those, mamba
             # will fail to pin it because there's no record of that version
             # in the remote index, only locally; to work around this bug
             # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
-            return ".".join([str(part) for part in version_tuple[:2]])
-        return ".".join([str(part) for part in version_tuple[:3]])
+            pin_strictness = 2
+        else:
+            # pin to x.x.x
+            pin_strictness = 3
+        return ".".join([str(part) for part in version_tuple[:pin_strictness]])
 
     def _default_channels(self):
         return ('conda-forge',)
@@ -157,7 +186,7 @@ class CondaInstallerTask(AbstractInstallerTask):
     def _default_prefix(self):
         if (Path(sys.prefix) / "conda-meta").is_dir():
             return sys.prefix
-        raise ValueError("prefix has not been specified!")
+        raise ValueError("Prefix has not been specified!")
 
 
 class InstallerQueue(QProcess):
@@ -169,7 +198,7 @@ class InstallerQueue(QProcess):
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
-        self._queue: Deque[AbstractInstallerTask] = Deque()
+        self._queue: Deque[AbstractInstallerTool] = deque()
         self._output_widget = None
 
         self.setProcessChannelMode(QProcess.MergedChannels)
@@ -182,20 +211,20 @@ class InstallerQueue(QProcess):
     # -------------------------- Public API ------------------------------
     def install(
         self,
-        task_handler: TaskHandler,
+        tool: InstallerTools,
         pkgs: Sequence[str],
         *,
         prefix: Optional[str] = None,
         origins: Sequence[str] = (),
         **kwargs,
     ) -> JobId:
-        """Install packages in `pkgs` into `prefix` using `task_handler` tool with additional
+        """Install packages in `pkgs` into `prefix` using `tool` with additional
         `origins` as source for `pkgs`.
 
         Parameters
         ----------
-        task_handler : str
-            Which type of installation task_handler to use: pip or conda
+        tool : InstallerTools
+            Which type of installation tool to use.
         pkgs : Sequence[str]
             List of packages to install.
         prefix : Optional[str], optional
@@ -209,8 +238,8 @@ class InstallerQueue(QProcess):
             ID that can be used to cancel the process.
         """
         item = self._build_queue_item(
-            task_handler=task_handler,
-            action="install",
+            tool=tool,
+            action=InstallerActions.install,
             pkgs=pkgs,
             prefix=prefix,
             origins=origins,
@@ -220,18 +249,18 @@ class InstallerQueue(QProcess):
 
     def uninstall(
         self,
-        task_handler: TaskHandler,
+        tool: InstallerTools,
         pkgs: Sequence[str],
         *,
         prefix: Optional[str] = None,
         **kwargs,
     ) -> JobId:
-        """Uninstall packages in `pkgs` from `prefix` using `task_handler` tool.
+        """Uninstall packages in `pkgs` from `prefix` using `tool`.
 
         Parameters
         ----------
-        task_handler : str
-            Which type of installation task_handler to use: pip or conda
+        tool : InstallerTools
+            Which type of installation tool to use.
         pkgs : Sequence[str]
             List of packages to uninstall.
         prefix : Optional[str], optional
@@ -243,8 +272,8 @@ class InstallerQueue(QProcess):
             ID that can be used to cancel the process.
         """
         item = self._build_queue_item(
-            task_handler=task_handler,
-            action="uninstall",
+            tool=tool,
+            action=InstallerActions.uninstall,
             pkgs=pkgs,
             prefix=prefix,
             **kwargs,
@@ -259,25 +288,16 @@ class InstallerQueue(QProcess):
         job_id : Optional[JobId], optional
             Job ID to cancel.  If not provided, cancel all jobs.
         """
-
-        def end_process():
-            if os.name == 'nt':
-                self.kill()  # this might be too agressive and won't allow rollbacks!
-            else:
-                self.terminate()
-            if self._output_widget:
-                self._output_widget.append("\nTask was cancelled by the user.")
-
         if job_id is None:
             # cancel all jobs
             self._queue.clear()
-            end_process()
+            self._end_process()
             return
 
         for i, item in enumerate(self._queue):
             if item.ident == job_id:
                 if i == 0:  # first in queue, currently running
-                    end_process()
+                    self._end_process()
                 else:  # still pending, just remove from queue
                     self._queue.remove(item)
                 return
@@ -318,24 +338,24 @@ class InstallerQueue(QProcess):
 
     def _build_queue_item(
         self,
-        task_handler: TaskHandler,
-        action: ActionType,
+        tool: InstallerTools,
+        action: InstallerActions,
         pkgs: Sequence[str],
         prefix: Optional[str] = None,
         origins: Sequence[str] = (),
         **kwargs,
-    ) -> AbstractInstallerTask:
-        if task_handler == "pip":
-            InstallerAction = PipInstallerTask
-        elif task_handler == "conda":
-            InstallerAction = CondaInstallerTask
+    ) -> AbstractInstallerTool:
+        if tool.value == "pip":
+            InstallerTool = PipInstallerTool
+        elif tool.value == "conda":
+            InstallerTool = CondaInstallerTool
         else:
-            raise ValueError(f"Handler {task_handler} not recognized!")
-        return InstallerAction(
+            raise ValueError(f"InstallerTool {tool} not recognized!")
+        return InstallerTool(
             pkgs=pkgs, action=action, origins=origins, prefix=prefix, **kwargs
         )
 
-    def _queue_item(self, item: AbstractInstallerTask) -> JobId:
+    def _queue_item(self, item: AbstractInstallerTool) -> JobId:
         self._queue.append(item)
         self._process_queue()
         return item.ident
@@ -344,14 +364,30 @@ class InstallerQueue(QProcess):
         if not self._queue:
             self.allFinished.emit()
             return
-        task = self._queue[0]
-        self.setProgram(str(task.executable()))
-        self.setProcessEnvironment(task.environment())
-        self.setArguments([str(arg) for arg in task.arguments()])
+        tool = self._queue[0]
+        self.setProgram(str(tool.executable()))
+        self.setProcessEnvironment(tool.environment())
+        self.setArguments([str(arg) for arg in tool.arguments()])
         # this might throw a warning because the same process
         # was already running but it's ok
-        self._log(f"Starting '{self.program()}' with args {self.arguments()}")
+        self._log(
+            trans._(
+                "Starting '{program}' with args {args}",
+                program=self.program(),
+                args=self.arguments(),
+            )
+        )
         self.start()
+    
+    def _end_process(self):
+        if os.name == 'nt':
+            # TODO: this might be too agressive and won't allow rollbacks!
+            # investigate whether we can also do .terminate()
+            self.kill()  
+        else:
+            self.terminate()
+        if self._output_widget:
+            self._output_widget.append(trans._("\nTask was cancelled by the user."))
 
     def _on_process_finished(
         self, exit_code: int, exit_status: QProcess.ExitStatus
@@ -362,7 +398,7 @@ class InstallerQueue(QProcess):
             current = None
         if (
             current
-            and current.action == "uninstall"
+            and current.action == InstallerActions.uninstall
             and exit_status == QProcess.ExitStatus.NormalExit
             and exit_code == 0
         ):
@@ -390,11 +426,14 @@ class InstallerQueue(QProcess):
     ):
         with contextlib.suppress(IndexError):
             self._queue.popleft()
-        msg = "Task finished with "
         if error:
-            msg += f"with errors! Code: {error}."
+            msg = trans._("Task finished with errors! Error: {error}.", error=error)
         else:
-            msg += f"exit code {exit_code} with status {exit_status}."
+            msg = trans._(
+                "Task finished with exit code {exit_code} with status {exit_status}.", 
+                exit_code=exit_code,
+                exit_status=exit_status,
+            )
         self._log(msg)
         self._process_queue()
 

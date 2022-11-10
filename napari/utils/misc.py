@@ -51,7 +51,7 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)
 
 
-def running_as_bundled_app(check_conda=True) -> bool:
+def running_as_bundled_app(*, check_conda=True) -> bool:
     """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425

@@ -42,7 +42,7 @@ from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 from ..widgets.qt_tooltip import QtToolTipLabel
-from .qt_package_installer import InstallerQueue
+from .qt_package_installer import InstallerQueue, InstallerTools, InstallerActions
 
 
 class PluginListItem(QFrame):
@@ -316,10 +316,10 @@ class QPluginList(QListWidget):
             lambda: self.handle_action(item, pkg_name, action_name)
         )
         widg.update_btn.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, "install", update=True)
+            lambda: self.handle_action(item, pkg_name, InstallerActions.install, update=True)
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, "cancel")
+            lambda: self.handle_action(item, pkg_name, InstallerActions.cancel)
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
@@ -328,17 +328,17 @@ class QPluginList(QListWidget):
         self,
         item: QListWidgetItem,
         pkg_name: str,
-        action_name: str,
+        action_name: InstallerActions,
         update: bool = False,
     ):
-        # TODO: 'task_handler' should be configurable per item, depending on dropdown
-        task_handler = "conda" if running_as_constructor_app() else "pip"
+        # TODO: 'tool' should be configurable per item, depending on dropdown
+        tool = InstallerTools.conda if running_as_constructor_app() else InstallerTools.pip
         widget = item.widget
         item.setText(f"0-{item.text()}")
         self._remove_list.append((pkg_name, item))
         self._warn_dialog = None
         # TODO: NPE version unknown before installing
-        if item.npe_version != 1 and action_name == "uninstall":
+        if item.npe_version != 1 and action_name == InstallerActions.uninstall:
             # show warning pop up dialog
             message = trans._(
                 'When installing/uninstalling npe2 plugins, you must '
@@ -353,7 +353,7 @@ class QPluginList(QListWidget):
             global_point = QPoint(global_point.x() - delta_x, global_point.y())
             self._warn_dialog.move(global_point)
 
-        if action_name == "install":
+        if action_name == InstallerActions.install:
             if update:
                 if hasattr(item, 'latest_version'):
                     pkg_name += f"=={item.latest_version}"
@@ -364,7 +364,7 @@ class QPluginList(QListWidget):
                 widget.set_busy(trans._("installing..."), update)
 
             job_id = self.installer.install(
-                task_handler=task_handler,
+                tool=tool,
                 pkgs=[pkg_name],
                 # origins="TODO",
             )
@@ -372,11 +372,11 @@ class QPluginList(QListWidget):
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == "uninstall":
+        elif action_name == InstallerActions.uninstall:
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
             job_id = self.installer.uninstall(
-                task_handler=task_handler,
+                tool=tool,
                 pkgs=[pkg_name],
                 # origins="TODO",
             )
@@ -384,7 +384,7 @@ class QPluginList(QListWidget):
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == "cancel":
+        elif action_name == InstallerActions.cancel:
             widget.set_busy(trans._("cancelling..."), update)
             try:
                 job_id = widget.property("current_job_id")

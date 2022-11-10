@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from napari._qt.dialogs.qt_package_installer import InstallerQueue
+from napari._qt.dialogs.qt_package_installer import InstallerQueue, InstallerTools
 
 if TYPE_CHECKING:
     from virtualenv.run import Session
@@ -64,17 +64,17 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
     installer = InstallerQueue()
     with qtbot.waitSignal(installer.allFinished, timeout=20000):
         installer.install(
-            task_handler="pip",
+            tool=InstallerTools.pip,
             pkgs=['pip-install-test'],
             _executable=tmp_virtualenv.creator.exe,
         )
         installer.install(
-            task_handler="pip",
+            tool=InstallerTools.pip,
             pkgs=['typing-extensions'],
             _executable=tmp_virtualenv.creator.exe,
         )
         job_id = installer.install(
-            task_handler="pip",
+            tool=InstallerTools.pip,
             pkgs=['requests'],
             _executable=tmp_virtualenv.creator.exe,
         )
@@ -97,7 +97,7 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
 
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         job_id = installer.uninstall(
-            task_handler="pip",
+            tool=InstallerTools.pip,
             pkgs=['pip-install-test'],
             _executable=tmp_virtualenv.creator.exe,
         )
@@ -114,7 +114,7 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = InstallerQueue()
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(
-            task_handler="conda",
+            tool=InstallerTools.conda,
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
             _executable=conda_executable,
@@ -128,7 +128,7 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
 
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.uninstall(
-            task_handler="conda",
+            tool=InstallerTools.conda,
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
             _executable=conda_executable,
