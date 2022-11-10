@@ -370,12 +370,15 @@ def is_conda_package(pkg):
     bool: True if a conda package, False if not
     """
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    for fname in conda_meta_dir.iterdir():
-        if fname.suffix == '.json':
-            *name, _, _ = fname.name.rsplit('-')
-            name = "-".join(name)
-            if pkg == name:
-                return True
+    try:
+        for fname in conda_meta_dir.iterdir():
+            if fname.suffix == '.json':
+                *name, _, _ = fname.name.rsplit('-')
+                name = "-".join(name)
+                if pkg == name:
+                    return True
+    except FileNotFoundError:
+        return False
 
     return False
 
@@ -402,7 +405,7 @@ class PluginListItem(QFrame):
         versions_pypi: list = [],
     ):
         super().__init__(parent)
-
+        self.url = url
         self._versions = {}
         self._versions['Conda'] = versions_conda
         self._versions['PyPi'] = versions_pypi
@@ -418,8 +421,6 @@ class PluginListItem(QFrame):
         self.package_author.setWordWrap(True)
         self.cancel_btn.setVisible(False)
 
-        self.help_button.setText(trans._("Website"))
-        self.help_button.setObjectName("help_button")
         self._handle_npe2_plugin(npe_version)
 
         if installed:
@@ -439,7 +440,6 @@ class PluginListItem(QFrame):
             self.info_widget.hide()
             self.install_info_button.addWidget(self.info_choice_wdg)
             self.info_choice_wdg.show()
-            self.update_btn.setVisible(False)
             self.source_choice_dropdown.show()
 
     def _handle_npe2_plugin(self, npe_version):
@@ -478,21 +478,16 @@ class PluginListItem(QFrame):
         """
         self.item_status.setText(text)
         if action_name == 'install' and update is True:
-            self.update_btn.setVisible(False)
             self.cancel_btn.setVisible(True)
             self.action_button.setVisible(False)
             self.old_action = 'update'
         elif (
             action_name == 'uninstall' or action_name == 'install'
         ) and update is False:
-            self.update_btn.setVisible(False)
             self.action_button.setVisible(False)
             self.cancel_btn.setVisible(True)
             self.old_action = action_name
         elif action_name == 'cancel':
-            if self.old_action != 'install':
-                self.update_btn.setVisible(True)
-                self.update_btn.setDisabled(False)
             self.action_button.setVisible(True)
             self.action_button.setDisabled(False)
             self.cancel_btn.setVisible(False)
@@ -519,7 +514,13 @@ class PluginListItem(QFrame):
         self.enabled_checkbox.setMinimumSize(QSize(20, 0))
         self.enabled_checkbox.setText("")
         self.row1.addWidget(self.enabled_checkbox)
-        self.plugin_name = QLabel(self)
+        self.plugin_name = QPushButton(self)
+        # Do not want to highlight on hover unless there is a website.
+        if self.url:
+            self.plugin_name.setObjectName('plugin_name_web')
+        else:
+            self.plugin_name.setObjectName('plugin_name')
+
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -562,6 +563,7 @@ class PluginListItem(QFrame):
             self.error_indicator, alignment=Qt.AlignmentFlag.AlignTop
         )
         self.row2.setContentsMargins(-1, 4, 0, -1)
+        self.row2.setSpacing(5)
         self.summary = QElidingLabel(parent=self)
         self.summary.setObjectName('summary_text')
         self.summary.setWordWrap(True)
@@ -593,16 +595,13 @@ class PluginListItem(QFrame):
             self.package_author, alignment=Qt.AlignmentFlag.AlignTop
         )
 
-        self.help_button = QPushButton(self)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.help_button.sizePolicy().hasHeightForWidth()
-        )
-        self.help_button.setSizePolicy(sizePolicy)
+        self.update_btn = QPushButton('Update', self)
+        self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.update_btn.setObjectName("install_button")
+        self.update_btn.setVisible(False)
+
         self.row2.addWidget(
-            self.help_button, alignment=Qt.AlignmentFlag.AlignTop
+            self.update_btn, alignment=Qt.AlignmentFlag.AlignTop
         )
 
         self.info_choice_wdg = QWidget(self)
@@ -630,6 +629,7 @@ class PluginListItem(QFrame):
         self.install_info_button.content().layout().setContentsMargins(
             0, 0, 0, 0
         )
+        self.version_choice_dropdown.setFixedWidth(80)
         self.row2.addWidget(
             self.install_info_button, alignment=Qt.AlignmentFlag.AlignTop
         )
@@ -654,13 +654,6 @@ class PluginListItem(QFrame):
             self.cancel_btn, alignment=Qt.AlignmentFlag.AlignTop
         )
 
-        self.update_btn = QPushButton('Update', self)
-        self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.update_btn.setObjectName("install_button")
-
-        self.row2.addWidget(
-            self.update_btn, alignment=Qt.AlignmentFlag.AlignTop
-        )
         self.action_button = QPushButton(self)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -694,10 +687,10 @@ class PluginListItem(QFrame):
         self.source = QLabel('PyPi')
         self.source.setStyleSheet('margin-right: 7px; padding: 0px;')
 
-        info_layout.addWidget(self.version_text, 0, 0)
-        info_layout.addWidget(self.package_name, 1, 0)
-        info_layout.addWidget(self.source_text, 0, 1)
-        info_layout.addWidget(self.source, 1, 1)
+        info_layout.addWidget(self.source_text, 0, 0)
+        info_layout.addWidget(self.source, 1, 0)
+        info_layout.addWidget(self.version_text, 0, 1)
+        info_layout.addWidget(self.package_name, 1, 1)
 
         self.info_widget.setLayout(info_layout)
 
@@ -800,11 +793,9 @@ class QPluginList(QListWidget):
         if project_info.home_page:
             import webbrowser
 
-            widg.help_button.clicked.connect(
+            widg.plugin_name.clicked.connect(
                 partial(webbrowser.open, project_info.home_page)
             )
-        else:
-            widg.help_button.setVisible(False)
 
         widg.action_button.clicked.connect(
             partial(self.handle_action, item, pkg_name, action_name,
@@ -1147,7 +1138,7 @@ class QtPluginDialog(QDialog):
     def setup_ui(self):
         """Defines the layout for the PluginDialog."""
 
-        self.resize(1080, 640)
+        self.resize(950, 640)
         vlay_1 = QVBoxLayout(self)
         self.h_splitter = QSplitter(self)
         vlay_1.addWidget(self.h_splitter)

@@ -155,3 +155,6 @@ def test_constructor_visible_widgets(plugin_dialog_constructor):
     """
     assert not plugin_dialog_constructor.direct_entry_edit.isVisible()
     assert not plugin_dialog_constructor.direct_entry_btn.isVisible()
+
+
+# def test_version_dropdown(plugin_dialog):
