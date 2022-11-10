@@ -3,20 +3,20 @@ from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 
 from qtpy import QtCore, QtGui, QtWidgets
 
-from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
-from napari._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
-from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor
+from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
+from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
+from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
-from napari._vendor.qt_json_builder.qt_jsonschema_form.signal import Signal
-from napari._vendor.qt_json_builder.qt_jsonschema_form.utils import is_concrete_schema, iter_layout_widgets, state_property
+from .signal import Signal
+from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
-from napari._qt.widgets.qt_plugin_sorter import QtPluginSorter
+from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
 
-from napari._qt.widgets.qt_spinbox import QtSpinBox
+from ...._qt.widgets.qt_spinbox import QtSpinBox
 
 
 if TYPE_CHECKING:
-    from napari._vendor.qt_json_builder.qt_jsonschema_form.form import WidgetBuilder
+    from .form import WidgetBuilder
 
 
 class SchemaWidgetMixin:

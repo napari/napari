@@ -11,11 +11,11 @@ try:
 except ImportError:  # pragma: no cover
     from dummy_threading import RLock
 
-from napari._vendor.experimental.cachetools.cachetools import keys
-from napari._vendor.experimental.cachetools.cachetools.lfu import LFUCache
-from napari._vendor.experimental.cachetools.cachetools.lru import LRUCache
-from napari._vendor.experimental.cachetools.cachetools.rr import RRCache
-from napari._vendor.experimental.cachetools.cachetools.ttl import TTLCache
+from . import keys
+from .lfu import LFUCache
+from .lru import LRUCache
+from .rr import RRCache
+from .ttl import TTLCache
 
 __all__ = ('lfu_cache', 'lru_cache', 'rr_cache', 'ttl_cache')
 
