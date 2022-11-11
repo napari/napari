@@ -1,3 +1,4 @@
+import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
@@ -292,16 +293,22 @@ def test_slice_layers_exception_subthread_on_result(layer_slicer):
     """Exception is raised on the main thread from an error on a subthread
     only after result is called, not upon submission of the task."""
 
+    @dataclass(frozen=True)
+    class FakeSliceRequestError(FakeSliceRequest):
+        def __call__(self) -> FakeSliceResponse:
+            assert current_thread() != main_thread()
+            raise RuntimeError('FakeSliceRequestError')
+
     class FakeAsyncLayerError(FakeAsyncLayer):
-        def _get_slice(self, request: FakeSliceRequest) -> FakeSliceResponse:
-            raise RuntimeError('_get_slice')
+        def _make_slice_request(self, dims) -> FakeSliceRequestError:
+            return FakeSliceRequestError(id=self.slice_count, lock=self.lock)
 
     layer = FakeAsyncLayerError()
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     done, _ = wait([future], timeout=5)
     if done:
-        with pytest.raises(RuntimeError, match='_get_slice'):
+        with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
             future.result()
     else:
         raise TimeoutError('Test future did not complete within timeout.')
@@ -333,6 +340,7 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
 
 def _wait_until_running(future: Future):
     while not future.running():
+        time.sleep(0.01)
         continue
 
 
