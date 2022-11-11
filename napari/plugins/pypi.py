@@ -140,7 +140,9 @@ def conda_package_versions(
     )
 
 
-def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
+def iter_napari_plugin_info() -> Iterator[
+    Tuple[PackageMetadata, bool, List[str], List[str]]
+]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
         data = executor.submit(pypi_plugin_summaries)
