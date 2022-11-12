@@ -563,7 +563,7 @@ class PluginListItem(QFrame):
         self.row2.addWidget(
             self.error_indicator, alignment=Qt.AlignmentFlag.AlignTop
         )
-        self.row2.setContentsMargins(-1, 4, 0, -1)
+        self.row2.setContentsMargins(-1, -1, 10, 0)
         self.row2.setSpacing(5)
         self.summary = QElidingLabel(parent=self)
         self.summary.setObjectName('summary_text')
