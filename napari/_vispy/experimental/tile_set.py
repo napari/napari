@@ -4,8 +4,8 @@ TiledImageVisual uses this class to track the tiles it's drawing.
 """
 from typing import Dict, List, NamedTuple, Set
 
-from ...layers.image.experimental import OctreeChunk
-from .texture_atlas import AtlasTile
+from napari._vispy.experimental.texture_atlas import AtlasTile
+from napari.layers.image.experimental import OctreeChunk
 
 
 class TileData(NamedTuple):

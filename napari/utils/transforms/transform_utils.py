@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.linalg
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 def compose_linear_matrix(rotate, scale, shear) -> np.array:

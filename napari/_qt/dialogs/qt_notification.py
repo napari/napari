@@ -25,14 +25,14 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel, ensure_main_thread
 
-from ...settings import get_settings
-from ...utils.notifications import Notification, NotificationSeverity
-from ...utils.theme import get_theme
-from ...utils.translations import trans
-from ..code_syntax_highlight import Pylighter
-from ..qt_resources import QColoredSVGIcon
+from napari._qt.code_syntax_highlight import Pylighter
+from napari._qt.qt_resources import QColoredSVGIcon
+from napari.settings import get_settings
+from napari.utils.notifications import Notification, NotificationSeverity
+from napari.utils.theme import get_theme
+from napari.utils.translations import trans
 
-ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
 
 
 class NapariQtNotification(QDialog):
@@ -110,8 +110,8 @@ class NapariQtNotification(QDialog):
 
     def _update_icon(self, severity: str):
         """Update the icon to match the severity level."""
-        from ...settings import get_settings
-        from ...utils.theme import get_theme
+        from napari.settings import get_settings
+        from napari.utils.theme import get_theme
 
         settings = get_settings()
         theme = settings.appearance.theme
@@ -353,42 +353,13 @@ class NapariQtNotification(QDialog):
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
 
-        from ...utils.notifications import ErrorNotification
+        from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
 
-            def show_tb(parent_):
-                tbdialog = QDialog(parent=parent_.parent())
-                tbdialog.setModal(True)
-                # this is about the minimum width to not get rewrap
-                # and the minimum height to not have scrollbar
-                tbdialog.resize(650, 270)
-                tbdialog.setLayout(QVBoxLayout())
-
-                text = QTextEdit()
-                theme = get_theme(
-                    get_settings().appearance.theme, as_dict=False
-                )
-                _highlight = Pylighter(  # noqa: F841
-                    text.document(), "python", theme.syntax_style
-                )
-                text.setText(notification.as_text())
-                text.setReadOnly(True)
-                btn = QPushButton(trans._('Enter Debugger'))
-
-                def _enter_debug_mode():
-                    btn.setText(
-                        trans._(
-                            'Now Debugging. Please quit debugger in console to continue'
-                        )
-                    )
-                    _debug_tb(notification.exception.__traceback__)
-                    btn.setText(trans._('Enter Debugger'))
-
-                btn.clicked.connect(_enter_debug_mode)
-                tbdialog.layout().addWidget(text)
-                tbdialog.layout().addWidget(
-                    btn, 0, Qt.AlignmentFlag.AlignRight
+            def show_tb(notification_dialog):
+                tbdialog = TracebackDialog(
+                    notification, notification_dialog.parent()
                 )
                 tbdialog.show()
 
@@ -409,8 +380,8 @@ class NapariQtNotification(QDialog):
     @classmethod
     @ensure_main_thread
     def show_notification(cls, notification: Notification):
-        from ..._qt.qt_main_window import _QtMainWindow
-        from ...settings import get_settings
+        from napari._qt.qt_main_window import _QtMainWindow
+        from napari.settings import get_settings
 
         settings = get_settings()
 
@@ -428,7 +399,7 @@ class NapariQtNotification(QDialog):
 def _debug_tb(tb):
     import pdb
 
-    from ..utils import event_hook_removed
+    from napari._qt.utils import event_hook_removed
 
     QApplication.processEvents()
     QApplication.processEvents()
@@ -436,3 +407,32 @@ def _debug_tb(tb):
         print("Entering debugger. Type 'q' to return to napari.\n")
         pdb.post_mortem(tb)
         print("\nDebugging finished.  Napari active again.")
+
+
+class TracebackDialog(QDialog):
+    def __init__(self, exception, parent=None):
+        super().__init__(parent=parent)
+        self.exception = exception
+        self.setModal(True)
+        self.setLayout(QVBoxLayout())
+        self.resize(650, 270)
+        text = QTextEdit()
+        theme = get_theme(get_settings().appearance.theme, as_dict=False)
+        _highlight = Pylighter(  # noqa: F841
+            text.document(), "python", theme.syntax_style
+        )
+        text.setText(exception.as_text())
+        text.setReadOnly(True)
+        self.btn = QPushButton(trans._('Enter Debugger'))
+        self.btn.clicked.connect(self._enter_debug_mode)
+        self.layout().addWidget(text)
+        self.layout().addWidget(self.btn, 0, Qt.AlignmentFlag.AlignRight)
+
+    def _enter_debug_mode(self):
+        self.btn.setText(
+            trans._(
+                'Now Debugging. Please quit debugger in console to continue'
+            )
+        )
+        _debug_tb(self.exception.__traceback__)
+        self.btn.setText(trans._('Enter Debugger'))

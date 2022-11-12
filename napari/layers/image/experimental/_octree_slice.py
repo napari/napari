@@ -10,22 +10,28 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
-from ....utils.translations import trans
-from ._octree_loader import OctreeLoader
-from .octree import Octree
-from .octree_intersection import OctreeIntersection, OctreeView
-from .octree_level import OctreeLevel, OctreeLevelInfo
-from .octree_util import OctreeMetadata
+from napari.layers.image.experimental._octree_loader import OctreeLoader
+from napari.layers.image.experimental.octree import Octree
+from napari.layers.image.experimental.octree_intersection import (
+    OctreeIntersection,
+    OctreeView,
+)
+from napari.layers.image.experimental.octree_level import (
+    OctreeLevel,
+    OctreeLevelInfo,
+)
+from napari.layers.image.experimental.octree_util import OctreeMetadata
+from napari.utils.translations import trans
 
 LOGGER = logging.getLogger("napari.octree.slice")
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import (
+    from napari.components.experimental.chunk import (
         ChunkRequest,
         LayerRef,
         OctreeLocation,
     )
-    from .octree_chunk import OctreeChunk
+    from napari.layers.image.experimental.octree_chunk import OctreeChunk
 
 
 class OctreeSlice:

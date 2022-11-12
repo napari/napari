@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 
-from ....utils.config import octree_config
+from napari.utils.config import octree_config
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import LayerRef
+    from napari.components.experimental.chunk import LayerRef
 
 
 def _get_tile_size() -> int:

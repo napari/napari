@@ -6,8 +6,8 @@ the chunk we are requesting and once it's loaded.
 """
 import numpy as np
 
-from ....components.experimental.chunk import ChunkLocation, LayerRef
-from ....layers import Layer
+from napari.components.experimental.chunk import ChunkLocation, LayerRef
+from napari.layers import Layer
 
 
 def get_data_id(data) -> int:

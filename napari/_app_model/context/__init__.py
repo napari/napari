@@ -1,5 +1,9 @@
-from ._context import Context, create_context, get_context
-from ._layerlist_context import LayerListContextKeys
+from napari._app_model.context._context import (
+    Context,
+    create_context,
+    get_context,
+)
+from napari._app_model.context._layerlist_context import LayerListContextKeys
 
 __all__ = [
     'Context',

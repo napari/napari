@@ -58,22 +58,43 @@ def test_PublicOnlyProxy(patched_root_dir):
     assert proxy.x.method() == 2
 
     assert isinstance(proxy, Tester)
-    with pytest.warns(FutureWarning) as e:
+    with pytest.warns(FutureWarning, match='Private attribute access'):
         proxy._private
-    assert 'Private attribute access' in str(e[0].message)
 
-    with pytest.warns(FutureWarning) as e:
+    with pytest.warns(FutureWarning, match='Private attribute access'):
+        # warns on setattr
+        proxy._private = 4
+
+    with pytest.warns(FutureWarning, match='Private attribute access'):
         # works on sub-objects too
         proxy.x._b
-    assert 'Private attribute access' in str(e[0].message)
 
-    with pytest.warns(FutureWarning) as e:
+    with pytest.warns(FutureWarning, match='Private attribute access'):
         # works on sub-items too
         proxy[0]._b
-    assert 'Private attribute access' in str(e[0].message)
 
     assert '_private' not in dir(proxy)
     assert '_private' in dir(t)
+
+
+@pytest.mark.filterwarnings("ignore:Qt libs are available but")
+def test_thread_proxy_guard(monkeypatch, single_threaded_executor):
+    class X:
+        a = 1
+
+    monkeypatch.setenv('NAPARI_ENSURE_PLUGIN_MAIN_THREAD', 'True')
+
+    x = X()
+    x_proxy = PublicOnlyProxy(x)
+
+    f = single_threaded_executor.submit(x.__setattr__, 'a', 2)
+    f.result()
+    assert x.a == 2
+
+    f = single_threaded_executor.submit(x_proxy.__setattr__, 'a', 3)
+    with pytest.raises(RuntimeError):
+        f.result()
+    assert x.a == 2
 
 
 def test_public_proxy_limited_to_napari(patched_root_dir):

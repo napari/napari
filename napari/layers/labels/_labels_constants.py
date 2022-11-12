@@ -2,8 +2,8 @@ import sys
 from collections import OrderedDict
 from enum import auto
 
-from ...utils.misc import StringEnum
-from ...utils.translations import trans
+from napari.utils.misc import StringEnum
+from napari.utils.translations import trans
 
 
 class Mode(StringEnum):

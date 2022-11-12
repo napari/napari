@@ -4,13 +4,13 @@ import re
 from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from npe2 import PluginManifest
 
+from napari.plugins import _npe2, plugin_manager
 from napari.settings import get_settings
-
-from . import _npe2, plugin_manager
 
 
 class MatchFlag(IntFlag):
@@ -130,6 +130,9 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     """
     readers = {}
     hook_caller = plugin_manager.hook.napari_get_reader
+    # lower case file extension
+    ext = str(Path(filename).suffix).lower()
+    filename = str(Path(filename).with_suffix(ext))
     for impl in hook_caller.get_hookimpls():
         reader = hook_caller._call_plugin(impl.plugin_name, path=filename)
         if callable(reader):
