@@ -295,10 +295,6 @@ def test_mgui_forward_refs(name, monkeypatch):
     """
     import magicgui.type_map
 
-    # clearing out the loaded modules that call magicgui.register_type,
-    # to make sure that when the forward ref is evaluated, those modules get imported
-    # again.
-    monkeypatch.setattr(magicgui.type_map, '_TYPE_DEFS', {})
     monkeypatch.delitem(sys.modules, 'napari')
     monkeypatch.delitem(sys.modules, 'napari.viewer')
     monkeypatch.delitem(sys.modules, 'napari.types')
@@ -309,7 +305,6 @@ def test_mgui_forward_refs(name, monkeypatch):
         if m.startswith('napari.layers') and 'utils' not in m:
             monkeypatch.delitem(sys.modules, m)
 
-    assert magicgui.type_map._TYPE_DEFS == {}
     wdg, options = magicgui.type_map.pick_widget_type(annotation=name)
     if name == 'napari.Viewer':
         assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
