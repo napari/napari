@@ -27,7 +27,7 @@ def build_qmodel_menu(
     QModelMenu
         QMenu subclass populated with all items in `menu_id` menu.
     """
-    from ..._app_model import get_app
+    from napari._app_model import get_app
 
     return QModelMenu(
         menu_id=menu_id, app=get_app(), title=title, parent=parent

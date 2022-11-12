@@ -3,8 +3,8 @@
 import json
 import logging
 
-from ....layers.image.experimental.octree_image import _OctreeImageBase
-from ...layerlist import LayerList
+from napari.components.layerlist import LayerList
+from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
 LOGGER = logging.getLogger("napari.monitor")
 

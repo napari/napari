@@ -14,11 +14,11 @@ from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
 
 import napari.utils._appdirs
+from napari.settings._yaml import PydanticYamlMixin
+from napari.utils.events import EmitterGroup, EventedModel
+from napari.utils.misc import deep_update
+from napari.utils.translations import trans
 
-from ..utils.events import EmitterGroup, EventedModel
-from ..utils.misc import deep_update
-from ..utils.translations import trans
-from ._yaml import PydanticYamlMixin
 
 _logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
     from pydantic.env_settings import EnvSettingsSource, SettingsSourceCallable
 
-    from ..utils.events import Event
+    from napari.utils.events import Event
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
