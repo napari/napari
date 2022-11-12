@@ -7,7 +7,7 @@ the translator before the settings manager is created.
 
 from pathlib import Path
 
-from ._appdirs import user_config_dir
+from napari.utils._appdirs import user_config_dir
 
 _FILENAME = "settings.yaml"
 _DEFAULT_LOCALE = "en"

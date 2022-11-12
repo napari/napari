@@ -19,7 +19,6 @@ from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import deep_update
 from napari.utils.translations import trans
 
-
 _logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
