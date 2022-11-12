@@ -5,11 +5,10 @@ import numpy as np
 from pydantic import PrivateAttr, validator
 
 from napari.utils.color import ColorArray
-
-from ..events import EventedModel
-from ..events.custom_types import Array
-from ..translations import trans
-from .colorbars import make_colorbar
+from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.events import EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class ColormapInterpolationMode(str, Enum):
@@ -121,10 +120,11 @@ class Colormap(EventedModel):
             cols = np.stack(cols, axis=1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
+            # Colors beyond max clipped to final bin
             indices = np.clip(
                 np.searchsorted(self.controls, values, side="right") - 1,
                 0,
-                len(self.colors),
+                len(self.colors) - 1,
             )
             cols = self.colors[indices.astype(np.int32)]
         else:

@@ -15,8 +15,7 @@ from qtpy.QtWidgets import (
 from napari.errors import ReaderPluginError
 from napari.plugins.utils import get_potential_readers
 from napari.settings import get_settings
-
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtReaderDialog(QDialog):
@@ -180,7 +179,7 @@ def handle_gui_reading(
         name of plugin already tried, if any
     error : ReaderPluginError | None
         previous error raised in the process of opening
-    plugin_override: bool
+    plugin_override : bool
         True when user is forcing a plugin choice, otherwise False.
         Dictates whether checkbox to remember choice is unchecked by default
     """

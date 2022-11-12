@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari.utils.events import disconnect_events
 
 
 class VispyBaseLayer(ABC):
@@ -124,7 +124,7 @@ class VispyBaseLayer(ABC):
 
     def _on_matrix_change(self):
         transform = self.layer._transforms.simplified.set_slice(
-            self.layer._dims_displayed
+            self.layer._slice_input.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -137,13 +137,13 @@ class VispyBaseLayer(ABC):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        if self._array_like and self.layer._ndisplay == 2:
+        if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = self.layer._data_to_world.set_slice(
-                self.layer._dims_displayed
+                self.layer._slice_input.displayed
             ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
             # Convert NumPy axis ordering to VisPy axis ordering

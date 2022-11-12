@@ -10,7 +10,7 @@ from typing import Optional, Union
 
 from yaml import safe_load
 
-from ._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
+from napari.utils._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
@@ -625,7 +625,7 @@ class _Translator:
             if locale.split("_")[0] != _DEFAULT_LOCALE:
                 _Translator._update_env(locale)
 
-            for __, bundle in cls._TRANSLATORS.items():
+            for bundle in cls._TRANSLATORS.values():
                 bundle._update_locale(locale)
 
     @classmethod

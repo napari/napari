@@ -21,12 +21,12 @@ from qtpy.QtWidgets import (
 )
 from vispy.util import keys
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
-from ...settings import get_settings
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
-from ..widgets.qt_message_popup import WarnPopup
+from napari._qt.widgets.qt_message_popup import WarnPopup
+from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 # Dict used to format strings returned from converted key press events.
 # For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
@@ -84,7 +84,7 @@ class ShortcutEditor(QWidget):
                 actions = {}
             else:
                 actions = action_manager._get_layer_actions(layer)
-                for name, action in actions.items():
+                for name in actions.keys():
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
 
@@ -513,7 +513,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for action_name, action in action_manager._actions.items():
+        for action_name in action_manager._actions.keys():
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 

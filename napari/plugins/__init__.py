@@ -4,11 +4,9 @@ from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
 
-from napari.utils.theme import refresh_themes
-
-from ..settings import get_settings
-from . import _npe2
-from ._plugin_manager import NapariPluginManager
+from napari.plugins import _npe2
+from napari.plugins._plugin_manager import NapariPluginManager
+from napari.settings import get_settings
 
 __all__ = ("plugin_manager", "menu_item_template")
 

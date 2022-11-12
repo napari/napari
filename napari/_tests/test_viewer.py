@@ -165,6 +165,10 @@ def test_screenshot(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
 
+    # test size argument (and ensure it coerces to int)
+    screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
+    assert screenshot.shape == (20, 20, 4)
+
 
 @skip_on_win_ci
 def test_changing_theme(make_napari_viewer):
