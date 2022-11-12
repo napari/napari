@@ -333,7 +333,7 @@ class InstallerQueue(QProcess):
         if tool == "conda":
             return CondaInstallerTool
         raise ValueError(f"InstallerTool {tool} not recognized!")
-    
+
     def _build_queue_item(
         self,
         tool: InstallerTools,
