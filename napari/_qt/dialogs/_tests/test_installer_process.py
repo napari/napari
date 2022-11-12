@@ -1,13 +1,18 @@
 import os
 import sys
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from qtpy.QtCore import QProcessEnvironment
 
 from napari._qt.dialogs.qt_package_installer import (
     InstallerQueue,
     InstallerTools,
+    AbstractInstallerTool,
+    PipInstallerTool,
+    CondaInstallerTool,
 )
 
 if TYPE_CHECKING:
@@ -63,23 +68,21 @@ def tmp_conda_env(tmp_path):
     return tmp_path
 
 
-def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
+def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     installer = InstallerQueue()
-    with qtbot.waitSignal(installer.allFinished, timeout=20000):
+    monkeypatch.setattr(PipInstallerTool, "executable", lambda *a: tmp_virtualenv.creator.exe)
+    with qtbot.waitSignal(installer.allFinished, timeout=20000):  
         installer.install(
             tool=InstallerTools.pip,
             pkgs=['pip-install-test'],
-            _executable=tmp_virtualenv.creator.exe,
         )
         installer.install(
             tool=InstallerTools.pip,
             pkgs=['typing-extensions'],
-            _executable=tmp_virtualenv.creator.exe,
         )
         job_id = installer.install(
             tool=InstallerTools.pip,
             pkgs=['requests'],
-            _executable=tmp_virtualenv.creator.exe,
         )
         assert isinstance(job_id, int)
         installer.cancel(job_id)
@@ -102,7 +105,6 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
         job_id = installer.uninstall(
             tool=InstallerTools.pip,
             pkgs=['pip-install-test'],
-            _executable=tmp_virtualenv.creator.exe,
         )
 
     for pth in tmp_virtualenv.creator.libs:
@@ -112,15 +114,76 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session'):
     assert not installer.hasJobs()
 
 
-def test_conda_installer(qtbot, tmp_conda_env: Path):
+def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
+    installer = InstallerQueue()
+    monkeypatch.setattr(PipInstallerTool, "executable", lambda *a: tmp_virtualenv.creator.exe)
+
+    # CHECK 1) Errors should trigger finished and allFinished too
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):  
+        installer.install(
+            tool=InstallerTools.pip,
+            pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
+        )
+
+    # Keep a reference before we monkey patch stuff
+    installer._on_process_done_original = installer._on_process_done
+
+    # CHECK 2) Non-existing packages should return non-zero
+    def _assert_exit_code_not_zero(exit_code=None, exit_status=None, error=None):
+        errors = []
+        if exit_code == 0:
+            errors.append("- 'exit_code' should have been non-zero!")
+        if error is not None:
+            errors.append("- 'error' should have been None!")
+        if errors:
+            raise Exception("\n".join(errors))
+        return installer._on_process_done_original(exit_code, exit_status, error)
+
+    monkeypatch.setattr(installer, "_on_process_done", _assert_exit_code_not_zero)
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):
+        installer.install(
+            tool=InstallerTools.pip,
+            pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
+        )
+
+    # CHECK 3) Non-existing tools should fail to start
+    class NonExistingTool(AbstractInstallerTool):
+        def executable(self):
+            return f"this-tool-does-not-exist-{hash(time.time())}"
+        def arguments(self):
+            return ()
+        def environment(self, env=None):
+            return QProcessEnvironment.systemEnvironment()
+
+    def _assert_error_used(exit_code=None, exit_status=None, error=None):
+        errors = []
+        if error is None:
+            errors.append("- 'error' should have been populated!")
+        if exit_code is not None:
+            errors.append("- 'exit_code' should not have been populated!")
+        if errors:
+            raise Exception("\n".join(errors))
+        return installer._on_process_done_original(exit_code, exit_status, error)
+
+    monkeypatch.setattr(installer, "_on_process_done", _assert_error_used)
+    monkeypatch.setattr(installer, "_get_tool", lambda *a: NonExistingTool)
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):
+        installer.install(
+            tool=NonExistingTool,
+            pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
+        )
+
+
+def test_conda_installer(qtbot, tmp_conda_env: Path, monkeypatch):
     conda_executable = conda_exe()
     installer = InstallerQueue()
+    monkeypatch.setattr(CondaInstallerTool, "executable", lambda *a: conda_executable)
+
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(
             tool=InstallerTools.conda,
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
-            _executable=conda_executable,
         )
 
     conda_meta = tmp_conda_env / "conda-meta"
@@ -134,7 +197,6 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
             tool=InstallerTools.conda,
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
-            _executable=conda_executable,
         )
 
     assert not installer.hasJobs()

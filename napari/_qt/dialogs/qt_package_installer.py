@@ -14,7 +14,7 @@ import shutil
 import sys
 from collections import deque
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, auto
 from logging import getLogger
 from pathlib import Path
 from tempfile import gettempdir
@@ -55,7 +55,6 @@ class AbstractInstallerTool:
     pkgs: Tuple[str, ...]
     origins: Tuple[str, ...] = ()
     prefix: Optional[str] = None
-    _executable: Optional[str] = None
 
     @property
     def ident(self):
@@ -66,12 +65,7 @@ class AbstractInstallerTool:
         raise NotImplementedError()
 
     # abstract method
-    def arguments(
-        self,
-        action: InstallerActions,
-        pkgs: Tuple[str, ...],
-        prefix: Optional[str] = None,
-    ):
+    def arguments(self):
         raise NotImplementedError()
 
     # abstract method
@@ -83,8 +77,6 @@ class AbstractInstallerTool:
 
 class PipInstallerTool(AbstractInstallerTool):
     def executable(self):
-        if self._executable:
-            return str(self._executable)
         return str(_get_python_exe())
 
     def arguments(self) -> Tuple[str, ...]:
@@ -127,8 +119,6 @@ class PipInstallerTool(AbstractInstallerTool):
 
 class CondaInstallerTool(AbstractInstallerTool):
     def executable(self):
-        if self._executable:
-            return str(self._executable)
         _bat = ".bat" if os.name == "nt" else ""
         if exe := os.environ.get("MAMBA_EXE", shutil.which(f'mamba{_bat}')):
             return exe
@@ -139,7 +129,7 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        args = [self.action, '-y', '--prefix', prefix]
+        args = [self.action.value, '-y', '--prefix', prefix]
         args.append('--override-channels')
         for channel in (*self.origins, *self._default_channels()):
             args.extend(["-c", channel])
@@ -337,6 +327,13 @@ class InstallerQueue(QProcess):
         if self._output_widget:
             self._output_widget.append(msg)
 
+    def _get_tool(self, tool: InstallerTools):
+        if tool == "pip":
+            return PipInstallerTool
+        if tool == "conda":
+            return CondaInstallerTool
+        raise ValueError(f"InstallerTool {tool} not recognized!")
+    
     def _build_queue_item(
         self,
         tool: InstallerTools,
@@ -346,13 +343,7 @@ class InstallerQueue(QProcess):
         origins: Sequence[str] = (),
         **kwargs,
     ) -> AbstractInstallerTool:
-        if tool.value == "pip":
-            InstallerTool = PipInstallerTool
-        elif tool.value == "conda":
-            InstallerTool = CondaInstallerTool
-        else:
-            raise ValueError(f"InstallerTool {tool} not recognized!")
-        return InstallerTool(
+        return self._get_tool(tool)(
             pkgs=pkgs, action=action, origins=origins, prefix=prefix, **kwargs
         )
 
