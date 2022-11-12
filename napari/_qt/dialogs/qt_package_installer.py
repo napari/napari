@@ -36,14 +36,14 @@ JobId = int
 log = getLogger(__name__)
 
 
-class InstallerActions(Enum):
+class InstallerActions(str, Enum):
     "Available actions for the plugin manager"
     install = "install"
     uninstall = "uninstall"
     cancel = "cancel"
 
 
-class InstallerTools(Enum):
+class InstallerTools(str, Enum):
     "Available tools for InstallerQueue jobs"
     conda = "conda"
     pip = "pip"
@@ -139,7 +139,7 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        args = [self.action.value, '-y', '--prefix', prefix]
+        args = [self.action, '-y', '--prefix', prefix]
         args.append('--override-channels')
         for channel in (*self.origins, *self._default_channels()):
             args.extend(["-c", channel])
