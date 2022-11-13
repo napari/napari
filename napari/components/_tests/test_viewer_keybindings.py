@@ -1,7 +1,7 @@
 from napari.components._viewer_key_bindings import toggle_theme
 from napari.components.viewer_model import ViewerModel
 from napari.settings import get_settings
-from napari.utils.theme import available_themes
+from napari.utils.theme import available_themes, get_system_theme
 
 
 def test_theme_toggle_keybinding():
@@ -26,3 +26,11 @@ def test_theme_toggle_keybinding():
         assert not viewer.theme == 'system'
     # ensure we're back at the initial theme
     assert viewer.theme == initial_theme
+
+
+def test_theme_toggle_from_system_theme():
+    get_settings().appearance.theme = 'system'
+    viewer = ViewerModel()
+    actual_theme = get_system_theme()
+    toggle_theme(viewer)
+    assert not viewer.theme == actual_theme
