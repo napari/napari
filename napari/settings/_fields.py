@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from functools import total_ordering
 from typing import Any, Dict, Optional, SupportsInt, Tuple, Union
 
-from napari.utils.theme import available_themes
+from napari.utils.theme import available_themes, refresh_themes
 from napari.utils.translations import _load_language, get_language_packs, trans
 
 
