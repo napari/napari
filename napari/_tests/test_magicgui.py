@@ -287,11 +287,8 @@ NAMES = ('Image', 'Labels', 'Layer', 'Points', 'Shapes', 'Surface')
 
 @pytest.mark.parametrize('name', sorted(MGUI_EXPORTS))
 def test_mgui_forward_refs(name, monkeypatch):
-    """Test magicgui forward ref annotations
-
-    make sure that calling
-    `magicgui.type_map.get_widget_class` with the string version of a napari
-    object triggers the appropriate imports to resolve the class in time.
+    """make sure that magicgui's `get_widget_class` returns the right widget type
+    for the various napari types... even when expressed as strings.
     """
     import magicgui.widgets
     from magicgui.type_map import get_widget_class
