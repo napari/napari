@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from magicgui import magicgui
 
-from napari import Viewer, layers, types
+from napari import Viewer, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
@@ -278,38 +278,6 @@ def test_magicgui_get_viewer(make_napari_viewer):
     assert not func.v.visible
     # ensure that viewer2 is still the current viewer
     assert current_viewer() is viewer2
-
-
-MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']
-MGUI_EXPORTS += [f'napari.types.{nm.title()}Data' for nm in layers.NAMES]
-NAMES = ('Image', 'Labels', 'Layer', 'Points', 'Shapes', 'Surface')
-
-
-@pytest.mark.parametrize('name', sorted(MGUI_EXPORTS))
-def test_mgui_forward_refs(name, monkeypatch):
-    """Test magicgui forward ref annotations
-
-    make sure that calling
-    `magicgui.type_map.pick_widget_type` with the string version of a napari
-    object triggers the appropriate imports to resolve the class in time.
-    """
-    import magicgui.type_map
-
-    monkeypatch.delitem(sys.modules, 'napari')
-    monkeypatch.delitem(sys.modules, 'napari.viewer')
-    monkeypatch.delitem(sys.modules, 'napari.types')
-    # need to clear all of these submodules too, otherise the layers are oddly not
-    # subclasses of napari.layers.Layer, and napari.layers.NAMES
-    # oddly ends up as an empty set
-    for m in list(sys.modules):
-        if m.startswith('napari.layers') and 'utils' not in m:
-            monkeypatch.delitem(sys.modules, m)
-
-    wdg, options = magicgui.type_map.pick_widget_type(annotation=name)
-    if name == 'napari.Viewer':
-        assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
-    else:
-        assert wdg == magicgui.widgets.Combobox
 
 
 def test_layers_populate_immediately(make_napari_viewer):
