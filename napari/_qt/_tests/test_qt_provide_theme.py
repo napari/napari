@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import patch
 
 import pytest
@@ -41,21 +42,39 @@ def test_provide_theme_hook_registered_correctly(
     mock_remove_theme.assert_not_called()
 
     # now, lets unregister the theme
-    # We didn't set the setting, so there should be no warning
-    with pytest.warns(None):
+    # We didn't set the setting, so ensure that no warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         napari_plugin_manager.unregister("TestPlugin")
     mock_remove_theme.assert_called()
 
-    # reset mocks
-    mock_add_theme.reset_mock()
-    mock_remove_theme.reset_mock()
 
-    # re-register the theme
+@patch.object(Window, "_remove_theme")
+@patch.object(Window, "_add_theme")
+def test_plugin_provide_theme_hook_set_settings_correctly(
+    mock_add_theme,
+    mock_remove_theme,
+    make_napari_viewer,
+    napari_plugin_manager,
+):
+    dark = get_theme("dark", True)
+    dark["name"] = "dark-test-2"
+
+    class TestPlugin:
+        @napari_hook_implementation
+        def napari_experimental_provide_theme():
+            return {"dark-test-2": dark}
+
+    # create instance of viewer to make sure
+    # registration and unregistration methods are called
+    make_napari_viewer()
+
+    # register theme
     napari_plugin_manager.register(TestPlugin)
     reg = napari_plugin_manager._theme_data["TestPlugin"]
     assert isinstance(reg["dark-test-2"], Theme)
 
-    # this time, set the theme setting
+    # set the theme as a setting
     get_settings().appearance.theme = "dark-test-2"
 
     # triggered when theme was added
