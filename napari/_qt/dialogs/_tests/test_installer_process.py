@@ -8,11 +8,11 @@ import pytest
 from qtpy.QtCore import QProcessEnvironment
 
 from napari._qt.dialogs.qt_package_installer import (
+    AbstractInstallerTool,
+    CondaInstallerTool,
     InstallerQueue,
     InstallerTools,
-    AbstractInstallerTool,
     PipInstallerTool,
-    CondaInstallerTool,
 )
 
 if TYPE_CHECKING:
@@ -70,8 +70,10 @@ def tmp_conda_env(tmp_path):
 
 def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     installer = InstallerQueue()
-    monkeypatch.setattr(PipInstallerTool, "executable", lambda *a: tmp_virtualenv.creator.exe)
-    with qtbot.waitSignal(installer.allFinished, timeout=20000):  
+    monkeypatch.setattr(
+        PipInstallerTool, "executable", lambda *a: tmp_virtualenv.creator.exe
+    )
+    with qtbot.waitSignal(installer.allFinished, timeout=20000):
         installer.install(
             tool=InstallerTools.pip,
             pkgs=['pip-install-test'],
@@ -116,10 +118,12 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
 
 def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     installer = InstallerQueue()
-    monkeypatch.setattr(PipInstallerTool, "executable", lambda *a: tmp_virtualenv.creator.exe)
+    monkeypatch.setattr(
+        PipInstallerTool, "executable", lambda *a: tmp_virtualenv.creator.exe
+    )
 
     # CHECK 1) Errors should trigger finished and allFinished too
-    with qtbot.waitSignal(installer.allFinished, timeout=10000):  
+    with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
             tool=InstallerTools.pip,
             pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
@@ -129,7 +133,9 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     installer._on_process_done_original = installer._on_process_done
 
     # CHECK 2) Non-existing packages should return non-zero
-    def _assert_exit_code_not_zero(exit_code=None, exit_status=None, error=None):
+    def _assert_exit_code_not_zero(
+        exit_code=None, exit_status=None, error=None
+    ):
         errors = []
         if exit_code == 0:
             errors.append("- 'exit_code' should have been non-zero!")
@@ -137,9 +143,13 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
             errors.append("- 'error' should have been None!")
         if errors:
             raise Exception("\n".join(errors))
-        return installer._on_process_done_original(exit_code, exit_status, error)
+        return installer._on_process_done_original(
+            exit_code, exit_status, error
+        )
 
-    monkeypatch.setattr(installer, "_on_process_done", _assert_exit_code_not_zero)
+    monkeypatch.setattr(
+        installer, "_on_process_done", _assert_exit_code_not_zero
+    )
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
             tool=InstallerTools.pip,
@@ -150,8 +160,10 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     class NonExistingTool(AbstractInstallerTool):
         def executable(self):
             return f"this-tool-does-not-exist-{hash(time.time())}"
+
         def arguments(self):
             return ()
+
         def environment(self, env=None):
             return QProcessEnvironment.systemEnvironment()
 
@@ -163,7 +175,9 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
             errors.append("- 'exit_code' should not have been populated!")
         if errors:
             raise Exception("\n".join(errors))
-        return installer._on_process_done_original(exit_code, exit_status, error)
+        return installer._on_process_done_original(
+            exit_code, exit_status, error
+        )
 
     monkeypatch.setattr(installer, "_on_process_done", _assert_error_used)
     monkeypatch.setattr(installer, "_get_tool", lambda *a: NonExistingTool)
@@ -177,7 +191,9 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
 def test_conda_installer(qtbot, tmp_conda_env: Path, monkeypatch):
     conda_executable = conda_exe()
     installer = InstallerQueue()
-    monkeypatch.setattr(CondaInstallerTool, "executable", lambda *a: conda_executable)
+    monkeypatch.setattr(
+        CondaInstallerTool, "executable", lambda *a: conda_executable
+    )
 
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(
