@@ -1,10 +1,11 @@
 from napari.components._viewer_key_bindings import toggle_theme
+from napari.components.viewer_model import ViewerModel
 from napari.settings import get_settings
 from napari.utils.theme import available_themes
 
 
-def test_theme_toggle_keybinding(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_theme_toggle_keybinding():
+    viewer = ViewerModel()
     assert viewer.theme == get_settings().appearance.theme
     toggle_theme(viewer)
     # toggle_theme should not change settings
