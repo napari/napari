@@ -1,3 +1,5 @@
+from itertools import permutations
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -121,9 +123,7 @@ def test_text_manager_format():
 
     text_manager.anchor = 'center'
     coords = np.array([[0, 0], [10, 10], [20, 20]])
-    text_coords = text_manager.compute_text_coords(
-        coords, ndisplay=3, order=tuple(range(3))
-    )
+    text_coords = text_manager.compute_text_coords(coords, ndisplay=3)
     np.testing.assert_equal(text_coords, (coords, 'center', 'center'))
 
     # remove the first text element
@@ -711,3 +711,56 @@ def test_copy_paste_with_derived_color():
     assert_colors_equal(
         actual, ['green', 'red', 'magenta', 'green', 'magenta']
     )
+
+
+# All pass
+@pytest.mark.parametrize(
+    ('ndim', 'ndisplay', 'translation'),
+    (
+        (2, 2, 0),  # 2D data and display, no translation
+        (2, 3, 0),  # 2D data and 3D display, no translation
+        (2, 2, 0),  # 3D data and display, no translation
+        (2, 2, 5.2),  # 2D data and display, constant translation
+        (2, 3, 5.2),  # 2D data and 3D display, constant translation
+        (2, 2, 5.2),  # 3D data and display, constant translation
+        (2, 2, [5.2, -3.2]),  # 2D data, display, translation
+        (2, 3, [5.2, -3.2]),  # 2D data, 3D display, 2D translation
+        (3, 3, [5.2, -3.2, 0.1]),  # 3D data, display, translation
+    ),
+)
+def test_compute_text_coords(ndim, ndisplay, translation):
+    num_points = 3
+    text_manager = TextManager(
+        features=pd.DataFrame(index=range(num_points)),
+        translation=translation,
+    )
+    np.random.seed(0)
+    coords = np.random.rand(num_points, ndim)
+
+    text_coords, _, _ = text_manager.compute_text_coords(
+        coords, ndisplay=ndisplay
+    )
+
+    expected_coords = coords + translation
+    np.testing.assert_equal(text_coords, expected_coords)
+
+
+# Some orders fail
+@pytest.mark.parametrize(('order'), permutations((0, 1, 2)))
+def test_compute_text_coords_with_3D_data_2D_display(order):
+    num_points = 3
+    translation = np.array([5.2, -3.2, 0.1])
+    text_manager = TextManager(
+        features=pd.DataFrame(index=range(num_points)),
+        translation=translation,
+    )
+    np.random.seed(0)
+    coords = np.random.rand(num_points, 3)
+
+    text_coords, _, _ = text_manager.compute_text_coords(
+        coords, ndisplay=2, order=order
+    )
+
+    displayed_dims = list(order[1:])
+    expected_coords = coords[:, displayed_dims] + translation[displayed_dims]
+    np.testing.assert_equal(text_coords, expected_coords)
