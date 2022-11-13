@@ -21,12 +21,12 @@ from qtpy.QtWidgets import (
 )
 from vispy.util import keys
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
-from ...settings import get_settings
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
-from ..widgets.qt_message_popup import WarnPopup
+from napari._qt.widgets.qt_message_popup import WarnPopup
+from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 # Dict used to format strings returned from converted key press events.
 # For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
@@ -84,7 +84,7 @@ class ShortcutEditor(QWidget):
                 actions = {}
             else:
                 actions = action_manager._get_layer_actions(layer)
-                for name, action in actions.items():
+                for name in actions.keys():
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
 
@@ -409,36 +409,28 @@ class ShortcutEditor(QWidget):
                 elif ind < len(shortcuts_list):
                     shortcuts_list.pop(col - self._shortcut_col)
                 new_value_dict = {}
-                if new_shortcut != "":
-                    # Bind the new shortcut.
-                    try:
-                        for short in shortcuts_list:
-                            action_manager.bind_shortcut(current_action, short)
-                    except TypeError:
-                        self._show_bind_shortcut_error(
-                            current_action,
-                            current_shortcuts,
-                            row,
-                            new_shortcut,
-                        )
-                        return
+                # Bind the new shortcut.
+                try:
+                    for short in shortcuts_list:
+                        action_manager.bind_shortcut(current_action, short)
+                except TypeError:
+                    self._show_bind_shortcut_error(
+                        current_action,
+                        current_shortcuts,
+                        row,
+                        new_shortcut,
+                    )
+                    return
 
-                    # The new shortcut is valid and can be displayed in widget.
+                # The new shortcut is valid and can be displayed in widget.
 
-                    # Keep track of what changed.
-                    new_value_dict = {current_action: shortcuts_list}
-
-                    # Format new shortcut.
-
-                elif action_manager._shortcuts[current_action]:
-                    # There is not a new shortcut to bind.  Keep track of it.
-                    new_value_dict = {current_action: shortcuts_list}
+                # Keep track of what changed.
+                new_value_dict = {current_action: shortcuts_list}
 
                 self._restore_shortcuts(row)
 
-                if new_value_dict:
-                    # Emit signal when new value set for shortcut.
-                    self.valueChanged.emit(new_value_dict)
+                # Emit signal when new value set for shortcut.
+                self.valueChanged.emit(new_value_dict)
 
     def _show_warning_icons(self, rows):
         """Creates and displays the warning icons.
@@ -521,7 +513,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for action_name, action in action_manager._actions.items():
+        for action_name in action_manager._actions.keys():
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 

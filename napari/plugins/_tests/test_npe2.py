@@ -19,6 +19,9 @@ MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 @pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
     mock_reg = MagicMock()
     npe2pm._command_registry = mock_reg
     with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):

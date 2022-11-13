@@ -1,15 +1,14 @@
 import pytest
 
-from ..interactions import Shortcut
+from napari.utils.interactions import Shortcut
 
 
 @pytest.mark.parametrize(
     'shortcut,reason',
     [
-        ('Ctrl-A', 'Ctrl instead of Control'),
-        ('Ctrl+A', '+ instead of -'),
-        ('Ctrl-AA', 'AA make no sens'),
-        ('BB', 'BB make no sens'),
+        ('Atl-A', 'Alt misspelled'),
+        ('Ctrl-AA', 'AA makes no sense'),
+        ('BB', 'BB makes no sense'),
     ],
 )
 def test_shortcut_invalid(shortcut, reason):
@@ -29,4 +28,4 @@ def test_minus_shortcut():
 
 def test_shortcut_qt():
 
-    assert Shortcut('Control-A').qt == 'Control+A'
+    assert Shortcut('Control-A').qt == 'Ctrl+A'

@@ -22,7 +22,7 @@ def update_text(
         A layer with text.
     """
 
-    ndisplay = layer._ndisplay
+    ndisplay = layer._slice_input.ndisplay
 
     # Vispy always needs non-empty values and coordinates, so if a layer
     # effectively has no visible text then return single dummy data.

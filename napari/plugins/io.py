@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
-from ..layers import Layer
-from ..types import LayerData
-from ..utils.misc import abspath_or_url
-from ..utils.translations import trans
-from . import _npe2, plugin_manager
+from napari.layers import Layer
+from napari.plugins import _npe2, plugin_manager
+from napari.types import LayerData
+from napari.utils.misc import abspath_or_url
+from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
@@ -62,8 +62,10 @@ def read_data_with_plugins(
     """
     if plugin == 'builtins':
         warnings.warn(
-            'The "builtins" plugin name is deprecated and will not work in a future '
-            'version. Please use "napari" instead.',
+            trans._(
+                'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+                deferred=True,
+            ),
         )
         plugin = 'napari'
 

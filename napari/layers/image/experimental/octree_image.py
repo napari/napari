@@ -10,17 +10,25 @@ from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
 
-from ....utils.events import Event
-from ....utils.translations import trans
-from ..image import _ImageBase
-from ._octree_slice import OctreeSlice, OctreeView
-from .octree_chunk import OctreeChunk
-from .octree_intersection import OctreeIntersection
-from .octree_level import OctreeLevelInfo
-from .octree_util import OctreeDisplayOptions, OctreeMetadata
+from napari.layers.image.experimental._octree_slice import (
+    OctreeSlice,
+    OctreeView,
+)
+from napari.layers.image.experimental.octree_chunk import OctreeChunk
+from napari.layers.image.experimental.octree_intersection import (
+    OctreeIntersection,
+)
+from napari.layers.image.experimental.octree_level import OctreeLevelInfo
+from napari.layers.image.experimental.octree_util import (
+    OctreeDisplayOptions,
+    OctreeMetadata,
+)
+from napari.layers.image.image import _ImageBase
+from napari.utils.events import Event
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import ChunkRequest
+    from napari.components.experimental.chunk import ChunkRequest
 
 LOGGER = logging.getLogger("napari.octree.image")
 
@@ -361,9 +369,10 @@ class _OctreeImageBase(_ImageBase):
 
         """
         # Compute our 2D corners from the incoming n-d corner_pixels
+        displayed_sorted = sorted(self._slice_input.displayed)
         data_corners = (
             self._transforms[1:]
-            .simplified.set_slice(self._displayed_axes)
+            .simplified.set_slice(displayed_sorted)
             .inverse(corner_pixels_displayed)
         )
 
@@ -395,7 +404,7 @@ class _OctreeImageBase(_ImageBase):
         """
 
         extent = self._extent_data
-        not_disp = self._dims_not_displayed
+        not_disp = self._slice_input.not_displayed
 
         return np.any(
             np.less(
@@ -417,7 +426,7 @@ class _OctreeImageBase(_ImageBase):
         logic in Image._set_view_slice goes away entirely.
         """
         # Consider non-multiscale data as just having a single level
-        from ....components.experimental.chunk import LayerRef
+        from napari.components.experimental.chunk import LayerRef
 
         multilevel_data = self.data if self.multiscale else [self.data]
 
@@ -436,7 +445,7 @@ class _OctreeImageBase(_ImageBase):
 
         # TODO_OCTREE: easier way to do this?
         base_shape = multilevel_data[0].shape
-        base_shape_2d = [base_shape[i] for i in self._dims_displayed]
+        base_shape_2d = [base_shape[i] for i in self._slice_input.displayed]
 
         layer_ref = LayerRef.from_layer(self)
 

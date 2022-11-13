@@ -101,7 +101,7 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Surface': 0,
     'Tracks': 0,
     'Points': 9,
-    'Labels': 12,
+    'Labels': 14,
     'Shapes': 17,
 }
 
@@ -164,6 +164,10 @@ def test_screenshot(make_napari_viewer):
     # Take screenshot with the viewer included
     screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
+
+    # test size argument (and ensure it coerces to int)
+    screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
+    assert screenshot.shape == (20, 20, 4)
 
 
 @skip_on_win_ci

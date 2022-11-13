@@ -1,7 +1,8 @@
+# Report benchmark results to the PR
 # We need a dual workflow to make sure the token has the needed permissions to post comments
 # See https://stackoverflow.com/a/71683208 for more details
 
-name: Report benchmarks
+name: "Benchmarks - Report"
 
 on:
   workflow_run:
@@ -38,7 +39,7 @@ jobs:
       - name: Unzip and prepare data
         run: |
           unzip asv_results.zip
-          sed -i 's/||BENCHMARK_CI_LOGS_URL||/${{ github.event.workflow_run.html_url }}/g' .asv/results/message.txt
+          sed -i 's@||BENCHMARK_CI_LOGS_URL||@${{ github.event.workflow_run.html_url }}@g' .asv/results/message.txt
           if [[ -f .asv/results/pr_number ]]; then
             echo "PR_NUMBER=$(cat .asv/results/pr_number)" >> $GITHUB_ENV
           fi
