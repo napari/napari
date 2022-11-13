@@ -14,7 +14,7 @@ import shutil
 import sys
 from collections import deque
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 from logging import getLogger
 from pathlib import Path
 from tempfile import gettempdir
