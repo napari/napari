@@ -1178,15 +1178,10 @@ class Window:
         """Update widget color theme."""
         settings = get_settings()
         with contextlib.suppress(AttributeError, RuntimeError):
-            if event:
-                value = event.value
-                self._qt_viewer.viewer.theme = value
-            else:
-                value = (
-                    get_system_theme()
-                    if settings.appearance.theme == "system"
-                    else self._qt_viewer.viewer.theme
-                )
+            value = event.value if event else settings.appearance.theme
+            if value == "system":
+                value = get_system_theme()
+            self._qt_viewer.viewer.theme = value
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
 
