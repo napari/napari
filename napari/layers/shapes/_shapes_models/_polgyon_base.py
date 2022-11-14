@@ -94,7 +94,6 @@ class PolygonBase(Shape):
         duplicates = np.isclose(data, np.roll(data, 1, axis=0))
         # cannot index with bools directly (flattens by design)
         data_spline = data[np.any(~duplicates, axis=1)]
-        print(data_spline)
 
         if (
             self.interpolation_order > 1
