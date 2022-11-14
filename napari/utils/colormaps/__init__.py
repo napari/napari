@@ -1,9 +1,10 @@
-from .colorbars import make_colorbar
-from .colormap import Colormap
-from .colormap_utils import (
+from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.colormaps.colormap import Colormap
+from napari.utils.colormaps.colormap_utils import (
     ALL_COLORMAPS,
     AVAILABLE_COLORMAPS,
     CYMRGB,
+    INVERSE_COLORMAPS,
     MAGENTA_GREEN,
     RGB,
     SIMPLE_COLORMAPS,

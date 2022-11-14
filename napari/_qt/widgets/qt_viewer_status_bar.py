@@ -1,5 +1,5 @@
 """Status bar widget on the viewer MainWindow"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -11,11 +11,11 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel
 
-from ...utils.translations import trans
-from ..dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ..qt_main_window import _QtMainWindow
+    from napari._qt.qt_main_window import _QtMainWindow
 
 
 class ViewerStatusBar(QStatusBar):
@@ -26,7 +26,7 @@ class ViewerStatusBar(QStatusBar):
 
         layout = QHBoxLayout()
 
-        self._status = QLabel('Ready')
+        self._status = QLabel(trans._('Ready'))
         self._status.setContentsMargins(0, 0, 0, 0)
 
         self._layer_base = QElidingLabel(trans._(''))
@@ -59,9 +59,11 @@ class ViewerStatusBar(QStatusBar):
 
         main_widget.setLayout(layout)
 
-        self.addWidget(main_widget)
-        self._help = QLabel('')
-        self.addPermanentWidget(self._help)
+        self.addWidget(main_widget, 1)
+        self._help = QElidingLabel('')
+        self._help.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self._help.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        layout.addWidget(self._help, 1)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
@@ -114,8 +116,10 @@ class ViewerStatusBar(QStatusBar):
         else:
             self._coordinates.hide()
 
-    def _toggle_activity_dock(self, visible: bool):
+    def _toggle_activity_dock(self, visible: Optional[bool] = None):
         par: _QtMainWindow = self.parent()
+        if visible is None:
+            visible = not par._activity_dialog.isVisible()
         if visible:
             par._activity_dialog.show()
             par._activity_dialog.raise_()

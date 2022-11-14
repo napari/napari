@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
-from ....utils.events import EmitterGroup
-from ....utils.translations import trans
+from napari.utils.events import EmitterGroup
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 

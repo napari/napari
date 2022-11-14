@@ -855,6 +855,18 @@ def test_select_properties_object_dtype():
     assert pl.selected_data == selection
 
 
+def test_select_properties_unsortable():
+    """selecting multiple points when they have properties that cannot be sorted should not fail
+
+    see https://github.com/napari/napari/issues/5174
+    """
+    properties = pd.DataFrame({'unsortable': [{}, {}]})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 2)
@@ -885,7 +897,7 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    np.testing.assert_array_equal(layer.edge_width, 0.1)
+    np.testing.assert_array_equal(layer.edge_width, 0.05)
 
     layer.edge_width = 0.5
     np.testing.assert_array_equal(layer.edge_width, 0.5)
@@ -906,6 +918,34 @@ def test_edge_width():
     layer = Points(data, edge_width=3, edge_width_is_relative=False)
     np.testing.assert_array_equal(layer.edge_width, 3)
     assert layer.edge_width_is_relative is False
+    with pytest.raises(ValueError):
+        layer.edge_width = -2
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+)
+def test_edge_width_types(edge_width):
+    """Test edge_width dtypes with valid values"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, edge_width)
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+)
+def test_edge_width_types_negative(edge_width):
+    """Test negative values in all edge_width dtypes"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    with pytest.raises(ValueError):
+        Points(data, edge_width=edge_width, edge_width_is_relative=False)
 
 
 def test_out_of_slice_display():
@@ -1693,14 +1733,10 @@ def test_view_data():
     layer = Points(coords)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([2], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
@@ -1712,14 +1748,10 @@ def test_view_size():
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([2], [1, 2])])
 
     layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
@@ -2458,3 +2490,15 @@ def test_antialiasing_value_clipping():
     with pytest.warns(RuntimeWarning):
         layer.antialiasing = -1
     assert layer.antialiasing == 0
+
+
+def test_set_drag_start():
+    """Drag start should only change when currently None."""
+    data = [[0, 0], [1, 1]]
+    layer = Points(data)
+    assert layer._drag_start is None
+    position = (0, 1)
+    layer._set_drag_start({0}, position=position)
+    np.testing.assert_array_equal(layer._drag_start, position)
+    layer._set_drag_start({0}, position=(1, 2))
+    np.testing.assert_array_equal(layer._drag_start, position)

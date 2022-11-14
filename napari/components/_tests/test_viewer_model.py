@@ -104,6 +104,21 @@ def test_add_multiscale():
     assert viewer.dims.ndim == 2
 
 
+def test_add_multiscale_image_with_negative_floats():
+    """See https://github.com/napari/napari/issues/5257"""
+    viewer = ViewerModel()
+    shapes = [(20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.float64) for s in shapes]
+    data[0][-4:, -2:] = -1
+    data[1][-2:, -1:] = -1
+
+    viewer.add_image(data, multiscale=True)
+
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
 def test_add_labels():
     """Test adding labels image."""
     viewer = ViewerModel()
@@ -785,7 +800,6 @@ def test_status_tooltip(Layer, data, ndim):
     layer = Layer(data)
     viewer.layers.append(layer)
     viewer.cursor.position = (1,) * ndim
-    viewer._on_cursor_position_change()
 
 
 def test_viewer_object_event_sources():
@@ -906,3 +920,24 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
         ReaderPluginError, match='Tried opening with napari, but failed.'
     ):
         viewer._open_or_raise_error([str(pth)])
+
+
+def test_slice_order_with_mixed_dims():
+    viewer = ViewerModel(ndisplay=2)
+    image_2d = viewer.add_image(np.zeros((4, 5)))
+    image_3d = viewer.add_image(np.zeros((3, 4, 5)))
+    image_4d = viewer.add_image(np.zeros((2, 3, 4, 5)))
+
+    # With standard ordering, the shapes of the slices match,
+    # so are trivially numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (4, 5)
+    assert image_4d._slice.image.view.shape == (4, 5)
+
+    viewer.dims.order = (2, 1, 0, 3)
+
+    # With non-standard ordering, the shapes of the slices do not match,
+    # and are not numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (3, 5)
+    assert image_4d._slice.image.view.shape == (2, 5)

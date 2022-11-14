@@ -74,8 +74,6 @@ def napari_plugin_manager(monkeypatch):
     Or, to re-enable global discovery, use:
     `napari_plugin_manager.discovery_blocker.stop()`
     """
-    from unittest.mock import patch
-
     import napari
     import napari.plugins.io
     from napari.plugins._plugin_manager import NapariPluginManager
@@ -242,7 +240,7 @@ def make_napari_viewer(
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
+        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
             msg = f"""The following Widgets leaked!: {leak}.
@@ -261,6 +259,38 @@ def make_napari_viewer(
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
+
+
+@pytest.fixture
+def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
+    """Fixture that returns a function for creating a napari viewer wrapped in proxy.
+    Use in the same way like `make_napari_viewer` fixture.
+
+    Parameters
+    ----------
+    make_napari_viewer : fixture
+        The make_napari_viewer fixture.
+
+    Returns
+    -------
+    function
+        A function that creates a napari viewer.
+    """
+    from napari.utils._proxies import PublicOnlyProxy
+
+    proxies = []
+
+    def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
+        monkeypatch.setenv(
+            "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
+        )
+        viewer = make_napari_viewer(*model_args, **model_kwargs)
+        proxies.append(PublicOnlyProxy(viewer))
+        return proxies[-1]
+
+    proxies.clear()
+
+    yield actual_factory
 
 
 @pytest.fixture

@@ -17,10 +17,12 @@ from qtpy.QtWidgets import (
 )
 
 import napari.resources
-
-from ...utils.progress import progress
-from ...utils.translations import trans
-from ..widgets.qt_progress_bar import QtLabeledProgressBar, QtProgressBarGroup
+from napari._qt.widgets.qt_progress_bar import (
+    QtLabeledProgressBar,
+    QtProgressBarGroup,
+)
+from napari.utils.progress import progress
+from napari.utils.translations import trans
 
 
 class ActivityToggleItem(QWidget):

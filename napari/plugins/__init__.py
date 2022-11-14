@@ -1,20 +1,22 @@
 from functools import lru_cache
-from pathlib import Path
 
 from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
 
-from ..settings import get_settings
-from . import _npe2
-from ._plugin_manager import NapariPluginManager
+from napari.plugins import _npe2
+from napari.plugins._plugin_manager import NapariPluginManager
+from napari.settings import get_settings
 
-__all__ = ["plugin_manager", "menu_item_template"]
+__all__ = ("plugin_manager", "menu_item_template")
 
 #: Template to use for namespacing a plugin item in the menu bar
-menu_item_template = '{}: {}'
-# the main plugin manager instance for the `napari` plugin namespace.
+# widget_name (plugin_name)
+menu_item_template = '{1} ({0})'
+"""Template to use for namespacing a plugin item in the menu bar"""
+#: The main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = NapariPluginManager()
+"""Main Plugin manager instance"""
 
 
 @lru_cache  # only call once

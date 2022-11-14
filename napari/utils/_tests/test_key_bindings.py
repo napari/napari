@@ -1,63 +1,20 @@
 import inspect
 import time
 import types
+from unittest.mock import patch
 
 import pytest
+from app_model.types import KeyCode, KeyMod
 
-from .. import key_bindings
-from ..key_bindings import (
+from napari.utils import key_bindings
+from napari.utils.key_bindings import (
     KeymapHandler,
     KeymapProvider,
     _bind_keymap,
+    _bind_user_key,
+    _get_user_keymap,
     bind_key,
-    components_to_key_combo,
-    normalize_key_combo,
-    parse_key_combo,
 )
-
-
-def test_parse_key_combo():
-    assert parse_key_combo('X') == ('X', set())
-    assert parse_key_combo('Control-X') == ('X', {'Control'})
-    assert parse_key_combo('Control-Alt-Shift-Meta-X') == (
-        'X',
-        {'Control', 'Alt', 'Shift', 'Meta'},
-    )
-
-
-def test_components_to_key_combo():
-    assert components_to_key_combo('X', []) == 'X'
-    assert components_to_key_combo('X', ['Control']) == 'Control-X'
-
-    # test consuming
-    assert components_to_key_combo('X', []) == 'X'
-    assert components_to_key_combo('X', ['Shift']) == 'Shift-X'
-    assert components_to_key_combo('x', []) == 'X'
-
-    assert components_to_key_combo('@', ['Shift']) == '@'
-    assert (
-        components_to_key_combo('2', ['Control', 'Shift']) == 'Control-Shift-2'
-    )
-
-    # test ordering
-    assert (
-        components_to_key_combo('2', ['Control', 'Alt', 'Shift', 'Meta'])
-        == 'Control-Alt-Shift-Meta-2'
-    )
-    assert (
-        components_to_key_combo('2', ['Alt', 'Shift', 'Control', 'Meta'])
-        == 'Control-Alt-Shift-Meta-2'
-    )
-
-
-def test_normalize_key_combo():
-    assert normalize_key_combo('x') == 'X'
-    assert normalize_key_combo('Control-X') == 'Control-X'
-    assert normalize_key_combo('Meta-Alt-X') == 'Alt-Meta-X'
-    assert (
-        normalize_key_combo('Shift-Alt-Control-Meta-2')
-        == 'Control-Alt-Shift-Meta-2'
-    )
 
 
 def test_bind_key():
@@ -93,8 +50,15 @@ def test_bind_key():
     bind_key(kb, ..., ...)
     assert kb == {'A': ..., ...: ...}
 
+    # typecheck
     with pytest.raises(TypeError):
         bind_key(kb, 'B', 'not a callable')
+
+    # app-model representation
+    kb = {}
+    bind_key(kb, KeyMod.Shift | KeyCode.KeyA, ...)
+    (key,) = kb.keys()
+    assert key == 'Shift-A'
 
 
 def test_bind_key_decorator():
@@ -123,9 +87,9 @@ def test_keymap_provider():
     assert Bar.class_keymap is not Foo.class_keymap
 
     class Baz(KeymapProvider):
-        class_keymap = {'A', ...}
+        class_keymap = {'A': ...}
 
-    assert Baz.class_keymap == {'A', ...}
+    assert Baz.class_keymap == {'A': ...}
 
 
 def test_bind_keymap():
@@ -180,6 +144,7 @@ def test_handle_single_keymap_provider():
     handler.keymap_providers = [foo]
 
     assert handler.keymap_chain.maps == [
+        _get_user_keymap(),
         _bind_keymap(foo.keymap, foo),
         _bind_keymap(foo.class_keymap, foo),
     ]
@@ -218,6 +183,32 @@ def test_handle_single_keymap_provider():
     assert not hasattr(foo, 'C')
 
 
+@patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
+def test_bind_user_key(keymap_mock):
+    foo = Foo()
+    bar = Bar()
+    handler = KeymapHandler()
+    handler.keymap_providers = [bar, foo]
+
+    x = 0
+
+    @_bind_user_key('D')
+    def abc():
+        nonlocal x
+        x = 42
+
+    assert handler.active_keymap == {
+        'A': types.MethodType(foo.class_keymap['A'], foo),
+        'B': types.MethodType(foo.keymap['B'], foo),
+        'D': abc,
+        'E': types.MethodType(bar.class_keymap['E'], bar),
+    }
+
+    handler.press_key('D')
+
+    assert x == 42
+
+
 def test_handle_multiple_keymap_providers():
     foo = Foo()
     bar = Bar()
@@ -225,6 +216,7 @@ def test_handle_multiple_keymap_providers():
     handler.keymap_providers = [bar, foo]
 
     assert handler.keymap_chain.maps == [
+        _get_user_keymap(),
         _bind_keymap(bar.keymap, bar),
         _bind_keymap(bar.class_keymap, bar),
         _bind_keymap(foo.keymap, foo),
@@ -277,6 +269,7 @@ def test_inherited_keymap():
     handler.keymap_providers = [baz]
 
     assert handler.keymap_chain.maps == [
+        _get_user_keymap(),
         _bind_keymap(baz.keymap, baz),
         _bind_keymap(baz.class_keymap, baz),
         _bind_keymap(Bar.class_keymap, baz),
@@ -305,7 +298,10 @@ def test_handle_on_release_bindings():
 
     class Baz(KeymapProvider):
         aliiiens = 0
-        class_keymap = {'A': make_42, 'Control-Shift-B': add_then_subtract}
+        class_keymap = {
+            KeyCode.Shift: make_42,
+            'Control-Shift-B': add_then_subtract,
+        }
 
     baz = Baz()
     handler = KeymapHandler()
@@ -313,7 +309,7 @@ def test_handle_on_release_bindings():
 
     # one-statement generator function
     assert not hasattr(baz, 'SPAM')
-    handler.press_key('A')
+    handler.press_key('Shift')
     assert baz.SPAM == 42
 
     # two-statement generator function

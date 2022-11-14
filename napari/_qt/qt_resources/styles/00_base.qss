@@ -83,7 +83,10 @@ QPushButton:checked {
 }
 
 QPushButton:disabled {
-  background-color: {{ background }};
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
 }
 
 QWidget[emphasized="true"] QPushButton {
@@ -145,6 +148,10 @@ QListView {
   background-color: {{ foreground }};
   color: {{ text }};
   border-radius: 2px;
+}
+
+QListView:item:selected {
+    background-color: {{ highlight }};
 }
 
 QWidget[emphasized="true"] QComboBox {
