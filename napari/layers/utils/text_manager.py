@@ -23,7 +23,6 @@ from napari.layers.utils.string_encoding import (
 from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.translations import trans
 
 
@@ -253,25 +252,23 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        if order is None:
-            order = range(ndisplay)
         anchor_coords, anchor_x, anchor_y = get_text_anchors(
             view_data, ndisplay, self.anchor
         )
+        # The translation should either be a scalar or be as long as
+        # the dimensionality of the associated layer.
+        # We do not have direct knowledge of that dimensionality, but
+        # can infer enough information to get the translation coordinates
+        # that need to offset the anchor coordinates.
         ndim_coords = min(ndisplay, anchor_coords.shape[1])
-        # broadcast in case translation is just a scalar
-        if self.translation.size == 1:
-            translation = np.broadcast_to(self.translation, ndim_coords)
-        else:
-            translation = self.translation
-        # get order of displayed dimensions
-        displayed_ordered = list(
-            reorder_after_dim_reduction(order[-ndim_coords:])
-        )
-        text_coords = (
-            anchor_coords[:, displayed_ordered]
-            + translation[displayed_ordered]
-        )
+        translation = self.translation
+        if translation.size > 1:
+            if order is None:
+                translation = self.translation[-ndim_coords:]
+            else:
+                order_displayed = list(order[-ndim_coords:])
+                translation = self.translation[order_displayed]
+        text_coords = anchor_coords + translation
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
