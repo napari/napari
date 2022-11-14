@@ -45,7 +45,7 @@ def test_register_theme():
     )
 
     # Register blue theme
-    register_theme('test_blue', blue_theme)
+    register_theme('test_blue', blue_theme, "test")
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
@@ -74,7 +74,7 @@ def test_unregister_theme():
     )
 
     # Register blue theme
-    register_theme('test_blue', blue_theme)
+    register_theme('test_blue', blue_theme, "test")
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
@@ -93,7 +93,7 @@ def test_rebuild_theme_settings():
     with pytest.raises(ValidationError):
         settings.appearance.theme = "another-theme"
     blue_theme = get_theme("dark", True)
-    register_theme("another-theme", blue_theme)
+    register_theme("another-theme", blue_theme, "test")
     settings.appearance.theme = "another-theme"
 
 
