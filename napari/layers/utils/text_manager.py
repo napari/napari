@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -223,7 +223,10 @@ class TextManager(EventedModel):
         self.color._append(color)
 
     def compute_text_coords(
-        self, view_data: np.ndarray, ndisplay: int, order: Tuple[int, ...]
+        self,
+        view_data: np.ndarray,
+        ndisplay: int,
+        order: Optional[Tuple[int, ...]] = None,
     ) -> Tuple[np.ndarray, str, str]:
         """Calculate the coordinates for each text element in view
 
@@ -233,8 +236,9 @@ class TextManager(EventedModel):
             The in view data from the layer
         ndisplay : int
             The number of dimensions being displayed in the viewer
-        order : Tuple[int, ...]
+        order : tuple of ints, optional
             The display order of the dimensions in the layer.
+            If None, implies ``range(ndisplay)``.
 
         Returns
         -------
@@ -245,6 +249,8 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+        if order is None:
+            order = range(ndisplay)
         anchor_coords, anchor_x, anchor_y = get_text_anchors(
             view_data, ndisplay, self.anchor
         )
@@ -258,7 +264,10 @@ class TextManager(EventedModel):
         displayed_ordered = list(
             reorder_after_dim_reduction(order[-ndim_coords:])
         )
-        text_coords = anchor_coords + translation[displayed_ordered]
+        text_coords = (
+            anchor_coords[:, displayed_ordered]
+            + translation[displayed_ordered]
+        )
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
