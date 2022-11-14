@@ -128,6 +128,7 @@ def test_theme_syntax_highlight():
 
 def test_is_theme_available(tmp_path, monkeypatch):
     (tmp_path / "blue").mkdir()
+    (tmp_path / "yellow").mkdir()
     (tmp_path / "blue" / PLUGIN_FILE_NAME).write_text("test-blue")
     monkeypatch.setattr(
         "napari.utils.theme._theme_path", lambda x: tmp_path / x
@@ -145,6 +146,7 @@ def test_is_theme_available(tmp_path, monkeypatch):
     assert len(available_themes()) == 3
     assert is_theme_available("dark")
     assert not is_theme_available("green")
+    assert not is_theme_available("yellow")
     assert is_theme_available("blue")
     assert len(available_themes()) == 4
     assert "blue" in available_themes()
