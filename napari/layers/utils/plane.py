@@ -3,9 +3,9 @@ from typing import Tuple
 import numpy as np
 from pydantic import validator
 
-from ...utils.events import EventedModel, SelectableEventedList
-from ...utils.geometry import intersect_line_with_plane_3d
-from ...utils.translations import trans
+from napari.utils.events import EventedModel, SelectableEventedList
+from napari.utils.geometry import intersect_line_with_plane_3d
+from napari.utils.translations import trans
 
 
 class Plane(EventedModel):

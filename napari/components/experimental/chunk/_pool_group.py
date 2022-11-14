@@ -6,11 +6,14 @@ import bisect
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Dict, List
 
-from ....utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ._pool import DoneCallback, LoaderPool
-    from ._request import ChunkRequest
+    from napari.components.experimental.chunk._pool import (
+        DoneCallback,
+        LoaderPool,
+    )
+    from napari.components.experimental.chunk._request import ChunkRequest
 
 
 class LoaderPoolGroup:
@@ -45,7 +48,7 @@ class LoaderPoolGroup:
         Dict[int, LoaderPool]
             The loader to use for each priority
         """
-        from ._pool import LoaderPool
+        from napari.components.experimental.chunk._pool import LoaderPool
 
         configs = _get_loader_configs(octree_config)
 

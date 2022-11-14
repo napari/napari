@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.interpolate import splev, splprep
 
-from ....utils.translations import trans
-from .._shapes_utils import create_box
-from .shape import Shape
+from napari.layers.shapes._shapes_models.shape import Shape
+from napari.layers.shapes._shapes_utils import create_box
+from napari.utils.translations import trans
 
 
 class PolygonBase(Shape):

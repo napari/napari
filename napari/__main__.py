@@ -13,7 +13,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from .utils.translations import trans
+from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -270,7 +270,11 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import _initialize_plugins, _npe2, plugin_manager
+            from napari.plugins import (
+                _initialize_plugins,
+                _npe2,
+                plugin_manager,
+            )
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.

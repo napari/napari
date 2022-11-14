@@ -7,8 +7,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Set
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk._request import OctreeLocation
-    from .octree_chunk import OctreeChunk
+    from napari.components.experimental.chunk._request import OctreeLocation
+    from napari.layers.image.experimental.octree_chunk import OctreeChunk
 
 
 class ChunkSet:
