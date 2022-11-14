@@ -233,14 +233,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @validator('theme')
     def _valid_theme(cls, v):
-        themes = available_themes()
         if not is_theme_available(v):
             raise ValueError(
                 trans._(
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=themes,
+                    themes=available_themes(),
                 )
             )
 

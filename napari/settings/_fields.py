@@ -30,14 +30,13 @@ class Theme(str):
             raise ValueError(trans._('must be a string', deferred=True))
 
         value = v.lower()
-        themes = available_themes()
         if not is_theme_available(value):
             raise ValueError(
                 trans._(
                     '"{value}" is not valid. It must be one of {themes}',
                     deferred=True,
                     value=value,
-                    themes=", ".join(themes),
+                    themes=", ".join(available_themes()),
                 )
             )
 
