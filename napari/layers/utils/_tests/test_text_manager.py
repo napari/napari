@@ -736,6 +736,9 @@ def test_compute_text_coords(ndim, ndisplay, translation):
         translation=translation,
     )
     np.random.seed(0)
+    # Cannot just use `rand(num_points, ndisplay)` because when
+    # ndim < ndisplay, we need to get ndim data which is what
+    # what layers are doing (e.g. see `Points._view_data`).
     coords = np.random.rand(num_points, ndim)[-ndisplay:]
 
     text_coords, _, _ = text_manager.compute_text_coords(
