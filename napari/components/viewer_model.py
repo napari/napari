@@ -239,7 +239,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=available_themes(),
+                    themes=", ".join(available_themes()),
                 )
             )
 
