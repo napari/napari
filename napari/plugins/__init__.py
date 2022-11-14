@@ -10,8 +10,6 @@ from napari.settings import get_settings
 
 __all__ = ("plugin_manager", "menu_item_template")
 
-from napari.utils.theme import refresh_themes
-
 #: Template to use for namespacing a plugin item in the menu bar
 # widget_name (plugin_name)
 menu_item_template = '{1} ({0})'
@@ -39,7 +37,6 @@ def _initialize_plugins():
     )
     _npe2pm.events.plugins_registered.connect(_npe2.on_plugins_registered)
     _npe2pm.discover(include_npe1=settings.plugins.use_npe2_adaptor)
-    refresh_themes()
 
     # this is a workaround for the fact that briefcase does not seem to include
     # napari's entry_points.txt in the bundled app, so the builtin plugins

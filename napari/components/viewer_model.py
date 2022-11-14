@@ -60,7 +60,7 @@ from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
-from napari.utils.theme import available_themes
+from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
 
 DEFAULT_THEME = 'dark'
@@ -234,7 +234,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @validator('theme')
     def _valid_theme(cls, v):
         themes = available_themes()
-        if v not in available_themes():
+        if not is_theme_available(v):
             raise ValueError(
                 trans._(
                     "Theme '{theme_name}' not found; options are {themes}.",

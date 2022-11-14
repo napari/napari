@@ -5,11 +5,16 @@ import warnings
 from ast import literal_eval
 from typing import Union
 
+import npe2
 from pydantic import validator
 from pydantic.color import Color
 
 from napari._vendor import darkdetect
-from napari.resources._icons import build_theme_svgs
+from napari.resources._icons import (
+    PLUGIN_FILE_NAME,
+    _theme_path,
+    build_theme_svgs,
+)
 from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
 from napari.utils.translations import trans
@@ -234,7 +239,7 @@ def get_theme(name, as_dict=None):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(name, theme):
+def register_theme(name, theme, source):
     """Register a new or updated theme.
 
     Parameters
@@ -243,13 +248,15 @@ def register_theme(name, theme):
         Name of requested theme.
     theme : dict of str: str, Theme
         Theme mapping elements to colors.
+    source : str
+        Source plugin of theme
     """
     if isinstance(theme, dict):
         theme = Theme(**theme)
     assert isinstance(theme, Theme)
     _themes[name] = theme
 
-    build_theme_svgs(name)
+    build_theme_svgs(name, source)
 
 
 def unregister_theme(name):
@@ -272,6 +279,35 @@ def available_themes():
         Names of available themes.
     """
     return tuple(_themes) + ("system",)
+
+
+def is_theme_available(name):
+    """Check if a theme is available.
+
+    Parameters
+    ----------
+    name : str
+        Name of requested theme.
+
+    Returns
+    -------
+    bool
+        True if the theme is available, False otherwise.
+    """
+    if name == "system":
+        return True
+    if name not in _themes and _theme_path(name).exists():
+        plugin_name_file = _theme_path(name) / PLUGIN_FILE_NAME
+        print("a")
+        if not plugin_name_file.exists():
+            return False
+        print("b")
+        plugin_name = plugin_name_file.read_text()
+        print(plugin_name)
+        npe2.PluginManager.instance().register(plugin_name)
+        _install_npe2_themes(_themes)
+
+    return name in _themes
 
 
 def rebuild_theme_settings():
@@ -317,20 +353,19 @@ LIGHT = Theme(
     canvas='white',
 )
 
-register_theme('dark', DARK)
-register_theme('light', LIGHT)
+register_theme('dark', DARK, "builtin")
+register_theme('light', LIGHT, "builtin")
 
 
 # this function here instead of plugins._npe2 to avoid circular import
 def _install_npe2_themes(_themes):
     import npe2
 
-    for theme in npe2.PluginManager.instance().iter_themes():
-        # `theme.type` is dark/light and supplies defaults for keys that
-        # are not provided by the plugin
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        register_theme(theme.id, d)
+    for mf in npe2.PluginManager.instance().iter_manifests(disabled=False):
+        for theme in mf.contributions.themes or ():
+            d = _themes[theme.type].dict()
+            d.update(theme.colors.dict(exclude_unset=True))
+            register_theme(theme.id, d, mf.name)
 
 
 def refresh_themes():
