@@ -318,6 +318,8 @@ class _QtMainWindow(QMainWindow):
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
         self._is_close_dialog[quit_app] = False
+        # here we save information that we could request confirmation on close
+        # So fi function `close` is called again, we don't ask again but just close
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
@@ -325,8 +327,10 @@ class _QtMainWindow(QMainWindow):
         ):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
+            # here we inform that confirmation dialog is not open
             return super().close()
         self._is_close_dialog[quit_app] = True
+        # here we inform that confirmation dialog is not open
 
     def close_window(self):
         """Close active dialog or active window."""
