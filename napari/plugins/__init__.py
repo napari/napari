@@ -10,6 +10,8 @@ from napari.settings import get_settings
 
 __all__ = ("plugin_manager", "menu_item_template")
 
+from napari.utils.theme import refresh_themes
+
 #: Template to use for namespacing a plugin item in the menu bar
 # widget_name (plugin_name)
 menu_item_template = '{1} ({0})'
