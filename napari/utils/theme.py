@@ -359,11 +359,13 @@ register_theme('light', LIGHT, "builtin")
 def _install_npe2_themes(_themes):
     import npe2
 
-    for mf in npe2.PluginManager.instance().iter_manifests(disabled=False):
-        for theme in mf.contributions.themes or ():
-            d = _themes[theme.type].dict()
-            d.update(theme.colors.dict(exclude_unset=True))
-            register_theme(theme.id, d, mf.name)
+    for manifest in npe2.PluginManager.instance().iter_manifests(
+        disabled=False
+    ):
+        for theme in manifest.contributions.themes or ():
+            theme_dict = _themes[theme.type].dict()
+            theme_dict.update(theme.colors.dict(exclude_unset=True))
+            register_theme(theme.id, theme_dict, manifest.name)
 
 
 _install_npe2_themes(_themes)
