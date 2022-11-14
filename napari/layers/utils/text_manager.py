@@ -6,21 +6,25 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
-from ...utils.events import Event, EventedModel
-from ...utils.events.custom_types import Array
-from ...utils.misc import reorder_after_dim_reduction
-from ...utils.translations import trans
-from ..base._base_constants import Blending
-from ._text_constants import Anchor
-from ._text_utils import get_text_anchors
-from .color_encoding import ColorArray, ColorEncoding, ConstantColorEncoding
-from .layer_utils import _validate_features
-from .string_encoding import (
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._text_constants import Anchor
+from napari.layers.utils._text_utils import get_text_anchors
+from napari.layers.utils.color_encoding import (
+    ColorArray,
+    ColorEncoding,
+    ConstantColorEncoding,
+)
+from napari.layers.utils.layer_utils import _validate_features
+from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     StringArray,
     StringEncoding,
 )
-from .style_encoding import _get_style_values
+from napari.layers.utils.style_encoding import _get_style_values
+from napari.utils.events import Event, EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import reorder_after_dim_reduction
+from napari.utils.translations import trans
 
 
 class TextManager(EventedModel):

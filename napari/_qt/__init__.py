@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from warnings import warn
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 try:
     from qtpy import API_NAME, QT_VERSION, QtCore
@@ -61,5 +61,5 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
     warn(message=warn_message)
 
 
-from .qt_event_loop import get_app, gui_qt, quit_app, run
-from .qt_main_window import Window
+from napari._qt.qt_event_loop import get_app, gui_qt, quit_app, run
+from napari._qt.qt_main_window import Window

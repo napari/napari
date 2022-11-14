@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, Optional
 
-from ...._vendor.experimental.cachetools import LRUCache
+from napari._vendor.experimental.cachetools import LRUCache
 
 if TYPE_CHECKING:
-    from ....types import ArrayLike
-    from ._request import ChunkRequest
+    from napari.components.experimental.chunk._request import ChunkRequest
+    from napari.types import ArrayLike
 
     # A ChunkRequest is just a dict of the arrays we need to load. We allow
     # loading multiple arrays in one request so the caller does not have to

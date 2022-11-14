@@ -1,7 +1,7 @@
 from app_model.types import SubmenuItem
 
-from ..utils.translations import trans
-from .constants import MenuGroup, MenuId
+from napari._app_model.constants import MenuGroup, MenuId
+from napari.utils.translations import trans
 
 SUBMENUS = [
     (

@@ -2,10 +2,10 @@ from typing import Dict, List
 
 from pydantic import Field, validator
 
-from ..utils.events.evented_model import EventedModel
-from ..utils.key_bindings import KeyBinding, coerce_keybinding
-from ..utils.shortcuts import default_shortcuts
-from ..utils.translations import trans
+from napari.utils.events.evented_model import EventedModel
+from napari.utils.key_bindings import KeyBinding, coerce_keybinding
+from napari.utils.shortcuts import default_shortcuts
+from napari.utils.translations import trans
 
 
 class ShortcutsSettings(EventedModel):
