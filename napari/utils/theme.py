@@ -3,6 +3,7 @@
 import re
 import warnings
 from ast import literal_eval
+from contextlib import suppress
 from typing import Union
 
 import npe2
@@ -301,8 +302,8 @@ def is_theme_available(name):
         if not plugin_name_file.exists():
             return False
         plugin_name = plugin_name_file.read_text()
-        print(plugin_name)
-        npe2.PluginManager.instance().register(plugin_name)
+        with suppress(ModuleNotFoundError):
+            npe2.PluginManager.instance().register(plugin_name)
         _install_npe2_themes(_themes)
 
     return name in _themes

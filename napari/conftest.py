@@ -51,6 +51,7 @@ from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
+from napari.utils import theme
 from napari.utils.config import async_loading
 
 if TYPE_CHECKING:
@@ -470,3 +471,10 @@ def _mock_app():
             yield app
         finally:
             Application.destroy('test_app')
+
+
+@pytest.fixture(autouse=True)
+def clean_themes():
+    old = {**theme._themes}
+    yield
+    theme._themes = old
