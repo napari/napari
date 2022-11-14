@@ -298,10 +298,8 @@ def is_theme_available(name):
         return True
     if name not in _themes and _theme_path(name).exists():
         plugin_name_file = _theme_path(name) / PLUGIN_FILE_NAME
-        print("a")
         if not plugin_name_file.exists():
             return False
-        print("b")
         plugin_name = plugin_name_file.read_text()
         print(plugin_name)
         npe2.PluginManager.instance().register(plugin_name)
