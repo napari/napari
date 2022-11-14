@@ -101,9 +101,20 @@ def napari_plugin_manager(monkeypatch):
 GCPASS = 0
 
 
+@pytest.fixture(autouse=True)
+def clean_themes():
+    from napari.utils import theme
+
+    themes = set(theme.available_themes())
+    yield
+    for name in theme.available_themes():
+        if name not in themes:
+            del theme._themes[name]
+
+
 @pytest.fixture
 def make_napari_viewer(
-    qtbot, request: 'FixtureRequest', napari_plugin_manager
+    qtbot, request: 'FixtureRequest', napari_plugin_manager, clean_themes
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
