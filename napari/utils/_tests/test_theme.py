@@ -33,7 +33,7 @@ def test_get_theme():
 
 def test_get_system_theme(monkeypatch):
     monkeypatch.setattr('napari.utils.theme.get_system_theme', lambda: 'light')
-    theme = get_theme('system')
+    theme = get_theme('system', False)
     # should return the theme specified by get_system_theme
     assert theme.name == 'light'
 
