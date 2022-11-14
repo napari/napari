@@ -5,8 +5,10 @@ from qtpy.QtGui import QImage
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
+from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
+LoadedRole = Qt.UserRole + 3
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -23,7 +25,10 @@ class QtLayerListModel(QtListModel[Layer]):
             # used to populate line edit when editing
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
-            return layer.get_source_str()
+            if layer.loaded:
+                return layer.get_source_str()
+            else:
+                return trans._('Layer loading')
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
@@ -38,6 +43,8 @@ class QtLayerListModel(QtListModel[Layer]):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
+        if role == LoadedRole:
+            return layer.loaded
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
@@ -71,6 +78,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
+            'loaded': LoadedRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)

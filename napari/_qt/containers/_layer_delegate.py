@@ -37,16 +37,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QPoint, QSize, Qt
-from qtpy.QtGui import QPixmap
+from qtpy.QtCore import QPoint, QSize, Qt, Signal
+from qtpy.QtGui import QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt.containers._base_item_model import ItemRole
-from napari._qt.containers.qt_layer_model import ThumbnailRole
+from napari._qt.containers.qt_layer_model import LoadedRole, ThumbnailRole
 from napari._qt.qt_resources import QColoredSVGIcon
+from napari.resources import LOADING_GIF_PATH
 
 if TYPE_CHECKING:
     from qtpy import QtCore
@@ -73,6 +74,14 @@ class LayerDelegate(QStyledItemDelegate):
     the appropriate icon for the layer, and some additional style/UX issues.
     """
 
+    loading_frame_changed = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.load_movie = QMovie(LOADING_GIF_PATH)
+        self.load_movie.setScaledSize(QSize(18, 18))
+        self.load_movie.frameChanged.connect(self.loading_frame_changed)
+
     def paint(
         self,
         painter: QPainter,
@@ -85,6 +94,8 @@ class LayerDelegate(QStyledItemDelegate):
         self.get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
+        # paint loading indicator if needed
+        self._paint_loading(painter, option, index)
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
@@ -111,6 +122,26 @@ class LayerDelegate(QStyledItemDelegate):
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = option.Right  # put icon on the right
         option.features |= option.HasDecoration
+
+    def _paint_loading(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QtCore.QModelIndex,
+    ):
+        loaded = index.data(LoadedRole)
+        if not loaded:
+            load_rect = option.rect.translated(55, 8)
+            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
+            load_rect.setWidth(h)
+            load_rect.setHeight(h)
+
+            if self.load_movie.state() == QMovie.NotRunning:
+                self.load_movie.start()
+            painter.drawPixmap(load_rect, self.load_movie.currentPixmap())
+        else:
+            self.load_movie.stop()
+            super().paint(painter, option, index)
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""

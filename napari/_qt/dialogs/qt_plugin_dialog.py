@@ -38,7 +38,6 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel
 
-import napari.resources
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
@@ -47,6 +46,7 @@ from napari.plugins import plugin_manager
 from napari.plugins.hub import iter_hub_plugin_info
 from napari.plugins.pypi import _user_agent, iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
+from napari.resources import LOADING_GIF_PATH
 from napari.settings import get_settings
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
 from napari.utils.misc import (
@@ -931,8 +931,7 @@ class QtPluginDialog(QDialog):
         self.process_error_indicator = QLabel(self)
         self.process_error_indicator.setObjectName("error_label")
         self.process_error_indicator.hide()
-        load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
-        mov = QMovie(load_gif)
+        mov = QMovie(LOADING_GIF_PATH)
         mov.setScaledSize(QSize(18, 18))
         self.working_indicator.setMovie(mov)
         mov.start()
