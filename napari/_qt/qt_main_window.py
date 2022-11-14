@@ -115,6 +115,10 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
+        self._is_close_dialog = {False: True, True: True}
+        # this ia sa workaround for #5335 issue. The dict is used to not
+        # collide shortcuts for close and close all windows
+
         act_dlg = QtActivityDialog(self._qt_viewer._canvas_overlay)
         self._qt_viewer._canvas_overlay.resized.connect(
             act_dlg.move_to_bottom_right
@@ -312,13 +316,17 @@ class _QtMainWindow(QMainWindow):
             self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
+        confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
+        self._is_close_dialog[quit_app] = False
         if (
-            not confirm_need
+            not confirm_need_local
             or not get_settings().application.confirm_close_window
             or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
         ):
             self._quit_app = quit_app
+            self._is_close_dialog[quit_app] = True
             return super().close()
+        self._is_close_dialog[quit_app] = True
 
     def close_window(self):
         """Close active dialog or active window."""
