@@ -4,15 +4,18 @@ import numpy as np
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
 
-from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
-from ...utils.action_manager import action_manager
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
-from ..utils import disable_with_opacity, qt_signals_blocked
-from ..widgets._slider_compat import QSlider
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import disable_with_opacity, qt_signals_blocked
+from napari._qt.widgets._slider_compat import QSlider
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.points._points_constants import SYMBOL_TRANSLATION, Mode
+from napari.utils.action_manager import action_manager
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers

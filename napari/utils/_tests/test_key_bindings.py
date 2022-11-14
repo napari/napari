@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 from app_model.types import KeyCode, KeyMod
 
-from .. import key_bindings
-from ..key_bindings import (
+from napari.utils import key_bindings
+from napari.utils.key_bindings import (
     KeymapHandler,
     KeymapProvider,
     _bind_keymap,

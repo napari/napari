@@ -1,12 +1,12 @@
 import numpy as np
 
-from ...settings import get_settings
-from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text
-from ..visuals.points import PointsVisual
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.utils.gl import BLENDING_MODES
+from napari._vispy.utils.text import update_text
+from napari._vispy.visuals.points import PointsVisual
+from napari.settings import get_settings
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import disconnect_events
 
 
 class VispyPointsLayer(VispyBaseLayer):

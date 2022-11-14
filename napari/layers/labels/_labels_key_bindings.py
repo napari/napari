@@ -1,13 +1,13 @@
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
-from ...layers.utils.layer_utils import (
+from napari.layers.labels._labels_constants import Mode
+from napari.layers.labels.labels import Labels
+from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from ...utils.translations import trans
-from ._labels_constants import Mode
-from .labels import Labels
+from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
 MAX_BRUSH_SIZE = 40

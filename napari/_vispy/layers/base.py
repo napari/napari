@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari.utils.events import disconnect_events
 
 
 class VispyBaseLayer(ABC):

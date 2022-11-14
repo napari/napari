@@ -1,7 +1,7 @@
 from vispy.scene.visuals import Compound, Line, Text
 
-from .clipping_planes_mixin import ClippingPlanesMixin
-from .markers import Markers
+from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
+from napari._vispy.visuals.markers import Markers
 
 
 class PointsVisual(ClippingPlanesMixin, Compound):

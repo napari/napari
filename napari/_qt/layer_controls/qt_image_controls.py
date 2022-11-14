@@ -11,16 +11,18 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLabeledDoubleSlider
 
-from ...layers.image._image_constants import (
+from napari._qt.layer_controls.qt_image_controls_base import (
+    QtBaseImageControls,
+)
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
     VolumeDepiction,
 )
-from ...utils.action_manager import action_manager
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from ..widgets._slider_compat import QDoubleSlider
-from .qt_image_controls_base import QtBaseImageControls
+from napari.utils.action_manager import action_manager
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers

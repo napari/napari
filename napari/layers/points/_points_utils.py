@@ -2,9 +2,13 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from ...utils.geometry import project_points_onto_plane
-from ...utils.translations import trans
-from ._points_constants import SYMBOL_ALIAS, SYMBOL_STR_SIZE, Symbol
+from napari.layers.points._points_constants import (
+    SYMBOL_ALIAS,
+    SYMBOL_STR_SIZE,
+    Symbol,
+)
+from napari.utils.geometry import project_points_onto_plane
+from napari.utils.translations import trans
 
 
 def _create_box_from_corners_3d(

@@ -7,7 +7,7 @@ from qtpy.QtWidgets import (
     QStyleOptionViewItem,
 )
 
-from ...utils.colormaps import (
+from napari.utils.colormaps import (
     display_name_to_name,
     ensure_colormap,
     make_colorbar,

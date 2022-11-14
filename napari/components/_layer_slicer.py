@@ -3,13 +3,38 @@ from __future__ import annotations
 import logging
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from threading import RLock
-from typing import Dict, Iterable, Optional, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    runtime_checkable,
+)
 
 from napari.components import Dims
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
 
 logger = logging.getLogger("napari.components._layer_slicer")
+
+
+# Layers that can be asynchronously sliced must be able to make
+# a slice request that can be called and will produce a slice
+# response. The request and response types will vary per layer
+# type, which means that the values of the dictionary result of
+# ``_slice_layers`` cannot be fixed to a single type.
+
+_SliceResponse = TypeVar('_SliceResponse')
+_SliceRequest = Callable[[], _SliceResponse]
+
+
+@runtime_checkable
+class _AsyncSliceable(Protocol[_SliceResponse]):
+    def _make_slice_request(self, dims: Dims) -> _SliceRequest[_SliceResponse]:
+        ...
 
 
 class _LayerSlicer:
@@ -77,7 +102,7 @@ class _LayerSlicer:
         # when we want to perform sync slicing anyway.
         requests = {}
         for layer in layers:
-            if layer._is_async():
+            if isinstance(layer, _AsyncSliceable):
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 layer._slice_dims(dims.point, dims.ndisplay, dims.order)
@@ -112,10 +137,7 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
-        return {
-            layer: layer._get_slice(request)
-            for layer, request in requests.items()
-        }
+        return {layer: request() for layer, request in requests.items()}
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
         """
@@ -163,5 +185,4 @@ class _LayerSlicer:
                 if set(task_layers).issubset(layer_set):
                     logger.debug(f'Found existing task for {task_layers}')
                     return task
-
         return None
