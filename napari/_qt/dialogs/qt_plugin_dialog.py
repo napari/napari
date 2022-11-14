@@ -571,9 +571,7 @@ class PluginListItem(QFrame):
         dlg_width = self.parent().parent().sizeHint().width()
         self.summary.setFixedWidth(int(dlg_width * 1.5))
 
-        sizePolicy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Fixed
-        )
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -832,9 +830,9 @@ class QPluginList(QListWidget):
         """Resize the plugin list item, especially after toggling QCollapsible."""
         height = item.widget.height()
         if item.widget.install_info_button.isExpanded():
-            item.widget.setFixedHeight(int(height * 1.8))
+            item.widget.setFixedHeight(int(height * 1.5))
         else:
-            item.widget.setFixedHeight(int(height / 1.8))
+            item.widget.setFixedHeight(int(height / 1.5))
         item.setSizeHint(item.widget.size())
 
     def handle_action(
