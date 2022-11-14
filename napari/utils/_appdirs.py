@@ -4,13 +4,18 @@ from functools import partial
 from typing import Callable, Optional
 
 import appdirs
+from packaging import version
 
-from napari._version import __version_tuple__
+from napari._version import __version__
+
+napari_version = version.parse(__version__)
+
+version_string = napari_version.base_version
+if napari_version.is_devrelease:
+    version_string += "dev"
 
 _appname = 'napari'
 _appauthor = False
-
-version_string = '.'.join(str(x) for x in __version_tuple__[:3])
 
 
 # all of these also take an optional "version" argument ... but if we want
@@ -21,7 +26,7 @@ user_data_dir: Callable[[], str] = partial(
     appdirs.user_data_dir, _appname, _appauthor
 )
 user_config_dir: Callable[[], str] = partial(
-    appdirs.user_config_dir, _appname, _appauthor
+    appdirs.user_config_dir, _appname, _appauthor, version_string
 )
 user_cache_dir: Callable[[], str] = partial(
     appdirs.user_cache_dir, _appname, _appauthor, version_string
