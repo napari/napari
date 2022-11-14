@@ -24,7 +24,7 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
-from napari.utils.theme import available_themes
+from napari.utils.theme import available_themes, get_system_theme
 
 BUILTINS_DISP = 'napari'
 BUILTINS_NAME = 'builtins'
@@ -534,6 +534,8 @@ def test_canvas_color(make_napari_viewer, theme):
     # This test is to make sure the application starts with
     # with different themes
     get_settings().appearance.theme = theme
+    if theme == 'system':
+        theme = get_system_theme()
     viewer = make_napari_viewer()
     assert viewer.theme == theme
 
