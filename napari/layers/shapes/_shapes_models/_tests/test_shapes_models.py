@@ -52,6 +52,10 @@ def test_polygon():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 0)
 
+    data = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]])
+    shape = Polygon(data, interpolation_order=3, ndisplay=3)
+    assert shape._edge_vertices.shape == (2500, 3)
+
 
 def test_nD_polygon():
     """Test creating Shape with a random nD polygon."""

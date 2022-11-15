@@ -37,4 +37,5 @@ class Polygon(PolygonBase):
             closed=True,
             filled=True,
             name='polygon',
+            interpolation_order=interpolation_order,
         )
