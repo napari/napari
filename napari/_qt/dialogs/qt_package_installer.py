@@ -29,21 +29,21 @@ from napari._version import version_tuple as _napari_version_tuple
 from napari.plugins import plugin_manager
 from napari.plugins.pypi import _user_agent
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
-from napari.utils.misc import running_as_bundled_app
+from napari.utils.misc import running_as_bundled_app, StringEnum
 from napari.utils.translations import trans
 
 JobId = int
 log = getLogger(__name__)
 
 
-class InstallerActions(str, Enum):
+class InstallerActions(StringEnum):
     "Available actions for the plugin manager"
     install = "install"
     uninstall = "uninstall"
     cancel = "cancel"
 
 
-class InstallerTools(str, Enum):
+class InstallerTools(StringEnum):
     "Available tools for InstallerQueue jobs"
     conda = "conda"
     pip = "pip"
@@ -61,7 +61,8 @@ class AbstractInstallerTool:
         return hash((self.action, *self.pkgs, *self.origins, self.prefix))
 
     # abstract method
-    def executable(self):
+    @classmethod
+    def executable(cls):
         raise NotImplementedError()
 
     # abstract method
@@ -76,7 +77,8 @@ class AbstractInstallerTool:
 
 
 class PipInstallerTool(AbstractInstallerTool):
-    def executable(self):
+    @classmethod 
+    def executable(cls):
         return str(_get_python_exe())
 
     def arguments(self) -> Tuple[str, ...]:
@@ -118,7 +120,8 @@ class PipInstallerTool(AbstractInstallerTool):
 
 
 class CondaInstallerTool(AbstractInstallerTool):
-    def executable(self):
+    @classmethod
+    def executable(cls):
         _bat = ".bat" if os.name == "nt" else ""
         if exe := os.environ.get("MAMBA_EXE", shutil.which(f'mamba{_bat}')):
             return exe
