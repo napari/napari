@@ -56,7 +56,10 @@ Keymap = Mapping[
 ]
 
 # global user keymap; to be made public later in refactoring process
-USER_KEYMAP: Mapping[str, Callable] = {}
+USER_KEYMAP: Mapping[KeyBinding, Callable] = {}
+
+# global plugin keymap; to be made public later in refactoring process
+PLUGIN_KEYMAP: Mapping[KeyBinding, Callable] = {}
 
 KEY_SUBS = {
     'Control': 'Ctrl',
@@ -236,7 +239,7 @@ def _get_user_keymap() -> Keymap:
 
     Returns
     -------
-    user_keymap : dict of str: callable
+    user_keymap : dict of KeyBinding: callable
         User keymap.
     """
     return USER_KEYMAP
@@ -250,6 +253,28 @@ def _bind_user_key(
     See ``bind_key`` docs for details.
     """
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
+
+
+def _get_plugin_keymap() -> Keymap:
+    """Retrieve the current plugin keymap. The plugin keymap is global
+    and takes precedent over all other keymaps except for the user keymap.
+
+    Returns
+    -------
+    plugin_keymap : dict of KeyBinding: callable
+        Plugin keymap.
+    """
+    return PLUGIN_KEYMAP
+
+
+def _bind_plugin_key(
+    key_bind: KeyBindingLike, func=_UNDEFINED, *, overwrite=False
+):
+    """Bind a key combination to the plugin keymap.
+
+    See ``bind_key`` docs for details.
+    """
+    return bind_key(_get_plugin_keymap(), key_bind, func, overwrite=overwrite)
 
 
 def _vispy2appmodel(event) -> KeyBinding:
@@ -363,7 +388,7 @@ class KeymapHandler:
     @property
     def keymap_chain(self):
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = [_get_user_keymap()]
+        maps = [_get_user_keymap(), _get_plugin_keymap()]
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
