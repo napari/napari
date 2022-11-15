@@ -40,7 +40,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import (
+from napari.types import (
     AugmentedWidget,
     ReaderFunction,
     SampleData,

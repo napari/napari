@@ -22,11 +22,11 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel
 
-from ...plugins import plugin_manager as napari_plugin_manager
-from ...settings import get_settings
-from ...utils.translations import trans
-from ..utils import drag_with_pixmap
-from .qt_tooltip import QtToolTipLabel
+from napari._qt.utils import drag_with_pixmap
+from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.plugins import plugin_manager as napari_plugin_manager
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari_plugin_engine import PluginManager

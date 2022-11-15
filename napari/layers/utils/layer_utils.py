@@ -8,10 +8,10 @@ import dask
 import numpy as np
 import pandas as pd
 
-from ...utils.action_manager import action_manager
-from ...utils.events.custom_types import Array
-from ...utils.transforms import Affine
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.events.custom_types import Array
+from napari.utils.transforms import Affine
+from napari.utils.translations import trans
 
 
 def register_layer_action(
@@ -958,3 +958,18 @@ def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     :meth:`_FeatureTable.properties`
     """
     return {name: series.to_numpy() for name, series in features.items()}
+
+
+def _unique_element(array: Array) -> Optional[Any]:
+    """
+    Returns the unique element along the 0th axis, if it exists; otherwise, returns None.
+
+    This is faster than np.unique, does not require extra tricks for nD arrays, and
+    does not fail for non-sortable elements.
+    """
+    if len(array) == 0:
+        return None
+    el = array[0]
+    if np.any(array[1:] != el):
+        return None
+    return el

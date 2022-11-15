@@ -3,7 +3,9 @@ import numpy as np
 import pytest
 from pint import UndefinedUnitError
 
+from napari.components import ViewerModel
 from napari.components._viewer_constants import CanvasPosition
+from napari.qt import QtViewer
 
 
 def test_vispy_text_visual(make_napari_viewer):
@@ -88,3 +90,23 @@ def test_vispy_text_visual(make_napari_viewer):
         np.testing.assert_equal(viewer.scale_bar.box_color, np.asarray(rgba))
 
     del qt_widget
+
+
+def test_box_color_with_background_color_override(qtbot):
+    viewer_model = ViewerModel()
+    qt_viewer = QtViewer(viewer_model)
+    qtbot.addWidget(qt_viewer)
+
+    qt_viewer.canvas.background_color_override = [1, 0, 0]
+    qt_viewer.scale_bar.reset()
+
+    np.testing.assert_equal(
+        qt_viewer.scale_bar.node.text.color.rgb, [[0, 1, 1]]
+    )
+
+    qt_viewer.canvas.background_color_override = [0, 1, 0]
+    qt_viewer.scale_bar.reset()
+
+    np.testing.assert_equal(
+        qt_viewer.scale_bar.node.text.color.rgb, [[1, 0, 1]]
+    )

@@ -1,4 +1,4 @@
-from .image import VispyImageLayer
+from napari._vispy.layers.image import VispyImageLayer
 
 
 class VispyLabelsLayer(VispyImageLayer):
