@@ -56,7 +56,10 @@ Keymap = Mapping[
 ]
 
 # global user keymap; to be made public later in refactoring process
-USER_KEYMAP: Mapping[str, Callable] = {}
+USER_KEYMAP: Mapping[KeyBinding, Callable] = {}
+
+# global plugin keymap; to be made public later in refactoring process
+PLUGIN_KEYMAP: Mapping[KeyBinding, Callable] = {}
 
 KEY_SUBS = {
     'Control': 'Ctrl',
@@ -208,7 +211,7 @@ def _get_user_keymap() -> Keymap:
 
     Returns
     -------
-    user_keymap : dict of str: callable
+    user_keymap : dict of KeyBinding: callable
         User keymap.
     """
     return USER_KEYMAP
@@ -311,7 +314,7 @@ class KeymapHandler:
     @property
     def keymap_chain(self):
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = [_get_user_keymap()]
+        maps = [_get_user_keymap(), _get_plugin_keymap()]
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))

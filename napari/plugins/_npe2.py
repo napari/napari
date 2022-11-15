@@ -349,7 +349,7 @@ def _npe2_manifest_to_actions(
     mf: PluginManifest,
 ) -> Tuple[List[Action], List[Tuple[str, SubmenuItem]]]:
     """Gather actions and submenus from a npe2 manifest, export app_model types."""
-    from app_model.types import Action, MenuRule
+    from app_model.types import Action, KeyBindingRule, MenuRule
 
     from napari._app_model.constants._menus import is_menu_contributable
 
@@ -365,6 +365,18 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
+    key_bindings: DefaultDict[str, List[KeyBindingRule]] = DefaultDict(list)
+    for key_bind in mf.contributions.keybindings or ():
+        # TODO: once supported, add when conditional
+        key_bindings[key_bind.command].append(
+            KeyBindingRule(
+                primary=key_bind.key,
+                win=key_bind.win,
+                mac=key_bind.mac,
+                linux=key_bind.linux,
+            )
+        )
+
     actions: List[Action] = [
         Action(
             id=cmd.id,
@@ -375,7 +387,7 @@ def _npe2_manifest_to_actions(
             enablement=cmd.enablement,
             callback=cmd.python_name or '',
             menus=cmds.get(cmd.id),
-            keybindings=[],
+            keybindings=key_bindings.get(cmd.id),
         )
         for cmd in mf.contributions.commands or ()
     ]
