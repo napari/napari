@@ -3,7 +3,7 @@ from itertools import product
 import numpy as np
 from vispy.scene.visuals import Compound, Line
 
-from ..visuals.markers import Markers
+from napari._vispy.visuals.markers import Markers
 
 
 class BoundingBox(Compound):

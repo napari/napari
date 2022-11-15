@@ -1,5 +1,5 @@
-from ..visuals.bounding_box import BoundingBox
-from .base import VispyLayerOverlay
+from napari._vispy.overlays.base import VispyLayerOverlay
+from napari._vispy.visuals.bounding_box import BoundingBox
 
 
 class VispyBoundingBoxOverlay(VispyLayerOverlay):
