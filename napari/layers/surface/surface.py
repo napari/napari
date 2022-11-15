@@ -230,8 +230,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
-        # Trigger generation of view slice and thumbnail
-        # Need _update_dims instead of refresh here because ndim is
+        # Trigger generation of view slice and thumbnail.
+        # Use _update_dims instead of refresh here because _get_ndim is
         # dependent on vertex_values as well as vertices.
         self._update_dims()
 
@@ -298,7 +298,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._vertex_values = vertex_values
 
-        self.refresh()
+        self._update_dims()
         self.events.data(value=self.data)
         self._set_editable()
 

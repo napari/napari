@@ -93,7 +93,7 @@ class LayerList(SelectableEventedList[Layer]):
             layer._on_selection(False)
 
     def _process_delete_item(self, item: Layer):
-        item.events.set_data.disconnect(self._clean_cache)
+        item.events.extent.disconnect(self._clean_cache)
         self._clean_cache()
 
     def _clean_cache(self):
@@ -162,7 +162,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
-        new_layer.events.set_data.connect(self._clean_cache)
+        new_layer.events.extent.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def toggle_selected_visibility(self):

@@ -649,12 +649,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    def _update_dims(self, event=None):
-        """Update the dims model and clear the extent cache.
-
-        This function needs to be called whenever data or transform information
-        changes, and should be called before events get emitted.
-        """
+    def _update_dims(self):
+        """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -724,16 +720,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Clears the cached extent.
 
         This should be called whenever this data or transform information
-        changes, and should be called before events get emitted.
+        changes, and should be called before any related events get emitted
+        so that they use the updated extent values.
         """
         if 'extent' in self.__dict__:
             del self.extent
-
-        # TODO: emit event to indicate the extent has changed instead of using set_data.
-        # self.events.extent()
-
-        # A new extent means that we must refresh the slice, which will also clear
-        # the cached extent of the LayerList.
+        self.events.extent()
         self.refresh()
 
     @property
@@ -1150,7 +1142,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()  # This event should be connected to the LayerList to cause it to recalculate its extent across all layers.
+            self.events.set_data()
             self._update_thumbnail()
             self._set_highlight(force=True)
 

@@ -372,7 +372,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # where the intention here is to use the base setter, so we use the
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
-        # triggered (self._update_dims(), below).
+        # triggered (self.refresh(), below).
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
