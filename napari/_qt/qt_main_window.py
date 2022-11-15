@@ -38,29 +38,32 @@ from qtpy.QtWidgets import (
 )
 from superqt.utils import QSignalThrottler
 
-from ..plugins import menu_item_template as plugin_menu_item_template
-from ..plugins import plugin_manager
-from ..settings import get_settings
-from ..utils import perf
-from ..utils._proxies import PublicOnlyProxy
-from ..utils.io import imsave
-from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
-from ..utils.notifications import Notification
-from ..utils.theme import _themes, get_system_theme
-from ..utils.translations import trans
-from . import menus
-from .dialogs.confirm_close_dialog import ConfirmCloseDialog
-from .dialogs.qt_activity_dialog import QtActivityDialog
-from .dialogs.qt_notification import NapariQtNotification
-from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_resources import get_stylesheet
-from .qt_viewer import QtViewer
-from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
-from .widgets.qt_viewer_dock_widget import (
+from napari._app_model.constants import MenuId
+from napari._qt import menus
+from napari._qt._qapp_model import build_qmodel_menu
+from napari._qt._qapp_model.qactions import init_qactions
+from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
+from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
+from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
+from napari._qt.qt_resources import get_stylesheet
+from napari._qt.qt_viewer import QtViewer
+from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
 )
-from .widgets.qt_viewer_status_bar import ViewerStatusBar
+from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
+from napari.plugins import menu_item_template as plugin_menu_item_template
+from napari.plugins import plugin_manager
+from napari.settings import get_settings
+from napari.utils import perf
+from napari.utils._proxies import PublicOnlyProxy
+from napari.utils.io import imsave
+from napari.utils.misc import in_ipython, in_jupyter, running_as_bundled_app
+from napari.utils.notifications import Notification
+from napari.utils.theme import _themes, get_system_theme
+from napari.utils.translations import trans
 
 _sentinel = object()
 
@@ -68,7 +71,7 @@ if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QImage
 
-    from ..viewer import Viewer
+    from napari.viewer import Viewer
 
 
 class _QtMainWindow(QMainWindow):
@@ -83,9 +86,15 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(self, viewer: 'Viewer', parent=None) -> None:
+    # `window` is passed through on construction so it's available to a window
+    # provider for dependency injection
+    # See https://github.com/napari/napari/pull/4826
+    def __init__(
+        self, viewer: 'Viewer', window: 'Window', parent=None
+    ) -> None:
         super().__init__(parent)
         self._ev = None
+        self._window = window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
@@ -133,6 +142,10 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
+        init_qactions()
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
@@ -259,7 +272,7 @@ class _QtMainWindow(QMainWindow):
 
         # Toggling the console visibility is disabled when it is not
         # available, so ensure that it is hidden.
-        if in_ipython():
+        if in_ipython() or in_jupyter():
             self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
@@ -453,7 +466,6 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
-
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
             str, QtViewerDockWidget
@@ -461,7 +473,7 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer)
+        self._qt_window = _QtMainWindow(viewer, self)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -628,13 +640,17 @@ class Window:
 
         self.file_menu = menus.FileMenu(self)
         self.main_menu.addMenu(self.file_menu)
-        self.view_menu = menus.ViewMenu(self)
+        self.view_menu = build_qmodel_menu(
+            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+        )
         self.main_menu.addMenu(self.view_menu)
         self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
-        self.help_menu = menus.HelpMenu(self)
+        self.help_menu = build_qmodel_menu(
+            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+        )
         self.main_menu.addMenu(self.help_menu)
 
         if perf.USE_PERFMON:
@@ -689,7 +705,7 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from ..plugins import _npe2
+        from napari.plugins import _npe2
 
         Widget = None
         dock_kwargs = {}
@@ -1243,7 +1259,7 @@ class Window:
         -------
         img : QImage
         """
-        from .utils import add_flash_animation
+        from napari._qt.utils import add_flash_animation
 
         if canvas_only:
             canvas = self._qt_viewer.canvas
@@ -1258,12 +1274,13 @@ class Window:
                     )
                 # Scale the requested size to account for HiDPI
                 size = tuple(
-                    dim / self._qt_window.devicePixelRatio() for dim in size
+                    int(dim / self._qt_window.devicePixelRatio())
+                    for dim in size
                 )
                 canvas.size = size[::-1]  # invert x ad y for vispy
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
-                canvas.size = tuple(dim * scale for dim in canvas.size)
+                canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:
@@ -1351,7 +1368,7 @@ class Window:
 
 def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
     # if the signature is looking a for a napari viewer, pass it.
-    from ..viewer import Viewer
+    from napari.viewer import Viewer
 
     kwargs = {}
     try:

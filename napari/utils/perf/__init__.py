@@ -50,9 +50,9 @@ not to leave them in the code. Think of them as similar to debug prints.
 """
 import os
 
-from ._config import perf_config
-from ._event import PerfEvent
-from ._timers import (
+from napari.utils.perf._config import perf_config
+from napari.utils.perf._event import PerfEvent
+from napari.utils.perf._timers import (
     add_counter_event,
     add_instant_event,
     block_timer,

@@ -46,7 +46,7 @@ class QColoredSVGIcon(QIcon):
         color: Optional[str] = None,
         opacity: float = 1.0,
     ) -> None:
-        from ...resources import get_colorized_svg
+        from napari.resources import get_colorized_svg
 
         self._svg = path_or_xml
         colorized = get_colorized_svg(path_or_xml, color, opacity)
@@ -81,7 +81,7 @@ class QColoredSVGIcon(QIcon):
             A pre-colored QColoredSVGIcon (which may still be recolored)
         """
         if not color and theme:
-            from ...utils.theme import get_theme
+            from napari.utils.theme import get_theme
 
             color = getattr(get_theme(theme, False), theme_key).as_hex()
 
@@ -105,7 +105,7 @@ class QColoredSVGIcon(QIcon):
         QColoredSVGIcon
             A colorizeable QIcon
         """
-        from ...resources import get_icon_path
+        from napari.resources import get_icon_path
 
         path = get_icon_path(icon_name)
         return QColoredSVGIcon(path)

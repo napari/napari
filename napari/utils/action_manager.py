@@ -7,14 +7,15 @@ from functools import cached_property
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-from ..utils.events import EmitterGroup
-from .interactions import Shortcut
-from .translations import trans
+from napari.utils.events import EmitterGroup
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
     from typing import Protocol
 
-    from .key_bindings import KeymapProvider
+    from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
         def connect(self, callback: Callable) -> None:
@@ -40,14 +41,14 @@ class Action:
     repeatable: bool = False
 
     @cached_property
-    def injected(self) -> Callable:
+    def injected(self) -> Callable[..., Future]:
         """command with napari objects injected.
 
         This will inject things like the current viewer, or currently selected
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
-        from .._app_model import get_app
+        from napari._app_model import get_app
 
         return get_app().injection_store.inject(self.command)
 

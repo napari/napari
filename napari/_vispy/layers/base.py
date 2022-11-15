@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari.utils.events import disconnect_events
 
 
 class VispyBaseLayer(ABC):
@@ -50,7 +50,7 @@ class VispyBaseLayer(ABC):
         self.node = node
 
         # avoid circular import; TODO: fix?
-        from ..utils.visual import create_vispy_overlay
+        from napari._vispy.utils.visual import create_vispy_overlay
 
         self.overlays = {
             name: create_vispy_overlay(overlay, layer=layer)

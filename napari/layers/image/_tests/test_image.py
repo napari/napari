@@ -432,6 +432,24 @@ def test_set_contrast_limits_range():
     assert layer.contrast_limits == [60, 100]
 
 
+@pytest.mark.parametrize(
+    'contrast_limits_range',
+    (
+        [-2, -1],  # range below lower boundary of [0, 1]
+        [-1, 0],  # range on lower boundary of [0, 1]
+        [1, 2],  # range on upper boundary of [0, 1]
+        [2, 3],  # range above upper boundary of [0, 1]
+    ),
+)
+def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
+    contrast_limits_range,
+):
+    """See https://github.com/napari/napari/issues/5257"""
+    layer = Image(np.zeros((6, 5)), contrast_limits=[0, 1])
+    layer.contrast_limits_range = contrast_limits_range
+    assert layer.contrast_limits == contrast_limits_range
+
+
 def test_gamma():
     """Test setting gamma."""
     np.random.seed(0)
@@ -478,7 +496,7 @@ def test_iso_threshold():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.iso_threshold == 0.5
+    assert np.min(data) <= layer.iso_threshold <= np.max(data)
 
     # Change iso_threshold property
     iso_threshold = 0.7

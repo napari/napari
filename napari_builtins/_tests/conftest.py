@@ -40,11 +40,11 @@ LAYERS: List[layers.Layer] = [
     ),
     layers.Shapes(
         [
-            np.random.rand(2, 2),
-            np.random.rand(2, 2),
-            np.random.rand(6, 2),
-            np.random.rand(6, 2),
-            np.random.rand(2, 2),
+            [(0, 0), (1, 1)],
+            [(5, 7), (10, 10)],
+            [(1, 3), (2, 4), (3, 5), (4, 6), (5, 7), (6, 8)],
+            [(4, 3), (5, -4), (6.1, 5), (7, 6.5), (8, 7), (9, 8)],
+            [(5.4, 6.7), (1.2, -3)],
         ],
         shape_type=['ellipse', 'line', 'path', 'polygon', 'rectangle'],
     ),

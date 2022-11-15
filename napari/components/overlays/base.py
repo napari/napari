@@ -1,5 +1,5 @@
-from ...utils.events import EventedModel
-from .._viewer_constants import CanvasPosition
+from napari.components._viewer_constants import CanvasPosition
+from napari.utils.events import EventedModel
 
 
 class Overlay(EventedModel):

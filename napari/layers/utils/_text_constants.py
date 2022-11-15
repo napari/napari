@@ -1,6 +1,6 @@
 from enum import auto
 
-from ...utils.misc import StringEnum
+from napari.utils.misc import StringEnum
 
 
 class Anchor(StringEnum):

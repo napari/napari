@@ -5,14 +5,27 @@ from typing import List, Tuple
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
-from ...components.overlays import (
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.layers.labels import VispyLabelsLayer
+from napari._vispy.layers.points import VispyPointsLayer
+from napari._vispy.layers.shapes import VispyShapesLayer
+from napari._vispy.layers.surface import VispySurfaceLayer
+from napari._vispy.layers.tracks import VispyTracksLayer
+from napari._vispy.layers.vectors import VispyVectorsLayer
+from napari._vispy.overlays.axes import VispyAxesOverlay
+from napari._vispy.overlays.base import VispyBaseOverlay
+from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
+from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
+from napari._vispy.overlays.text import VispyTextOverlay
+from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
 )
-from ...layers import (
+from napari.layers import (
     Image,
     Labels,
     Layer,
@@ -22,21 +35,8 @@ from ...layers import (
     Tracks,
     Vectors,
 )
-from ...utils.config import async_octree
-from ...utils.translations import trans
-from ..layers.base import VispyBaseLayer
-from ..layers.image import VispyImageLayer
-from ..layers.labels import VispyLabelsLayer
-from ..layers.points import VispyPointsLayer
-from ..layers.shapes import VispyShapesLayer
-from ..layers.surface import VispySurfaceLayer
-from ..layers.tracks import VispyTracksLayer
-from ..layers.vectors import VispyVectorsLayer
-from ..overlays.axes import VispyAxesOverlay
-from ..overlays.base import VispyBaseOverlay
-from ..overlays.bounding_box import VispyBoundingBoxOverlay
-from ..overlays.scale_bar import VispyScaleBarOverlay
-from ..overlays.text import VispyTextOverlay
+from napari.utils.config import async_octree
+from napari.utils.translations import trans
 
 layer_to_visual = {
     Image: VispyImageLayer,
@@ -57,8 +57,10 @@ overlay_to_visual = {
 }
 
 if async_octree:
-    from ...layers.image.experimental.octree_image import _OctreeImageBase
-    from ..experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+    from napari._vispy.experimental.vispy_tiled_image_layer import (
+        VispyTiledImageLayer,
+    )
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     # Insert _OctreeImageBase in front so it gets picked over plain Image.
     new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
