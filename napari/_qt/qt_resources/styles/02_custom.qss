@@ -609,7 +609,7 @@ QLabel#latest_version_text {
 }
 
 QWidget#install_button {
-  background-color: {{ foreground }};
+  background-color: {{ current }};
   color: {{ darken(text, 15) }};
 }
 
