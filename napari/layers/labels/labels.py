@@ -1,7 +1,7 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -21,8 +21,6 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     sphere_indices,
 )
-from napari.layers.labels._slice import _LabelSliceRequest, _LabelSliceResponse
-from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils import config
@@ -39,9 +37,6 @@ from napari.utils.misc import _is_array_type
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import generate_layer_coords_status
 from napari.utils.translations import trans
-
-if TYPE_CHECKING:
-    from napari.components import Dims
 
 
 class Labels(_ImageBase):
@@ -1502,71 +1497,6 @@ class Labels(_ImageBase):
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
-
-    def _make_slice_request(self, dims: 'Dims') -> _LabelSliceRequest:
-        """Make a label slice request based on the given dims and these labels."""
-        slice_input = self._make_slice_input(
-            dims.point, dims.ndisplay, dims.order
-        )
-        # TODO: for the existing sync slicing, slice_indices is passed through
-        # to avoid some performance issues related to the evaluation of the
-        # data-to-world transform and its inverse. Async slicing currently
-        # absorbs these performance issues here, but we can likely improve
-        # things either by caching the world-to-data transform on the layer
-        # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, slice_indices)
-
-    def _make_slice_request_internal(
-        self,
-        slice_input: _SliceInput,
-        slice_indices,
-    ) -> _LabelSliceRequest:
-        """Needed to support old-style sync slicing through _slice_dims and
-        _set_view_slice.
-
-        This is temporary scaffolding that should go away once we have completed
-        the async slicing project: https://github.com/napari/napari/issues/4795
-        """
-        return _LabelSliceRequest(
-            dims=slice_input,
-            data=self.data,
-            slice_indices=slice_indices,
-            multiscale=self.multiscale,
-            corner_pixels=self.corner_pixels,
-            rgb=self.rgb,
-            data_level=self.data_level,
-            thumbnail_level=self._thumbnail_level,
-            level_shapes=self.level_shapes,
-            downsample_factors=self.downsample_factors,
-            lazy=True,
-        )
-
-    def _update_slice_response(
-        self, response: _LabelSliceResponse, indices
-    ) -> None:
-        """Update the slice output state currently on the layer."""
-        # For the old experimental async code.
-        slice_data = self._SliceDataClass(
-            layer=self,
-            indices=indices,
-            image=response.data,
-            thumbnail_source=response.thumbnail,
-        )
-
-        self._transforms[0] = response.tile_to_data
-
-        # For the old experimental async code, where loading might be sync
-        # or async.
-        self._load_slice(slice_data)
-
-        # Maybe reset the contrast limits based on the new slice.
-        if self._should_calc_clims:
-            self.reset_contrast_limits_range()
-            self.reset_contrast_limits()
-            self._should_calc_clims = False
-        elif self._keep_auto_contrast:
-            self.reset_contrast_limits()
 
 
 if config.async_octree:
