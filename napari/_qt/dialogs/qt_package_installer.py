@@ -29,7 +29,7 @@ from napari._version import version_tuple as _napari_version_tuple
 from napari.plugins import plugin_manager
 from napari.plugins.pypi import _user_agent
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
-from napari.utils.misc import running_as_bundled_app, StringEnum
+from napari.utils.misc import StringEnum, running_as_bundled_app
 from napari.utils.translations import trans
 
 JobId = int
@@ -77,7 +77,7 @@ class AbstractInstallerTool:
 
 
 class PipInstallerTool(AbstractInstallerTool):
-    @classmethod 
+    @classmethod
     def executable(cls):
         return str(_get_python_exe())
 
