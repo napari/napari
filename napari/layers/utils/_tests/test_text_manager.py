@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from napari._tests.utils import assert_colors_equal
+from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     FormatStringEncoding,
@@ -713,7 +714,6 @@ def test_copy_paste_with_derived_color():
     )
 
 
-# All pass
 @pytest.mark.parametrize(
     ('ndim', 'ndisplay', 'translation'),
     (
@@ -729,13 +729,17 @@ def test_copy_paste_with_derived_color():
     ),
 )
 def test_compute_text_coords(ndim, ndisplay, translation):
+    """See https://github.com/napari/napari/issues/5111"""
     num_points = 3
     text_manager = TextManager(
         features=pd.DataFrame(index=range(num_points)),
         translation=translation,
     )
     np.random.seed(0)
-    coords = np.random.rand(num_points, ndim)
+    # Cannot just use `rand(num_points, ndisplay)` because when
+    # ndim < ndisplay, we need to get ndim data which is what
+    # what layers are doing (e.g. see `Points._view_data`).
+    coords = np.random.rand(num_points, ndim)[-ndisplay:]
 
     text_coords, _, _ = text_manager.compute_text_coords(
         coords, ndisplay=ndisplay
@@ -745,22 +749,24 @@ def test_compute_text_coords(ndim, ndisplay, translation):
     np.testing.assert_equal(text_coords, expected_coords)
 
 
-# Some orders fail
 @pytest.mark.parametrize(('order'), permutations((0, 1, 2)))
 def test_compute_text_coords_with_3D_data_2D_display(order):
+    """See https://github.com/napari/napari/issues/5111"""
     num_points = 3
     translation = np.array([5.2, -3.2, 0.1])
     text_manager = TextManager(
         features=pd.DataFrame(index=range(num_points)),
         translation=translation,
     )
+    slice_input = _SliceInput(ndisplay=2, point=(0.0,) * 3, order=order)
     np.random.seed(0)
-    coords = np.random.rand(num_points, 3)
+    coords = np.random.rand(num_points, slice_input.ndisplay)
 
     text_coords, _, _ = text_manager.compute_text_coords(
-        coords, ndisplay=2, order=order
+        coords,
+        ndisplay=slice_input.ndisplay,
+        order=slice_input.displayed,
     )
 
-    displayed_dims = list(order[1:])
-    expected_coords = coords[:, displayed_dims] + translation[displayed_dims]
+    expected_coords = coords + translation[slice_input.displayed]
     np.testing.assert_equal(text_coords, expected_coords)
