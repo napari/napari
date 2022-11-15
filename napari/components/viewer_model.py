@@ -225,6 +225,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
 
+    # simple properties for backward compatibility
+    @property
+    def axes(self):
+        return self.overlays['axes']
+
+    @property
+    def scale_bar(self):
+        return self.overlays['scale_bar']
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
