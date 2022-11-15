@@ -83,7 +83,6 @@ class LockableData:
     def __init__(self, data: LayerDataProtocol):
         self.data = data
         self.lock = RLock()
-        self.ndim = data.ndim
 
     @property
     def dtype(self) -> DTypeLike:
@@ -92,6 +91,10 @@ class LockableData:
     @property
     def shape(self) -> Tuple[int, ...]:
         return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        return self.data.ndim
 
     def __getitem__(
         self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
