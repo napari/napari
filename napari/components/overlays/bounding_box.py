@@ -1,5 +1,5 @@
-from ...utils.color import ColorValue
-from .base import LayerOverlay
+from napari.components.overlays.base import LayerOverlay
+from napari.utils.color import ColorValue
 
 
 class BoundingBoxOverlay(LayerOverlay):
