@@ -12,7 +12,11 @@ from napari._qt.widgets.qt_mode_buttons import (
     QtModePushButton,
     QtModeRadioButton,
 )
-from napari.layers.points._points_constants import SYMBOL_TRANSLATION, Mode
+from napari.layers.points._points_constants import (
+    SYMBOL_TRANSLATION,
+    SYMBOL_TRANSLATION_INVERTED,
+    Mode,
+)
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
@@ -124,11 +128,13 @@ class QtPointsControls(QtLayerControls):
             )
         )
         current_index = 0
-        for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
-            data = data.value
-            sym_cb.addItem(text, data)
+        for index, (symbol_string, text) in enumerate(
+            SYMBOL_TRANSLATION.items()
+        ):
+            symbol_string = symbol_string.value
+            sym_cb.addItem(text, symbol_string)
 
-            if np.all(data == self.layer.symbol):
+            if symbol_string == self.layer.current_symbol:
                 current_index = index
 
         sym_cb.setCurrentIndex(current_index)
@@ -234,7 +240,7 @@ class QtPointsControls(QtLayerControls):
         text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
-        self.layer.current_symbol = text
+        self.layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
 
     def changeSize(self, value):
         """Change size of points on the layer model.
@@ -282,7 +288,7 @@ class QtPointsControls(QtLayerControls):
         """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
-                self.symbolComboBox.findData(self.layer.current_symbol)
+                self.symbolComboBox.findData(self.layer.current_symbol.value)
             )
 
     def _on_size_change(self):

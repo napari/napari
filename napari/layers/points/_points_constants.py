@@ -70,8 +70,6 @@ SYMBOL_ALIAS = {
     '|': Symbol.VBAR,
 }
 
-SYMBOL_STR_SIZE = max(len(s.value) for s in Symbol)
-
 SYMBOL_TRANSLATION = OrderedDict(
     [
         (Symbol.ARROW, trans._('arrow')),
@@ -90,6 +88,8 @@ SYMBOL_TRANSLATION = OrderedDict(
         (Symbol.X, trans._('x')),
     ]
 )
+
+SYMBOL_TRANSLATION_INVERTED = {v: k for k, v in SYMBOL_TRANSLATION.items()}
 
 
 class Shading(StringEnum):

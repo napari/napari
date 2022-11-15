@@ -2,11 +2,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from napari.layers.points._points_constants import (
-    SYMBOL_ALIAS,
-    SYMBOL_STR_SIZE,
-    Symbol,
-)
+from napari.layers.points._points_constants import SYMBOL_ALIAS, Symbol
 from napari.utils.geometry import project_points_onto_plane
 from napari.utils.translations import trans
 
@@ -266,9 +262,10 @@ def coerce_symbols(array: np.ndarray) -> np.ndarray:
     array : np.ndarray
         Array of strings matching Symbol values.
     """
-    dtype = f'U{SYMBOL_STR_SIZE}'
-    array = array.astype(dtype, copy=True)
+    # dtype has to be object, otherwise np.vectorize will cut it down to `U(N)`,
+    # where N is the biggest string currently in the array. This breaks if
+    array = array.astype(object, copy=True)
     for k, v in SYMBOL_ALIAS.items():
         array[(array == k) | (array == k.upper())] = v
     # otypes necessary for empty arrays
-    return np.vectorize(Symbol.__getitem__, otypes=[dtype])(array)
+    return np.vectorize(Symbol, otypes=[object])(array)
