@@ -144,13 +144,19 @@ class _LayerSlicer:
         # term as we develop, and also in the long term if there are cases
         # when we want to perform sync slicing anyway.
         requests = {}
+        sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
                 requests[layer] = layer._make_slice_request(dims)
             else:
-                layer._slice_dims(dims.point, dims.ndisplay, dims.order)
+                sync_layers.append(layer)
+
         # create task for slicing of each request/layer
         task = self._executor.submit(self._slice_layers, requests)
+
+        # submit the sync layers (purposefully placed after async submission)
+        for layer in sync_layers:
+            layer._slice_dims(dims.point, dims.ndisplay, dims.order)
 
         # store task for cancellation logic
         # this is purposefully done before adding the done callback to ensure
