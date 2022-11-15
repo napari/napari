@@ -1,8 +1,8 @@
-from napari.components.overlays.base import LayerOverlay
+from napari.components.overlays.base import SceneOverlay
 from napari.utils.color import ColorValue
 
 
-class BoundingBoxOverlay(LayerOverlay):
+class BoundingBoxOverlay(SceneOverlay):
     lines: bool = True
     line_thickness = 1
     line_color: ColorValue = 'red'

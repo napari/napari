@@ -1,8 +1,8 @@
-from napari._vispy.overlays.base import VispyLayerOverlay
+from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.bounding_box import BoundingBox
 
 
-class VispyBoundingBoxOverlay(VispyLayerOverlay):
+class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, node=BoundingBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_bounds_change)

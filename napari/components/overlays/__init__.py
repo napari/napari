@@ -1,7 +1,6 @@
 from napari.components.overlays.axes import AxesOverlay
 from napari.components.overlays.base import (
     CanvasOverlay,
-    LayerOverlay,
     Overlay,
     SceneOverlay,
 )

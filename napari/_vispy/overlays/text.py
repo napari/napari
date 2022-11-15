@@ -1,10 +1,10 @@
 from vispy.scene.visuals import Text
 
-from napari._vispy.overlays.base import VispyCanvasOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari.components._viewer_constants import CanvasPosition
 
 
-class VispyTextOverlay(VispyCanvasOverlay):
+class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Text overlay."""
 
     def __init__(self, **kwargs):

@@ -39,7 +39,3 @@ class SceneOverlay(Overlay):
     """
 
     # TODO: should transform live here?
-
-
-class LayerOverlay(SceneOverlay):
-    pass

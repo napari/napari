@@ -1,11 +1,11 @@
 import numpy as np
 
-from napari._vispy.overlays.base import VispySceneOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
 
-class VispyAxesOverlay(VispySceneOverlay):
+class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
     def __init__(self, **kwargs):

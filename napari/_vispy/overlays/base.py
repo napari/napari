@@ -11,11 +11,12 @@ class VispyBaseOverlay:
         self.overlay = overlay
 
         self.node = node
-        self.node.parent = parent
         self.node.order = self.overlay.order
 
         self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.opacity.connect(self._on_opacity_change)
+
+        self.node.parent = parent
 
     def _on_visible_change(self):
         self.node.visible = self.overlay.visible
@@ -34,9 +35,8 @@ class VispyBaseOverlay:
 
 
 class VispyCanvasOverlay(VispyBaseOverlay):
-    def __init__(self, *, viewer, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.viewer = viewer
 
         self.x_offset = 10
         self.y_offset = 10
@@ -44,6 +44,13 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.y_size = 0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
+        self.node.events.parent_change.connect(self._on_parent_change)
+
+    def _on_parent_change(self, event):
+        if event.old is not None:
+            disconnect_events(self, event.old.canvas)
+        if event.new is not None:
+            event.new.canvas.events.resize.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
         if self.node.canvas is None:
@@ -102,14 +109,18 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
 
 class VispySceneOverlay(VispyBaseOverlay):
-    def __init__(self, *, viewer, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.viewer = viewer
         self.node.transform = MatrixTransform()
 
 
-class VispyLayerOverlay(VispyBaseOverlay):
+class LayerOverlayMixin:
     def __init__(self, *, layer, **kwargs):
         super().__init__(**kwargs)
         self.layer = layer
-        self.node.transform = MatrixTransform()
+
+
+class ViewerOverlayMixin:
+    def __init__(self, *, viewer, **kwargs):
+        super().__init__(**kwargs)
+        self.viewer = viewer

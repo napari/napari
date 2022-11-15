@@ -2,14 +2,14 @@ import bisect
 
 import numpy as np
 
-from napari._vispy.overlays.base import VispyCanvasOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.utils._units import PREFERRED_VALUES, get_unit_registry
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
 
-class VispyScaleBarOverlay(VispyCanvasOverlay):
+class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     def __init__(self, **kwargs):
