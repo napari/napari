@@ -17,23 +17,29 @@ from napari.utils.key_bindings import _bind_plugin_key
 APP_NAME = 'napari'
 
 
+def _bindable_cmd(app, cmd_id):
+    """Given a command, return a function that will execute it when called.
+
+    This was factored out into its own function to clarify scoping behaviour.
+    """
+
+    def exec_cmd():
+        app.commands.execute_command(cmd_id).result()
+
+    return exec_cmd
+
+
 def populate_plugin_keymap():
     """Populate the global plugin keymap from the app's keybinding registry."""
-    from napari._app_model import get_app
-
-    app = get_app()
+    app = NapariApplication.get_app()
     for kb_rule in app.keybindings:
         # skip built-in keybinds
         if kb_rule.command_id.startswith('napari:'):
             continue
 
-        # assign to local var so it doesn't get overwritten by future loops
-        # must come after continue statement to work yay python scoping
-        cmd_id = kb_rule.command_id
-
         _bind_plugin_key(
             kb_rule.keybinding,
-            lambda: app.commands.execute_command(cmd_id).result(),
+            _bindable_cmd(app, kb_rule.command_id),
             overwrite=True,
         )
 
