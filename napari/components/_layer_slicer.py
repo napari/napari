@@ -85,9 +85,12 @@ class _LayerSlicer:
         >>> with layer_slice.force_sync():
         >>>     layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
         """
+        prev = self._force_sync
         self._force_sync = True
-        yield None
-        self._force_sync = False
+        try:
+            yield None
+        finally:
+            self._force_sync = prev
 
     def wait_until_idle(self, timeout: Optional[float] = None) -> None:
         """Wait for all slicing tasks to complete before returning.
@@ -108,7 +111,7 @@ class _LayerSlicer:
 
         if len(not_done_futures) > 0:
             raise TimeoutError(
-                f'Slicing tasks did not complete within timeout ({timeout}s).'
+                f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
             )
 
     def slice_layers_async(

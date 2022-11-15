@@ -307,11 +307,9 @@ def test_slice_layers_exception_subthread_on_result(layer_slicer):
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     done, _ = wait([future], timeout=5)
-    if done:
-        with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
-            future.result()
-    else:
-        raise TimeoutError('Test future did not complete within timeout.')
+    assert done, 'Test future did not complete within timeout.'
+    with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
+        future.result()
 
 
 def test_wait_until_idle(layer_slicer, single_threaded_executor):
@@ -341,7 +339,6 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
 def _wait_until_running(future: Future):
     while not future.running():
         time.sleep(0.01)
-        continue
 
 
 def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
