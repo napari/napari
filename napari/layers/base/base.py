@@ -13,7 +13,6 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.components.overlays import BoundingBoxOverlay
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.interactivity_utils import (
@@ -69,11 +68,6 @@ def no_op(layer: Layer, event: Event) -> None:
 
     """
     return None
-
-
-DEFAULT_OVERLAYS = {
-    'bounding_box': BoundingBoxOverlay,
-}
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -327,9 +321,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
-        self._overlays = EventedDict(
-            {k: v() for k, v in DEFAULT_OVERLAYS.items()}
-        )
+        # circular import
+        from napari.components.overlays.bounding_box import BoundingBoxOverlay
+
+        self._overlays = EventedDict({'bounding_box': BoundingBoxOverlay()})
 
         self.events = EmitterGroup(
             source=self,
