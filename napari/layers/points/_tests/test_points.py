@@ -2491,15 +2491,15 @@ def test_set_drag_start():
 
 
 @pytest.mark.parametrize(
-    "dims_indices,length_check",
+    "dims_indices,target_indices",
     [
-        ((8, slice(None), slice(None)), 1),
-        ((10, slice(None), slice(None)), 4),
-        ((10 + 2 * 1e-12, slice(None), slice(None)), 4),
-        ((10.1, slice(None), slice(None)), 4),
+        ((8, slice(None), slice(None)), [2]),
+        ((10, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10 + 2 * 1e-12, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10.1, slice(None), slice(None)), [0, 1, 3, 4]),
     ],
 )
-def test_point_slice_request_response(dims_indices, length_check):
+def test_point_slice_request_response(dims_indices, target_indices):
     """Test points slicing with request and response."""
     data = [
         (10, 2, 4),
@@ -2516,4 +2516,5 @@ def test_point_slice_request_response(dims_indices, length_check):
     )
     response = request()
 
-    assert len(response.indices) == length_check
+    assert len(response.indices) == len(target_indices)
+    assert all([a == b for a, b in zip(response.indices, target_indices)])

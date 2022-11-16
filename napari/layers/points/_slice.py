@@ -58,10 +58,6 @@ class _PointSliceRequest:
             return _PointSliceResponse(indices=[], scale=np.empty(0))
 
         not_disp = list(self.dims.not_displayed)
-        # Return early if we won't be slicing
-        if not not_disp:
-            return _PointSliceResponse(indices=[], scale=np.empty(0))
-
         # We want a numpy array so we can use fancy indexing with the non-displayed
         # indices, but as self.dims_indices can (and often/always does) contain slice
         # objects, the array has dtype=object which is then very slow for the
