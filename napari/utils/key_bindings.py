@@ -227,6 +227,28 @@ def _bind_user_key(
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
 
 
+def _get_plugin_keymap() -> Keymap:
+    """Retrieve the current plugin keymap. The plugin keymap is global
+    and takes precedent over all other keymaps except for the user keymap.
+
+    Returns
+    -------
+    plugin_keymap : dict of KeyBinding: callable
+        Plugin keymap.
+    """
+    return PLUGIN_KEYMAP
+
+
+def _bind_plugin_key(
+    key_bind: KeyBindingLike, func=_UNDEFINED, *, overwrite=False
+):
+    """Bind a key combination to the plugin keymap.
+
+    See ``bind_key`` docs for details.
+    """
+    return bind_key(_get_plugin_keymap(), key_bind, func, overwrite=overwrite)
+
+
 class KeybindingDescriptor:
     """Descriptor which transforms ``func`` into a method with the first
     argument bound to ``class_keymap`` or ``keymap`` depending on if it was
@@ -355,7 +377,7 @@ class KeymapHandler:
         is_auto_repeat : bool, optional
             If this key press was triggered by holding down a key.
         """
-        from ..utils.action_manager import action_manager
+        from napari.utils.action_manager import action_manager
 
         key_bind = coerce_keybinding(key_bind)
 
