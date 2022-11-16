@@ -127,7 +127,7 @@ class CondaInstallerTool(AbstractInstallerTool):
             Path(os.environ.get('CONDA_EXE', '')),
             # $CONDA is usually only available on GitHub Actions
             Path(os.environ.get('CONDA', '')) / 'condabin' / f'conda{bat}',
-        ):  
+        ):
             if path.is_file():
                 return str(path)
         return f'conda{bat}'  # cross our fingers 'conda' is in PATH
