@@ -178,7 +178,6 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
 def test_conda_installer(qtbot, tmp_conda_env: Path, monkeypatch):
     installer = InstallerQueue()
 
-
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(
             tool=InstallerTools.conda,
