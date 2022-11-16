@@ -14,7 +14,6 @@ import shutil
 import sys
 from collections import deque
 from dataclasses import dataclass
-from enum import Enum
 from logging import getLogger
 from pathlib import Path
 from tempfile import gettempdir
@@ -122,13 +121,16 @@ class PipInstallerTool(AbstractInstallerTool):
 class CondaInstallerTool(AbstractInstallerTool):
     @classmethod
     def executable(cls):
-        _bat = ".bat" if os.name == "nt" else ""
-        if exe := os.environ.get("MAMBA_EXE", shutil.which(f'mamba{_bat}')):
-            return exe
-        _exe = ".exe" if os.name == "nt" else ""
-        if exe := os.environ.get("CONDA_EXE", shutil.which(f'conda{_exe}')):
-            return exe
-        return 'conda'  # cross our fingers
+        bat = ".bat" if os.name == "nt" else ""
+        for path in (
+            Path(os.environ.get('MAMBA_EXE', '')),
+            Path(os.environ.get('CONDA_EXE', '')),
+            # $CONDA is usually only available on GitHub Actions
+            Path(os.environ.get('CONDA', '')) / 'condabin' / f'conda{bat}',
+        ):  
+            if path.is_file():
+                return str(path)
+        return f'conda{bat}'  # cross our fingers 'conda' is in PATH
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()

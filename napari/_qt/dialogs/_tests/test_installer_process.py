@@ -27,19 +27,6 @@ def tmp_virtualenv(tmp_path) -> 'Session':
     return virtualenv.cli_run(cmd)
 
 
-def conda_exe():
-    if conda_exe := os.environ.get('CONDA_EXE', ''):
-        pass  # in an active conda env, this is set and we take it
-    elif conda_dir := os.environ.get('CONDA'):
-        # $CONDA is usually defined in GHA, pointing to their bundled conda root
-        conda_exe = os.path.join(conda_dir, 'condabin', 'conda')
-        if os.name == 'nt':
-            conda_exe += '.bat'
-    if not os.path.isfile(conda_exe):
-        conda_exe = 'conda.bat ' if os.name == 'nt' else 'conda'
-    return conda_exe
-
-
 @pytest.fixture
 def tmp_conda_env(tmp_path):
     import subprocess
@@ -47,7 +34,7 @@ def tmp_conda_env(tmp_path):
     try:
         subprocess.check_output(
             [
-                conda_exe(),
+                CondaInstallerTool.executable(),
                 'create',
                 '-yq',
                 '-p',
