@@ -295,7 +295,7 @@ def test_slice_layers_async_with_one_3d_image(layer_slicer):
 
 
 def test_slice_layers_async_with_one_3d_points(layer_slicer):
-    """ensure that async slicing of points returns early"""
+    """ensure that async slicing of points does not block"""
     np.random.seed(0)
     num_points = 100
     data = np.rint(2.0 * np.random.rand(num_points, 3))
