@@ -100,8 +100,7 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         if (pth / 'requests').exists():
             raise AssertionError('requests got installed')
 
-    if pkgs < 2:
-        raise AssertionError('package was not installed')
+    assert pkgs >= 2, 'package was not installed'
 
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         job_id = installer.uninstall(
@@ -110,8 +109,7 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
     for pth in tmp_virtualenv.creator.libs:
-        if (pth / 'pip_install_test').exists():
-            raise AssertionError('pip_install_test still installed')
+        assert not (pth / 'pip_install_test').exists(), 'pip_install_test still installed'
 
     assert not installer.hasJobs()
 
