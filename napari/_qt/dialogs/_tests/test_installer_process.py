@@ -109,7 +109,9 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
     for pth in tmp_virtualenv.creator.libs:
-        assert not (pth / 'pip_install_test').exists(), 'pip_install_test still installed'
+        assert not (
+            pth / 'pip_install_test'
+        ).exists(), 'pip_install_test still installed'
 
     assert not installer.hasJobs()
 
