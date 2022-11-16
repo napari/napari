@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - main
+      - "v*x"
     paths-ignore:
       - 'docs/**'
 
@@ -80,6 +81,10 @@ jobs:
           - python: 3.9
             platform: ubuntu-latest
             backend: pyside6
+# uncoment when new qtpy is released
+#          - python: '3.10'
+#            platform: ubuntu-latest
+#            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs
