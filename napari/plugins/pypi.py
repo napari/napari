@@ -91,7 +91,10 @@ def pypi_package_versions(package_name: str) -> List[str]:
     """
     url = f"https://pypi.org/simple/{package_name}"
     html = requests.get(url).text
-    return re.findall(f">{package_name}-(.+).tar", html)
+    package_name_ = package_name.replace('-', '_')
+    ret1 = re.findall(f">{package_name}-(.+).tar", html)
+    ret2 = re.findall(f">{package_name_}-(.+).tar", html)
+    return ret1 + ret2
 
 
 @lru_cache

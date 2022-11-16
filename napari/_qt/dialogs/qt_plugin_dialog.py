@@ -409,11 +409,11 @@ class PluginListItem(QFrame):
         self.url = url
         self._versions = {}
         self._versions['Conda'] = versions_conda
-        self._versions['PyPi'] = versions_pypi
+        self._versions['PyPI'] = versions_pypi
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
 
-        self._populate_version_dropdown('PyPi')
+        self._populate_version_dropdown('PyPI')
         self.package_name.setText(version)
         if summary:
             self.summary.setText(summary)
@@ -618,8 +618,10 @@ class PluginListItem(QFrame):
         self.source_choice_text = QLabel('Source ')
         self.version_choice_text = QLabel('Version ')
         self.source_choice_dropdown = QComboBox()
-        self.source_choice_dropdown.addItem('PyPi')
-        self.source_choice_dropdown.addItem('Conda')
+        if len(self._versions['PyPI']) > 0:
+            self.source_choice_dropdown.addItem('PyPI')
+        if len(self._versions['Conda']) > 0:
+            self.source_choice_dropdown.addItem('Conda')
         self.source_choice_dropdown.currentTextChanged.connect(
             self._populate_version_dropdown
         )
@@ -683,7 +685,7 @@ class PluginListItem(QFrame):
         self.package_name.setStyleSheet('margin: 0px; padding: 0px;')
         self.source_text = QLabel('Source:')
         self.source_text.setStyleSheet('margin-right: 7px; padding: 0px;')
-        self.source = QLabel('PyPi')
+        self.source = QLabel('PyPI')
         self.source.setStyleSheet('margin-right: 7px; padding: 0px;')
 
         info_layout.addWidget(self.source_text, 0, 0)
@@ -993,6 +995,7 @@ class QtPluginDialog(QDialog):
         self.installer = InstallerQueue()
         self.setWindowTitle(trans._('Plugin Manager'))
         self.setup_ui()
+        self.setWindowTitle('Plugin Installation')
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
         self.installer.finished.connect(self._on_installer_done)
