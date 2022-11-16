@@ -269,6 +269,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
+        self._reset_editable()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
