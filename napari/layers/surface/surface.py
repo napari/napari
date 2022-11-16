@@ -285,7 +285,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._update_dims()
         self.refresh()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def vertex_values(self) -> np.ndarray:
@@ -299,7 +299,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.refresh()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def faces(self) -> np.ndarray:
@@ -313,7 +313,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.refresh()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""

@@ -517,29 +517,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.blending()
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """bool: Whether the visual is currently being displayed."""
         return self._visible
 
     @visible.setter
-    def visible(self, visibility):
+    def visible(self, visibility: bool):
         self._visible = visibility
         self.refresh()
         self.events.visible()
-        self.editable = self._set_editable() if self.visible else False
+        self.editable = visibility
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         """bool: Whether the current layer data is editable from the viewer."""
         return self._editable
 
     @editable.setter
-    def editable(self, editable):
+    def editable(self, editable: bool):
         if self._editable == editable:
             return
         self._editable = editable
-        self._set_editable(editable=editable)
+        self._on_editable_changed()
         self.events.editable()
+
+    def _reset_editable(self) -> None:
+        """Reset this layer's editable state based on layer properties."""
+        self.editable = True
+
+    def _on_editable_changed(self) -> None:
+        """Executes side-effects on this layer related to changes of the editable state."""
+        pass
 
     @property
     def scale(self):
@@ -736,10 +744,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_ndim(self):
         raise NotImplementedError()
 
-    def _set_editable(self, editable=None):
-        if editable is None:
-            self.editable = True
-
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
 
@@ -921,7 +925,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # Update the point values
         self._update_dims()
-        self._set_editable()
+        self._reset_editable()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
