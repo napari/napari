@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - "v*x"
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   # Allows you to run this workflow manually from the Actions tab
