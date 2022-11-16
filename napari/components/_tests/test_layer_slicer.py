@@ -299,6 +299,10 @@ def test_slice_layers_async_with_one_3d_points(layer_slicer):
     num_points = 100
     data = np.rint(2.0 * np.random.rand(num_points, 3))
     layer = Points(data=data)
+
+    # Note: We are directly accessing and locking the _data of layer. This
+    #       forces a block to ensure that the async slicing call returns
+    #       before slicing is complete.
     lockable_internal_data = LockableData(layer._data)
     layer._data = lockable_internal_data
     dims = Dims(
