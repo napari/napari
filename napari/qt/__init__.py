@@ -6,7 +6,6 @@ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
 from napari.qt.threading import create_worker, thread_worker
 
-
 __all__ = (
     'create_worker',
     'QtToolTipLabel',
