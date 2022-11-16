@@ -296,10 +296,11 @@ def test_slice_layers_async_with_one_3d_image(layer_slicer):
 
 def test_slice_layers_async_with_one_3d_points(layer_slicer):
     np.random.seed(0)
-    num_points = 10_000
+    num_points = 100
     data = np.rint(2.0 * np.random.rand(num_points, 3))
-    lockable_data = LockableData(data)
-    layer = Points(data=lockable_data)
+    layer = Points(data=data)
+    lockable_internal_data = LockableData(layer._data)
+    layer._data = lockable_internal_data
     dims = Dims(
         ndim=3,
         ndisplay=2,
@@ -307,7 +308,7 @@ def test_slice_layers_async_with_one_3d_points(layer_slicer):
         current_step=(1, 0, 0),
     )
 
-    with lockable_data.lock:
+    with lockable_internal_data.lock:
         future = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not future.done()
 
@@ -317,4 +318,4 @@ def test_slice_layers_async_with_one_3d_points(layer_slicer):
     # get the selected points that are in view
 
     # Target number of indices manually determined
-    np.testing.assert_equal(len(_indices_view), 4911)
+    np.testing.assert_equal(len(_indices_view), 48)
