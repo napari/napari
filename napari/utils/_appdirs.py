@@ -6,10 +6,7 @@ from typing import Callable, Optional
 
 import appdirs
 
-path_to_bin_dir = os.path.dirname(sys.executable)
-
-sha_short = hashlib.sha1(path_to_bin_dir.encode()).hexdigest()
-print(path_to_bin_dir, sha_short)
+sha_short = hashlib.sha1(sys.prefix.encode()).hexdigest()
 
 _appname = 'napari'
 _appauthor = False
