@@ -314,7 +314,7 @@ def test_slice_layers_async_with_one_3d_points(layer_slicer):
 
     layer_result = future.result()[layer]
 
-    points_in_view = np.array(layer_result.indices, dtype=int)
+    points_in_view = np.array(layer_result.indices)
 
     # Target number of indices manually determined
     np.testing.assert_equal(len(points_in_view), 48)
