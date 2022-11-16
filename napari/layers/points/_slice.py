@@ -61,7 +61,9 @@ class _PointSliceRequest:
         if not not_disp:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
-            return _PointSliceResponse(indices=range(len(self.data)), scale=1)
+            return _PointSliceResponse(
+                indices=np.arange(len(self.data), dtype=int), scale=1
+            )
 
         # We want a numpy array so we can use fancy indexing with the non-displayed
         # indices, but as self.dims_indices can (and often/always does) contain slice
