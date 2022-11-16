@@ -1743,10 +1743,7 @@ def test_view_data():
 
 
 def test_view_size():
-    """Test the behavior for:
-    - out of slice point rendering
-    - slicing with no points
-    """
+    """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
