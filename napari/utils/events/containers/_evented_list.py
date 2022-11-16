@@ -183,7 +183,7 @@ class EventedList(TypedMutableSequence[_T]):
             self._process_delete_item(item)
             parent.events.removed(index=index, value=item)
 
-    def _process_delete_item(self, item):
+    def _process_delete_item(self, item: _T):
         """Allow process item in inherited class before event was emitted"""
 
     def insert(self, index: int, value: _T):
