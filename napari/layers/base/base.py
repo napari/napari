@@ -38,6 +38,7 @@ from napari.utils._magicgui import (
     get_layers,
 )
 from napari.utils.events import EmitterGroup, Event, EventedDict
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -390,7 +391,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
-            _ndisplay=Event,
+            reload=Event,
+            extent=Event,
+            _overlays=Event,
+            mode=Event,
         )
         self.name = name
         self.mode = mode
@@ -1798,18 +1802,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
-
-    def _on_selection(self, selected: bool):
-        # This method is a temporary workaround to the fact that the Points
-        # layer needs to know when its selection state changes so that it can
-        # update the highlight state.  This, along with the events.select and
-        # events.deselect emitters, (and the LayerList._on_selection_event
-        # method) can be removed once highlighting logic has been removed from
-        # the layer model.
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
 
     @classmethod
     def create(
