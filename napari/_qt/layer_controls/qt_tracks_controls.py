@@ -126,14 +126,18 @@ class QtTracksControls(QtLayerControls):
         with self.layer.events.properties.blocker():
             pre_store = self.layer.properties_to_color_by
 
-            with qt_signals_blocked(self.color_by_combobox): 
-                    self.color_by_combobox.clear() 
-                    
+            with qt_signals_blocked(self.color_by_combobox):
+                self.color_by_combobox.clear()
+
             if pre_store in self.layer.properties_to_color_by:
                 self.layers.color_by = pre_store
-                self.color_by_combobox.addItems(self.layer.properties_to_color_by) 
+                self.color_by_combobox.addItems(
+                    self.layer.properties_to_color_by
+                )
             else:
-                self.color_by_combobox.addItems(self.layer.properties_to_color_by)
+                self.color_by_combobox.addItems(
+                    self.layer.properties_to_color_by
+                )
 
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update combobox."""
