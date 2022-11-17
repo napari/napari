@@ -1,4 +1,4 @@
-import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -175,7 +175,7 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
 
-def test_conda_installer(qtbot, tmp_conda_env: Path, monkeypatch):
+def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = InstallerQueue()
 
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
@@ -200,3 +200,16 @@ def test_conda_installer(qtbot, tmp_conda_env: Path, monkeypatch):
 
     assert not installer.hasJobs()
     assert not list(conda_meta.glob(glob_pat))
+
+
+def test_constraints_are_in_sync():
+    conda_constraints = sorted(CondaInstallerTool.constraints())
+    pip_constraints = sorted(PipInstallerTool.constraints())
+    
+    assert len(conda_constraints) == len(pip_constraints)
+    
+    name_re = re.compile(r"([a-z0-9_\-]+).*")
+    for conda_constraint, pip_constraint in zip(conda_constraints, pip_constraints):
+        conda_name = name_re.match(conda_constraint).group(1)
+        pip_name = name_re.match(pip_constraint).group(1)
+        assert conda_name == pip_name

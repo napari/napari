@@ -8,15 +8,16 @@ executable path, arguments and environment modifications.
 Available actions for each tool are `install`, `uninstall`
 and `cancel`.
 """
+import atexit
 import contextlib
 import os
-import shutil
 import sys
 from collections import deque
 from dataclasses import dataclass
+from functools import lru_cache
 from logging import getLogger
 from pathlib import Path
-from tempfile import gettempdir
+from tempfile import gettempdir, mkstemp
 from typing import Deque, Optional, Sequence, Tuple
 
 from npe2 import PluginManager
@@ -62,17 +63,27 @@ class AbstractInstallerTool:
     # abstract method
     @classmethod
     def executable(cls):
+        "Path to the executable that will run the task"
         raise NotImplementedError()
 
     # abstract method
     def arguments(self):
+        "Arguments supplied to the executable"
         raise NotImplementedError()
 
     # abstract method
     def environment(
         self, env: QProcessEnvironment = None
     ) -> QProcessEnvironment:
+        "Changes needed in the environment variables."
         raise NotImplementedError()
+    
+    @staticmethod
+    def constraints() -> Sequence[str]:
+        """
+        Version constraints to limit unwanted changes in installation.
+        """
+        return [f"napari=={_napari_version}"]
 
 
 class PipInstallerTool(AbstractInstallerTool):
@@ -83,11 +94,13 @@ class PipInstallerTool(AbstractInstallerTool):
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
         if self.action == InstallerActions.install:
-            args += ['install', '--upgrade']
+            args += ['install', '--upgrade', '-c', self._constraints_file()]
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
-        else:
+        elif self.action == InstallerActions.uninstall:
             args += ['uninstall', '-y']
+        else:
+            raise ValueError(f"Action '{self.action}' not supported!")
         if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
             args.append('-vvv')
         if self.prefix is not None:
@@ -117,6 +130,15 @@ class PipInstallerTool(AbstractInstallerTool):
         env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
         return env
 
+    @classmethod
+    @lru_cache(maxsize=0)
+    def _constraints_file(cls) -> str:
+        handler, path = mkstemp("-napari-constraints.txt", text=True)
+        handler.write("\n".join(cls.constraints()))
+        handler.close()
+        atexit.register(os.unlink, path)
+        return path
+
 
 class CondaInstallerTool(AbstractInstallerTool):
     @classmethod
@@ -145,9 +167,7 @@ class CondaInstallerTool(AbstractInstallerTool):
     ) -> QProcessEnvironment:
         if env is None:
             env = QProcessEnvironment.systemEnvironment()
-        PINNED = 'CONDA_PINNED_PACKAGES'
-        system_pins = f"&{env.value(PINNED)}" if env.contains(PINNED) else ""
-        env.insert(PINNED, f"napari={self._napari_pin()}{system_pins}")
+        self._add_constraints_to_env(env)
         if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
             env.insert('CONDA_VERBOSITY', '3')
         if os.name == "nt":
@@ -160,21 +180,28 @@ class CondaInstallerTool(AbstractInstallerTool):
                 env.insert("USERPROFILE", os.path.expanduser("~"))
         return env
 
-    def _napari_pin(self):
+    @staticmethod
+    def constraints() -> Sequence[str]:
+        # FIXME
+        # dev or rc versions might not be available in public channels
+        # but only installed locally - if we try to pin those, mamba
+        # will fail to pin it because there's no record of that version
+        # in the remote index, only locally; to work around this bug
+        # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
         version_lower = _napari_version.lower()
-        if "rc" in version_lower or "dev" in version_lower:
-            # dev or rc versions might not be available in public channels
-            # but only installed locally - if we try to pin those, mamba
-            # will fail to pin it because there's no record of that version
-            # in the remote index, only locally; to work around this bug
-            # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
-            pin_strictness = 2
-        else:
-            # pin to x.x.x
-            pin_strictness = 3
-        return ".".join(
-            [str(part) for part in _napari_version_tuple[:pin_strictness]]
-        )
+        is_dev = "rc" in version_lower or "dev" in version_lower 
+        pin_level = 2 if is_dev else 3
+        version = ".".join([str(x) for x in _napari_version_tuple[:pin_level]])
+
+        return [f"napari={version}"]
+    
+    def _add_constraints_to_env(self, env: QProcessEnvironment) -> QProcessEnvironment:
+        PINNED = 'CONDA_PINNED_PACKAGES'
+        constraints = self._constraints()
+        if env.contains(PINNED):
+            constraints.append(env.value(PINNED))
+        env.insert(PINNED, "&".join(constraints))
+        return env
 
     def _default_channels(self):
         return ('conda-forge',)
