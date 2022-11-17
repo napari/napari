@@ -199,7 +199,7 @@ class CondaInstallerTool(AbstractInstallerTool):
         self, env: QProcessEnvironment
     ) -> QProcessEnvironment:
         PINNED = 'CONDA_PINNED_PACKAGES'
-        constraints = self._constraints()
+        constraints = self.constraints()
         if env.contains(PINNED):
             constraints.append(env.value(PINNED))
         env.insert(PINNED, "&".join(constraints))
