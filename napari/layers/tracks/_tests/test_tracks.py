@@ -222,3 +222,13 @@ def test_fast_points_lookup() -> None:
         total_length += len(unique_time)
 
     assert total_length == len(sorted_time)
+
+
+def test_single_time_tracks() -> None:
+    """Edge case where all tracks belong to a single time"""
+
+    # track_id, t, y, x
+    tracks = [[0, 5, 2, 3], [1, 5, 3, 4], [2, 5, 4, 5]]
+    layer = Tracks(tracks)
+
+    assert np.all(layer.data == tracks)
