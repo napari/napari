@@ -40,7 +40,8 @@ def test_tracks_controls_color_by(qtbot):
     assert qtctrl.color_by_combobox.currentText() == qt_update_color_by
 
 
-def test_color_by_same_after_properties_change(qtbot):
+@pytest.mark.parametrize('color_by', ('track_id', 'confidence'))
+def test_color_by_same_after_properties_change(color_by, qtbot):
     """See https://github.com/napari/napari/issues/5330"""
     data = np.array(
         [
@@ -55,20 +56,20 @@ def test_color_by_same_after_properties_change(qtbot):
             [3, 2, 636, 200],
         ]
     )
-    np.random.seed(0)
     initial_properties = {
+        'track_id': data[:, 0],
         'time': data[:, 1],
-        'confidence': np.random.rand(data.shape[0]),
+        'confidence': np.ones(data.shape[0]),
     }
-    layer = Tracks(
-        data,
-        properties=initial_properties,
-    )
-    layer.color_by = 'confidence'
+    layer = Tracks(data, properties=initial_properties)
+    layer.color_by = color_by
     controls = QtTracksControls(layer)
     qtbot.addWidget(controls)
 
     # Change the properties value by removing the time column.
-    layer.properties = {'confidence': initial_properties['confidence']}
+    layer.properties = {
+        'track_id': initial_properties['track_id'],
+        'confidence': initial_properties['confidence'],
+    }
 
-    assert layer.color_by == 'confidence'
+    assert layer.color_by == color_by

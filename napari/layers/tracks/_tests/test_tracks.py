@@ -199,7 +199,8 @@ def test_tracks_length_change():
     assert layer._max_length == track_length
 
 
-def test_color_by_same_after_properties_change():
+@pytest.mark.parametrize('color_by', ('track_id', 'confidence'))
+def test_color_by_same_after_properties_change(color_by):
     """See https://github.com/napari/napari/issues/5330"""
     data = np.array(
         [
@@ -214,15 +215,18 @@ def test_color_by_same_after_properties_change():
             [3, 2, 636, 200],
         ]
     )
-    np.random.seed(0)
     initial_properties = {
+        'track_id': data[:, 0],
         'time': data[:, 1],
-        'confidence': np.random.rand(data.shape[0]),
+        'confidence': np.ones(data.shape[0]),
     }
     layer = Tracks(data, properties=initial_properties)
-    layer.color_by = 'confidence'
+    layer.color_by = color_by
 
     # Change the properties value by removing the time column.
-    layer.properties = {'confidence': initial_properties['confidence']}
+    layer.properties = {
+        'track_id': initial_properties['track_id'],
+        'confidence': initial_properties['confidence'],
+    }
 
-    assert layer.color_by == 'confidence'
+    assert layer.color_by == color_by
