@@ -7,6 +7,7 @@ import pytest
 from app_model.types import KeyCode, KeyMod
 
 from napari.utils import key_bindings
+from napari.utils.interactions import KEY_SYMBOLS
 from napari.utils.key_bindings import (
     KeymapHandler,
     KeymapProvider,
@@ -15,6 +16,15 @@ from napari.utils.key_bindings import (
     _get_user_keymap,
     bind_key,
 )
+
+_keys = list(KEY_SYMBOLS.keys())
+
+_keys.remove('Return')
+
+
+@pytest.mark.parametrize('key', _keys)
+def test_back_symbols(key):
+    assert getattr(KeyCode, key, None) is not None
 
 
 def test_bind_key():
