@@ -77,7 +77,7 @@ class AbstractInstallerTool:
     ) -> QProcessEnvironment:
         "Changes needed in the environment variables."
         raise NotImplementedError()
-    
+
     @staticmethod
     def constraints() -> Sequence[str]:
         """
@@ -189,13 +189,15 @@ class CondaInstallerTool(AbstractInstallerTool):
         # in the remote index, only locally; to work around this bug
         # we will have to pin to e.g. 0.4.* instead of 0.4.17.* for now
         version_lower = _napari_version.lower()
-        is_dev = "rc" in version_lower or "dev" in version_lower 
+        is_dev = "rc" in version_lower or "dev" in version_lower
         pin_level = 2 if is_dev else 3
         version = ".".join([str(x) for x in _napari_version_tuple[:pin_level]])
 
         return [f"napari={version}"]
-    
-    def _add_constraints_to_env(self, env: QProcessEnvironment) -> QProcessEnvironment:
+
+    def _add_constraints_to_env(
+        self, env: QProcessEnvironment
+    ) -> QProcessEnvironment:
         PINNED = 'CONDA_PINNED_PACKAGES'
         constraints = self._constraints()
         if env.contains(PINNED):
