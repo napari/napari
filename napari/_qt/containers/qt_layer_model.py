@@ -25,10 +25,11 @@ class QtLayerListModel(QtListModel[Layer]):
             # used to populate line edit when editing
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
+            layer_source_info = layer.get_source_str()
             if layer.loaded:
-                return layer.get_source_str()
+                return layer_source_info
             else:
-                return trans._('Layer loading')
+                return trans._('{source} (loading)', source=layer_source_info)
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
