@@ -38,3 +38,37 @@ def test_tracks_controls_color_by(qtbot):
     qtctrl.color_by_combobox.setCurrentIndex(speed_index)
     assert layer.color_by == qt_update_color_by
     assert qtctrl.color_by_combobox.currentText() == qt_update_color_by
+
+
+def test_color_by_same_after_properties_change(qtbot):
+    """See https://github.com/napari/napari/issues/5330"""
+    data = np.array(
+        [
+            [1, 0, 236, 0],
+            [1, 1, 236, 100],
+            [1, 2, 236, 200],
+            [2, 0, 436, 0],
+            [2, 1, 436, 100],
+            [2, 2, 436, 200],
+            [3, 0, 636, 0],
+            [3, 1, 636, 100],
+            [3, 2, 636, 200],
+        ]
+    )
+    np.random.seed(0)
+    initial_properties = {
+        'time': data[:, 1],
+        'confidence': np.random.rand(data.shape[0]),
+    }
+    layer = Tracks(
+        data,
+        properties=initial_properties,
+    )
+    layer.color_by = 'confidence'
+    controls = QtTracksControls(layer)
+    qtbot.addWidget(controls)
+
+    # Change the properties value by removing the time column.
+    layer.properties = {'confidence': initial_properties['confidence']}
+
+    assert layer.color_by == 'confidence'
