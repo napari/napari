@@ -11,13 +11,14 @@ class TracksSuite:
         """
         Create tracks data
         """
+
         if 10 * n_tracks > size:
-            # number of tracks are adjusted if not 10 times larger than size
-            n_tracks = size // 10
+            # not useful, tracks to short or larger than size
+            raise NotImplementedError
 
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(0)
 
-        track_ids = rng.integers(1, n_tracks + 1, size=size)
+        track_ids = rng.integers(n_tracks, size=size)
         time = np.zeros(len(track_ids))
 
         for value, counts in zip(*np.unique(track_ids, return_counts=True)):
