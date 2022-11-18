@@ -40,7 +40,13 @@ def test_tracks_controls_color_by(qtbot):
     assert qtctrl.color_by_combobox.currentText() == qt_update_color_by
 
 
-@pytest.mark.parametrize('color_by', ('track_id', 'confidence'))
+@pytest.mark.parametrize(
+    'color_by',
+    (
+        'track_id',
+        pytest.param('confidence', marks=pytest.mark.xfail),
+    ),
+)
 def test_color_by_same_after_properties_change(color_by, qtbot):
     """See https://github.com/napari/napari/issues/5330"""
     data = np.array(
