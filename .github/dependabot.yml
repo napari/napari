@@ -8,3 +8,10 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: "ci(dependabot):"
+
+  - package-ecosystem: "pip"
+    directory: "/resources"
+    schedule:
+      interval: "weekly"
+
+    target-branch: "develop"

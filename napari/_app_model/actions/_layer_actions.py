@@ -15,9 +15,9 @@ from typing import TYPE_CHECKING, List
 
 from app_model.types import Action
 
-from ...layers import _layer_actions
-from ..constants import CommandId, MenuGroup, MenuId
-from ..context import LayerListContextKeys as LLCK
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._app_model.context import LayerListContextKeys as LLCK
+from napari.layers import _layer_actions
 
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict

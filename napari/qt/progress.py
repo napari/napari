@@ -1,6 +1,6 @@
 import warnings
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 warnings.warn(
     trans._(
@@ -11,6 +11,6 @@ warnings.warn(
     stacklevel=3,
 )
 
-from ..utils import progrange, progress  # noqa
+from napari.utils import progrange, progress  # noqa
 
 __all__ = ('progress', 'progrange')

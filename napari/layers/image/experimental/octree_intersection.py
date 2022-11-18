@@ -4,9 +4,12 @@ from typing import List, NamedTuple, Tuple
 
 import numpy as np
 
-from .octree_chunk import OctreeChunk
-from .octree_level import OctreeLevel
-from .octree_util import OctreeDisplayOptions, spiral_index
+from napari.layers.image.experimental.octree_chunk import OctreeChunk
+from napari.layers.image.experimental.octree_level import OctreeLevel
+from napari.layers.image.experimental.octree_util import (
+    OctreeDisplayOptions,
+    spiral_index,
+)
 
 MAX_NUM_CHUNKS = 81
 
