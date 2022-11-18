@@ -7,7 +7,7 @@ import pytest
 
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
-from napari.layers import Image
+from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.types import DTypeLike
 
@@ -97,6 +97,9 @@ class LockableData:
     ) -> LayerDataProtocol:
         with self.lock:
             return self.data[key]
+
+    def __len__(self):
+        return len(self.data)
 
 
 @pytest.fixture()
@@ -289,3 +292,27 @@ def test_slice_layers_async_with_one_3d_image(layer_slicer):
 
     layer_result = future.result()[layer]
     np.testing.assert_equal(layer_result.data, data[2, :, :])
+
+
+def test_slice_layers_async_with_one_3d_points(layer_slicer):
+    """ensure that async slicing of points does not block"""
+    np.random.seed(0)
+    num_points = 100
+    data = np.rint(2.0 * np.random.rand(num_points, 3))
+    layer = Points(data=data)
+
+    # Note: We are directly accessing and locking the _data of layer. This
+    #       forces a block to ensure that the async slicing call returns
+    #       before slicing is complete.
+    lockable_internal_data = LockableData(layer._data)
+    layer._data = lockable_internal_data
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 3, 1), (0, 3, 1), (0, 3, 1)),
+        current_step=(1, 0, 0),
+    )
+
+    with lockable_internal_data.lock:
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        assert not future.done()
