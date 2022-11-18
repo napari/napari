@@ -111,21 +111,23 @@ class _LayerSlicer:
             if isinstance(layer, _AsyncSliceable):
                 requests[layer] = layer._make_slice_request(dims)
             else:
-                layer._slice_dims(dims.point, dims.ndisplay, dims.order)
+                layer._slice_dims(
+                    dims.point, dims.ndisplay, dims.order, force=True
+                )
 
-        if len(requests) > 0:
-            # create task for slicing of each request/layer
-            task = self._executor.submit(self._slice_layers, requests)
+        if len(requests) == 0:
+            return None
 
-            # store task for cancellation logic
-            # this is purposefully done before adding the done callback to ensure
-            # that the task is added before the done callback can be executed
-            with self._lock_layers_to_task:
-                self._layers_to_task[tuple(requests)] = task
+        # create task for slicing of each request/layer
+        task = self._executor.submit(self._slice_layers, requests)
 
-            task.add_done_callback(self._on_slice_done)
-        else:
-            task = None
+        # store task for cancellation logic
+        # this is purposefully done before adding the done callback to ensure
+        # that the task is added before the done callback can be executed
+        with self._lock_layers_to_task:
+            self._layers_to_task[tuple(requests)] = task
+
+        task.add_done_callback(self._on_slice_done)
 
         return task
 

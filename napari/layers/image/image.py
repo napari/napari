@@ -798,6 +798,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._slice_input = response.request.dims
 
         # For the old experimental async code.
+        self._empty = False
         slice_data = self._SliceDataClass(
             layer=self,
             indices=response.request.slice_indices,
