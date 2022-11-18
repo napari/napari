@@ -5,7 +5,7 @@ from napari.layers import Tracks
 
 class TracksSuite:
     param_names = ['size', 'n_tracks']
-    params = [(5 * np.power(10, np.arange(2, 7))).tolist(), [10, 100, 1000]]
+    params = [(5 * np.power(10, np.arange(7))).tolist(), [10, 100, 1000]]
 
     def setup(self, size, n_tracks):
         """
