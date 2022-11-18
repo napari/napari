@@ -64,6 +64,7 @@ jobs:
         name: Install Python
         with:
           python-version: "3.9"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
