@@ -351,7 +351,7 @@ class KeymapHandler:
         is_auto_repeat : bool, optional
             If this key press was triggered by holding down a key.
         """
-        from ..utils.action_manager import action_manager
+        from napari.utils.action_manager import action_manager
 
         key_bind = coerce_keybinding(key_bind)
 
