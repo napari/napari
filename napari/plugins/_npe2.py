@@ -247,7 +247,8 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     return (
         (
-            plugin_name,
+            # use display_name for user facing display
+            pm.get_manifest(plugin_name).display_name,
             {
                 c.key: {'data': c.open, 'display_name': c.display_name}
                 for c in contribs
