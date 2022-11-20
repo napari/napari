@@ -894,7 +894,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def _slice_dims(self, point=None, ndisplay=2, order=None):
+    def _slice_dims(self, point=None, ndisplay=2, order=None, force=False):
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
