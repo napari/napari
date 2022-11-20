@@ -1,3 +1,5 @@
+import time
+from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
 from typing import Tuple, Union
@@ -63,6 +65,9 @@ class FakeAsyncLayer:
         assert current_thread() == main_thread()
         self.slice_count += 1
         return FakeSliceRequest(id=self.slice_count, lock=self.lock)
+
+    def _slice_dims(self, *args, **kwargs) -> None:
+        self.slice_count += 1
 
 
 class FakeSyncLayer:
@@ -269,6 +274,94 @@ def test_slice_layers_async_task_to_layers_lock(layer_slicer):
 
     assert task.result()[layer].id == 1
     assert task not in layer_slicer._layers_to_task
+
+
+def test_slice_layers_exception_main_thread(layer_slicer):
+    """Exception is raised on the main thread from an error on the main
+    thread immediately when the task is created."""
+
+    class FakeAsyncLayerError(FakeAsyncLayer):
+        def _make_slice_request(self, dims) -> FakeSliceRequest:
+            raise RuntimeError('_make_slice_request')
+
+    layer = FakeAsyncLayerError()
+    with pytest.raises(RuntimeError, match='_make_slice_request'):
+        layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+
+def test_slice_layers_exception_subthread_on_result(layer_slicer):
+    """Exception is raised on the main thread from an error on a subthread
+    only after result is called, not upon submission of the task."""
+
+    @dataclass(frozen=True)
+    class FakeSliceRequestError(FakeSliceRequest):
+        def __call__(self) -> FakeSliceResponse:
+            assert current_thread() != main_thread()
+            raise RuntimeError('FakeSliceRequestError')
+
+    class FakeAsyncLayerError(FakeAsyncLayer):
+        def _make_slice_request(self, dims) -> FakeSliceRequestError:
+            return FakeSliceRequestError(id=self.slice_count, lock=self.lock)
+
+    layer = FakeAsyncLayerError()
+    future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+    done, _ = wait([future], timeout=5)
+    assert done, 'Test future did not complete within timeout.'
+    with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
+        future.result()
+
+
+def test_wait_until_idle(layer_slicer, single_threaded_executor):
+    dims = Dims()
+    layer = FakeAsyncLayer()
+
+    with layer.lock:
+        slice_future = layer_slicer.slice_layers_async(
+            layers=[layer], dims=dims
+        )
+        _wait_until_running(slice_future)
+        # The slice task has started, but has not finished yet
+        # because we are holding the layer's slicing lock.
+        assert len(layer_slicer._layers_to_task) > 0
+        # We can't call wait_until_idle on this thread because we're
+        # holding the layer's slice lock, so submit it to be executed
+        # on another thread and also wait for it to start.
+        wait_future = single_threaded_executor.submit(
+            layer_slicer.wait_until_idle
+        )
+        _wait_until_running(wait_future)
+
+    wait_future.result()
+    assert len(layer_slicer._layers_to_task) == 0
+
+
+def _wait_until_running(future: Future):
+    while not future.running():
+        time.sleep(0.01)
+
+
+def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
+    layer = FakeSyncLayer()
+
+    with layer_slicer.force_sync():
+        assert layer_slicer._force_sync
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+    assert layer.slice_count == 1
+    assert future.result() == {}
+    assert not layer_slicer._force_sync
+
+
+def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
+    layer = FakeAsyncLayer()
+
+    with layer_slicer.force_sync():
+        assert layer_slicer._force_sync
+        future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+
+    assert layer.slice_count == 1
+    assert future.result() == {}
 
 
 def test_slice_layers_async_with_one_3d_image(layer_slicer):
