@@ -109,8 +109,10 @@ class _LayerSlicer:
         requests = {}
         for layer in layers:
             if isinstance(layer, _AsyncSliceable):
+                logger.debug(f"Slicing {layer.name} asynchronously")
                 requests[layer] = layer._make_slice_request(dims)
             else:
+                logger.debug(f"Slicing {layer.name} synchronously")
                 layer._slice_dims(
                     dims.point, dims.ndisplay, dims.order, force=True
                 )
