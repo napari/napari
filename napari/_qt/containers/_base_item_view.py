@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
-from ._base_item_model import ItemRole
-from ._factory import create_model
+from napari._qt.containers._base_item_model import ItemRole
+from napari._qt.containers._factory import create_model
 
 ItemType = TypeVar("ItemType")
 
@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
 
-    from ...utils.events import Event
-    from ...utils.events.containers import SelectableEventedList
-    from ._base_item_model import _BaseEventedItemModel
+    from napari._qt.containers._base_item_model import _BaseEventedItemModel
+    from napari.utils.events import Event
+    from napari.utils.events.containers import SelectableEventedList
 
 
 class _BaseEventedItemView(Generic[ItemType]):

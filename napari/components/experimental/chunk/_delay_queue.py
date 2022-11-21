@@ -9,12 +9,12 @@ import threading
 import time
 from typing import TYPE_CHECKING, Callable, List, NamedTuple, Optional
 
-from ....utils.perf import add_counter_event
+from napari.utils.perf import add_counter_event
 
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
-    from ._request import ChunkRequest
+    from napari.components.experimental.chunk._request import ChunkRequest
 
 
 class QueueEntry(NamedTuple):

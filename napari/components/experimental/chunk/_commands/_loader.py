@@ -2,14 +2,17 @@
 """
 from typing import List
 
-from ....._vendor.experimental.humanize.src.humanize import naturalsize
-from .....layers.base import Layer
-from .....layers.image import Image
-from .....utils.config import octree_config
-from .._info import LayerInfo, LoadType
-from .._loader import chunk_loader
-from ._tables import RowTable, print_property_table
-from ._utils import highlight
+from napari._vendor.experimental.humanize.src.humanize import naturalsize
+from napari.components.experimental.chunk._commands._tables import (
+    RowTable,
+    print_property_table,
+)
+from napari.components.experimental.chunk._commands._utils import highlight
+from napari.components.experimental.chunk._info import LayerInfo, LoadType
+from napari.components.experimental.chunk._loader import chunk_loader
+from napari.layers.base import Layer
+from napari.layers.image import Image
+from napari.utils.config import octree_config
 
 LOAD_TYPE_STR = {
     LoadType.AUTO: "auto",

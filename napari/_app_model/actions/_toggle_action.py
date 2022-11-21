@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from app_model.types import Action, ToggleRule
 
 if TYPE_CHECKING:
-    from ...viewer import Viewer
+    from napari.viewer import Viewer
 
 
 class ViewerToggleAction(Action):

@@ -1,8 +1,8 @@
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
-from ...components._viewer_constants import CanvasPosition
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
+from napari.components._viewer_constants import CanvasPosition
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 
 class VispyBaseOverlay:

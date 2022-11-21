@@ -232,3 +232,15 @@ def test_single_time_tracks() -> None:
     layer = Tracks(tracks)
 
     assert np.all(layer.data == tracks)
+
+
+def test_track_ids_ordering() -> None:
+    """Check if tracks ids are correctly set to features when given not-sorted tracks."""
+    # track_id, t, y, x
+    unsorted_data = np.asarray(
+        [[1, 1, 0, 0], [0, 1, 0, 0], [2, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0]]
+    )
+    sorted_track_ids = [0, 0, 1, 1, 2]  # track_ids after sorting
+
+    layer = Tracks(unsorted_data)
+    assert np.all(sorted_track_ids == layer.features["track_id"])

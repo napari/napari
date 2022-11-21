@@ -1,1 +1,1 @@
-from .tracks import Tracks
+from napari.layers.tracks.tracks import Tracks

@@ -14,6 +14,7 @@ from napari.layers import Image, Points
 from napari.plugins import _npe2
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
+PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
@@ -145,7 +146,7 @@ def test_sample_iterator(mock_pm):
 
 def test_widget_iterator(mock_pm):
     wdgs = list(_npe2.widget_iterator())
-    assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]
+    assert wdgs == [('dock', (PLUGIN_DISPLAY_NAME, ['My Widget']))]
 
 
 def test_plugin_actions(mock_pm: 'TestPluginManager'):

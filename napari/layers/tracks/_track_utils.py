@@ -5,9 +5,9 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..utils.layer_utils import _FeatureTable
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -176,9 +176,9 @@ class TrackManager:
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
+        self._feature_table.reorder(self._order)
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
-        self._feature_table.reorder(self._order)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

@@ -2,8 +2,8 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from ...utils.translations import trans
-from ._text_constants import Anchor
+from napari.layers.utils._text_constants import Anchor
+from napari.utils.translations import trans
 
 
 def get_text_anchors(

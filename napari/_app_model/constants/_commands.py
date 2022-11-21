@@ -11,7 +11,7 @@ that operates on layers.
 from enum import Enum
 from typing import NamedTuple, Optional
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 # fmt: off

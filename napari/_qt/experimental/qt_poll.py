@@ -8,7 +8,7 @@ from typing import Optional
 
 from qtpy.QtCore import QEvent, QObject, QTimer
 
-from ...utils.events import EmitterGroup
+from napari.utils.events import EmitterGroup
 
 # When running a timer we use this interval.
 POLL_INTERVAL_MS = 16.666  # About 60HZ
