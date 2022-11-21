@@ -153,7 +153,7 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
-                logger.debug(f'Async slicing {layer.name}')
+                logger.debug('Async slicing: %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 sync_layers.append(layer)
@@ -163,7 +163,7 @@ class _LayerSlicer:
 
         # submit the sync layers (purposefully placed after async submission)
         for layer in sync_layers:
-            logger.debug(f'Sync slicing {layer.name}')
+            logger.debug('Sync slicing: %s', layer)
             layer._slice_dims(dims.point, dims.ndisplay, dims.order)
 
         # store task for cancellation logic
