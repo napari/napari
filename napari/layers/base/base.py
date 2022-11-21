@@ -1137,13 +1137,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if not self.visible:
             return
-        if hasattr(self, '_make_slice_request'):
-            self.events.reslice(Event('reslice', layer=self))
-        else:
-            self.set_view_slice()
-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
-            self._update_thumbnail()
-            self._set_highlight(force=True)
+
+        self.events.reslice(Event('reslice', layer=self))
 
     def world_to_data(self, position):
         """Convert from world coordinates to data coordinates.
