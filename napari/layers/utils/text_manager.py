@@ -75,7 +75,7 @@ class TextManager(EventedModel):
         The location of the text origin relative to the bounding box.
         Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
     translation : np.ndarray
-        Offset from the anchor point in canvas coordinates.
+        Offset from the anchor point in data coordinates.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
     """
