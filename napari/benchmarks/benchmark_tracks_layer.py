@@ -5,14 +5,14 @@ from napari.layers import Tracks
 
 class TracksSuite:
     param_names = ['size', 'n_tracks']
-    params = [(5 * np.power(10, np.arange(7))).tolist(), [10, 100, 1000]]
+    params = [(5 * np.power(10, np.arange(7))).tolist(), [1, 10, 100, 1000]]
 
     def setup(self, size, n_tracks):
         """
         Create tracks data
         """
 
-        if 10 * n_tracks > size:
+        if 5 * n_tracks > size:
             # not useful, tracks to short or larger than size
             raise NotImplementedError
 
