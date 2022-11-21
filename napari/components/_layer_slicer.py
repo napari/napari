@@ -153,8 +153,10 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
+                logger.debug(f'Async slicing {layer.name}')
                 requests[layer] = layer._make_slice_request(dims)
             else:
+                logger.debug(f'Sync slicing {layer.name}')
                 sync_layers.append(layer)
 
         # create task for slicing of each request/layer
