@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QPoint, QSize, Qt, Signal
+from qtpy.QtCore import QPoint, QSize, Qt, QTimer, Signal
 from qtpy.QtGui import QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
@@ -123,25 +123,36 @@ class LayerDelegate(QStyledItemDelegate):
         option.decorationPosition = option.Right  # put icon on the right
         option.features |= option.HasDecoration
 
+    def _check_loaded(self, index):
+        """
+        Check loading state of the layer and pause loading movie if necessary.
+        """
+        if index.data(LoadedRole):
+            self.load_movie.setPaused(True)
+            self.loading_frame_changed.emit()
+
     def _paint_loading(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
     ):
+        """Paint loading layer indicator."""
         loaded = index.data(LoadedRole)
-        if not loaded:
-            load_rect = option.rect.translated(55, 8)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
-            load_rect.setWidth(h)
-            load_rect.setHeight(h)
+        load_rect = option.rect.translated(55, 8)
+        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
+        load_rect.setWidth(h)
+        load_rect.setHeight(h)
 
-            if self.load_movie.state() == QMovie.NotRunning:
-                self.load_movie.start()
+        if self.load_movie.state() == QMovie.Running:
             painter.drawPixmap(load_rect, self.load_movie.currentPixmap())
+
+        if loaded:
+            # Add some delay to check if the layer is still loaded to
+            # prevent blinking from the loading indicator.
+            QTimer.singleShot(100, lambda: self._check_loaded(index))
         else:
-            self.load_movie.stop()
-            super().paint(painter, option, index)
+            self.load_movie.start()
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
