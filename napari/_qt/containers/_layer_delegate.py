@@ -78,6 +78,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.layer_index = None
         self.load_movie = QMovie(LOADING_GIF_PATH)
         self.load_movie.setScaledSize(QSize(18, 18))
         self.load_movie.frameChanged.connect(self.loading_frame_changed)
@@ -123,13 +124,14 @@ class LayerDelegate(QStyledItemDelegate):
         option.decorationPosition = option.Right  # put icon on the right
         option.features |= option.HasDecoration
 
-    def _check_loaded(self, index):
+    def _check_loaded(self):
         """
         Check loading state of the layer and pause loading movie if necessary.
         """
-        if index.data(LoadedRole):
-            self.load_movie.setPaused(True)
-            self.loading_frame_changed.emit()
+        if self.layer_index and self.layer_index.isValid():
+            if self.layer_index.data(LoadedRole):
+                self.load_movie.setPaused(True)
+                self.loading_frame_changed.emit()
 
     def _paint_loading(
         self,
@@ -150,7 +152,8 @@ class LayerDelegate(QStyledItemDelegate):
         if loaded:
             # Add some delay to check if the layer is still loaded to
             # prevent blinking from the loading indicator.
-            QTimer.singleShot(100, lambda: self._check_loaded(index))
+            self.layer_index = index
+            QTimer.singleShot(100, self._check_loaded)
         else:
             self.load_movie.start()
 
