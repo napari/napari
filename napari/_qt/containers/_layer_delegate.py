@@ -146,16 +146,17 @@ class LayerDelegate(QStyledItemDelegate):
         load_rect.setWidth(h)
         load_rect.setHeight(h)
 
-        if self.load_movie.state() == QMovie.Running:
-            painter.drawPixmap(load_rect, self.load_movie.currentPixmap())
-
-        if loaded:
+        if loaded and self.load_movie.state() == QMovie.Running:
             # Add some delay to check if the layer is still loaded to
-            # prevent blinking from the loading indicator.
+            # prevent blinking from the loading indicator
+            # when pausing the movie.
             self.layer_index = index
             QTimer.singleShot(100, self._check_loaded)
-        else:
+        elif not loaded:
             self.load_movie.start()
+
+        if self.load_movie.state() == QMovie.Running:
+            painter.drawPixmap(load_rect, self.load_movie.currentPixmap())
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
