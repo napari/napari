@@ -31,9 +31,10 @@ jobs:
         run: |
           cp -R napari-repo/examples docs
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
