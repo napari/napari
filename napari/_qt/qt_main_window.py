@@ -115,6 +115,10 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
+        self._is_close_dialog = {False: True, True: True}
+        # this ia sa workaround for #5335 issue. The dict is used to not
+        # collide shortcuts for close and close all windows
+
         act_dlg = QtActivityDialog(self._qt_viewer._canvas_overlay)
         self._qt_viewer._canvas_overlay.resized.connect(
             act_dlg.move_to_bottom_right
@@ -312,13 +316,21 @@ class _QtMainWindow(QMainWindow):
             self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
+        confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
+        self._is_close_dialog[quit_app] = False
+        # here we save information that we could request confirmation on close
+        # So fi function `close` is called again, we don't ask again but just close
         if (
-            not confirm_need
+            not confirm_need_local
             or not get_settings().application.confirm_close_window
             or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
         ):
             self._quit_app = quit_app
+            self._is_close_dialog[quit_app] = True
+            # here we inform that confirmation dialog is not open
             return super().close()
+        self._is_close_dialog[quit_app] = True
+        # here we inform that confirmation dialog is not open
 
     def close_window(self):
         """Close active dialog or active window."""
@@ -466,6 +478,7 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
+
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
             str, QtViewerDockWidget
@@ -644,10 +657,10 @@ class Window:
             MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
         )
         self.main_menu.addMenu(self.view_menu)
-        self.window_menu = menus.WindowMenu(self)
-        self.main_menu.addMenu(self.window_menu)
         self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
+        self.window_menu = menus.WindowMenu(self)
+        self.main_menu.addMenu(self.window_menu)
         self.help_menu = build_qmodel_menu(
             MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
         )
