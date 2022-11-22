@@ -138,6 +138,8 @@ def test_sample_iterator(mock_pm):
     for plugin, contribs in samples:
         assert isinstance(plugin, str)
         assert isinstance(contribs, dict)
+        # check that the manifest display_name is used
+        assert plugin == PLUGIN_DISPLAY_NAME
         assert contribs
         for i in contribs.values():
             assert 'data' in i
