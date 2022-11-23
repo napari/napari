@@ -63,3 +63,5 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
 
 from napari._qt.qt_event_loop import get_app, gui_qt, quit_app, run
 from napari._qt.qt_main_window import Window
+
+__all__ = ["get_app", "gui_qt", "quit_app", "run", "Window"]
