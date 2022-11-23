@@ -838,3 +838,52 @@ def find_nearest_triangle_intersection(
     intersection = intersection_points[closest_triangle_index]
 
     return closest_intersected_triangle_index, intersection
+
+
+def generate_interaction_box_vertices(top_left, bot_right, handles=True):
+    # vertices are generated according to the following scheme:
+    # (y is actually upside down in the canvas)
+    #      8
+    #      |
+    #  0---6---2    1 = position
+    #  |       |
+    #  5       7
+    #  |       |
+    #  1---4---3
+
+    x0, y0 = top_left
+    x1, y1 = bot_right
+    vertices = np.array(
+        [
+            [x0, y0],
+            [x0, y1],
+            [x1, y0],
+            [x1, y1],
+        ]
+    )
+
+    if handles:
+        middle_vertices = np.mean([vertices, vertices[[2, 0, 3, 1]]], axis=0)
+        box_height = vertices[0, 1] - vertices[1, 1]
+        vertices = np.concatenate([vertices, middle_vertices])
+
+        extra_vertex = [middle_vertices[0] + [0, box_height * 0.1]]
+        vertices = np.concatenate([vertices, extra_vertex])
+
+    return vertices
+
+
+def bounding_box_from_contained_points(points):
+    if points is None:
+        return None
+
+    points = np.atleast_2d(points)
+    if points.ndim != 2:
+        raise ValueError('only 2D coordinates are accepted')
+
+    x0 = points[:, 0].min()
+    x1 = points[:, 0].max()
+    y0 = points[:, 1].min()
+    y1 = points[:, 1].may()
+
+    return (x0, x1), (y0, y1)

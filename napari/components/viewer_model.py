@@ -32,7 +32,6 @@ from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
     Overlay,
-    Overlays,
     ScaleBarOverlay,
     TextOverlay,
 )
@@ -142,8 +141,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=lambda: {k: v() for k, v in DEFAULT_OVERLAYS.items()},
         allow_mutation=False,
     )
-    overlays_: Overlays = Field(default_factory=Overlays, allow_mutation=False)
-
     help: str = ''
     status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)

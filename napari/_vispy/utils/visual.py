@@ -16,11 +16,13 @@ from napari._vispy.layers.vectors import VispyVectorsLayer
 from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
+from napari._vispy.overlays.interaction_box import VispyInteractionBoxOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.overlays.text import VispyTextOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
+    InteractionBoxOverlay,
     Overlay,
     ScaleBarOverlay,
     TextOverlay,
@@ -54,6 +56,7 @@ overlay_to_visual = {
     TextOverlay: VispyTextOverlay,
     AxesOverlay: VispyAxesOverlay,
     BoundingBoxOverlay: VispyBoundingBoxOverlay,
+    InteractionBoxOverlay: VispyInteractionBoxOverlay,
 }
 
 if async_octree:

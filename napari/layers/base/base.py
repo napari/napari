@@ -323,8 +323,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
+        from napari.components.overlays.interaction_box import (
+            InteractionBoxOverlay,
+        )
 
-        self._overlays = EventedDict({'bounding_box': BoundingBoxOverlay()})
+        self._overlays = EventedDict(
+            {
+                'bounding_box': BoundingBoxOverlay(),
+                'interaction_box': InteractionBoxOverlay(),
+            }
+        )
 
         self.events = EmitterGroup(
             source=self,
