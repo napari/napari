@@ -1,8 +1,6 @@
 import os
-import logging
 import numpy as np
 import napari
-import napari.viewer
 
 
 """
@@ -51,7 +49,7 @@ def generate_shapes(filename):
             vertices, triangles = PolygonData(
                 vertices=shape[:, 1:]
             ).triangulate()
-        except:
+        except: # noqa: E722
             pass
         else:
             good_shapes.append(shape)

@@ -4,9 +4,9 @@ import napari
 
 
 def raise_():
-    x = 1
-    y = 'a string'
-    import something_that_does_not_exist
+    x = 1  # noqa: F841
+    y = 'a string'  # noqa: F841
+    import something_that_does_not_exist   # noqa: F401
 
 
 def warn_():
