@@ -110,6 +110,17 @@ LAYER_ACTIONS: List[Action] = [
         ],
     ),
     Action(
+        id=CommandId.LAYER_RELOAD,
+        title=CommandId.LAYER_RELOAD.title,
+        callback=_layer_actions._reload,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
         id=CommandId.LAYER_LINK_SELECTED,
         title=CommandId.LAYER_LINK_SELECTED.title,
         callback=_layer_actions._link_selected_layers,

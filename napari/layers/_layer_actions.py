@@ -93,6 +93,11 @@ def _toggle_visibility(ll: LayerList):
         lay.visible = not lay.visible
 
 
+def _reload(ll: LayerList):
+    for lay in ll.selection:
+        lay.refresh()
+
+
 def _link_selected_layers(ll: LayerList):
     ll.link_layers(ll.selection)
 
