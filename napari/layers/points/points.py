@@ -22,7 +22,9 @@ from napari.layers.points._points_utils import (
     fix_data_points,
     points_to_squares,
 )
+from napari.layers.points._slice import _PointSliceRequest, _PointSliceResponse
 from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
@@ -1468,54 +1470,6 @@ class Points(Layer):
             # layers being rendered in 3D.
             self.editable = False
 
-    def _slice_data(
-        self, dims_indices
-    ) -> Tuple[List[int], Union[float, np.ndarray]]:
-        """Determines the slice of points given the indices.
-
-        Parameters
-        ----------
-        dims_indices : sequence of int or slice
-            Indices to slice with.
-
-        Returns
-        -------
-        slice_indices : list
-            Indices of points in the currently viewed slice.
-        scale : float, (N, ) array
-            If in `out_of_slice_display` mode then the scale factor of points, where
-            values of 1 corresponds to points located in the slice, and values
-            less than 1 correspond to points located in neighboring slices.
-        """
-        # Get a list of the data for the points in this slice
-        not_disp = list(self._slice_input.not_displayed)
-        # We want a numpy array so we can use fancy indexing with the non-displayed
-        # indices, but as dims_indices can (and often/always does) contain slice
-        # objects, the array has dtype=object which is then very slow for the
-        # arithmetic below. As Points._round_index is always False, we can safely
-        # convert to float to get a major performance improvement.
-        not_disp_indices = np.array(dims_indices)[not_disp].astype(float)
-        if len(self.data) > 0:
-            if self.out_of_slice_display is True and self.ndim > 2:
-                distances = abs(self.data[:, not_disp] - not_disp_indices)
-                sizes = self.size[:, not_disp] / 2
-                matches = np.all(distances <= sizes, axis=1)
-                size_match = sizes[matches]
-                size_match[size_match == 0] = 1
-                scale_per_dim = (size_match - distances[matches]) / size_match
-                scale_per_dim[size_match == 0] = 1
-                scale = np.prod(scale_per_dim, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, scale
-            else:
-                data = self.data[:, not_disp]
-                distances = np.abs(data - not_disp_indices)
-                matches = np.all(distances <= 0.5, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, 1
-        else:
-            return [], np.empty(0)
-
     def _get_value(self, position) -> Union[None, int]:
         """Index of the point at a given 2D position in data coordinates.
 
@@ -1692,8 +1646,46 @@ class Points(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        # get the indices of points in view
-        indices, scale = self._slice_data(self._slice_indices)
+
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self._make_slice_request_internal(
+            self._slice_input, self._slice_indices
+        )
+        response = request()
+        self._set_slice_response(response)
+
+    def _make_slice_request(self, dims) -> _PointSliceRequest:
+        """Make a Points slice request based on the given dims and these data."""
+        slice_input = self._make_slice_input(
+            dims.point, dims.ndisplay, dims.order
+        )
+        # TODO: [see Image]
+        #   For the existing sync slicing, slice_indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
+        return self._make_slice_request_internal(slice_input, slice_indices)
+
+    def _make_slice_request_internal(
+        self, slice_input: _SliceInput, dims_indices
+    ):
+        return _PointSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dims_indices=dims_indices,
+            out_of_slice_display=self.out_of_slice_display,
+            size=self.size,
+        )
+
+    def _set_slice_response(self, response: _PointSliceResponse):
+        """Handle a slicing response."""
+        indices = response.indices
+        scale = response.scale
 
         # Update the _view_size_scale in accordance to the self._indices_view setter.
         # If out_of_slice_display is False, scale is a number and not an array.

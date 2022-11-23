@@ -197,3 +197,15 @@ def test_tracks_length_change():
     layer.head_length = track_length
     assert layer.head_length == track_length
     assert layer._max_length == track_length
+
+
+def test_track_ids_ordering() -> None:
+    """Check if tracks ids are correctly set to features when given not-sorted tracks."""
+    # track_id, t, y, x
+    unsorted_data = np.asarray(
+        [[1, 1, 0, 0], [0, 1, 0, 0], [2, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0]]
+    )
+    sorted_track_ids = [0, 0, 1, 1, 2]  # track_ids after sorting
+
+    layer = Tracks(unsorted_data)
+    assert np.all(sorted_track_ids == layer.features["track_id"])

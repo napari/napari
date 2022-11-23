@@ -93,6 +93,7 @@ class LayerList(SelectableEventedList[Layer]):
             layer._on_selection(False)
 
     def _process_delete_item(self, item: Layer):
+        super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
         self._clean_cache()
 
