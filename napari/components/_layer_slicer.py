@@ -119,7 +119,7 @@ class _LayerSlicer:
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> Optional[Future[dict]]:
+    ) -> Future[dict]:
         """This should only be called from the main thread.
 
         Creates a new task and adds it to the _layers_to_task dict. Cancels

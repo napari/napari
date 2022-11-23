@@ -1135,10 +1135,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
-        if not self.visible:
-            return
-
-        self.events.reslice(Event('reslice', layer=self))
+        if self.visible:
+            self.set_view_slice()
+            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
+            self._update_thumbnail()
+            self._set_highlight(force=True)
 
     def world_to_data(self, position):
         """Convert from world coordinates to data coordinates.
@@ -1535,7 +1536,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                # Draws only make sense in the context of a layer being hooked up to
+                # vispy, so we can replace refresh with reslice here to notify the
+                # viewer model that it should slice this layer.
+                self.events.reslice(Event('reslice', layer=self))
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
