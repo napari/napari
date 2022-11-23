@@ -11,6 +11,7 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt import ensure_main_thread
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -247,6 +248,9 @@ class QtViewer(QSplitter):
             'pointing': Qt.CursorShape.PointingHandCursor,
             'standard': Qt.CursorShape.ArrowCursor,
         }
+
+        # TODO: ideally would connect to a public event of the viewer.
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
@@ -522,6 +526,18 @@ class QtViewer(QSplitter):
         if console is not None:
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
+
+    @ensure_main_thread
+    def _on_slice_ready(self, event):
+        responses = event.value
+        for layer, response in responses.items():
+            # This is to temporarily support behavior that depends on
+            # layer slice state.
+            layer._update_slice_response(response)
+            # TODO: find a better place for these.
+            layer.events.set_data()
+            layer._update_thumbnail()
+            layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""

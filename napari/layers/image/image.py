@@ -750,9 +750,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(self._slice_input, indices)
+        request = self._make_slice_request_internal(
+            self._slice_input, indices, lazy=True
+        )
         response = request()
-        self._update_slice_response(response, indices)
+        self._update_slice_response(response)
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
@@ -772,6 +774,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self,
         slice_input: _SliceInput,
         slice_indices,
+        lazy: bool = False,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
@@ -790,17 +793,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_level=self._thumbnail_level,
             level_shapes=self.level_shapes,
             downsample_factors=self.downsample_factors,
-            lazy=True,
+            lazy=lazy,
         )
 
-    def _update_slice_response(
-        self, response: _ImageSliceResponse, indices
-    ) -> None:
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Update the slice output state currently on the layer."""
+        self._slice_input = response.request.dims
+
         # For the old experimental async code.
+        self._empty = False
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=indices,
+            indices=response.request.slice_indices,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )

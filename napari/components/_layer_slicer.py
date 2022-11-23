@@ -37,6 +37,9 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
     def _make_slice_request(self, dims: Dims) -> _SliceRequest[_SliceResponse]:
         ...
 
+    def _update_slice_response(self, response: _SliceResponse) -> None:
+        ...
+
 
 class _LayerSlicer:
     """
@@ -116,7 +119,7 @@ class _LayerSlicer:
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> Future[dict]:
+    ) -> Optional[Future[dict]]:
         """This should only be called from the main thread.
 
         Creates a new task and adds it to the _layers_to_task dict. Cancels
@@ -130,6 +133,9 @@ class _LayerSlicer:
         wait for any existing tasks that include that layer AND another layer,
         In other words, it will only cancel if the new task will replace the
         slices of all the layers in the pending task.
+
+        TODO: consider renaming this slice_layers, or maybe just slice, or run;
+        we don't know if slicing will be async or not.
         """
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
@@ -147,6 +153,7 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
+                logger.debug('Async slicing: %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 sync_layers.append(layer)
@@ -156,6 +163,7 @@ class _LayerSlicer:
 
         # submit the sync layers (purposefully placed after async submission)
         for layer in sync_layers:
+            logger.debug('Sync slicing: %s', layer)
             layer._slice_dims(dims.point, dims.ndisplay, dims.order)
 
         # store task for cancellation logic
@@ -170,7 +178,7 @@ class _LayerSlicer:
 
     def shutdown(self) -> None:
         """Should be called from the main thread when this is no longer needed."""
-        self._executor.shutdown()
+        self._executor.shutdown(wait=True, cancel_futures=True)
 
     def _slice_layers(self, requests: Dict) -> Dict:
         """

@@ -27,8 +27,11 @@ class _ImageSliceResponse:
     tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
         For single-scale images, this will be the identity matrix.
+    indices: Any
+        The indices that were used to slice the layer's data.
     """
 
+    request: '_ImageSliceRequest'
     data: Any = field(repr=False)
     thumbnail: Optional[Any] = field(repr=False)
     tile_to_data: Affine = field(repr=False)
@@ -95,6 +98,7 @@ class _ImageSliceRequest:
             data=image,
             thumbnail=None,
             tile_to_data=tile_to_data,
+            request=self,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
@@ -149,6 +153,7 @@ class _ImageSliceRequest:
             data=image,
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
+            request=self,
         )
 
     def _slice_indices_at_level(
