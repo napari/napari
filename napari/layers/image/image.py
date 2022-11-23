@@ -798,13 +798,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Update the slice output state currently on the layer."""
-        self._slice_input = response.request.dims
+        self._slice_input = response.dims
 
         # For the old experimental async code.
         self._empty = False
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=response.request.slice_indices,
+            indices=response.slice_indices,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )
