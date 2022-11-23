@@ -63,7 +63,7 @@ from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
     in_jupyter,
-    in_python_REPL,
+    in_python_repl,
     running_as_bundled_app,
 )
 from napari.utils.notifications import Notification
@@ -281,7 +281,7 @@ class _QtMainWindow(QMainWindow):
 
         # Toggling the console visibility is disabled when it is not
         # available, so ensure that it is hidden.
-        if in_ipython() or in_jupyter() or in_python_REPL():
+        if in_ipython() or in_jupyter() or in_python_repl():
             self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:

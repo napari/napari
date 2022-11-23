@@ -19,7 +19,7 @@ from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
-from napari.utils.misc import in_ipython, in_jupyter, in_python_REPL
+from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -121,7 +121,7 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        if in_ipython() or in_jupyter() or in_python_REPL():
+        if in_ipython() or in_jupyter() or in_python_repl():
             self.consoleButton.setEnabled(False)
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')

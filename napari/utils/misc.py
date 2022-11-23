@@ -109,7 +109,7 @@ def in_ipython() -> bool:
     return False
 
 
-def in_python_REPL() -> bool:
+def in_python_repl() -> bool:
     """Return true if we're running in a Python REPL."""
     try:
         from IPython import get_ipython
