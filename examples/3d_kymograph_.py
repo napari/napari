@@ -7,7 +7,6 @@ can also be used to render 2d timelapse acquisitions as kymographs.
 
 .. tags:: experimental
 """
-from typing import Dict, List, Tuple
 import numpy as np
 import napari
 from tqdm import tqdm
