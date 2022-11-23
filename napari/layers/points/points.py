@@ -1684,6 +1684,7 @@ class Points(Layer):
 
     def _update_slice_response(self, response: _PointSliceResponse):
         """Handle a slicing response."""
+        self._slice_input = response.dims
         indices = response.indices
         scale = response.scale
 
