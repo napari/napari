@@ -326,9 +326,11 @@ that is in integer steps.
 ### Viewer buttons
 
 Underneath the layers list there is a row of buttons that includes the `Console`
-button that will show or hide our console that allows you to interact with a
-python kernel. Inside the console you can access the viewer using the `viewer`
-argument.
+button. This button will show or hide our console that allows you to interact with the
+python kernel, if you launch napari from the command line or use the napari bundled app.
+Inside the console you can access the viewer using the `viewer` argument. Note 
+that if you launch napari from an interactive python environment, like ipython or jupyter,
+then the console will be disabled in favor of using the existing interactive console.
 
 When the console button is clicked, the console will appear at the bottom of the
 viewer as follows:
