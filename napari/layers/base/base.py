@@ -254,6 +254,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
+        self._errored = False
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
@@ -343,6 +344,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            errored=Event,
             _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
@@ -459,6 +461,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Derived classes that do asynchronous loading can override this.
         """
         return True
+
+    @property
+    def errored(self) -> bool:
+        """Return if this layer presented an error while loading."""
+        return self._errored
+
+    @errored.setter
+    def errored(self, errored):
+        self._errored = errored
+        self.events.errored()
 
     @property
     def opacity(self):

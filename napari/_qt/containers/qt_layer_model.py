@@ -5,8 +5,10 @@ from qtpy.QtGui import QImage
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
+from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
+ErroredRole = Qt.UserRole + 4
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -23,7 +25,18 @@ class QtLayerListModel(QtListModel[Layer]):
             # used to populate line edit when editing
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
-            return layer.get_source_str()
+            if layer.errored:
+                failure_message = trans._("Layer failed loading")
+                options_message = trans._("Try refreshing or reloading layer")
+                return (
+                    "<p style='white-space:pre; text-align: center;'>"
+                    f"<b>{failure_message}</b>"
+                    "<br>"
+                    f"{options_message}"
+                    "</p>"
+                )
+            else:
+                return layer.get_source_str()
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
@@ -38,6 +51,8 @@ class QtLayerListModel(QtListModel[Layer]):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
+        if role == ErroredRole:
+            return layer.errored
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
@@ -71,6 +86,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
+            'errored': ErroredRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)
