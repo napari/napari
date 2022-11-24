@@ -113,6 +113,10 @@ class LockableData:
 @pytest.fixture()
 def layer_slicer():
     layer_slicer = _LayerSlicer()
+    # Initially, force_sync will be True to maintain the existing sync
+    # behavior, but these tests should exercise the case when async is
+    # allowed, so ensure it's False.
+    layer_slicer._force_sync = False
     yield layer_slicer
     layer_slicer.shutdown()
 

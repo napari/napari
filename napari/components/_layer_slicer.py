@@ -161,7 +161,8 @@ class _LayerSlicer:
         # create task for slicing of each request/layer
         task = self._executor.submit(self._slice_layers, requests)
 
-        # submit the sync layers (purposefully placed after async submission)
+        # slice the sync layers after async submission so that async
+        # tasks can potentially run concurrently
         for layer in sync_layers:
             logger.debug('Sync slicing: %s', layer)
             layer._slice_dims(dims.point, dims.ndisplay, dims.order)
