@@ -22,6 +22,25 @@ def test_changing_layer_color_mode_updates_combo_box(qtbot):
     assert layer.color_mode == qtctrl.colorModeComboBox.currentText()
 
 
+def test_changing_show_selected_updates_backend(qtbot):
+    """Test that changing show_selected_labels on UI updates the backend
+    and changing on the backend updates the UI"""
+    layer = Labels(_LABELS, color=_COLOR)
+    qtctrl = QtLabelsControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    assert not qtctrl.selectedColorCheckbox.isChecked()
+    assert not layer.show_selected_label
+
+    # ensure setting UI checkbox changes backend
+    qtctrl.selectedColorCheckbox.setChecked(True)
+    assert layer.show_selected_label
+
+    # ensure setting on backend updates UI
+    layer.show_selected_label = False
+    assert not qtctrl.selectedColorCheckbox.isChecked()
+
+
 def test_rendering_combobox(qtbot):
     """Changing the model attribute should update the view"""
     layer = Labels(_LABELS)
