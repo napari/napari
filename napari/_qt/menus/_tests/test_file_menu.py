@@ -59,6 +59,8 @@ def test_plugin_display_name_use_for_multiple_samples(
     plugin_action_menu.actions()[0].trigger()
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'astronaut'
+    viewer.close()
+    viewer.deleteLater()
 
 
 def test_show_shortcuts_actions(make_napari_viewer):
