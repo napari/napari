@@ -43,9 +43,10 @@ def test_sample_data_triggers_reader_dialog(
     mock_read.assert_called_once()
 
 
-def test_plugin_display_name_use_for_multiple_samples(make_napari_viewer):
+def test_plugin_display_name_use_for_multiple_samples(
+    make_napari_viewer, builtins
+):
     """For plugin with more than two sample datasets, should use plugin_display for building the menu"""
-    # ensure that builtins plugin is available
     viewer = make_napari_viewer()
     # builtins provides more than one sample, so the submenu should use the `display_name` from manifest
     plugin_action_menu = viewer.window.file_menu.open_sample_menu.actions()[
