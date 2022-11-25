@@ -13,3 +13,23 @@ class QtToolTipLabel(QLabel):
             QToolTip.showText(pos, self.toolTip(), self)
 
         super().enterEvent(event)
+
+
+class QtTopToolTipLabel(QLabel):
+    """
+    A QLabel that provides instant tooltips on mouser hover positioned over the label top.
+    """
+
+    def enterEvent(self, event):
+        """
+        Override to show tooltips instantly and set their position over the label top.
+        """
+        if self.toolTip():
+            point = self.contentsRect().center()
+            y_offset = self.contentsRect().height() * 3
+            new_y = int(point.y() - y_offset)
+            point.setY(new_y)
+            pos = self.mapToGlobal(point)
+            QToolTip.showText(pos, self.toolTip(), self)
+
+        super().enterEvent(event)

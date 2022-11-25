@@ -137,6 +137,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
+    error: dict = {'error_message': '', 'error_tooltip': ''}
     status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)

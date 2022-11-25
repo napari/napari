@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.widgets.qt_tooltip import QtTopToolTipLabel
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -65,12 +66,14 @@ class ViewerStatusBar(QStatusBar):
         self._help.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         layout.addWidget(self._help, 1)
 
+        self._error_message_item = QtTopToolTipLabel('')
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
             self._toggle_activity_dock
         )
         # FIXME: feels weird to set this here.
         parent._activity_dialog._toggleButton = self._activity_item
+        self.addPermanentWidget(self._error_message_item)
         self.addPermanentWidget(self._activity_item)
 
     def setHelpText(self, text: str) -> None:
@@ -115,6 +118,17 @@ class ViewerStatusBar(QStatusBar):
             self._coordinates.setText(coordinates)
         else:
             self._coordinates.hide()
+
+    def setErrorText(self, error_message: str, error_tooltip: str) -> None:
+        if error_message:
+            self._error_message_item.show()
+            self._error_message_item.setText(error_message)
+            if error_tooltip:
+                self._error_message_item.setToolTip(error_tooltip)
+            else:
+                self._error_message_item.setToolTip('')
+        else:
+            self._error_message_item.hide()
 
     def _toggle_activity_dock(self, visible: Optional[bool] = None):
         par: _QtMainWindow = self.parent()

@@ -523,6 +523,7 @@ class Window:
             )
 
         viewer.events.help.connect(self._help_changed)
+        viewer.events.error.connect(self._error_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
         viewer.layers.events.connect(self.file_menu.update)
@@ -1247,6 +1248,19 @@ class Window:
             The napari event that triggered this method.
         """
         self._status_bar.setHelpText(event.value)
+
+    def _error_changed(self, event):
+        """Update error message on status bar.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        error_info = event.value
+        self._status_bar.setErrorText(
+            error_info["error_message"], error_info["error_tooltip"]
+        )
 
     def _restart(self):
         """Restart the napari application."""
