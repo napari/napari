@@ -69,16 +69,14 @@ def test_plugin_display_name_use_for_multiple_samples(
 
     viewer = make_napari_viewer()
     # if more than one sample, a submenu is made using the `display_name` from manifest
+    plugin_action_menu = viewer.window.file_menu.open_sample_menu.actions()[0].menu()
     assert (
-        viewer.window.file_menu.open_sample_menu.actions()[0].menu().title()
-        == tmp_plugin_display_name
+		plugin_action_menu.title() == tmp_plugin_display_name
     )
     # Now ensure that the actions are still correct
     # trigger the action, opening the second sample: `napari logo`
     assert len(viewer.layers) == 0
-    viewer.window.file_menu.open_sample_menu.actions()[0].menu().actions()[
-        1
-    ].trigger()
+    plugin_action_menu.actions()[1].trigger()
     assert len(viewer.layers) == 1
     assert viewer.layers[0].name == 'logo'
 
