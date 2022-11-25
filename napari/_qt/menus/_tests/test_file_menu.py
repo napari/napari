@@ -80,7 +80,7 @@ def test_plugin_display_name_use_for_multiple_samples(
         1
     ].trigger()
     assert len(viewer.layers) == 1
-    viewer.layers[0].name == 'napari logo'
+    assert viewer.layers[0].name == 'logo'
 
 
 def test_show_shortcuts_actions(make_napari_viewer):
