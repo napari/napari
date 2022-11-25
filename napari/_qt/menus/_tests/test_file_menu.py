@@ -43,6 +43,46 @@ def test_sample_data_triggers_reader_dialog(
     mock_read.assert_called_once()
 
 
+def test_plugin_display_name_use_for_multiple_samples(
+    make_napari_viewer, tmp_plugin: DynamicPlugin
+):
+    """For plugin with two sample datasets, should use plugin_display for building the menu"""
+    from pathlib import Path
+
+    import napari
+
+    tmp_plugin_display_name = 'Temp Sample PLugin'
+    tmp_plugin.manifest.display_name = tmp_plugin_display_name
+
+    # make two samples, so display_name is used in the menu
+    my_sample = SampleDataURI(
+        key='tmp-sample',
+        display_name='Temp Sample',
+        uri='some-path/some-file.tif',
+    )
+    tmp_plugin.manifest.contributions.sample_data = [my_sample]
+
+    LOGO = str(Path(napari.__file__).parent / 'resources' / 'logo.png')
+    tmp_plugin.manifest.contributions.sample_data.append(
+        SampleDataURI(uri=LOGO, key='napari logo', display_name='Napari logo')
+    )
+
+    viewer = make_napari_viewer()
+    # if more than one sample, a submenu is made using the `display_name` from manifest
+    assert (
+        viewer.window.file_menu.open_sample_menu.actions()[0].menu().title()
+        == tmp_plugin_display_name
+    )
+    # Now ensure that the actions are still correct
+    # trigger the action, opening the second sample: `napari logo`
+    assert len(viewer.layers) == 0
+    viewer.window.file_menu.open_sample_menu.actions()[0].menu().actions()[
+        1
+    ].trigger()
+    assert len(viewer.layers) == 1
+    viewer.layers[0].name == 'napari logo'
+
+
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window.file_menu._pref_dialog is None
