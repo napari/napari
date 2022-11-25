@@ -73,6 +73,8 @@ class QtLabelsControls(QtLayerControls):
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
+    selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if selected layer is shown.
 
     Raises
     ------
@@ -91,6 +93,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
+        )
+        self.layer.events.show_selected_label.connect(
+            self._on_show_selected_label_change
         )
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
@@ -412,6 +417,12 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
             self.selectionSpinBox.setValue(value)
+
+    def _on_show_selected_label_change(self):
+        """Receive layer model show selected label change event and update checkbox."""
+        with self.layer.events.show_selected_label.blocker():
+            value = self.layer.show_selected_label
+            self.selectedColorCheckbox.setChecked(value)
 
     def _on_brush_size_change(self):
         """Receive layer model brush size change event and update the slider."""

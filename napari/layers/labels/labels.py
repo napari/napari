@@ -280,6 +280,7 @@ class Labels(_ImageBase):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
+            show_selected_label=Event,
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
@@ -659,6 +660,7 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter):
         self._show_selected_label = filter
+        self.events.show_selected_label()
         self.refresh()
 
     @property
@@ -799,7 +801,8 @@ class Labels(_ImageBase):
             Value of selected label to color, by default None
         """
         if selected_label:
-            if selected_label > len(self._all_vals):
+            if selected_label >= len(self._all_vals):
+                # new added layer (will reset _all_vals)
                 self._color_lookup_func = self._get_color_lookup_func(
                     im,
                     min(np.min(im), selected_label),
@@ -940,6 +943,7 @@ class Labels(_ImageBase):
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
+            # import pdb; pdb.set_trace()
             image = self._color_lookup_func(raw_modified, self._selected_label)
         elif (
             self.show_selected_label
@@ -972,7 +976,8 @@ class Labels(_ImageBase):
         elif label is None:
             col = self.colormap.map([0, 0, 0, 0])[0]
         else:
-            val = self._raw_to_displayed(np.array([label]))
+            # import pdb; pdb.set_trace()
+            val = self._raw_to_displayed(np.array([label]))  # TODO here
             col = self.colormap.map(val)[0]
         return col
 
