@@ -30,8 +30,10 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from weakref import WeakKeyDictionary
 
 try:
     __import__('dotenv').load_dotenv()
@@ -470,3 +472,141 @@ def _mock_app():
             yield app
         finally:
             Application.destroy('test_app')
+
+
+def _get_calling_place():
+    if hasattr(sys, "_getframe"):
+        frame = sys._getframe(2)
+        return f"{frame.f_code.co_filename}:{frame.f_code.co_firstlineno}"
+    return ""
+
+
+@pytest.fixture(autouse=True)
+def dangling_threads(monkeypatch):
+    from qtpy.QtCore import QThread
+
+    base_start = QThread.start
+    thread_dkt = WeakKeyDictionary()
+
+    def my_start(self, priority=QThread.InheritPriority):
+        thread_dkt[self] = _get_calling_place()
+        base_start(self, priority)
+
+    monkeypatch.setattr(QThread, 'start', my_start)
+    yield
+
+    dangling_threads = []
+
+    for thread, calling in thread_dkt.items():
+        try:
+            if thread.isRunning():
+                dangling_threads.append((thread, calling))
+        except RuntimeError as e:
+            if "wrapped C/C++ object of type QThread" not in e.args[0]:
+                raise
+
+    for thread, _ in dangling_threads:
+        thread.quit()
+        thread.wait(2000)
+
+    assert not dangling_threads, "thread called in:\n" + "\n".join(
+        x[1] for x in dangling_threads
+    )
+
+
+@pytest.fixture(autouse=True)
+def dangling_thread_pool(monkeypatch):
+    from qtpy.QtCore import QThreadPool
+
+    base_start = QThreadPool.start
+    threadpool_dkt = WeakKeyDictionary()
+
+    def my_start(self, runnable, priority=0):
+        if self not in threadpool_dkt:
+            threadpool_dkt[self] = []
+        threadpool_dkt[self].append(_get_calling_place())
+        base_start(self, runnable, priority)
+
+    monkeypatch.setattr(QThreadPool, 'start', my_start)
+    yield
+
+    dangling_threads_pools = []
+
+    for thread_pool, calling in threadpool_dkt.items():
+        if thread_pool.activeThreadCount():
+            dangling_threads_pools.append((thread_pool, calling))
+
+    for thread_pool, _ in dangling_threads_pools:
+        thread_pool.clear()
+        thread_pool.waitForDone(2000)
+
+    assert not dangling_threads_pools, "thread called in:\n" + "\n".join(
+        "; ".join(x[1]) for x in dangling_threads_pools
+    )
+
+
+@pytest.fixture(autouse=True)
+def dangling_timers(monkeypatch):
+    from qtpy.QtCore import QTimer
+
+    base_start = QTimer.start
+    timer_dkt = WeakKeyDictionary()
+
+    def my_start(self, msec=None):
+        timer_dkt[self] = _get_calling_place()
+        if msec is not None:
+            base_start(self, msec)
+        else:
+            base_start(self)
+
+    monkeypatch.setattr(QTimer, 'start', my_start)
+
+    def single_shot(*_args, **_kwargs):
+        raise RuntimeError(
+            "single shot timer called and we cannot check if it properly terminate"
+        )
+
+    monkeypatch.setattr(QTimer, 'singleShot', single_shot)
+
+    yield
+
+    dangling_timers = []
+
+    for timer, calling in timer_dkt.items():
+        if timer.isActive():
+            dangling_timers.append((timer, calling))
+
+    for timer, _ in dangling_timers:
+        timer.stop()
+
+    assert not dangling_timers, "timer called in:\n" + "\n".join(
+        x[1] for x in dangling_timers
+    )
+
+
+@pytest.fixture(autouse=True)
+def dangling_animations(monkeypatch):
+    from qtpy.QtCore import QPropertyAnimation
+
+    base_start = QPropertyAnimation.start
+    animation_dkt = WeakKeyDictionary()
+
+    def my_start(self):
+        animation_dkt[self] = _get_calling_place()
+        base_start(self)
+
+    monkeypatch.setattr(QPropertyAnimation, 'start', my_start)
+    yield
+
+    dangling_animations = []
+
+    for animation, calling in animation_dkt.items():
+        if animation.state() == QPropertyAnimation.Running:
+            dangling_animations.append((animation, calling))
+
+    for animation, _ in dangling_animations:
+        animation.stop()
+
+    assert not dangling_animations, "animation called in:\n" + "\n".join(
+        x[1] for x in dangling_animations
+    )
