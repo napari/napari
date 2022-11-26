@@ -30,9 +30,14 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from itertools import chain
+from multiprocessing.pool import ThreadPool
+from typing import TYPE_CHECKING
+from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
 try:
@@ -40,11 +45,6 @@ try:
 except ModuleNotFoundError:
     pass
 
-import os
-from itertools import chain
-from multiprocessing.pool import ThreadPool
-from typing import TYPE_CHECKING
-from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
@@ -474,9 +474,9 @@ def _mock_app():
             Application.destroy('test_app')
 
 
-def _get_calling_place():
+def _get_calling_place(depth=1):
     if hasattr(sys, "_getframe"):
-        frame = sys._getframe(2)
+        frame = sys._getframe(1 + depth)
         return f"{frame.f_code.co_filename}:{frame.f_code.co_firstlineno}"
     return ""
 
@@ -551,6 +551,7 @@ def dangling_timers(monkeypatch):
 
     base_start = QTimer.start
     timer_dkt = WeakKeyDictionary()
+    single_shot_list = []
 
     def my_start(self, msec=None):
         timer_dkt[self] = _get_calling_place()
@@ -561,18 +562,29 @@ def dangling_timers(monkeypatch):
 
     monkeypatch.setattr(QTimer, 'start', my_start)
 
-    def single_shot(*_args, **_kwargs):
-        raise RuntimeError(
-            "single shot timer called and we cannot check if it properly terminate"
-        )
+    def single_shot(msec, reciver, method=None):
+        t = QTimer()
+        t.setSingleShot(True)
+        if method is None:
+            t.timeout.connect(reciver)
+        else:
+            t.timeout.connect(getattr(reciver, method))
+        single_shot_list.append((t, _get_calling_place(2)))
+        base_start(t, msec)
 
-    monkeypatch.setattr(QTimer, 'singleShot', single_shot)
+    def _single_shot(self, *args):
+        if isinstance(self, QTimer):
+            single_shot(*args)
+        else:
+            single_shot(self, *args)
+
+    monkeypatch.setattr(QTimer, 'singleShot', _single_shot)
 
     yield
 
     dangling_timers = []
 
-    for timer, calling in timer_dkt.items():
+    for timer, calling in chain(timer_dkt.items(), single_shot_list):
         if timer.isActive():
             dangling_timers.append((timer, calling))
 
