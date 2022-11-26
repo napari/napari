@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from napari.resources._icons import (
     ICON_PATH,
     ICONS,
