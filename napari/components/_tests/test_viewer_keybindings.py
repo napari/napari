@@ -7,6 +7,7 @@ from napari.utils.theme import available_themes, get_system_theme
 def test_theme_toggle_keybinding():
     viewer = ViewerModel()
     assert viewer.theme == get_settings().appearance.theme
+    assert not viewer.theme == 'light'
     toggle_theme(viewer)
     # toggle_theme should not change settings
     assert not get_settings().appearance.theme == 'light'
