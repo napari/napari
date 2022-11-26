@@ -2,7 +2,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction, QMenu
 
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -208,7 +208,9 @@ class FileMenu(NapariMenu):
                     plugin_display_name = pm.get_manifest(
                         plugin_name
                     ).display_name
-                    menu = self.open_sample_menu.addMenu(plugin_display_name)
+                    menu = self.open_sample_menu.addMenu(
+                        QMenu(title=plugin_display_name, parent=self)
+                    ).menu()
                 else:
                     menu = self.open_sample_menu.addMenu(plugin_name)
             else:
