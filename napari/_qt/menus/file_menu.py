@@ -199,11 +199,18 @@ class FileMenu(NapariMenu):
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
-                # use display_name for the menu item
-                from npe2 import plugin_manager as pm
+                # use display_name for the menu item if npe2
+                if plugin_name in [
+                    manifest.name for manifest in _npe2.iter_manifests()
+                ]:
+                    from npe2 import plugin_manager as pm
 
-                plugin_display_name = pm.get_manifest(plugin_name).display_name
-                menu = self.open_sample_menu.addMenu(plugin_display_name)
+                    plugin_display_name = pm.get_manifest(
+                        plugin_name
+                    ).display_name
+                    menu = self.open_sample_menu.addMenu(plugin_display_name)
+                else:
+                    menu = self.open_sample_menu.addMenu(plugin_name)
             else:
                 menu = self.open_sample_menu
 
