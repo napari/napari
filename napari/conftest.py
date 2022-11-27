@@ -481,7 +481,7 @@ def _get_calling_place(depth=1):
     return ""
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def dangling_threads(monkeypatch):
     from qtpy.QtCore import QThread
 
@@ -514,7 +514,7 @@ def dangling_threads(monkeypatch):
     )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def dangling_thread_pool(monkeypatch):
     from qtpy.QtCore import QThreadPool
 
@@ -545,7 +545,7 @@ def dangling_thread_pool(monkeypatch):
     )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def dangling_timers(monkeypatch):
     from qtpy.QtCore import QTimer
 
@@ -596,7 +596,7 @@ def dangling_timers(monkeypatch):
     )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def dangling_animations(monkeypatch):
     from qtpy.QtCore import QPropertyAnimation
 
@@ -622,3 +622,16 @@ def dangling_animations(monkeypatch):
     assert not dangling_animations, "animation called in:\n" + "\n".join(
         x[1] for x in dangling_animations
     )
+
+
+def pytest_runtest_setup(item):
+    if "qapp" in item.fixturenames:
+        # here we do autouse for dangling fixtures only if qapp is used
+        item.fixturenames.extend(
+            [
+                "dangling_thread_pool",
+                "dangling_animations",
+                "dangling_threads",
+                "dangling_timers",
+            ]
+        )
