@@ -1391,7 +1391,9 @@ class Points(Layer):
             The vispy text anchor for the y axis
         """
         return self.text.compute_text_coords(
-            self._view_data, self._slice_input.ndisplay
+            self._view_data,
+            self._slice_input.ndisplay,
+            self._slice_input.order,
         )
 
     @property
