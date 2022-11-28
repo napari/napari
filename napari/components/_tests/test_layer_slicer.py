@@ -164,7 +164,7 @@ def test_slice_layers_async_with_one_sync_layer(layer_slicer):
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-    assert future.result() == {}
+    assert future is None
 
 
 def test_slice_layers_async_with_multiple_sync_layer(layer_slicer):
@@ -179,7 +179,7 @@ def test_slice_layers_async_with_multiple_sync_layer(layer_slicer):
 
     assert layer1.slice_count == 1
     assert layer2.slice_count == 1
-    assert not future.result()
+    assert future is None
 
 
 def test_slice_layers_async_with_mixed_layers(layer_slicer):
@@ -361,7 +361,7 @@ def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
         future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     assert layer.slice_count == 1
-    assert future.result() == {}
+    assert future is None
     assert not layer_slicer._force_sync
 
 
@@ -373,7 +373,7 @@ def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
         future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
     assert layer.sync_slice_count == 1
-    assert future.result() == {}
+    assert future is None
 
 
 def test_slice_layers_async_with_one_3d_image(layer_slicer):
@@ -422,6 +422,10 @@ def test_slice_layers_async_with_one_3d_points(layer_slicer):
 
 def test_slice_layers_async_after_shutdown_raises():
     layer_slicer = _LayerSlicer()
+    # Initially, force_sync will be True to maintain the existing sync
+    # behavior, but these tests should exercise the case when async is
+    # allowed, so ensure it's False.
+    layer_slicer._force_sync = False
     layer_slicer.shutdown()
     with pytest.raises(RuntimeError):
         layer_slicer.slice_layers_async(layers=[FakeAsyncLayer()], dims=Dims())

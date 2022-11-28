@@ -119,7 +119,7 @@ class _LayerSlicer:
 
     def slice_layers_async(
         self, layers: Iterable[Layer], dims: Dims
-    ) -> Future[dict]:
+    ) -> Optional[Future[dict]]:
         """This should only be called from the main thread.
 
         Creates a new task and adds it to the _layers_to_task dict. Cancels
@@ -158,22 +158,24 @@ class _LayerSlicer:
             else:
                 sync_layers.append(layer)
 
-        # create task for slicing of each request/layer
-        task = self._executor.submit(self._slice_layers, requests)
+        # create task for all requests
+        task = None
+        if len(requests) > 0:
+            task = self._executor.submit(self._slice_layers, requests)
+
+            # store task for cancellation logic
+            # this is purposefully done before adding the done callback to ensure
+            # that the task is added before the done callback can be executed
+            with self._lock_layers_to_task:
+                self._layers_to_task[tuple(requests)] = task
+
+            task.add_done_callback(self._on_slice_done)
 
         # slice the sync layers after async submission so that async
         # tasks can potentially run concurrently
         for layer in sync_layers:
             logger.debug('Sync slicing: %s', layer)
             layer._slice_dims(dims.point, dims.ndisplay, dims.order)
-
-        # store task for cancellation logic
-        # this is purposefully done before adding the done callback to ensure
-        # that the task is added before the done callback can be executed
-        with self._lock_layers_to_task:
-            self._layers_to_task[tuple(requests)] = task
-
-        task.add_done_callback(self._on_slice_done)
 
         return task
 
