@@ -361,7 +361,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         layers = layers or self.layers
         self._layer_slicer.slice_layers_async(layers, self.dims)
-        # TODO: does this need to occur after all slicing has finished?
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]

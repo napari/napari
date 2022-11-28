@@ -249,7 +249,6 @@ class QtViewer(QSplitter):
             'standard': Qt.CursorShape.ArrowCursor,
         }
 
-        # TODO: ideally would connect to a public event of the viewer.
         self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
@@ -531,10 +530,11 @@ class QtViewer(QSplitter):
     def _on_slice_ready(self, event):
         responses = event.value
         for layer, response in responses.items():
-            # This is to temporarily support behavior that depends on
-            # layer slice state.
+            # Update the layer slice state to temporarily support behavior
+            # that depends on it.
             layer._update_slice_response(response)
-            # TODO: find a better place for these.
+            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
+            # notifies the corresponding vispy layer of the new slice.
             layer.events.set_data()
             layer._update_thumbnail()
             layer._set_highlight(force=True)
