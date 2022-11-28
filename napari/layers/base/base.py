@@ -1536,9 +1536,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                # Draws only make sense in the context of a layer being hooked up to
-                # vispy, so we can replace refresh with reslice here to notify the
-                # viewer model that it should slice this layer.
                 self.events.reslice(Event('reslice', layer=self))
 
         else:

@@ -81,6 +81,7 @@ class _LayerSlicer:
     @contextmanager
     def force_sync(self):
         """Context manager to temporarily force slicing to be synchronous.
+
         This should only be used from the main thread.
 
         >>> layer_slicer = _LayerSlicer()
@@ -123,7 +124,9 @@ class _LayerSlicer:
         dims: Dims,
         _refresh_sync: bool = False,
     ) -> Optional[Future[dict]]:
-        """This should only be called from the main thread.
+        """Slices the given layers with the given dims.
+
+        This should only be called from the main thread.
 
         Creates a new task and adds it to the _layers_to_task dict. Cancels
         all tasks currently pending for that layer tuple.
@@ -137,8 +140,23 @@ class _LayerSlicer:
         In other words, it will only cancel if the new task will replace the
         slices of all the layers in the pending task.
 
-        TODO: consider renaming this slice_layers, or maybe just slice, or run;
-        we don't know if slicing will be async or not.
+        Parameters
+        ----------
+        layers: iterable of layers
+            The layers to slice.
+        dims: Dims
+            The dimensions values associated with the view to be sliced.
+        _refresh_sync: bool
+            True if when forcing synchronous slicing, `refresh` should be used
+            instead of `_slice_dims`. False otherwise. The leading underscore
+            indicates that this is a temporary parameter that will be removed
+            after old-style slicing is removed.
+
+        Returns
+        -------
+        Future[dict] or none
+            A future with a result that maps from a layer to a layer slice
+            response. Or none if no async slicing tasks were submitted.
         """
         # Cancel any tasks that are slicing a subset of the layers
         # being sliced now. This allows us to slice arbitrary sets of
@@ -185,7 +203,10 @@ class _LayerSlicer:
         return task
 
     def shutdown(self) -> None:
-        """Should be called from the main thread when this is no longer needed."""
+        """Shuts this down, preventing any new slice tasks from being submitted.
+
+        This should only be called from the main thread.
+        """
         self._executor.shutdown(wait=True, cancel_futures=True)
 
     def _slice_layers(self, requests: Dict) -> Dict:
