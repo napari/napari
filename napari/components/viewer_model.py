@@ -347,7 +347,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _slice_layer(self, event: Event) -> None:
-        self._layer_slicer.slice_layers_async([event.layer], self.dims)
+        self._layer_slicer.slice_layers_async(
+            [event.layer], self.dims, _refresh_sync=True
+        )
 
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.

@@ -118,7 +118,10 @@ class _LayerSlicer:
             )
 
     def slice_layers_async(
-        self, layers: Iterable[Layer], dims: Dims
+        self,
+        layers: Iterable[Layer],
+        dims: Dims,
+        _refresh_sync: bool = False,
     ) -> Optional[Future[dict]]:
         """This should only be called from the main thread.
 
@@ -153,7 +156,6 @@ class _LayerSlicer:
         sync_layers = []
         for layer in layers:
             if isinstance(layer, _AsyncSliceable) and not self._force_sync:
-                logger.debug('Async slicing: %s', layer)
                 requests[layer] = layer._make_slice_request(dims)
             else:
                 sync_layers.append(layer)
@@ -175,7 +177,10 @@ class _LayerSlicer:
         # tasks can potentially run concurrently
         for layer in sync_layers:
             logger.debug('Sync slicing: %s', layer)
-            layer._slice_dims(dims.point, dims.ndisplay, dims.order)
+            if _refresh_sync:
+                layer.refresh()
+            else:
+                layer._slice_dims(dims.point, dims.ndisplay, dims.order)
 
         return task
 
