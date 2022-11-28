@@ -66,7 +66,7 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_bundled_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_error
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
@@ -1257,10 +1257,9 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        error_info = event.value
-        self._status_bar.setErrorText(
-            error_info["error_message"], error_info["error_tooltip"]
-        )
+        error_message = event.value
+        if error_message:
+            show_error(error_message)
 
     def _restart(self):
         """Restart the napari application."""
