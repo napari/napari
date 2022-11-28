@@ -140,13 +140,12 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
-        # Moving this here made test_image_rendering fail in a different
-        # way (trying to schedule tasks after shutdown, instead of qtviewer
-        # instance number issues)
+        # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()
 
         # Remove all the layers from the viewer
         self.layers.clear()
+
         # Close the main window
         self.window.close()
 
