@@ -158,7 +158,7 @@ class _LayerSlicer:
             else:
                 sync_layers.append(layer)
 
-        # create task for all requests
+        # create one task for all requests
         task = None
         if len(requests) > 0:
             task = self._executor.submit(self._slice_layers, requests)
