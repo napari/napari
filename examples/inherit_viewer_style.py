@@ -6,7 +6,6 @@ Example how to embed magicgui widget in dialog to inherit style
 from main napari window.
 """
 
-from typing import Callable
 
 from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
 
