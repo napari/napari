@@ -482,49 +482,65 @@ def _get_calling_place(depth=1):
 
 
 @pytest.fixture
-def dangling_threads(monkeypatch):
+def dangling_qthreads(monkeypatch, qtbot):
     from qtpy.QtCore import QThread
 
     base_start = QThread.start
-    thread_dkt = WeakKeyDictionary()
+    thread_dict = WeakKeyDictionary()
+    # dict of threads that have been started but not yet terminated
 
     def my_start(self, priority=QThread.InheritPriority):
-        thread_dkt[self] = _get_calling_place()
+        thread_dict[self] = _get_calling_place()
         base_start(self, priority)
 
     monkeypatch.setattr(QThread, 'start', my_start)
     yield
 
-    dangling_threads = []
+    dangling_threads_li = []
 
-    for thread, calling in thread_dkt.items():
+    for thread, calling in thread_dict.items():
         try:
             if thread.isRunning():
-                dangling_threads.append((thread, calling))
+                dangling_threads_li.append((thread, calling))
         except RuntimeError as e:
             if "wrapped C/C++ object of type QThread" not in e.args[0]:
                 raise
 
-    for thread, _ in dangling_threads:
-        thread.quit()
-        thread.wait(2000)
+    for thread, _ in dangling_threads_li:
+        with qtbot.waitUntil(thread.isFinished, timeout=2000):
+            thread.quit()
 
-    assert not dangling_threads, "thread called in:\n" + "\n".join(
-        x[1] for x in dangling_threads
+    long_desc = (
+        "If you see this error, it means that a QThread was started in a test "
+        "but not terminated. This can cause segfaults in the test suite. "
+        "Please use the `qtbot` fixture to wait for the thread to finish. "
+        "If you think that the thread is obsolete for this test, you can "
+        "use the `monkeypatch` fixture to patch the `start` method of the "
+        "QThread class to do nothing.\n"
+    )
+
+    if len(dangling_threads_li) > 1:
+        long_desc += " The QThreads were started in:\n"
+    else:
+        long_desc += " The QThread was started in:\n"
+
+    assert not dangling_threads_li, long_desc + "\n".join(
+        x[1] for x in dangling_threads_li
     )
 
 
 @pytest.fixture
-def dangling_thread_pool(monkeypatch):
+def dangling_qthread_pool(monkeypatch):
     from qtpy.QtCore import QThreadPool
 
     base_start = QThreadPool.start
-    threadpool_dkt = WeakKeyDictionary()
+    threadpool_dict = WeakKeyDictionary()
+    # dict of threadpools that have been used to run QRunnables
 
     def my_start(self, runnable, priority=0):
-        if self not in threadpool_dkt:
-            threadpool_dkt[self] = []
-        threadpool_dkt[self].append(_get_calling_place())
+        if self not in threadpool_dict:
+            threadpool_dict[self] = []
+        threadpool_dict[self].append(_get_calling_place())
         base_start(self, runnable, priority)
 
     monkeypatch.setattr(QThreadPool, 'start', my_start)
@@ -532,7 +548,7 @@ def dangling_thread_pool(monkeypatch):
 
     dangling_threads_pools = []
 
-    for thread_pool, calling in threadpool_dkt.items():
+    for thread_pool, calling in threadpool_dict.items():
         if thread_pool.activeThreadCount():
             dangling_threads_pools.append((thread_pool, calling))
 
@@ -540,13 +556,26 @@ def dangling_thread_pool(monkeypatch):
         thread_pool.clear()
         thread_pool.waitForDone(2000)
 
-    assert not dangling_threads_pools, "thread called in:\n" + "\n".join(
+    long_desc = (
+        "If you see this error, it means that a QThreadPool was used to run "
+        "a QRunnable in a test but not terminated. This can cause segfaults "
+        "in the test suite. Please use the `qtbot` fixture to wait for the "
+        "thread to finish. If you think that the thread is obsolete for this "
+        "test, you can use the `monkeypatch` fixture to patch the `start` "
+        "method of the QThreadPool class to do nothing.\n"
+    )
+    if len(dangling_threads_pools) > 1:
+        long_desc += " The QThreadPools were used in:\n"
+    else:
+        long_desc += " The QThreadPool was used in:\n"
+
+    assert not dangling_threads_pools, long_desc + "\n".join(
         "; ".join(x[1]) for x in dangling_threads_pools
     )
 
 
 @pytest.fixture
-def dangling_timers(monkeypatch):
+def dangling_qtimers(monkeypatch):
     from qtpy.QtCore import QTimer
 
     base_start = QTimer.start
@@ -591,13 +620,23 @@ def dangling_timers(monkeypatch):
     for timer, _ in dangling_timers:
         timer.stop()
 
-    assert not dangling_timers, "timer called in:\n" + "\n".join(
+    long_desc = (
+        "If you see this error, it means that a QTimer was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not requires a QTimer to pass you could monkeypatch it out. "
+        "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_timers) > 1:
+        long_desc += " The QTimers were started in:\n"
+    else:
+        long_desc += " The QTimer was started in:\n"
+    assert not dangling_timers, long_desc + "\n".join(
         x[1] for x in dangling_timers
     )
 
 
 @pytest.fixture
-def dangling_animations(monkeypatch):
+def dangling_qanimations(monkeypatch):
     from qtpy.QtCore import QPropertyAnimation
 
     base_start = QPropertyAnimation.start
@@ -619,7 +658,17 @@ def dangling_animations(monkeypatch):
     for animation, _ in dangling_animations:
         animation.stop()
 
-    assert not dangling_animations, "animation called in:\n" + "\n".join(
+    long_desc = (
+        "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not requires a QPropertyAnimation to pass you could monkeypatch it out. "
+        "If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_animations) > 1:
+        long_desc += " The QPropertyAnimations were started in:\n"
+    else:
+        long_desc += " The QPropertyAnimation was started in:\n"
+    assert not dangling_animations, long_desc + "\n".join(
         x[1] for x in dangling_animations
     )
 
@@ -627,11 +676,15 @@ def dangling_animations(monkeypatch):
 def pytest_runtest_setup(item):
     if "qapp" in item.fixturenames:
         # here we do autouse for dangling fixtures only if qapp is used
+        if "qtbot" not in item.fixturenames:
+            # for proper waiting for threads to finish
+            item.fixturenames.append("qtbot")
+
         item.fixturenames.extend(
             [
-                "dangling_thread_pool",
-                "dangling_animations",
-                "dangling_threads",
-                "dangling_timers",
+                "dangling_qthread_pool",
+                "dangling_qanimations",
+                "dangling_qthreads",
+                "dangling_qtimers",
             ]
         )
