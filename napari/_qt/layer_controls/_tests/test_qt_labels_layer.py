@@ -33,7 +33,8 @@ def test_changing_show_selected_updates_backend(qtbot):
     assert not layer.show_selected_label
 
     # ensure setting UI checkbox changes backend
-    qtctrl.selectedColorCheckbox.setChecked(True)
+    with qtbot.wait_signal(qtctrl.selectedColorCheckbox.stateChanged):
+        qtctrl.selectedColorCheckbox.setChecked(True)
     assert layer.show_selected_label
 
     # ensure setting on backend updates UI
