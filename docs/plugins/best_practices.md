@@ -303,3 +303,89 @@ get_settings().appearance.events.theme.connect(change_style)
 change_style()
 
 ```
+
+## Do not package your tests as a top-level package
+
+If you are using the [napari plugin cookiecutter template](https://github.com/napari/cookiecutter-napari-plugin),
+your tests are already packaged in the correct way. No further action required!
+
+```bash
+# project structure suggested by the cookiecutter template
+src/
+  my_package/
+    _tests/
+      test_my_module.py
+    __init__.py
+    my_module.py
+pyproject.toml
+README.md
+```
+
+However, if your project structure is already following a different scheme, 
+the testing logic might live outside your package, as a top-level directory:
+
+```bash
+# alternative structure, no src/ directory, testing logic outside the package
+my_package/
+  __init__.py
+  my_module.py
+tests/
+  conftest.py
+  test_my_module.py
+pyproject.toml
+README.md
+```
+
+Under these circumstances, your build backend (usually `setuptools`) might include `tests` as a
+separate package that will be installed next to `my_package`! 
+Most of the time, this is not wanted; e.g. do you want to do `import tests`? Probably not!
+Additionally, this unwanted behavior might cause installation issues with other projects.
+
+Ideally, you could change your project structure to follow the recommended skeleton followed in
+the cookiecutter template. Howevever, if that's unfeasible, you can fix this in the project metadata files. 
+
+You need to explicitly _exclude_ the top-level `tests` directory from the packaged contents:
+
+```toml
+# pyproject.toml
+...
+[options.packages.find]
+exclude =
+    tests
+    tests.*
+```
+
+```python
+# setup.py
+...
+setup(
+    ...
+    packages=find_packages(exclude=("tests", "tests.*")),
+    ...
+)
+```
+
+Note this also applies to other top-level directories, like `test`, `_tests`, `testing`, etc.
+
+You can find more information in the 
+[package discovery documentation for `setuptools`](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html).
+
+
+## License issues when including code from 3rd parties
+
+Plugins will often depend on 3rd party packages beyond `napari` itself.
+These dependencies are usually included in the project metadata in `pyproject.toml`.
+However, sometimes developers might include code from 3rd parties directly in their project.
+Sometimes it will be just a little snippet, maybe slightly modified to suit the project needs.
+Some other times, a whole project will be included entirely (vendoring).
+
+This constitutes an act of source code redistribution, which is usually covered by many licensing schemes.
+Most of the time, this means you need to explicitly include the vendored project license in the source.
+This is the case for Apache, BSD and MIT-style licenses. 
+Do note that some projects might NOT allow redistribution without explicit approval.
+Others will prevent it entirely... Be mindful and check the requirements before distributing your package!
+
+```{note}
+If you are vendoring other projects, please add an acknowledgement in your README.
+The license details in your project metadata should also include this information!
+```
