@@ -80,6 +80,7 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 line-length = 120
 ignore = ["E501"]
 per-file-ignores = {"napari/_vispy/__init__.py" = ["E402"]}
+target-version = "py38"
 
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
