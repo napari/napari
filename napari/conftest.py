@@ -510,7 +510,6 @@ def dangling_qthreads(monkeypatch, qtbot):
         thread.quit()
         qtbot.waitUntil(thread.isFinished, timeout=2000)
 
-
     long_desc = (
         "If you see this error, it means that a QThread was started in a test "
         "but not terminated. This can cause segfaults in the test suite. "
