@@ -482,16 +482,23 @@ def _get_calling_place(depth=1):
 
 
 @pytest.fixture
-def dangling_qthreads(monkeypatch, qtbot):
+def dangling_qthreads(monkeypatch, qtbot, request):
     from qtpy.QtCore import QThread
 
     base_start = QThread.start
     thread_dict = WeakKeyDictionary()
     # dict of threads that have been started but not yet terminated
 
-    def my_start(self, priority=QThread.InheritPriority):
-        thread_dict[self] = _get_calling_place()
-        base_start(self, priority)
+    if "disable_qthread_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, priority=QThread.InheritPriority):
+            thread_dict[self] = _get_calling_place()
+            base_start(self, priority)
 
     monkeypatch.setattr(QThread, 'start', my_start)
     yield
@@ -515,7 +522,8 @@ def dangling_qthreads(monkeypatch, qtbot):
         "but not terminated. This can cause segfaults in the test suite. "
         "Please use the `qtbot` fixture to wait for the thread to finish. "
         "If you think that the thread is obsolete for this test, you can "
-        "use the `monkeypatch` fixture to patch the `start` method of the "
+        "use the `@pytest.mark.disable_qthread_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` method of the "
         "QThread class to do nothing.\n"
     )
 
@@ -530,18 +538,25 @@ def dangling_qthreads(monkeypatch, qtbot):
 
 
 @pytest.fixture
-def dangling_qthread_pool(monkeypatch):
+def dangling_qthread_pool(monkeypatch, request):
     from qtpy.QtCore import QThreadPool
 
     base_start = QThreadPool.start
     threadpool_dict = WeakKeyDictionary()
     # dict of threadpools that have been used to run QRunnables
 
-    def my_start(self, runnable, priority=0):
-        if self not in threadpool_dict:
-            threadpool_dict[self] = []
-        threadpool_dict[self].append(_get_calling_place())
-        base_start(self, runnable, priority)
+    if "disable_qthread_pool_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, runnable, priority=0):
+            if self not in threadpool_dict:
+                threadpool_dict[self] = []
+            threadpool_dict[self].append(_get_calling_place())
+            base_start(self, runnable, priority)
 
     monkeypatch.setattr(QThreadPool, 'start', my_start)
     yield
@@ -561,7 +576,8 @@ def dangling_qthread_pool(monkeypatch):
         "a QRunnable in a test but not terminated. This can cause segfaults "
         "in the test suite. Please use the `qtbot` fixture to wait for the "
         "thread to finish. If you think that the thread is obsolete for this "
-        "test, you can use the `monkeypatch` fixture to patch the `start` "
+        "use the `@pytest.mark.disable_qthread_pool_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` "
         "method of the QThreadPool class to do nothing.\n"
     )
     if len(dangling_threads_pools) > 1:
@@ -575,38 +591,57 @@ def dangling_qthread_pool(monkeypatch):
 
 
 @pytest.fixture
-def dangling_qtimers(monkeypatch):
+def dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
     base_start = QTimer.start
     timer_dkt = WeakKeyDictionary()
     single_shot_list = []
 
-    def my_start(self, msec=None):
-        timer_dkt[self] = _get_calling_place()
-        if msec is not None:
-            base_start(self, msec)
-        else:
-            base_start(self)
+    if "disable_qtimer_start" in request.keywords:
+        from pytestqt.qt_compat import qt_api
+
+        def my_start(*_, **__):
+            """dummy function to prevent timer start"""
+
+        _single_shot = my_start
+
+        class OldTimer(QTimer):
+            def start(self, time=None):
+                if time is not None:
+                    base_start(self, time)
+                else:
+                    base_start(self)
+
+        monkeypatch.setattr(qt_api.QtCore, "QTimer", OldTimer)
+        # This monkeypatch is require to keep `qtbot.waitUntil` working
+
+    else:
+
+        def my_start(self, msec=None):
+            timer_dkt[self] = _get_calling_place()
+            if msec is not None:
+                base_start(self, msec)
+            else:
+                base_start(self)
+
+        def single_shot(msec, reciver, method=None):
+            t = QTimer()
+            t.setSingleShot(True)
+            if method is None:
+                t.timeout.connect(reciver)
+            else:
+                t.timeout.connect(getattr(reciver, method))
+            single_shot_list.append((t, _get_calling_place(2)))
+            base_start(t, msec)
+
+        def _single_shot(self, *args):
+            if isinstance(self, QTimer):
+                single_shot(*args)
+            else:
+                single_shot(self, *args)
 
     monkeypatch.setattr(QTimer, 'start', my_start)
-
-    def single_shot(msec, reciver, method=None):
-        t = QTimer()
-        t.setSingleShot(True)
-        if method is None:
-            t.timeout.connect(reciver)
-        else:
-            t.timeout.connect(getattr(reciver, method))
-        single_shot_list.append((t, _get_calling_place(2)))
-        base_start(t, msec)
-
-    def _single_shot(self, *args):
-        if isinstance(self, QTimer):
-            single_shot(*args)
-        else:
-            single_shot(self, *args)
-
     monkeypatch.setattr(QTimer, 'singleShot', _single_shot)
 
     yield
@@ -636,15 +671,22 @@ def dangling_qtimers(monkeypatch):
 
 
 @pytest.fixture
-def dangling_qanimations(monkeypatch):
+def dangling_qanimations(monkeypatch, request):
     from qtpy.QtCore import QPropertyAnimation
 
     base_start = QPropertyAnimation.start
     animation_dkt = WeakKeyDictionary()
 
-    def my_start(self):
-        animation_dkt[self] = _get_calling_place()
-        base_start(self)
+    if "disable_qanimation_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self):
+            animation_dkt[self] = _get_calling_place()
+            base_start(self)
 
     monkeypatch.setattr(QPropertyAnimation, 'start', my_start)
     yield
