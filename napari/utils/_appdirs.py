@@ -6,7 +6,7 @@ from typing import Callable, Optional
 
 import appdirs
 
-sha_short = hashlib.sha1(sys.prefix.encode()).hexdigest()
+sha_short = f"{os.path.basename(sys.prefix)}_{hashlib.sha1(sys.prefix.encode()).hexdigest()}"
 
 _appname = 'napari'
 _appauthor = False
