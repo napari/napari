@@ -507,8 +507,9 @@ def dangling_qthreads(monkeypatch, qtbot):
                 raise
 
     for thread, _ in dangling_threads_li:
-        with qtbot.waitUntil(thread.isFinished, timeout=2000):
-            thread.quit()
+        thread.quit()
+        qtbot.waitUntil(thread.isFinished, timeout=2000)
+
 
     long_desc = (
         "If you see this error, it means that a QThread was started in a test "
@@ -623,7 +624,7 @@ def dangling_qtimers(monkeypatch):
     long_desc = (
         "If you see this error, it means that a QTimer was started but not stopped. "
         "This can cause tests to fail, and can also cause segfaults. "
-        "If this test does not requires a QTimer to pass you could monkeypatch it out. "
+        "If this test does not require a QTimer to pass you could monkeypatch it out. "
         "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
     )
     if len(dangling_timers) > 1:
@@ -661,7 +662,7 @@ def dangling_qanimations(monkeypatch):
     long_desc = (
         "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
         "This can cause tests to fail, and can also cause segfaults. "
-        "If this test does not requires a QPropertyAnimation to pass you could monkeypatch it out. "
+        "If this test does not require a QPropertyAnimation to pass you could monkeypatch it out. "
         "If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. "
     )
     if len(dangling_animations) > 1:
