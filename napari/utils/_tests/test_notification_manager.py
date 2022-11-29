@@ -1,7 +1,6 @@
 import sys
 import threading
 import warnings
-from contextlib import suppress
 from typing import List
 
 import pytest
@@ -14,26 +13,6 @@ from napari.utils.notifications import (
     show_info,
     show_warning,
 )
-
-
-@pytest.fixture(autouse=True)
-def disable_notification_dismiss_timer(monkeypatch):
-    """
-    This fixture disables starting timer for closing notification
-    by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
-
-    As Qt timer is realised by thread and keep reference to the object,
-    without increase of reference counter object could be garbage collected and
-    cause segmentation fault error when Qt (C++) code try to access it without
-    checking if Python object exists.
-    """
-
-    with suppress(ImportError):
-        from napari._qt.dialogs.qt_notification import NapariQtNotification
-
-        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
-        monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
-        monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
 
 
 # capsys fixture comes from pytest
