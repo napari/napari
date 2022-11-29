@@ -207,7 +207,12 @@ class _LayerSlicer:
 
         This should only be called from the main thread.
         """
-        self._executor.shutdown(wait=True, cancel_futures=True)
+        # Replace with cancel_futures=True in shutdown when we drop support
+        # for Python 3.8
+        with self._lock_layers_to_task:
+            for task in self._layers_to_task.values():
+                task.cancel()
+        self._executor.shutdown(wait=True)
 
     def _slice_layers(self, requests: Dict) -> Dict:
         """
