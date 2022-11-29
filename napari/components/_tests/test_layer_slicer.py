@@ -58,19 +58,20 @@ class FakeSliceRequest:
 
 class FakeAsyncLayer:
     def __init__(self):
-        self.async_slice_count: int = 0
-        self.sync_slice_count: int = 0
+        self._slice_request_count: int = 0
+        self.slice_count: int = 0
         self.lock: RLock = RLock()
 
     def _make_slice_request(self, dims: Dims) -> FakeSliceRequest:
         assert current_thread() == main_thread()
-        return FakeSliceRequest(id=self.async_slice_count + 1, lock=self.lock)
+        self._slice_request_count += 1
+        return FakeSliceRequest(id=self._slice_request_count, lock=self.lock)
 
     def _update_slice_response(self, response: FakeSliceResponse):
-        self.async_slice_count = response.id
+        self.slice_count = response.id
 
     def _slice_dims(self, *args, **kwargs) -> None:
-        self.sync_slice_count += 1
+        self.slice_count += 1
 
 
 class FakeSyncLayer:
@@ -185,14 +186,13 @@ def test_slice_layers_async_with_multiple_sync_layer(layer_slicer):
 def test_slice_layers_async_with_mixed_layers(layer_slicer):
     layer1 = FakeAsyncLayer()
     layer2 = FakeSyncLayer()
-    assert layer1.sync_slice_count == 0
+    assert layer1.slice_count == 0
     assert layer2.slice_count == 0
 
     future = layer_slicer.slice_layers_async(
         layers=[layer1, layer2], dims=Dims()
     )
 
-    assert layer1.sync_slice_count == 0
     assert future.result()[layer1].id == 1
     assert layer2 not in future.result()
     assert layer2.slice_count == 1
@@ -202,7 +202,7 @@ def test_slice_layers_async_lock_blocking(layer_slicer):
     dims = Dims()
     layer = FakeAsyncLayer()
 
-    assert layer.sync_slice_count == 0
+    assert layer.slice_count == 0
     with layer.lock:
         blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not blocked.done()
@@ -311,9 +311,7 @@ def test_slice_layers_exception_subthread_on_result(layer_slicer):
 
     class FakeAsyncLayerError(FakeAsyncLayer):
         def _make_slice_request(self, dims: Dims) -> FakeSliceRequestError:
-            return FakeSliceRequestError(
-                id=self.async_slice_count + 1, lock=self.lock
-            )
+            return FakeSliceRequestError(id=0, lock=self.lock)
 
     layer = FakeAsyncLayerError()
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
@@ -372,7 +370,7 @@ def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
         assert layer_slicer._force_sync
         future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
-    assert layer.sync_slice_count == 1
+    assert layer.slice_count == 1
     assert future is None
 
 
