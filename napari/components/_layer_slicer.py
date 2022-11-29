@@ -194,7 +194,6 @@ class _LayerSlicer:
         # slice the sync layers after async submission so that async
         # tasks can potentially run concurrently
         for layer in sync_layers:
-            logger.debug('Sync slicing: %s', layer)
             if _refresh_sync:
                 layer.refresh()
             else:

@@ -11,6 +11,7 @@ from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
+from napari._qt import get_app
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
@@ -675,3 +676,24 @@ def test_create_non_empty_viewer_model(qtbot):
     del viewer
     qtbot.wait(50)
     gc.collect()
+
+
+def test_slicing_integration_dims_current_step_change(make_napari_viewer):
+    viewer = make_napari_viewer()
+    slicer = viewer._layer_slicer
+    slicer._force_sync = False
+    data = np.random.rand(3, 4, 5)
+    image = viewer.add_image(data)
+
+    viewer.dims.current_step = (2, 0, 0)
+    # Wait for async slicing to finish and then wait for the qt event loop
+    # to become idle since post-slicing callbacks occur on the main event loop.
+    slicer.wait_until_idle()
+    get_app().processEvents()
+
+    np.testing.assert_equal(image._data_view, data[2, :, :])
+
+    vispy_image = viewer.window._qt_viewer.layer_to_visual[image]
+    # vispy node data has passed through a color map, so values are
+    # only approximately equal.
+    np.testing.assert_allclose(vispy_image.node._data, data[2, :, :])
