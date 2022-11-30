@@ -118,12 +118,18 @@ def _all_rgb():
     return np.stack((r, g, b), axis=-1).reshape((-1, 3))
 
 
-# obtained with colorconv.rgb2luv(_all_rgb().reshape((-1, 256, 3)))
+# obtained with the following slow code:
+# >>> luv_colormaps = colorconv.rgb2luv(_all_rgb().reshape((-1, 256, 3)))
+# >>> LUVMIN = np.amin(luv_colormaps, axis=(0, 1))
+# >>> LUVMAX = np.amax(luv_colormaps, axis=(0, 1))
 LUVMIN = np.array([0.0, -83.07790815, -134.09790293])
 LUVMAX = np.array([100.0, 175.01447356, 107.39905336])
 LUVRNG = LUVMAX - LUVMIN
 
-# obtained with colorconv.rgb2lab(_all_rgb().reshape((-1, 256, 3)))
+# obtained with the following slow code:
+# >>> lab_colormaps = colorconv.rgb2lab(_all_rgb().reshape((-1, 256, 3)))
+# >>> LABMIN = np.amin(lab_colormaps, axis=(0, 1))
+# >>> LABMAX = np.amax(lab_colormaps, axis=(0, 1))
 LABMIN = np.array([0.0, -86.18302974, -107.85730021])
 LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
