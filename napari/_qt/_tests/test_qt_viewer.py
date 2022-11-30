@@ -739,6 +739,28 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][1, 0:4, 0:3])
 
 
+def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer):
+    viewer = make_napari_viewer()
+    np.random.seed(0)
+    data = [np.random.rand(4, 8, 10), np.random.rand(2, 4, 5)]
+    vispy_image = setup_viewer_for_async_slice_image(viewer, data)
+
+    # Check that we're initially slicing the middle of the first dimension
+    # over the whole of lowest resolution image.
+    assert viewer.dims.not_displayed == (0,)
+    assert viewer.dims.current_step[0] == 2
+    image = vispy_image.layer
+    assert image._data_level == 1
+    np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])
+
+    # Simulate zooming into the middle of the higher resolution image.
+    image._data_level = 0
+    image.corner_pixels = np.array([[0, 2, 3], [0, 6, 7]])
+    image.events.reslice(Event('reslice', layer=image))
+
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[0][2, 2:6, 3:7])
+
+
 def setup_viewer_for_async_slice_image(
     viewer: Viewer,
     data: Union[np.ndarray, List[np.ndarray]],
