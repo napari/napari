@@ -2,7 +2,7 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 from unittest import mock
 
 import numpy as np
@@ -10,7 +10,9 @@ import pytest
 from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
+from vispy.visuals import VolumeVisual
 
+from napari import Viewer
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
@@ -19,9 +21,10 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
+from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Points
+from napari.layers import Image, Points
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
@@ -677,22 +680,65 @@ def test_create_non_empty_viewer_model(qtbot):
     gc.collect()
 
 
-def test_slicing_with_dims_current_step_change(qtbot, make_napari_viewer):
+def test_async_slice_image_on_current_step_change(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
-    slicer = viewer._layer_slicer
-    slicer._force_sync = False
-    data = np.random.rand(3, 4, 5)
-    layer = viewer.add_image(data)
-    vispy_node = viewer.window._qt_viewer.layer_to_visual[layer].node
-    assert not np.array_equal(vispy_node._data, data[2, :, :])
+    image, vispy_image = setup_viewer_for_async_slice_image(viewer)
+    assert viewer.dims.current_step != (2, 0, 0)
 
     viewer.dims.current_step = (2, 0, 0)
 
-    def assert_data_equal():
-        # vispy node data has passed through a color map, so values are
-        # only approximately equal.
-        np.testing.assert_allclose(vispy_node._data, data[2, :, :])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, image.data[2, :, :])
 
-    # Wait for the vispy node data to be updated since slicing may occur on
-    # another thread and we can't guarantee the timing of events.
-    qtbot.waitUntil(assert_data_equal)
+
+def test_async_slice_image_on_order_change(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    image, vispy_image = setup_viewer_for_async_slice_image(viewer)
+    assert viewer.dims.order != (1, 0, 2)
+
+    viewer.dims.order = (1, 0, 2)
+
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, image.data[:, 2, :])
+
+
+def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    image, vispy_image = setup_viewer_for_async_slice_image(viewer)
+    assert viewer.dims.ndisplay != 3
+
+    viewer.dims.ndisplay = 3
+
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, image.data)
+
+
+def setup_viewer_for_async_slice_image(
+    viewer: Viewer,
+) -> Tuple[Image, VispyImageLayer]:
+    # Initially make slicing synchronous so it's done at the end of this function.
+    viewer._layer_slicer._force_sync = False
+    # Create a small 3D image with random values.
+    np.random.seed(0)
+    data = np.random.rand(3, 4, 5)
+    layer = viewer.add_image(data)
+    vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
+    # Assert the current slice, so we know that we're changing it in tests.
+    assert viewer.dims.ndisplay == 2
+    assert viewer.dims.current_step == (1, 2, 2)
+    assert viewer.dims.order == (0, 1, 2)
+    # Finally make slicing asynchronous for testing.
+    viewer._layer_slicer._force_sync = True
+    return layer, vispy_layer
+
+
+def wait_until_vispy_image_data_equal(
+    qtbot, vispy_layer: VispyImageLayer, expected_data: np.ndarray
+) -> None:
+    def assert_vispy_image_data_equal() -> None:
+        node = vispy_layer.node
+        data = (
+            node._last_data if isinstance(node, VolumeVisual) else node._data
+        )
+        # Vispy node data may have been post-processed (e.g. through a colormap),
+        # so check that values are close rather than exactly equal.
+        np.testing.assert_allclose(data, expected_data)
+
+    qtbot.waitUntil(assert_vispy_image_data_equal)
