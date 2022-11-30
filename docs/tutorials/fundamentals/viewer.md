@@ -19,7 +19,7 @@ Welcome to the tutorial on the **napari** viewer!
 
 This tutorial assumes you have already installed **napari** and know how to
 launch the viewer. For help with installation see our
-[installation](./installation) tutorial. For help getting started with the
+[installation](./installation) tutorial. For help launching the
 viewer see our [getting started](./getting_started) tutorial.
 
 This tutorial will teach you about the **napari** viewer, including how to use
@@ -31,24 +31,25 @@ on the screen and the data inside of it.
 
 ## Launching the viewer
 
-As discussed in [getting started](./getting_started) tutorial the napari viewer
+As discussed in the [getting started](./getting_started) tutorial, the napari viewer
 can be launched from the command-line, a python script, an IPython console, or a
-jupyter notebook. All four methods launch the same viewer, and anything related
+Jupyter notebook. All four methods launch the same viewer, and anything related
 to the interacting with the viewer on the screen applies equally to all of them.
-We will use the syntax inside python scripts so you can copy and paste these
-examples into scripts and run them.
+We will use the python script syntax for any example code which you can copy and
+paste into a script/console/notebook and run.
 
 Let's get stated by launching a viewer with a simple 2D image.
 
-The fastest way to get the viewer open and throw an image up on the screen is
-using the `napari.view_image` method:
+The fastest way to open a viewer with an image on the canvass is
+using {func}`imshow<napari.imshow>`:
 
 
 ```{code-cell} python
-import napari
 from skimage import data
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+import napari
+
+viewer, image_layer = napari.imshow(data.astronaut(), rgb=True)
 ```
 
 ```{code-cell} python
@@ -57,24 +58,31 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 viewer.close()
 ```
 
-Calling `napari.view_image` will return a `Viewer` object that is the main
-object inside **napari**. All the data you add to **napari** will be stored
-inside the `Viewer` object and will be accessible from it. This command will
-also open the viewer to create a GUI that you can interact with.
+Calling {func}`imshow<napari.imshow>` will return a {class}`Viewer<napari.Viewer>`
+object that is the main object inside **napari** and a {class}`Image<napari.layers.Image>`
+layer object. All the data you add to **napari** will be stored
+inside the {class}`Viewer<napari.Viewer>` object and will be accessible from it. This command will
+also open the viewer to create a GUI that you can interact with. The {class}`Image<napari.layers.Image>`
+will contain information about the image and allow you to access image methods.
 
-You can also create an empty `Viewer` directly and then start adding images to
+You can also create an empty {class}`Viewer<napari.Viewer>` directly and then start adding images to
 it. For example:
 
 ```{code-cell} python
+from skimage import data
+
+import napari
+
 viewer = napari.Viewer()
 new_layer = viewer.add_image(data.astronaut(), rgb=True)
 ```
 
-`add_image` accepts the same arguments as `view_image` but returns a layer
-rather than a `Viewer`, (as you must already have a viewer to use it).
+{meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>` accepts the same arguments as {func}`imshow<napari.show>` but only returns an {class}`Image<napari.layers.Image>` layer
+instead of both the {class}`Viewer<napari.Viewer>` and
+{class}`Image<napari.layers.Image>` layer (as you must already have a viewer to use it).
 
 After running either of those two commands you should now be able to see the
-photograph of the astronaut in the **napari** viewer as shown below
+photograph of the astronaut in the **napari** viewer as shown below:
 
 ```{code-cell} python
 :tags: [hide-input]
@@ -89,7 +97,8 @@ nbscreenshot(viewer, alt_text="photograph of an astronaut in napari viewer")
 viewer.close()
 ```
 
-Both the `view_image` and the `add_image` methods accept any numpy-array like
+Both the {func}`imshow<napari.imshow>` and the {meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>`
+methods accept any numpy-array like
 object as an input, including n-dimensional arrays. For more information on
 adding images to the viewer see the [image layer guide](../../howtos/layers/image).
 Now we will continue exploring the rest of the viewer.
@@ -106,9 +115,9 @@ We'll go through each of these in the next sections.
 
 +++
 
-### Main canvas
+### Canvas
 
-The main canvas is in the center of the viewer and contains the visual display
+The canvas is in the center of the viewer and contains the visual display
 of the data passed to **napari**, including images, point, shapes, and our other
 supported data types. Under the hood the canvas is a `vispy.scene.SceneCanvas`
 object which has built-in support for features such as zooming and panning. As
@@ -142,6 +151,10 @@ widgets to the layer list as follows:
 
 ```{code-cell} python
 :tags: [remove-output]
+import napari
+
+from skimage import data
+
 viewer = napari.Viewer()
 viewer.add_image(data.astronaut(), name='astronaut')
 viewer.add_image(data.moon(), name='moon')
@@ -154,20 +167,21 @@ nbscreenshot(viewer, alt_text="3 image layers shown in napari viewer with the ca
 ```
 
 Note that we've also also named each of the layers using the `name` keyword
-argument in `add_image`, and that name has appeared as a string in the layer
+argument in {meth}`add_image<napari.components.viewer_model.ViewerModel.add_image>`,
+and that name has appeared as a string in the layer
 widget. The layer name is coerced into being unique so that it can be used to
 index into the `LayerList`.
 
 You can select layers, causing them to become outlined, by clicking on their
 layer widget. Multiple layers can be simultaneously selected using either
-`shift` or `command` click to select either all the layers in between clicked-on
-layers or just the clicked-on layers respectively.
+`shift` to select all the layers in between two clicked-on layers or
+`command` click to select individual clicked-on layers.
 
 You can rearrange the order of the layers by dragging them, including dragging
 multiple layers at the same time.
 
-The `Viewer` object also contains our `LayerList` object that allows you to
-access the data of all the layers by
+The {class}`Viewer<napari.Viewer>` object also contains our {class}`LayerList` object that allows you to
+access the data of all the layers with:
 
 ```{code-cell} python
 viewer.layers
@@ -198,14 +212,18 @@ Above the layers list in the top left corner of the viewer there is a box that
 contains the layer controls. The controls that you have available to you depend
 on the layer type that you have selected.
 
-For example, if you add a `Points` layer after adding an `Image` layer you will
-now see different controls present.
+For example, if you add a `Points` layer after adding an `Image` layer, the
+new `Points` layer will be 'selected' and you will now see different controls
+present.
 
 ```{code-cell} python
 :tags: [remove-output]
 import numpy as np
+from skimage import data
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+import napari
+
+viewer, image_layer = napari.imshow(data.astronaut(), rgb=True)
 points = np.array([[100, 100], [200, 200], [300, 100]])
 viewer.add_points(points, size=30)
 ```
@@ -217,9 +235,9 @@ nbscreenshot(viewer, alt_text="points layer showing 3 white points layered on to
 
 +++
 
-Adjusting these properties in the GUI will cause corresponding changes to
-properties on the individual layers that are accessible in the console through
-`viewer.layers`.
+Adjusting these properties in the layers list will cause corresponding changes
+to properties on the selected individual layers. These properties are also able
+to be changed and accessed in the console through `viewer.layers`.
 
 For example, the name and opacity of a layer can be changed within the console
 as follows:
@@ -238,30 +256,33 @@ viewer.close()
 ```
 
 and these changes will instantly propagate to the GUI. For more information
-about the different properties for different layer types please see our layer
-specific tutorials listed at the bottom of this tutorial.
+about the different properties for different layer types please see our
+[guides on using layers](../../howtos/layers/index).
 
 +++
 
-### New layer buttons
+### Layer buttons
 
 New `Points`, `Shapes`, and `Labels` layers can be added to the viewer using the
-new layer buttons in the bottom righthand corner of the GUI. These correspond to
-the calls such as:
+layer buttons between the layer controls and layer list. These correspond to
+the following calls:
 
 ```python
-viewer.add_points(data)
-viewer.add_shapes(data)
-viewer.add_labels(data)
+import napari
+
+viewer = napari.Viewer()
+viewer.add_points()
+viewer.add_shapes()
+viewer.add_labels()
 ```
 
-but with empty data. Once added in the GUI these layers become accessible in the
-layers list and at `viewer.layers`.
+Once added, either in the GUI or via the console, these layers become accessible
+in the layers list section of the GUI and at `viewer.layers`.
 
 Layers can also be deleted by selecting them and then clicking on the trash
 icon, or by dragging the layers and dropping them into the trash.
 
-In the console a layer at index `i` can be removed by
+In the console a layer at index `i` can be removed by:
 
 ```python
 viewer.layers.pop(i)
@@ -278,7 +299,7 @@ timeseries (i.e. 4D), or even higher dimensional. **napari** places no limits on
 the dimensionality of its input data for all its layer types.
 
 Adding data with a dimensionality greater than 2D will cause dimension sliders
-to appear directly underneath the main canvas and above the status bar. As many
+to appear directly underneath the canvas and above the status bar. As many
 sliders as needed will appear to ensure the data can be fully browsed. For
 example, a 3D dataset needs one slider, a 4D dataset needs two sliders, and so
 on. The widths of the scroll bars of the dimension sliders are directly related
@@ -295,6 +316,11 @@ datasets to the same viewer:
 
 ```{code-cell} python
 :tags: [remove-output]
+import numpy as np
+from skimage import data
+
+import napari
+
 viewer = napari.Viewer()
 viewer.add_image(data.moon(), name='moon')
 blobs = np.stack(
@@ -314,26 +340,30 @@ viewer.add_image(blobs, name='blobs', opacity=0.5, colormap='red')
 nbscreenshot(viewer, alt_text="A 2d view of the moon on top of which is overlaid a 3d volume containing blobs through which you can navigate using the dimension slider.")
 ```
 
-In order to get or to update the current position of the slider, use 
+In order to get or to update the current position of the slider, use:
 
-```viewer.dims.current_step```
+```python
+# to get the current position
+viewer.dims.current_step
+# to change the current position
+viewer.dims.current_step = 3
+```
 
-that is in integer steps. 
-
-`viewer.dims.point` contains the position in world coordinates (ie including scale and translate transformations)
-
+`viewer.dims.point` contains the position in world coordinates (i.e., including
+scale and translate transformations).
 
 ### Viewer buttons
 
-Underneath the layers list there is a row of buttons that includes the `Console`
-button. This button will show or hide our console that allows you to interact with the
-python kernel, if you launch napari from the command line or use the napari bundled app.
-Inside the console you can access the viewer using the `viewer` argument. Note 
-that if you launch napari from an interactive python environment, like ipython or jupyter,
-then the console will be disabled in favor of using the existing interactive console.
+Underneath the layers list there is a row of buttons. The first is the `Console`
+button that will show or hide the console, allowing you to interact with the
+python kernel. Inside the console, for example, you can access the
+{class}`Viewer<napari.Viewer>` instance using `viewer`. This button will be
+enabled if you launch napari from the command line, a script or use the napari
+bundled app. However, the console is disabled if the napari viewer is opened
+from a Jupyter notebook or launched from within IPython, in favor of the user
+continuing to use the existing interactive console.
 
-When the console button is clicked, the console will appear at the bottom of the
-viewer as follows:
+The console (when available) will appear at the bottom of the viewer as below:
 
 +++
 
@@ -347,15 +377,18 @@ running the following code:
 
 ```{code-cell} python
 :tags: [remove-output]
+from skimage import data
 from scipy import ndimage as ndi
 
+import napari
+
 blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
-viewer = napari.view_image(blobs.astype(float), name='blobs')
+viewer, image_layer = napari.imshow(blobs.astype(float), name='blobs')
 labeled = ndi.label(blobs)[0]
 viewer.add_labels(labeled, name='blob ID')
 ```
 
-... clicking on the 3D button
+... then clicking on the 2D / 3D button
 
 ![image: 3D_button](../assets/tutorials/3D_button.png)
 
@@ -372,12 +405,13 @@ viewer.camera.angles = (3, 38, 53)
 nbscreenshot(viewer, alt_text="A rotated 3D view")
 ```
 
-
 Next to the 2D / 3D button is a button to roll the dimensions that are currently
 being displayed in the viewer - for example if you have a `ZYX` volume and are
 looking at the `YX` slice this will then show you the `ZY` slice.
 
 After that is a button that transposes the displayed dimensions.
+
+After that is a button the toggles grid mode.
 
 Finally, there is the `home` button that will reset the camera state to its
 initial values.
@@ -406,8 +440,11 @@ Currently, **napari** comes with two different themes `light` and `dark`, which
 is the default. To change the theme, update `theme` property of the viewer:
 
 ```{code-cell} python
-viewer = napari.Viewer()
-viewer.add_image(data.astronaut(), name='astronaut')
+from skimage import data
+
+import napari
+
+viewer, image_layer = napari.imshow(data.astronaut(), name='astronaut')
 
 # change the viewer theme
 viewer.theme = 'light'
@@ -450,9 +487,11 @@ prints their names to your console when you press the `p` key you can do the
 following:
 
 ```{code-cell} python
+from skimage import data
 
-viewer = napari.Viewer()
-viewer.add_image(data.astronaut(), name='astronaut')
+import napari
+
+viewer, image_layer = napari.imshow(data.astronaut(), name='astronaut')
 
 @viewer.bind_key('p')
 def print_names(viewer):
@@ -473,8 +512,7 @@ the `yield` will get executed on key release. The following example will print
 it.
 
 ```{code-cell} python
-viewer = napari.Viewer()
-viewer.add_image(data.astronaut(), name='astronaut')
+viewer, image_layer = napari.imshow(data.astronaut(), name='astronaut')
 
 @viewer.bind_key('m')
 def print_message(viewer):
@@ -484,6 +522,8 @@ def print_message(viewer):
 ```
 
 ```{code-cell} python
+:tags: [remove-cell]
+
 viewer.close()
 ```
 
@@ -491,7 +531,7 @@ Keys can be bound both to the object class or a particular instance depending on
 if you want the keybinding to apply to all instances of the class or only one
 particular instance.
 
-Currently the keybindings only work when the main canvas is in focus, we are
+Currently the keybindings only work when the canvas is in focus, we are
 working to ensure they always work.
 
 The ability to add custom keybindings dramatically increases what is possible
@@ -502,6 +542,8 @@ within **napari** and we hope you take full advantage of them.
 ## Next steps
 
 Hopefully, this tutorial has given you an overview of the functionality
-available on the **napari** viewer, including the `LayerList` and some of the
+available on the **napari** viewer, including the {class}`LayerList` and some of the
 different layer types. To learn more about the different layer types that
 **napari** supports, check out [our guides on using layers](../../howtos/layers/index).
+For a more detailed introduction to layer manipulation see
+[Layers at a glance](../../guides/layers).
