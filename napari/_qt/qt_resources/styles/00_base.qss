@@ -43,6 +43,12 @@ QWidget[emphasized="true"] > QFrame {
     background-color: {{ foreground }};
 }
 
+QWidget:disabled {
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
 
 /* ------------ QAbstractScrollArea ------------- */
 
