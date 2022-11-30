@@ -2,7 +2,7 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Union
 from unittest import mock
 
 import numpy as np
@@ -24,8 +24,9 @@ from napari._tests.utils import (
 from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Image, Points
+from napari.layers import Points
 from napari.settings import get_settings
+from napari.utils.events import Event
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.theme import available_themes
 
@@ -681,52 +682,76 @@ def test_create_non_empty_viewer_model(qtbot):
 
 
 def test_async_slice_image_on_current_step_change(make_napari_viewer, qtbot):
+    np.random.seed(0)
+    data = np.random.rand(3, 4, 5)
     viewer = make_napari_viewer()
-    image, vispy_image = setup_viewer_for_async_slice_image(viewer)
+    vispy_image = setup_viewer_for_async_slice_image(viewer, data)
     assert viewer.dims.current_step != (2, 0, 0)
 
     viewer.dims.current_step = (2, 0, 0)
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_image, image.data[2, :, :])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
 
 
 def test_async_slice_image_on_order_change(make_napari_viewer, qtbot):
+    np.random.seed(0)
+    data = np.random.rand(3, 4, 5)
     viewer = make_napari_viewer()
-    image, vispy_image = setup_viewer_for_async_slice_image(viewer)
+    vispy_image = setup_viewer_for_async_slice_image(viewer, data)
     assert viewer.dims.order != (1, 0, 2)
 
     viewer.dims.order = (1, 0, 2)
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_image, image.data[:, 2, :])
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[:, 2, :])
 
 
 def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot):
+    np.random.seed(0)
+    data = np.random.rand(3, 4, 5)
     viewer = make_napari_viewer()
-    image, vispy_image = setup_viewer_for_async_slice_image(viewer)
+    vispy_image = setup_viewer_for_async_slice_image(viewer, data)
     assert viewer.dims.ndisplay != 3
 
     viewer.dims.ndisplay = 3
 
-    wait_until_vispy_image_data_equal(qtbot, vispy_image, image.data)
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data)
+
+
+def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    np.random.seed(0)
+    data = [np.random.rand(4, 8, 10), np.random.rand(2, 4, 5)]
+    vispy_image = setup_viewer_for_async_slice_image(viewer, data)
+
+    # Check that we're initially slicing the middle of the first dimension
+    # over the whole of lowest resolution image.
+    assert viewer.dims.not_displayed == (0,)
+    assert viewer.dims.current_step[0] == 2
+    image = vispy_image.layer
+    assert image._data_level == 1
+    np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])
+
+    # Simulate panning to the left by changing the corner pixels in the last
+    # dimension, which corresponds to x/columns, then triggering a reslice.
+    image.corner_pixels = np.array([[0, 0, 0], [0, 4, 3]])
+    image.events.reslice(Event('reslice', layer=image))
+
+    wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][1, 0:4, 0:3])
 
 
 def setup_viewer_for_async_slice_image(
     viewer: Viewer,
-) -> Tuple[Image, VispyImageLayer]:
-    # Initially make slicing synchronous so it's done at the end of this function.
-    viewer._layer_slicer._force_sync = False
-    # Create a small 3D image with random values.
-    np.random.seed(0)
-    data = np.random.rand(3, 4, 5)
+    data: Union[np.ndarray, List[np.ndarray]],
+) -> VispyImageLayer:
+    # Initially force synchronous slicing so any slicing caused
+    # by adding the image finishes before any other slicing starts.
+    viewer._layer_slicer._force_sync = True
+    # Add the image and get the corresponding vispy image.
     layer = viewer.add_image(data)
     vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
-    # Assert the current slice, so we know that we're changing it in tests.
-    assert viewer.dims.ndisplay == 2
-    assert viewer.dims.current_step == (1, 2, 2)
-    assert viewer.dims.order == (0, 1, 2)
-    # Finally make slicing asynchronous for testing.
-    viewer._layer_slicer._force_sync = True
-    return layer, vispy_layer
+    # Then allow asynchronous slicing for testing.
+    viewer._layer_slicer._force_sync = False
+    return vispy_layer
 
 
 def wait_until_vispy_image_data_equal(
