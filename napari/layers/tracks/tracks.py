@@ -195,7 +195,7 @@ class Tracks(Layer):
         self.color_by = color_by
         self.colormap = colormap
 
-        self._update_dims()
+        self.refresh()
 
         # reset the display before returning
         self._current_displayed_dims = None

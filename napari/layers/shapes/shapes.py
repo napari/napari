@@ -558,7 +558,7 @@ class Shapes(Layer):
         )
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str

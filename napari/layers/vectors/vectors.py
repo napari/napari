@@ -245,7 +245,7 @@ class Vectors(Layer):
         self._view_alphas = []
 
         # now that everything is set up, make the layer visible (if set to visible)
-        self._update_dims()
+        self.refresh()
         self.visible = visible
 
     @property
