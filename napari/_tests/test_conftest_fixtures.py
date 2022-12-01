@@ -36,6 +36,7 @@ def test_disable_qtimer(qtbot):
     t.start()
     assert not t.isActive()
 
+    # As qtbot uses a QTimer in waitUntil, we also test if timer disable does not break it
     th = _TestThread()
     th.mutex.lock()
     th.start()
