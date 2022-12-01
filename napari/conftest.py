@@ -54,6 +54,7 @@ from IPython.core.history import HistoryManager
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.config import async_loading
+from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -475,10 +476,19 @@ def _mock_app():
 
 
 def _get_calling_place(depth=1):
-    if hasattr(sys, "_getframe"):
-        frame = sys._getframe(1 + depth)
-        return f"{frame.f_code.co_filename}:{frame.f_code.co_firstlineno}"
-    return ""
+    if not hasattr(sys, "_getframe"):
+        return ""
+    frame = sys._getframe(1 + depth)
+    result = f"{frame.f_code.co_filename}:{frame.f_lineno}"
+    if not frame.f_code.co_filename.startswith(ROOT_DIR):
+        with suppress(ValueError):
+            while not frame.f_code.co_filename.startswith(ROOT_DIR):
+                frame = frame.f_back
+                if frame is None:
+                    break
+            else:
+                result += f" called from\n{frame.f_code.co_filename}:{frame.f_lineno}"
+    return result
 
 
 @pytest.fixture
@@ -662,9 +672,9 @@ def dangling_qtimers(monkeypatch, request):
         "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
     )
     if len(dangling_timers) > 1:
-        long_desc += " The QTimers were started in:\n"
+        long_desc += "The QTimers were started in:\n"
     else:
-        long_desc += " The QTimer was started in:\n"
+        long_desc += "The QTimer was started in:\n"
     assert not dangling_timers, long_desc + "\n".join(
         x[1] for x in dangling_timers
     )

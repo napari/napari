@@ -16,6 +16,10 @@ if TYPE_CHECKING:
 _SAVE_GRAPH_OPNAME = "--save-leaked-object-graph"
 
 
+def _empty(*_, **__):
+    """Empty function for mocking"""
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--show-napari-viewer",
@@ -116,7 +120,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot, request: 'FixtureRequest', napari_plugin_manager
+    qtbot, request: 'FixtureRequest', napari_plugin_manager, monkeypatch
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
@@ -195,6 +199,11 @@ def make_napari_viewer(
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
     is_internal_test = request.module.__name__.startswith("napari.")
+
+    # disable throttling cursor event in tests
+    monkeypatch.setattr(
+        "napari._qt.qt_main_window._QtMainWindow._reconnect_cursor", _empty
+    )
 
     def actual_factory(
         *model_args,
