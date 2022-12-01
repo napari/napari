@@ -2166,3 +2166,30 @@ def test_set_data_3d():
     shapes = Shapes(lines, shape_type='line')
     shapes._slice_dims(ndisplay=3)
     shapes.data = lines
+
+
+def test_editing_4d(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_shapes(
+        ndim=4,
+        name='rois',
+        edge_color='red',
+        face_color=np.array([0, 0, 0, 0]),
+        edge_width=1,
+    )
+
+    viewer.layers['rois'].add(
+        [
+            np.array(
+                [
+                    [1, 4, 1.7, 4.9],
+                    [1, 4, 1.7, 13.1],
+                    [1, 4, 13.5, 13.1],
+                    [1, 4, 13.5, 4.9],
+                ]
+            )
+        ]
+    )
+    viewer.layers['rois'].data = [
+        np.around(x) for x in viewer.layers['rois'].data
+    ]
