@@ -109,6 +109,19 @@ def in_ipython() -> bool:
     return False
 
 
+def in_python_repl() -> bool:
+    """Return true if we're running in a Python REPL."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
+            sys, 'ps1'
+        )
+    except Exception:
+        pass
+    return False
+
+
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
     return list(

@@ -554,7 +554,7 @@ class Shapes(Layer):
         )
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
@@ -1542,11 +1542,12 @@ class Shapes(Layer):
             The vispy text anchor for the y axis
         """
         ndisplay = self._slice_input.ndisplay
+        order = self._slice_input.order
 
         # short circuit if no text present
         if self.text.values.shape == ():
             return self.text.compute_text_coords(
-                np.zeros((0, ndisplay)), ndisplay
+                np.zeros((0, ndisplay)), ndisplay, order
             )
 
         # get the coordinates of the vertices for the shapes in view
@@ -1560,7 +1561,9 @@ class Shapes(Layer):
             for position in in_view_shapes_coords
         ]
 
-        return self.text.compute_text_coords(sliced_in_view_coords, ndisplay)
+        return self.text.compute_text_coords(
+            sliced_in_view_coords, ndisplay, order
+        )
 
     @property
     def _view_text_color(self) -> np.ndarray:

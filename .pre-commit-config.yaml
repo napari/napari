@@ -4,6 +4,10 @@ repos:
     hooks:
     -   id: absolufy-imports
         exclude: _vendor|vendored|examples
+-   repo: https://github.com/hadialqattan/pycln
+    rev: v2.1.2
+    hooks:
+    - id: pycln
 -   repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
@@ -16,7 +20,7 @@ repos:
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
+    rev: 6.0.0
     hooks:
     - id: flake8
       additional_dependencies: [flake8-typing-imports]
