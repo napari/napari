@@ -364,7 +364,17 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         elif colorspace == 'rgb':
             raw_rgb = random
         else:  # 'lab' by default
-            raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
+            # The values in random are in [0, 1], but since the LAB colorspace
+            # is not exactly contained in the unit-box, some 3-tuples might not
+            # be valid LAB color vectors. scikit-image handles this by projecting
+            # such vectors into the colorspace, but will also warn when doing this.
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Color data out of range',
+                    category=UserWarning,
+                )
+                raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
         rgb = _validate_rgb(raw_rgb, tolerance=tolerance)
         factor *= expand_factor
     return rgb[:n]

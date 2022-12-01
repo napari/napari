@@ -1,6 +1,5 @@
 import itertools
 import time
-import warnings
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -1496,10 +1495,3 @@ class TestLabels:
             obj,
             {"seed", "num_colors", "show_selected_label", "color"},
         )
-
-
-def test_labels_no_colormap_warning():
-    """See: https://github.com/napari/napari/issues/5311"""
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        Labels(data=np.random.randint(2, size=(3, 4)))
