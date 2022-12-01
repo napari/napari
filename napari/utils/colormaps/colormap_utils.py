@@ -370,8 +370,8 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         else:  # 'lab' by default
             # The values in random are in [0, 1], but since the LAB colorspace
             # is not exactly contained in the unit-box, some 3-tuples might not
-            # be valid LAB color vectors. scikit-image handles this by projecting
-            # such vectors into the colorspace, but will also warn when doing this.
+            # be valid LAB color coordinates. scikit-image handles this by projecting
+            # such coordinates into the colorspace, but will also warn when doing this.
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     action='ignore',
