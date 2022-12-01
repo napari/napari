@@ -15,7 +15,6 @@ except ModuleNotFoundError:
         "You must have nilearn installed to run this example."
     )
 
-import numpy as np
 import napari
 
 

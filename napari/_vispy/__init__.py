@@ -23,3 +23,16 @@ from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.overlays.text import VispyTextOverlay
 from napari._vispy.utils.quaternion import quaternion2euler
 from napari._vispy.utils.visual import create_vispy_layer, create_vispy_overlay
+
+__all__ = [
+    "VispyCamera",
+    "VispyCanvas",
+    "VispyAxesOverlay",
+    "VispySelectionBoxOverlay",
+    "VispyScaleBarOverlay",
+    "VispyTransformBoxOverlay",
+    "VispyTextOverlay",
+    "quaternion2euler",
+    "create_vispy_layer",
+    "create_vispy_overlay",
+]
