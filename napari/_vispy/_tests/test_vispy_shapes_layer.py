@@ -87,3 +87,37 @@ def test_text_with_non_empty_constant_string():
     # automatically broadcasts, so explicitly check length.
     assert len(text_node.text) == 3
     np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+
+
+def test_text_with_non_empty_constant_string_alt():
+    num_shapes = 3
+    bar_len = 200
+    lines = np.array(
+        [[[i, 400, 100], [i, 400, 100 + bar_len]] for i in range(num_shapes)]
+    )
+
+    layer = Shapes(
+        lines,
+        shape_type='line',
+        name='scale bar',
+        features={'bar_len': np.ones(3) * bar_len},
+        text={
+            'string': {'constant': '200'},
+            'size': 30,
+            'color': 'red',
+            'translation': np.array([0, 5, 0]),
+        },
+        edge_width=2,
+        edge_color=[1, 0, 0, 1],
+        face_color=[0, 0, 0, 0],
+    )
+
+    vispy_layer = VispyShapesLayer(layer)
+    text_node = vispy_layer._get_text_node()
+
+    # Vispy cannot broadcast a constant string and assert_array_equal
+    # automatically broadcasts, so explicitly check length.
+    assert len(text_node.text) == 1
+    np.testing.assert_array_equal(text_node.text, ['200'])
+
+    np.testing.assert_array_equal(text_node.pos, [[200, 405]])
