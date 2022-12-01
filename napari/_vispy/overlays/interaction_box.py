@@ -1,5 +1,8 @@
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
+from napari.components.overlays._interaction_box_constants import (
+    InteractionBoxHandle,
+)
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
@@ -49,17 +52,24 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
         self.layer.events.rotate.connect(self._on_bounds_change)
         self.layer.events.shear.connect(self._on_bounds_change)
         self.layer.events.affine.connect(self._on_bounds_change)
+        self.overlay.events.selected_vertex.connect(self._on_bounds_change)
 
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
             bounds = self.layer._display_bounding_box(
                 self.layer._slice_input.displayed
             )
-            top_left, bot_right = bounds.T
+            # invert axes for vispy
+            top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
+
+            if self.overlay.selected_vertex == InteractionBoxHandle.ALL:
+                selected = slice(None)
+            else:
+                selected = self.overlay.selected_vertex
+
             self.node.set_data(
-                # invert axes for vispy
-                tuple(top_left[::-1]),
-                tuple(bot_right[::-1]),
+                top_left,
+                bot_right,
                 handles=True,
-                selected=self.overlay.selected_vertex,
+                selected=selected,
             )

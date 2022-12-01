@@ -8,6 +8,10 @@ import pandas as pd
 from scipy import ndimage as ndi
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
@@ -208,7 +212,7 @@ class Labels(_ImageBase):
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
+        Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
         Mode.PAINT: draw,
         Mode.FILL: draw,
@@ -217,7 +221,7 @@ class Labels(_ImageBase):
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
         Mode.PAINT: no_op,
         Mode.FILL: no_op,

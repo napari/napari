@@ -14,6 +14,10 @@ import numpy as np
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import Blending, Mode
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -216,15 +220,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     _modeclass = Mode
 
-    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
+    }
 
     _move_modes = {
-        Mode.TRANSFORM: no_op,
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
     }
     _cursor_modes = {
-        Mode.TRANSFORM: 'standard',
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
     }
 
     def __init__(
@@ -343,13 +350,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             TransformBoxOverlay,
         )
 
-        self._overlays = EventedDict(
-            {
-                'bounding_box': BoundingBoxOverlay(),
-                'transform_box': TransformBoxOverlay(),
-                'selection_box': SelectionBoxOverlay(),
-            }
-        )
+        self._overlays = EventedDict()
 
         self.events = EmitterGroup(
             source=self,
@@ -394,6 +395,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         self.name = name
         self.mode = mode
+        self._overlays.update(
+            {
+                'bounding_box': BoundingBoxOverlay(),
+                'transform_box': TransformBoxOverlay(),
+                'selection_box': SelectionBoxOverlay(),
+            }
+        )
 
         # TODO: we try to avoid inner event connection, but this might be the only way
         #       until we figure out nested evented objects

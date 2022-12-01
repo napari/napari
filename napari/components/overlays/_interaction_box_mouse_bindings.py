@@ -45,24 +45,17 @@ def inside_boxes(boxes):
 
 
 class InteractionBoxMouseBindings:
-    def __init__(self, viewer, interaction_box_visual):
+    def __init__(self, viewer, overlay):
         self._selected_vertex: int = None
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
-        self._layer_listening_for_affine = None
         self._initial_transform = None
         self._initial_transform_inverse = None
-        self._ref_viewer = ref(viewer)
-        self._interaction_box_model = viewer.overlays_.interaction_box
-        self._ref_interaction_box_visual = ref(interaction_box_visual)
-        viewer.layers.events.inserted.connect(self._on_add_layer)
-        viewer.layers.events.removed.connect(self._on_remove_layer)
+
+        self.viewer = ref(viewer)
+        self.overlay = overlay
+        self._ref_interaction_box_visual = ref(overlay)
         viewer.layers.selection.events.active.connect(self._on_active)
-        viewer.dims.events.order.connect(self._on_dim_change)
-        viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
-        self._interaction_box_model.events.transform_drag.connect(
-            self._on_transform_change
-        )
         self.initialize_mouse_events(viewer)
         self.initialize_key_events(viewer)
 

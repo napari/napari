@@ -29,7 +29,7 @@ class VispyBaseOverlay:
         self._on_opacity_change()
 
     def close(self):
-        disconnect_events(self.layer.events, self)
+        disconnect_events(self.overlay.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
@@ -118,15 +118,22 @@ class LayerOverlayMixin:
     def __init__(self, *, layer, **kwargs):
         super().__init__(**kwargs)
         self.layer = layer
+        self.layer._overlays.events.removing.connect(self._close_if_removed)
 
-    #     self.layer.overlays.events.removing.connect(self._close_if_removed)
-    #
-    # def _close_if_removed(self, event):
-    #     if self.layer.overlays[event.key] is self:
-    #         self.close()
+    def _close_if_removed(self, event):
+        if self.layer._overlays[event.key] is self:
+            self.close()
+
+    def close(self):
+        disconnect_events(self.layer.events, self)
+        super().close()
 
 
 class ViewerOverlayMixin:
     def __init__(self, *, viewer, **kwargs):
         super().__init__(**kwargs)
         self.viewer = viewer
+
+    def close(self):
+        disconnect_events(self.viewer.events, self)
+        super().close()

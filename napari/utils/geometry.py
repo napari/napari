@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Dict, Optional, Tuple
 
 import numpy as np
@@ -840,12 +841,13 @@ def find_nearest_triangle_intersection(
     return closest_intersected_triangle_index, intersection
 
 
+@lru_cache
 def generate_interaction_box_vertices(top_left, bot_right, handles=True):
     # vertices are generated according to the following scheme:
-    # (y is actually upside down in the canvas)
-    #      8
+    # (y is actually upside down in the canvas, so X is towards the origin)
+    #  X   8
     #      |
-    #  0---6---2    1 = position
+    #  0---6---2
     #  |       |
     #  5       7
     #  |       |

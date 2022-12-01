@@ -9,6 +9,10 @@ import pandas as pd
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_constants import (
     Box,
@@ -320,6 +324,7 @@ class Shapes(Layer):
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
         Mode.DIRECT: select,
         Mode.VERTEX_INSERT: vertex_insert,
@@ -329,11 +334,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
-        Mode.TRANSFORM: no_op,
     }
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
         Mode.DIRECT: highlight,
         Mode.VERTEX_INSERT: highlight,
@@ -343,11 +348,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
-        Mode.TRANSFORM: no_op,
     }
 
     _double_click_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.SELECT: no_op,
         Mode.DIRECT: no_op,
         Mode.VERTEX_INSERT: no_op,
@@ -357,11 +362,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
-        Mode.TRANSFORM: no_op,
     }
 
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
         Mode.SELECT: 'pointing',
         Mode.DIRECT: 'pointing',
         Mode.VERTEX_INSERT: 'cross',
@@ -371,7 +376,6 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
-        Mode.TRANSFORM: 'standard',
     }
 
     _interactive_modes = {

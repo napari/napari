@@ -12,7 +12,7 @@ class InteractionBox(Compound):
     #      |
     #  0---4---2    1 = position
     #  |       |
-    #  5       6
+    #  5   9   6
     #  |       |
     #  1---7---3
     _edges = np.array(
@@ -27,7 +27,8 @@ class InteractionBox(Compound):
 
     def __init__(self, *args, **kwargs):
         self._marker_color = (1, 1, 1, 1)
-        self._marker_size = 5
+        self._marker_size = 10
+        self._highlight_width = 2
         # TODO: change to array (square + circle for handle) after #5312
         self._marker_symbol = 'square'
         self._edge_color = (0, 0, 1, 1)
@@ -42,9 +43,9 @@ class InteractionBox(Compound):
     def markers(self):
         return self._subvisuals[1]
 
-    def set_data(self, bot_left, top_right, handles=True, selected=None):
+    def set_data(self, top_left, bot_right, handles=True, selected=None):
         vertices = generate_interaction_box_vertices(
-            bot_left, top_right, handles=handles
+            top_left, bot_right, handles=handles
         )
 
         edges = self._edges if handles else self._edges[:4]
@@ -53,8 +54,8 @@ class InteractionBox(Compound):
 
         if handles:
             marker_edges = np.zeros(len(vertices))
-            if selected:
-                marker_edges[selected] = 1
+            if selected is not None:
+                marker_edges[selected] = self._highlight_width
 
             self.markers.set_data(
                 pos=vertices,

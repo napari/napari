@@ -9,6 +9,10 @@ import pandas as pd
 from scipy.stats import gmean
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.points._points_constants import (
     SYMBOL_ALIAS,
     Mode,
@@ -289,23 +293,23 @@ class Points(Layer):
     _modeclass = Mode
 
     _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
     }
 
     _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
     }
     _cursor_modes = {
-        Mode.ADD: 'crosshair',
-        Mode.SELECT: 'standard',
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
+        Mode.ADD: 'crosshair',
+        Mode.SELECT: 'standard',
     }
 
     # TODO  write better documentation for edge_color and face_color
