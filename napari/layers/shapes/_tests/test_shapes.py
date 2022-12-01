@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -2169,7 +2170,7 @@ def test_set_data_3d():
 
 
 def test_editing_4d(make_napari_viewer):
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     viewer.add_shapes(
         ndim=4,
         name='rois',
