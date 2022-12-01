@@ -73,16 +73,13 @@ class PluginsMenu(NapariMenu):
         multiprovider = len(widgets) > 1
         if multiprovider:
             # use display_name if npe2 plugin
+            from npe2 import plugin_manager as pm
 
-            if plugin_name in [
-                manifest.name for manifest in _npe2.iter_manifests()
-            ]:
-                from npe2 import plugin_manager as pm
-
+            try:
                 plugin_display_name = pm.get_manifest(plugin_name).display_name
-                menu = NapariMenu(plugin_display_name, self)
-            else:
-                menu = NapariMenu(plugin_name, self)
+            except KeyError:
+                plugin_display_name = plugin_name
+            menu = NapariMenu(plugin_display_name, self)
             self.addMenu(menu)
         else:
             menu = self
