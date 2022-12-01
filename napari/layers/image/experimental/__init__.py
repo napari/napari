@@ -8,3 +8,10 @@ from napari.layers.image.experimental.octree_intersection import (
     OctreeIntersection,
 )
 from napari.layers.image.experimental.octree_level import OctreeLevel
+
+__all__ = [
+    "OctreeChunk",
+    "OctreeChunkGeom",
+    "OctreeIntersection",
+    "OctreeLevel",
+]
