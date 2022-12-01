@@ -44,7 +44,7 @@ QWidget[emphasized="true"] > QFrame {
 }
 
 QWidget:disabled {
-  background-color: {{ opacity(foreground, 75) }};
+  background-color: {{ foreground }};
   border: 1px solid;
   border-color: {{ foreground }};
   color: {{ opacity(text, 90) }};
