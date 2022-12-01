@@ -118,18 +118,22 @@ def _all_rgb():
     return np.stack((r, g, b), axis=-1).reshape((-1, 3))
 
 
-# obtained with the following slow code:
-# >>> luv_colors = colorconv.rgb2luv(_all_rgb().reshape((-1, 3)))
-# >>> LUVMIN = np.amin(luv_colors, axis=(0,))
-# >>> LUVMAX = np.amax(luv_colors, axis=(0,))
+# The following values were precomputed and stored as constants
+# here to avoid heavy computation when importing this module.
+# The following code can be used to reproduce these values.
+#
+# rgb_colors = _all_rgb()
+# luv_colors = colorconv.rgb2luv(rgb_colors)
+# LUVMIN = np.amin(luv_colors, axis=(0,))
+# LUVMAX = np.amax(luv_colors, axis=(0,))
+# lab_colors = colorconv.rgb2lab(rgb_colors)
+# LABMIN = np.amin(lab_colors, axis=(0,))
+# LABMAX = np.amax(lab_colors, axis=(0,))
+
 LUVMIN = np.array([0.0, -83.07790815, -134.09790293])
 LUVMAX = np.array([100.0, 175.01447356, 107.39905336])
 LUVRNG = LUVMAX - LUVMIN
 
-# obtained with the following slow code:
-# >>> lab_colors = colorconv.rgb2lab(_all_rgb().reshape((-1, 3)))
-# >>> LABMIN = np.amin(lab_colors, axis=(0,))
-# >>> LABMAX = np.amax(lab_colors, axis=(0,))
 LABMIN = np.array([0.0, -86.18302974, -107.85730021])
 LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
