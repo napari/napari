@@ -13,7 +13,7 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending
+from napari.layers.base._base_constants import Blending, Mode
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -214,6 +214,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
+    _modeclass = Mode
+
+    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
+
+    _move_modes = {
+        Mode.TRANSFORM: no_op,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.TRANSFORM: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+    }
+
     def __init__(
         self,
         data,
@@ -232,6 +245,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
+        mode='pan_zoom',
     ):
         super().__init__()
 
@@ -267,6 +281,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
+        self._mode = self._modeclass('pan_zoom')
 
         self._ndim = ndim
 
@@ -324,13 +339,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
         from napari.components.overlays.interaction_box import (
-            InteractionBoxOverlay,
+            SelectionBoxOverlay,
+            TransformBoxOverlay,
         )
 
         self._overlays = EventedDict(
             {
                 'bounding_box': BoundingBoxOverlay(),
-                'interaction_box': InteractionBoxOverlay(),
+                'transform_box': TransformBoxOverlay(),
+                'selection_box': SelectionBoxOverlay(),
             }
         )
 
@@ -357,7 +374,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             _ndisplay=Event,
-            overlays=Event,
+            _overlays=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
@@ -372,10 +389,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 ),
                 type='deselect',
             ),
+            mode=Event,
         )
         self.name = name
+        self.mode = mode
 
-        self.overlays.events.connect(self.events.overlays)
+        # TODO: we try to avoid inner event connection, but this might be the only way
+        #       until we figure out nested evented objects
+        # self._overlays.events.connect(self.events._overlays)
 
     def __str__(self):
         """Return self.name."""
@@ -385,37 +406,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode, Modeclass):
+    def _mode_setter_helper(self, mode):
         """
         Helper to manage callbacks in multiple layers
 
         Parameters
         ----------
-        mode : Modeclass | str
+        mode : type(self._modeclass) | str
             New mode for the current layer.
-        Modeclass : Enum
-            Enum for the current class representing the modes it can takes,
-            this is usually specific on each subclass.
 
         Returns
         -------
-        tuple (new Mode, mode changed)
+        bool : whether mode changed
 
         """
-        mode = Modeclass(mode)
+        mode = self._modeclass(mode)
         assert mode is not None
         if not self.editable:
-            mode = Modeclass.PAN_ZOOM
+            mode = self._modeclass.PAN_ZOOM
         if mode == self._mode:
-            return mode, False
-        if mode.value not in Modeclass.keys():
+            return mode
+
+        if mode.value not in self._modeclass.keys():
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
                 )
             )
-        old_mode = self._mode
-        self._mode = mode
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
@@ -427,13 +444,44 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 ),
             ),
         ]:
-            if mode_dict[old_mode] in callback_list:
-                callback_list.remove(mode_dict[old_mode])
+            if mode_dict[self._mode] in callback_list:
+                callback_list.remove(mode_dict[self._mode])
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == Modeclass.PAN_ZOOM
-        return mode, True
+        self.interactive = mode == self._modeclass.PAN_ZOOM
+        self._overlays['transform_box'].visible = (
+            mode == self._modeclass.TRANSFORM
+        )
+
+        if mode == self._modeclass.TRANSFORM:
+            self.help = trans._(
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+            )
+        elif mode == self._modeclass.PAN_ZOOM:
+            self.help = ''
+
+        return mode
+
+    @property
+    def mode(self) -> str:
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        TRANSFORM allows for manipulation of the layer transform.
+        """
+        return str(self._mode)
+
+    @mode.setter
+    def mode(self, mode):
+        mode = self._mode_setter_helper(mode)
+        if mode == self._mode:
+            return
+        self._mode = mode
+
+        self.events.mode(mode=mode)
 
     @classmethod
     def _basename(cls):
@@ -902,8 +950,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def overlays(self):
-        return self._overlays
+    def bounding_box(self):
+        return self._overlays['bounding_box']
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():

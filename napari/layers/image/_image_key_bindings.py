@@ -3,7 +3,7 @@ from __future__ import annotations
 from app_model.types import KeyCode
 
 import napari
-from napari.layers.image._image_constants import Mode
+from napari.layers.base._base_constants import Mode
 from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
@@ -14,6 +14,22 @@ from napari.utils.translations import trans
 
 def register_image_action(description: str, repeatable: bool = False):
     return register_layer_action(Image, description, repeatable)
+
+
+@register_image_action(trans._('Transform'))
+def activate_image_transform_mode(layer):
+    layer.mode = Mode.TRANSFORM
+
+
+@register_image_action(trans._('Pan/zoom'))
+def activate_image_pan_zoom_mode(layer):
+    layer.mode = Mode.PAN_ZOOM
+
+
+image_fun_to_mode = [
+    (activate_image_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_image_transform_mode, Mode.TRANSFORM),
+]
 
 
 @Image.bind_key(KeyCode.KeyZ)
@@ -64,27 +80,3 @@ def synchronise_plane_normal_with_view_direction(layer: Image):
     viewer.camera.events.angles.disconnect(
         sync_plane_normal_with_view_direction
     )
-
-
-@Image.bind_key(KeyCode.Space)
-def hold_to_pan_zoom(layer):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
-
-
-@register_image_action(trans._('Transform'))
-def activate_image_select_mode(layer):
-    layer.mode = Mode.TRANSFORM
-
-
-@register_image_action(trans._('Pan/zoom'))
-def activate_image_pan_zoom_mode(layer):
-    layer.mode = Mode.PAN_ZOOM

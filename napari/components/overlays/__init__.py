@@ -5,6 +5,9 @@ from napari.components.overlays.base import (
     SceneOverlay,
 )
 from napari.components.overlays.bounding_box import BoundingBoxOverlay
-from napari.components.overlays.interaction_box import InteractionBoxOverlay
+from napari.components.overlays.interaction_box import (
+    SelectionBoxOverlay,
+    TransformBoxOverlay,
+)
 from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.text import TextOverlay

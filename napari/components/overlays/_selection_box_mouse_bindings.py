@@ -66,39 +66,6 @@ class InteractionBoxMouseBindings:
         self.initialize_mouse_events(viewer)
         self.initialize_key_events(viewer)
 
-    def _on_remove_layer(self, event):
-        """Gets called when layer is removed and removes event listener"""
-
-        layer = event.value
-        if hasattr(layer, 'mode'):
-            layer.events.mode.disconnect(self)
-
-    def _on_add_layer(self, event):
-        """Gets called when layer is added and adds event listener to mode change"""
-        layer = event.value
-        if hasattr(layer, 'mode'):
-            layer.events.mode.connect(self._on_mode_change)
-
-    def _on_active(self, event):
-        """Gets called when active layer is changed"""
-        active_layer = event.value
-
-        if getattr(active_layer, 'mode', None) == 'transform':
-            self._couple_interaction_box_to_active()
-            self._interaction_box_model.show = True
-            self._layer_affine_event_helper(active_layer)
-        else:
-            self._interaction_box_model.show = False
-
-    def _on_ndisplay_change(self):
-        """Gets called on ndisplay change to disable interaction box in 3D"""
-        if (
-            getattr(self._ref_viewer().layers.selection.active, 'mode', None)
-            == 'transform'
-            and self._ref_viewer().dims.ndisplay > 2
-        ):
-            self._ref_viewer().layers.selection.active.mode = 'pan_zoom'
-
     def _couple_interaction_box_to_active(self, event=None):
         viewer = self._ref_viewer()
         active_layer = viewer.layers.selection.active
@@ -128,14 +95,6 @@ class InteractionBoxMouseBindings:
                 self._initial_transform
             )
         )
-
-    def _on_dim_change(self, event):
-        """Gets called when changing order of dims to make sure interaction box is using right extent and transform"""
-        if (
-            getattr(self._ref_viewer().layers.selection.active, 'mode', None)
-            == 'transform'
-        ):
-            self._couple_interaction_box_to_active()
 
     def _layer_affine_event_helper(self, layer):
         """Helper function to connect listener to the transform of active layer and removes previous callbacks"""

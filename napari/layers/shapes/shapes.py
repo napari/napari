@@ -307,6 +307,7 @@ class Shapes(Layer):
         won't update during interactive events
     """
 
+    _modeclass = Mode
     _colors = get_color_names()
     _vertex_size = 10
     _rotation_handle_length = 20
@@ -444,7 +445,6 @@ class Shapes(Layer):
         )
 
         self.events.add(
-            mode=Event,
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
@@ -510,10 +510,6 @@ class Shapes(Layer):
         self._is_creating = False
         self._clipboard = {}
 
-        # change mode once to trigger the
-        # Mode setting logic
-        self._mode = Mode.SELECT
-        self.mode = Mode.PAN_ZOOM
         self._status = self.mode
 
         self._init_shapes(
@@ -1594,19 +1590,11 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
+        mode = self._mode_setter_helper(mode)
+        if mode == self._mode:
             return
 
-        if mode.value not in Mode.keys():
-            raise ValueError(
-                trans._(
-                    "Mode not recognized: {mode}", deferred=True, mode=mode
-                )
-            )
-
-        old_mode = self._mode
-        self._mode = mode
+        self.events.mode(mode=mode)
 
         draw_modes = {
             Mode.SELECT,
@@ -1615,11 +1603,9 @@ class Shapes(Layer):
             Mode.VERTEX_REMOVE,
         }
 
-        self.events.mode(mode=mode)
-
         # don't update thumbnail on mode changes
         with self.block_thumbnail_update():
-            if not (mode in draw_modes and old_mode in draw_modes):
+            if not (mode in draw_modes and self._mode in draw_modes):
                 # Shapes._finish_drawing() calls Shapes.refresh()
                 self._finish_drawing()
             else:

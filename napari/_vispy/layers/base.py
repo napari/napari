@@ -78,7 +78,7 @@ class VispyBaseLayer(ABC):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
-        self.layer.events.overlays.connect(self._on_overlays_change)
+        self.layer.events._overlays.connect(self._on_overlays_change)
 
     @property
     def _master_transform(self):

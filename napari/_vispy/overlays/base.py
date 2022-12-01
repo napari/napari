@@ -119,6 +119,12 @@ class LayerOverlayMixin:
         super().__init__(**kwargs)
         self.layer = layer
 
+    #     self.layer.overlays.events.removing.connect(self._close_if_removed)
+    #
+    # def _close_if_removed(self, event):
+    #     if self.layer.overlays[event.key] is self:
+    #         self.close()
+
 
 class ViewerOverlayMixin:
     def __init__(self, *, viewer, **kwargs):

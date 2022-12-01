@@ -53,3 +53,15 @@ BLENDING_TRANSLATIONS = OrderedDict(
         (Blending.OPAQUE, trans._("opaque")),
     ]
 )
+
+
+class Mode(StringEnum):
+    """
+    Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    allows for normal interactivity with the canvas.
+
+    TRANSFORM allows for manipulation of the layer transform.
+    """
+
+    PAN_ZOOM = auto()
+    TRANSFORM = auto()

@@ -286,6 +286,28 @@ class Points(Layer):
         None after dragging is done.
     """
 
+    _modeclass = Mode
+
+    _drag_modes = {
+        Mode.ADD: add,
+        Mode.SELECT: select,
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+    }
+
+    _move_modes = {
+        Mode.ADD: no_op,
+        Mode.SELECT: highlight,
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+    }
+    _cursor_modes = {
+        Mode.ADD: 'crosshair',
+        Mode.SELECT: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
+    }
+
     # TODO  write better documentation for edge_color and face_color
 
     # The max number of points that will ever be used to render the thumbnail
@@ -337,6 +359,32 @@ class Points(Layer):
 
         data, ndim = fix_data_points(data, ndim)
 
+        # Indices of selected points
+        self._selected_data = set()
+        self._selected_data_stored = set()
+        self._selected_data_history = set()
+        # Indices of selected points within the currently viewed slice
+        self._selected_view = []
+        # Index of hovered point
+        self._value = None
+        self._value_stored = None
+        self._highlight_index = []
+        self._highlight_box = None
+
+        self._drag_start = None
+        self._drag_normal = None
+        self._drag_up = None
+
+        # initialize view data
+        self.__indices_view = np.empty(0, int)
+        self._view_size_scale = []
+
+        self._drag_box = None
+        self._drag_box_stored = None
+        self._is_selecting = False
+        self._clipboard = {}
+        self._round_index = False
+
         super().__init__(
             data,
             ndim,
@@ -355,7 +403,6 @@ class Points(Layer):
         )
 
         self.events.add(
-            mode=Event,
             size=Event,
             edge_width=Event,
             edge_width_is_relative=Event,
@@ -402,33 +449,8 @@ class Points(Layer):
         self._current_edge_width = (
             np.asarray(edge_width) if np.isscalar(edge_width) else 0.1
         )
-        # Indices of selected points
-        self._selected_data = set()
-        self._selected_data_stored = set()
-        self._selected_data_history = set()
-        # Indices of selected points within the currently viewed slice
-        self._selected_view = []
-        # Index of hovered point
-        self._value = None
-        self._value_stored = None
-        self._mode = Mode.PAN_ZOOM
+
         self._status = self.mode
-        self._highlight_index = []
-        self._highlight_box = None
-
-        self._drag_start = None
-        self._drag_normal = None
-        self._drag_up = None
-
-        # initialize view data
-        self.__indices_view = np.empty(0, int)
-        self._view_size_scale = []
-
-        self._drag_box = None
-        self._drag_box_stored = None
-        self._is_selecting = False
-        self._clipboard = {}
-        self._round_index = False
 
         color_properties = (
             self.properties if self._data.size > 0 else self.property_choices
@@ -1278,7 +1300,7 @@ class Points(Layer):
             return create_box(data)
         return None
 
-    @property
+    @Layer.mode.getter
     def mode(self) -> str:
         """str: Interactive mode
 
@@ -1293,45 +1315,19 @@ class Points(Layer):
         """
         return str(self._mode)
 
-    _drag_modes = {
-        Mode.ADD: add,
-        Mode.SELECT: select,
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-    }
-
-    _move_modes = {
-        Mode.ADD: no_op,
-        Mode.SELECT: highlight,
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-    }
-    _cursor_modes = {
-        Mode.ADD: 'crosshair',
-        Mode.SELECT: 'standard',
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-    }
-
-    @mode.setter
-    def mode(self, mode):
-        old_mode = self._mode
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
-            return
-        assert mode is not None, mode
+    def _mode_setter_helper(self, mode):
+        mode = super()._mode_setter_helper(mode)
+        if mode == self._mode:
+            return mode
 
         if mode == Mode.ADD:
             self.selected_data = set()
             self.interactive = True
-        elif mode == Mode.PAN_ZOOM:
-            self.interactive = True
-
-        if mode != Mode.SELECT or old_mode != Mode.SELECT:
+        elif mode != Mode.SELECT or self._mode != Mode.SELECT:
             self._selected_data_stored = set()
 
         self._set_highlight()
-        self.events.mode(mode=mode)
+        return mode
 
     @property
     def _indices_view(self):

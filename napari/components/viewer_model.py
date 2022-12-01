@@ -231,6 +231,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def scale_bar(self):
         return self.overlays['scale_bar']
 
+    @property
+    def text_overlay(self):
+        return self.overlays['text']
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
@@ -546,7 +550,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
-            if not shortcuts[action_name]:
+            if not shortcuts.get(action_name, None):
                 continue
             help_li.append(
                 trans._(
