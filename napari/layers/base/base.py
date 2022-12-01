@@ -397,9 +397,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.mode = mode
         self._overlays.update(
             {
-                'bounding_box': BoundingBoxOverlay(),
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
+                'bounding_box': BoundingBoxOverlay(),
             }
         )
 
