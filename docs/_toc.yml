@@ -34,6 +34,7 @@ subtrees:
             - entries:
               - file: tutorials/tracking/cell_tracking
       - file: further-resources/napari-workshops
+      - file: further-resources/sample_data
       - file: howtos/index
         subtrees:
         - titlesonly: True
