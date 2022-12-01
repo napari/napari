@@ -61,3 +61,15 @@ from napari.utils.perf._timers import (
 )
 
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
+
+
+__all__ = [
+    "perf_config",
+    "USE_PERFMON",
+    "add_counter_event",
+    "add_instant_event",
+    "block_timer",
+    "perf_timer",
+    "timers",
+    "PerfEvent",
+]

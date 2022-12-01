@@ -7,7 +7,6 @@ Demonstrate interaction box on points layer
 .. tags:: experimental
 """
 
-from skimage import data
 import napari
 import numpy as np
 from napari.layers.points._points_utils import points_in_box

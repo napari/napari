@@ -7,6 +7,7 @@ def raise_():
     x = 1
     y = 'a string'
     import something_that_does_not_exist
+    return something_that_does_not_exist.fun(x, y)
 
 
 def warn_():

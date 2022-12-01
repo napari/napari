@@ -7,3 +7,13 @@ from napari.components.overlays.base import (
 from napari.components.overlays.overlays import Overlays
 from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.text import TextOverlay
+
+__all__ = [
+    "AxesOverlay",
+    "BaseOverlay",
+    "CanvasOverlay",
+    "Overlays",
+    "ScaleBarOverlay",
+    "SceneOverlay",
+    "TextOverlay",
+]

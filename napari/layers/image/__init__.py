@@ -5,3 +5,6 @@ from napari.layers.image.image import Image
 # decorated with keybindings during that process, but it is not directly needed
 # by our users and so is deleted below
 del _image_key_bindings
+
+
+__all__ = ['Image']
