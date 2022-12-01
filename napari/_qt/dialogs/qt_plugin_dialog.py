@@ -56,24 +56,10 @@ InstallerTypes = Literal['pip', 'mamba']
 
 DEFAULT_CHANNEL = "conda-forge"
 
-
-class superQCollapsible(QCollapsible):
-    '''QCallpsible class that emits a signal when toggled.'''
-
-    toggled = Signal()
-
-    def __init__(self, title: str = "", parent: Optional[QWidget] = None):
-        super().__init__(title=title, parent=parent)
-
-    def _toggle(self):
-        '''Overwrites toggle method in order to emit signal.'''
-        super()._toggle()
-        self.toggled.emit()
-
-
 # TODO: add error icon and handle pip install errors
-class Installer(QObject):
 
+
+class Installer(QObject):
     started = Signal()
     finished = Signal(int)
 
@@ -605,7 +591,16 @@ class PluginListItem(QFrame):
 
         self.info_choice_wdg = QWidget(self)
         self.info_choice_wdg.setObjectName('install_choice')
-        self.install_info_button = superQCollapsible("Installation Info")
+        coll_icon = QColoredSVGIcon.from_resources('right_arrow').colored(
+            color='white',
+        )
+        exp_icon = QColoredSVGIcon.from_resources('down_arrow').colored(
+            color='white',
+        )
+        self.install_info_button = QCollapsible(
+            "Installation Info", collapsedIcon=coll_icon, expandedIcon=exp_icon
+        )
+        self.install_info_button.setLayoutDirection(Qt.RightToLeft)
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
