@@ -2169,7 +2169,7 @@ def test_set_data_3d():
     shapes.data = lines
 
 
-def test_editing_4d(make_napari_viewer):
+def test_editing_4d():
     viewer = ViewerModel()
     viewer.add_shapes(
         ndim=4,
