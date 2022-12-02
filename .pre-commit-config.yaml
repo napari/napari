@@ -19,6 +19,11 @@ repos:
     - id: black
       pass_filenames: true
       exclude: _vendor|vendored|examples
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.128
+    hooks:
+      - id: ruff
+        exclude: _vendor|vendored
 -   repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
     hooks:
