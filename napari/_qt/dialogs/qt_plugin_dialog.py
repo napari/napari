@@ -827,9 +827,9 @@ class QPluginList(QListWidget):
         """Resize the plugin list item, especially after toggling QCollapsible."""
         height = item.widget.height()
         if item.widget.install_info_button.isExpanded():
-            item.widget.setFixedHeight(int(height * 1.5))
+            item.widget.setFixedHeight(int(height * 1.6))
         else:
-            item.widget.setFixedHeight(int(height / 1.5))
+            item.widget.setFixedHeight(int(height / 1.6))
         item.setSizeHint(item.widget.size())
 
     def handle_action(
@@ -990,7 +990,7 @@ class QtPluginDialog(QDialog):
         self.installer = InstallerQueue()
         self.setWindowTitle(trans._('Plugin Manager'))
         self.setup_ui()
-        self.setWindowTitle('Plugin Installation')
+        self.setWindowTitle('napari Plugin Manager')
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
         self.installer.finished.connect(self._on_installer_done)

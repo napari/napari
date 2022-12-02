@@ -610,7 +610,6 @@ QLabel#latest_version_text {
 
 QWidget#install_button {
   background-color: {{ current }};
-  color: {{ darken(text, 15) }};
 }
 
 QPushButton#plugin_name {
@@ -640,6 +639,7 @@ QPushButton#install_button:pressed {
 
 QPushButton#install_button:disabled {
   background-color: {{ lighten(current, 20) }};
+  color: {{ darken(text, 15) }};
 }
 
 QPushButton#remove_button {

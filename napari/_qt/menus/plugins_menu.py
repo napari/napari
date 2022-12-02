@@ -34,7 +34,7 @@ class PluginsMenu(NapariMenu):
 
     def _build(self, event=None):
         self.clear()
-        action = self.addAction(trans._("Install/Uninstall Plugins..."))
+        action = self.addAction(trans._("napari Plugin Manager"))
         action.triggered.connect(self._show_plugin_install_dialog)
         action = self.addAction(trans._("Plugin Errors..."))
         action.setStatusTip(
