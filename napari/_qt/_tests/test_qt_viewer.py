@@ -675,33 +675,3 @@ def test_create_non_empty_viewer_model(qtbot):
     del viewer
     qtbot.wait(50)
     gc.collect()
-
-
-def test_shapes_with_constant_text(make_napari_viewer):
-    viewer = make_napari_viewer(show=True)
-    num_shapes = 3
-    bar_len = 200
-    lines = np.array(
-        [[[i, 400, 100], [i, 400, 100 + bar_len]] for i in range(num_shapes)]
-    )
-
-    layer = viewer.add_shapes(
-        lines,
-        shape_type='line',
-        name='scale bar',
-        features={'bar_len': np.ones(3) * bar_len},
-        text={
-            'string': {'constant': '200'},
-            'size': 30,
-            'color': 'red',
-            'translation': np.array([0, 5, 0]),
-        },
-        edge_width=2,
-        edge_color=[1, 0, 0, 1],
-        face_color=[0, 0, 0, 0],
-    )
-
-    # not sure why we need to force a draw for the error
-    vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
-    text_node = vispy_layer._get_text_node()
-    text_node.draw()
