@@ -45,6 +45,7 @@ QWidget[emphasized="true"] > QFrame {
 
 QWidget:disabled {
   background-color: {{ foreground }};
+  selection-background-color: transparent;
   border: 1px solid;
   border-color: {{ background }};
   color: {{ opacity(text, 90) }};
