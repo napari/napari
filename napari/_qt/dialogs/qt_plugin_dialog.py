@@ -372,7 +372,7 @@ def is_conda_package(pkg):
 
 class PluginListItem(QFrame):
     """An entry in the plugin dialog.  This will include the package name, summary,
-    author, source, version, and buttons to update, install/uinstall, etc."""
+    author, source, version, and buttons to update, install/uninstall, etc."""
 
     def __init__(
         self,
