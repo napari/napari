@@ -520,7 +520,7 @@ def dangling_qthreads(monkeypatch, qtbot, request):
             if thread.isRunning():
                 dangling_threads_li.append((thread, calling))
         except RuntimeError as e:
-            if "wrapped C/C++ object of type QThread" not in e.args[0]:
+            if "wrapped C/C++ object of type" not in e.args[0]:
                 raise
 
     for thread, _ in dangling_threads_li:
@@ -605,6 +605,7 @@ def dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
     base_start = QTimer.start
+    base_single_shot = QTimer.singleShot
     timer_dkt = WeakKeyDictionary()
     single_shot_list = []
 
@@ -647,7 +648,8 @@ def dangling_qtimers(monkeypatch, request):
 
         def _single_shot(self, *args):
             if isinstance(self, QTimer):
-                single_shot(*args)
+                timer_dkt[self] = _get_calling_place()
+                base_single_shot(self, *args)
             else:
                 single_shot(self, *args)
 

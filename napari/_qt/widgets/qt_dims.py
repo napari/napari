@@ -303,6 +303,7 @@ class QtDims(QWidget):
         if self._animation_thread:
             self._animation_thread.quit()
             self._animation_thread.wait()
+            self._animation_worker._stop()
         self._animation_thread = None
         self._animation_worker = None
         self.enable_play()

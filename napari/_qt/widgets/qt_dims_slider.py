@@ -581,11 +581,16 @@ class AnimationWorker(QObject):
     started = Signal()
 
     def __init__(self, slider):
+        # FIXME there are attributes defined outsid of __init__.
         super().__init__()
+        self._interval = 1
         self.slider = slider
         self.dims = slider.dims
         self.axis = slider.axis
         self.loop_mode = slider.loop_mode
+
+        self.timer = QTimer()
+
         slider.fps_changed.connect(self.set_fps)
         slider.mode_changed.connect(self.set_loop_mode)
         slider.range_changed.connect(self.set_frame_range)
@@ -598,7 +603,18 @@ class AnimationWorker(QObject):
         self.dims.events.current_step.connect(self._on_axis_changed)
         self.current = max(self.dims.current_step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
-        self.timer = QTimer()
+
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.advance)
+
+    @property
+    def interval(self):
+        return self._interval
+
+    @interval.setter
+    def interval(self, value):
+        self._interval = value
+        self.timer.setInterval(int(self._interval))
 
     @Slot()
     def work(self):
@@ -610,11 +626,17 @@ class AnimationWorker(QObject):
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
                 self.frame_requested.emit(self.axis, self.max_point)
-            self.timer.singleShot(int(self.interval), self.advance)
+            self.timer.start()
         else:
             # immediately advance one frame
             self.advance()
         self.started.emit()
+
+    def _stop(self):
+        """Stop the animation."""
+        if self.timer.isActive():
+            self.timer.stop()
+            self.finish()
 
     @Slot(float)
     def set_fps(self, fps):
@@ -716,7 +738,7 @@ class AnimationWorker(QObject):
             self.frame_requested.emit(self.axis, self.current)
         # using a singleShot timer here instead of timer.start() because
         # it makes it easier to update the interval using signals/slots
-        self.timer.singleShot(int(self.interval), self.advance)
+        self.timer.start()
 
     def finish(self):
         """Emit the finished event signal."""
