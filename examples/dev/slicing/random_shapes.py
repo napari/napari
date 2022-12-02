@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import napari
-import napari.viewer
 
 
 """
@@ -44,13 +43,12 @@ def generate_shapes(filename):
     good_shapes = []
 
     for shape in all_shapes:
-
         # Use try/except to filter all bad shapes
         try:
             vertices, triangles = PolygonData(
                 vertices=shape[:, 1:]
             ).triangulate()
-        except:
+        except AssertionError:
             pass
         else:
             good_shapes.append(shape)
