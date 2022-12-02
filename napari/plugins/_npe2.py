@@ -243,7 +243,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     return (
         (
             # use display_name for user facing display
-            pm.get_manifest(plugin_name).display_name,
+            plugin_name,
             {
                 c.key: {'data': c.open, 'display_name': c.display_name}
                 for c in contribs
