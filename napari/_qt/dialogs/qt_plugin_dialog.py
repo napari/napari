@@ -690,7 +690,7 @@ class PluginListItem(QFrame):
 
         self.info_widget.setLayout(info_layout)
 
-    def _populate_version_dropdown(self, e):
+    def _populate_version_dropdown(self, source):
         """Display the versions available after selecting a source: pypi or conda."""
 
         versions = self._versions[source][::-1]
