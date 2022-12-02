@@ -132,7 +132,7 @@ def test_add_layer_magic_name(
 
 
 @skip_on_win_ci
-def test_screenshot(make_napari_viewer):
+def test_screenshot(make_napari_viewer, qtbot):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
 
@@ -168,6 +168,11 @@ def test_screenshot(make_napari_viewer):
     # test size argument (and ensure it coerces to int)
     screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
     assert screenshot.shape == (20, 20, 4)
+    qtbot.waitUntil(
+        lambda: not hasattr(
+            viewer.window._qt_viewer._canvas_overlay, '_flash_animation'
+        )
+    )
 
 
 @skip_on_win_ci
