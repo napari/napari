@@ -97,7 +97,6 @@ def test_text_with_non_empty_constant_string():
     # Ensure we do position calculation for constants.
     # See https://github.com/napari/napari/issues/5378
     expected_position = np.mean(shapes, axis=1)
-    # Skip 3rd dimension of vispy position for 2D data, and also flip
-    # xy coordinates to be rc.
+    # We want row, column coordinates so drop 3rd dimension and flip.
     actual_position = text_node.pos[:, 1::-1]
     np.testing.assert_allclose(actual_position, expected_position)
