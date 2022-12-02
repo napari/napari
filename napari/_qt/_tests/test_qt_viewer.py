@@ -678,7 +678,7 @@ def test_create_non_empty_viewer_model(qtbot):
 
 
 def test_shapes_with_constant_text(make_napari_viewer):
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     num_shapes = 3
     bar_len = 200
     lines = np.array(
