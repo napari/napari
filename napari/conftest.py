@@ -520,7 +520,10 @@ def dangling_qthreads(monkeypatch, qtbot, request):
             if thread.isRunning():
                 dangling_threads_li.append((thread, calling))
         except RuntimeError as e:
-            if "wrapped C/C++ object of type" not in e.args[0]:
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
                 raise
 
     for thread, _ in dangling_threads_li:
