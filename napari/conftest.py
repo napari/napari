@@ -428,6 +428,10 @@ def disable_notification_dismiss_timer(monkeypatch):
     without increase of reference counter object could be garbage collected and
     cause segmentation fault error when Qt (C++) code try to access it without
     checking if Python object exists.
+
+    This fixture is used in all exceptions because it is not possible to call Qt code
+    from non Qt test by connection of `NapariQtNotification.show_notification` to
+    `NotificationManager` global instance.
     """
 
     with suppress(ImportError):
