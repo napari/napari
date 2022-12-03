@@ -785,6 +785,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
+            dask_indexer=self.dask_optimized_slicing,
             slice_indices=slice_indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,

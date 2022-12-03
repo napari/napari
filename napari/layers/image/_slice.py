@@ -5,6 +5,7 @@ from typing import Any, Optional, Tuple, Union
 import numpy as np
 
 from napari.layers.utils._slice_input import _SliceInput
+from napari.utils._dask_utils import DaskIndexer
 from napari.utils.transforms import Affine
 from napari.utils.translations import trans
 
@@ -70,6 +71,7 @@ class _ImageSliceRequest:
 
     dims: _SliceInput
     data: Any = field(repr=False)
+    dask_indexer: DaskIndexer
     slice_indices: Tuple[Union[int, slice], ...]
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
@@ -81,11 +83,12 @@ class _ImageSliceRequest:
     lazy: bool = field(default=False, repr=False)
 
     def __call__(self) -> _ImageSliceResponse:
-        return (
-            self._call_multi_scale()
-            if self.multiscale
-            else self._call_single_scale()
-        )
+        with self.dask_indexer():
+            return (
+                self._call_multi_scale()
+                if self.multiscale
+                else self._call_single_scale()
+            )
 
     def _call_single_scale(self) -> _ImageSliceResponse:
         image = self.data[self.slice_indices]
