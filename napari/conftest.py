@@ -608,7 +608,6 @@ def dangling_qtimers(monkeypatch, request):
     from qtpy.QtCore import QTimer
 
     base_start = QTimer.start
-    base_single_shot = QTimer.singleShot
     timer_dkt = WeakKeyDictionary()
     single_shot_list = []
 
@@ -651,8 +650,7 @@ def dangling_qtimers(monkeypatch, request):
 
         def _single_shot(self, *args):
             if isinstance(self, QTimer):
-                timer_dkt[self] = _get_calling_place()
-                base_single_shot(self, *args)
+                single_shot(*args)
             else:
                 single_shot(self, *args)
 
