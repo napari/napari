@@ -355,6 +355,7 @@ def builtins(_npe2pm: TestPluginManager):
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
 
