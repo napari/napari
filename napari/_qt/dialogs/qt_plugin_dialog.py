@@ -41,7 +41,7 @@ from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.plugins import plugin_manager
 from napari.plugins.hub import iter_hub_plugin_info
-from napari.plugins.pypi import iter_napari_plugin_info
+from napari.plugins.npe2api import iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
 from napari.settings import get_settings
 from napari.utils.misc import (
@@ -1293,18 +1293,20 @@ class QtPluginDialog(QDialog):
                 packages, versions=versions, installer=installer
             )
 
-    def _handle_yield(
-        self, data: Tuple[PackageMetadata, bool, List[str], List[str]]
-    ):
+    def _handle_yield(self, data: Tuple[PackageMetadata, bool, Dict]):
         """Output from a worker process.  Includes information about the plugin,
         including available versions on conda and pypi."""
 
-        project_info, is_available, versions_pypi, versions_conda = data
+        project_info, is_available, extra_info = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info, is_available)
         else:
             self.available_list.addItem(
-                (project_info, versions_pypi, versions_conda)
+                (
+                    project_info,
+                    extra_info['pypi_versions'],
+                    extra_info['conda_versions'],
+                )
             )
             if not is_available:
                 self.available_list.tag_unavailable(project_info)
