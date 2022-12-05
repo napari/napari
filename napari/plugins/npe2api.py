@@ -75,7 +75,7 @@ def conda_map() -> Dict[PyPIname, Optional[str]]:
 
 
 def iter_napari_plugin_info() -> Iterator[
-    Tuple[PackageMetadata, bool, List[str], List[str]]
+    Tuple[PackageMetadata, bool, Dict[str, str]]
 ]:
     """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
     with ThreadPoolExecutor() as executor:
