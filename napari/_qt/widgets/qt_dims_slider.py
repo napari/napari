@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt, QTimer, Signal, Slot
+from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
     QApplication,
@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
+from superqt import ensure_object_thread
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.qthreading import _new_worker_qthread
@@ -632,6 +633,7 @@ class AnimationWorker(QObject):
             self.advance()
         self.started.emit()
 
+    @ensure_object_thread
     def _stop(self):
         """Stop the animation."""
         if self.timer.isActive():
@@ -705,6 +707,7 @@ class AnimationWorker(QObject):
         """
         self.loop_mode = LoopMode(mode)
 
+    @Slot()
     def advance(self):
         """Advance the current frame in the animation.
 
@@ -748,3 +751,14 @@ class AnimationWorker(QObject):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         self.current = self.dims.current_step[self.axis]
+
+    def moveToThread(self, thread: QThread):
+        """Move the animation to a given thread.
+
+        Parameters
+        ----------
+        thread : QThread
+            The thread to move the animation to.
+        """
+        super().moveToThread(thread)
+        self.timer.moveToThread(thread)
