@@ -85,6 +85,10 @@ def is_conda_package(pkg):
     -------
     bool: True if a conda package, False if not
     """
+
+    # Installed conda packages within a conda installation and environment can be identified as files
+    # with the template `<package-name>-<version>-<build-string>.json` saved within a `conda-meta` folder within
+    # the given environment of interest.
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
     try:
         if conda_meta_dir.is_dir():
