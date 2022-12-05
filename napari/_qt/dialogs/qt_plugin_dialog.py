@@ -418,10 +418,10 @@ class PluginListItem(QFrame):
         self.source_text = QLabel('Source:')
         self.source = QLabel('PyPI')
 
-        info_layout.addWidget(self.source_text, 0, 1)
-        info_layout.addWidget(self.source, 1, 1)
-        info_layout.addWidget(self.version_text, 0, 0)
-        info_layout.addWidget(self.package_name, 1, 0)
+        info_layout.addWidget(self.source_text, 0, 0)
+        info_layout.addWidget(self.source, 1, 0)
+        info_layout.addWidget(self.version_text, 0, 1)
+        info_layout.addWidget(self.package_name, 1, 1)
 
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.info_widget.setLayout(info_layout)
