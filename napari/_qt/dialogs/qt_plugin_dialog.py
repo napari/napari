@@ -414,10 +414,10 @@ class PluginListItem(QFrame):
         self.source_text = QLabel('Source:')
         self.source = QLabel('PyPI')
 
-        info_layout.addWidget(self.source_text, 0, 0)
-        info_layout.addWidget(self.source, 1, 0)
-        info_layout.addWidget(self.version_text, 0, 1)
-        info_layout.addWidget(self.package_name, 1, 1)
+        info_layout.addWidget(self.source_text, 0, 1)
+        info_layout.addWidget(self.source, 1, 1)
+        info_layout.addWidget(self.version_text, 0, 0)
+        info_layout.addWidget(self.package_name, 1, 0)
 
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.info_widget.setLayout(info_layout)
@@ -894,6 +894,7 @@ class QtPluginDialog(QDialog):
         self.packages_filter.setPlaceholderText(trans._("filter..."))
         self.packages_filter.setMaximumWidth(350)
         self.packages_filter.setClearButtonEnabled(True)
+        self.packages_filter.setDisabled(True)
         mid_layout = QVBoxLayout()
         mid_layout.addWidget(self.packages_filter)
         mid_layout.addWidget(self.installed_label)
@@ -992,6 +993,7 @@ class QtPluginDialog(QDialog):
         )
 
     def _end_refresh(self):
+        self.packages_filter.setDisabled(False)
         refresh_state = self.refresh_state
         self.refresh_state = RefreshState.DONE
         if refresh_state == RefreshState.OUTDATED:
@@ -1054,7 +1056,7 @@ class QtPluginDialog(QDialog):
             if not is_available:
                 self.available_list.tag_unavailable(project_info)
 
-        self.filter()
+        # self.filter()
 
     def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""
