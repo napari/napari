@@ -158,9 +158,9 @@ class _QtMainWindow(QMainWindow):
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
-        self._reconnect_cursor(viewer)
+        self._throttle_cursor_to_status_connection(viewer)
 
-    def _reconnect_cursor(self, viewer: 'Viewer'):
+    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so
         # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):

@@ -202,7 +202,8 @@ def make_napari_viewer(
 
     # disable throttling cursor event in tests
     monkeypatch.setattr(
-        "napari._qt.qt_main_window._QtMainWindow._reconnect_cursor", _empty
+        "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
+        _empty,
     )
 
     def actual_factory(
