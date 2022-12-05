@@ -12,7 +12,7 @@ def _iter_napari_hub_or_pypi_plugin_info(
     """Mock the hub and pypi methods to collect available plugins.
 
     This will mock `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
-    and `napari.plugins.pypi.iter_napari_plugin_info` for pypi.
+    and `napari.plugins.npe2api.iter_napari_plugin_info` for pypi.
 
     It will return two fake plugins that will populate the available plugins
     list (the bottom one). The first plugin will not be available on
@@ -29,10 +29,11 @@ def _iter_napari_hub_or_pypi_plugin_info(
         "license": "UNKNOWN",
     }
     for i in range(2):
-        yield PackageMetadata(name=f"test-name-{i}", **base_data), bool(i), [
-            '1',
-            '2',
-        ], ['3', '4.5']
+        yield PackageMetadata(name=f"test-name-{i}", **base_data), bool(i), {
+            "home_page": 'www.mywebsite.com',
+            "pypi_versions": ['3'],
+            "conda_versions": ['4.5'],
+        }
 
 
 @pytest.fixture
