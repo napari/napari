@@ -2,7 +2,9 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line
 
 from napari._vispy.visuals.markers import Markers
-from napari.utils.geometry import generate_interaction_box_vertices
+from napari.components.overlays._interaction_box_utils import (
+    generate_interaction_box_vertices,
+)
 
 
 class InteractionBox(Compound):

@@ -1,10 +1,10 @@
 from typing import Optional, Tuple
 
-from napari.components.overlays._interaction_box_constants import (
+from napari.components.overlays._interaction_box_utils import (
     InteractionBoxHandle,
+    calculate_bounds_from_contained_points,
 )
 from napari.components.overlays.base import SceneOverlay
-from napari.utils.geometry import bounding_box_from_contained_points
 
 
 class SelectionBoxOverlay(SceneOverlay):
@@ -28,7 +28,7 @@ class SelectionBoxOverlay(SceneOverlay):
 
     def update_from_points(self, points):
         """Create as a bounding box of the given points"""
-        self.bounds = bounding_box_from_contained_points(points)
+        self.bounds = calculate_bounds_from_contained_points(points)
 
 
 class TransformBoxOverlay(SceneOverlay):
