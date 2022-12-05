@@ -632,10 +632,10 @@ class PluginListItem(QFrame):
 
         info_layout = QGridLayout()
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.addWidget(self.source_choice_text, 0, 0)
-        info_layout.addWidget(self.source_choice_dropdown, 1, 0)
-        info_layout.addWidget(self.version_choice_text, 0, 1)
-        info_layout.addWidget(self.version_choice_dropdown, 1, 1)
+        info_layout.addWidget(self.source_choice_text, 0, 1)
+        info_layout.addWidget(self.source_choice_dropdown, 1, 1)
+        info_layout.addWidget(self.version_choice_text, 0, 0)
+        info_layout.addWidget(self.version_choice_dropdown, 1, 0)
         self.info_choice_wdg.setLayout(info_layout)
         self.info_choice_wdg.setObjectName("install_choice_widget")
         self.row2.addWidget(
@@ -683,10 +683,10 @@ class PluginListItem(QFrame):
         self.source = QLabel('PyPI')
         self.source.setStyleSheet('margin-right: 7px; padding: 0px;')
 
-        info_layout.addWidget(self.source_text, 0, 0)
-        info_layout.addWidget(self.source, 1, 0)
-        info_layout.addWidget(self.version_text, 0, 1)
-        info_layout.addWidget(self.package_name, 1, 1)
+        info_layout.addWidget(self.source_text, 0, 1)
+        info_layout.addWidget(self.source, 1, 1)
+        info_layout.addWidget(self.version_text, 0, 0)
+        info_layout.addWidget(self.package_name, 1, 0)
 
         self.info_widget.setLayout(info_layout)
 
@@ -817,7 +817,6 @@ class QPluginList(QListWidget):
         )
 
         item.setSizeHint(widg.sizeHint())
-        self.setItemWidget(item, widg)
         widg.install_info_button.setDuration(0)
         widg.install_info_button.toggled.connect(
             lambda: self._resize_pluginlistitem(item)
@@ -1152,6 +1151,7 @@ class QtPluginDialog(QDialog):
         self.packages_filter.setPlaceholderText(trans._("filter..."))
         self.packages_filter.setMaximumWidth(350)
         self.packages_filter.setClearButtonEnabled(True)
+        self.packages_filter.setDisabled(True)
         mid_layout = QVBoxLayout()
         mid_layout.addWidget(self.packages_filter)
         mid_layout.addWidget(self.installed_label)
@@ -1250,6 +1250,7 @@ class QtPluginDialog(QDialog):
         )
 
     def _end_refresh(self):
+        self.packages_filter.setDisabled(False)
         refresh_state = self.refresh_state
         self.refresh_state = RefreshState.DONE
         if refresh_state == RefreshState.OUTDATED:
@@ -1311,7 +1312,7 @@ class QtPluginDialog(QDialog):
             if not is_available:
                 self.available_list.tag_unavailable(project_info)
 
-        self.filter()
+        # self.filter()
 
     def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""

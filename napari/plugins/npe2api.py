@@ -3,6 +3,7 @@ These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
 import json
+import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
@@ -73,74 +74,6 @@ def conda_map() -> Dict[PyPIname, Optional[str]]:
         return json.load(resp)
 
 
-# @lru_cache
-# def pypi_package_versions(package_name: str) -> List[str]:
-#     """Get available versions of a package on pypi.
-
-#     Parameters
-#     ----------
-#     package_name : str
-#         Name of the package.
-
-#     Returns
-#     -------
-#     list
-#         Versions available on pypi.
-#     """
-#     url = f"https://pypi.org/simple/{package_name}"
-#     html = requests.get(url).text
-#     package_name_ = package_name.replace('-', '_')
-#     ret1 = re.findall(f">{package_name}-(.+).tar", html)
-#     ret2 = re.findall(f">{package_name_}-(.+).tar", html)
-#     return ret1 + ret2
-
-
-# @lru_cache
-# def conda_package_data(
-#     package_name: str, channel: str = DEFAULT_CHANNEL
-# ) -> dict:
-#     """Return information on package from given channel.
-
-#     Parameters
-#     ----------
-#     package_name : str
-#         Name of package.
-#     channel : str, optional
-#         Channel to search, by default `DEFAULT_CHANNEL`.
-
-#     Returns
-#     -------
-#     dict
-#         Package information.
-#     """
-#     url = f"https://api.anaconda.org/package/{channel}/{package_name}"
-#     response = requests.get(url)
-#     return response.json()
-
-
-# @lru_cache
-# def conda_package_versions(
-#     package_name: str, channel: str = DEFAULT_CHANNEL
-# ) -> List[str]:
-#     """Return information on package from given channel.
-
-#     Parameters
-#     ----------
-#     package_name : str
-#         Name of package.
-#     channel : str, optional
-#         Channel to search, by default `DEFAULT_CHANNEL`.
-
-#     Returns
-#     -------
-#     list of str
-#         Package versions.
-#     """
-#     return conda_package_data(package_name, channel=channel).get(
-#         "versions", []
-#     )
-
-
 def iter_napari_plugin_info() -> Iterator[
     Tuple[PackageMetadata, bool, List[str], List[str]]
 ]:
@@ -150,7 +83,10 @@ def iter_napari_plugin_info() -> Iterator[
         _conda = executor.submit(conda_map)
 
     conda = _conda.result()
-    for info in data.result():
+    for i, info in enumerate(data.result()):
+        # Sleep every 5 items for 350 ms to avoid hanging the UI
+        if i % 5 == 0:
+            time.sleep(0.35)
         _info = cast(Dict[str, str], dict(info))
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
