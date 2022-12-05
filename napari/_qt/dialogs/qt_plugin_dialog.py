@@ -355,6 +355,10 @@ def is_conda_package(pkg):
     -------
     bool: True if a conda package, False if not
     """
+
+    # Installed conda packages within a conda installation and environment can be identified as files
+    # with the template `<package-name>-<version>-<build-string>.json` saved within a `conda-meta` folder within
+    # the given environment of interest.
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
     try:
         if conda_meta_dir.is_dir():
@@ -467,13 +471,11 @@ class PluginListItem(QFrame):
         if action_name == 'install' and update is True:
             self.cancel_btn.setVisible(True)
             self.action_button.setVisible(False)
-            self.old_action = 'update'
         elif (
             action_name == 'uninstall' or action_name == 'install'
         ) and update is False:
             self.action_button.setVisible(False)
             self.cancel_btn.setVisible(True)
-            self.old_action = action_name
         elif action_name == 'cancel':
             self.action_button.setVisible(True)
             self.action_button.setDisabled(False)
