@@ -602,31 +602,33 @@ class PluginListItem(QFrame):
         self.install_info_button = QCollapsible(
             "Installation Info", collapsedIcon=coll_icon, expandedIcon=exp_icon
         )
-        self.install_info_button.setLayoutDirection(Qt.RightToLeft)
-        self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.install_info_button.sizePolicy().hasHeightForWidth()
-        )
-        self.install_info_button.setSizePolicy(sizePolicy)
         self.install_info_button.setObjectName("install_info_button")
-        self.source_choice_text = QLabel('Source ')
-        self.version_choice_text = QLabel('Version ')
+
+        # To make the icon appear on the right
+        self.install_info_button.setLayoutDirection(Qt.RightToLeft)
+
+        # Remove any extra margins
+        self.install_info_button.content().layout().setContentsMargins(0,0,0,0)
+        self.install_info_button.content().setContentsMargins(0,0,0,0)
+        self.install_info_button.content().layout().setSpacing(0)
+        self.install_info_button.layout().setContentsMargins(0,0,0,0)
+        self.install_info_button.layout().setSpacing(2)
+
+        self.source_choice_text = QLabel('Source:')
+        self.version_choice_text = QLabel('Version:')
         self.source_choice_dropdown = QComboBox()
+
         if len(self._versions['PyPI']) > 0:
             self.source_choice_dropdown.addItem('PyPI')
+
         if len(self._versions['Conda']) > 0:
             self.source_choice_dropdown.addItem('Conda')
+
         self.source_choice_dropdown.currentTextChanged.connect(
             self._populate_version_dropdown
         )
         self.source_choice_dropdown.hide()
         self.version_choice_dropdown = QComboBox()
-        self.install_info_button.content().layout().setContentsMargins(
-            0, 0, 0, 0
-        )
         self.version_choice_dropdown.setFixedWidth(80)
         self.row2.addWidget(
             self.install_info_button, alignment=Qt.AlignmentFlag.AlignTop
@@ -634,11 +636,14 @@ class PluginListItem(QFrame):
 
         info_layout = QGridLayout()
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.addWidget(self.source_choice_text, 0, 1)
-        info_layout.addWidget(self.source_choice_dropdown, 1, 1)
-        info_layout.addWidget(self.version_choice_text, 0, 0)
-        info_layout.addWidget(self.version_choice_dropdown, 1, 0)
+        info_layout.setVerticalSpacing(2)
+        info_layout.setHorizontalSpacing(4)
+        info_layout.addWidget(self.source_choice_text, 0, 0)
+        info_layout.addWidget(self.source_choice_dropdown, 1, 0)
+        info_layout.addWidget(self.version_choice_text, 0, 1)
+        info_layout.addWidget(self.version_choice_dropdown, 1, 1)
         self.info_choice_wdg.setLayout(info_layout)
+        self.info_choice_wdg.setLayoutDirection(Qt.LeftToRight)
         self.info_choice_wdg.setObjectName("install_choice_widget")
         self.row2.addWidget(
             self.info_choice_wdg, alignment=Qt.AlignmentFlag.AlignTop
@@ -668,28 +673,22 @@ class PluginListItem(QFrame):
         self.v_lay.addLayout(self.row2)
 
         self.info_widget = QWidget(self)
-
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        self.info_widget.setSizePolicy(sizePolicy)
+        self.info_widget.setLayoutDirection(Qt.LeftToRight)
         self.info_widget.setObjectName("info_widget")
         info_layout = QGridLayout()
         info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setVerticalSpacing(0)
         self.version_text = QLabel('Version:')
-        self.version_text.setStyleSheet('margin: 0px; padding: 0px;')
         self.package_name = QLabel()
-        self.package_name.setStyleSheet('margin: 0px; padding: 0px;')
         self.source_text = QLabel('Source:')
-        self.source_text.setStyleSheet('margin-right: 7px; padding: 0px;')
         self.source = QLabel('PyPI')
-        self.source.setStyleSheet('margin-right: 7px; padding: 0px;')
 
-        info_layout.addWidget(self.source_text, 0, 1)
-        info_layout.addWidget(self.source, 1, 1)
-        info_layout.addWidget(self.version_text, 0, 0)
-        info_layout.addWidget(self.package_name, 1, 0)
+        info_layout.addWidget(self.source_text, 0, 0)
+        info_layout.addWidget(self.source, 1, 0)
+        info_layout.addWidget(self.version_text, 0, 1)
+        info_layout.addWidget(self.package_name, 1, 1)
 
+        self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.info_widget.setLayout(info_layout)
 
     def _populate_version_dropdown(self, source):

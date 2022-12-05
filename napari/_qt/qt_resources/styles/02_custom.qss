@@ -592,14 +592,16 @@ QLabel#author_text {
 QWidget#info_widget {
   background-color: {{ darken(foreground, 20) }};
   margin: 0px;
-  margin-left: -10px;
   padding: 0px;
-  padding-left: 0px
+  font: 10px;
 }
 
 QWidget#install_choice_widget {
   background-color: {{ darken(foreground, 20) }};
   color: {{ darken(text, 35) }};
+  margin: 0px;
+  padding: 0px;
+  font: 10px;
 }
 
 QLabel#latest_version_text {
