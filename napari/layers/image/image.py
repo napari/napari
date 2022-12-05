@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
 
 import numpy as np
@@ -33,6 +34,7 @@ from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils import config
+from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
@@ -768,13 +770,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
         slice_indices = slice_input.data_indices(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, slice_indices)
+        return self._make_slice_request_internal(
+            slice_input,
+            slice_indices,
+            dask_indexer=self.dask_optimized_slicing,
+        )
 
     def _make_slice_request_internal(
         self,
         slice_input: _SliceInput,
         slice_indices,
         lazy: bool = False,
+        dask_indexer: DaskIndexer = nullcontext,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
@@ -785,7 +792,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
-            dask_indexer=self.dask_optimized_slicing,
+            dask_indexer=dask_indexer,
             slice_indices=slice_indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
