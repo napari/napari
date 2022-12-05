@@ -126,7 +126,7 @@ def generate_transform_box_from_layer(
     Returns
     -------
     np.ndarray
-        Coordinates of the vertices and handles of the interaction box.
+        Vertices and handles of the interaction box in data coordinates.
     """
     bounds = layer._display_bounding_box(dims_displayed)
     # generates in vispy canvas pos, so invert x and y, and then go back

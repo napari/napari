@@ -30,27 +30,31 @@ def transform_with_box(layer, event):
     if not len(event.dims_displayed) == 2:
         return
 
-    pos_data = layer.world_to_data(event.position)
+    # same as Layer.world_to_data
+    data_to_world = layer._transforms.set_slice(
+        event.dims_displayed
+    ).simplified
+    world_to_data = data_to_world.inverse
+    pos_data = world_to_data(event.position)
     pos_displayed = np.array(pos_data)[event.dims_displayed]
 
     initial_handle_coords = generate_transform_box_from_layer(
         layer, event.dims_displayed
     )
     nearby_handle = get_nearby_handle(pos_displayed, initial_handle_coords)
+    initial_handle_coords = data_to_world(initial_handle_coords)
 
     if nearby_handle is None:
         return
 
     # initial layer transform so we can calculate changes later
-    initial_transform = layer._transforms.set_slice(event.dims_displayed)
     initial_affine = layer.affine.set_slice(event.dims_displayed)
     initial_position = pos_displayed
 
     yield
 
     while event.type == 'mouse_move':
-        # same as Layer.world_to_data
-        pos_data = initial_transform[1:].simplified.inverse(event.position)
+        pos_data = world_to_data(event.position)
         pos_displayed = np.array(pos_data)[event.dims_displayed]
 
         if nearby_handle == InteractionBoxHandle.INSIDE:
