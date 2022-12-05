@@ -14,12 +14,16 @@ def highlight_box_handles(layer, event):
     if not len(event.dims_displayed) == 2:
         return
 
-    pos_data = layer.world_to_data(event.position)
-    pos_displayed = np.array(pos_data)[event.dims_displayed]
+    # same as Layer.world_to_data
+    data_to_world = layer._transforms.set_slice(
+        event.dims_displayed
+    ).simplified
+    pos_displayed = np.array(event.position)[event.dims_displayed]
 
     handle_coords = generate_transform_box_from_layer(
         layer, event.dims_displayed
     )
+    handle_coords = data_to_world(handle_coords)
     nearby_handle = get_nearby_handle(pos_displayed, handle_coords)
 
     # set the selected vertex of the box to the nearby_handle (can also be INSIDE or None)
@@ -34,15 +38,13 @@ def transform_with_box(layer, event):
     data_to_world = layer._transforms.set_slice(
         event.dims_displayed
     ).simplified
-    world_to_data = data_to_world.inverse
-    pos_data = world_to_data(event.position)
-    pos_displayed = np.array(pos_data)[event.dims_displayed]
+    pos_displayed = np.array(event.position)[event.dims_displayed]
 
     initial_handle_coords = generate_transform_box_from_layer(
         layer, event.dims_displayed
     )
-    nearby_handle = get_nearby_handle(pos_displayed, initial_handle_coords)
     initial_handle_coords = data_to_world(initial_handle_coords)
+    nearby_handle = get_nearby_handle(pos_displayed, initial_handle_coords)
 
     if nearby_handle is None:
         return
@@ -54,8 +56,7 @@ def transform_with_box(layer, event):
     yield
 
     while event.type == 'mouse_move':
-        pos_data = world_to_data(event.position)
-        pos_displayed = np.array(pos_data)[event.dims_displayed]
+        pos_displayed = np.array(event.position)[event.dims_displayed]
 
         if nearby_handle == InteractionBoxHandle.INSIDE:
             offset = pos_displayed - initial_position
