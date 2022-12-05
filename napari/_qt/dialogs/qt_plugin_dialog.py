@@ -608,10 +608,12 @@ class PluginListItem(QFrame):
         self.install_info_button.setLayoutDirection(Qt.RightToLeft)
 
         # Remove any extra margins
-        self.install_info_button.content().layout().setContentsMargins(0,0,0,0)
-        self.install_info_button.content().setContentsMargins(0,0,0,0)
+        self.install_info_button.content().layout().setContentsMargins(
+            0, 0, 0, 0
+        )
+        self.install_info_button.content().setContentsMargins(0, 0, 0, 0)
         self.install_info_button.content().layout().setSpacing(0)
-        self.install_info_button.layout().setContentsMargins(0,0,0,0)
+        self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.install_info_button.layout().setSpacing(2)
 
         self.source_choice_text = QLabel('Source:')
