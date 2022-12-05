@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from napari.components.overlays._interaction_box_utils import (
@@ -31,24 +33,18 @@ def transform_with_box(layer, event):
     pos_data = layer.world_to_data(event.position)
     pos_displayed = np.array(pos_data)[event.dims_displayed]
 
-    handle_coords = generate_transform_box_from_layer(
+    initial_handle_coords = generate_transform_box_from_layer(
         layer, event.dims_displayed
     )
-    nearby_handle = get_nearby_handle(pos_displayed, handle_coords)
+    nearby_handle = get_nearby_handle(pos_displayed, initial_handle_coords)
 
     if nearby_handle is None:
         return
 
-    # initial layer transform so we can calculate
+    # initial layer transform so we can calculate changes later
     initial_transform = layer._transforms.set_slice(event.dims_displayed)
     initial_affine = layer.affine.set_slice(event.dims_displayed)
     initial_position = pos_displayed
-    center = np.mean(
-        handle_coords[
-            [InteractionBoxHandle.TOP_LEFT, InteractionBoxHandle.BOTTOM_RIGHT]
-        ],
-        axis=0,
-    )
 
     yield
 
@@ -65,15 +61,27 @@ def transform_with_box(layer, event):
             )
             yield
         elif nearby_handle == InteractionBoxHandle.ROTATION:
-            initial_vector = (
-                handle_coords[InteractionBoxHandle.ROTATION] - center
+            center = np.mean(
+                initial_handle_coords[
+                    [
+                        InteractionBoxHandle.TOP_LEFT,
+                        InteractionBoxHandle.BOTTOM_RIGHT,
+                    ]
+                ],
+                axis=0,
             )
-            initial_vector /= np.linalg.norm(initial_vector)
-            new_vector = pos_displayed - center
-            new_vector /= np.linalg.norm(new_vector)
-            angle = np.arctan2(new_vector[1], new_vector[0]) - np.arctan2(
-                initial_vector[1], initial_vector[0]
+
+            # calculate the angle between the center-handle vector and the center-mouse vector
+            center_to_handle = (
+                initial_handle_coords[InteractionBoxHandle.ROTATION] - center
             )
+            center_to_handle /= np.linalg.norm(center_to_handle)
+            center_to_mouse = pos_displayed - center
+            center_to_mouse /= np.linalg.norm(center_to_mouse)
+            angle = np.arctan2(
+                center_to_mouse[1], center_to_mouse[0]
+            ) - np.arctan2(center_to_handle[1], center_to_handle[0])
+
             # TODO: center of rotation is wrong, despite angles being correct. Need to transform it to other
             #       coordinates system?
             new_affine = (
@@ -97,20 +105,27 @@ def transform_with_box(layer, event):
             else:
                 locked_aspect_ratio = False
 
-            opposite_handle = handle_coords[
+            # calculate the distance to the opposite handle (which is fixed) before and after drag
+            opposite_handle = initial_handle_coords[
                 InteractionBoxHandle.opposite_handle(nearby_handle)
             ]
-            initial_vec_from_opposite_handle = (
-                handle_coords[nearby_handle] - opposite_handle
+            opposite_to_handle = (
+                initial_handle_coords[nearby_handle] - opposite_handle
             )
-            new_vec_from_opposite_handle = pos_displayed - opposite_handle
-            scale = (
-                new_vec_from_opposite_handle / initial_vec_from_opposite_handle
-            )
-            scale = np.nan_to_num(scale, nan=0, posinf=1, neginf=1)
+            opposite_to_mouse = pos_displayed - opposite_handle
+
+            # get per-dimension scale values
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                scale = opposite_to_mouse / opposite_to_handle
+            # infinite values (due to numerical imprecision) mean we are rescaling only
+            # one dimension, so we set to 1.
+            scale = np.nan_to_num(scale, posinf=1, neginf=1)
+
             if locked_aspect_ratio:
-                scale = np.linalg.norm(scale)
-                scale = [scale, scale]
+                scale_factor = np.linalg.norm(scale)
+                scale = [scale_factor, scale_factor]
+
             new_affine = (
                 Affine(translate=opposite_handle)
                 .compose(Affine(scale=scale))
