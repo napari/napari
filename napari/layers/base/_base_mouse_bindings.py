@@ -87,8 +87,6 @@ def transform_with_box(layer, event):
                 center_to_mouse[1], center_to_mouse[0]
             ) - np.arctan2(center_to_handle[1], center_to_handle[0])
 
-            # TODO: center of rotation is wrong, despite angles being correct. Need to transform it to other
-            #       coordinates system?
             new_affine = (
                 Affine(translate=center)
                 .compose(Affine(rotate=np.rad2deg(angle)))
@@ -118,6 +116,8 @@ def transform_with_box(layer, event):
                 initial_handle_coords[nearby_handle] - opposite_handle
             )
             opposite_to_mouse = pos_displayed - opposite_handle
+
+            # TODO: prevent shear!
 
             # get per-dimension scale values
             with warnings.catch_warnings():
