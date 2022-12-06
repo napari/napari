@@ -10,7 +10,7 @@ from urllib import error, request
 
 from npe2 import PackageMetadata
 
-from .utils import normalized_name
+from napari.plugins.utils import normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'

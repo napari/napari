@@ -11,15 +11,18 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLabeledDoubleSlider
 
-from ...layers.image._image_constants import (
+from napari._qt.layer_controls.qt_image_controls_base import (
+    QtBaseImageControls,
+)
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
     VolumeDepiction,
 )
-from ...utils.action_manager import action_manager
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from .qt_image_controls_base import QtBaseImageControls
+from napari.utils.action_manager import action_manager
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -134,12 +137,12 @@ class QtImageControls(QtBaseImageControls):
             self.changePlaneThickness
         )
 
-        sld = QSlider(Qt.Orientation.Horizontal, parent=self)
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(int(self.layer.iso_threshold * 100))
+        cmin, cmax = self.layer.contrast_limits_range
+        sld.setMinimum(cmin)
+        sld.setMaximum(cmax)
+        sld.setValue(self.layer.iso_threshold)
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
@@ -195,7 +198,7 @@ class QtImageControls(QtBaseImageControls):
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
         """
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.layer.interpolation2d = text
         else:
             self.layer.interpolation3d = text
@@ -242,14 +245,19 @@ class QtImageControls(QtBaseImageControls):
             Threshold for isosurface.
         """
         with self.layer.events.blocker(self._on_iso_threshold_change):
-            self.layer.iso_threshold = value / 100
+            self.layer.iso_threshold = value
+
+    def _on_contrast_limits_change(self):
+        with self.layer.events.blocker(self._on_iso_threshold_change):
+            cmin, cmax = self.layer.contrast_limits_range
+            self.isoThresholdSlider.setMinimum(cmin)
+            self.isoThresholdSlider.setMaximum(cmax)
+        return super()._on_contrast_limits_change()
 
     def _on_iso_threshold_change(self):
         """Receive layer model isosurface change event and update the slider."""
         with self.layer.events.iso_threshold.blocker():
-            self.isoThresholdSlider.setValue(
-                int(self.layer.iso_threshold * 100)
-            )
+            self.isoThresholdSlider.setValue(self.layer.iso_threshold)
 
     def changeAttenuation(self, value):
         """Change attenuation rate for attenuated maximum intensity projection.
@@ -323,12 +331,13 @@ class QtImageControls(QtBaseImageControls):
     def _toggle_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        if depiction == VolumeDepiction.VOLUME or self.layer._ndisplay == 2:
+        ndisplay = self.layer._slice_input.ndisplay
+        if depiction == VolumeDepiction.VOLUME or ndisplay == 2:
             self.planeNormalButtons.hide()
             self.planeNormalLabel.hide()
             self.planeThicknessSlider.hide()
             self.planeThicknessLabel.hide()
-        if depiction == VolumeDepiction.PLANE and self.layer._ndisplay == 3:
+        if depiction == VolumeDepiction.PLANE and ndisplay == 3:
             self.planeNormalButtons.show()
             self.planeNormalLabel.show()
             self.planeThicknessSlider.show()
@@ -338,7 +347,7 @@ class QtImageControls(QtBaseImageControls):
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
             self.layer.interpolation2d
-            if self.layer._ndisplay == 2
+            if self.layer._slice_input.ndisplay == 2
             else self.layer.interpolation3d
         )
         with qt_signals_blocked(self.interpComboBox):
@@ -350,7 +359,7 @@ class QtImageControls(QtBaseImageControls):
         """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
         self._toggle_plane_parameter_visibility()
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()

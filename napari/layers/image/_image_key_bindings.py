@@ -1,33 +1,34 @@
 from __future__ import annotations
 
-import napari
+from app_model.types import KeyCode
 
-from ...layers.utils.interactivity_utils import (
+import napari
+from napari.layers.image._image_constants import Mode
+from napari.layers.image.image import Image
+from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
 )
-from ...layers.utils.layer_utils import register_layer_action
-from ...utils.translations import trans
-from ._image_constants import Mode
-from .image import Image
+from napari.layers.utils.layer_utils import register_layer_action
+from napari.utils.translations import trans
 
 
 def register_image_action(description: str, repeatable: bool = False):
     return register_layer_action(Image, description, repeatable)
 
 
-@Image.bind_key('z')
+@Image.bind_key(KeyCode.KeyZ)
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
-@Image.bind_key('y')
+@Image.bind_key(KeyCode.KeyY)
 @register_image_action(trans._('orient plane normal along y-axis'))
 def orient_plane_normal_along_y(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
-@Image.bind_key('x')
+@Image.bind_key(KeyCode.KeyX)
 @register_image_action(trans._('orient plane normal along x-axis'))
 def orient_plane_normal_along_x(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
@@ -43,7 +44,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
-@Image.bind_key('o')
+@Image.bind_key(KeyCode.KeyO)
 def synchronise_plane_normal_with_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
     if viewer.dims.ndisplay != 3:
@@ -65,7 +66,7 @@ def synchronise_plane_normal_with_view_direction(layer: Image):
     )
 
 
-@Image.bind_key('Space')
+@Image.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:

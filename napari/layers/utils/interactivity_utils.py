@@ -4,10 +4,13 @@ from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
 
-from ...utils.geometry import point_in_bounding_box, project_points_onto_plane
+from napari.utils.geometry import (
+    point_in_bounding_box,
+    project_points_onto_plane,
+)
 
 if TYPE_CHECKING:
-    from ..image.image import Image
+    from napari.layers.image.image import Image
 
 
 def displayed_plane_from_nd_line_segment(
@@ -110,8 +113,7 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     """
     # avoid circular imports
     import napari
-
-    from ..image._image_constants import VolumeDepiction
+    from napari.layers.image._image_constants import VolumeDepiction
 
     viewer = napari.viewer.current_viewer()
 
@@ -121,7 +123,8 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     # find cursor-plane intersection in data coordinates
     cursor_position = layer._world_to_displayed_data(
-        position=viewer.cursor.position, dims_displayed=layer._dims_displayed
+        position=viewer.cursor.position,
+        dims_displayed=layer._slice_input.displayed,
     )
     view_direction = layer._world_to_displayed_data_ray(
         viewer.camera.view_direction, dims_displayed=[-3, -2, -1]
@@ -131,7 +134,7 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     )
 
     # check if intersection is within data extents for displayed dimensions
-    bounding_box = layer.extent.data[:, layer._dims_displayed]
+    bounding_box = layer.extent.data[:, layer._slice_input.displayed]
 
     # update plane position
     if point_in_bounding_box(intersection, bounding_box):
@@ -139,7 +142,7 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
 
     # update plane normal
     layer.plane.normal = layer._world_to_displayed_data_ray(
-        plane_normal, dims_displayed=layer._dims_displayed
+        plane_normal, dims_displayed=layer._slice_input.displayed
     )
 
 

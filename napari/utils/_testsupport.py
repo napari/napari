@@ -101,6 +101,19 @@ def napari_plugin_manager(monkeypatch):
 GCPASS = 0
 
 
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+
+    # set a report attribute for each phase of a call, which can
+    # be "setup", "call", "teardown"
+
+    setattr(item, f"rep_{rep.when}", rep)
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot, request: 'FixtureRequest', napari_plugin_manager
@@ -228,7 +241,14 @@ def make_napari_viewer(
     if request.config.getoption(_SAVE_GRAPH_OPNAME):
         fail_obj_graph(QtViewer)
 
+    if request.node.rep_call.failed:
+        # IF test failed do not check for leaks
+        QtViewer._instances.clear()
+
     _do_not_inline_below = len(QtViewer._instances)
+
+    QtViewer._instances.clear()  # clear to prevent fail of next test
+
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
     assert _do_not_inline_below == 0
@@ -240,7 +260,7 @@ def make_napari_viewer(
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
+        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
             msg = f"""The following Widgets leaked!: {leak}.
@@ -259,6 +279,38 @@ def make_napari_viewer(
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
+
+
+@pytest.fixture
+def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
+    """Fixture that returns a function for creating a napari viewer wrapped in proxy.
+    Use in the same way like `make_napari_viewer` fixture.
+
+    Parameters
+    ----------
+    make_napari_viewer : fixture
+        The make_napari_viewer fixture.
+
+    Returns
+    -------
+    function
+        A function that creates a napari viewer.
+    """
+    from napari.utils._proxies import PublicOnlyProxy
+
+    proxies = []
+
+    def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
+        monkeypatch.setenv(
+            "NAPARI_ENSURE_PLUGIN_MAIN_THREAD", str(ensure_main_thread)
+        )
+        viewer = make_napari_viewer(*model_args, **model_kwargs)
+        proxies.append(PublicOnlyProxy(viewer))
+        return proxies[-1]
+
+    proxies.clear()
+
+    yield actual_factory
 
 
 @pytest.fixture

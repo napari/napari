@@ -3,7 +3,16 @@ from typing import Tuple
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
-from ...layers import (
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.layers.group import VispyLayerGroup
+from napari._vispy.layers.image import VispyImageLayer
+from napari._vispy.layers.labels import VispyLabelsLayer
+from napari._vispy.layers.points import VispyPointsLayer
+from napari._vispy.layers.shapes import VispyShapesLayer
+from napari._vispy.layers.surface import VispySurfaceLayer
+from napari._vispy.layers.tracks import VispyTracksLayer
+from napari._vispy.layers.vectors import VispyVectorsLayer
+from napari.layers import (
     Image,
     Labels,
     Layer,
@@ -13,18 +22,9 @@ from ...layers import (
     Tracks,
     Vectors,
 )
-from ...layers.layergroup import LayerGroup
-from ...utils.config import async_octree
-from ...utils.translations import trans
-from ..layers.base import VispyBaseLayer
-from ..layers.group import VispyLayerGroup
-from ..layers.image import VispyImageLayer
-from ..layers.labels import VispyLabelsLayer
-from ..layers.points import VispyPointsLayer
-from ..layers.shapes import VispyShapesLayer
-from ..layers.surface import VispySurfaceLayer
-from ..layers.tracks import VispyTracksLayer
-from ..layers.vectors import VispyVectorsLayer
+from napari.layers.layergroup import LayerGroup
+from napari.utils.config import async_octree
+from napari.utils.translations import trans
 
 layer_to_visual = {
     Image: VispyImageLayer,
@@ -39,8 +39,10 @@ layer_to_visual = {
 
 
 if async_octree:
-    from ...layers.image.experimental.octree_image import _OctreeImageBase
-    from ..experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+    from napari._vispy.experimental.vispy_tiled_image_layer import (
+        VispyTiledImageLayer,
+    )
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     # Insert _OctreeImageBase in front so it gets picked over plain Image.
     new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
@@ -48,7 +50,7 @@ if async_octree:
     layer_to_visual = new_mapping
 
 
-def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
+def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters

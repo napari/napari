@@ -158,7 +158,7 @@ def test_remove_selected(LayersClass):
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 
-    # select and remove all layersay
+    # select and remove all layers
     layers.select_all()
     layers.remove_selected()
     assert len(layers) == 0

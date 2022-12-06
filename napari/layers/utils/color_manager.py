@@ -5,24 +5,24 @@ from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 from pydantic import Field, root_validator, validator
 
-from ...utils.colormaps import Colormap
-from ...utils.colormaps.categorical_colormap import CategoricalColormap
-from ...utils.colormaps.colormap_utils import ColorType, ensure_colormap
-from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ._color_manager_constants import ColorMode
-from .color_manager_utils import (
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager_utils import (
     _validate_colormap_mode,
     _validate_cycle_mode,
     guess_continuous,
     is_color_mapped,
 )
-from .color_transformations import (
+from napari.layers.utils.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color,
     transform_color_with_defaults,
 )
+from napari.utils.colormaps import Colormap
+from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
+from napari.utils.events import EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 @dataclass

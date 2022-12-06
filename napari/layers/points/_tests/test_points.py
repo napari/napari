@@ -855,6 +855,18 @@ def test_select_properties_object_dtype():
     assert pl.selected_data == selection
 
 
+def test_select_properties_unsortable():
+    """selecting multiple points when they have properties that cannot be sorted should not fail
+
+    see https://github.com/napari/napari/issues/5174
+    """
+    properties = pd.DataFrame({'unsortable': [{}, {}]})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 2)
@@ -1721,33 +1733,26 @@ def test_view_data():
     layer = Points(coords)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([2], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
 
 
 def test_view_size():
+    """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([2], [1, 2])])
 
     layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
@@ -1808,24 +1813,6 @@ def test_world_data_extent():
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
-
-
-def test_slice_data():
-    data = [
-        (10, 2, 4),
-        (10 + 2 * 1e-7, 4, 6),
-        (8, 1, 7),
-        (10.1, 7, 2),
-        (10 - 2 * 1e-7, 1, 6),
-    ]
-    layer = Points(data)
-    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
-    assert (
-        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 4
-    )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
 
 
 def test_scale_init():
@@ -2495,10 +2482,36 @@ def test_set_drag_start():
     assert layer._drag_start is None
     position = (0, 1)
     layer._set_drag_start({0}, position=position)
-    assert all(
-        layer._drag_start[i] == position[i] for i in layer._dims_displayed
-    )
+    np.testing.assert_array_equal(layer._drag_start, position)
     layer._set_drag_start({0}, position=(1, 2))
-    assert all(
-        layer._drag_start[i] == position[i] for i in layer._dims_displayed
+    np.testing.assert_array_equal(layer._drag_start, position)
+
+
+@pytest.mark.parametrize(
+    "dims_indices,target_indices",
+    [
+        ((8, slice(None), slice(None)), [2]),
+        ((10, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10 + 2 * 1e-12, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10.1, slice(None), slice(None)), [0, 1, 3, 4]),
+    ],
+)
+def test_point_slice_request_response(dims_indices, target_indices):
+    """Test points slicing with request and response."""
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+
+    layer = Points(data)
+
+    request = layer._make_slice_request_internal(
+        layer._slice_input, dims_indices
     )
+    response = request()
+
+    assert len(response.indices) == len(target_indices)
+    assert all([a == b for a, b in zip(response.indices, target_indices)])

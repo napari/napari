@@ -9,8 +9,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils import citation_text, sys_info
-from ...utils.translations import trans
+from napari.utils import citation_text, sys_info
+from napari.utils.translations import trans
 
 
 class QtAbout(QDialog):

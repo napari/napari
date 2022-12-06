@@ -1,11 +1,12 @@
-# The full test suite, which will be run anytime anything is merged into main.
+# The Comprehensive test suite, which will be run anytime anything is merged into main.
 # See test_pull_request.yml for the tests that will be run
-name: Full Test
+name: Comprehensive Test
 
 on:
   push:
     branches:
       - main
+      - "v*x"
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   # Allows you to run this workflow manually from the Actions tab
@@ -19,7 +20,7 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v4
         with:
@@ -61,17 +62,18 @@ jobs:
 
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.10.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
           cache: "pip"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -130,7 +132,7 @@ jobs:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: napari-from-github
 
@@ -139,6 +141,7 @@ jobs:
         with:
           python-version: 3.9
           cache: "pip"
+          cache-dependency-path: napari-from-github/setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 

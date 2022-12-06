@@ -3,9 +3,9 @@ import typing
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
-from ...layers import Layer
-from ._base_item_model import ItemRole, ThumbnailRole
-from .qt_list_model import QtListModel
+from napari._qt.containers._base_item_model import ItemRole, ThumbnailRole
+from napari._qt.containers.qt_list_model import QtListModel
+from napari.layers import Layer
 
 
 class QtLayerListModel(QtListModel[Layer]):

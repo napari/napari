@@ -13,7 +13,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from .utils.translations import trans
+from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -270,7 +270,11 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import _initialize_plugins, _npe2, plugin_manager
+            from napari.plugins import (
+                _initialize_plugins,
+                _npe2,
+                plugin_manager,
+            )
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
@@ -436,6 +440,10 @@ def _maybe_rerun_with_macos_fixes():
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
+    from napari._qt import API_NAME
+
+    # This import mus be here to raise exception about PySide6 problem
+
     if sys.platform != "darwin":
         return
 
@@ -450,8 +458,6 @@ def _maybe_rerun_with_macos_fixes():
     import platform
     import subprocess
     from tempfile import mkdtemp
-
-    from qtpy import API_NAME
 
     # In principle, we will relaunch to the same python we were using
     executable = sys.executable

@@ -26,10 +26,15 @@ import contextlib
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
-from ...translations import trans
-from ..event import EmitterGroup, Event
-from ..types import SupportsEvents
-from ._typed import _L, _T, Index, TypedMutableSequence
+from napari.utils.events.containers._typed import (
+    _L,
+    _T,
+    Index,
+    TypedMutableSequence,
+)
+from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.types import SupportsEvents
+from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +183,7 @@ class EventedList(TypedMutableSequence[_T]):
             self._process_delete_item(item)
             parent.events.removed(index=index, value=item)
 
-    def _process_delete_item(self, item):
+    def _process_delete_item(self, item: _T):
         """Allow processing item in inherited class before delete event is emitted"""
 
     def insert(self, index: int, value: _T):
