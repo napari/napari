@@ -61,7 +61,7 @@ class SummaryDict(TypedDict):
 @lru_cache
 def plugin_summaries() -> List[SummaryDict]:
     """Return PackageMetadata object for all known napari plugins."""
-    url = "https://npe2api-5lai6hg8a-napari.vercel.app/api/extended_summary"
+    url = "https://npe2api.vercel.app/api/extended_summary"
     with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
         return json.load(resp)
 
@@ -84,23 +84,28 @@ def iter_napari_plugin_info() -> Iterator[
 
     conda = _conda.result()
     for i, info in enumerate(data.result()):
-        # Sleep every 5 items for 350 ms to avoid hanging the UI
-        if i % 5 == 0:
-            time.sleep(0.35)
+        # Sleep every 2 items for 150 ms to avoid hanging the UI
+        if i % 2 == 0:
+            time.sleep(0.150)
+
         _info = cast(Dict[str, str], dict(info))
+
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
         # receive (and it doesn't currently receive this from the hub API)
         _info.pop("display_name", None)
 
-        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
-        # parity with the hub api.  change this later.
+        # TODO: once the new version of npe2 is out, this can be refactored
+        # to all the metadata includes the conda and pypi versions.
         extra_info = {
             "home_page": _info.get("home_page", ""),
             "pypi_versions": _info.pop("pypi_versions"),
             "conda_versions": _info.pop("conda_versions"),
         }
         name = _info.pop("name")
+
+        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
+        # parity with the hub api.  change this later.
         meta = PackageMetadata(name=normalized_name(name), **_info)
 
         yield meta, (name in conda), extra_info
