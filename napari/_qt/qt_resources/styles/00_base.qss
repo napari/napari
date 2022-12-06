@@ -51,19 +51,6 @@ QWidget:disabled {
   color: {{ opacity(text, 90) }};
 }
 
-QModelMenu::separator {
-	height: 1 px;
-	background: {{ opacity(text, 90) }};
-	margin-left: 17 px;
-	margin-right: 6 px;
-	margin-top: 5 px;
-	margin-bottom: 3 px;
-}
-
-QModelMenu {
-	padding: 6 px;
-}
-
 /* ------------ QAbstractScrollArea ------------- */
 
 /* QAbstractScrollArea is the superclass */ 
