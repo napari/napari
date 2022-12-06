@@ -1043,6 +1043,7 @@ class QtPluginDialog(QDialog):
             if distname:
                 try:
                     meta = metadata(distname)
+
                 except PackageNotFoundError:
                     self.refresh_state = RefreshState.OUTDATED
                     return  # a race condition has occurred and the package is uninstalled by another thread
@@ -1060,7 +1061,7 @@ class QtPluginDialog(QDialog):
                         name=norm_name,
                         version=meta.get('version', ''),
                         summary=meta.get('summary', ''),
-                        home_page=meta.get('url', ''),
+                        home_page=meta.get('Home-page', ''),
                         author=meta.get('author', ''),
                         license=meta.get('license', ''),
                     ),
