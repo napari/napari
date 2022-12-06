@@ -2,7 +2,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction, QMenu
 
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -199,7 +199,18 @@ class FileMenu(NapariMenu):
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
-                menu = self.open_sample_menu.addMenu(plugin_name)
+                # use display_name for the menu item if npe2
+                from npe2 import plugin_manager as pm
+
+                try:
+                    plugin_display_name = pm.get_manifest(
+                        plugin_name
+                    ).display_name
+                except KeyError:
+                    plugin_display_name = plugin_name
+                menu = self.open_sample_menu.addMenu(
+                    QMenu(title=plugin_display_name, parent=self)
+                ).menu()
             else:
                 menu = self.open_sample_menu
 

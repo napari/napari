@@ -1,5 +1,10 @@
 """
+Labels 3D
+=========
+
 View 3D labels.
+
+.. tags:: visualization-nD
 """
 
 
