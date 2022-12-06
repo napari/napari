@@ -265,9 +265,6 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.camera.on_draw)
 
-        # # Add axes, scale bar
-        # self._add_visuals()
-
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
 
@@ -450,16 +447,6 @@ class QtViewer(QSplitter):
             vispy_overlay.node.parent = self.view.scene
 
         self.overlay_to_visual[overlay] = vispy_overlay
-
-    # def _add_visuals(self) -> None:
-    #     """Add visuals for axes, scale bar, and welcome text."""
-    #
-    #     self.interaction_box_visual = VispyInteractionBox(
-    #         self.viewer, parent=self.view.scene, order=1e6 + 3
-    #     )
-    #     self.interaction_box_mousebindings = InteractionBoxMouseBindings(
-    #         self.viewer, self.interaction_box_visual
-    #     )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
