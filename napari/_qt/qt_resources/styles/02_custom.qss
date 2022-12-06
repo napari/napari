@@ -593,7 +593,7 @@ QWidget#info_widget {
   background-color: {{ darken(foreground, 20) }};
   margin: 0px;
   padding: 0px;
-  font: 10px;
+  font: 11px;
 }
 
 QWidget#install_choice_widget {
@@ -601,7 +601,7 @@ QWidget#install_choice_widget {
   color: {{ darken(text, 35) }};
   margin: 0px;
   padding: 0px;
-  font: 10px;
+  font: 11px;
 }
 
 QLabel#latest_version_text {
