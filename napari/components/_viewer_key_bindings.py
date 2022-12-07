@@ -56,7 +56,7 @@ def toggle_ndisplay(viewer: Viewer):
 # RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
 # ```
 @register_viewer_action(trans._("Toggle current viewer theme."))
-def toggle_theme(viewer: ViewerModel):
+def toggle_theme(viewer: Viewer):
     """Toggle theme for current viewer"""
     themes = available_themes()
     current_theme = viewer.theme
