@@ -378,9 +378,9 @@ class InstallerQueue(QProcess):
             self._output_widget.append(msg)
 
     def _get_tool(self, tool: InstallerTools):
-        if tool == "pip":
+        if tool == InstallerTools.pip:
             return PipInstallerTool
-        if tool == "conda":
+        if tool == InstallerTools.conda:
             return CondaInstallerTool
         raise ValueError(f"InstallerTool {tool} not recognized!")
 
