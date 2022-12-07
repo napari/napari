@@ -429,7 +429,7 @@ def disable_notification_dismiss_timer(monkeypatch):
     cause segmentation fault error when Qt (C++) code try to access it without
     checking if Python object exists.
 
-    This fixture is used in all exceptions because it is not possible to call Qt code
+    This fixture is used in all tests because it is possible to call Qt code
     from non Qt test by connection of `NapariQtNotification.show_notification` to
     `NotificationManager` global instance.
     """
