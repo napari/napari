@@ -10,7 +10,6 @@ in the viewer.
 import numpy as np
 import napari
 
-from time import sleep
 from napari.utils import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
@@ -54,6 +53,7 @@ def try_thresholds():
         thresholded_nuclei.append(binarised_im)
 
         # uncomment if processing is too fast
+        # from time import sleep
         # sleep(0.5)
 
     # working with a wrapped iterable, the progress bar will be closed
@@ -99,6 +99,7 @@ def segment_binarised_ims():
             segmented_nuclei.append(labelled_im)
 
             # uncomment if processing is too fast
+            # from time import sleep
             # sleep(0.5)
 
     # progress bar is still automatically closed
@@ -139,6 +140,7 @@ def process_ims():
         pbar.update(1)
 
         # uncomment this line to see the 100% progress bar
+        # from time import sleep
         # sleep(0.5)
 
 button_layout = QVBoxLayout()

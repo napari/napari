@@ -110,6 +110,19 @@ def clean_themes():
     for name in theme.available_themes():
         if name not in themes:
             del theme._themes[name]
+            
+            
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+
+    # set a report attribute for each phase of a call, which can
+    # be "setup", "call", "teardown"
+
+    setattr(item, f"rep_{rep.when}", rep)
 
 
 @pytest.fixture
@@ -239,7 +252,14 @@ def make_napari_viewer(
     if request.config.getoption(_SAVE_GRAPH_OPNAME):
         fail_obj_graph(QtViewer)
 
+    if request.node.rep_call.failed:
+        # IF test failed do not check for leaks
+        QtViewer._instances.clear()
+
     _do_not_inline_below = len(QtViewer._instances)
+
+    QtViewer._instances.clear()  # clear to prevent fail of next test
+
     # do not inline to avoid pytest trying to compute repr of expression.
     # it fails if C++ object gone but not Python object.
     assert _do_not_inline_below == 0

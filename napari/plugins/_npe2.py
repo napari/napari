@@ -242,6 +242,7 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     return (
         (
+            # use display_name for user facing display
             plugin_name,
             {
                 c.key: {'data': c.open, 'display_name': c.display_name}
