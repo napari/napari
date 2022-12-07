@@ -174,6 +174,9 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
 
+@pytest.mark.skipif(
+    not CondaInstallerTool.available(), reason="Conda is not available."
+)
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = InstallerQueue()
 

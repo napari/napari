@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from logging import getLogger
 from pathlib import Path
+from subprocess import call
 from tempfile import gettempdir, mkstemp
 from typing import Deque, Optional, Sequence, Tuple
 
@@ -85,11 +86,22 @@ class AbstractInstallerTool:
         """
         return [f"napari=={_napari_version}"]
 
+    @classmethod
+    def available(cls) -> bool:
+        """
+        Check if the tool is available by performing a little test
+        """
+        raise NotImplementedError()
+
 
 class PipInstallerTool(AbstractInstallerTool):
     @classmethod
     def executable(cls):
         return str(_get_python_exe())
+
+    @classmethod
+    def available(cls):
+        return call([cls.executable(), "-m", "pip", "--version"]) == 0
 
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
@@ -153,6 +165,10 @@ class CondaInstallerTool(AbstractInstallerTool):
             if path.is_file():
                 return str(path)
         return f'conda{bat}'  # cross our fingers 'conda' is in PATH
+
+    @classmethod
+    def available(cls):
+        return call([cls.executable(), "--version"]) == 0
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
