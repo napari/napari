@@ -32,10 +32,21 @@ def test_theme_toggle_keybinding():
 def test_theme_toggle_from_system_theme():
     get_settings().appearance.theme = 'system'
     viewer = ViewerModel()
-    actual_theme = get_system_theme()
+    assert viewer.theme == 'system'
+    actual_initial_theme = get_system_theme()
     toggle_theme(viewer)
     # ensure that theme has changed
-    assert not viewer.theme == actual_theme
-    toggle_theme(viewer)
+    assert not viewer.theme == actual_initial_theme
+    assert not viewer.theme == 'system'
+    number_of_actual_themes = len(available_themes())
+    if 'system' in available_themes():
+        number_of_actual_themes = len(available_themes()) - 1
+    for i in range(number_of_actual_themes - 1):  # we've already toggled once
+        current_theme = viewer.theme
+        toggle_theme(viewer)
+        # theme should have changed
+        assert not viewer.theme == current_theme
+        # toggle_theme should toggle only actual themes
+        assert not viewer.theme == 'system'
     # ensure we have looped back to whatever system was
-    assert viewer.theme == actual_theme
+    assert viewer.theme == actual_initial_theme
