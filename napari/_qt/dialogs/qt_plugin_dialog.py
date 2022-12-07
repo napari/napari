@@ -1,5 +1,6 @@
 import os
 from enum import Enum, auto
+from functools import partial
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Optional, Sequence, Tuple
@@ -311,20 +312,26 @@ class QPluginList(QListWidget):
             import webbrowser
 
             widg.help_button.clicked.connect(
-                lambda: webbrowser.open(project_info.home_page)
+                partial(webbrowser.open, project_info.home_page)
             )
         else:
             widg.help_button.setVisible(False)
         widg.action_button.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, action_name)
+            partial(self.handle_action, item, pkg_name, action_name)
         )
         widg.update_btn.clicked.connect(
-            lambda: self.handle_action(
-                item, pkg_name, InstallerActions.install, update=True
+            partial(
+                self.handle_action,
+                item,
+                pkg_name,
+                InstallerActions.install,
+                update=True,
             )
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, InstallerActions.cancel)
+            partial(
+                self.handle_action, item, pkg_name, InstallerActions.cancel
+            )
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
@@ -693,7 +700,7 @@ class QtPluginDialog(QDialog):
         self.cancel_all_btn = QPushButton(trans._("cancel all actions"), self)
         self.cancel_all_btn.setObjectName("remove_button")
         self.cancel_all_btn.setVisible(False)
-        self.cancel_all_btn.clicked.connect(lambda: self.installer.cancel())
+        self.cancel_all_btn.clicked.connect(self.installer.cancel)
 
         self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.accept)

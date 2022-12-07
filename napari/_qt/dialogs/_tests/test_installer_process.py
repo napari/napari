@@ -103,6 +103,41 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     assert not installer.hasJobs()
 
 
+def _assert_exit_code_not_zero(
+    self, exit_code=None, exit_status=None, error=None
+):
+    errors = []
+    if exit_code == 0:
+        errors.append("- 'exit_code' should have been non-zero!")
+    if error is not None:
+        errors.append("- 'error' should have been None!")
+    if errors:
+        raise Exception("\n".join(errors))
+    return self._on_process_done_original(exit_code, exit_status, error)
+
+
+class _NonExistingTool(AbstractInstallerTool):
+    def executable(self):
+        return f"this-tool-does-not-exist-{hash(time.time())}"
+
+    def arguments(self):
+        return ()
+
+    def environment(self, env=None):
+        return QProcessEnvironment.systemEnvironment()
+
+
+def _assert_error_used(self, exit_code=None, exit_status=None, error=None):
+    errors = []
+    if error is None:
+        errors.append("- 'error' should have been populated!")
+    if exit_code is not None:
+        errors.append("- 'exit_code' should not have been populated!")
+    if errors:
+        raise Exception("\n".join(errors))
+    return self._on_process_done_original(exit_code, exit_status, error)
+
+
 def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     installer = InstallerQueue()
     monkeypatch.setattr(
@@ -120,20 +155,6 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     installer._on_process_done_original = installer._on_process_done
 
     # CHECK 2) Non-existing packages should return non-zero
-    def _assert_exit_code_not_zero(
-        exit_code=None, exit_status=None, error=None
-    ):
-        errors = []
-        if exit_code == 0:
-            errors.append("- 'exit_code' should have been non-zero!")
-        if error is not None:
-            errors.append("- 'error' should have been None!")
-        if errors:
-            raise Exception("\n".join(errors))
-        return installer._on_process_done_original(
-            exit_code, exit_status, error
-        )
-
     monkeypatch.setattr(
         installer, "_on_process_done", _assert_exit_code_not_zero
     )
@@ -144,33 +165,11 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
     # CHECK 3) Non-existing tools should fail to start
-    class NonExistingTool(AbstractInstallerTool):
-        def executable(self):
-            return f"this-tool-does-not-exist-{hash(time.time())}"
-
-        def arguments(self):
-            return ()
-
-        def environment(self, env=None):
-            return QProcessEnvironment.systemEnvironment()
-
-    def _assert_error_used(exit_code=None, exit_status=None, error=None):
-        errors = []
-        if error is None:
-            errors.append("- 'error' should have been populated!")
-        if exit_code is not None:
-            errors.append("- 'exit_code' should not have been populated!")
-        if errors:
-            raise Exception("\n".join(errors))
-        return installer._on_process_done_original(
-            exit_code, exit_status, error
-        )
-
     monkeypatch.setattr(installer, "_on_process_done", _assert_error_used)
-    monkeypatch.setattr(installer, "_get_tool", lambda *a: NonExistingTool)
+    monkeypatch.setattr(installer, "_get_tool", lambda *a: _NonExistingTool)
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
-            tool=NonExistingTool,
+            tool=_NonExistingTool,
             pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
         )
 
