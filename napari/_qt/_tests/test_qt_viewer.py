@@ -326,9 +326,10 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     pts = viewer.add_points(name='test', size=1, ndim=3)
     pts.add((8.7, 0, 0))
     viewer.dims.set_point(0, 30 * 0.29)  # middle plane
-    layer = viewer.layers[1]
-    indices, scale = layer._slice_data(layer._slice_indices)
-    np.testing.assert_equal(indices, [0])
+
+    request = pts._make_slice_request(viewer.dims)
+    response = request()
+    np.testing.assert_equal(response.indices, [0])
 
 
 def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
