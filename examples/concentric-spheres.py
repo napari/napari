@@ -1,5 +1,10 @@
 """
+Concentric spheres
+==================
+
 Display concentric spheres in 3D.
+
+.. tags:: visualization-nD
 """
 
 import numpy as np

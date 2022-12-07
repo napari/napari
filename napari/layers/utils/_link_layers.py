@@ -188,7 +188,7 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 
 def _get_common_evented_attributes(
     layers: Iterable[Layer],
-    exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
+    exclude: set[str] = {'thumbnail', 'status', 'name', 'data', 'extent'},
     with_private=False,
 ) -> set[str]:
     """Get the set of common, non-private evented attributes in ``layers``.
