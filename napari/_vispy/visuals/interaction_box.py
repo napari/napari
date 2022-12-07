@@ -36,6 +36,8 @@ class InteractionBox(Compound):
         self._edge_color = (0, 0, 1, 1)
 
         super().__init__([Line(), Markers(antialias=0)], *args, **kwargs)
+        # TODO: vispy 0.12 will allow to set different symbols per marker
+        self.markers.symbol = self._marker_symbol
 
     @property
     def line(self):
@@ -63,7 +65,7 @@ class InteractionBox(Compound):
                 pos=vertices,
                 size=self._marker_size,
                 face_color=self._marker_color,
-                symbol=self._marker_symbol,
+                # symbol=self._marker_symbol,
                 edge_width=marker_edges,
                 edge_color=self._edge_color,
             )

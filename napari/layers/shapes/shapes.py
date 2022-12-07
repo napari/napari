@@ -1575,7 +1575,7 @@ class Shapes(Layer):
         self.text.color._apply(self.features)
         return self.text._view_color(self._indices_view)
 
-    @property
+    @Layer.mode.getter
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1601,6 +1601,7 @@ class Shapes(Layer):
         if mode == self._mode:
             return
 
+        self._mode = mode
         self.events.mode(mode=mode)
 
         draw_modes = {
