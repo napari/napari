@@ -110,8 +110,8 @@ def clean_themes():
     for name in theme.available_themes():
         if name not in themes:
             del theme._themes[name]
-            
-            
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
