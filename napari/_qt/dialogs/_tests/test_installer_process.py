@@ -2,6 +2,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from types import MethodType
 from typing import TYPE_CHECKING
 
 import pytest
@@ -156,7 +157,9 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
 
     # CHECK 2) Non-existing packages should return non-zero
     monkeypatch.setattr(
-        installer, "_on_process_done", _assert_exit_code_not_zero
+        installer,
+        "_on_process_done",
+        MethodType(_assert_exit_code_not_zero, installer),
     )
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
@@ -165,7 +168,11 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
     # CHECK 3) Non-existing tools should fail to start
-    monkeypatch.setattr(installer, "_on_process_done", _assert_error_used)
+    monkeypatch.setattr(
+        installer,
+        "_on_process_done",
+        MethodType(_assert_error_used, installer),
+    )
     monkeypatch.setattr(installer, "_get_tool", lambda *a: _NonExistingTool)
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
