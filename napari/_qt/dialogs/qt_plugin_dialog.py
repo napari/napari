@@ -898,7 +898,6 @@ class QtPluginDialog(QDialog):
         self.packages_filter.setPlaceholderText(trans._("filter..."))
         self.packages_filter.setMaximumWidth(350)
         self.packages_filter.setClearButtonEnabled(True)
-        self.packages_filter.setDisabled(True)
         mid_layout = QVBoxLayout()
         mid_layout.addWidget(self.packages_filter)
         mid_layout.addWidget(self.installed_label)
@@ -997,7 +996,6 @@ class QtPluginDialog(QDialog):
         )
 
     def _end_refresh(self):
-        self.packages_filter.setDisabled(False)
         refresh_state = self.refresh_state
         self.refresh_state = RefreshState.DONE
         if refresh_state == RefreshState.OUTDATED:
@@ -1060,7 +1058,7 @@ class QtPluginDialog(QDialog):
             if not is_available:
                 self.available_list.tag_unavailable(project_info)
 
-        # self.filter()
+        self.filter()
 
     def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""
