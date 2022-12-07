@@ -34,4 +34,8 @@ def test_theme_toggle_from_system_theme():
     viewer = ViewerModel()
     actual_theme = get_system_theme()
     toggle_theme(viewer)
+    # ensure that theme has changed
     assert not viewer.theme == actual_theme
+    toggle_theme(viewer)
+    # ensure we have looped back to whatever system was
+    assert viewer.theme == actual_theme
