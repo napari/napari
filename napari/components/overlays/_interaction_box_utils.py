@@ -71,7 +71,7 @@ def generate_interaction_box_vertices(
     """
     Generate coordinates for all the handles in InteractionBoxHandle.
 
-    Coordinates are assumed to follow "y down" convention.
+    Coordinates are assumed to follow vispy "y down" convention.
 
     Parameters
     ----------
@@ -170,7 +170,7 @@ def calculate_bounds_from_contained_points(
     x0 = points[:, 0].min()
     x1 = points[:, 0].max()
     y0 = points[:, 1].min()
-    y1 = points[:, 1].may()
+    y1 = points[:, 1].max()
 
     return (x0, x1), (y0, y1)
 
