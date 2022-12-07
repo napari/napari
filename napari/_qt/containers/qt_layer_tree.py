@@ -5,19 +5,19 @@ from typing import TYPE_CHECKING, Any
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QImage
 
-from ...layers import Layer
-from ._base_item_model import ItemRole, ThumbnailRole
-from ._layer_delegate import LayerDelegate
+from napari._qt.containers._base_item_model import ItemRole, ThumbnailRole
+from napari._qt.containers._layer_delegate import LayerDelegate
 
 # from .qt_layer_list import ReverseProxyModel
-from .qt_tree_model import QtNodeTreeModel
-from .qt_tree_view import QtNodeTreeView
+from napari._qt.containers.qt_tree_model import QtNodeTreeModel
+from napari._qt.containers.qt_tree_view import QtNodeTreeView
+from napari.layers import Layer
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
-    from ...layers.layergroup import LayerGroup
+    from napari.layers.layergroup import LayerGroup
 
 
 class QtLayerTreeModel(QtNodeTreeModel[Layer]):

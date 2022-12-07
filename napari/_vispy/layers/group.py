@@ -1,6 +1,6 @@
 from vispy.scene.node import Node
 
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
 
 
 class VispyLayerGroup(VispyBaseLayer):

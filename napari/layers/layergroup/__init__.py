@@ -1,1 +1,1 @@
-from .layergroup import LayerGroup
+from napari.layers.layergroup.layergroup import LayerGroup

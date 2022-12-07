@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 
 if TYPE_CHECKING:
     import napari.layers

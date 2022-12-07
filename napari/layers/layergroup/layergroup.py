@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, Iterable, List, Optional
 
 import numpy as np
 
-from ...components.layerlist import Extent, _LayerListMixin
-from ...utils.naming import inc_name_count
-from ...utils.translations import trans
-from ...utils.tree import Group
-from ..base import Layer
-from ..utils.layer_utils import combine_extents
+from napari.components.layerlist import Extent, _LayerListMixin
+from napari.layers.base import Layer
+from napari.layers.utils.layer_utils import combine_extents
+from napari.utils.naming import inc_name_count
+from napari.utils.translations import trans
+from napari.utils.tree import Group
 
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
@@ -25,8 +25,8 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         Layer.__init__(self, None, self._get_ndim(), name=name)
 
         # avoid circular import
-        from ..._app_model.context import create_context
-        from ..._app_model.context._layerlist_context import (
+        from napari._app_model.context import create_context
+        from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
         )
 
@@ -296,7 +296,7 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         _writer: Optional[WriterContribution] = None,
     ) -> List[str]:
 
-        from ...plugins.io import save_layers
+        from napari.plugins.io import save_layers
 
         layers = (
             list(self.selection)
