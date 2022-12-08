@@ -113,7 +113,7 @@ def _assert_exit_code_not_zero(
     if error is not None:
         errors.append("- 'error' should have been None!")
     if errors:
-        raise Exception("\n".join(errors))
+        raise AssertionError("\n".join(errors))
     return self._on_process_done_original(exit_code, exit_status, error)
 
 
@@ -135,7 +135,7 @@ def _assert_error_used(self, exit_code=None, exit_status=None, error=None):
     if exit_code is not None:
         errors.append("- 'exit_code' should not have been populated!")
     if errors:
-        raise Exception("\n".join(errors))
+        raise AssertionError("\n".join(errors))
     return self._on_process_done_original(exit_code, exit_status, error)
 
 
