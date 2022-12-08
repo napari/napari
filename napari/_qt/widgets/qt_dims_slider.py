@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
+from superqt import ensure_object_thread
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.qthreading import _new_worker_qthread
@@ -632,6 +633,7 @@ class AnimationWorker(QObject):
             self.advance()
         self.started.emit()
 
+    @ensure_object_thread
     def _stop(self):
         """Stop the animation."""
         if self.timer.isActive():

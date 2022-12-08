@@ -335,6 +335,7 @@ class _QtMainWindow(QMainWindow):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
             # here we inform that confirmation dialog is not open
+            self._qt_viewer.dims.stop()
             return super().close()
         self._is_close_dialog[quit_app] = True
         # here we inform that confirmation dialog is not open
@@ -435,6 +436,8 @@ class _QtMainWindow(QMainWindow):
             for _ in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
+
+        self._qt_viewer.dims.stop()
 
         if self._quit_app:
             quit_app()
