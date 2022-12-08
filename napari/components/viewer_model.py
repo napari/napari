@@ -346,7 +346,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
-    def _slice_layer(self, event: Event) -> None:
+    def _on_layer_reslice(self, event: Event) -> None:
         self._layer_slicer.slice_layers_async(
             [event.layer], self.dims, _refresh_sync=True
         )
@@ -504,7 +504,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
-        layer.events.reslice.connect(self._slice_layer)
+        layer.events.reslice.connect(self._on_layer_reslice)
         if hasattr(layer.events, "mode"):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
