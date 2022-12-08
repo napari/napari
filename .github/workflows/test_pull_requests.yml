@@ -8,48 +8,48 @@ on:
       - "v*x"
 
 jobs:
-  # manifest:
-  #   # make sure all necessary files will be bundled in the release
-  #   name: Check Manifest
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.x"
-  #         cache-dependency-path: setup.cfg
-  #     - name: Check Manifest
-  #       run: |
-  #         pip install --upgrade pip
-  #         pip install -e .[build]
-  #         make typestubs
-  #         make check-manifest
-  #
-  # localization_syntax:
-  #   # make sure all necessary files will be bundled in the release
-  #   name: Check l18n syntax
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.x"
-  #     - name: Check localization formatting
-  #       run: |
-  #         pip install --upgrade pip semgrep
-  #         # f"..." and f'...' are the same for semgrep
-  #         semgrep --error --lang python --pattern 'trans._(f"...")' napari
-  #         semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
-  #
+  manifest:
+    # make sure all necessary files will be bundled in the release
+    name: Check Manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache-dependency-path: setup.cfg
+      - name: Check Manifest
+        run: |
+          pip install --upgrade pip
+          pip install -e .[build]
+          make typestubs
+          make check-manifest
+
+  localization_syntax:
+    # make sure all necessary files will be bundled in the release
+    name: Check l18n syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Check localization formatting
+        run: |
+          pip install --upgrade pip semgrep
+          # f"..." and f'...' are the same for semgrep
+          semgrep --error --lang python --pattern 'trans._(f"...")' napari
+          semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
+
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
-        # platform: [ubuntu-latest]
-        # python: ["3.8", "3.9", "3.10"]
-        # backend: [pyqt5, pyside2]
+        platform: [ubuntu-latest]
+        python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
           # Windows py38
           - python: 3.8
@@ -58,28 +58,28 @@ jobs:
           - python: 3.8
             platform: windows-latest
             backend: pyside2
-          # - python: 3.9
-          #   platform: macos-latest
-          #   backend: pyqt5
-          # # minimum specified requirements
-          # - python: 3.8
-          #   platform: ubuntu-18.04
-          #   backend: pyqt5
-          #   MIN_REQ: 1
-          # # test with --async_only
-          # - python: 3.8
-          #   platform: ubuntu-18.04
-          #   toxenv: async-pyqt5-py38-linux
-          # # test without any Qt backends
-          # - python: 3.8
-          #   platform: ubuntu-18.04
-          #   toxenv: headless-py38-linux
-          # - python: 3.9
-          #   platform: ubuntu-latest
-          #   backend: pyqt6
-          # - python: 3.9
-          #   platform: ubuntu-latest
-          #   backend: pyside6
+          - python: 3.9
+            platform: macos-latest
+            backend: pyqt5
+          # minimum specified requirements
+          - python: 3.8
+            platform: ubuntu-18.04
+            backend: pyqt5
+            MIN_REQ: 1
+          # test with --async_only
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: async-pyqt5-py38-linux
+          # test without any Qt backends
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: headless-py38-linux
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyside6
 # uncoment when new qtpy is released
 #          - python: '3.10'
 #            platform: ubuntu-latest
@@ -149,51 +149,51 @@ jobs:
       - name: Coverage
         uses: codecov/codecov-action@v3
 
-  # test_pip_install:
-  #   name: ubuntu-latest 3.9 pip install
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         path: napari-from-github
-  #
-  #     - name: Set up Python 3.9
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.9
-  #         cache: "pip"
-  #         cache-dependency-path: napari-from-github/setup.cfg
-  #
-  #     - uses: tlambert03/setup-qt-libs@v1
-  #
-  #     - name: Install this commit
-  #       run: |
-  #         pip install --upgrade pip
-  #         pip install ./napari-from-github[all,testing]
-  #
-  #     - name: Test
-  #       uses: GabrielBB/xvfb-action@v1
-  #       with:
-  #         run: |
-  #           python -m pytest --pyargs napari --color=yes
-  #           python -m pytest --pyargs napari_builtins --color=yes
-  #
-  # test_examples:
-  #   name: test examples
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.9
-  #         cache-dependency-path: setup.cfg
-  #     - uses: tlambert03/setup-qt-libs@v1
-  #     - name: Install this commit
-  #       run: |
-  #         pip install --upgrade pip
-  #         pip install setuptools tox tox-gh-actions
-  #
-  #     - name: Test
-  #       uses: GabrielBB/xvfb-action@v1
-  #       with:
-  #         run: tox -e py39-linux-pyside2-examples
+  test_pip_install:
+    name: ubuntu-latest 3.9 pip install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: napari-from-github
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: "pip"
+          cache-dependency-path: napari-from-github/setup.cfg
+
+      - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install ./napari-from-github[all,testing]
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: |
+            python -m pytest --pyargs napari --color=yes
+            python -m pytest --pyargs napari_builtins --color=yes
+
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache-dependency-path: setup.cfg
+      - uses: tlambert03/setup-qt-libs@v1
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples
