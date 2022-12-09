@@ -19,7 +19,7 @@ from npe2 import io_utils
 from npe2 import plugin_manager as pm
 from npe2.manifest import contributions
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from app_model import Action
@@ -29,8 +29,8 @@ if TYPE_CHECKING:
     from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
-    from ..layers import Layer
-    from ..types import SampleDict
+    from napari.layers import Layer
+    from napari.types import SampleDict
 
 
 class _FakeHookimpl:
@@ -67,7 +67,7 @@ def write_layers(
     layers: List[Layer],
     plugin_name: Optional[str] = None,
     writer: Optional[WriterContribution] = None,
-) -> List[str]:
+) -> Tuple[List[str], str]:
     """
     Write layers to a file using an NPE2 plugin.
 
@@ -86,19 +86,24 @@ def write_layers(
 
     Returns
     -------
-    list of str
+    (written paths, writer name) as Tuple[List[str],str]
+
+    written paths: List[str]
         Empty list when no plugin was found, otherwise a list of file paths,
         if any, that were written.
+    writer name: str
+        Name of the plugin selected to write the data.
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
 
     if writer is None:
         try:
-            return io_utils.write(
+            paths, writer = io_utils.write_get_writer(
                 path=path, layer_data=layer_data, plugin_name=plugin_name
             )
+            return (paths, writer.plugin_name)
         except ValueError:
-            return []
+            return ([], '')
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -106,8 +111,8 @@ def write_layers(
     if isinstance(
         res, str
     ):  # pragma: no cover # it shouldn't be... bad plugin.
-        return [res]
-    return res or []
+        return ([res], writer.plugin_name)
+    return (res or [], writer.plugin_name)
 
 
 def get_widget_contribution(
@@ -207,6 +212,7 @@ def get_readers(path: Optional[str] = None) -> Dict[str, str]:
     Dict[str, str]
         Dictionary of plugin_name to display name
     """
+
     if path:
         return {
             reader.plugin_name: pm.get_manifest(reader.command).display_name
@@ -236,6 +242,7 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     return (
         (
+            # use display_name for user facing display
             plugin_name,
             {
                 c.key: {'data': c.open, 'display_name': c.display_name}
@@ -286,8 +293,8 @@ def on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     'Disabled' means the plugin remains installed, but it cannot be activated,
     and its contributions will not be indexed
     """
-    from .. import Viewer
-    from ..settings import get_settings
+    from napari import Viewer
+    from napari.settings import get_settings
 
     plugin_settings = get_settings().plugins
     to_disable = set(plugin_settings.disabled_plugins)
@@ -327,7 +334,7 @@ def _register_manifest_actions(manifest: PluginManifest) -> None:
     This is called when a plugin is registered or enabled and it adds the
     plugin's menus and submenus to the app model registry.
     """
-    from .._app_model import get_app
+    from napari._app_model import get_app
 
     app = get_app()
     actions, submenus = _npe2_manifest_to_actions(manifest)
@@ -344,7 +351,7 @@ def _npe2_manifest_to_actions(
     """Gather actions and submenus from a npe2 manifest, export app_model types."""
     from app_model.types import Action, MenuRule
 
-    from .._app_model.constants._menus import is_menu_contributable
+    from napari._app_model.constants._menus import is_menu_contributable
 
     cmds: DefaultDict[str, List[MenuRule]] = DefaultDict(list)
     submenus: List[Tuple[str, SubmenuItem]] = []

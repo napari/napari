@@ -8,11 +8,12 @@ import runpy
 import sys
 import warnings
 from ast import literal_eval
+from itertools import chain, repeat
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from .utils.translations import trans
+from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -136,11 +137,14 @@ def parse_sys_argv():
         '--with',
         dest='with_',
         nargs='+',
+        action='append',
+        default=[],
         metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
         help=(
             "open napari with dock widget from specified plugin name."
             "(If plugin provides multiple dock widgets, widget name must also "
-            "be provided)"
+            "be provided). Use __all__ to open all dock widgets of a "
+            "specified plugin. Multiple widgets are opened in tabs."
         ),
     )
     parser.add_argument(
@@ -266,22 +270,52 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import _initialize_plugins, _npe2, plugin_manager
+            from napari.plugins import (
+                _initialize_plugins,
+                _npe2,
+                plugin_manager,
+            )
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
             _initialize_plugins()
             plugin_manager.discover_widgets()
-            pname, *wnames = args.with_
-            if wnames:
-                for wname in wnames:
+
+            plugin_manager_plugins = []
+            npe2_plugins = []
+            for plugin in args.with_:
+                pname, *wnames = plugin
+                for _name, (_pname, _wnames) in _npe2.widget_iterator():
+                    if _name == 'dock' and pname == _pname:
+                        npe2_plugins.append(plugin)
+                        if '__all__' in wnames:
+                            wnames = _wnames
+                        break
+
+                for _name, (_pname, _wnames) in plugin_manager.iter_widgets():
+                    if _name == 'dock' and pname == _pname:
+                        plugin_manager_plugins.append(plugin)
+                        if '__all__' in wnames:
+                            # Plugin_manager iter_widgets return wnames as dict keys
+                            wnames = list(_wnames.keys())
+                        print(
+                            trans._(
+                                'Non-npe2 plugin {pname} detected. Disable tabify for this plugin.',
+                                deferred=True,
+                                pname=pname,
+                            )
+                        )
+                        break
+
+                if wnames:
+                    for wname in wnames:
+                        _npe2.get_widget_contribution(
+                            pname, wname
+                        ) or plugin_manager.get_widget(pname, wname)
+                else:
                     _npe2.get_widget_contribution(
-                        pname, wname
-                    ) or plugin_manager.get_widget(pname, wname)
-            else:
-                _npe2.get_widget_contribution(
-                    pname
-                ) or plugin_manager.get_widget(pname)
+                        pname
+                    ) or plugin_manager.get_widget(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -317,12 +351,37 @@ def _run():
         )
 
         if args.with_:
-            pname, *wnames = args.with_
-            if wnames:
-                for wname in wnames:
-                    viewer.window.add_plugin_dock_widget(pname, wname)
-            else:
-                viewer.window.add_plugin_dock_widget(pname)
+            # Non-npe2 plugins disappear on tabify or if tabified npe2 plugins are loaded after them.
+            # Therefore, read npe2 plugins first and do not tabify for non-npe2 plugins.
+            for plugin, tabify in chain(
+                zip(npe2_plugins, repeat(True)),
+                zip(plugin_manager_plugins, repeat(False)),
+            ):
+                pname, *wnames = plugin
+                if '__all__' in wnames:
+                    for name, (_pname, _wnames) in chain(
+                        _npe2.widget_iterator(), plugin_manager.iter_widgets()
+                    ):
+                        if name == 'dock' and pname == _pname:
+                            if isinstance(_wnames, dict):
+                                # Plugin_manager iter_widgets return wnames as dict keys
+                                wnames = list(_wnames.keys())
+                            else:
+                                wnames = _wnames
+                            break
+
+                if wnames:
+                    first_dock_widget = viewer.window.add_plugin_dock_widget(
+                        pname, wnames[0], tabify=tabify
+                    )[0]
+                    for wname in wnames[1:]:
+                        viewer.window.add_plugin_dock_widget(
+                            pname, wname, tabify=tabify
+                        )
+                    first_dock_widget.show()
+                    first_dock_widget.raise_()
+                else:
+                    viewer.window.add_plugin_dock_widget(pname, tabify=tabify)
 
         # only necessary in bundled app, but see #3596
         from napari.utils.misc import (
@@ -381,6 +440,10 @@ def _maybe_rerun_with_macos_fixes():
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
+    from napari._qt import API_NAME
+
+    # This import mus be here to raise exception about PySide6 problem
+
     if sys.platform != "darwin":
         return
 
@@ -395,8 +458,6 @@ def _maybe_rerun_with_macos_fixes():
     import platform
     import subprocess
     from tempfile import mkdtemp
-
-    from qtpy import API_NAME
 
     # In principle, we will relaunch to the same python we were using
     executable = sys.executable

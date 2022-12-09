@@ -30,6 +30,7 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 
 try:
@@ -351,6 +352,7 @@ def builtins(_npe2pm: TestPluginManager):
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
 
@@ -426,6 +428,10 @@ def disable_notification_dismiss_timer(monkeypatch):
     without increase of reference counter object could be garbage collected and
     cause segmentation fault error when Qt (C++) code try to access it without
     checking if Python object exists.
+
+    This fixture is used in all tests because it is possible to call Qt code
+    from non Qt test by connection of `NapariQtNotification.show_notification` to
+    `NotificationManager` global instance.
     """
 
     with suppress(ImportError):
@@ -434,3 +440,38 @@ def disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+
+
+@pytest.fixture()
+def single_threaded_executor():
+    executor = ThreadPoolExecutor(max_workers=1)
+    yield executor
+    executor.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def _mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This is used whenever `napari._app_model.get_app()` is called to return
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`.
+
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers. If this is required for a unit test,
+    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
+    the test.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')

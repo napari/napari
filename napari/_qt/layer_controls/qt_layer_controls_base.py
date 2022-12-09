@@ -1,9 +1,13 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
-from ...layers.base._base_constants import BLENDING_TRANSLATIONS
-from ...utils.events import disconnect_events
-from ..widgets._slider_compat import QDoubleSlider
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
+
+# opaque and minimum blending do not support changing alpha (opacity)
+NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 
 
 class LayerFormLayout(QFormLayout):
@@ -34,6 +38,8 @@ class QtLayerControls(QFrame):
         An instance of a napari layer.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
+    opacityLabel : qtpy.QtWidgets.QLabel
+        Label for the opacity slider widget.
     """
 
     def __init__(self, layer):
@@ -55,6 +61,8 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
+        self.opacityLabel = QLabel(trans._('opacity:'))
+
         self._on_opacity_change()
 
         blend_comboBox = QComboBox(self)
@@ -66,6 +74,13 @@ class QtLayerControls(QFrame):
 
         blend_comboBox.currentTextChanged.connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -88,6 +103,21 @@ class QtLayerControls(QFrame):
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
         self.layer.blending = self.blendComboBox.currentData()
+        # opaque and minimum blending do not support changing alpha
+        self.opacitySlider.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+        self.opacityLabel.setEnabled(
+            self.layer.blending not in NO_OPACITY_BLENDING_MODES
+        )
+
+        blending_tooltip = ''
+        if self.layer.blending == str(Blending.MINIMUM):
+            blending_tooltip = trans._(
+                '`minimum` blending mode works best with inverted colormaps with a white background.',
+            )
+        self.blendComboBox.setToolTip(blending_tooltip)
+        self.layer.help = blending_tooltip
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""

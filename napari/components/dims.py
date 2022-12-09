@@ -5,8 +5,9 @@ from typing import Sequence, Tuple, Union
 import numpy as np
 from pydantic import root_validator, validator
 
-from ..utils.events import EventedModel
-from ..utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.misc import argsort, reorder_after_dim_reduction
+from napari.utils.translations import trans
 
 
 class Dims(EventedModel):
@@ -183,10 +184,7 @@ class Dims(EventedModel):
 
     @property
     def displayed_order(self) -> Tuple[int, ...]:
-        displayed = self.displayed
-        # equivalent to: order = np.argsort(self.displayed)
-        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
+        return tuple(argsort(self.displayed))
 
     def set_range(
         self,
@@ -405,24 +403,6 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
-
-
-def reorder_after_dim_reduction(order):
-    """Ensure current dimension order is preserved after dims are dropped.
-
-    Parameters
-    ----------
-    order : tuple
-        The data to reorder.
-
-    Returns
-    -------
-    arr : tuple
-        The original array with the unneeded dimension
-        thrown away.
-    """
-    arr = sorted(range(len(order)), key=lambda x: order[x])
-    return tuple(arr)
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:

@@ -1,6 +1,6 @@
 from napari_plugin_engine import PluginError, standard_metadata
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 
 def format_exceptions(
@@ -27,8 +27,7 @@ def format_exceptions(
         return ''
 
     from napari import __version__
-
-    from ..utils._tracebacks import get_tb_formatter
+    from napari.utils._tracebacks import get_tb_formatter
 
     format_exc_info = get_tb_formatter()
 

@@ -7,7 +7,6 @@ Points over time
 import napari
 import numpy as np
 import dask.array as da
-from skimage import data
 
 
 image4d = da.random.random(

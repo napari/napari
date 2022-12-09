@@ -9,8 +9,8 @@ from weakref import ReferenceType, ref
 if TYPE_CHECKING:
     from napari.layers import Layer
 
-from ...utils.events.event import WarningEmitter
-from ...utils.translations import trans
+from napari.utils.events.event import WarningEmitter
+from napari.utils.translations import trans
 
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
@@ -84,7 +84,7 @@ def link_layers(
     >>> link_layers(viewer.layers)  # doctest: +SKIP
     """
 
-    from ...utils.misc import pick_equality_operator
+    from napari.utils.misc import pick_equality_operator
 
     valid_attrs = _get_common_evented_attributes(layers)
 
@@ -188,7 +188,7 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 
 def _get_common_evented_attributes(
     layers: Iterable[Layer],
-    exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
+    exclude: set[str] = {'thumbnail', 'status', 'name', 'data', 'extent'},
     with_private=False,
 ) -> set[str]:
     """Get the set of common, non-private evented attributes in ``layers``.

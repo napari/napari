@@ -13,11 +13,12 @@ jobs:
     if: github.repository == 'napari/napari'
     steps:
       - name: Checkout code
-        uses: actions/checkout@main
+        uses: actions/checkout@v3
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip

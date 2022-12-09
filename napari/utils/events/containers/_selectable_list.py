@@ -1,10 +1,10 @@
 import warnings
 from typing import TypeVar
 
-from ...translations import trans
-from ._evented_list import EventedList
-from ._nested_list import NestableEventedList
-from ._selection import Selectable
+from napari.utils.events.containers._evented_list import EventedList
+from napari.utils.events.containers._nested_list import NestableEventedList
+from napari.utils.events.containers._selection import Selectable
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 
@@ -45,9 +45,6 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.events.removed.connect(
-            lambda e: self.selection.discard(e.value)
-        )  # FIXME remove lambda
         self.selection._pre_add_hook = self._preselect_hook
 
     def _preselect_hook(self, value):
@@ -61,6 +58,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
                 )
             )
         return value
+
+    def _process_delete_item(self, item: _T):
+        self.selection.discard(item)
 
     def insert(self, index: int, value: _T):
         super().insert(index, value)
@@ -110,8 +110,10 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """
         # this is just here for now to support the old layerlist API
         warnings.warn(
-            "move_selected is deprecated since 0.4.16. Please use layers.move_multiple "
-            "with layers.selection instead.",
+            trans._(
+                'move_selected is deprecated since 0.4.16. Please use layers.move_multiple with layers.selection instead.',
+                deferred=True,
+            ),
             FutureWarning,
             stacklevel=2,
         )

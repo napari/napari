@@ -5,8 +5,8 @@ the IPython console window.
 """
 from typing import Any, List, Tuple, Union
 
-from .....utils.translations import trans
-from ._utils import highlight
+from napari.components.experimental.chunk._commands._utils import highlight
+from napari.utils.translations import trans
 
 
 def print_property_table(table: List[Tuple[str, Any]]) -> None:

@@ -4,9 +4,9 @@ from typing import Tuple
 
 import numpy as np
 
-from ...utils.translations import trans
-from .._data_protocols import LayerDataProtocol
-from .._multiscale_data import MultiScaleData
+from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._multiscale_data import MultiScaleData
+from napari.utils.translations import trans
 
 
 def guess_rgb(shape):

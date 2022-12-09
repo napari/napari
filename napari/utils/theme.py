@@ -8,11 +8,11 @@ from typing import Union
 from pydantic import validator
 from pydantic.color import Color
 
-from .._vendor import darkdetect
-from ..resources._icons import build_theme_svgs
-from ..utils.translations import trans
-from .events import EventedModel
-from .events.containers._evented_dict import EventedDict
+from napari._vendor import darkdetect
+from napari.resources._icons import build_theme_svgs
+from napari.utils.events import EventedModel
+from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.translations import trans
 
 try:
     from qtpy import QT_VERSION
@@ -213,13 +213,14 @@ def get_theme(name, as_dict=None):
     if as_dict is None:
         warnings.warn(
             trans._(
-                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
+                "The `as_dict` kwarg default to False` since Napari 0.4.17, "
+                "and will become a mandatory parameter in the future.",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
-        as_dict = True
+        as_dict = False
     if as_dict:
         _theme = _theme.dict()
         _theme = {
@@ -279,7 +280,7 @@ def rebuild_theme_settings():
     here we simply update the settings to reflect current list of available
     themes.
     """
-    from ..settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.appearance.refresh_themes()

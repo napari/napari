@@ -5,16 +5,16 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..base import Layer
-from ..utils._color_manager_constants import ColorMode
-from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import fix_data_vectors
+from napari.layers.base import Layer
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_transformations import ColorType
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.vectors._vector_utils import fix_data_vectors
+from napari.utils.colormaps import Colormap, ValidColormapArg
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class Vectors(Layer):
@@ -245,7 +245,7 @@ class Vectors(Layer):
         self._view_alphas = []
 
         # now that everything is set up, make the layer visible (if set to visible)
-        self._update_dims()
+        self.refresh()
         self.visible = visible
 
     @property
@@ -578,7 +578,7 @@ class Vectors(Layer):
         face_color[:, -1] *= self._view_alphas
         face_color = np.repeat(face_color, 2, axis=0)
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
@@ -606,8 +606,7 @@ class Vectors(Layer):
         """
 
         if len(self.data) > 0:
-            # ensure dims not displayed is a list
-            dims_not_displayed = list(self._dims_not_displayed)
+            dims_not_displayed = self._slice_input.not_displayed
 
             # We want a numpy array so we can use fancy indexing with the non-displayed
             # indices, but as dims_indices can (and often/always does) contain slice
@@ -649,7 +648,7 @@ class Vectors(Layer):
 
         indices, alphas = self._slice_data(self._slice_indices)
 
-        disp = list(self._dims_displayed)
+        disp = self._slice_input.displayed
 
         if len(self.data) == 0:
             self._view_data = np.empty((0, 2, 2))
@@ -666,49 +665,54 @@ class Vectors(Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
-        # calculate min vals for the vertices and pad with 0.5
-        # the offset is needed to ensure that the top left corner of the
-        # vectors corresponds to the top left corner of the thumbnail
-        de = self._extent_data
-        offset = (np.array([de[0, d] for d in self._dims_displayed]) + 0.5)[
-            -2:
-        ]
-        # calculate range of values for the vertices and pad with 1
-        # padding ensures the entire vector can be represented in the thumbnail
-        # without getting clipped
-        shape = np.ceil(
-            [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
-        ).astype(int)[-2:]
-        zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
-
-        # vectors = copy(self._data_view[:, :, -2:])
-        if self._view_data.shape[0] > self._max_vectors_thumbnail:
-            thumbnail_indices = np.random.randint(
-                0, self._view_data.shape[0], self._max_vectors_thumbnail
-            )
-            vectors = copy(self._view_data[thumbnail_indices, :, -2:])
-            thumbnail_color_indices = self._view_indices[thumbnail_indices]
-        else:
-            vectors = copy(self._view_data[:, :, -2:])
-            thumbnail_color_indices = self._view_indices
-        vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
-        downsampled = (vectors - offset) * zoom_factor
-        downsampled = np.clip(
-            downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
-        )
+        # Set the default thumbnail to black, opacity 1
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        edge_colors = self._edge.colors[thumbnail_color_indices]
-        for v, ec in zip(downsampled, edge_colors):
-            start = v[0]
-            stop = v[1]
-            step = int(np.ceil(np.max(abs(stop - start))))
-            x_vals = np.linspace(start[0], stop[0], step)
-            y_vals = np.linspace(start[1], stop[1], step)
-            for x, y in zip(x_vals, y_vals):
-                colormapped[int(x), int(y), :] = ec
-        colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
+        if len(self.data) == 0:
+            self.thumbnail = colormapped
+        else:
+            # calculate min vals for the vertices and pad with 0.5
+            # the offset is needed to ensure that the top left corner of the
+            # vectors corresponds to the top left corner of the thumbnail
+            de = self._extent_data
+            offset = (
+                np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
+            )[-2:]
+            # calculate range of values for the vertices and pad with 1
+            # padding ensures the entire vector can be represented in the thumbnail
+            # without getting clipped
+            shape = np.ceil(
+                [de[1, d] - de[0, d] + 1 for d in self._slice_input.displayed]
+            ).astype(int)[-2:]
+            zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+
+            if self._view_data.shape[0] > self._max_vectors_thumbnail:
+                thumbnail_indices = np.random.randint(
+                    0, self._view_data.shape[0], self._max_vectors_thumbnail
+                )
+                vectors = copy(self._view_data[thumbnail_indices, :, -2:])
+                thumbnail_color_indices = self._view_indices[thumbnail_indices]
+            else:
+                vectors = copy(self._view_data[:, :, -2:])
+                thumbnail_color_indices = self._view_indices
+            vectors[:, 1, :] = (
+                vectors[:, 0, :] + vectors[:, 1, :] * self.length
+            )
+            downsampled = (vectors - offset) * zoom_factor
+            downsampled = np.clip(
+                downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
+            )
+            edge_colors = self._edge.colors[thumbnail_color_indices]
+            for v, ec in zip(downsampled, edge_colors):
+                start = v[0]
+                stop = v[1]
+                step = int(np.ceil(np.max(abs(stop - start))))
+                x_vals = np.linspace(start[0], stop[0], step)
+                y_vals = np.linspace(start[1], stop[1], step)
+                for x, y in zip(x_vals, y_vals):
+                    colormapped[int(x), int(y), :] = ec
+            colormapped[..., 3] *= self.opacity
+            self.thumbnail = colormapped
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
