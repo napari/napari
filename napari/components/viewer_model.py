@@ -347,9 +347,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _on_layer_reslice(self, event: Event) -> None:
-        self._layer_slicer.slice_layers_async(
-            [event.layer], self.dims, _refresh_sync=True
-        )
+        self._layer_slicer.submit([event.layer], self.dims, _refresh_sync=True)
 
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
@@ -360,7 +358,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-        self._layer_slicer.slice_layers_async(layers, self.dims)
+        self._layer_slicer.submit(layers, self.dims)
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]

@@ -87,7 +87,7 @@ class _LayerSlicer:
         >>> layer_slicer = _LayerSlicer()
         >>> layer = Image(...)  # an async-ready layer
         >>> with layer_slice.force_sync():
-        >>>     layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+        >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
         prev = self._force_sync
         self._force_sync = True
@@ -118,7 +118,7 @@ class _LayerSlicer:
                 f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
             )
 
-    def slice_layers_async(
+    def submit(
         self,
         layers: Iterable[Layer],
         dims: Dims,
