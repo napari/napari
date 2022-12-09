@@ -13,16 +13,10 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from ...layers.base._base_constants import Blending
-from ...layers.utils._slice_input import _SliceInput
-from ...layers.utils.interactivity_utils import (
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
-)
-from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import (
-    add_layer_to_viewer,
-    add_layers_to_viewer,
-    get_layers,
 )
 from napari.layers.utils.layer_utils import (
     coerce_affine,

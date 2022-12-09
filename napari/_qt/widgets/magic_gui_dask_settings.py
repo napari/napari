@@ -1,6 +1,6 @@
 from magicgui import magicgui
 
-from .magic_gui_base_widget import BaseMagicSetting
+from napari._qt.widgets.magic_gui_base_widget import BaseMagicSetting
 
 
 @magicgui(auto_call=True, layout='horizontal', cache={'min': 0, 'max': 20})
