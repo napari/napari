@@ -48,6 +48,7 @@ HELP_ACTIONS: List[Action] = [
             f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html'
         ),
         menus=[{'id': MenuId.MENUBAR_HELP}],
+        enablement=VERSION != "dev",
     ),
     Action(
         id=CommandId.NAPARI_HOMEPAGE,
