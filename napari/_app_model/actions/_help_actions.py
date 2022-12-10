@@ -16,15 +16,43 @@ v = parse(__version__)
 VERSION = "dev" if v.is_devrelease else str(v)
 
 
-def _open_getting_started():
-    webbrowser.open(f'https://napari.org/{VERSION}/tutorials/start_index.html')
-
-
 HELP_ACTIONS: List[Action] = [
     Action(
         id=CommandId.NAPARI_GETTING_STARTED,
         title=CommandId.NAPARI_GETTING_STARTED.title,
-        callback=_open_getting_started,
+        callback=lambda: webbrowser.open(
+            f'https://napari.org/{VERSION}/tutorials/start_index.html'
+        ),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id=CommandId.NAPARI_TUTORIALS,
+        title=CommandId.NAPARI_TUTORIALS.title,
+        callback=lambda: webbrowser.open(
+            f'https://napari.org/{VERSION}/tutorials/index.html'
+        ),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id=CommandId.NAPARI_EXAMPLES,
+        title=CommandId.NAPARI_EXAMPLES.title,
+        callback=lambda: webbrowser.open(
+            f'https://napari.org/{VERSION}/gallery.html'
+        ),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id=CommandId.NAPARI_RELEASE_NOTES,
+        title=CommandId.NAPARI_RELEASE_NOTES.title,
+        callback=lambda: webbrowser.open(
+            f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html'
+        ),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id=CommandId.NAPARI_HOMEPAGE,
+        title=CommandId.NAPARI_HOMEPAGE.title,
+        callback=lambda: webbrowser.open('https://napari.org'),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
 ]
