@@ -34,6 +34,14 @@ HELP_ACTIONS: List[Action] = [
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
+        id=CommandId.NAPARI_LAYERS_GUIDE,
+        title=CommandId.NAPARI_LAYERS_GUIDE.title,
+        callback=lambda: webbrowser.open(
+            f'https://napari.org/{VERSION}/howtos/layers/index.html'
+        ),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
         id=CommandId.NAPARI_EXAMPLES,
         title=CommandId.NAPARI_EXAMPLES.title,
         callback=lambda: webbrowser.open(
