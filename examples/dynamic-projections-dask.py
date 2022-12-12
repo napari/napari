@@ -37,7 +37,7 @@ if __name__ == '__main__':
 ##############################################################################
 # Part 2: using magicgui to vary the slice thickness.
 
-from magicgui import magicgui
+from magicgui import magicgui  # noqa: E402
 
 def sliding_window_mean(
     arr: napari.types.ImageData, size: int = 1

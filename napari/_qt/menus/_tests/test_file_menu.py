@@ -43,6 +43,24 @@ def test_sample_data_triggers_reader_dialog(
     mock_read.assert_called_once()
 
 
+def test_plugin_display_name_use_for_multiple_samples(
+    make_napari_viewer, builtins
+):
+    """For plugin with more than two sample datasets, should use plugin_display for building the menu"""
+    viewer = make_napari_viewer()
+    # builtins provides more than one sample, so the submenu should use the `display_name` from manifest
+    plugin_action_menu = viewer.window.file_menu.open_sample_menu.actions()[
+        0
+    ].menu()
+    assert plugin_action_menu.title() == 'napari builtins'
+    # Now ensure that the actions are still correct
+    # trigger the action, opening the first sample: `Astronaut`
+    assert len(viewer.layers) == 0
+    plugin_action_menu.actions()[0].trigger()
+    assert len(viewer.layers) == 1
+    assert viewer.layers[0].name == 'astronaut'
+
+
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window.file_menu._pref_dialog is None

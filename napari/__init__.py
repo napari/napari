@@ -1,5 +1,7 @@
 import os
 
+from napari._lazy import install_lazy
+
 try:
     from napari._version import version as __version__
 except ImportError:
@@ -49,7 +51,6 @@ _submod_attrs = {
 # potential to take a second or more, so we definitely don't want to import it
 # just to access the CLI (which may not actually need any of the imports)
 
-from napari._lazy import install_lazy
 
 __getattr__, __dir__, __all__ = install_lazy(
     __name__, _proto_all_, _submod_attrs

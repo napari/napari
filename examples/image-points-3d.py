@@ -1,5 +1,10 @@
 """
+Image points 3D
+===============
+
 Display points overlaid on a 3D image
+
+.. tags:: visualization-nD
 """
 from skimage import data, feature, filters
 import napari
