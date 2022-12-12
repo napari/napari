@@ -357,14 +357,16 @@ register_theme('light', LIGHT, "builtin")
 
 
 # this function here instead of plugins._npe2 to avoid circular import
-def _install_npe2_themes(_themes):
+def _install_npe2_themes(themes=None):
+    if themes is None:
+        themes = _themes
     import npe2
 
     for manifest in npe2.PluginManager.instance().iter_manifests(
         disabled=False
     ):
         for theme in manifest.contributions.themes or ():
-            theme_dict = _themes[theme.type].dict()
+            theme_dict = themes[theme.type].dict()
             theme_dict.update(theme.colors.dict(exclude_unset=True))
             register_theme(theme.id, theme_dict, manifest.name)
 

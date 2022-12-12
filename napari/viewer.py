@@ -57,12 +57,14 @@ class Viewer(ViewerModel):
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
         from napari.plugins import _initialize_plugins
+        from napari.utils.theme import _install_npe2_themes
 
         # having this import here makes all of Qt imported lazily, upon
         # instantiating the first Viewer.
         from napari.window import Window
 
         _initialize_plugins()
+        _install_npe2_themes()
 
         self._window = Window(self, show=show)
         self._instances.add(self)
