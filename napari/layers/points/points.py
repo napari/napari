@@ -176,7 +176,7 @@ class Points(Layer):
         that property will be displayed. Multiple properties can be composed using f-string-like
         syntax (e.g., '{property_1}, {float_property:.2f}).
         For example usage, see /napari/examples/add_points_with_text.py.
-    symbol : str, array
+    symbol : array of str
         Array of symbols for each point.
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same

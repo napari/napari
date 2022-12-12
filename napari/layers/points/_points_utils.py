@@ -263,7 +263,7 @@ def coerce_symbols(array: np.ndarray) -> np.ndarray:
         Array of strings matching Symbol values.
     """
     # dtype has to be object, otherwise np.vectorize will cut it down to `U(N)`,
-    # where N is the biggest string currently in the array. This breaks if
+    # where N is the biggest string currently in the array.
     array = array.astype(object, copy=True)
     for k, v in SYMBOL_ALIAS.items():
         array[(array == k) | (array == k.upper())] = v
