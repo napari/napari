@@ -14,7 +14,7 @@ from itertools import product
 
 try:
     from omero.gateway import BlitzGateway
-except:
+except ModuleNotFoundError:
     print("Could not import BlitzGateway which is")
     print("required to download the sample datasets.")
     print("Please install omero-py:")

@@ -352,6 +352,7 @@ def builtins(_npe2pm: TestPluginManager):
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
 
@@ -427,6 +428,10 @@ def disable_notification_dismiss_timer(monkeypatch):
     without increase of reference counter object could be garbage collected and
     cause segmentation fault error when Qt (C++) code try to access it without
     checking if Python object exists.
+
+    This fixture is used in all tests because it is possible to call Qt code
+    from non Qt test by connection of `NapariQtNotification.show_notification` to
+    `NotificationManager` global instance.
     """
 
     with suppress(ImportError):

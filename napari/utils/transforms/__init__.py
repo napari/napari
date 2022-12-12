@@ -6,3 +6,12 @@ from napari.utils.transforms.transforms import (
     Transform,
     TransformChain,
 )
+
+__all__ = [
+    "shear_matrix_from_angle",
+    "Affine",
+    "CompositeAffine",
+    "ScaleTranslate",
+    "Transform",
+    "TransformChain",
+]

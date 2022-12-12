@@ -19,6 +19,11 @@ repos:
     - id: black
       pass_filenames: true
       exclude: _vendor|vendored|examples
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.158
+    hooks:
+      - id: ruff
+        exclude: _vendor|vendored
 -   repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
     hooks:
@@ -28,13 +33,13 @@ repos:
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.2
+    rev: v3.3.0
     hooks:
     - id: pyupgrade
       args: ["--py38-plus", "--keep-runtime-typing"]
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/seddonym/import-linter
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
     - id: import-linter
       stages: [manual]
