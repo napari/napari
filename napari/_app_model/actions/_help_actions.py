@@ -10,7 +10,7 @@ from app_model.types import Action
 from packaging.version import parse
 
 from napari import __version__
-from napari._app_model.constants import CommandId, MenuId
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
 
 v = parse(__version__)
 VERSION = "dev" if v.is_devrelease else str(v)
@@ -56,7 +56,13 @@ HELP_ACTIONS: List[Action] = [
         callback=lambda: webbrowser.open(
             HELP_URLS['release_notes'],
         ),
-        menus=[{'id': MenuId.MENUBAR_HELP, 'when': VERSION != "dev"}],
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'when': VERSION != "dev",
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
     ),
     Action(
         id=CommandId.NAPARI_GITHUB_ISSUE,
@@ -64,12 +70,18 @@ HELP_ACTIONS: List[Action] = [
         callback=lambda: webbrowser.open(
             HELP_URLS['github_issue'],
         ),
-        menus=[{'id': MenuId.MENUBAR_HELP, 'when': VERSION == "dev"}],
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'when': VERSION == "dev",
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
     ),
     Action(
         id=CommandId.NAPARI_HOMEPAGE,
         title=CommandId.NAPARI_HOMEPAGE.title,
         callback=lambda: webbrowser.open(HELP_URLS['homepage']),
-        menus=[{'id': MenuId.MENUBAR_HELP}],
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
 ]

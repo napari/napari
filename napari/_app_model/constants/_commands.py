@@ -117,7 +117,7 @@ _COMMAND_INFO = {
     CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes'), ),
     CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage'), ),
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
-    CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report a bug on GitHub'), ),
+    CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub'), ),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
 
     # Layer menubar
