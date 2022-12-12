@@ -94,7 +94,9 @@ authors:
   family-names: Royer
   affiliation: Chan Zuckerberg Biohub
 - given-names: Andrea
-  family-names: PIERRÉ
+  family-names: Pierré
+  affiliation: Brown University
+  orcid: "https://orcid.org/0000-0003-4501-5428"
 - given-names: Hagai
   family-names: Har-Gil
   affiliation: Tel Aviv University, Israel
