@@ -27,12 +27,6 @@ HELP_URLS = {
 
 HELP_ACTIONS: List[Action] = [
     Action(
-        id=CommandId.NAPARI_HOMEPAGE,
-        title=CommandId.NAPARI_HOMEPAGE.title,
-        callback=lambda: webbrowser.open(HELP_URLS['homepage']),
-        menus=[{'id': MenuId.MENUBAR_HELP}],
-    ),
-    Action(
         id=CommandId.NAPARI_GETTING_STARTED,
         title=CommandId.NAPARI_GETTING_STARTED.title,
         callback=lambda: webbrowser.open(HELP_URLS['getting_started']),
@@ -71,5 +65,11 @@ HELP_ACTIONS: List[Action] = [
             HELP_URLS['github_issue'],
         ),
         menus=[{'id': MenuId.MENUBAR_HELP, 'when': VERSION == "dev"}],
+    ),
+    Action(
+        id=CommandId.NAPARI_HOMEPAGE,
+        title=CommandId.NAPARI_HOMEPAGE.title,
+        callback=lambda: webbrowser.open(HELP_URLS['homepage']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
 ]
