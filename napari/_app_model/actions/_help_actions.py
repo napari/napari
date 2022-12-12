@@ -21,10 +21,17 @@ HELP_URLS = {
     "layers_guide": f'https://napari.org/{VERSION}/howtos/layers/index.html',
     "examples_gallery": f'https://napari.org/{VERSION}/gallery.html',
     "release_notes": f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
+    "github_issue": 'https://github.com/napari/napari/issues',
     "homepage": 'https://napari.org',
 }
 
 HELP_ACTIONS: List[Action] = [
+    Action(
+        id=CommandId.NAPARI_HOMEPAGE,
+        title=CommandId.NAPARI_HOMEPAGE.title,
+        callback=lambda: webbrowser.open(HELP_URLS['homepage']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
     Action(
         id=CommandId.NAPARI_GETTING_STARTED,
         title=CommandId.NAPARI_GETTING_STARTED.title,
@@ -55,13 +62,14 @@ HELP_ACTIONS: List[Action] = [
         callback=lambda: webbrowser.open(
             HELP_URLS['release_notes'],
         ),
-        menus=[{'id': MenuId.MENUBAR_HELP}],
-        enablement=VERSION != "dev",
+        menus=[{'id': MenuId.MENUBAR_HELP, 'when': VERSION != "dev"}],
     ),
     Action(
-        id=CommandId.NAPARI_HOMEPAGE,
-        title=CommandId.NAPARI_HOMEPAGE.title,
-        callback=lambda: webbrowser.open(HELP_URLS['homepage']),
-        menus=[{'id': MenuId.MENUBAR_HELP}],
+        id=CommandId.NAPARI_GITHUB_ISSUE,
+        title=CommandId.NAPARI_GITHUB_ISSUE.title,
+        callback=lambda: webbrowser.open(
+            HELP_URLS['github_issue'],
+        ),
+        menus=[{'id': MenuId.MENUBAR_HELP, 'when': VERSION == "dev"}],
     ),
 ]
