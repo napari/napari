@@ -96,13 +96,13 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
 
 
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 5,
+    'Image': 7,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
     'Points': 9,
     'Labels': 14,
-    'Shapes': 17,
+    'Shapes': 20,
 }
 
 
