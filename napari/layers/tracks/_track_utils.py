@@ -92,6 +92,23 @@ class TrackManager:
         # lookup table for vertex indices from track id
         self._id2idxs = None
 
+    @staticmethod
+    def _fast_points_lookup(sorted_time: np.ndarray) -> Dict[int, slice]:
+        """Computes a fast lookup table from time to their respective points slicing."""
+
+        # finds where t transitions to t + 1
+        transitions = np.nonzero(sorted_time[:-1] - sorted_time[1:])[0] + 1
+        start = np.insert(transitions, 0, 0)
+
+        # compute end of slice
+        end = np.roll(start, -1)
+        end[-1] = len(sorted_time)
+
+        # access first position of each t slice
+        time = sorted_time[start]
+
+        return {t: slice(s, e) for s, e, t in zip(start, end, time)}
+
     @property
     def data(self) -> np.ndarray:
         """array (N, D+1): Coordinates for N points in D+1 dimensions."""
@@ -104,12 +121,12 @@ class TrackManager:
         # convert data to a numpy array if it is not already one
         data = np.asarray(data)
 
+        # check check the formatting of the incoming track data
+        data = self._validate_track_data(data)
+
         # Sort data by ID then time
         self._order = np.lexsort((data[:, 1], data[:, 0]))
-        data = data[self._order]
-
-        # check check the formatting of the incoming track data
-        self._data = self._validate_track_data(data)
+        self._data = data[self._order]
 
         # build the indices for sorting points by time
         self._ordered_points_idx = np.argsort(self.data[:, 1])
@@ -124,11 +141,7 @@ class TrackManager:
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
         time = np.round(self._points[:, 0]).astype(np.uint)
-        frames = list(set(time.tolist()))
-        self._points_lookup = {}
-        for f in frames:
-            idx = np.where(time == f)[0]
-            self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
+        self._points_lookup = self._fast_points_lookup(time)
 
         # make a second lookup table using a sparse matrix to convert track id
         # to the vertex indices
@@ -138,9 +151,6 @@ class TrackManager:
                 (self.track_ids, np.arange(self.track_ids.size)),
             )
         ).tocsr()
-
-        # sort the data by ID then time
-        # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
 
     @property
     def features(self):
@@ -166,9 +176,9 @@ class TrackManager:
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
+        self._feature_table.reorder(self._order)
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
-        self._feature_table.reorder(self._order)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -238,15 +248,6 @@ class TrackManager:
                 )
             )
 
-        # check that data are sorted by ID then time
-        indices = np.lexsort((data[:, 1], data[:, 0]))
-        if not np.array_equal(indices, np.arange(data[:, 0].size)):
-            raise ValueError(
-                trans._(
-                    'tracks should be ordered by ID and time', deferred=True
-                )
-            )
-
         return data
 
     def _validate_track_graph(
@@ -260,11 +261,13 @@ class TrackManager:
             if type(parents_idx) != list:
                 graph[node_idx] = [parents_idx]
 
+        unique_track_ids = set(self.unique_track_ids)
+
         # check that graph nodes exist in the track id lookup
         for node_idx, parents_idx in graph.items():
             nodes = [node_idx] + parents_idx
             for node in nodes:
-                if node not in self.unique_track_ids:
+                if node not in unique_track_ids:
                     raise ValueError(
                         trans._(
                             'graph node {node_idx} not found',
@@ -288,7 +291,6 @@ class TrackManager:
 
             # grab the correct vertices and sort by time
             vertices = self.data[indices, 1:]
-            vertices = vertices[vertices[:, 0].argsort()]
 
             # coordinates of the text identifiers, vertices and connections
             points_id += [idx] * vertices.shape[0]
@@ -315,9 +317,7 @@ class TrackManager:
                 parent_stop = self._vertex_indices_from_id(parent_idx)[-1]
                 parent = self.data[parent_stop, 1:]
 
-                verts = np.stack([node, parent], axis=0)
-
-                graph_vertices.append(verts)
+                graph_vertices.append([node, parent])
                 graph_connex.append([True, False])
 
         # if there is a graph, store the vertices and connection arrays,
