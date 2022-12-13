@@ -68,7 +68,7 @@ def test_update_theme(
 
     blue = get_theme("dark", False)
     blue.name = "blue"
-    register_theme("blue", blue)
+    register_theme("blue", blue, "test")
 
     # triggered when theme was added
     mock_add_theme.assert_called()
