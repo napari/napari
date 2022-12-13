@@ -291,6 +291,7 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""

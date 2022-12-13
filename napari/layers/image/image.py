@@ -535,7 +535,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -594,6 +594,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
             )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
@@ -604,6 +611,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)

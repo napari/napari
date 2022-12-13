@@ -15,7 +15,7 @@ class Interpolation(StringEnum):
     """
 
     BESSEL = auto()
-    BICUBIC = auto()
+    CUBIC = auto()
     LINEAR = auto()
     BLACKMAN = auto()
     CATROM = auto()
@@ -33,7 +33,7 @@ class Interpolation(StringEnum):
     @classmethod
     def view_subset(cls):
         return (
-            cls.BICUBIC,
+            cls.CUBIC,
             cls.LINEAR,
             cls.KAISER,
             cls.NEAREST,

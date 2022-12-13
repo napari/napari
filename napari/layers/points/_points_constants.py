@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from enum import Enum, auto
+from enum import auto
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -37,32 +37,23 @@ class Mode(StringEnum):
     TRANSFORM = auto()
 
 
-class Symbol(Enum):
-    """Symbol: Valid symbol/marker types for the Points layer.
-    The string method returns the valid vispy string.
+class Symbol(StringEnum):
+    """Valid symbol/marker types for the Points layer."""
 
-    """
-
-    ARROW = 'arrow'
-    CLOBBER = 'clobber'
-    CROSS = 'cross'
-    DIAMOND = 'diamond'
-    DISC = 'disc'
-    HBAR = 'hbar'
-    RING = 'ring'
-    SQUARE = 'square'
-    STAR = 'star'
-    TAILED_ARROW = 'tailed_arrow'
-    TRIANGLE_DOWN = 'triangle_down'
-    TRIANGLE_UP = 'triangle_up'
-    VBAR = 'vbar'
-    X = 'x'
-
-    def __str__(self):
-        """String representation: The string method returns the
-        valid vispy symbol string for the Markers visual.
-        """
-        return self.value
+    ARROW = auto()
+    CLOBBER = auto()
+    CROSS = auto()
+    DIAMOND = auto()
+    DISC = auto()
+    HBAR = auto()
+    RING = auto()
+    SQUARE = auto()
+    STAR = auto()
+    TAILED_ARROW = auto()
+    TRIANGLE_DOWN = auto()
+    TRIANGLE_UP = auto()
+    VBAR = auto()
+    X = auto()
 
 
 # Mapping of symbol alias names to the deduplicated name
@@ -78,7 +69,6 @@ SYMBOL_ALIAS = {
     's': Symbol.SQUARE,
     '|': Symbol.VBAR,
 }
-
 
 SYMBOL_TRANSLATION = OrderedDict(
     [
@@ -98,6 +88,8 @@ SYMBOL_TRANSLATION = OrderedDict(
         (Symbol.X, trans._('x')),
     ]
 )
+
+SYMBOL_TRANSLATION_INVERTED = {v: k for k, v in SYMBOL_TRANSLATION.items()}
 
 
 class Shading(StringEnum):

@@ -4,9 +4,11 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
+from napari._tests.utils import skip_on_win_ci
 from napari.utils import nbscreenshot
 
 
+@skip_on_win_ci
 def test_nbscreenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
@@ -22,6 +24,7 @@ def test_nbscreenshot(make_napari_viewer):
     assert rich_display_object.image is not None
 
 
+@skip_on_win_ci
 @pytest.mark.parametrize(
     "alt_text_input, expected_alt_text",
     [
