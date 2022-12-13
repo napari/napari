@@ -41,13 +41,26 @@ from napari.errors import (
     NoAvailableReaderError,
     ReaderPluginError,
 )
-from napari.layers import Image, Labels, Layer, Points, Shapes
+from napari.layers import (
+    Image,
+    Labels,
+    Layer,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from napari.layers._source import layer_source
+from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
 from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
 from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
+from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
+from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
 from napari.layers.utils.stack_utils import split_channels
+from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
 from napari.utils._register import create_func as create_add_method
@@ -540,6 +553,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
             Shapes: shapes_fun_to_mode,
+            Vectors: vectors_fun_to_mode,
+            Image: image_fun_to_mode,
+            Surface: surface_fun_to_mode,
+            Tracks: tracks_fun_to_mode,
         }
 
         help_li = []
