@@ -1,4 +1,4 @@
-from napari.layers.tracks._tracks_constants import Mode
+from napari.layers.base._base_constants import Mode
 from napari.layers.tracks.tracks import Tracks
 from napari.layers.utils.layer_utils import (
     register_layer_action,

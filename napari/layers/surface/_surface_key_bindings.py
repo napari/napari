@@ -1,4 +1,4 @@
-from napari.layers.surface._surface_constants import Mode
+from napari.layers.base._base_constants import Mode
 from napari.layers.surface.surface import Surface
 from napari.layers.utils.layer_utils import (
     register_layer_action,

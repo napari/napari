@@ -1,8 +1,8 @@
+from napari.layers.base._base_constants import Mode
 from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from napari.layers.vectors._vectors_constants import Mode
 from napari.layers.vectors.vectors import Vectors
 from napari.utils.translations import trans
 
