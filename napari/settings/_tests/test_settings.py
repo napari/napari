@@ -169,7 +169,7 @@ def test_custom_theme_settings(test_settings):
         primary='rgb(80, 88, 108)',
         current='rgb(184, 112, 0)',
     )
-    register_theme(custom_theme_name, blue_theme)
+    register_theme(custom_theme_name, blue_theme, "test")
 
     # Theme registered, should pass validation
     test_settings.appearance.theme = custom_theme_name
