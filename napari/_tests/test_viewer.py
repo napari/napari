@@ -16,29 +16,29 @@ from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
 
 
-def _get_all_keybinding_methods(type_):
-    obj_methods = set(super(type_, type_).class_keymap.values())
-    obj_methods.update({v.__name__ for v in type_.class_keymap.values()})
-    obj_methods.update(
+def _get_all_keybinding_actions(type_):
+    obj_actions = set(super(type_, type_).class_keymap.values())
+    obj_actions.update({v.__name__ for v in type_.class_keymap.values()})
+    obj_actions.update(
         {
             a.command.__name__
             for a in action_manager._get_layer_actions(type_).values()
         }
     )
-    return obj_methods
+    return obj_actions
 
 
-viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 14
+viewer_actions = _get_all_keybinding_actions(Viewer)
+EXPECTED_NUMBER_OF_VIEWER_ACTIONS = 14
 
 
-def test_len_methods_viewer(make_napari_viewer):
+def test_len_actions_viewer(make_napari_viewer):
     """
-    Make sure we do find all the methods attached to a viewer via keybindings
+    Make sure we do find all the actions attached to a viewer via keybindings
     """
     _ = make_napari_viewer()
-    viewer_methods = _get_all_keybinding_methods(Viewer)
-    assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
+    viewer_actions = _get_all_keybinding_actions(Viewer)
+    assert len(viewer_actions) == EXPECTED_NUMBER_OF_VIEWER_ACTIONS
 
 
 @pytest.mark.xfail
@@ -47,12 +47,12 @@ def test_non_existing_bindings():
     Those are condition tested in next unittest; but do not exists; this is
     likely due to an oversight somewhere.
     """
-    assert 'play' in [x.__name__ for x in viewer_methods]
-    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_methods]
+    assert 'play' in [x.__name__ for x in viewer_actions]
+    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_actions]
 
 
-@pytest.mark.parametrize('func', viewer_methods)
-def test_viewer_methods(make_napari_viewer, func):
+@pytest.mark.parametrize('func', viewer_actions)
+def test_viewer_actions(make_napari_viewer, func):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
 
@@ -95,7 +95,7 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
         func(layer)
 
 
-EXPECTED_NUMBER_OF_LAYER_METHODS = {
+EXPECTED_NUMBER_OF_LAYER_ACTIONS = {
     'Image': 5,
     'Vectors': 0,
     'Surface': 0,
@@ -107,14 +107,17 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
 
 
 @pytest.mark.parametrize(
-    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_METHODS.items()
+    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_ACTIONS.items()
 )
-def test_expected_number_of_layer_methods(cls, expectation):
+def test_expected_number_of_layer_actions(cls, expectation):
     """
-    Make sure we do find all the methods attached to a layer via keybindings
+    Make sure we do find all the actions attached to a layer via keybindings
     """
-    layer_methods = _get_all_keybinding_methods(getattr(layers, cls))
-    assert len(layer_methods) == expectation
+    layer_actions = _get_all_keybinding_actions(getattr(layers, cls))
+    assert len(layer_actions) == expectation, (
+        # chr(10) is "\n", which can't be used directly in fstrings
+        f'expected {expectation} actions, but got the following:\n{chr(10).join(layer_actions)}'
+    )
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
