@@ -131,7 +131,11 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot, request: 'FixtureRequest', napari_plugin_manager, monkeypatch, clean_themes
+    qtbot,
+    request: 'FixtureRequest',
+    napari_plugin_manager,
+    monkeypatch,
+    clean_themes,
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
