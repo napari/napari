@@ -1,4 +1,4 @@
-from magicgui import magicgui
+from magicgui import magic_factory
 
 from napari._qt.widgets.magic_gui_base_widget import BaseMagicSetting
 
