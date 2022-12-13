@@ -532,8 +532,9 @@ def dangling_qthreads(monkeypatch, qtbot, request):
                 raise
 
     for thread, _ in dangling_threads_li:
-        thread.quit()
-        qtbot.waitUntil(thread.isFinished, timeout=2000)
+        with suppress(RuntimeError):
+            thread.quit()
+            qtbot.waitUntil(thread.isFinished, timeout=2000)
 
     long_desc = (
         "If you see this error, it means that a QThread was started in a test "
@@ -586,8 +587,9 @@ def dangling_qthread_pool(monkeypatch, request):
             dangling_threads_pools.append((thread_pool, calling))
 
     for thread_pool, _ in dangling_threads_pools:
-        thread_pool.clear()
-        thread_pool.waitForDone(2000)
+        with suppress(RuntimeError):
+            thread_pool.clear()
+            thread_pool.waitForDone(2000)
 
     long_desc = (
         "If you see this error, it means that a QThreadPool was used to run "
@@ -671,7 +673,8 @@ def dangling_qtimers(monkeypatch, request):
             dangling_timers.append((timer, calling))
 
     for timer, _ in dangling_timers:
-        timer.stop()
+        with suppress(RuntimeError):
+            timer.stop()
 
     long_desc = (
         "If you see this error, it means that a QTimer was started but not stopped. "
@@ -716,7 +719,8 @@ def dangling_qanimations(monkeypatch, request):
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:
-        animation.stop()
+        with suppress(RuntimeError):
+            animation.stop()
 
     long_desc = (
         "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
