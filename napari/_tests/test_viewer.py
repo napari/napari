@@ -114,7 +114,10 @@ def test_expected_number_of_layer_methods(cls, expectation):
     Make sure we do find all the methods attached to a layer via keybindings
     """
     layer_methods = _get_all_keybinding_methods(getattr(layers, cls))
-    assert len(layer_methods) == expectation
+    assert len(layer_methods) == expectation, (
+        # chr(10) is "\n"
+        f'expected {expectation} methods, but got the following: {chr(10).join(layer_methods)}'
+    )
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
