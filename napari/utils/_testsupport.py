@@ -105,6 +105,17 @@ def napari_plugin_manager(monkeypatch):
 GCPASS = 0
 
 
+@pytest.fixture(autouse=True)
+def clean_themes():
+    from napari.utils import theme
+
+    themes = set(theme.available_themes())
+    yield
+    for name in theme.available_themes():
+        if name not in themes:
+            del theme._themes[name]
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
@@ -120,7 +131,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot, request: 'FixtureRequest', napari_plugin_manager, monkeypatch
+    qtbot, request: 'FixtureRequest', napari_plugin_manager, monkeypatch, clean_themes
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
