@@ -12,33 +12,41 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
+from napari.settings import get_settings
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
 
 
-def _get_all_keybinding_actions(type_):
-    obj_actions = set(super(type_, type_).class_keymap.values())
-    obj_actions.update({v.__name__ for v in type_.class_keymap.values()})
-    obj_actions.update(
-        {
-            a.command.__name__
-            for a in action_manager._get_layer_actions(type_).values()
-        }
-    )
-    return obj_actions
+def _get_provider_actions(type_):
+    return {
+        action.command.__name__
+        for action in action_manager._get_provider_actions(type_).values()
+    }
 
 
-viewer_actions = _get_all_keybinding_actions(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_ACTIONS = 14
+def _assert_shortcuts_exist_for_each_action(type_):
+    actions = _get_provider_actions(type_)
+    shortcuts = {
+        name.partition(':')[-1] for name in get_settings().shortcuts.shortcuts
+    }
+    shortcuts.update(func.__name__ for func in type_.class_keymap.values())
+    for action in actions:
+        assert (
+            action in shortcuts
+        ), f"Shortcut for action '{action}' is missing"
 
 
-def test_len_actions_viewer(make_napari_viewer):
+viewer_actions = _get_provider_actions(Viewer)
+
+
+def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
     """
     Make sure we do find all the actions attached to a viewer via keybindings
     """
-    _ = make_napari_viewer()
-    viewer_actions = _get_all_keybinding_actions(Viewer)
-    assert len(viewer_actions) == EXPECTED_NUMBER_OF_VIEWER_ACTIONS
+    _ = (
+        make_napari_viewer()
+    )  # instantiate to make sure everything is initialized correctly
+    _assert_shortcuts_exist_for_each_action(Viewer)
 
 
 @pytest.mark.xfail
@@ -47,8 +55,8 @@ def test_non_existing_bindings():
     Those are condition tested in next unittest; but do not exists; this is
     likely due to an oversight somewhere.
     """
-    assert 'play' in [x.__name__ for x in viewer_actions]
-    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_actions]
+    assert 'play' in viewer_actions
+    assert 'toggle_fullscreen' in viewer_actions
 
 
 @pytest.mark.parametrize('func', viewer_actions)
@@ -95,29 +103,28 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
         func(layer)
 
 
-EXPECTED_NUMBER_OF_LAYER_ACTIONS = {
-    'Image': 5,
-    'Vectors': 0,
-    'Surface': 0,
-    'Tracks': 0,
-    'Points': 9,
-    'Labels': 14,
-    'Shapes': 17,
-}
-
-
-@pytest.mark.parametrize(
-    'cls, expectation', EXPECTED_NUMBER_OF_LAYER_ACTIONS.items()
+layer_types = (
+    'Image',
+    'Vectors',
+    'Surface',
+    'Tracks',
+    'Points',
+    'Labels',
+    'Shapes',
 )
-def test_expected_number_of_layer_actions(cls, expectation):
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_all_layer_actions_are_accessible_via_shortcut(
+    layer_class, data, ndim
+):
     """
     Make sure we do find all the actions attached to a layer via keybindings
     """
-    layer_actions = _get_all_keybinding_actions(getattr(layers, cls))
-    assert len(layer_actions) == expectation, (
-        # chr(10) is "\n", which can't be used directly in fstrings
-        f'expected {expectation} actions, but got the following:\n{chr(10).join(layer_actions)}'
-    )
+    _ = layer_class(
+        data
+    )  # instantiate to make sure everything is initialized correctly
+    _assert_shortcuts_exist_for_each_action(layer_class)
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
