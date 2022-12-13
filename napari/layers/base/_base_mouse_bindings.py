@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from napari.components.overlays._interaction_box_utils import (
+from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
     generate_transform_box_from_layer,
     get_nearby_handle,

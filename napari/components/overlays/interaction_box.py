@@ -1,10 +1,10 @@
 from typing import Optional, Tuple
 
-from napari.components.overlays._interaction_box_utils import (
+from napari.components.overlays.base import SceneOverlay
+from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
     calculate_bounds_from_contained_points,
 )
-from napari.components.overlays.base import SceneOverlay
 
 
 class SelectionBoxOverlay(SceneOverlay):
