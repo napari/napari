@@ -8,10 +8,13 @@ on:
   schedule:
     - cron: "0 0 * * *"
   # workflow_dispatch: # go to napari/packaging to trigger manual runs
+  # temporary for debug only - DNM
+  pull_request:
 
 jobs:
   packaging:
-    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@main
+    uses: napari/packaging/.github/workflows/make_bundle_conda.yml@update-conda-recipe
     secrets: inherit
     with:
-      event_name: ${{ github.event_name }}
+      # event_name: ${{ github.event_name }}
+      event_name: schedule  # DNM TEMP pretend
