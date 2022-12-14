@@ -78,12 +78,16 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
         close_btn=True,
+        hide_btn=True,
+        float_btn=True,
     ):
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
         self._close_btn = close_btn
+        self._hide_btn = hide_btn
+        self._float_btn = float_btn
 
         areas = {
             'left': Qt.DockWidgetArea.LeftDockWidgetArea,
@@ -148,7 +152,11 @@ class QtViewerDockWidget(QDockWidget):
 
         # custom title bar
         self.title = QtCustomTitleBar(
-            self, title=self.name, close_btn=close_btn
+            self,
+            title=self.name,
+            close_btn=close_btn,
+            hide_btn=hide_btn,
+            float_btn=float_btn,
         )
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
@@ -280,6 +288,8 @@ class QtViewerDockWidget(QDockWidget):
                     title=self.name,
                     vertical=not self.is_vertical,
                     close_btn=self._close_btn,
+                    hide_btn=self._hide_btn,
+                    float_btn=self._float_btn,
                 )
                 self.setTitleBarWidget(self.title)
 
@@ -305,7 +315,13 @@ class QtCustomTitleBar(QLabel):
     """
 
     def __init__(
-        self, parent, title: str = '', vertical=False, close_btn=True
+        self,
+        parent,
+        title: str = '',
+        vertical=False,
+        close_btn=True,
+        hide_btn=True,
+        float_btn=True,
     ):
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
@@ -316,19 +332,24 @@ class QtCustomTitleBar(QLabel):
         line = QFrame(self)
         line.setObjectName("QtCustomTitleBarLine")
 
-        self.hide_button = QPushButton(self)
-        self.hide_button.setToolTip(trans._('hide this panel'))
-        self.hide_button.setObjectName("QTitleBarHideButton")
-        self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
-        self.hide_button.clicked.connect(lambda: self.parent().close())
+        if hide_btn:
+            self.hide_button = QPushButton(self)
+            self.hide_button.setToolTip(trans._('hide this panel'))
+            self.hide_button.setObjectName("QTitleBarHideButton")
+            self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
+            self.hide_button.clicked.connect(lambda: self.parent().close())
 
-        self.float_button = QPushButton(self)
-        self.float_button.setToolTip(trans._('float this panel'))
-        self.float_button.setObjectName("QTitleBarFloatButton")
-        self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
-        self.float_button.clicked.connect(
-            lambda: self.parent().setFloating(not self.parent().isFloating())
-        )
+        if float_btn:
+            self.float_button = QPushButton(self)
+            self.float_button.setToolTip(trans._('float this panel'))
+            self.float_button.setObjectName("QTitleBarFloatButton")
+            self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
+            self.float_button.clicked.connect(
+                lambda: self.parent().setFloating(
+                    not self.parent().isFloating()
+                )
+            )
+
         self.title: QLabel = QLabel(title, self)
         self.title.setSizePolicy(
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
@@ -352,12 +373,14 @@ class QtCustomTitleBar(QLabel):
                 layout.addWidget(
                     self.close_button, 0, Qt.AlignmentFlag.AlignHCenter
                 )
-            layout.addWidget(
-                self.hide_button, 0, Qt.AlignmentFlag.AlignHCenter
-            )
-            layout.addWidget(
-                self.float_button, 0, Qt.AlignmentFlag.AlignHCenter
-            )
+            if hide_btn:
+                layout.addWidget(
+                    self.hide_button, 0, Qt.AlignmentFlag.AlignHCenter
+                )
+            if float_btn:
+                layout.addWidget(
+                    self.float_button, 0, Qt.AlignmentFlag.AlignHCenter
+                )
             layout.addWidget(line, 0, Qt.AlignmentFlag.AlignHCenter)
             self.title.hide()
 
@@ -368,9 +391,10 @@ class QtCustomTitleBar(QLabel):
             line.setFixedHeight(1)
             if close_btn:
                 layout.addWidget(self.close_button)
-
-            layout.addWidget(self.hide_button)
-            layout.addWidget(self.float_button)
+            if hide_btn:
+                layout.addWidget(self.hide_button)
+            if float_btn:
+                layout.addWidget(self.float_button)
             layout.addWidget(line)
             layout.addWidget(self.title)
 
