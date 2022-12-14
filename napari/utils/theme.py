@@ -60,6 +60,7 @@ class Theme(EventedModel):
     """
 
     id: str
+    label: str
     syntax_style: str
     canvas: Color
     console: Color
@@ -323,6 +324,7 @@ def rebuild_theme_settings():
 
 DARK = Theme(
     id='dark',
+    label='Default Dark',
     background='rgb(38, 41, 48)',
     foreground='rgb(65, 72, 81)',
     primary='rgb(90, 98, 108)',
@@ -338,6 +340,7 @@ DARK = Theme(
 )
 LIGHT = Theme(
     id='light',
+    label='Default Light',
     background='rgb(239, 235, 233)',
     foreground='rgb(214, 208, 206)',
     primary='rgb(188, 184, 181)',
