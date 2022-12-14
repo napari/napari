@@ -18,10 +18,15 @@ from napari.utils.action_manager import action_manager
 
 
 def _get_provider_actions(type_):
-    return {
-        action.command.__name__
-        for action in action_manager._get_provider_actions(type_).values()
-    }
+    actions = set()
+    for superclass in type_.mro():
+        actions.update(
+            action.command
+            for action in action_manager._get_provider_actions(
+                superclass
+            ).values()
+        )
+    return actions
 
 
 def _assert_shortcuts_exist_for_each_action(type_):
@@ -32,8 +37,8 @@ def _assert_shortcuts_exist_for_each_action(type_):
     shortcuts.update(func.__name__ for func in type_.class_keymap.values())
     for action in actions:
         assert (
-            action in shortcuts
-        ), f"Shortcut for action '{action}' is missing"
+            action.__name__ in shortcuts
+        ), f"missing shortcut for action '{action.__name__}' on '{type_.__name__}' is missing"
 
 
 viewer_actions = _get_provider_actions(Viewer)
@@ -43,9 +48,8 @@ def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
     """
     Make sure we do find all the actions attached to a viewer via keybindings
     """
-    _ = (
-        make_napari_viewer()
-    )  # instantiate to make sure everything is initialized correctly
+    # instantiate to make sure everything is initialized correctly
+    _ = make_napari_viewer()
     _assert_shortcuts_exist_for_each_action(Viewer)
 
 
@@ -55,13 +59,12 @@ def test_non_existing_bindings():
     Those are condition tested in next unittest; but do not exists; this is
     likely due to an oversight somewhere.
     """
-    assert 'play' in viewer_actions
-    assert 'toggle_fullscreen' in viewer_actions
+    assert 'play' in [func.__name__ for func in viewer_actions]
+    assert 'toggle_fullscreen' in [func.__name__ for func in viewer_actions]
 
 
 @pytest.mark.parametrize('func', viewer_actions)
 def test_viewer_actions(make_napari_viewer, func):
-    """Test instantiating viewer."""
     viewer = make_napari_viewer()
 
     if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
@@ -121,9 +124,8 @@ def test_all_layer_actions_are_accessible_via_shortcut(
     """
     Make sure we do find all the actions attached to a layer via keybindings
     """
-    _ = layer_class(
-        data
-    )  # instantiate to make sure everything is initialized correctly
+    # instantiate to make sure everything is initialized correctly
+    _ = layer_class(data)
     _assert_shortcuts_exist_for_each_action(layer_class)
 
 
