@@ -1119,6 +1119,7 @@ class Image(_ImageBase):
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
                 'data': self.data,
+                'custom_interpolation_kernel': self.custom_interpolation_kernel,
             }
         )
         return state
