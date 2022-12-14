@@ -158,7 +158,9 @@ class _QtMainWindow(QMainWindow):
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
+        self._throttle_cursor_to_status_connection(viewer)
 
+    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so
         # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
@@ -333,6 +335,7 @@ class _QtMainWindow(QMainWindow):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
             # here we inform that confirmation dialog is not open
+            self._qt_viewer.dims.stop()
             return super().close()
         self._is_close_dialog[quit_app] = True
         # here we inform that confirmation dialog is not open
@@ -433,6 +436,8 @@ class _QtMainWindow(QMainWindow):
             for _ in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
+
+        self._qt_viewer.dims.stop()
 
         if self._quit_app:
             quit_app()
