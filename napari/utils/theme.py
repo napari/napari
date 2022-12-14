@@ -35,7 +35,10 @@ class Theme(EventedModel):
     Attributes
     ----------
     id : str
-        Name of the virtual folder where icons will be saved to.
+        id of the theme and name of the virtual folder where icons
+        will be saved to.
+    label : str
+        Name of the theme as it should be shown in the ui.
     syntax_style : str
         Name of the console style.
         See for more details: https://pygments.org/docs/styles/
