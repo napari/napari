@@ -160,7 +160,7 @@ class VispyImageLayer(VispyBaseLayer):
         )
 
     def _on_custom_interpolation_kernel_change(self):
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.node.custom_kernel = self.layer.custom_interpolation_kernel
 
     def _on_rendering_change(self):
