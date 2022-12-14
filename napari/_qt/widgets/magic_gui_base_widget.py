@@ -11,8 +11,7 @@ class BaseMagicSetting(QObject):
 
     def __init__(self, description=None):
         super().__init__()
-        self._widget = self.__class__.MAGIC_GUI
-        self._native_widget = self._widget.root_native_widget
+        self._widget = self.MAGIC_GUI()
         self._description = description
 
         def _call_magic_gui(magic_gui):
