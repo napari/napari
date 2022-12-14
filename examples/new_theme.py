@@ -28,7 +28,7 @@ blue_theme.foreground = [45, 52, 71]  # or as list
 blue_theme.primary = '#50586c'  # or as hexes
 blue_theme.current = 'orange'  # or as color name
 
-register_theme('blue', blue_theme)
+register_theme('blue', blue_theme, "custom")
 
 # List themes
 print('New themes', available_themes())
