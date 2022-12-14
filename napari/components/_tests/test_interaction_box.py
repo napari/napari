@@ -1,13 +1,13 @@
 import numpy as np
 
-from napari.components.overlays._interaction_box_utils import (
-    InteractionBoxHandle,
+from napari.components.overlays.interaction_box import SelectionBoxOverlay
+from napari.layers.base._base_constants import InteractionBoxHandle
+from napari.layers.points import Points
+from napari.layers.utils.interaction_box import (
     generate_interaction_box_vertices,
     generate_transform_box_from_layer,
     get_nearby_handle,
 )
-from napari.components.overlays.interaction_box import SelectionBoxOverlay
-from napari.layers.points import Points
 
 
 def test_transform_box_vertices_from_bounds():
