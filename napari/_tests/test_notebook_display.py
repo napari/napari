@@ -57,3 +57,15 @@ def test_safe_alt_text(alt_text_input, expected_alt_text):
         assert not display_obj.alt_text
     else:
         assert html.escape(display_obj.alt_text) == expected_alt_text
+
+
+def test_invalid_alt_text():
+    with pytest.warns(UserWarning):
+        # because string with only whitespace messes up with the parser
+        display_obj = nbscreenshot(Mock(), alt_text=" ")
+    assert display_obj.alt_text is None
+
+    with pytest.warns(UserWarning):
+        # because string with only whitespace messes up with the parser
+        display_obj = nbscreenshot(Mock(), alt_text="")
+    assert display_obj.alt_text is None
