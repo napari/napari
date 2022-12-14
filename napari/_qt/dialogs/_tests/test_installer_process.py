@@ -63,15 +63,15 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     )
     with qtbot.waitSignal(installer.allFinished, timeout=20000):
         installer.install(
-            tool=InstallerTools.pip,
+            tool=InstallerTools.PIP,
             pkgs=['pip-install-test'],
         )
         installer.install(
-            tool=InstallerTools.pip,
+            tool=InstallerTools.PIP,
             pkgs=['typing-extensions'],
         )
         job_id = installer.install(
-            tool=InstallerTools.pip,
+            tool=InstallerTools.PIP,
             pkgs=['requests'],
         )
         assert isinstance(job_id, int)
@@ -92,7 +92,7 @@ def test_pip_installer_tasks(qtbot, tmp_virtualenv: 'Session', monkeypatch):
 
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         job_id = installer.uninstall(
-            tool=InstallerTools.pip,
+            tool=InstallerTools.PIP,
             pkgs=['pip-install-test'],
         )
 
@@ -148,7 +148,7 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     # CHECK 1) Errors should trigger finished and allFinished too
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
-            tool=InstallerTools.pip,
+            tool=InstallerTools.PIP,
             pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
         )
 
@@ -163,7 +163,7 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
     )
     with qtbot.waitSignal(installer.allFinished, timeout=10000):
         installer.install(
-            tool=InstallerTools.pip,
+            tool=InstallerTools.PIP,
             pkgs=[f'this-package-does-not-exist-{hash(time.time())}'],
         )
 
@@ -189,7 +189,7 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
 
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.install(
-            tool=InstallerTools.conda,
+            tool=InstallerTools.CONDA,
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
         )
@@ -202,7 +202,7 @@ def test_conda_installer(qtbot, tmp_conda_env: Path):
 
     with qtbot.waitSignal(installer.allFinished, timeout=600_000):
         installer.uninstall(
-            tool=InstallerTools.conda,
+            tool=InstallerTools.CONDA,
             pkgs=['typing-extensions'],
             prefix=tmp_conda_env,
         )

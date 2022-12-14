@@ -324,13 +324,13 @@ class QPluginList(QListWidget):
                 self.handle_action,
                 item,
                 pkg_name,
-                InstallerActions.install,
+                InstallerActions.INSTALL,
                 update=True,
             )
         )
         widg.cancel_btn.clicked.connect(
             partial(
-                self.handle_action, item, pkg_name, InstallerActions.cancel
+                self.handle_action, item, pkg_name, InstallerActions.CANCEL
             )
         )
         item.setSizeHint(widg.sizeHint())
@@ -345,16 +345,16 @@ class QPluginList(QListWidget):
     ):
         # TODO: 'tool' should be configurable per item, depending on dropdown
         tool = (
-            InstallerTools.conda
+            InstallerTools.CONDA
             if running_as_constructor_app()
-            else InstallerTools.pip
+            else InstallerTools.PIP
         )
         widget = item.widget
         item.setText(f"0-{item.text()}")
         self._remove_list.append((pkg_name, item))
         self._warn_dialog = None
         # TODO: NPE version unknown before installing
-        if item.npe_version != 1 and action_name == InstallerActions.uninstall:
+        if item.npe_version != 1 and action_name == InstallerActions.UNINSTALL:
             # show warning pop up dialog
             message = trans._(
                 'When installing/uninstalling npe2 plugins, you must '
@@ -369,7 +369,7 @@ class QPluginList(QListWidget):
             global_point = QPoint(global_point.x() - delta_x, global_point.y())
             self._warn_dialog.move(global_point)
 
-        if action_name == InstallerActions.install:
+        if action_name == InstallerActions.INSTALL:
             if update:
                 if hasattr(item, 'latest_version'):
                     pkg_name += f"=={item.latest_version}"
@@ -388,7 +388,7 @@ class QPluginList(QListWidget):
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == InstallerActions.uninstall:
+        elif action_name == InstallerActions.UNINSTALL:
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
             job_id = self.installer.uninstall(
@@ -400,7 +400,7 @@ class QPluginList(QListWidget):
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == InstallerActions.cancel:
+        elif action_name == InstallerActions.CANCEL:
             widget.set_busy(trans._("cancelling..."), update)
             try:
                 job_id = widget.property("current_job_id")

@@ -14,6 +14,7 @@ import os
 import sys
 from collections import deque
 from dataclasses import dataclass
+from enum import auto
 from functools import lru_cache
 from logging import getLogger
 from pathlib import Path
@@ -39,15 +40,15 @@ log = getLogger(__name__)
 
 class InstallerActions(StringEnum):
     "Available actions for the plugin manager"
-    install = "install"
-    uninstall = "uninstall"
-    cancel = "cancel"
+    INSTALL = auto()
+    UNINSTALL = auto()
+    CANCEL = auto()
 
 
 class InstallerTools(StringEnum):
     "Available tools for InstallerQueue jobs"
-    conda = "conda"
-    pip = "pip"
+    CONDA = auto()
+    PIP = auto()
 
 
 @dataclass(frozen=True)
@@ -105,11 +106,11 @@ class PipInstallerTool(AbstractInstallerTool):
 
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
-        if self.action == InstallerActions.install:
+        if self.action == InstallerActions.INSTALL:
             args += ['install', '--upgrade', '-c', self._constraints_file()]
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
-        elif self.action == InstallerActions.uninstall:
+        elif self.action == InstallerActions.UNINSTALL:
             args += ['uninstall', '-y']
         else:
             raise ValueError(f"Action '{self.action}' not supported!")
@@ -280,7 +281,7 @@ class InstallerQueue(QProcess):
         """
         item = self._build_queue_item(
             tool=tool,
-            action=InstallerActions.install,
+            action=InstallerActions.INSTALL,
             pkgs=pkgs,
             prefix=prefix,
             origins=origins,
@@ -314,7 +315,7 @@ class InstallerQueue(QProcess):
         """
         item = self._build_queue_item(
             tool=tool,
-            action=InstallerActions.uninstall,
+            action=InstallerActions.UNINSTALL,
             pkgs=pkgs,
             prefix=prefix,
             **kwargs,
@@ -378,9 +379,9 @@ class InstallerQueue(QProcess):
             self._output_widget.append(msg)
 
     def _get_tool(self, tool: InstallerTools):
-        if tool == InstallerTools.pip:
+        if tool == InstallerTools.PIP:
             return PipInstallerTool
-        if tool == InstallerTools.conda:
+        if tool == InstallerTools.CONDA:
             return CondaInstallerTool
         raise ValueError(f"InstallerTool {tool} not recognized!")
 
@@ -442,7 +443,7 @@ class InstallerQueue(QProcess):
             current = None
         if (
             current
-            and current.action == InstallerActions.uninstall
+            and current.action == InstallerActions.UNINSTALL
             and exit_status == QProcess.ExitStatus.NormalExit
             and exit_code == 0
         ):
