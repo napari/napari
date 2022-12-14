@@ -3,14 +3,14 @@ from typing import TYPE_CHECKING, Sequence
 
 from qtpy.QtWidgets import QAction
 
-from ...plugins import _npe2
-from ...utils.translations import trans
-from ..dialogs.qt_plugin_dialog import QtPluginDialog
-from ..dialogs.qt_plugin_report import QtPluginErrReporter
-from ._util import NapariMenu
+from napari._qt.dialogs.qt_plugin_dialog import QtPluginDialog
+from napari._qt.dialogs.qt_plugin_report import QtPluginErrReporter
+from napari._qt.menus._util import NapariMenu
+from napari.plugins import _npe2
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ..qt_main_window import Window
+    from napari._qt.qt_main_window import Window
 
 
 class PluginsMenu(NapariMenu):
@@ -18,7 +18,7 @@ class PluginsMenu(NapariMenu):
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
 
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         _npe2.index_npe1_adapters()
 
@@ -50,13 +50,13 @@ class PluginsMenu(NapariMenu):
 
     def _remove_unregistered_widget(self, event):
 
-        for idx, action in enumerate(self.actions()):
+        for action in self.actions():
             if event.value in action.text():
                 self.removeAction(action)
                 self._win._remove_dock_widget(event=event)
 
     def _add_registered_widget(self, event=None, call_all=False):
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
         for hook_type, (plugin_name, widgets) in chain(
@@ -68,11 +68,18 @@ class PluginsMenu(NapariMenu):
     def _add_plugin_actions(
         self, hook_type: str, plugin_name: str, widgets: Sequence[str]
     ):
-        from ...plugins import menu_item_template
+        from napari.plugins import menu_item_template
 
         multiprovider = len(widgets) > 1
         if multiprovider:
-            menu = NapariMenu(plugin_name, self)
+            # use display_name if npe2 plugin
+            from npe2 import plugin_manager as pm
+
+            try:
+                plugin_display_name = pm.get_manifest(plugin_name).display_name
+            except KeyError:
+                plugin_display_name = plugin_name
+            menu = NapariMenu(plugin_display_name, self)
             self.addMenu(menu)
         else:
             menu = self

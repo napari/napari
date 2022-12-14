@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sys
 from functools import partial
@@ -5,8 +6,11 @@ from typing import Callable, Optional
 
 import appdirs
 
+sha_short = f"{os.path.basename(sys.prefix)}_{hashlib.sha1(sys.prefix.encode()).hexdigest()}"
+
 _appname = 'napari'
 _appauthor = False
+
 
 # all of these also take an optional "version" argument ... but if we want
 # to be able to update napari while using data (e.g. plugins, settings) from
@@ -16,10 +20,10 @@ user_data_dir: Callable[[], str] = partial(
     appdirs.user_data_dir, _appname, _appauthor
 )
 user_config_dir: Callable[[], str] = partial(
-    appdirs.user_config_dir, _appname, _appauthor
+    appdirs.user_config_dir, _appname, _appauthor, sha_short
 )
 user_cache_dir: Callable[[], str] = partial(
-    appdirs.user_cache_dir, _appname, _appauthor
+    appdirs.user_cache_dir, _appname, _appauthor, sha_short
 )
 user_state_dir: Callable[[], str] = partial(
     appdirs.user_state_dir, _appname, _appauthor

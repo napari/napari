@@ -1,8 +1,8 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout
 
-from ...settings import get_settings
-from ..qt_resources import get_stylesheet
+from napari._qt.qt_resources import get_stylesheet
+from napari.settings import get_settings
 
 
 class WarnPopup(QDialog):
@@ -35,6 +35,7 @@ class WarnPopup(QDialog):
         self.setLayout(main_layout)
 
         self.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
+        self._xbutton.raise_()
 
     def _close(self):
         self.close()

@@ -64,6 +64,7 @@ jobs:
         name: Install Python
         with:
           python-version: "3.9"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -125,7 +126,7 @@ jobs:
               exit 1
           fi
 
-      - name: Report Failures
+      - name: Report Failures as Issue
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && failure() }}
         uses: JasonEtco/create-an-issue@v2
         env:
@@ -143,7 +144,9 @@ jobs:
         if: always()
         run: |
           # Copy the full `asv continuous` log
-          cp asv_continuous.log .asv/results/
+          cp asv_continuous.log .asv/results/asv_continuous_${{ matrix.benchmark-name }}.log
+          # ensure that even if this isn't a PR, the benchmark_report workflow can run without error
+          touch .asv/results/message_${{ matrix.benchmark-name }}.txt
 
           # Add the message that might be posted as a comment on the PR
           # We delegate the actual comment to `benchmarks_report.yml` due to
@@ -151,11 +154,11 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
 
           echo "${{ github.event.pull_request.number }}" > .asv/results/pr_number
-          cat <<EOF > .asv/results/message.txt
-          The benchmark run requested by $EVENT_NAME ($CONTENDER_REF vs $BASE_REF) has
-          finished with status `${{ steps.run_benchmark.outcome }}`. See the
-          [CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details.
-          EOF
+          echo \
+          "The ${{ matrix.benchmark-name }} benchmark run requested by $EVENT_NAME ($CONTENDER_REF vs $BASE_REF) has" \
+          "finished with status '${{ steps.run_benchmark.outcome }}'. See the" \
+          "[CI logs and artifacts](||BENCHMARK_CI_LOGS_URL||) for further details." \
+          > .asv/results/message_${{ matrix.benchmark-name }}.txt
 
           fi
 

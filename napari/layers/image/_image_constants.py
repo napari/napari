@@ -1,8 +1,8 @@
 from collections import OrderedDict
 from enum import auto
 
-from ...utils.misc import StringEnum
-from ...utils.translations import trans
+from napari.utils.misc import StringEnum
+from napari.utils.translations import trans
 
 
 class Interpolation(StringEnum):
@@ -15,7 +15,7 @@ class Interpolation(StringEnum):
     """
 
     BESSEL = auto()
-    BICUBIC = auto()
+    CUBIC = auto()
     LINEAR = auto()
     BLACKMAN = auto()
     CATROM = auto()
@@ -34,7 +34,7 @@ class Interpolation(StringEnum):
     @classmethod
     def view_subset(cls):
         return (
-            cls.BICUBIC,
+            cls.CUBIC,
             cls.LINEAR,
             cls.KAISER,
             cls.NEAREST,

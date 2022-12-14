@@ -15,14 +15,14 @@ from qtpy.QtWidgets import (
 )
 from vispy.color import get_color_dict
 
-from ...utils.colormaps.colormap_utils import ColorType
-from ...utils.colormaps.standardize_color import (
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari.utils.colormaps.colormap_utils import ColorType
+from napari.utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,
     transform_color,
 )
-from ...utils.translations import trans
-from ..dialogs.qt_modal import QtPopup
+from napari.utils.translations import trans
 
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.

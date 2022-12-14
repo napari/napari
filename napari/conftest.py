@@ -30,18 +30,21 @@ Notes for using the plugin-related fixtures here:
 """
 from __future__ import annotations
 
+import os
+import sys
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from itertools import chain
+from multiprocessing.pool import ThreadPool
+from typing import TYPE_CHECKING
+from unittest.mock import patch
+from weakref import WeakKeyDictionary
 
 try:
     __import__('dotenv').load_dotenv()
 except ModuleNotFoundError:
     pass
 
-import os
-from itertools import chain
-from multiprocessing.pool import ThreadPool
-from typing import TYPE_CHECKING
-from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
@@ -51,6 +54,7 @@ from IPython.core.history import HistoryManager
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.config import async_loading
+from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
@@ -351,6 +355,7 @@ def builtins(_npe2pm: TestPluginManager):
 def tmp_plugin(_npe2pm: TestPluginManager):
     with _npe2pm.tmp_plugin() as plugin:
         plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
 
 
@@ -426,6 +431,10 @@ def disable_notification_dismiss_timer(monkeypatch):
     without increase of reference counter object could be garbage collected and
     cause segmentation fault error when Qt (C++) code try to access it without
     checking if Python object exists.
+
+    This fixture is used in all tests because it is possible to call Qt code
+    from non Qt test by connection of `NapariQtNotification.show_notification` to
+    `NotificationManager` global instance.
     """
 
     with suppress(ImportError):
@@ -434,3 +443,312 @@ def disable_notification_dismiss_timer(monkeypatch):
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
         monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+
+
+@pytest.fixture()
+def single_threaded_executor():
+    executor = ThreadPoolExecutor(max_workers=1)
+    yield executor
+    executor.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def _mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This is used whenever `napari._app_model.get_app()` is called to return
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`.
+
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers. If this is required for a unit test,
+    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
+    the test.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')
+
+
+def _get_calling_place(depth=1):
+    if not hasattr(sys, "_getframe"):
+        return ""
+    frame = sys._getframe(1 + depth)
+    result = f"{frame.f_code.co_filename}:{frame.f_lineno}"
+    if not frame.f_code.co_filename.startswith(ROOT_DIR):
+        with suppress(ValueError):
+            while not frame.f_code.co_filename.startswith(ROOT_DIR):
+                frame = frame.f_back
+                if frame is None:
+                    break
+            else:
+                result += f" called from\n{frame.f_code.co_filename}:{frame.f_lineno}"
+    return result
+
+
+@pytest.fixture
+def dangling_qthreads(monkeypatch, qtbot, request):
+    from qtpy.QtCore import QThread
+
+    base_start = QThread.start
+    thread_dict = WeakKeyDictionary()
+    # dict of threads that have been started but not yet terminated
+
+    if "disable_qthread_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, priority=QThread.InheritPriority):
+            thread_dict[self] = _get_calling_place()
+            base_start(self, priority)
+
+    monkeypatch.setattr(QThread, 'start', my_start)
+    yield
+
+    dangling_threads_li = []
+
+    for thread, calling in thread_dict.items():
+        try:
+            if thread.isRunning():
+                dangling_threads_li.append((thread, calling))
+        except RuntimeError as e:
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                raise
+
+    for thread, _ in dangling_threads_li:
+        with suppress(RuntimeError):
+            thread.quit()
+            qtbot.waitUntil(thread.isFinished, timeout=2000)
+
+    long_desc = (
+        "If you see this error, it means that a QThread was started in a test "
+        "but not terminated. This can cause segfaults in the test suite. "
+        "Please use the `qtbot` fixture to wait for the thread to finish. "
+        "If you think that the thread is obsolete for this test, you can "
+        "use the `@pytest.mark.disable_qthread_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` method of the "
+        "QThread class to do nothing.\n"
+    )
+
+    if len(dangling_threads_li) > 1:
+        long_desc += " The QThreads were started in:\n"
+    else:
+        long_desc += " The QThread was started in:\n"
+
+    assert not dangling_threads_li, long_desc + "\n".join(
+        x[1] for x in dangling_threads_li
+    )
+
+
+@pytest.fixture
+def dangling_qthread_pool(monkeypatch, request):
+    from qtpy.QtCore import QThreadPool
+
+    base_start = QThreadPool.start
+    threadpool_dict = WeakKeyDictionary()
+    # dict of threadpools that have been used to run QRunnables
+
+    if "disable_qthread_pool_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, runnable, priority=0):
+            if self not in threadpool_dict:
+                threadpool_dict[self] = []
+            threadpool_dict[self].append(_get_calling_place())
+            base_start(self, runnable, priority)
+
+    monkeypatch.setattr(QThreadPool, 'start', my_start)
+    yield
+
+    dangling_threads_pools = []
+
+    for thread_pool, calling in threadpool_dict.items():
+        if thread_pool.activeThreadCount():
+            dangling_threads_pools.append((thread_pool, calling))
+
+    for thread_pool, _ in dangling_threads_pools:
+        with suppress(RuntimeError):
+            thread_pool.clear()
+            thread_pool.waitForDone(2000)
+
+    long_desc = (
+        "If you see this error, it means that a QThreadPool was used to run "
+        "a QRunnable in a test but not terminated. This can cause segfaults "
+        "in the test suite. Please use the `qtbot` fixture to wait for the "
+        "thread to finish. If you think that the thread is obsolete for this "
+        "use the `@pytest.mark.disable_qthread_pool_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` "
+        "method of the QThreadPool class to do nothing.\n"
+    )
+    if len(dangling_threads_pools) > 1:
+        long_desc += " The QThreadPools were used in:\n"
+    else:
+        long_desc += " The QThreadPool was used in:\n"
+
+    assert not dangling_threads_pools, long_desc + "\n".join(
+        "; ".join(x[1]) for x in dangling_threads_pools
+    )
+
+
+@pytest.fixture
+def dangling_qtimers(monkeypatch, request):
+    from qtpy.QtCore import QTimer
+
+    base_start = QTimer.start
+    timer_dkt = WeakKeyDictionary()
+    single_shot_list = []
+
+    if "disable_qtimer_start" in request.keywords:
+        from pytestqt.qt_compat import qt_api
+
+        def my_start(*_, **__):
+            """dummy function to prevent timer start"""
+
+        _single_shot = my_start
+
+        class OldTimer(QTimer):
+            def start(self, time=None):
+                if time is not None:
+                    base_start(self, time)
+                else:
+                    base_start(self)
+
+        monkeypatch.setattr(qt_api.QtCore, "QTimer", OldTimer)
+        # This monkeypatch is require to keep `qtbot.waitUntil` working
+
+    else:
+
+        def my_start(self, msec=None):
+            timer_dkt[self] = _get_calling_place()
+            if msec is not None:
+                base_start(self, msec)
+            else:
+                base_start(self)
+
+        def single_shot(msec, reciver, method=None):
+            t = QTimer()
+            t.setSingleShot(True)
+            if method is None:
+                t.timeout.connect(reciver)
+            else:
+                t.timeout.connect(getattr(reciver, method))
+            single_shot_list.append((t, _get_calling_place(2)))
+            base_start(t, msec)
+
+        def _single_shot(self, *args):
+            if isinstance(self, QTimer):
+                single_shot(*args)
+            else:
+                single_shot(self, *args)
+
+    monkeypatch.setattr(QTimer, 'start', my_start)
+    monkeypatch.setattr(QTimer, 'singleShot', _single_shot)
+
+    yield
+
+    dangling_timers = []
+
+    for timer, calling in chain(timer_dkt.items(), single_shot_list):
+        if timer.isActive():
+            dangling_timers.append((timer, calling))
+
+    for timer, _ in dangling_timers:
+        with suppress(RuntimeError):
+            timer.stop()
+
+    long_desc = (
+        "If you see this error, it means that a QTimer was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not require a QTimer to pass you could monkeypatch it out. "
+        "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_timers) > 1:
+        long_desc += "The QTimers were started in:\n"
+    else:
+        long_desc += "The QTimer was started in:\n"
+    assert not dangling_timers, long_desc + "\n".join(
+        x[1] for x in dangling_timers
+    )
+
+
+@pytest.fixture
+def dangling_qanimations(monkeypatch, request):
+    from qtpy.QtCore import QPropertyAnimation
+
+    base_start = QPropertyAnimation.start
+    animation_dkt = WeakKeyDictionary()
+
+    if "disable_qanimation_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self):
+            animation_dkt[self] = _get_calling_place()
+            base_start(self)
+
+    monkeypatch.setattr(QPropertyAnimation, 'start', my_start)
+    yield
+
+    dangling_animations = []
+
+    for animation, calling in animation_dkt.items():
+        if animation.state() == QPropertyAnimation.Running:
+            dangling_animations.append((animation, calling))
+
+    for animation, _ in dangling_animations:
+        with suppress(RuntimeError):
+            animation.stop()
+
+    long_desc = (
+        "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not require a QPropertyAnimation to pass you could monkeypatch it out. "
+        "If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_animations) > 1:
+        long_desc += " The QPropertyAnimations were started in:\n"
+    else:
+        long_desc += " The QPropertyAnimation was started in:\n"
+    assert not dangling_animations, long_desc + "\n".join(
+        x[1] for x in dangling_animations
+    )
+
+
+def pytest_runtest_setup(item):
+    if "qapp" in item.fixturenames:
+        # here we do autouse for dangling fixtures only if qapp is used
+        if "qtbot" not in item.fixturenames:
+            # for proper waiting for threads to finish
+            item.fixturenames.append("qtbot")
+
+        item.fixturenames.extend(
+            [
+                "dangling_qthread_pool",
+                "dangling_qanimations",
+                "dangling_qthreads",
+                "dangling_qtimers",
+            ]
+        )

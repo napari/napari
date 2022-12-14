@@ -132,7 +132,7 @@ def test_add_layer_magic_name(
 
 
 @skip_on_win_ci
-def test_screenshot(make_napari_viewer):
+def test_screenshot(make_napari_viewer, qtbot):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
 
@@ -164,6 +164,17 @@ def test_screenshot(make_napari_viewer):
     # Take screenshot with the viewer included
     screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
+
+    # test size argument (and ensure it coerces to int)
+    screenshot = viewer.screenshot(canvas_only=True, size=(20, 20.0))
+    assert screenshot.shape == (20, 20, 4)
+    # Here we wait until the flash animation will be over. We cannot wait on finished
+    # signal as _flash_animation may be already removed when calling wait.
+    qtbot.waitUntil(
+        lambda: not hasattr(
+            viewer.window._qt_viewer._canvas_overlay, '_flash_animation'
+        )
+    )
 
 
 @skip_on_win_ci
@@ -287,6 +298,7 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""

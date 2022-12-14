@@ -6,33 +6,28 @@ have the same signatures.
 import inspect
 
 from napari import Viewer
-from napari.layers import Image
 from napari.view_layers import imshow
 
 
-def test_signature_imshow():
-    layer = Image
-    name = layer.__name__
-    method = imshow
-
-    # collect the signatures for this method and its classes
-    class_parameters = {
-        **inspect.signature(layer.__init__).parameters,
+def test_imshow_signature_consistency():
+    # Collect the signatures for imshow and the associated Viewer methods
+    viewer_parameters = {
         **inspect.signature(Viewer.__init__).parameters,
+        **inspect.signature(Viewer.add_image).parameters,
     }
-    method_parameters = dict(inspect.signature(method).parameters)
+    imshow_parameters = dict(inspect.signature(imshow).parameters)
 
-    # Remove unique parameters from viewer method
-    del method_parameters['viewer']  # only in this method
-    del method_parameters[
-        'channel_axis'
-    ]  # gets added in viewer_model (TODO: I don't understand this)
-    del class_parameters['self']  # only in class
+    # Remove unique parameters
+    del imshow_parameters['viewer']
+    del viewer_parameters['self']
 
-    # ensure both have the same parameters
-    assert set(class_parameters) == set(method_parameters)
+    # Ensure both have the same parameter names
+    assert imshow_parameters.keys() == viewer_parameters.keys()
 
-    # ensure the parameters have the same defaults
-    for name, parameter in class_parameters.items():
+    # Ensure the parameters have the same defaults
+    for name, parameter in viewer_parameters.items():
+        # data is a required for imshow, but optional for add_image
+        if name == 'data':
+            continue
         fail_msg = f'Signature mismatch on {parameter}'
-        assert method_parameters[name].default == parameter.default, fail_msg
+        assert imshow_parameters[name].default == parameter.default, fail_msg

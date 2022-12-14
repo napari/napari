@@ -1,5 +1,5 @@
 """Test label"""
-from napari.components.text_overlay import TextOverlay
+from napari.components.overlays.text import TextOverlay
 
 
 def test_label():
