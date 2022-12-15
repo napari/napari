@@ -22,11 +22,10 @@ class Dims(EventedModel):
     last_used : int
         Dimension which was last used.
     range : tuple of 3-tuple of float
-        List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space. As with Python's `range` and `slice`, max is not
-        included.
-    current_step : tuple of int
-        Tuple of the slider position for each dims slider, in slider coordinates.
+        List of tuples (min, max, step), one for each dimension in world
+        coordinates space.
+    span : tuple of 3-tuple of float
+        Tuple of (low, high) bounds of the currently selected slice in world space.
     order : tuple of int
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
@@ -41,22 +40,23 @@ class Dims(EventedModel):
     last_used : int
         Dimension which was last used.
     range : tuple of 3-tuple of float
-        List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space. As with Python's `range` and `slice`, max is not
-        included.
-    current_step : tuple of int
-        Tuple the slider position for each dims slider, in slider coordinates.
+        List of tuples (min, max, step), one for each dimension in world
+        coordinates space.
+    span : tuple of 3-tuple of float
+        Tuple of (low, high) bounds of the currently selected slice in world space.
     order : tuple of int
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    current_step : tuple of int
+        Tuple the slider position for each dims slider, in world coordinates.
     nsteps : tuple of int
         Number of steps available to each slider. These are calculated from
         the ``range``.
-    point : tuple of float
-        List of floats setting the current value of the range slider when in
-        POINT mode, one for each dimension. In a world coordinates space. These
-        are calculated from the ``current_step`` and ``range``.
+    thickness : tuple of floats
+        Thickness of each span in world coordinates.
+    point : tuple of floats
+        Center point of each span in world coordinates.
     displayed : tuple of int
         List of dimensions that are displayed. These are calculated from the
         ``order`` and ``ndisplay``.
@@ -71,23 +71,33 @@ class Dims(EventedModel):
     # fields
     ndim: int = 2
     ndisplay: Literal[2, 3] = 2
-    last_used: int = 0
-    range: Tuple[Tuple[float, float, float], ...] = ()
-    current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+    range: Tuple[Tuple[float, float], ...] = ()
+    step: Tuple[float, ...] = ()
+    span: Tuple[Tuple[float, float], ...] = ()
+
+    last_used: int = 0
 
     # private vars
     _scroll_progress: int = 0
 
     # validators
     @validator('axis_labels', pre=True)
-    def _string_to_list(v):
+    def _string_to_tuple(v):
         if isinstance(v, str):
-            return list(v)
+            return tuple(v)
         return v
 
-    @root_validator
+    @validator('range', 'span', pre=True)
+    def _sorted_ranges(v):
+        return tuple(sorted(float(el) for el in dim) for dim in v)
+
+    @validator('step', pre=True)
+    def _float(v):
+        return tuple(float(dim) for dim in v)
+
+    @root_validator(skip_on_failure=True)
     def _check_dims(cls, values):
         """Check the consitency of dimensionaity for all attributes
 
@@ -98,27 +108,46 @@ class Dims(EventedModel):
         """
         ndim = values['ndim']
 
-        # Check the range tuple has same number of elements as ndim
-        if len(values['range']) < ndim:
-            values['range'] = ((0, 2, 1),) * (
-                ndim - len(values['range'])
-            ) + values['range']
-        elif len(values['range']) > ndim:
-            values['range'] = values['range'][-ndim:]
+        values['range'] = ensure_ndim(
+            values['range'], ndim, default=(0.0, 2.0)
+        )
 
-        # Check the current step tuple has same number of elements as ndim
-        if len(values['current_step']) < ndim:
-            values['current_step'] = (0,) * (
-                ndim - len(values['current_step'])
-            ) + values['current_step']
-        elif len(values['current_step']) > ndim:
-            values['current_step'] = values['current_step'][-ndim:]
+        values['span'] = ensure_ndim(values['span'], ndim, default=(0.0, 0.0))
+        # ensure span is limited to range
+        for (low, high), (min_val, max_val) in zip(
+            values['span'], values['range']
+        ):
+            if low < min_val or high > max_val:
+                raise ValueError(
+                    trans._(
+                        "Invalid span {span} for dimension with range {range}",
+                        deferred=True,
+                        span=(low, high),
+                        range=(min_val, max_val),
+                    )
+                )
 
+        values['step'] = ensure_ndim(values['step'], ndim, default=1.0)
+        # ensure step is not bigger than range
+        for step, (min_val, max_val) in zip(values['step'], values['range']):
+            if step > max_val - min_val:
+                raise ValueError(
+                    trans._(
+                        "Invalid step {step} for dimension with range {range}",
+                        deferred=True,
+                        step=step,
+                        range=(min_val, max_val),
+                    )
+                )
+
+        # order and label default computation is too different to include in ensure_ndim()
         # Check the order tuple has same number of elements as ndim
-        if len(values['order']) < ndim:
-            values['order'] = tuple(
-                range(ndim - len(values['order']))
-            ) + tuple(o + ndim - len(values['order']) for o in values['order'])
+        order_ndim = len(values['order'])
+        if order_ndim < ndim:
+            prepended_dims = tuple(
+                dim for dim in range(ndim) if dim not in values['order']
+            )
+            values['order'] = prepended_dims + values['order']
         elif len(values['order']) > ndim:
             values['order'] = reorder_after_dim_reduction(
                 values['order'][-ndim:]
@@ -136,18 +165,17 @@ class Dims(EventedModel):
             )
 
         # Check the axis labels tuple has same number of elements as ndim
-        if len(values['axis_labels']) < ndim:
+        labels_ndim = len(values['axis_labels'])
+        if labels_ndim < ndim:
             # Append new "default" labels to existing ones
-            if values['axis_labels'] == tuple(
-                map(str, range(len(values['axis_labels'])))
-            ):
+            if values['axis_labels'] == tuple(map(str, range(labels_ndim))):
                 values['axis_labels'] = tuple(map(str, range(ndim)))
             else:
                 values['axis_labels'] = (
-                    tuple(map(str, range(ndim - len(values['axis_labels']))))
+                    tuple(map(str, range(ndim - labels_ndim)))
                     + values['axis_labels']
                 )
-        elif len(values['axis_labels']) > ndim:
+        elif labels_ndim > ndim:
             values['axis_labels'] = values['axis_labels'][-ndim:]
 
         return values
@@ -157,7 +185,7 @@ class Dims(EventedModel):
         """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
             int((max_val - min_val) / step_size)
-            for min_val, max_val, step_size in self.range
+            for (min_val, max_val), step_size in zip(self.range, self.step)
         )
 
     @property
@@ -342,7 +370,7 @@ class Dims(EventedModel):
         """Reset dims values to initial states."""
         # Don't reset axis labels
         self.range = ((0, 2, 1),) * self.ndim
-        self.current_step = (0,) * self.ndim
+        self.span = ((0, 0),) * self.ndim
         self.order = tuple(range(self.ndim))
 
     def transpose(self):
@@ -365,7 +393,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_current_step(axis, self.current_step[axis] + 1)
+        self.set_point_step(axis, self.current_step[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -377,7 +405,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_current_step(axis, self.current_step[axis] - 1)
+        self.set_point_step(axis, self.current_step[axis] - 1)
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -403,6 +431,30 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
+
+
+def ensure_ndim(value: Tuple, ndim: int, default: Tuple):
+    """
+    Ensure that the value has same number of elements as ndim.
+
+    Right-crop if value is too long; left-pad with default if too short.
+
+    Parameters
+    ----------
+    value : Tuple
+        A tuple of values to be resized.
+    ndim : int
+        Number of desired values.
+    default : Tuple
+        Default element for left-padding.
+    """
+    if len(value) < ndim:
+        # left pad
+        value = (default,) * (ndim - len(value)) + value
+    elif len(value) > ndim:
+        # right-crop
+        value = value[-ndim:]
+    return value
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:

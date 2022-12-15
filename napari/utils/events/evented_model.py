@@ -201,21 +201,22 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         self._events.source = self
         # add event emitters for each field which is mutable
-        field_events = [
-            name
-            for name, field in self.__fields__.items()
-            if field.field_info.allow_mutation
-        ]
+        field_events = []
+        for name, field in self.__fields__.items():
+            value = getattr(self, name)
+            if field.field_info.allow_mutation or hasattr(value, 'events'):
+                field_events.append(name)
 
         self._events.add(
             **dict.fromkeys(field_events + list(self.__property_setters__))
         )
 
-        # while seemingly redundant, this next line is very important to maintain
-        # correct sources; see https://github.com/napari/napari/pull/4138
-        # we solve it by re-setting the source after initial validation, which allows
-        # us to use `validate_all = True`
-        self._reset_event_source()
+        # hook up events from children
+        for name in field_events:
+            value = getattr(self, name)
+            if hasattr(value, 'events'):
+                # TODO: won't track source all the way in?
+                value.events.connect(getattr(self.events, name))
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed

@@ -87,7 +87,7 @@ def test_point():
     assert dims.point == (0, 0, 1, 4)
 
     dims.set_point((0, 1, 2), (2.1, 2.6, 0.0))
-    assert dims.point == (2, 3, 0, 4)
+    assert dims.point == (2.1, 2.6, 0.0, 4.0)
 
 
 def test_point_variable_step_size():
@@ -102,24 +102,24 @@ def test_point_variable_step_size():
     dims.set_point([0, 1, 2], (2.9, 2.9, 2.9))
     assert dims.current_step == (6, 3, 1)
     # point is a property computed on demand from current_step
-    assert dims.point == (3, 3, 2)
+    assert dims.point == (2.9, 2.9, 2.9)
 
     # can set step directly as well
     # note that out of range values get clipped
-    dims.set_current_step((0, 1, 2), (1, -3, 5))
-    assert dims.current_step == (1, 0, 2)
-    assert dims.point == (0.5, 0, 4)
+    dims.set_point_step((0, 1, 2), (1, -3, 5))
+    assert dims.current_step == (1, 0, 3)
+    assert dims.point == (0.5, 0, 6)
 
-    dims.set_current_step(0, -1)
-    assert dims.current_step == (0, 0, 2)
-    assert dims.point == (0, 0, 4)
+    dims.set_point_step(0, -1)
+    assert dims.current_step == (0, 0, 3)
+    assert dims.point == (0, 0, 6)
 
     # mismatched len(axis) vs. len(value)
     with pytest.raises(ValueError):
         dims.set_point((0, 1), (0, 0, 0))
 
     with pytest.raises(ValueError):
-        dims.set_current_step((0, 1), (0, 0, 0))
+        dims.set_point_step((0, 1), (0, 0, 0))
 
 
 def test_range():

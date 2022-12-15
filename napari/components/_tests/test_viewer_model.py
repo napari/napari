@@ -782,7 +782,12 @@ def test_not_mutable_fields(field):
     # Check attribute lives on the viewer
     assert hasattr(viewer, field)
     # Check attribute does not have an event emitter
-    assert not hasattr(viewer.events, field)
+    attr = getattr(viewer, field)
+    evented = hasattr(viewer.events, field)
+    if hasattr(attr, 'events'):
+        assert evented
+    else:
+        assert not evented
 
     # Check attribute is not settable
     with pytest.raises(TypeError) as err:

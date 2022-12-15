@@ -117,7 +117,7 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
-        self.dims.set_current_step(self.axis, val)
+        self.dims.set_point_step(self.axis, val)
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -139,7 +139,7 @@ class QtDimSliderWidget(QWidget):
 
         We split this out as a separate function for perfmon.
         """
-        self.dims.set_current_step(self.axis, value)
+        self.dims.set_point_step(self.axis, value)
 
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
@@ -598,7 +598,7 @@ class AnimationWorker(QObject):
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
 
-        # after dims.set_current_step is called, it will emit a dims.events.current_step()
+        # after dims.set_point_step is called, it will emit a dims.events.current_step()
         # we use this to update this threads current frame (in case it
         # was some other event that updated the axis)
         self.dims.events.current_step.connect(self._on_axis_changed)
