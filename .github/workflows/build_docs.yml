@@ -31,9 +31,10 @@ jobs:
         run: |
           cp -R napari-repo/examples docs
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -55,7 +56,7 @@ jobs:
         with:
           # the napari-docs repo is cloned into a docs/ folder, hence the
           # invocation below. Locally, you should simply run make docs
-          run: make -C docs docs
+          run: make -C docs docs GALLERY_PATH=../examples/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

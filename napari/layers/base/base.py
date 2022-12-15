@@ -343,6 +343,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            extent=Event,
             _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
@@ -559,7 +560,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._update_dims()
+        self._clear_extent()
         self.events.scale()
 
     @property
@@ -570,7 +571,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._update_dims()
+        self._clear_extent()
         self.events.translate()
 
     @property
@@ -581,7 +582,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._update_dims()
+        self._clear_extent()
         self.events.rotate()
 
     @property
@@ -592,7 +593,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._update_dims()
+        self._clear_extent()
         self.events.shear()
 
     @property
@@ -608,7 +609,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._update_dims()
+        self._clear_extent()
         self.events.affine()
 
     @property
@@ -656,12 +657,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    def _update_dims(self, event=None):
-        """Update the dims model and clear the extent cache.
-
-        This function needs to be called whenever data or transform information
-        changes, and should be called before events get emitted.
-        """
+    def _update_dims(self):
+        """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -675,10 +672,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._slice_input = self._slice_input.with_ndim(ndim)
 
         self._ndim = ndim
-        if 'extent' in self.__dict__:
-            del self.extent
 
-        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
+        self._clear_extent()
 
     @property
     @abstractmethod
@@ -728,6 +723,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             world=extent_world,
             step=abs(data_to_world.scale),
         )
+
+    def _clear_extent(self):
+        """Clears the cached extent.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any related events get emitted
+        so that they use the updated extent values.
+        """
+        if 'extent' in self.__dict__:
+            del self.extent
+        self.events.extent()
+        self.refresh()
 
     @property
     def _slice_indices(self):
@@ -923,8 +930,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if old_ndisplay != ndisplay:
             self.events._ndisplay()
 
-        # Update the point values
-        self._update_dims()
+        self.refresh()
         self._reset_editable()
 
     def _make_slice_input(
@@ -1140,7 +1146,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
+            self.events.set_data()
             self._update_thumbnail()
             self._set_highlight(force=True)
 

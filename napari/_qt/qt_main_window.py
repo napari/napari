@@ -60,7 +60,12 @@ from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.io import imsave
-from napari.utils.misc import in_ipython, in_jupyter, running_as_bundled_app
+from napari.utils.misc import (
+    in_ipython,
+    in_jupyter,
+    in_python_repl,
+    running_as_bundled_app,
+)
 from napari.utils.notifications import Notification
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
@@ -115,6 +120,10 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
+        self._is_close_dialog = {False: True, True: True}
+        # this ia sa workaround for #5335 issue. The dict is used to not
+        # collide shortcuts for close and close all windows
+
         act_dlg = QtActivityDialog(self._qt_viewer._canvas_overlay)
         self._qt_viewer._canvas_overlay.resized.connect(
             act_dlg.move_to_bottom_right
@@ -149,7 +158,9 @@ class _QtMainWindow(QMainWindow):
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
+        self._throttle_cursor_to_status_connection(viewer)
 
+    def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so
         # replace the direct connection with a throttled one.
         with contextlib.suppress(IndexError):
@@ -272,7 +283,7 @@ class _QtMainWindow(QMainWindow):
 
         # Toggling the console visibility is disabled when it is not
         # available, so ensure that it is hidden.
-        if in_ipython() or in_jupyter():
+        if in_ipython() or in_jupyter() or in_python_repl():
             self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
@@ -312,13 +323,22 @@ class _QtMainWindow(QMainWindow):
             self.status_throttler._timer.stop()
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
+        confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
+        self._is_close_dialog[quit_app] = False
+        # here we save information that we could request confirmation on close
+        # So fi function `close` is called again, we don't ask again but just close
         if (
-            not confirm_need
+            not confirm_need_local
             or not get_settings().application.confirm_close_window
             or ConfirmCloseDialog(self, quit_app).exec_() == QDialog.Accepted
         ):
             self._quit_app = quit_app
+            self._is_close_dialog[quit_app] = True
+            # here we inform that confirmation dialog is not open
+            self._qt_viewer.dims.stop()
             return super().close()
+        self._is_close_dialog[quit_app] = True
+        # here we inform that confirmation dialog is not open
 
     def close_window(self):
         """Close active dialog or active window."""
@@ -416,6 +436,8 @@ class _QtMainWindow(QMainWindow):
             for _ in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
+
+        self._qt_viewer.dims.stop()
 
         if self._quit_app:
             quit_app()

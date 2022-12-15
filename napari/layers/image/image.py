@@ -372,7 +372,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # where the intention here is to use the base setter, so we use the
         # _set_colormap method. This is important for Labels layers, because
         # we don't want to use get_color before set_view_slice has been
-        # triggered (self._update_dims(), below).
+        # triggered (self.refresh(), below).
         self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
         self._interpolation2d = Interpolation.NEAREST
@@ -386,7 +386,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         connect_no_arg(self.plane.events, self.events, 'plane')
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
@@ -538,7 +538,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -597,6 +597,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
                 ),
             )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
         self.events.interpolation(value=self._interpolation2d)
@@ -607,6 +614,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @interpolation3d.setter
     def interpolation3d(self, value):
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
         self.events.interpolation(value=self._interpolation3d)
