@@ -756,7 +756,7 @@ class Labels(_ImageBase):
             )
         self._contrast_limits = (0, 1)
 
-    def _reset_editable(self, editable: Optional[bool] = None) -> None:
+    def _reset_editable(self) -> None:
         self.editable = not self.multiscale
 
     def _on_editable_changed(self) -> None:
