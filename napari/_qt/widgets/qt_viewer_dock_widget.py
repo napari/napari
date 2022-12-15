@@ -64,6 +64,9 @@ class QtViewerDockWidget(QDockWidget):
         Whether to add stretch to the bottom of vertical widgets (pushing
         widgets up towards the top of the allotted area, instead of letting
         them distribute across the vertical space).  By default, True.
+    add_custom_title_bar : bool, optional
+        Whether to add a custom title bar containing the widget name and
+        buttons for closing, hiding, and floating the dock widget. By default, True.
     """
 
     def __init__(
@@ -77,6 +80,7 @@ class QtViewerDockWidget(QDockWidget):
         shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,
+        add_custom_title_bar=True,
         close_btn=True,
         hide_btn=True,
         float_btn=True,
@@ -85,6 +89,7 @@ class QtViewerDockWidget(QDockWidget):
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
+        self.add_custom_title_bar = add_custom_title_bar
         self._close_btn = close_btn
         self._hide_btn = hide_btn
         self._float_btn = float_btn
@@ -150,15 +155,16 @@ class QtViewerDockWidget(QDockWidget):
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
 
-        # custom title bar
-        self.title = QtCustomTitleBar(
-            self,
-            title=self.name,
-            close_btn=close_btn,
-            hide_btn=hide_btn,
-            float_btn=float_btn,
-        )
-        self.setTitleBarWidget(self.title)
+        # add custom title bar
+        if add_custom_title_bar:
+            self.title = QtCustomTitleBar(
+                self,
+                title=self.name,
+                close_btn=close_btn,
+                hide_btn=hide_btn,
+                float_btn=float_btn,
+            )
+            self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
 
     @property
@@ -282,7 +288,7 @@ class QtViewerDockWidget(QDockWidget):
             return
         with qt_signals_blocked(self):
             self.setTitleBarWidget(None)
-            if not self.isFloating():
+            if not self.isFloating() and self.add_custom_title_bar:
                 self.title = QtCustomTitleBar(
                     self,
                     title=self.name,

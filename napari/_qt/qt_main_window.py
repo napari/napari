@@ -797,6 +797,7 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
+        add_custom_title_bar=True,
         tabify: bool = False,
         menu: Optional[QMenu] = None,
     ):
@@ -830,6 +831,8 @@ class Window:
                 The shortcut parameter is deprecated since version 0.4.8, please use
                 the action and shortcut manager APIs. The new action manager and
                 shortcut API allow user configuration and localisation.
+        add_custom_title_bar : bool, optional
+            Whether to add a custom title bar with buttons for closing, hiding, and floating the dock widget. By default, True.
         tabify : bool
             Flag to tabify dockwidget or not.
         menu : QMenu, optional
@@ -864,6 +867,7 @@ class Window:
                 allowed_areas=allowed_areas,
                 shortcut=shortcut,
                 add_vertical_stretch=add_vertical_stretch,
+                add_custom_title_bar=add_custom_title_bar,
             )
         else:
             dock_widget = QtViewerDockWidget(
@@ -873,6 +877,7 @@ class Window:
                 area=area,
                 allowed_areas=allowed_areas,
                 add_vertical_stretch=add_vertical_stretch,
+                add_custom_title_bar=add_custom_title_bar,
             )
 
         self._add_viewer_dock_widget(dock_widget, tabify=tabify, menu=menu)
