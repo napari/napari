@@ -10,7 +10,7 @@ from typing import Optional, Union
 
 from yaml import safe_load
 
-from ._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
+from napari.utils._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"

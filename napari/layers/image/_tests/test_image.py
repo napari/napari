@@ -321,10 +321,11 @@ def test_interpolation():
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'bicubic'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bicubic'
+        layer = Image(data, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'cubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'cubic'
 
     layer.interpolation2d = 'linear'
     assert layer.interpolation2d == 'linear'
@@ -496,7 +497,7 @@ def test_iso_threshold():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.iso_threshold == 0.5
+    assert np.min(data) <= layer.iso_threshold <= np.max(data)
 
     # Change iso_threshold property
     iso_threshold = 0.7

@@ -326,6 +326,7 @@ def test_not_playing_after_ndim_changes(qtbot):
     dims.ndim = 2
 
     qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
 
 def test_not_playing_after_ndisplay_changes(qtbot):
@@ -340,6 +341,7 @@ def test_not_playing_after_ndisplay_changes(qtbot):
     dims.ndisplay = 3
 
     qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
 
 def test_set_axis_labels_after_ndim_changes(qtbot):

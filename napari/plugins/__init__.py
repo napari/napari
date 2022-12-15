@@ -4,11 +4,13 @@ from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
 
-from ..settings import get_settings
-from . import _npe2
-from ._plugin_manager import NapariPluginManager
+from napari.plugins import _npe2
+from napari.plugins._plugin_manager import NapariPluginManager
+from napari.settings import get_settings
 
 __all__ = ("plugin_manager", "menu_item_template")
+
+from napari.utils.theme import _install_npe2_themes
 
 #: Template to use for namespacing a plugin item in the menu bar
 # widget_name (plugin_name)
@@ -60,3 +62,5 @@ def _initialize_plugins():
         plugin_manager.discover = lambda *a, **k: None
     else:
         plugin_manager._initialize()
+
+    _install_npe2_themes()

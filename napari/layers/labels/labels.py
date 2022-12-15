@@ -7,33 +7,36 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
-from napari.utils.misc import _is_array_type
-
-from ...utils import config
-from ...utils._dtype import normalize_dtype
-from ...utils.colormaps import (
-    color_dict_to_colormap,
-    label_colormap,
-    low_discrepancy_image,
+from napari.layers.base import no_op
+from napari.layers.image._image_utils import guess_multiscale
+from napari.layers.image.image import _ImageBase
+from napari.layers.labels._labels_constants import (
+    LabelColorMode,
+    LabelsRendering,
+    Mode,
 )
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.geometry import clamp_point_to_bounding_box
-from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_coords_status
-from ...utils.translations import trans
-from ..base import no_op
-from ..image._image_utils import guess_multiscale
-from ..image.image import _ImageBase
-from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import _FeatureTable
-from ._labels_constants import LabelColorMode, LabelsRendering, Mode
-from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import (
+from napari.layers.labels._labels_mouse_bindings import draw, pick
+from napari.layers.labels._labels_utils import (
     indices_in_shape,
     interpolate_coordinates,
     sphere_indices,
 )
+from napari.layers.utils.color_transformations import transform_color
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.utils import config
+from napari.utils._dtype import normalize_dtype
+from napari.utils.colormaps import (
+    color_dict_to_colormap,
+    label_colormap,
+    low_discrepancy_image,
+)
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.geometry import clamp_point_to_bounding_box
+from napari.utils.misc import _is_array_type
+from napari.utils.naming import magic_name
+from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.translations import trans
 
 
 class Labels(_ImageBase):
@@ -304,7 +307,7 @@ class Labels(_ImageBase):
         self._reset_history()
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
         self._set_editable()
 
     @property
@@ -1406,7 +1409,7 @@ class Labels(_ImageBase):
 
         source_info = self._get_source_info()
         source_info['coordinates'] = generate_layer_coords_status(
-            position, value
+            position[-self.ndim :], value
         )
 
         # if this labels layer has properties
@@ -1497,7 +1500,7 @@ class Labels(_ImageBase):
 
 
 if config.async_octree:
-    from ..image.experimental.octree_image import _OctreeImageBase
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     class Labels(Labels, _OctreeImageBase):
         pass

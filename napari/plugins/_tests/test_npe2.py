@@ -14,11 +14,15 @@ from napari.layers import Image, Points
 from napari.plugins import _npe2
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
+PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
 
 
 @pytest.fixture
 def mock_pm(npe2pm: 'TestPluginManager'):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
     mock_reg = MagicMock()
     npe2pm._command_registry = mock_reg
     with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
@@ -134,6 +138,8 @@ def test_sample_iterator(mock_pm):
     for plugin, contribs in samples:
         assert isinstance(plugin, str)
         assert isinstance(contribs, dict)
+        # check that the manifest display_name is used
+        assert plugin == PLUGIN_NAME
         assert contribs
         for i in contribs.values():
             assert 'data' in i

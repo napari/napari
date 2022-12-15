@@ -13,35 +13,37 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import (
-    add_layer_to_viewer,
-    add_layers_to_viewer,
-    get_layers,
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils.interactivity_utils import (
+    drag_data_to_projected_distance,
 )
-from ...utils.events import EmitterGroup, Event
-from ...utils.events.event import WarningEmitter
-from ...utils.geometry import (
-    find_front_back_face,
-    intersect_line_with_axis_aligned_bounding_box_3d,
-)
-from ...utils.key_bindings import KeymapProvider
-from ...utils.mouse_bindings import MousemapProvider
-from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_coords_status
-from ...utils.transforms import Affine, CompositeAffine, TransformChain
-from ...utils.translations import trans
-from ..utils._slice_input import _SliceInput
-from ..utils.interactivity_utils import drag_data_to_projected_distance
-from ..utils.layer_utils import (
+from napari.layers.utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
     get_extent_world,
 )
-from ..utils.plane import ClippingPlane, ClippingPlaneList
-from ._base_constants import Blending
+from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+from napari.utils._dask_utils import configure_dask
+from napari.utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
+)
+from napari.utils.events import EmitterGroup, Event
+from napari.utils.events.event import WarningEmitter
+from napari.utils.geometry import (
+    find_front_back_face,
+    intersect_line_with_axis_aligned_bounding_box_3d,
+)
+from napari.utils.key_bindings import KeymapProvider
+from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.naming import magic_name
+from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.transforms import Affine, CompositeAffine, TransformChain
+from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -247,7 +249,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
 
         # Needs to be imported here to avoid circular import in _source
-        from .._source import current_source
+        from napari.layers._source import current_source
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -341,6 +343,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            extent=Event,
             _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
@@ -549,7 +552,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._update_dims()
+        self._clear_extent()
         self.events.scale()
 
     @property
@@ -560,7 +563,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._update_dims()
+        self._clear_extent()
         self.events.translate()
 
     @property
@@ -571,7 +574,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._update_dims()
+        self._clear_extent()
         self.events.rotate()
 
     @property
@@ -582,7 +585,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._update_dims()
+        self._clear_extent()
         self.events.shear()
 
     @property
@@ -598,7 +601,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._update_dims()
+        self._clear_extent()
         self.events.affine()
 
     @property
@@ -646,12 +649,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    def _update_dims(self, event=None):
-        """Update the dims model and clear the extent cache.
-
-        This function needs to be called whenever data or transform information
-        changes, and should be called before events get emitted.
-        """
+    def _update_dims(self):
+        """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -665,10 +664,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._slice_input = self._slice_input.with_ndim(ndim)
 
         self._ndim = ndim
-        if 'extent' in self.__dict__:
-            del self.extent
 
-        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
+        self._clear_extent()
 
     @property
     @abstractmethod
@@ -718,6 +715,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             world=extent_world,
             step=abs(data_to_world.scale),
         )
+
+    def _clear_extent(self):
+        """Clears the cached extent.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any related events get emitted
+        so that they use the updated extent values.
+        """
+        if 'extent' in self.__dict__:
+            del self.extent
+        self.events.extent()
+        self.refresh()
 
     @property
     def _slice_indices(self):
@@ -906,6 +915,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
         """
+        slice_input = self._make_slice_input(point, ndisplay, order)
+
+        if self._slice_input == slice_input:
+            return
+
+        old_ndisplay = self._slice_input.ndisplay
+        self._slice_input = slice_input
+
+        if old_ndisplay != ndisplay:
+            self.events._ndisplay()
+
+        self.refresh()
+        self._set_editable()
+
+    def _make_slice_input(
+        self, point=None, ndisplay=2, order=None
+    ) -> _SliceInput:
         if point is None:
             point = (0,) * self.ndim
         else:
@@ -923,24 +949,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
         )
 
-        slice_input = _SliceInput(
+        return _SliceInput(
             ndisplay=ndisplay,
             point=point,
             order=order,
         )
-
-        if self._slice_input == slice_input:
-            return
-
-        old_ndisplay = self._slice_input.ndisplay
-        self._slice_input = slice_input
-
-        if old_ndisplay != ndisplay:
-            self.events._ndisplay()
-
-        # Update the point values
-        self._update_dims()
-        self._set_editable()
 
     @abstractmethod
     def _update_thumbnail(self):
@@ -1129,7 +1142,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
+            self.events.set_data()
             self._update_thumbnail()
             self._set_highlight(force=True)
 
@@ -1630,7 +1643,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         source_info = self._get_source_info()
         source_info['coordinates'] = generate_layer_coords_status(
-            position, value
+            position[-self.ndim :], value
         )
         return source_info
 
@@ -1685,7 +1698,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         list of str
             File paths of any files that were written.
         """
-        from ...plugins.io import save_layers
+        from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
 
@@ -1745,8 +1758,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         >>> Layer.create(*data)
 
         """
-        from ... import layers
-        from ..image._image_utils import guess_labels
+        from napari import layers
+        from napari.layers.image._image_utils import guess_labels
 
         layer_type = (layer_type or '').lower()
 

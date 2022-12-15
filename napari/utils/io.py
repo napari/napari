@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -48,3 +48,27 @@ def imsave(filename: str, data: np.ndarray):
         import imageio
 
         imageio.imsave(filename, data)
+
+
+def __getattr__(name: str):
+    if name in {
+        'imsave_extensions',
+        'write_csv',
+        'read_csv',
+        'csv_to_layer_data',
+        'read_zarr_dataset',
+    }:
+        warnings.warn(
+            trans._(
+                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
+                deferred=True,
+                name=name,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        import napari_builtins.io
+
+        return getattr(napari_builtins.io, name)
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")

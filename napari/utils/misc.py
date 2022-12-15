@@ -32,7 +32,7 @@ from typing import (
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import packaging.version
@@ -104,6 +104,19 @@ def in_ipython() -> bool:
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
+def in_python_repl() -> bool:
+    """Return true if we're running in a Python REPL."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
+            sys, 'ps1'
+        )
     except Exception:
         pass
     return False

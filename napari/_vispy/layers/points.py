@@ -1,12 +1,12 @@
 import numpy as np
 
-from ...settings import get_settings
-from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text
-from ..visuals.points import PointsVisual
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.utils.gl import BLENDING_MODES
+from napari._vispy.utils.text import update_text
+from napari._vispy.visuals.points import PointsVisual
+from napari.settings import get_settings
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events import disconnect_events
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -19,7 +19,7 @@ class VispyPointsLayer(VispyBaseLayer):
         node = PointsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(self._on_symbol_change)
+        self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_width_is_relative.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
@@ -39,24 +39,24 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        if len(self.layer._indices_view) > 0:
-            edge_color = self.layer._view_edge_color
-            face_color = self.layer._view_face_color
-        else:
-            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
-
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
         if len(self.layer._indices_view) == 0:
+            # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = [0]
+            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
             edge_width = [0]
+            symbol = ['o']
         else:
             data = self.layer._view_data
             size = self.layer._view_size
+            edge_color = self.layer._view_edge_color
+            face_color = self.layer._view_face_color
             edge_width = self.layer._view_edge_width
+            symbol = self.layer._view_symbol
 
         set_data = self.node._subvisuals[0].set_data
 
@@ -74,15 +74,13 @@ class VispyPointsLayer(VispyBaseLayer):
         set_data(
             data[:, ::-1],
             size=size,
-            **edge_kw,
+            symbol=symbol,
             edge_color=edge_color,
             face_color=face_color,
+            **edge_kw,
         )
 
         self.reset()
-
-    def _on_symbol_change(self):
-        self.node.symbol = self.layer.symbol
 
     def _on_highlight_change(self):
         settings = get_settings()
@@ -92,13 +90,16 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
+            symbol = self.layer._view_symbol[self.layer._highlight_index]
         else:
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
+            symbol = ['o']
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
             size=size,
+            symbol=symbol,
             edge_width=settings.appearance.highlight_thickness,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
@@ -179,7 +180,6 @@ class VispyPointsLayer(VispyBaseLayer):
     def reset(self):
         super().reset()
         self._update_text(update_node=False)
-        self._on_symbol_change()
         self._on_highlight_change()
         self._on_antialiasing_change()
         self._on_shading_change()

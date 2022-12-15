@@ -23,14 +23,14 @@ from napari_plugin_engine.hooks import HookCaller
 from pydantic import ValidationError
 from typing_extensions import TypedDict
 
-from ..settings import get_settings
-from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
-from ..utils._appdirs import user_site_packages
-from ..utils.events import EmitterGroup, EventedSet
-from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from ..utils.theme import Theme, register_theme, unregister_theme
-from ..utils.translations import trans
-from . import hook_specifications
+from napari.plugins import hook_specifications
+from napari.settings import get_settings
+from napari.types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
+from napari.utils._appdirs import user_site_packages
+from napari.utils.events import EmitterGroup, EventedSet
+from napari.utils.misc import camel_to_spaces, running_as_bundled_app
+from napari.utils.theme import Theme, register_theme, unregister_theme
+from napari.utils.translations import trans
 
 
 class PluginHookOption(TypedDict):
@@ -99,7 +99,7 @@ class NapariPluginManager(PluginManager):
 
     def _initialize(self):
         with self.discovery_blocked():
-            from ..settings import get_settings
+            from napari.settings import get_settings
 
             # dicts to store maps from extension -> plugin_name
             plugin_settings = get_settings().plugins
@@ -371,7 +371,7 @@ class NapariPluginManager(PluginManager):
         for theme_name, theme_colors in data.items():
             try:
                 theme = Theme.parse_obj(theme_colors)
-                register_theme(theme_name, theme)
+                register_theme(theme_name, theme, plugin_name)
                 _data[theme_name] = theme
             except (KeyError, ValidationError) as err:
                 warn_msg = trans._(
@@ -648,7 +648,7 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `reader`
         """
-        from ..settings import get_settings
+        from napari.settings import get_settings
 
         self._assign_plugin_to_extensions(reader, extensions, type_='reader')
         extension2readers = get_settings().plugins.extension2reader
@@ -673,7 +673,7 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `writer`
         """
-        from ..settings import get_settings
+        from napari.settings import get_settings
 
         self._assign_plugin_to_extensions(writer, extensions, type_='writer')
         get_settings().plugins.extension2writer = self._extension2writer

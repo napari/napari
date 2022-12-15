@@ -6,3 +6,6 @@ from superqt import QDoubleSlider
 if tuple(int(x) for x in QT_VERSION.split(".")) >= (5, 14):
     from superqt import QLabeledDoubleSlider as QDoubleSlider  # noqa
     from superqt import QLabeledSlider as QSlider  # noqa
+
+
+__all__ = ["QSlider", "QDoubleSlider"]

@@ -13,9 +13,10 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
       - name: Install napari
         run: |
-          pip install mypy types-PyYAML types-setuptools
+          pip install -r resources/requirements_mypy.txt
           SETUPTOOLS_ENABLE_FEATURES="legacy-editable" pip install -e .[all]
 
       - name: Run mypy on typed modules
