@@ -358,6 +358,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         layers = layers or self.layers
         self._layer_slicer.submit(layers, self.dims)
+        # If the currently selected layer is sliced asynchronously, then the value
+        # shown with this position may be incorrect. See the discussion for more details:
+        # https://github.com/napari/napari/pull/5377#discussion_r1036280855
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
