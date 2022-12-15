@@ -1,3 +1,4 @@
+import warnings
 from numbers import Integral
 from typing import Literal  # Added to typing in 3.8
 from typing import Sequence, Tuple, Union
@@ -48,7 +49,7 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
-    current_step : tuple of int
+    point_step : tuple of int
         Tuple the slider position for each dims slider, in world coordinates.
     nsteps : tuple of int
         Number of steps available to each slider. These are calculated from
@@ -180,38 +181,157 @@ class Dims(EventedModel):
 
         return values
 
-    @property
-    def nsteps(self) -> Tuple[int, ...]:
-        """Tuple of int: Number of slider steps for each dimension."""
-        return tuple(
-            int((max_val - min_val) / step_size)
-            for (min_val, max_val), step_size in zip(self.range, self.step)
-        )
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # to be removed if/when deprecating current_step
+        self.events.span.connect(self.events.current_step)
 
     @property
-    def point(self) -> Tuple[int, ...]:
-        """Tuple of float: Value of each dimension."""
-        # The point value is computed from the range and current_step
-        point = tuple(
-            min_val + step_size * value
-            for (min_val, max_val, step_size), value in zip(
-                self.range, self.current_step
+    def _span_step(self) -> Tuple[float, ...]:
+        return tuple(
+            (
+                int(round((low - min_val) / step)),
+                int(round((high - min_val) / step)),
+            )
+            for (low, high), (min_val, _), step in zip(
+                self.span, self.range, self.step
             )
         )
-        return point
+
+    @_span_step.setter
+    def _span_step(self, value):
+        self.span = [
+            (
+                min_val + low * step,
+                min_val + high * step,
+            )
+            for (low, high), (min_val, _), step in zip(
+                value, self.range, self.step
+            )
+        ]
 
     @property
-    def displayed(self) -> Tuple[int, ...]:
+    def nsteps(self) -> Tuple[float]:
+        return tuple(
+            int((max_val - min_val) // step)
+            for (min_val, max_val), step in zip(self.range, self.step)
+        )
+
+    @nsteps.setter
+    def nsteps(self, value):
+        self.step = [
+            (max_val - min_val) / nsteps
+            for (min_val, max_val), nsteps in zip(self.range, value)
+        ]
+
+    @property
+    def thickness(self) -> Tuple[float]:
+        return tuple(high - low for low, high in self.span)
+
+    @thickness.setter
+    def thickness(self, value):
+        # change slice thickness by resizing the span symmetrically
+        span = []
+        for new_thickness, (min_val, max_val), (low, high) in zip(
+            value, self.range, self.span
+        ):
+            # find the maximum possible change in thickness (can't go further than range)
+            max_change = min(abs(low - min_val), abs(max_val - high))
+            # move low and high end of the span by half the thickness change
+            thickness_change = min(
+                (new_thickness - (high - low)) / 2, max_change
+            )
+            new_low = max(min_val, low - thickness_change)
+            new_high = min(max_val, high + thickness_change)
+            span.append((new_low, new_high))
+        self.span = span
+
+    @property
+    def _thickness_step(self) -> Tuple[float]:
+        return tuple(
+            thickness / step
+            for thickness, step in zip(self.thickness, self.step)
+        )
+
+    @_thickness_step.setter
+    def _thickness_step(self, value):
+        self.thickness = [
+            thickness * step for thickness, step in zip(value, self.step)
+        ]
+
+    @property
+    def point(self) -> Tuple[float]:
+        return tuple((low + high) / 2 for low, high in self.span)
+
+    @point.setter
+    def point(self, value):
+        # move the slice so its center is on the specified point, preserving thickness
+        # if not possible, move it as far as it can be moved
+        span = []
+        for point, (min_val, max_val), thickness in zip(
+            value, self.range, self.thickness
+        ):
+            # calculate real limits, including half thickness
+            half_thk = thickness / 2
+            min_pt, max_pt = (min_val + half_thk, max_val - half_thk)
+            point = np.clip(point, min_pt, max_pt)
+            span.append((point - half_thk, point + half_thk))
+        self.span = span
+
+    @property
+    def _point_step(self):
+        return tuple(
+            int(round((point - min_val) / step))
+            for point, (min_val, _), step in zip(
+                self.point, self.range, self.step
+            )
+        )
+
+    @_point_step.setter
+    def _point_step(self, value):
+        self.point = [
+            min_val + point * step
+            for point, (min_val, _), step in zip(value, self.range, self.step)
+        ]
+
+    @property
+    def current_step(self) -> Tuple[int]:
+        warnings.warn(
+            trans._(
+                'Dims.current_step is deprecated. Use Dims._point_step instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._point_step
+
+    @current_step.setter
+    def current_step(self, value: Tuple[int]):
+        warnings.warn(
+            trans._(
+                'Dims.current_step is deprecated. Use Dims._point_step instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._point_step = value
+
+    @property
+    def displayed(self) -> Tuple[int]:
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
+    @displayed.setter
+    def displayed(self, value):
+        self.order = value
+
     @property
-    def not_displayed(self) -> Tuple[int, ...]:
+    def not_displayed(self) -> Tuple[int]:
         """Tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
-    def displayed_order(self) -> Tuple[int, ...]:
+    def displayed_order(self) -> Tuple[int]:
         return tuple(argsort(self.displayed))
 
     def set_range(
@@ -231,26 +351,43 @@ class Dims(EventedModel):
             Range specified as (min, max, step) or a sequence of these range
             tuples.
         """
-        if isinstance(axis, Integral):
-            axis = assert_axis_in_bounds(axis, self.ndim)  # type: ignore
-            if self.range[axis] != _range:
-                full_range = list(self.range)
-                full_range[axis] = _range
-                self.range = full_range
-        else:
-            full_range = list(self.range)
-            # cast range to list for list comparison below
-            _range = list(_range)  # type: ignore
-            axis = tuple(axis)  # type: ignore
-            if len(axis) != len(_range):
-                raise ValueError(
-                    trans._("axis and _range sequences must have equal length")
-                )
-            if _range != full_range:
-                for ax, r in zip(axis, _range):
-                    ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    full_range[ax] = r
-                self.range = full_range
+        axis, value = self._sanitize_input(
+            axis, _range, value_is_sequence=True
+        )
+        full_range = list(self.range)
+        for ax, val in zip(axis, value):
+            full_range[ax] = val
+        self.range = full_range
+
+    def _set_span(
+        self,
+        axis: Union[int, Sequence[int]],
+        value: Union[
+            Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
+        ],
+    ):
+        axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
+        full_span = list(self.span)
+        range = list(self.range)
+        for ax, val in zip(axis, value):
+            min_val, max_val, _ = range[ax]
+            low, high = sorted(val)
+            span = max(min_val, low), min(max_val, high)
+            full_span[ax] = span
+        self.span = full_span
+
+    def _set_span_step(
+        self,
+        axis: Union[int, Sequence[int]],
+        value: Union[Sequence[int], Sequence[Sequence[int]]],
+    ):
+        axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
+        range = list(self.range)
+        value_world = []
+        for ax, val in zip(axis, value):
+            min_val, _, step_size = range[ax]
+            value_world.append([min_val + v * step_size for v in val])
+        self.set_span(axis, value_world)
 
     def set_point(
         self,
@@ -259,8 +396,9 @@ class Dims(EventedModel):
     ):
         """Sets point to slice dimension in world coordinates.
 
-        The desired point gets transformed into an integer step
-        of the slider and stored in the current_step.
+        The current thickness is preserved, and the point is set as
+        the center of the slice. If too close to (or beyond) the edge to fit
+        the whole thickness, the position is clipped as appropriate.
 
         Parameters
         ----------
@@ -269,66 +407,39 @@ class Dims(EventedModel):
         value : scalar or sequence of scalars
             Value of the point for each axis.
         """
-        if isinstance(axis, Integral):
-            axis = assert_axis_in_bounds(axis, self.ndim)  # type: ignore
-            (min_val, max_val, step_size) = self.range[axis]
-            raw_step = (value - min_val) / step_size
-            self.set_current_step(axis, raw_step)
-        else:
-            value = tuple(value)  # type: ignore
-            axis = tuple(axis)  # type: ignore
-            if len(axis) != len(value):
-                raise ValueError(
-                    trans._("axis and value sequences must have equal length")
-                )
-            raw_steps = []
-            for ax, val in zip(axis, value):
-                ax = assert_axis_in_bounds(int(ax), self.ndim)
-                min_val, _, step_size = self.range[ax]
-                raw_steps.append((val - min_val) / step_size)
-            self.set_current_step(axis, raw_steps)
+        axis, value = self._sanitize_input(
+            axis, value, value_is_sequence=False
+        )
+        full_span = list(self.span)
+        point = list(self.point)
+        range = list(self.range)
+        point_clips = [
+            (mn + th / 2, mx - th / 2)
+            for (mn, mx, _), th in zip(range, self.thickness)
+        ]
+        for ax, val in zip(axis, value):
+            val = np.clip(val, *point_clips[ax])
+            shift = val - point[ax]
+            min_val, max_val, _ = range[ax]
+            low, high = tuple(v + shift for v in full_span[ax])
+            span = max(min_val, low), min(max_val, high)
+            full_span[ax] = span
+        self.span = full_span
 
-    def set_current_step(
+    def set_point_step(
         self,
         axis: Union[int, Sequence[int]],
-        value: Union[Union[int, float], Sequence[Union[int, float]]],
+        value: Union[int, Sequence[int]],
     ):
-        """Set the slider steps at which to slice this dimension.
-
-        The position of the slider in world coordinates gets
-        calculated from the current_step of the slider.
-
-        Parameters
-        ----------
-        axis : int or sequence of int
-            Dimension index or a sequence of axes whos step will be set.
-        value : scalar or sequence of scalars
-            Value of the step for each axis.
-        """
-        if isinstance(axis, Integral):
-            axis = assert_axis_in_bounds(axis, self.ndim)
-            step = round(min(max(value, 0), self.nsteps[axis] - 1))
-            if self.current_step[axis] != step:
-                full_current_step = list(self.current_step)
-                full_current_step[axis] = step
-                self.current_step = full_current_step
-        else:
-            full_current_step = list(self.current_step)
-            # cast value to list for list comparison below
-            value = list(value)  # type: ignore
-            axis = tuple(axis)  # type: ignore
-            if len(axis) != len(value):
-                raise ValueError(
-                    trans._("axis and value sequences must have equal length")
-                )
-            if value != full_current_step:
-                # (computed) nsteps property outside of the loop for efficiency
-                nsteps = self.nsteps
-                for ax, val in zip(axis, value):
-                    ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    step = round(min(max(val, 0), nsteps[ax] - 1))
-                    full_current_step[ax] = step
-                self.current_step = full_current_step
+        axis, value = self._sanitize_input(
+            axis, value, value_is_sequence=False
+        )
+        range = list(self.range)
+        value_world = []
+        for ax, val in zip(axis, value):
+            min_val, _, step_size = range[ax]
+            value_world.append(min_val + val * step_size)
+        self.set_point(axis, value_world)
 
     def set_axis_label(
         self,
@@ -344,27 +455,58 @@ class Dims(EventedModel):
         label : str or sequence of str
             Given labels for the specified axes.
         """
-        if isinstance(axis, Integral):
-            axis = assert_axis_in_bounds(axis, self.ndim)
-            if self.axis_labels[axis] != str(label):
-                full_axis_labels = list(self.axis_labels)
-                full_axis_labels[axis] = str(label)
-                self.axis_labels = full_axis_labels
-            self.last_used = axis
-        else:
-            full_axis_labels = list(self.axis_labels)
-            # cast label to list for list comparison below
-            label = list(label)  # type: ignore
-            axis = tuple(axis)  # type: ignore
-            if len(axis) != len(label):
-                raise ValueError(
-                    trans._("axis and label sequences must have equal length")
-                )
-            if label != full_axis_labels:
-                for ax, val in zip(axis, label):
-                    ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    full_axis_labels[ax] = val
-                self.axis_labels = full_axis_labels
+        axis, label = self._sanitize_input(
+            axis, label, value_is_sequence=False
+        )
+        full_axis_labels = list(self.axis_labels)
+        for ax, val in zip(axis, label):
+            full_axis_labels[ax] = val
+        self.axis_labels = full_axis_labels
+
+    def _set_thickness(
+        self,
+        axis: Union[int, Sequence[int]],
+        value: Union[Union[int, float], Sequence[Union[int, float]]],
+    ):
+        """Set the slider slice thickness for this dimension. If the new thickness
+        would extend beyond the range limits, it is instead clipped to prevent it.
+
+        Parameters
+        ----------
+        axis : int or sequence of int
+            Dimension index or a sequence of axes whose slice thickness will be set.
+        value : scalar or sequence of scalars
+            Value of the slice thickness.
+        """
+        axis, value = self._sanitize_input(
+            axis, value, value_is_sequence=False
+        )
+        full_span = list(self.span)
+        range = list(self.range)
+        for ax, val in zip(axis, value):
+            min_val, max_val, _ = range[ax]
+            low, high = full_span[ax]
+            max_change = min(abs(low - min_val), abs(max_val - high))
+            thickness_change = min((val - (high - low)) / 2, max_change)
+            new_low = max(min_val, low - thickness_change)
+            new_high = min(max_val, high + thickness_change)
+            full_span[ax] = new_low, new_high
+        self.span = full_span
+
+    def _set_thickness_step(
+        self,
+        axis: Union[int, Sequence[int]],
+        value: Union[int, Sequence[int]],
+    ):
+        axis, value = self._sanitize_input(
+            axis, value, value_is_sequence=False
+        )
+        range = list(self.range)
+        value_world = []
+        for ax, val in zip(axis, value):
+            min_val, _, step_size = range[ax]
+            value_world.append(min_val + val * step_size)
+        self.set_thickness(axis, value_world)
 
     def reset(self):
         """Reset dims values to initial states."""
@@ -432,6 +574,35 @@ class Dims(EventedModel):
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
 
+    def _sanitize_input(self, axis, value, value_is_sequence=False):
+        """
+        Ensure that axis is and value are the same length, that axis are not
+        out of bounds, and corerces to lists for easier processing.
+        """
+        if isinstance(axis, Integral):
+            if (
+                isinstance(value, Sequence)
+                and not isinstance(value, str)
+                and not value_is_sequence
+            ):
+                raise ValueError(
+                    trans._('cannot set multiple values to a single axis')
+                )
+            axis = [axis]
+            value = [value]
+        else:
+            axis = list(axis)
+            value = list(value)
+
+        if len(axis) != len(value):
+            raise ValueError(
+                trans._("axis and value sequences must have equal length")
+            )
+
+        for ax in axis:
+            ensure_axis_in_bounds(ax, self.ndim)
+        return axis, value
+
 
 def ensure_ndim(value: Tuple, ndim: int, default: Tuple):
     """
@@ -457,8 +628,8 @@ def ensure_ndim(value: Tuple, ndim: int, default: Tuple):
     return value
 
 
-def assert_axis_in_bounds(axis: int, ndim: int) -> int:
-    """Assert a given value is inside the existing axes of the image.
+def ensure_axis_in_bounds(axis: int, ndim: int) -> int:
+    """Ensure a given value is inside the existing axes of the image.
 
     Returns
     -------

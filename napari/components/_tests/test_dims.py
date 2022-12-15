@@ -2,7 +2,7 @@ import pytest
 
 from napari.components import Dims
 from napari.components.dims import (
-    assert_axis_in_bounds,
+    ensure_axis_in_bounds,
     reorder_after_dim_reduction,
 )
 
@@ -208,14 +208,14 @@ def test_labels_order_when_changing_dims():
     "ndim, ax_input, expected", ((2, 1, 1), (2, -1, 1), (4, -3, 1))
 )
 def test_assert_axis_in_bounds(ndim, ax_input, expected):
-    actual = assert_axis_in_bounds(ax_input, ndim)
+    actual = ensure_axis_in_bounds(ax_input, ndim)
     assert actual == expected
 
 
 @pytest.mark.parametrize("ndim, ax_input", ((2, 2), (2, -3)))
 def test_assert_axis_out_of_bounds(ndim, ax_input):
     with pytest.raises(ValueError):
-        assert_axis_in_bounds(ax_input, ndim)
+        ensure_axis_in_bounds(ax_input, ndim)
 
 
 def test_axis_labels_str_to_list():
