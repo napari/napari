@@ -169,11 +169,10 @@ class QtViewerDockWidget(QDockWidget):
 
     @property
     def _parent(self):
-        """
-        Let's make sure parent always a weakref:
+        """Let's make sure parent always a weakref:
 
             1) parent is likely to always exists after child
-            2) even if not strictly necessary it make it easier to view reference cycles.
+            2) even if not strictly necessary it makes it easier to view reference cycles.
         """
         return self._ref_parent()
 
