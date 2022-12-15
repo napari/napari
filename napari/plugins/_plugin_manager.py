@@ -369,7 +369,6 @@ class NapariPluginManager(PluginManager):
 
         _data = {}
         for theme_id, theme_colors in data.items():
-            print(theme_colors)
             try:
                 theme = Theme.parse_obj(theme_colors)
                 register_theme(theme_id, theme, plugin_name)
