@@ -211,7 +211,7 @@ class QtViewer(QSplitter):
         self._viewerButtons = None
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
-        self._console_backlog = None
+        self._console_backlog = []
         self._console = None
 
         self._dockLayerList = None
@@ -487,8 +487,6 @@ class QtViewer(QSplitter):
     @property
     def console_backlog(self):
         """List: items to push to console when instantiated."""
-        if self._console_backlog is None:
-            self._console_backlog = []
         return self._console_backlog
 
     @property
@@ -508,7 +506,7 @@ class QtViewer(QSplitter):
                     )
                     for i in self.console_backlog:
                         self.console.push(i)
-                    self._console_backlog = None
+                    self._console_backlog = []
             except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
