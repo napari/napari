@@ -79,7 +79,7 @@ def test_point():
     dims = Dims(ndim=4)
     assert dims.point == (0,) * 4
 
-    dims.set_range(range(dims.ndim), ((0, 5, 1),) * dims.ndim)
+    dims.range = ((0, 5),) * dims.ndim
     dims.set_point(3, 4)
     assert dims.point == (0, 0, 0, 4)
 
@@ -94,24 +94,26 @@ def test_point_variable_step_size():
     dims = Dims(ndim=3)
     assert dims.point == (0,) * 3
 
-    desired_range = ((0, 6, 0.5), (0, 6, 1), (0, 6, 2))
-    dims.set_range(range(3), desired_range)
+    desired_range = ((0, 6), (0, 6), (0, 6))
+    desired_step = (0.5, 1, 2)
+    dims.range = desired_range
+    dims.step = desired_step
     assert dims.range == desired_range
+    assert dims.step == desired_step
 
-    # set point updates current_step indirectly
-    dims.set_point([0, 1, 2], (2.9, 2.9, 2.9))
-    assert dims.current_step == (6, 3, 1)
-    # point is a property computed on demand from current_step
+    # set point updates point_step indirectly
+    dims.point = (2.9, 2.9, 2.9)
+    assert dims.point_step == (6, 3, 1)
     assert dims.point == (2.9, 2.9, 2.9)
 
     # can set step directly as well
     # note that out of range values get clipped
     dims.set_point_step((0, 1, 2), (1, -3, 5))
-    assert dims.current_step == (1, 0, 3)
+    assert dims.point_step == (1, 0, 3)
     assert dims.point == (0.5, 0, 6)
 
     dims.set_point_step(0, -1)
-    assert dims.current_step == (0, 0, 3)
+    assert dims.point_step == (0, 0, 3)
     assert dims.point == (0, 0, 6)
 
     # mismatched len(axis) vs. len(value)
@@ -127,10 +129,13 @@ def test_range():
     Tests range setting.
     """
     dims = Dims(ndim=4)
-    assert dims.range == ((0, 2, 1),) * 4
+    assert dims.range == ((0, 2),) * 4
+    assert dims.step == (1, 1, 1, 1)
 
-    dims.set_range(3, (0, 4, 2))
-    assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
+    dims.set_range(3, (0, 4))
+    dims._set_step(3, 2)
+    assert dims.range == ((0, 2),) * 3 + ((0, 4),)
+    assert dims.step == (1, 1, 1, 2)
 
 
 def test_range_set_multiple():

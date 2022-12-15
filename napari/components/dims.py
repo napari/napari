@@ -94,10 +94,6 @@ class Dims(EventedModel):
     def _sorted_ranges(v):
         return tuple(sorted(float(el) for el in dim) for dim in v)
 
-    @validator('step', pre=True)
-    def _float(v):
-        return tuple(float(dim) for dim in v)
-
     @root_validator(skip_on_failure=True)
     def _check_dims(cls, values):
         """Check the consitency of dimensionaity for all attributes
@@ -279,7 +275,7 @@ class Dims(EventedModel):
         self.span = span
 
     @property
-    def _point_step(self):
+    def point_step(self):
         return tuple(
             int(round((point - min_val) / step))
             for point, (min_val, _), step in zip(
@@ -287,8 +283,8 @@ class Dims(EventedModel):
             )
         )
 
-    @_point_step.setter
-    def _point_step(self, value):
+    @point_step.setter
+    def point_step(self, value):
         self.point = [
             min_val + point * step
             for point, (min_val, _), step in zip(value, self.range, self.step)
@@ -298,23 +294,23 @@ class Dims(EventedModel):
     def current_step(self) -> Tuple[int]:
         warnings.warn(
             trans._(
-                'Dims.current_step is deprecated. Use Dims._point_step instead.'
+                'Dims.current_step is deprecated. Use Dims.point_step instead.'
             ),
             DeprecationWarning,
             stacklevel=2,
         )
-        return self._point_step
+        return self.point_step
 
     @current_step.setter
     def current_step(self, value: Tuple[int]):
         warnings.warn(
             trans._(
-                'Dims.current_step is deprecated. Use Dims._point_step instead.'
+                'Dims.current_step is deprecated. Use Dims.point_step instead.'
             ),
             DeprecationWarning,
             stacklevel=2,
         )
-        self._point_step = value
+        self.point_step = value
 
     @property
     def displayed(self) -> Tuple[int]:
@@ -370,7 +366,7 @@ class Dims(EventedModel):
         full_span = list(self.span)
         range = list(self.range)
         for ax, val in zip(axis, value):
-            min_val, max_val, _ = range[ax]
+            min_val, max_val = range[ax]
             low, high = sorted(val)
             span = max(min_val, low), min(max_val, high)
             full_span[ax] = span
@@ -383,9 +379,11 @@ class Dims(EventedModel):
     ):
         axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
         range = list(self.range)
+        step = list(self.step)
         value_world = []
         for ax, val in zip(axis, value):
-            min_val, _, step_size = range[ax]
+            min_val, _ = range[ax]
+            step_size = step[ax]
             value_world.append([min_val + v * step_size for v in val])
         self.set_span(axis, value_world)
 
@@ -415,12 +413,12 @@ class Dims(EventedModel):
         range = list(self.range)
         point_clips = [
             (mn + th / 2, mx - th / 2)
-            for (mn, mx, _), th in zip(range, self.thickness)
+            for (mn, mx), th in zip(range, self.thickness)
         ]
         for ax, val in zip(axis, value):
             val = np.clip(val, *point_clips[ax])
             shift = val - point[ax]
-            min_val, max_val, _ = range[ax]
+            min_val, max_val = range[ax]
             low, high = tuple(v + shift for v in full_span[ax])
             span = max(min_val, low), min(max_val, high)
             full_span[ax] = span
@@ -435,9 +433,11 @@ class Dims(EventedModel):
             axis, value, value_is_sequence=False
         )
         range = list(self.range)
+        step = list(self.step)
         value_world = []
         for ax, val in zip(axis, value):
-            min_val, _, step_size = range[ax]
+            min_val, _ = range[ax]
+            step_size = step[ax]
             value_world.append(min_val + val * step_size)
         self.set_point(axis, value_world)
 
@@ -484,7 +484,7 @@ class Dims(EventedModel):
         full_span = list(self.span)
         range = list(self.range)
         for ax, val in zip(axis, value):
-            min_val, max_val, _ = range[ax]
+            min_val, max_val = range[ax]
             low, high = full_span[ax]
             max_change = min(abs(low - min_val), abs(max_val - high))
             thickness_change = min((val - (high - low)) / 2, max_change)
@@ -502,16 +502,19 @@ class Dims(EventedModel):
             axis, value, value_is_sequence=False
         )
         range = list(self.range)
+        step = list(self.step)
         value_world = []
         for ax, val in zip(axis, value):
-            min_val, _, step_size = range[ax]
+            min_val, _ = range[ax]
+            step_size = step[ax]
             value_world.append(min_val + val * step_size)
         self.set_thickness(axis, value_world)
 
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
-        self.range = ((0, 2, 1),) * self.ndim
+        self.range = ((0, 2),) * self.ndim
+        self.step = (1,) * self.ndim
         self.span = ((0, 0),) * self.ndim
         self.order = tuple(range(self.ndim))
 
