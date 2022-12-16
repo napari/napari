@@ -291,6 +291,7 @@ def test_play_button(qtbot):
 
     qtbot.mouseClick(button, Qt.LeftButton)
     qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
