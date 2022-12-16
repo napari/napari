@@ -280,10 +280,14 @@ def test_play_button(qtbot):
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
     button = view.slider_widgets[0].play_button
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitSignal(view._animation_thread.started, timeout=5000)
 
-    with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
+    # Cannot wait for the view._animation_thread.started signal here because
+    # _animation_thread will be None before the mouse is clicked.
+    assert not view.is_playing
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    with qtbot.waitSignal(view._animation_thread.finished):
         qtbot.mouseClick(button, Qt.LeftButton)
 
     assert not view.is_playing
