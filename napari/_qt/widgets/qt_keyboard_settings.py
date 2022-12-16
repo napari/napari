@@ -83,8 +83,8 @@ class ShortcutEditor(QWidget):
             if len(layer.class_keymap) == 0:
                 actions = {}
             else:
-                actions = action_manager._get_layer_actions(layer)
-                for name, action in actions.items():
+                actions = action_manager._get_provider_actions(layer)
+                for name in actions.keys():
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
 
@@ -513,7 +513,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for action_name, action in action_manager._actions.items():
+        for action_name in action_manager._actions.keys():
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 

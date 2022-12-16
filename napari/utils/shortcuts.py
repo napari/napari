@@ -42,9 +42,13 @@ default_shortcuts = {
     'napari:activate_vertex_remove_mode': ['1'],
     'napari:copy_selected_shapes': ['Control-C'],
     'napari:paste_shape': ['Control-V'],
+    'napari:move_shapes_selection_to_front': ['f'],
+    'napari:move_shapes_selection_to_back': ['b'],
     'napari:select_all_shapes': ['A'],
     'napari:delete_selected_shapes': ['Backspace', 'Delete', '3'],
     'napari:finish_drawing_shape': ['Escape'],
     'napari:reset_active_layer_affine': ['Control-Shift-R'],
     'napari:transform_active_layer': ['Control-Shift-A'],
+    'napari:activate_image_pan_zoom_mode': ['2'],
+    'napari:activate_image_transform_mode': ['1'],
 }
