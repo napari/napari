@@ -62,12 +62,6 @@ default_shortcuts = {
         KeyCode.Digit3,
     ],
     'napari:finish_drawing_shape': [KeyCode.Escape],
-    'napari:reset_active_layer_affine': [
-        KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyR
-    ],
-    'napari:transform_active_layer': [
-        KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyA
-    ],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit2],
     'napari:activate_image_transform_mode': [KeyCode.Digit1],
 }
