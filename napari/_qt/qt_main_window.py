@@ -229,8 +229,8 @@ class _QtMainWindow(QMainWindow):
         # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
         #   * Set fullscreen flag
         #   * Remove `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Set geometry to previously stored normal geometry
-        #   * Call super `showNormal` to set Qt window state
+        #   * Set geometry to previously stored normal geometry or default empty QRect
+        # Always call super `showNormal` to set Qt window state
         # See https://bugreports.qt.io/browse/QTBUG-41309
         # Based on https://github.com/spyder-ide/spyder/pull/7720
         self._fullscreen_flag = False
@@ -245,25 +245,30 @@ class _QtMainWindow(QMainWindow):
     def showFullScreen(self):
         # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
         #   * Set fullscreen flag
-        #   * Save window normal geometry if needed
         #   * Add `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
-        #   * Set geometry window to use total screen geometry
-        #   * Call super `showNormal` or `showFullScreen` as needed
+        #   * Call super `showNormal` to update the normal screen geometry to apply it later if needed
+        #   * Save window normal geometry if needed
+        #   * Get screen geometry
+        #   * Set geometry window to use total screen geometry +1 in every direction if needed
+        # If the workaround is not needed just call super `showFullScreen`
         # See https://bugreports.qt.io/browse/QTBUG-41309
         # Based on https://github.com/spyder-ide/spyder/pull/7720
         self._fullscreen_flag = True
         if os.name == 'nt':
-            self._normal_geometry = self.normalGeometry()
             self.setWindowFlags(
                 self.windowFlags()
                 | Qt.FramelessWindowHint
                 | Qt.WindowStaysOnTopHint
             )
-            r = QApplication.primaryScreen().geometry()
-            self.setGeometry(
-                r.left() - 1, r.top() - 1, r.width() + 2, r.height() + 2
-            )
             super().showNormal()
+            self._normal_geometry = self.normalGeometry()
+            screen_rect = self.windowHandle().screen().geometry()
+            self.setGeometry(
+                screen_rect.left() - 1,
+                screen_rect.top() - 1,
+                screen_rect.width() + 2,
+                screen_rect.height() + 2,
+            )
         else:
             super().showFullScreen()
 
