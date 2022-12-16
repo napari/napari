@@ -12,8 +12,12 @@ from napari._app_model.actions import RepeatableAction
 from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
+from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
+from napari.components.viewer_model import ViewerModel
+from napari.utils.action_manager import action_manager
+
 
 APP_NAME = 'napari'
 
@@ -36,10 +40,38 @@ class NapariApplication(Application):
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in chain(HELP_ACTIONS, LAYER_ACTIONS, VIEW_ACTIONS):
+        for action in chain(HELP_ACTIONS, LAYER_ACTIONS, VIEW_ACTIONS, VIEWER_ACTIONS):
             self.register_action(action)
 
+        # re-register with action_manager shim for keybindings
+        for action in chain(VIEW_ACTIONS, VIEWER_ACTIONS):
+            self._register_action_manager_viewer_action(action)
+
         self.menus.append_menu_items(SUBMENUS)
+
+    def _register_action_manager_viewer_action(self, action: Action):
+        """Shim from app-model Action to action_manager for keybinding"""
+        # TODO: remove this once keybind handling is ported to app-model
+        # this is a hack because action_manager actions can only be
+        # "prefix:suffix", while app-model supports extra levels of nesting
+        # e.g.
+        #     app-model allows "napari:viewer:toggle_theme"
+        #     action_manager wants "napari:toggle_theme"
+        # so this hack works if we keep the prefix and suffix the same when
+        # porting to app-model
+        prefix, *group, command = action.id.split(":")
+
+        def _callback(*args, **kwargs):
+            self.get_app().commands.execute_command(action.id).result()
+
+        # TODO: do we need a docstring on this callback?
+
+        action_manager.register_action(
+            name=f"{prefix}:{command}",
+            command=_callback,
+            description=action.title,
+            keymapprovider=ViewerModel,
+        )
 
     @classmethod
     def get_app(cls) -> NapariApplication:

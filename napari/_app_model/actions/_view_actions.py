@@ -3,14 +3,19 @@
 View actions that do require Qt should go in
 `napari/_qt/_qapp_model/qactions/_view.py`.
 """
+from __future__ import annotations
 
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions._toggle_action import ViewerToggleAction
 from napari._app_model.constants import CommandId, MenuId
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari.viewer import Viewer
+
 
 VIEW_ACTIONS: List[Action] = []
 
@@ -46,18 +51,47 @@ def _get_current_tooltip_visibility():
     return get_settings().appearance.layer_tooltip_visibility
 
 
+VIEW_ACTIONS.append(
+    # TODO: this could be made into a toggle setting Action subclass
+    # using a similar pattern to the above ViewerToggleAction classes
+    Action(
+        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
+        title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
+        callback=_tooltip_visibility_toggle,
+        toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
+    ),
+)
+
+
+def _ndisplay_toggle(viewer: Viewer):
+    viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
+
+
+def _get_current_ndisplay_is_3D(viewer: Viewer):
+    return viewer.dims.ndisplay == 3
+
+
+# actions ported to app_model from components/_viewer_key_bindings
 VIEW_ACTIONS.extend(
     [
-        # TODO: this could be made into a toggle setting Action subclass
-        # using a similar pattern to the above ViewerToggleAction classes
         Action(
-            id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-            title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+            id=CommandId.TOGGLE_VIEWER_NDISPLAY,
+            title=CommandId.TOGGLE_VIEWER_NDISPLAY.title,
             menus=[
-                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}
+                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 0}
             ],
-            callback=_tooltip_visibility_toggle,
-            toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
+            callback=_ndisplay_toggle,
+            toggled=ToggleRule(get_current=_get_current_ndisplay_is_3D),
         ),
-    ]
+        ViewerToggleAction(
+            id=CommandId.VIEWER_TOGGLE_GRID,
+            title=CommandId.VIEWER_TOGGLE_GRID.title,
+            viewer_attribute="grid",
+            sub_attribute="enabled",
+            menus=[
+                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 0},
+            ],
+        ),
+    ],
 )

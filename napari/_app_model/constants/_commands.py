@@ -34,6 +34,7 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR = 'napari:window:view:toggle_viewer_scale_bar'
     TOGGLE_VIEWER_SCALE_BAR_COLORED = 'napari:window:view:toggle_viewer_scale_bar_colored'
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
+    TOGGLE_VIEWER_NDISPLAY = "napari:window:view:toggle_ndisplay"
 
     # Help menubar
     NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
@@ -76,6 +77,22 @@ class CommandId(str, Enum):
     LAYER_PROJECT_MEAN = 'napari:layer:project_mean'
     LAYER_PROJECT_MEDIAN = 'napari:layer:project_median'
 
+    # Viewer Actions
+    VIEWER_RESET_SCROLL = "napari:viewer:reset_scroll_progress"
+    VIEWER_CYCLE_THEME = "napari:viewer:toggle_theme"
+    VIEWER_RESET_VIEW = "napari:viewer:reset_view"
+    VIEWER_INC_DIMS_LEFT = "napari:viewer:increment_dims_left"
+    VIEWER_INC_DIMS_RIGHT = "napari:viewer:increment_dims_right"
+    VIEWER_FOCUS_AXES_UP = "napari:viewer:focus_axes_up"
+    VIEWER_FOCUS_AXES_DOWN = "napari:viewer:focus_axes_down"
+    VIEWER_ROLL_AXES = "napari:viewer:roll_axes"
+    VIEWER_TRANSPOSE_AXES = "napari:viewer:transpose_axes"
+    VIEWER_TOGGLE_GRID = "napari:viewer:toggle_grid"
+    # TODO: captured above in LAYER_TOGGLE_VISIBILITY?
+    VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY = "napari:viewer:toggle_selected_visibility"
+    # TODO: console action should be provided by plugin?
+    VIEWER_TOGGLE_CONSOLE_VISIBILITY = "napari:viewer:toggle_console_visibility"
+
     @property
     def title(self) -> str:
         return _COMMAND_INFO[self].title
@@ -108,6 +125,7 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR: _i(trans._('Scale Bar Visible')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
+    CommandId.TOGGLE_VIEWER_NDISPLAY : _i(trans._('3D Canvas')),
 
     # Help menubar
     CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started'), ),
@@ -145,5 +163,20 @@ _COMMAND_INFO = {
     CommandId.LAYER_PROJECT_SUM: _i(trans._('Sum projection'),),
     CommandId.LAYER_PROJECT_MEAN: _i(trans._('Mean projection'),),
     CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection'),),
+
+    CommandId.VIEWER_RESET_SCROLL: _i(trans._('Reset scroll'), trans._('Reset dims scroll progress'),),
+    CommandId.VIEWER_CYCLE_THEME: _i(trans._('Cycle theme'),),
+    CommandId.VIEWER_RESET_VIEW: _i(trans._('Reset view'), trans._('Reset view to original state.'),),
+    CommandId.VIEWER_INC_DIMS_LEFT: _i(trans._('Increment dims left'),),
+    CommandId.VIEWER_INC_DIMS_RIGHT: _i(trans._('Increment dims right'),),
+    CommandId.VIEWER_FOCUS_AXES_UP: _i(trans._('Focus axes up'), trans._('Move focus of dimensions slider up.'),),
+    CommandId.VIEWER_FOCUS_AXES_DOWN: _i(trans._('Focus axes down'), trans._('Move focus of dimensions slider down.'),),
+    CommandId.VIEWER_ROLL_AXES: _i(trans._('Roll axes'), trans._('Change order of visible axes, e.g. [0, 1, 2] -> [2, 0, 1]'),),
+    CommandId.VIEWER_TRANSPOSE_AXES: _i(trans._('Transpose axes'), trans._('Transpose last two visible axes, e.g. [0, 1, 2] -> [0, 2, 1]'),),
+    # TODO: move to view menu?
+    CommandId.VIEWER_TOGGLE_GRID: _i(trans._('Grid mode'),),
+    # TODO: captured above in LAYER_TOGGLE_VISIBILITY?
+    CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY: _i(trans._('Toggle selected layer visibility'),),
+    CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: _i(trans._('Toggle console'), trans._('Show/Hide IPython console (only available when napari started as standalone application)'),),
 }
 # fmt: on
