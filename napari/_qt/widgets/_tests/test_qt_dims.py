@@ -286,15 +286,11 @@ def test_play_button(qtbot):
     assert slider.loop_mode == 'loop'
     assert not view.is_playing
 
-    with qtbot.waitSignal(slider.play_started):
-        qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: view.is_playing)
 
-    assert view.is_playing
-
-    with qtbot.waitSignal(slider.play_stopped):
-        qtbot.mouseClick(button, Qt.LeftButton)
-
-    assert not view.is_playing
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: not view.is_playing)
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
