@@ -53,6 +53,8 @@ default_shortcuts = {
     'napari:activate_vertex_remove_mode': [KeyCode.Digit1],
     'napari:copy_selected_shapes': [KeyMod.CtrlCmd | KeyCode.KeyC],
     'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
+    'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
+    'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
     'napari:select_all_shapes': [KeyCode.KeyA],
     'napari:delete_selected_shapes': [
         KeyCode.Backspace,
@@ -60,6 +62,14 @@ default_shortcuts = {
         KeyCode.Digit3,
     ],
     'napari:finish_drawing_shape': [KeyCode.Escape],
+    'napari:reset_active_layer_affine': [
+        KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyR
+    ],
+    'napari:transform_active_layer': [
+        KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyA
+    ],
+    'napari:activate_image_pan_zoom_mode': [KeyCode.Digit2],
+    'napari:activate_image_transform_mode': [KeyCode.Digit1],
 }
 
 default_shortcuts = {
