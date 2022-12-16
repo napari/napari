@@ -1,4 +1,5 @@
 import numpy as np
+from qtpy.QtWidgets import QAbstractButton
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari.layers import Labels
@@ -63,3 +64,23 @@ def test_changing_colormap_updates_colorbox(qtbot):
         color_box.color,
         np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
     )
+
+
+def test_set_visible_or_editable_enables_edit_buttons(qtbot):
+    """See https://github.com/napari/napari/issues/1346"""
+    layer = Labels(np.zeros((3, 4), dtype=int))
+    qtctrl = QtLabelsControls(layer)
+    qtbot.addWidget(qtctrl)
+    assert all(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.editable = False
+    assert not any(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.visible = False
+    assert not any(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.visible = True
+    assert not any(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.editable = True
+    assert all(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))

@@ -51,7 +51,7 @@ class QtLayerListModel(QtListModel[Layer]):
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
         if role == Qt.ItemDataRole.CheckStateRole:
-            self.getItem(index).visible = value
+            self.getItem(index).visible = value == Qt.Checked
         elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
             role = Qt.ItemDataRole.DisplayRole

@@ -88,7 +88,8 @@ class QtPointsControls(QtLayerControls):
         self.layer._face.events.current_color.connect(
             self._on_current_face_color_change
         )
-        self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Orientation.Horizontal)
@@ -179,6 +180,12 @@ class QtPointsControls(QtLayerControls):
         self.textDispCheckBox.setToolTip(trans._('toggle text visibility'))
         self.textDispCheckBox.setChecked(self.layer.text.visible)
         self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
+
+        self._EDIT_BUTTONS = (
+            self.select_button,
+            self.addition_button,
+            self.delete_button,
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -328,12 +335,12 @@ class QtPointsControls(QtLayerControls):
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_editable_change(self):
-        """Receive layer model editable change event & enable/disable buttons."""
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
         disable_with_opacity(
             self,
-            ['select_button', 'addition_button', 'delete_button'],
-            self.layer.editable,
+            self._EDIT_BUTTONS,
+            self.layer.editable and self.layer.visible,
         )
 
     def close(self):

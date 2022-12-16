@@ -523,11 +523,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._visible
 
     @visible.setter
-    def visible(self, visibility: bool):
-        self._visible = visibility
+    def visible(self, visible: bool):
+        self._visible = visible
         self.refresh()
         self.events.visible()
-        self.editable = visibility
 
     @property
     def editable(self) -> bool:

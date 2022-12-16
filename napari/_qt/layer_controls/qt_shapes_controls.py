@@ -91,7 +91,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.events.current_face_color.connect(
             self._on_current_face_color_change
         )
-        self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Orientation.Horizontal)
@@ -239,6 +239,21 @@ class QtShapesControls(QtLayerControls):
                 "Delete selected shapes ({shortcut})",
                 shortcut=Shortcut('Backspace').platform,
             ),
+        )
+
+        self._EDIT_BUTTONS = (
+            self.select_button,
+            self.direct_button,
+            self.rectangle_button,
+            self.ellipse_button,
+            self.line_button,
+            self.path_button,
+            self.polygon_button,
+            self.vertex_remove_button,
+            self.vertex_insert_button,
+            self.delete_button,
+            self.move_back_button,
+            self.move_front_button,
         )
 
         self.button_group = QButtonGroup(self)
@@ -409,25 +424,12 @@ class QtShapesControls(QtLayerControls):
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_editable_change(self):
-        """Receive layer model editable change event & enable/disable buttons."""
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
         disable_with_opacity(
             self,
-            [
-                'select_button',
-                'direct_button',
-                'rectangle_button',
-                'ellipse_button',
-                'line_button',
-                'path_button',
-                'polygon_button',
-                'vertex_remove_button',
-                'vertex_insert_button',
-                'delete_button',
-                'move_back_button',
-                'move_front_button',
-            ],
-            self.layer.editable,
+            self._EDIT_BUTTONS,
+            self.layer.editable and self.layer.visible,
         )
 
     def close(self):

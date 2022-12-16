@@ -1,5 +1,8 @@
+from typing import Tuple
+
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QAbstractButton
 
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari.layers import Points
@@ -99,3 +102,30 @@ def test_current_size_slider_properly_initialized(qtbot):
     assert slider.minimum() == 1
     assert slider.value() == 10
     assert layer.current_size == 10
+
+
+def test_set_visible_or_editable_enables_edit_buttons(qtbot):
+    """See https://github.com/napari/napari/issues/1346"""
+    layer = Points(np.empty((0, 2)))
+    qtctrl = QtPointsControls(layer)
+    qtbot.addWidget(qtctrl)
+    assert all(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.editable = False
+    assert not any(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.visible = False
+    assert not any(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.visible = True
+    assert not any(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+    layer.editable = True
+    assert all(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
+
+
+def _get_edit_buttons(qtctrl: QtPointsControls) -> Tuple[QAbstractButton, ...]:
+    return tuple(
+        getattr(qtctrl, name)
+        for name in ('select_button', 'addition_button', 'delete_button')
+    )
