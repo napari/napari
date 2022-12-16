@@ -279,15 +279,19 @@ def test_play_button(qtbot):
     ndim = 3
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
-    button = view.slider_widgets[0].play_button
+    slider = view.slider_widgets[0]
+    button = slider.play_button
 
-    # Cannot wait for the view._animation_thread.started signal here because
-    # _animation_thread will be None before the mouse is clicked.
+    # Need looping playback so that it does not stop before we can assert that.
+    assert slider.loop_mode == 'loop'
     assert not view.is_playing
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitUntil(lambda: view.is_playing)
 
-    with qtbot.waitSignal(view._animation_thread.finished):
+    with qtbot.waitSignal(slider.play_started):
+        qtbot.mouseClick(button, Qt.LeftButton)
+
+    assert view.is_playing
+
+    with qtbot.waitSignal(slider.play_stopped):
         qtbot.mouseClick(button, Qt.LeftButton)
 
     assert not view.is_playing
