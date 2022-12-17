@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from functools import total_ordering
 from typing import Any, Dict, Optional, SupportsInt, Tuple, Union
 
-from napari.utils.theme import available_themes
+from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import _load_language, get_language_packs, trans
 
 
@@ -30,14 +30,13 @@ class Theme(str):
             raise ValueError(trans._('must be a string', deferred=True))
 
         value = v.lower()
-        themes = available_themes()
-        if value not in available_themes():
+        if not is_theme_available(value):
             raise ValueError(
                 trans._(
                     '"{value}" is not valid. It must be one of {themes}',
                     deferred=True,
                     value=value,
-                    themes=", ".join(themes),
+                    themes=", ".join(available_themes()),
                 )
             )
 
