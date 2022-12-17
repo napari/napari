@@ -2,7 +2,7 @@ from qtpy.QtCore import QObject, Signal
 
 
 class BaseMagicSetting(QObject):
-    """Base class that helps use Magic GUI widgets in the json schema widget
+    """Base class that helps use Magic GdUI widgets in the json schema widget
     buider.
     """
 
@@ -14,18 +14,9 @@ class BaseMagicSetting(QObject):
         self._widget = self.MAGIC_GUI()
         self._description = description
 
-        def _call_magic_gui(magic_gui):
-            try:
-                return magic_gui()
-            except TypeError:
-                # Older version of magic gui.
-                return magic_gui.value()
-
-        self._widget.changed.connect(
-            lambda magic_gui: self.valueChanged.emit(
-                _call_magic_gui(magic_gui)
-            )
-        )
+        @self._widget.changed.connect
+        def _call_magic_gui(value: dict = {}):
+            self.valueChanged.emit(value())
 
     def __getattr__(self, attribute):
         """Method that will retrieve needed information
