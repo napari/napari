@@ -100,8 +100,15 @@ def test_calculate_view_direction_nd():
     assert np.allclose(view_direction[[0, 2, 4]], (0, 1, 0))
 
 
-def test_look_at():
-    """Check that look at results in the correct view direction."""
+def test_look_at_2d():
+    """Check that Camera.look_at() sets the camera center in 2D."""
+    camera = Camera(center=(0, 0), angles=(0, 0, 0), zoom=1)
+    camera.look_at((10, 10))
+    assert camera.center[-2:] == (10, 10)
+
+
+def test_look_at_3d():
+    """Check that Camera.look_at() sets the view direction in 3D."""
     origin = (0.5, 0.5, 0.5)
     camera = Camera(center=origin, angles=(90, 0, 0), zoom=1)
     points = [

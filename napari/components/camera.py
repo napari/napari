@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from pydantic import validator
@@ -99,9 +99,9 @@ class Camera(EventedModel):
         """
         # default behaviour of up direction
         view_direction_along_y_axis = (
-            view_direction[0],
-            view_direction[2],
-        ) == (0, 0)
+                                          view_direction[0],
+                                          view_direction[2],
+                                      ) == (0, 0)
         up_direction_along_y_axis = (up_direction[0], up_direction[2]) == (
             0,
             0,
@@ -138,14 +138,24 @@ class Camera(EventedModel):
         )
         self.angles = euler_angles
 
-    def look_at(self, point: Tuple[float, float, float]):
-        """Point the camera at a point in 3D scene coordinates.
+    def look_at(
+        self, point: Union[Tuple[float, float], Tuple[float, float, float]]
+    ):
+        """Point the camera at a point in the 2D/3D scene.
 
-        This method modifies only the view direction, not the current center
-        point.
+        In 2D, this method simply sets the camera center position. In 3D,
+        this keeps the camera center the same but updates the view direction,
+        ensuring that the point supplied as an argument is centered.
         """
-        view_direction = np.asarray(point) - np.asarray(self.center)
-        self.set_view_direction(view_direction, up_direction=self.up_direction)
+        if len(point) == 2:
+            self.center = point
+        elif len(point) == 3:
+            view_direction = np.asarray(point) - np.asarray(self.center)
+            self.set_view_direction(
+                view_direction, up_direction=self.up_direction
+            )
+        else:
+            raise ValueError("Point must be 2D or 3D.")
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: Tuple[int]
