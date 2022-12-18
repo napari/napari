@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_array_almost_equal
 
 from napari.components import Camera
 
@@ -97,3 +98,26 @@ def test_calculate_view_direction_nd():
     )
     assert len(view_direction) == 5
     assert np.allclose(view_direction[[0, 2, 4]], (0, 1, 0))
+
+
+def test_look_at():
+    """Check that look at results in the correct view direction."""
+    origin = (0.5, 0.5, 0.5)
+    camera = Camera(center=origin, angles=(90, 0, 0), zoom=1)
+    points = [
+        [0, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0],
+        [1, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+        [1, 1, 0],
+    ]
+    for point in points:
+        camera.look_at(point)
+        view_direction = np.asarray(point) - np.asarray(origin)
+        view_direction /= np.linalg.norm(view_direction)
+        assert_array_almost_equal(
+            camera.view_direction, view_direction
+        )
