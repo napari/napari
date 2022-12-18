@@ -118,6 +118,4 @@ def test_look_at():
         camera.look_at(point)
         view_direction = np.asarray(point) - np.asarray(origin)
         view_direction /= np.linalg.norm(view_direction)
-        assert_array_almost_equal(
-            camera.view_direction, view_direction
-        )
+        assert_array_almost_equal(camera.view_direction, view_direction)
