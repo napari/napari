@@ -99,9 +99,9 @@ class Camera(EventedModel):
         """
         # default behaviour of up direction
         view_direction_along_y_axis = (
-                                          view_direction[0],
-                                          view_direction[2],
-                                      ) == (0, 0)
+            view_direction[0],
+            view_direction[2],
+        ) == (0, 0)
         up_direction_along_y_axis = (up_direction[0], up_direction[2]) == (
             0,
             0,
