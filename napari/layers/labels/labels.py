@@ -197,7 +197,7 @@ class Labels(_ImageBase):
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
-    Notesq
+    Notes
     -----
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
