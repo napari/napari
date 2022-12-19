@@ -137,7 +137,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-   image: url("theme_{{ name }}:/drop_down_50.svg");
+   image: url("theme_{{ id }}:/drop_down_50.svg");
    width: 14px;
    height: 14px;
 }
@@ -248,11 +248,11 @@ QAbstractSpinBox::down-arrow {
 }
 
 QAbstractSpinBox::up-arrow {
-   image: url("theme_{{ name }}:/plus_50.svg");
+   image: url("theme_{{ id }}:/plus_50.svg");
 }
 
 QAbstractSpinBox::down-arrow {
-   image: url("theme_{{ name }}:/minus_50.svg");
+   image: url("theme_{{ id }}:/minus_50.svg");
 }
 
 QLabeledRangeSlider > QAbstractSpinBox {
@@ -285,11 +285,11 @@ QCheckBox::indicator:unchecked {
 }
 
 QCheckBox::indicator:checked {
-  image: url("theme_{{ name }}:/check.svg");
+  image: url("theme_{{ id }}:/check.svg");
 }
 
 QCheckBox::indicator:indeterminate {
-  image: url("theme_{{ name }}:/minus.svg");
+  image: url("theme_{{ id }}:/minus.svg");
   padding: 2px;
   width: 14px;
   height: 14px;
@@ -336,7 +336,7 @@ QRadioButton::indicator::checked {
 }
 
 QRadioButton::indicator::checked {
-  image: url("theme_{{ name }}:/circle.svg");
+  image: url("theme_{{ id }}:/circle.svg");
   height: 6px;
   width: 6px;
   padding: 5px;
@@ -505,19 +505,19 @@ QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
 }
 
 QScrollBar:left-arrow:horizontal {
-    image: url("theme_{{ name }}:/left_arrow.svg");
+    image: url("theme_{{ id }}:/left_arrow.svg");
 }
 
 QScrollBar::right-arrow:horizontal {
-    image: url("theme_{{ name }}:/right_arrow.svg");
+    image: url("theme_{{ id }}:/right_arrow.svg");
 }
 
 QScrollBar:up-arrow:vertical {
-    image: url("theme_{{ name }}:/up_arrow.svg");
+    image: url("theme_{{ id }}:/up_arrow.svg");
 }
 
 QScrollBar::down-arrow:vertical {
-    image: url("theme_{{ name }}:/down_arrow.svg");
+    image: url("theme_{{ id }}:/down_arrow.svg");
 }
 
 QScrollBar::left-arrow,

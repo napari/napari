@@ -56,7 +56,7 @@ jobs:
         with:
           # the napari-docs repo is cloned into a docs/ folder, hence the
           # invocation below. Locally, you should simply run make docs
-          run: make -C docs docs
+          run: make -C docs docs GALLERY_PATH=../examples/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
