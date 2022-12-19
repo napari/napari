@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from functools import lru_cache
 from itertools import chain
-from typing import Dict
+from typing import Callable, Dict, Set
 
 from app_model import Application
+from app_model.types import Action
 
 from napari._app_model._submenus import SUBMENUS
+from napari._app_model.actions import RepeatableAction
 from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
@@ -27,6 +29,8 @@ class NapariApplication(Application):
         # adopt asynchronous command execution.
         super().__init__(app_name, raise_synchronous_exceptions=True)
 
+        self._repeatable_actions: Set[str] = set()
+
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
         self.injection_store.register(
             providers=PROVIDERS, processors=PROCESSORS
@@ -40,6 +44,45 @@ class NapariApplication(Application):
     @classmethod
     def get_app(cls) -> NapariApplication:
         return Application.get_app(APP_NAME) or cls()
+
+    def register_action(self, action: Action) -> Callable[[], None]:
+        dispose = super().register_action(action)
+        if isinstance(action, RepeatableAction) and action.repeatable:
+            self.set_action_repeatable(action.id, True)
+        return dispose
+
+    def set_action_repeatable(self, action_id: str, repeatable: bool):
+        """Registers an action as repeatable or not.
+
+        Parameters
+        ----------
+        action_id : str
+            Unique identifier of the action.
+        repeatable : bool
+            Whether or not to set the action as repeatable.
+        """
+        if action_id not in self.commands:
+            raise ValueError(f'Command {id!r} not registered')
+
+        if repeatable:
+            self._repeatable_actions.add(action_id)
+        elif self.action_is_repeatable(action_id):
+            self._repeatable_actions.remove(action_id)
+
+    def action_is_repeatable(self, action_id: str) -> bool:
+        """Determines if an action is repeatable.
+
+        Parameters
+        ----------
+        action_id : str
+            Unique identifier of the action.
+
+        Returns
+        -------
+        bool
+            Whether the action is repeatable or not.
+        """
+        return action_id in self._repeatable_actions
 
 
 @lru_cache(maxsize=1)
