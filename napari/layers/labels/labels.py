@@ -197,7 +197,7 @@ class Labels(_ImageBase):
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
-    Notes
+    Notesq
     -----
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
@@ -239,7 +239,6 @@ class Labels(_ImageBase):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors, seed)
-        self._all_vals = np.array([], dtype=float)
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
@@ -394,9 +393,6 @@ class Labels(_ImageBase):
     def seed(self, seed):
         self._seed = seed
         self.colormap.seed = seed
-        # invalidate _all_vals to trigger re-generation
-        # in _raw_to_displayed
-        self._all_vals = np.array([])
         self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
