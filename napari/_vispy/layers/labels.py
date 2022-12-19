@@ -44,6 +44,7 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
     vec4 low_disc_plus_cmap(float t) {
         float phi_mod = 0.6180339887498948482;  // phi - 1
         float value = 0.0;
+        float margin = 1.0 / 256;
 
         bool use_selection = $use_selection;
         float selection = $selection;
@@ -56,7 +57,7 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
             return vec4(0.0,0.0,0.0,0.0);
         }
 
-        value = mod((t * phi_mod + $seed), 1.0);
+        value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
 
         return texture2D(
             texture2D_LUT,
