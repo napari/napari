@@ -1,6 +1,7 @@
 from app_model.types import KeyBinding, KeyCode, KeyMod
 
 default_shortcuts = {
+    # viewer
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
     ],
@@ -17,20 +18,24 @@ default_shortcuts = {
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
     'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyG],
-    'napari:activate_label_erase_mode': [KeyCode.Digit1],
-    'napari:activate_fill_mode': [KeyCode.Digit3],
-    'napari:activate_paint_mode': [KeyCode.Digit2],
-    'napari:activate_label_pan_zoom_mode': [KeyCode.Digit5],
-    'napari:activate_label_picker_mode': [KeyCode.Digit4],
+    # labels
+    'napari:activate_labels_erase_mode': [KeyCode.Digit1],
+    'napari:activate_labels_paint_mode': [KeyCode.Digit2],
+    'napari:activate_labels_fill_mode': [KeyCode.Digit3],
+    'napari:activate_labels_picker_mode': [KeyCode.Digit4],
+    'napari:activate_labels_pan_zoom_mode': [KeyCode.Digit5],
+    'napari:activate_labels_transform_mode': [KeyCode.Digit6],
     'napari:new_label': [KeyCode.KeyM],
     'napari:decrease_label_id': [KeyCode.Minus],
     'napari:increase_label_id': [KeyCode.Equal],
     'napari:decrease_brush_size': [KeyCode.BracketLeft],
     'napari:increase_brush_size': [KeyCode.BracketRight],
     'napari:toggle_preserve_labels': [KeyCode.KeyP],
+    # points
     'napari:activate_points_add_mode': [KeyCode.Digit2],
     'napari:activate_points_select_mode': [KeyCode.Digit3],
     'napari:activate_points_pan_zoom_mode': [KeyCode.Digit4],
+    'napari:activate_points_transform_mode': [KeyCode.Digit5],
     'napari:select_all_in_slice': [
         KeyCode.KeyA,
         KeyMod.CtrlCmd | KeyCode.KeyA,
@@ -41,6 +46,7 @@ default_shortcuts = {
         KeyCode.Delete,
         KeyCode.Digit1,
     ],
+    # shapes
     'napari:activate_add_rectangle_mode': [KeyCode.KeyR],
     'napari:activate_add_ellipse_mode': [KeyCode.KeyE],
     'napari:activate_add_line_mode': [KeyCode.KeyL],
@@ -48,7 +54,8 @@ default_shortcuts = {
     'napari:activate_add_polygon_mode': [KeyCode.KeyP],
     'napari:activate_direct_mode': [KeyCode.Digit4],
     'napari:activate_select_mode': [KeyCode.Digit5],
-    'napari:activate_shape_pan_zoom_mode': [KeyCode.Digit6],
+    'napari:activate_shapes_pan_zoom_mode': [KeyCode.Digit6],
+    'napari:activate_shapes_transform_mode': [KeyCode.Digit2],
     'napari:activate_vertex_insert_mode': [KeyCode.Digit2],
     'napari:activate_vertex_remove_mode': [KeyCode.Digit1],
     'napari:copy_selected_shapes': [KeyMod.CtrlCmd | KeyCode.KeyC],
@@ -62,8 +69,18 @@ default_shortcuts = {
         KeyCode.Digit3,
     ],
     'napari:finish_drawing_shape': [KeyCode.Escape],
-    'napari:activate_image_pan_zoom_mode': [KeyCode.Digit2],
-    'napari:activate_image_transform_mode': [KeyCode.Digit1],
+    # image
+    'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
+    'napari:activate_image_transform_mode': [KeyCode.Digit2],
+    # vectors
+    'napari:activate_vectors_pan_zoom_mode': [KeyCode.Digit1],
+    'napari:activate_vectors_transform_mode': [KeyCode.Digit2],
+    # tracks
+    'napari:activate_tracks_pan_zoom_mode': [KeyCode.Digit1],
+    'napari:activate_tracks_transform_mode': [KeyCode.Digit2],
+    # surface
+    'napari:activate_surface_pan_zoom_mode': [KeyCode.Digit1],
+    'napari:activate_surface_transform_mode': [KeyCode.Digit2],
 }
 
 default_shortcuts = {

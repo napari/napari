@@ -97,12 +97,6 @@ def activate_select_mode(layer: Shapes):
     layer.mode = Mode.SELECT
 
 
-@register_shapes_mode_action(trans._('Pan/Zoom'))
-def activate_shape_pan_zoom_mode(layer: Shapes):
-    """Activate pan and zoom mode."""
-    layer.mode = Mode.PAN_ZOOM
-
-
 @register_shapes_mode_action(trans._('Insert vertex'))
 def activate_vertex_insert_mode(layer: Shapes):
     """Activate vertex insertion tool."""
