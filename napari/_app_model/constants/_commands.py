@@ -36,7 +36,14 @@ class CommandId(str, Enum):
     TOGGLE_VIEWER_SCALE_BAR_TICKS = 'napari:window:view:toggle_viewer_scale_bar_ticks'
 
     # Help menubar
+    NAPARI_GETTING_STARTED = 'napari:window:help:getting_started'
+    NAPARI_TUTORIALS = 'napari:window:help:tutorials'
+    NAPARI_LAYERS_GUIDE = 'napari:window:help:layers_guide'
+    NAPARI_EXAMPLES = 'napari:window:help:examples'
+    NAPARI_RELEASE_NOTES = 'napari:window:help:release_notes'
+    NAPARI_HOMEPAGE = 'napari:window:help:homepage'
     NAPARI_INFO = 'napari:window:help:info'
+    NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
     # Layer menubar
@@ -104,7 +111,14 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
 
     # Help menubar
+    CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started'), ),
+    CommandId.NAPARI_TUTORIALS: _i(trans._('Tutorials'), ),
+    CommandId.NAPARI_LAYERS_GUIDE: _i(trans._('Using Layers Guides'), ),
+    CommandId.NAPARI_EXAMPLES: _i(trans._('Examples Gallery'), ),
+    CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes'), ),
+    CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage'), ),
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
+    CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub'), ),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
 
     # Layer menubar
