@@ -1,5 +1,4 @@
 import argparse
-from skimage import data
 import numpy as np
 import napari
 
