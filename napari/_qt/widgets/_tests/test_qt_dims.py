@@ -287,7 +287,7 @@ def test_play_button(qtbot):
     assert not view.is_playing
 
     qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitUntil(view.is_playing)
+    qtbot.waitUntil(lambda: view.is_playing)
 
     qtbot.mouseClick(button, Qt.LeftButton)
     qtbot.waitUntil(lambda: not view.is_playing)
