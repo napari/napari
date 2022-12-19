@@ -49,6 +49,12 @@ class NapariApplication(Application):
         dispose = super().register_action(action)
         if isinstance(action, RepeatableAction) and action.repeatable:
             self.set_action_repeatable(action.id, True)
+
+            def _dispose():
+                dispose()
+                self._repeatable_actions.remove(action.id)
+
+            return _dispose
         return dispose
 
     def set_action_repeatable(self, action_id: str, repeatable: bool):
