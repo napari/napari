@@ -368,11 +368,11 @@ class NapariPluginManager(PluginManager):
             return
 
         _data = {}
-        for theme_name, theme_colors in data.items():
+        for theme_id, theme_colors in data.items():
             try:
                 theme = Theme.parse_obj(theme_colors)
-                register_theme(theme_name, theme, plugin_name)
-                _data[theme_name] = theme
+                register_theme(theme_id, theme, plugin_name)
+                _data[theme_id] = theme
             except (KeyError, ValidationError) as err:
                 warn_msg = trans._(
                     "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for creating themes. {err!r}",
@@ -394,8 +394,8 @@ class NapariPluginManager(PluginManager):
             return
 
         # unregister all themes that were provided by the plugins
-        for theme_name in self._theme_data[plugin_name]:
-            unregister_theme(theme_name)
+        for theme_id in self._theme_data[plugin_name]:
+            unregister_theme(theme_id)
 
         # since its possible that disabled/removed plugin was providing the
         # current theme, we check for this explicitly and if this the case,
