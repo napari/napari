@@ -384,9 +384,15 @@ def test_label_colormap():
     # Make sure color 0 is transparent
     assert not np.any(colormap.map([0.0]))
 
-    # Test that out-of-range values map to last value
-    # TODO: The new behavior is for colors to keep cycling, beyond N colors?
-    # assert np.all(colormap.map([1.0, 1.1, 2.0]) == colormap.colors[-1])
+    # test that all four colors are represented in a large set of random
+    # labels.
+    # we choose non-zero labels, and then there should not be any transparent
+    # values.
+    labels = np.random.randint(1, 2**23, size=(100, 100)).astype(np.float32)
+    colormapped = colormap.map(labels)
+    linear = np.reshape(colormapped, (-1, 4))
+    unique = np.unique(linear, axis=0)
+    assert len(unique) == 4
 
 
 def test_custom_color_dict():
