@@ -8,7 +8,7 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari.utils.colormaps.standardize_color import transform_color
 
 
-class VispyCanvas(SceneCanvas):
+class VispyCanvas:
     """SceneCanvas for our QtViewer class.
 
     Add two features to SceneCanvas. Ignore mousewheel events with
@@ -30,7 +30,9 @@ class VispyCanvas(SceneCanvas):
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
-        super().__init__(*args, **kwargs)
+        self.viewer = kwargs["parent"].viewer
+        self.napari_canvas = kwargs["parent"].viewer.canvas
+        self.scene_canvas = SceneCanvas(*args, **kwargs)
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
@@ -39,12 +41,12 @@ class VispyCanvas(SceneCanvas):
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
 
-        self.events.ignore_callback_errors = False
-        self.context.set_depth_func('lequal')
+        self.scene_canvas.events.ignore_callback_errors = False
+        self.scene_canvas.context.set_depth_func('lequal')
 
     @property
     def destroyed(self):
-        return self._backend.destroyed
+        return self.scene_canvas._backend.destroyed
 
     @property
     def background_color_override(self):
@@ -73,24 +75,26 @@ class VispyCanvas(SceneCanvas):
 
     @property
     def bgcolor(self):
-        SceneCanvas.bgcolor.fget(self)
+        self.scene_canvas.bgcolor.hex
 
     @bgcolor.setter
     def bgcolor(self, value):
         _value = self._background_color_override or value
-        SceneCanvas.bgcolor.fset(self, _value)
+        self.scene_canvas.bgcolor = _value
 
     @property
     def central_widget(self):
         """Overrides SceneCanvas.central_widget to make border_width=0"""
-        if self._central_widget is None:
-            self._central_widget = Widget(
-                size=self.size, parent=self.scene, border_width=0
+        if self.scene_canvas._central_widget is None:
+            self.scene_canvas._central_widget = Widget(
+                size=self.scene_canvas.size,
+                parent=self.scene_canvas.scene,
+                border_width=0,
             )
-        return self._central_widget
+        return self.scene_canvas._central_widget
 
     def _process_mouse_event(self, event):
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
-        super()._process_mouse_event(event)
+        super().scene_canvas._process_mouse_event(event)
