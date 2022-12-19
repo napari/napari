@@ -2,9 +2,15 @@ from copy import copy
 
 import numpy as np
 
-from ._shapes_constants import Box, Mode
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
-from ._shapes_utils import point_to_lines
+from napari.layers.shapes._shapes_constants import Box, Mode
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.layers.shapes._shapes_utils import point_to_lines
 
 
 def highlight(layer, event):
@@ -44,6 +50,10 @@ def select(layer, event):
 
     # we don't update the thumbnail unless a shape has been moved
     update_thumbnail = False
+
+    # Set _drag_start value here to prevent an offset when mouse_move happens
+    # https://github.com/napari/napari/pull/4999
+    _set_drag_start(layer, layer.world_to_data(event.position))
     yield
 
     # on move
@@ -94,7 +104,7 @@ def add_line(layer, event):
     """Add a line."""
     size = layer._vertex_size * layer.scale_factor / 4
     full_size = np.zeros(layer.ndim, dtype=float)
-    for i in layer._dims_displayed:
+    for i in layer._slice_input.displayed:
         full_size[i] = size
 
     coordinates = layer.world_to_data(event.position)
@@ -111,9 +121,9 @@ def add_ellipse(layer, event):
     """Add an ellipse."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
-    size_h[layer._dims_displayed[0]] = size
+    size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
-    size_v[layer._dims_displayed[1]] = size
+    size_v[layer._slice_input.displayed[1]] = size
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
@@ -129,9 +139,9 @@ def add_rectangle(layer, event):
     """Add a rectangle."""
     size = layer._vertex_size * layer.scale_factor / 4
     size_h = np.zeros(layer.ndim, dtype=float)
-    size_h[layer._dims_displayed[0]] = size
+    size_h[layer._slice_input.displayed[0]] = size
     size_v = np.zeros(layer.ndim, dtype=float)
-    size_v[layer._dims_displayed[1]] = size
+    size_v[layer._slice_input.displayed[1]] = size
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
@@ -254,7 +264,7 @@ def vertex_insert(layer, event):
 
     # Determine the closet edge to the current cursor coordinate
     coordinates = layer.world_to_data(event.position)
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
     ind, loc = point_to_lines(coord, all_edges)
     index = all_edges_shape[ind][0]
     ind = all_edges_shape[ind][1] + 1
@@ -349,7 +359,7 @@ def _drag_selection_box(layer, coordinates):
     if len(layer.selected_data) > 0:
         return
 
-    coord = [coordinates[i] for i in layer._dims_displayed]
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
 
     # Create or extend a selection box
     layer._is_selecting = True
@@ -357,6 +367,14 @@ def _drag_selection_box(layer, coordinates):
         layer._drag_start = coord
     layer._drag_box = np.array([layer._drag_start, coord])
     layer._set_highlight()
+
+
+def _set_drag_start(layer, coordinates):
+    coord = [coordinates[i] for i in layer._slice_input.displayed]
+    if layer._drag_start is None and len(layer.selected_data) > 0:
+        center = layer._selected_box[Box.CENTER]
+        layer._drag_start = coord - center
+    return coord
 
 
 def _move(layer, coordinates):
@@ -378,14 +396,11 @@ def _move(layer, coordinates):
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
-        coord = [coordinates[i] for i in layer._dims_displayed]
+        coord = _set_drag_start(layer, coordinates)
         layer._moving_coordinates = coordinates
         layer._is_moving = True
         if vertex is None:
             # Check where dragging box from to move whole object
-            if layer._drag_start is None:
-                center = layer._selected_box[Box.CENTER]
-                layer._drag_start = coord - center
             center = layer._selected_box[Box.CENTER]
             shift = coord - center - layer._drag_start
             for index in layer.selected_data:

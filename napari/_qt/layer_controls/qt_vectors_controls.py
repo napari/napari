@@ -4,11 +4,11 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
 
-from ...layers.utils._color_manager_constants import ColorMode
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -104,7 +104,7 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('width:'), self.widthSpinBox)
         self.layout().addRow(trans._('length:'), self.lengthSpinBox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)

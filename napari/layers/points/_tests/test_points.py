@@ -436,6 +436,7 @@ def test_remove_selected_removes_corresponding_attributes():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     size = np.random.rand(shape[0])
+    symbol = np.random.choice(['o', 's'], shape[0])
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
     shown = np.random.randint(2, size=shape[0]).astype(bool)
@@ -445,6 +446,7 @@ def test_remove_selected_removes_corresponding_attributes():
         data,
         size=size,
         edge_width=size,
+        symbol=symbol,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -455,6 +457,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
+        symbol=symbol[1:],
         edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
@@ -588,13 +591,18 @@ def test_symbol():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.symbol == 'disc'
+    assert np.all(layer.symbol == 'disc')
 
     layer.symbol = 'cross'
-    assert layer.symbol == 'cross'
+    assert np.all(layer.symbol == 'cross')
+
+    symbol = ['o', 's'] * 5
+    expected = ['disc', 'square'] * 5
+    layer.symbol = symbol
+    assert np.all(layer.symbol == expected)
 
     layer = Points(data, symbol='star')
-    assert layer.symbol == 'star'
+    assert np.all(layer.symbol == 'star')
 
 
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -639,8 +647,8 @@ def test_properties(properties):
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
 
-    assert layer.get_status(data[0]).endswith("point_type: B")
-    assert layer.get_status(data[1]).endswith("point_type: A")
+    assert layer.get_status(data[0])['coordinates'].endswith("point_type: B")
+    assert layer.get_status(data[1])['coordinates'].endswith("point_type: A")
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -855,6 +863,18 @@ def test_select_properties_object_dtype():
     assert pl.selected_data == selection
 
 
+def test_select_properties_unsortable():
+    """selecting multiple points when they have properties that cannot be sorted should not fail
+
+    see https://github.com/napari/napari/issues/5174
+    """
+    properties = pd.DataFrame({'unsortable': [{}, {}]})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 2)
@@ -885,7 +905,7 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    np.testing.assert_array_equal(layer.edge_width, 0.1)
+    np.testing.assert_array_equal(layer.edge_width, 0.05)
 
     layer.edge_width = 0.5
     np.testing.assert_array_equal(layer.edge_width, 0.5)
@@ -906,6 +926,34 @@ def test_edge_width():
     layer = Points(data, edge_width=3, edge_width_is_relative=False)
     np.testing.assert_array_equal(layer.edge_width, 3)
     assert layer.edge_width_is_relative is False
+    with pytest.raises(ValueError):
+        layer.edge_width = -2
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(1), float(1), np.array([1, 2, 3, 4, 5]), [1, 2, 3, 4, 5]],
+)
+def test_edge_width_types(edge_width):
+    """Test edge_width dtypes with valid values"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, edge_width=edge_width, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, edge_width)
+
+
+@pytest.mark.parametrize(
+    "edge_width",
+    [int(-1), float(-1), np.array([-1, 2, 3, 4, 5]), [-1, 2, 3, 4, 5]],
+)
+def test_edge_width_types_negative(edge_width):
+    """Test negative values in all edge_width dtypes"""
+    shape = (5, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    with pytest.raises(ValueError):
+        Points(data, edge_width=edge_width, edge_width_is_relative=False)
 
 
 def test_out_of_slice_display():
@@ -1610,7 +1658,7 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -1622,7 +1670,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -1693,33 +1741,26 @@ def test_view_data():
     layer = Points(coords)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_data == coords[np.ix_([2], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
 
 
 def test_view_size():
+    """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([0, 1], [1, 2])])
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([2], [1, 2])])
 
     layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
@@ -1780,24 +1821,6 @@ def test_world_data_extent():
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
-
-
-def test_slice_data():
-    data = [
-        (10, 2, 4),
-        (10 + 2 * 1e-7, 4, 6),
-        (8, 1, 7),
-        (10.1, 7, 2),
-        (10 - 2 * 1e-7, 1, 6),
-    ]
-    layer = Points(data)
-    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
-    assert (
-        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 4
-    )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
 
 
 def test_scale_init():
@@ -2458,3 +2481,45 @@ def test_antialiasing_value_clipping():
     with pytest.warns(RuntimeWarning):
         layer.antialiasing = -1
     assert layer.antialiasing == 0
+
+
+def test_set_drag_start():
+    """Drag start should only change when currently None."""
+    data = [[0, 0], [1, 1]]
+    layer = Points(data)
+    assert layer._drag_start is None
+    position = (0, 1)
+    layer._set_drag_start({0}, position=position)
+    np.testing.assert_array_equal(layer._drag_start, position)
+    layer._set_drag_start({0}, position=(1, 2))
+    np.testing.assert_array_equal(layer._drag_start, position)
+
+
+@pytest.mark.parametrize(
+    "dims_indices,target_indices",
+    [
+        ((8, slice(None), slice(None)), [2]),
+        ((10, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10 + 2 * 1e-12, slice(None), slice(None)), [0, 1, 3, 4]),
+        ((10.1, slice(None), slice(None)), [0, 1, 3, 4]),
+    ],
+)
+def test_point_slice_request_response(dims_indices, target_indices):
+    """Test points slicing with request and response."""
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+
+    layer = Points(data)
+
+    request = layer._make_slice_request_internal(
+        layer._slice_input, dims_indices
+    )
+    response = request()
+
+    assert len(response.indices) == len(target_indices)
+    assert all([a == b for a, b in zip(response.indices, target_indices)])

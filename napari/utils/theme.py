@@ -3,16 +3,22 @@
 import re
 import warnings
 from ast import literal_eval
+from contextlib import suppress
 from typing import Union
 
+import npe2
 from pydantic import validator
 from pydantic.color import Color
 
-from .._vendor import darkdetect
-from ..resources._icons import build_theme_svgs
-from ..utils.translations import trans
-from .events import EventedModel
-from .events.containers._evented_dict import EventedDict
+from napari._vendor import darkdetect
+from napari.resources._icons import (
+    PLUGIN_FILE_NAME,
+    _theme_path,
+    build_theme_svgs,
+)
+from napari.utils.events import EventedModel
+from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.translations import trans
 
 try:
     from qtpy import QT_VERSION
@@ -213,13 +219,14 @@ def get_theme(name, as_dict=None):
     if as_dict is None:
         warnings.warn(
             trans._(
-                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
+                "The `as_dict` kwarg default to False` since Napari 0.4.17, "
+                "and will become a mandatory parameter in the future.",
                 deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
         )
-        as_dict = True
+        as_dict = False
     if as_dict:
         _theme = _theme.dict()
         _theme = {
@@ -233,7 +240,7 @@ def get_theme(name, as_dict=None):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(name, theme):
+def register_theme(name, theme, source):
     """Register a new or updated theme.
 
     Parameters
@@ -242,13 +249,15 @@ def register_theme(name, theme):
         Name of requested theme.
     theme : dict of str: str, Theme
         Theme mapping elements to colors.
+    source : str
+        Source plugin of theme
     """
     if isinstance(theme, dict):
         theme = Theme(**theme)
     assert isinstance(theme, Theme)
     _themes[name] = theme
 
-    build_theme_svgs(name)
+    build_theme_svgs(name, source)
 
 
 def unregister_theme(name):
@@ -273,13 +282,40 @@ def available_themes():
     return tuple(_themes) + ("system",)
 
 
+def is_theme_available(name):
+    """Check if a theme is available.
+
+    Parameters
+    ----------
+    name : str
+        Name of requested theme.
+
+    Returns
+    -------
+    bool
+        True if the theme is available, False otherwise.
+    """
+    if name == "system":
+        return True
+    if name not in _themes and _theme_path(name).exists():
+        plugin_name_file = _theme_path(name) / PLUGIN_FILE_NAME
+        if not plugin_name_file.exists():
+            return False
+        plugin_name = plugin_name_file.read_text()
+        with suppress(ModuleNotFoundError):
+            npe2.PluginManager.instance().register(plugin_name)
+        _install_npe2_themes(_themes)
+
+    return name in _themes
+
+
 def rebuild_theme_settings():
     """update theme information in settings.
 
     here we simply update the settings to reflect current list of available
     themes.
     """
-    from ..settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.appearance.refresh_themes()
@@ -316,20 +352,23 @@ LIGHT = Theme(
     canvas='white',
 )
 
-register_theme('dark', DARK)
-register_theme('light', LIGHT)
+register_theme('dark', DARK, "builtin")
+register_theme('light', LIGHT, "builtin")
 
 
 # this function here instead of plugins._npe2 to avoid circular import
-def _install_npe2_themes(_themes):
+def _install_npe2_themes(themes=None):
+    if themes is None:
+        themes = _themes
     import npe2
 
-    for theme in npe2.PluginManager.instance().iter_themes():
-        # `theme.type` is dark/light and supplies defaults for keys that
-        # are not provided by the plugin
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        register_theme(theme.id, d)
+    for manifest in npe2.PluginManager.instance().iter_manifests(
+        disabled=False
+    ):
+        for theme in manifest.contributions.themes or ():
+            theme_dict = themes[theme.type].dict()
+            theme_dict.update(theme.colors.dict(exclude_unset=True))
+            register_theme(theme.id, theme_dict, manifest.name)
 
 
 _install_npe2_themes(_themes)

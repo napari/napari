@@ -2,11 +2,10 @@
 """
 from weakref import WeakSet
 
-from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas, Widget
 
-from ..utils.colormaps.standardize_color import transform_color
-from .utils.gl import get_max_texture_sizes
+from napari._vispy.utils.gl import get_max_texture_sizes
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 class VispyCanvas(SceneCanvas):
@@ -41,7 +40,6 @@ class VispyCanvas(SceneCanvas):
         self.max_texture_sizes = get_max_texture_sizes()
 
         self.events.ignore_callback_errors = False
-        self.native.setMinimumSize(QSize(200, 200))
         self.context.set_depth_func('lequal')
 
     @property
@@ -61,7 +59,7 @@ class VispyCanvas(SceneCanvas):
         self._set_theme_change(event.value)
 
     def _set_theme_change(self, theme: str):
-        from ..utils.theme import get_theme
+        from napari.utils.theme import get_theme
 
         # Note 1. store last requested theme color, in case we need to reuse it
         # when clearing the background_color_override, without needing to

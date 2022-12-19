@@ -111,6 +111,11 @@ def sys_info(as_html=False):
         ('scipy', 'SciPy'),
         ('dask', 'Dask'),
         ('vispy', 'VisPy'),
+        ('magicgui', 'magicgui'),
+        ('superqt', 'superqt'),
+        ('in_n_out', 'in-n-out'),
+        ('app_model', 'app-model'),
+        ('npe2', 'npe2'),
     )
 
     loaded = {}
@@ -148,6 +153,16 @@ def sys_info(as_html=False):
             text += f"  - screen {i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>"
     except Exception as e:
         text += f"  - failed to load screen information {e}"
+
+    text += "<br><b>Settings path:</b><br>"
+    try:
+        from napari.settings import get_settings
+
+        text += f"  - {get_settings().config_path}"
+    except ValueError:
+        from napari.utils._appdirs import user_config_dir
+
+        text += f"  - {os.getenv('NAPARI_CONFIG', user_config_dir())}"
 
     if not as_html:
         text = (

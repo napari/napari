@@ -2008,7 +2008,7 @@ def test_message():
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -2020,7 +2020,7 @@ def test_message_3d():
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():
@@ -2157,12 +2157,12 @@ def test_world_data_extent():
 
 
 def test_set_data_3d():
-    """Test for reproduce https://github.com/napari/napari/issues/4527"""
+    """Test to reproduce https://github.com/napari/napari/issues/4527"""
     lines = [
         np.array([[0, 0, 0], [500, 0, 0]]),
         np.array([[0, 0, 0], [0, 300, 0]]),
         np.array([[0, 0, 0], [0, 0, 200]]),
     ]
     shapes = Shapes(lines, shape_type='line')
-    shapes._ndisplay = 3
+    shapes._slice_dims(ndisplay=3)
     shapes.data = lines

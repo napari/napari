@@ -11,13 +11,15 @@ from typing import (
     runtime_checkable,
 )
 
+from napari.utils.translations import trans
+
 _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 
 if TYPE_CHECKING:
     from enum import Enum
 
-    from ..types import DTypeLike
+    from napari.types import DTypeLike
 
     # https://github.com/python/typing/issues/684#issuecomment-548203158
     class ellipsis(Enum):
@@ -33,10 +35,12 @@ def _raise_protocol_error(obj: Any, protocol: type):
     annotations = getattr(protocol, '__annotations__', {})
     needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
-    message = (
-        f"Object of type {type(obj).__name__!r} does not implement "
-        f"{protocol.__name__!r} Protocol.\n"
-        f"Missing methods: {missing!r}"
+    message = trans._(
+        "Object of type {type_name} does not implement {protocol_name} Protocol.\nMissing methods: {missing_methods}",
+        deferred=True,
+        type_name=repr(type(obj).__name__),
+        protocol_name=repr(protocol.__name__),
+        missing_methods=repr(missing),
     )
     raise TypeError(message)
 

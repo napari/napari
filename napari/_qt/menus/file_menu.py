@@ -2,23 +2,22 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction, QMenu
 
+from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
+from napari._qt.menus._util import NapariMenu, populate_menu
+from napari.components._viewer_key_bindings import register_viewer_action
 from napari.errors.reader_errors import MultipleReaderError
-
-from ...components._viewer_key_bindings import register_viewer_action
-from ...settings import get_settings
-from ...utils.history import get_save_history, update_save_history
-from ...utils.misc import running_as_bundled_app
-from ...utils.translations import trans
-from ..dialogs.preferences_dialog import PreferencesDialog
-from ..dialogs.screenshot_dialog import ScreenshotDialog
-from ._util import NapariMenu, populate_menu
+from napari.settings import get_settings
+from napari.utils.history import get_save_history, update_save_history
+from napari.utils.misc import running_as_bundled_app
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ... import Viewer
-    from ..qt_main_window import Window
+    from napari import Viewer
+    from napari._qt.qt_main_window import Window
 
 
 class FileMenu(NapariMenu):
@@ -41,6 +40,23 @@ class FileMenu(NapariMenu):
                 'text': trans._('Open Folder...'),
                 'slot': window._qt_viewer._open_folder_dialog,
                 'shortcut': 'Ctrl+Shift+O',
+            },
+            {
+                'menu': trans._('Open with Plugin'),
+                'items': [
+                    {
+                        'text': 'Open File(s)...',
+                        'slot': self._open_files_w_plugin,
+                    },
+                    {
+                        'text': 'Open Files as Stack...',
+                        'slot': self._open_files_as_stack_w_plugin,
+                    },
+                    {
+                        'text': 'Open Folder...',
+                        'slot': self._open_folder_w_plugin,
+                    },
+                ],
             },
             {'menu': self.open_sample_menu},
             {},
@@ -124,7 +140,7 @@ class FileMenu(NapariMenu):
 
         self._pref_dialog = None
 
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         plugin_manager.discover_sample_data()
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -174,7 +190,7 @@ class FileMenu(NapariMenu):
         self._pref_dialog = None
 
     def _rebuild_samples_menu(self):
-        from ...plugins import _npe2, menu_item_template, plugin_manager
+        from napari.plugins import _npe2, menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()
 
@@ -183,7 +199,18 @@ class FileMenu(NapariMenu):
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
-                menu = self.open_sample_menu.addMenu(plugin_name)
+                # use display_name for the menu item if npe2
+                from npe2 import plugin_manager as pm
+
+                try:
+                    plugin_display_name = pm.get_manifest(
+                        plugin_name
+                    ).display_name
+                except KeyError:
+                    plugin_display_name = plugin_name
+                menu = self.open_sample_menu.addMenu(
+                    QMenu(title=plugin_display_name, parent=self)
+                ).menu()
             else:
                 menu = self.open_sample_menu
 
@@ -210,6 +237,20 @@ class FileMenu(NapariMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
+
+    def _open_files_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog(choose_plugin=True)
+
+    def _open_files_as_stack_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_files_dialog_as_stack_dialog(
+            choose_plugin=True
+        )
+
+    def _open_folder_w_plugin(self):
+        """Helper method for forcing plugin choice"""
+        self._win._qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
 @register_viewer_action(trans._("Show all key bindings"))

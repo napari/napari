@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -90,7 +90,7 @@ class QtTracksControls(QtLayerControls):
         self.layout().addRow(trans._('color by:'), self.color_by_combobox)
         self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
         self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
         self.layout().addRow(trans._('head length:'), self.head_length_slider)

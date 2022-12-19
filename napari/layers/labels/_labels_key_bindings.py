@@ -1,15 +1,19 @@
 import numpy as np
+from app_model.types import KeyCode, KeyMod
 
-from ...layers.utils.layer_utils import (
+from napari.layers.labels._labels_constants import Mode
+from napari.layers.labels.labels import Labels
+from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from ...utils.translations import trans
-from ._labels_constants import Mode
-from .labels import Labels
+from napari.utils.translations import trans
+
+MIN_BRUSH_SIZE = 1
+MAX_BRUSH_SIZE = 40
 
 
-@Labels.bind_key('Space')
+@Labels.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer: Labels):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
@@ -23,8 +27,8 @@ def hold_to_pan_zoom(layer: Labels):
         layer.mode = prev_mode
 
 
-def register_label_action(description):
-    return register_layer_action(Labels, description)
+def register_label_action(description: str, repeatable: bool = False):
+    return register_layer_action(Labels, description, repeatable)
 
 
 def register_label_mode_action(description):
@@ -90,13 +94,46 @@ def increase_label_id(layer: Labels):
     layer.selected_label += 1
 
 
-@Labels.bind_key('Control-Z')
+@register_label_action(
+    trans._("Decrease the paint brush size by one."),
+    repeatable=True,
+)
+def decrease_brush_size(layer: Labels):
+    """Decrease the brush size"""
+    if (
+        layer.brush_size > MIN_BRUSH_SIZE
+    ):  # here we should probably add a non-hard-coded
+        # reference to the limit values of brush size?
+        layer.brush_size -= 1
+
+
+@register_label_action(
+    trans._("Increase the paint brush size by one."),
+    repeatable=True,
+)
+def increase_brush_size(layer: Labels):
+    """Increase the brush size"""
+    if (
+        layer.brush_size < MAX_BRUSH_SIZE
+    ):  # here we should probably add a non-hard-coded
+        # reference to the limit values of brush size?
+        layer.brush_size += 1
+
+
+@register_layer_attr_action(
+    Labels, trans._("Toggle preserve labels"), "preserve_labels"
+)
+def toggle_preserve_labels(layer: Labels):
+    layer.preserve_labels = not layer.preserve_labels
+
+
+@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""
     layer.undo()
 
 
-@Labels.bind_key('Control-Shift-Z')
+@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ)
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()

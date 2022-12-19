@@ -6,10 +6,10 @@ from vispy.scene.visuals import create_visual_node
 from vispy.visuals.image import ImageVisual
 from vispy.visuals.shaders import Function, FunctionChain
 
-from ...utils.colormaps import low_discrepancy_image
-from ...utils.colormaps.colormap import LabelColormap
-from ..visuals.volume import Volume as VolumeNode
-from .image import ImageLayerNode, VispyImageLayer
+from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
+from napari._vispy.visuals.volume import Volume as VolumeNode
+from napari.utils.colormaps import low_discrepancy_image
+from napari.utils.colormaps.colormap import LabelColormap
 
 # from napari._vispy.layers.base import VispyBaseLayer
 

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from npe2 import DynamicPlugin
@@ -45,13 +47,6 @@ def test_reader_with_error_message(reader_dialog):
     assert widg.findChild(QLabel).text().startswith('Test Error')
 
 
-def test_reader_dir(tmpdir, reader_dialog):
-    dir = tmpdir.mkdir('my_dir')
-    widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
-
-    assert not hasattr(widg, 'persist_checkbox')
-
-
 def test_reader_dir_with_extension(tmpdir, reader_dialog):
     dir = tmpdir.mkdir('my_dir.zarr')
     widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
@@ -59,6 +54,16 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
     assert (
         widg.persist_checkbox.text()
         == "Remember this choice for files with a .zarr extension"
+    )
+
+
+def test_reader_dir(tmpdir, reader_dialog):
+
+    dir = tmpdir.mkdir('my_dir')
+    widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
+    assert (
+        widg._persist_text
+        == f'Remember this choice for folders labeled as {dir}{os.sep}.'
     )
 
 

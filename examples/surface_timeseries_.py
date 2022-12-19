@@ -3,6 +3,8 @@ Surface timeseries
 ==================
 
 Display a surface timeseries using data from nilearn
+
+.. tags:: experimental
 """
 
 try:
@@ -13,7 +15,6 @@ except ModuleNotFoundError:
         "You must have nilearn installed to run this example."
     )
 
-import numpy as np
 import napari
 
 

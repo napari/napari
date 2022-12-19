@@ -307,6 +307,9 @@ def test_blending():
     layer.blending = 'opaque'
     assert layer.blending == 'opaque'
 
+    layer.blending = 'minimum'
+    assert layer.blending == 'minimum'
+
 
 def test_interpolation():
     """Test setting image interpolation mode."""
@@ -318,10 +321,11 @@ def test_interpolation():
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'bicubic'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bicubic'
+        layer = Image(data, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'cubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'cubic'
 
     layer.interpolation2d = 'linear'
     assert layer.interpolation2d == 'linear'
@@ -418,14 +422,33 @@ def test_set_contrast_limits_range():
     # clim values should stay within the contrast limits range
     layer.contrast_limits_range = [0, 30]
     assert layer.contrast_limits == [20, 30]
-    # setting contrast limits range should clamp both of the clims values
+    # setting clim range outside of clim should override clim
     layer.contrast_limits_range = [0, 10]
-    assert layer.contrast_limits == [10, 10]
+    assert layer.contrast_limits == [0, 10]
+
     # in both directions...
     layer.contrast_limits_range = [0, 100]
     layer.contrast_limits = [20, 40]
     layer.contrast_limits_range = [60, 100]
-    assert layer.contrast_limits == [60, 60]
+    assert layer.contrast_limits == [60, 100]
+
+
+@pytest.mark.parametrize(
+    'contrast_limits_range',
+    (
+        [-2, -1],  # range below lower boundary of [0, 1]
+        [-1, 0],  # range on lower boundary of [0, 1]
+        [1, 2],  # range on upper boundary of [0, 1]
+        [2, 3],  # range above upper boundary of [0, 1]
+    ),
+)
+def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
+    contrast_limits_range,
+):
+    """See https://github.com/napari/napari/issues/5257"""
+    layer = Image(np.zeros((6, 5)), contrast_limits=[0, 1])
+    layer.contrast_limits_range = contrast_limits_range
+    assert layer.contrast_limits == contrast_limits_range
 
 
 def test_gamma():
@@ -474,7 +497,7 @@ def test_iso_threshold():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.iso_threshold == 0.5
+    assert np.min(data) <= layer.iso_threshold <= np.max(data)
 
     # Change iso_threshold property
     iso_threshold = 0.7
@@ -552,7 +575,7 @@ def test_message():
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_message_3d():
@@ -560,11 +583,11 @@ def test_message_3d():
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
-    layer._ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():

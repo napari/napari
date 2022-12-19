@@ -12,9 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 
 class QtWelcomeLabel(QLabel):
@@ -136,6 +136,8 @@ class QtWelcomeWidget(QWidget):
         """
         self._update_property("drag", True)
         if event.mimeData().hasUrls():
+            viewer = self.parentWidget().nativeParentWidget()._qt_viewer
+            viewer._set_drag_status()
             event.accept()
         else:
             event.ignore()

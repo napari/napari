@@ -229,10 +229,11 @@ def test_interpolation():
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'
 
-    layer = Image(data, multiscale=True, interpolation2d='bicubic')
-    assert layer.interpolation2d == 'bicubic'
     with pytest.deprecated_call():
-        assert layer.interpolation == 'bicubic'
+        layer = Image(data, multiscale=True, interpolation2d='bicubic')
+    assert layer.interpolation2d == 'cubic'
+    with pytest.deprecated_call():
+        assert layer.interpolation == 'cubic'
 
     layer.interpolation2d = 'linear'
     with pytest.deprecated_call():
@@ -373,7 +374,7 @@ def test_message():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
     msg = layer.get_status((0,) * 2)
-    assert type(msg) == str
+    assert type(msg) == dict
 
 
 def test_thumbnail():

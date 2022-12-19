@@ -2,13 +2,14 @@ import warnings
 from typing import Optional, Tuple
 
 import numpy as np
+from qtpy.QtCore import Slot
 from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
-from ...components.dims import Dims
-from ...settings._constants import LoopMode
-from ...utils.translations import trans
-from .qt_dims_slider import QtDimSliderWidget
+from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
+from napari.components.dims import Dims
+from napari.settings._constants import LoopMode
+from napari.utils.translations import trans
 
 
 class QtDims(QWidget):
@@ -46,6 +47,7 @@ class QtDims(QWidget):
 
         self._play_ready = True  # False if currently awaiting a draw event
         self._animation_thread = None
+        self._animation_worker = None
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -97,12 +99,8 @@ class QtDims(QWidget):
         self._resize_slice_labels()
 
     def _update_display(self):
-        """
-        Updates display for all sliders.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-        """
+        """Updates display for all sliders."""
+        self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
@@ -121,12 +119,8 @@ class QtDims(QWidget):
         self._resize_slice_labels()
 
     def _update_nsliders(self):
-        """
-        Updates the number of sliders based on the number of dimensions.
-
-        The event parameter is there just to allow easy connection to signals,
-        without using `lambda event:`
-        """
+        """Updates the number of sliders based on the number of dimensions."""
+        self.stop()
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -306,11 +300,16 @@ class QtDims(QWidget):
                 )
             )
 
+    @Slot()
     def stop(self):
         """Stop axis animation"""
-        if self._animation_thread:
-            self._animation_thread.quit()
-            self._animation_thread.wait()
+        if self._animation_worker is not None:
+            # Thread will be stop by the worker
+            self._animation_worker._stop()
+
+    @Slot()
+    def cleaned_worker(self):
+        print("aaaa")
         self._animation_thread = None
         self._animation_worker = None
         self.enable_play()

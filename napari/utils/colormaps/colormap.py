@@ -5,11 +5,10 @@ import numpy as np
 from pydantic import PrivateAttr, validator
 
 from napari.utils.color import ColorArray
-
-from ..events import EventedModel
-from ..events.custom_types import Array
-from ..translations import trans
-from .colorbars import make_colorbar
+from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.events import EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class ColormapInterpolationMode(str, Enum):
@@ -51,7 +50,7 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[float, (-1,)] = None
+    controls: Array[np.float32, (-1,)] = None
 
     def __init__(self, colors, display_name: Optional[str] = None, **data):
         if display_name is None:
@@ -68,7 +67,7 @@ class Colormap(EventedModel):
             n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
-            return np.linspace(0, 1, n_controls)
+            return np.linspace(0, 1, n_controls, dtype=np.float32)
 
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
@@ -121,8 +120,11 @@ class Colormap(EventedModel):
             cols = np.stack(cols, axis=1)
         elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
+            # Colors beyond max clipped to final bin
             indices = np.clip(
-                np.searchsorted(self.controls, values) - 1, 0, len(self.colors)
+                np.searchsorted(self.controls, values, side="right") - 1,
+                0,
+                len(self.colors) - 1,
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
@@ -156,7 +158,7 @@ class LabelColormap(Colormap):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
 
     def map(self, values):
-        from .colormap_utils import low_discrepancy_image
+        from napari.utils.colormaps.colormap_utils import low_discrepancy_image
 
         values = np.atleast_1d(values)
 

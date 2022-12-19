@@ -4,9 +4,11 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
+from napari._tests.utils import skip_on_win_ci
 from napari.utils import nbscreenshot
 
 
+@skip_on_win_ci
 def test_nbscreenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
@@ -22,6 +24,7 @@ def test_nbscreenshot(make_napari_viewer):
     assert rich_display_object.image is not None
 
 
+@skip_on_win_ci
 @pytest.mark.parametrize(
     "alt_text_input, expected_alt_text",
     [
@@ -54,3 +57,15 @@ def test_safe_alt_text(alt_text_input, expected_alt_text):
         assert not display_obj.alt_text
     else:
         assert html.escape(display_obj.alt_text) == expected_alt_text
+
+
+def test_invalid_alt_text():
+    with pytest.warns(UserWarning):
+        # because string with only whitespace messes up with the parser
+        display_obj = nbscreenshot(Mock(), alt_text=" ")
+    assert display_obj.alt_text is None
+
+    with pytest.warns(UserWarning):
+        # because string with only whitespace messes up with the parser
+        display_obj = nbscreenshot(Mock(), alt_text="")
+    assert display_obj.alt_text is None

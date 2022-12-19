@@ -14,21 +14,23 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLargeIntSpinBox
 
-from ...layers.labels._labels_constants import (
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import disable_with_opacity
+from napari._qt.widgets._slider_compat import QSlider
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
     LabelsRendering,
     Mode,
 )
-from ...layers.labels._labels_utils import get_dtype
-from ...utils._dtype import get_dtype_limits
-from ...utils.action_manager import action_manager
-from ...utils.events import disconnect_events
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
-from ..utils import disable_with_opacity
-from ..widgets._slider_compat import QSlider
-from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from .qt_layer_controls_base import QtLayerControls
+from napari.layers.labels._labels_utils import get_dtype
+from napari.utils._dtype import get_dtype_limits
+from napari.utils.action_manager import action_manager
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -195,10 +197,6 @@ class QtLabelsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_fill_mode',
             self.fill_button,
-            extra_tooltip_text=trans._(
-                "Toggle with {shortcut}",
-                shortcut=Shortcut("Control"),
-            ),
         )
 
         self.erase_button = QtModeRadioButton(
@@ -209,10 +207,6 @@ class QtLabelsControls(QtLayerControls):
         action_manager.bind_button(
             'napari:activate_label_erase_mode',
             self.erase_button,
-            extra_tooltip_text=trans._(
-                "Toggle with {shortcut}",
-                shortcut=Shortcut("Alt"),
-            ),
         )
 
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
@@ -269,7 +263,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.layout().addRow(button_row)
         self.layout().addRow(trans._('label:'), color_layout)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.renderLabel, self.renderComboBox)
@@ -470,7 +464,9 @@ class QtLabelsControls(QtLayerControls):
 
         disable_with_opacity(
             self,
-            widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
+            widgets_to_toggle[
+                (self.layer._slice_input.ndisplay, self.layer.editable)
+            ],
             self.layer.editable,
         )
 
@@ -484,7 +480,7 @@ class QtLabelsControls(QtLayerControls):
 
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.renderComboBox.hide()
             self.renderLabel.hide()
         else:

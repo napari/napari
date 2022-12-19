@@ -3,6 +3,8 @@ Viewer FPS label
 ================
 
 Display a 3D volume and the fps label.
+
+.. tags:: experimental
 """
 import numpy as np
 import napari

@@ -1,39 +1,42 @@
 import warnings
 from collections import deque
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
-from napari.utils.misc import _is_array_type
-
-from ...utils import config
-from ...utils._dtype import normalize_dtype
-from ...utils.colormaps import (
-    color_dict_to_colormap,
-    label_colormap,
-    low_discrepancy_image,
+from napari.layers.base import no_op
+from napari.layers.image._image_utils import guess_multiscale
+from napari.layers.image.image import _ImageBase
+from napari.layers.labels._labels_constants import (
+    LabelColorMode,
+    LabelsRendering,
+    Mode,
 )
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.geometry import clamp_point_to_bounding_box
-from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_status
-from ...utils.translations import trans
-from ..base import no_op
-from ..image._image_utils import guess_multiscale
-from ..image.image import _ImageBase
-from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import _FeatureTable
-from ._labels_constants import LabelColorMode, LabelsRendering, Mode
-from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import (
+from napari.layers.labels._labels_mouse_bindings import draw, pick
+from napari.layers.labels._labels_utils import (
     indices_in_shape,
     interpolate_coordinates,
     sphere_indices,
 )
+from napari.layers.utils.color_transformations import transform_color
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.utils import config
+from napari.utils._dtype import normalize_dtype
+from napari.utils.colormaps import (
+    color_dict_to_colormap,
+    label_colormap,
+    low_discrepancy_image,
+)
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.geometry import clamp_point_to_bounding_box
+from napari.utils.misc import _is_array_type
+from napari.utils.naming import magic_name
+from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.translations import trans
 
 
 class Labels(_ImageBase):
@@ -148,7 +151,9 @@ class Labels(_ImageBase):
         to background.
     color : dict of int to str or array
         Custom label to color mapping. Values must be valid color names or RGBA
-        arrays.
+        arrays. While there is no limit to the number of custom labels, the
+        the layer will render incorrectly if they map to more than 1024 distinct
+        colors.
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -301,7 +306,7 @@ class Labels(_ImageBase):
         self._reset_history()
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
         self._set_editable()
 
     @property
@@ -375,7 +380,9 @@ class Labels(_ImageBase):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
-        min_scale = np.min([abs(scale[d]) for d in self._dims_displayed])
+        min_scale = np.min(
+            [abs(scale[d]) for d in self._slice_input.displayed]
+        )
         return abs(self.brush_size * min_scale)
 
     @property
@@ -1081,7 +1088,9 @@ class Labels(_ImageBase):
         ):
             return
 
-        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions :])
+        dims_to_fill = sorted(
+            self._slice_input.order[-self.n_edit_dimensions :]
+        )
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
@@ -1135,13 +1144,12 @@ class Labels(_ImageBase):
         """
         if coordinates is None:
             return
-        ndisplay = len(self._dims_displayed)
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size
         )
         for c in interp_coord:
             if (
-                ndisplay == 3
+                self._slice_input.ndisplay == 3
                 and self.data[tuple(np.round(c).astype(int))] == 0
             ):
                 continue
@@ -1167,8 +1175,12 @@ class Labels(_ImageBase):
             calls.
         """
         shape = self.data.shape
-        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
-        dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])
+        dims_to_paint = sorted(
+            self._slice_input.order[-self.n_edit_dimensions :]
+        )
+        dims_not_painted = sorted(
+            self._slice_input.order[: -self.n_edit_dimensions]
+        )
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
@@ -1252,13 +1264,13 @@ class Labels(_ImageBase):
 
     def get_status(
         self,
-        position,
+        position: Optional[Tuple] = None,
         *,
         view_direction: Optional[np.ndarray] = None,
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
-    ) -> str:
-        """Status message of the data at a coordinate position.
+    ) -> dict:
+        """Status message information of the data at a coordinate position.
 
         Parameters
         ----------
@@ -1276,16 +1288,23 @@ class Labels(_ImageBase):
 
         Returns
         -------
-        msg : string
-            String containing a message that can be used as a status update.
+        source_info : dict
+            Dict containing a information that can be used in a status update.
         """
-        value = self.get_value(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
+        if position is not None:
+            value = self.get_value(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        else:
+            value = None
+
+        source_info = self._get_source_info()
+        source_info['coordinates'] = generate_layer_coords_status(
+            position[-self.ndim :], value
         )
-        msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
         properties = self._get_properties(
@@ -1295,9 +1314,9 @@ class Labels(_ImageBase):
             world=world,
         )
         if properties:
-            msg += "; " + ", ".join(properties)
+            source_info['coordinates'] += "; " + ", ".join(properties)
 
-        return msg
+        return source_info
 
     def _get_tooltip_text(
         self,
@@ -1375,7 +1394,7 @@ class Labels(_ImageBase):
 
 
 if config.async_octree:
-    from ..image.experimental.octree_image import _OctreeImageBase
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     class Labels(Labels, _OctreeImageBase):
         pass

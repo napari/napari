@@ -4,15 +4,22 @@ import numpy as np
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
 
-from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
-from ...utils.action_manager import action_manager
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
-from ..utils import disable_with_opacity, qt_signals_blocked
-from ..widgets._slider_compat import QSlider
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import disable_with_opacity, qt_signals_blocked
+from napari._qt.widgets._slider_compat import QSlider
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.points._points_constants import (
+    SYMBOL_TRANSLATION,
+    SYMBOL_TRANSLATION_INVERTED,
+    Mode,
+)
+from napari.utils.action_manager import action_manager
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -92,7 +99,11 @@ class QtPointsControls(QtLayerControls):
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        sld.setMaximum(100)
+        if self.layer.size.size:
+            max_value = max(100, int(np.max(self.layer.size)) + 1)
+        else:
+            max_value = 100
+        sld.setMaximum(max_value)
         sld.setSingleStep(1)
         value = self.layer.current_size
         sld.setValue(int(value))
@@ -110,17 +121,25 @@ class QtPointsControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-        self.symbolComboBox = QComboBox()
+        sym_cb = QComboBox()
+        sym_cb.setToolTip(
+            trans._(
+                "Change the symbol of currently selected points and any added afterwards."
+            )
+        )
         current_index = 0
-        for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
-            data = data.value
-            self.symbolComboBox.addItem(text, data)
+        for index, (symbol_string, text) in enumerate(
+            SYMBOL_TRANSLATION.items()
+        ):
+            symbol_string = symbol_string.value
+            sym_cb.addItem(text, symbol_string)
 
-            if data == self.layer.symbol:
+            if symbol_string == self.layer.current_symbol:
                 current_index = index
 
-        self.symbolComboBox.setCurrentIndex(current_index)
-        self.symbolComboBox.currentTextChanged.connect(self.changeSymbol)
+        sym_cb.setCurrentIndex(current_index)
+        sym_cb.currentTextChanged.connect(self.changeSymbol)
+        self.symbolComboBox = sym_cb
 
         self.outOfSliceCheckBox = QCheckBox()
         self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
@@ -176,7 +195,7 @@ class QtPointsControls(QtLayerControls):
         button_row.setSpacing(4)
 
         self.layout().addRow(button_row)
-        self.layout().addRow(trans._('opacity:'), self.opacitySlider)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('point size:'), self.sizeSlider)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
@@ -221,7 +240,7 @@ class QtPointsControls(QtLayerControls):
         text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
-        self.layer.symbol = self.symbolComboBox.currentData()
+        self.layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
 
     def changeSize(self, value):
         """Change size of points on the layer model.
@@ -269,14 +288,23 @@ class QtPointsControls(QtLayerControls):
         """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
-                self.symbolComboBox.findData(self.layer.symbol)
+                self.symbolComboBox.findData(self.layer.current_symbol.value)
             )
 
     def _on_size_change(self):
         """Receive layer model size change event and update point size slider."""
         with self.layer.events.size.blocker():
             value = self.layer.current_size
-            self.sizeSlider.setValue(int(value))
+            min_val = min(value) if isinstance(value, list) else value
+            max_val = max(value) if isinstance(value, list) else value
+            if min_val < self.sizeSlider.minimum():
+                self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
+            if max_val > self.sizeSlider.maximum():
+                self.sizeSlider.setMaximum(int(max_val + 1))
+            try:
+                self.sizeSlider.setValue(int(value))
+            except TypeError:
+                pass
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):
