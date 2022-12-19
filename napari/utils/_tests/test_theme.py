@@ -127,26 +127,28 @@ def test_theme_syntax_highlight():
 
 
 def test_is_theme_available(tmp_path, monkeypatch):
-    (tmp_path / "blue").mkdir()
+    (tmp_path / "test_blue").mkdir()
     (tmp_path / "yellow").mkdir()
-    (tmp_path / "blue" / PLUGIN_FILE_NAME).write_text("test-blue")
+    (tmp_path / "test_blue" / PLUGIN_FILE_NAME).write_text("test-blue")
     monkeypatch.setattr(
         "napari.utils.theme._theme_path", lambda x: tmp_path / x
     )
 
+    n_themes = len(available_themes())
+
     def mock_install_theme(_themes):
         theme_dict = _themes["dark"].dict()
-        theme_dict["name"] = "blue"
-        register_theme("blue", theme_dict, "test")
+        theme_dict["id"] = "test_blue"
+        register_theme("test_blue", theme_dict, "test")
 
     monkeypatch.setattr(
         "napari.utils.theme._install_npe2_themes", mock_install_theme
     )
 
-    assert len(available_themes()) == 3
+    assert len(available_themes()) == n_themes
     assert is_theme_available("dark")
     assert not is_theme_available("green")
     assert not is_theme_available("yellow")
-    assert is_theme_available("blue")
-    assert len(available_themes()) == 4
-    assert "blue" in available_themes()
+    assert is_theme_available("test_blue")
+    assert len(available_themes()) == n_themes + 1
+    assert "test_blue" in available_themes()
