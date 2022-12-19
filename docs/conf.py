@@ -59,6 +59,7 @@ extensions = [
     "sphinx_panels",
     "sphinx.ext.viewcode",
     "sphinx-favicon",
+    "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "sphinx_tags",
 ]
