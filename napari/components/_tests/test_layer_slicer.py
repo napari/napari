@@ -335,7 +335,7 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
         # on another thread and also wait for it to start.
         wait_future = single_threaded_executor.submit(
             layer_slicer.wait_until_idle,
-            timeout=5,
+            timeout=DEFAULT_TIMEOUT_SECS,
         )
         _wait_until_running(wait_future)
 
