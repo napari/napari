@@ -312,7 +312,7 @@ def test_slice_layers_exception_subthread_on_result(layer_slicer):
     layer = FakeAsyncLayerError()
     future = layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
 
-    done, _ = wait([future], timeout=5)
+    done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
     assert done, 'Test future did not complete within timeout.'
     with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
         _wait_for_result(future)
