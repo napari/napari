@@ -252,12 +252,6 @@ class QtViewer(QSplitter):
         self.canvas.bgcolor = transform_color(
             get_theme(self.viewer.theme, False).canvas.as_hex()
         )[0]
-        theme = self.viewer.events.theme
-
-        on_theme_change = self.canvas._on_theme_change
-        theme.connect(on_theme_change)
-
-        self.canvas.destroyed.connect(self._diconnect_theme)
 
         # Stacked widget to provide a welcome page
         self._canvas_overlay = QtWidgetOverlay(
@@ -442,9 +436,6 @@ class QtViewer(QSplitter):
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)
-
-    def _diconnect_theme(self):
-        self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""

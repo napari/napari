@@ -46,6 +46,8 @@ class VispyCanvas:
 
         # Connecting events from SceneCanvas
         self.scene_canvas.events.draw.connect(self.viewer.dims.enable_play)
+        self.viewer.events.theme.connect(self._on_theme_change)
+        self.destroyed.connect(self._disconnect_theme)
 
     @property
     def destroyed(self):
@@ -75,6 +77,9 @@ class VispyCanvas:
             get_theme(theme, False).canvas.as_hex()
         )[0]
         self.bgcolor = self._last_theme_color
+
+    def _disconnect_theme(self):
+        self.viewer.events.theme.disconnect(self._on_theme_change)
 
     @property
     def bgcolor(self):
