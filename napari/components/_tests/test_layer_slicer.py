@@ -209,6 +209,7 @@ def test_slice_layers_async_multiple_calls_cancels_pending(layer_slicer):
 
     with layer.lock:
         blocked = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
+        _wait_until_running(blocked)
         pending = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not pending.running()
         layer_slicer.slice_layers_async(layers=[layer], dims=dims)
@@ -339,11 +340,6 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
     assert len(layer_slicer._layers_to_task) == 0
 
 
-def _wait_until_running(future: Future):
-    while not future.running():
-        time.sleep(0.01)
-
-
 def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
     layer = FakeSyncLayer()
 
@@ -409,3 +405,15 @@ def test_slice_layers_async_with_one_3d_points(layer_slicer):
     with lockable_internal_data.lock:
         future = layer_slicer.slice_layers_async(layers=[layer], dims=dims)
         assert not future.done()
+
+
+def _wait_until_running(future: Future, timeout_milliseconds: int = 5000):
+    sleep_milliseconds = 10
+    total_sleep_milliseconds = 0
+    while not future.running():
+        time.sleep(sleep_milliseconds / 1000)
+        total_sleep_milliseconds += sleep_milliseconds
+        if total_sleep_milliseconds > timeout_milliseconds:
+            raise TimeoutError(
+                f'Future did not start running after the given timeout of {timeout_milliseconds}ms.'
+            )
