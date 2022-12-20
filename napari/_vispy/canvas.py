@@ -4,6 +4,7 @@ from weakref import WeakSet
 
 from vispy.scene import SceneCanvas, Widget
 
+from napari._vispy import VispyCamera
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -34,6 +35,9 @@ class VispyCanvas:
         self.napari_canvas = kwargs["parent"].viewer.canvas
         self.scene_canvas = SceneCanvas(*args, **kwargs)
         self.view = self.central_widget.add_view(border_width=0)
+        self.vispy_camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
+        )
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
@@ -47,6 +51,7 @@ class VispyCanvas:
 
         # Connecting events from SceneCanvas
         self.scene_canvas.events.draw.connect(self.viewer.dims.enable_play)
+        self.scene_canvas.events.draw.connect(self.vispy_camera.on_draw)
         self.viewer.events.theme.connect(self._on_theme_change)
         self.destroyed.connect(self._disconnect_theme)
 

@@ -64,7 +64,6 @@ from napari_builtins.io import imsave_extensions
 
 from napari._vispy import (  # isort:skip
     VispyAxesOverlay,
-    VispyCamera,
     VispyCanvas,
     VispyScaleBarOverlay,
     VispyInteractionBox,
@@ -292,11 +291,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.removed.connect(self._remove_layer)
 
         self.setAcceptDrops(True)
-
-        self.camera = VispyCamera(
-            self.canvas.view, self.viewer.camera, self.viewer.dims
-        )
-        self.canvas.scene_canvas.events.draw.connect(self.camera.on_draw)
 
         # Add axes, scale bar
         self._add_visuals()
