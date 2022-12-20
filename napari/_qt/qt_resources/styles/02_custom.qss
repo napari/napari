@@ -722,6 +722,57 @@ QtShortcutLabel {
  font-size: 16px;
 }
 
+/* ------------ Narrow scrollbars for qtlayer controls --------- */
+
+QtLayerControlsContainer QAbstractScrollArea::corner,
+QtLayerControlsContainer QScrollArea > QWidget,
+QtLayerControlsContainer QFrame {
+  background: {{ foreground }};
+}
+
+QtLayerControlsContainer QScrollBar:vertical {
+  max-width: 8px;
+}
+
+QtLayerControlsContainer QScrollBar::add-line:vertical,
+QtLayerControlsContainer QScrollBar::sub-line:vertical  {
+  height: 10px;
+  width: 8px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerControlsContainer QScrollBar:up-arrow,
+QtLayerControlsContainer QScrollBar:down-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+  background: {{ background }};
+}
+
+QtLayerControlsContainer QScrollBar:horizontal {
+  min-height: 6px;
+  max-height: 8px;
+}
+
+QtLayerControlsContainer QScrollBar::add-line:horizontal,
+QtLayerControlsContainer QScrollBar::sub-line:horizontal {
+  height: 8px;
+  width: 10px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerControlsContainer QScrollBar:left-arrow,
+QtLayerControlsContainer QScrollBar:right-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+  background: {{ background }};
+  padding: 2px 1px;
+}
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 

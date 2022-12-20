@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QFrame, QStackedWidget
+from qtpy.QtWidgets import QFrame, QScrollArea, QStackedWidget
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -134,8 +134,11 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         layer = event.value
         controls = create_qt_layer_controls(layer)
-        self.addWidget(controls)
-        self.widgets[layer] = controls
+        scroll_controls = QScrollArea()
+        scroll_controls.setWidget(controls)
+        scroll_controls.setWidgetResizable(True)
+        self.addWidget(scroll_controls)
+        self.widgets[layer] = scroll_controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -148,7 +151,6 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        # controls.close()
         controls.hide()
         controls.deleteLater()
         controls = None
