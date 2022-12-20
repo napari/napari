@@ -4,16 +4,9 @@ from app_model.types import KeyCode, KeyMod
 
 from napari.layers.points._points_constants import Mode
 from napari.layers.points.points import Points
-from napari.layers.utils.layer_utils import (
-    register_layer_action,
-    register_layer_attr_action,
-)
+from napari.layers.utils.layer_utils import register_layer_attr_action
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
-
-
-def register_points_action(description: str, repeatable: bool = False):
-    return register_layer_action(Points, description, repeatable)
 
 
 def register_points_mode_action(description):
@@ -71,9 +64,6 @@ def paste(layer: Points):
     layer._paste_data()
 
 
-@register_points_action(
-    trans._("Select all points in the current view slice."),
-)
 def select_all_in_slice(layer: Points):
     new_selected = set(layer._indices_view[: len(layer._view_data)])
 
@@ -102,9 +92,6 @@ def select_all_in_slice(layer: Points):
     layer._set_highlight()
 
 
-@register_points_action(
-    trans._("Select all points in the layer."),
-)
 def select_all_data(layer: Points):
 
     # If all points are already selected, deselect all points
@@ -130,7 +117,6 @@ def select_all_data(layer: Points):
     layer._set_highlight()
 
 
-@register_points_action(trans._('Delete selected points'))
 def delete_selected_points(layer: Points):
     """Delete all selected points."""
     layer.remove_selected()

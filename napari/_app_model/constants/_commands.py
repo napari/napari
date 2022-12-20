@@ -93,6 +93,26 @@ class CommandId(str, Enum):
     # TODO: console action should be provided by plugin?
     VIEWER_TOGGLE_CONSOLE_VISIBILITY = "napari:viewer:toggle_console_visibility"
 
+    # Image layer actions
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z = "napari:image:orient_plane_normal_along_z"
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y = "napari:image:orient_plane_normal_along_y"
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_X = "napari:image:orient_plane_normal_along_x"
+    IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION = "napari:image:orient_plane_normal_along_view_direction"
+    IMAGE_SYNCHRONISE_PLANE_NORMAL_WITH_VIEW_DIRECTION = "napari:image:synchronise_plane_normal_with_view_direction"
+    IMAGE_HOLD_TO_PAN_ZOOM = "napari:image:hold_to_pan_zoom"
+    IMAGE_ACTIVATE_SELECT_MODE = "napari:image:activate_image_select_mode"
+    IMAGE_ACTIVATE_PAN_ZOOM_MODE = "napari:image:activate_image_pan_zoom_mode"
+
+    POINTS_HOLD_TO_PAN_ZOOM = "napari:points:hold_to_pan_zoom"
+    POINTS_ACTIVATE_ADD_MODE = "napari:points:activate_points_add_mode"
+    POINTS_ACTIVATE_SELECT_MODE = "napari:points:activate_points_select_mode"
+    POINTS_ACTIVATE_PAN_ZOOM_MODE = "napari:points:activate_points_pan_zoom_mode"
+    POINTS_COPY = "napari:points:copy"
+    POINTS_PASTE = "napari:points:paste"
+    POINTS_SELECT_ALL_IN_SLICE = "napari:points:select_all_in_slice"
+    POINTS_SELECT_ALL_DATA = "napari:points:select_all_data"
+    POINTS_DELETE_SELECTED = "napari:points:delete_selected_points"
+
     @property
     def title(self) -> str:
         return _COMMAND_INFO[self].title
@@ -178,5 +198,24 @@ _COMMAND_INFO = {
     # TODO: captured above in LAYER_TOGGLE_VISIBILITY?
     CommandId.VIEWER_TOGGLE_SELECTED_LAYER_VISIBILITY: _i(trans._('Toggle selected layer visibility'),),
     CommandId.VIEWER_TOGGLE_CONSOLE_VISIBILITY: _i(trans._('Toggle console'), trans._('Show/Hide IPython console (only available when napari started as standalone application)'),),
+
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Z: _i(trans._('Orient along Z'), trans._('orient plane normal along z-axis'),),
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y: _i(trans._('Orient along Y'), trans._('orient plane normal along y-axis'),),
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_X: _i(trans._('Orient along X'), trans._('orient plane normal along x-axis'),),
+    CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION: _i(trans._('Orient along view'), trans._('orient plane normal along view axis'),),
+    CommandId.IMAGE_SYNCHRONISE_PLANE_NORMAL_WITH_VIEW_DIRECTION: _i(trans._('Sync with view'), trans._('synchronise plane normal wtih view direction'),),
+    CommandId.IMAGE_HOLD_TO_PAN_ZOOM: _i(trans._('Hold to pan/zoom'), trans._('hold to pan and zoom in the viewer'),),
+    CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE: _i(trans._('Transform'), trans._('activate tranform mode'),),
+    CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+
+    CommandId.POINTS_HOLD_TO_PAN_ZOOM: _i(trans._('Hold to pan/zoom'), trans._('hold to pan and zoom in the viewer'),),
+    CommandId.POINTS_ACTIVATE_ADD_MODE: _i(trans._('Add points'),),
+    CommandId.POINTS_ACTIVATE_SELECT_MODE: _i(trans._('Select points'),),
+    CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'),),
+    CommandId.POINTS_COPY: _i(trans._('Copy'), trans._('copy any selected points'),),
+    CommandId.POINTS_PASTE: _i(trans._('Paste'), trans._('paste any copied points'),),
+    CommandId.POINTS_SELECT_ALL_IN_SLICE: _i(trans._('Select all in current slice'), trans._('select all points in the current view slice'),),
+    CommandId.POINTS_SELECT_ALL_DATA: _i(trans._('Select all in layer'), trans._('select all points in the layer'),),
+    CommandId.POINTS_DELETE_SELECTED: _i(trans._('Delete points'), trans._('delete all selected points'),),
 }
 # fmt: on
