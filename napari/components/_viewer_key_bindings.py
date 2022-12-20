@@ -34,7 +34,6 @@ def register_viewer_action(description):
 def reset_scroll_progress(viewer: Viewer):
     # on key press
     viewer.dims._scroll_progress = 0
-    # TODO: app-model doesn't handle generators - action-manager seems to use them for keydown/up bindings
     yield
     # on key release
     viewer.dims._scroll_progress = 0

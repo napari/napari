@@ -8,7 +8,7 @@ from app_model import Application
 from app_model.types import Action
 
 from napari._app_model._submenus import SUBMENUS
-from napari._app_model.actions import RepeatableAction
+from napari._app_model.actions import GeneratorCallback, RepeatableAction
 from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._image_actions import IMAGE_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
@@ -20,7 +20,6 @@ from napari._app_model.injection._providers import PROVIDERS
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Image, Points
 from napari.utils.action_manager import action_manager
-
 
 APP_NAME = 'napari'
 
@@ -78,16 +77,24 @@ class NapariApplication(Application):
         # porting to app-model
         prefix, *group, command = action.id.split(":")
 
-        def _callback(*args, **kwargs):
-            print(f"calling {action.id} via action_manager shim")
-            self.get_app().commands.execute_command(action.id).result()
+        if isinstance(action.callback, GeneratorCallback):
+
+            def _callback(*args, **kwargs):
+                self.get_app().commands.execute_command(action.id).result()
+                yield
+                self.get_app().commands.execute_command(action.id).result()
+
+        else:
+
+            def _callback(*args, **kwargs):
+                self.get_app().commands.execute_command(action.id).result()
 
         action_manager.register_action(
             name=f"{prefix}:{command}",
             command=_callback,
             description=action.title,
             keymapprovider=keymapprovider,
-            # repeatable=isinstance(action, RepeatableAction),
+            repeatable=isinstance(action, RepeatableAction),
         )
 
     @classmethod

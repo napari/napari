@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from app_model.types import Action
 
+from napari._app_model.actions import GeneratorCallback
 from napari._app_model.constants import CommandId
 from napari.layers.image import _image_key_bindings as _image_actions
 
@@ -42,7 +43,7 @@ IMAGE_ACTIONS = [
         id=CommandId.IMAGE_HOLD_TO_PAN_ZOOM,
         title=CommandId.IMAGE_HOLD_TO_PAN_ZOOM.description,
         short_title=CommandId.IMAGE_HOLD_TO_PAN_ZOOM.title,
-        callback=_image_actions.hold_to_pan_zoom,
+        callback=GeneratorCallback(_image_actions.hold_to_pan_zoom),
     ),
     Action(
         id=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE,

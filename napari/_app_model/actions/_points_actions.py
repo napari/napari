@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from app_model.types import Action
 
+from napari._app_model.actions import GeneratorCallback
 from napari._app_model.constants import CommandId
 from napari.layers.points import _points_key_bindings as _points_actions
 
@@ -18,7 +19,7 @@ POINTS_ACTIONS = [
         id=CommandId.POINTS_HOLD_TO_PAN_ZOOM,
         title=CommandId.POINTS_HOLD_TO_PAN_ZOOM.description,
         short_title=CommandId.POINTS_HOLD_TO_PAN_ZOOM.title,
-        callback=_points_actions.hold_to_pan_zoom,
+        callback=GeneratorCallback(_points_actions.hold_to_pan_zoom),
     ),
     # TODO: register_points_mode_action (register_layer_attr_action)
     # Action(

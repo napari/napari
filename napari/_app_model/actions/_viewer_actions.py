@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app_model.types import Action
 
+from napari._app_model.actions import GeneratorCallback
 from napari._app_model.constants import CommandId
 from napari.components import _viewer_key_bindings as _viewer_actions
 
@@ -17,7 +18,7 @@ VIEWER_ACTIONS = [
         id=CommandId.VIEWER_RESET_SCROLL,
         title=CommandId.VIEWER_RESET_SCROLL.description,
         short_title=CommandId.VIEWER_RESET_SCROLL.title,
-        callback=_viewer_actions.reset_scroll_progress,
+        callback=GeneratorCallback(_viewer_actions.reset_scroll_progress),
     ),
     Action(
         id=CommandId.VIEWER_CYCLE_THEME,
