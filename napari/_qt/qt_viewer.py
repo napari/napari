@@ -181,8 +181,6 @@ class QtViewer(QSplitter):
         Qt view for LayerList controls.
     layer_to_visual : dict
         Dictionary mapping napari layers with their corresponding vispy_layers.
-    view : vispy scene widget
-        View displayed by vispy canvas. Adds a vispy ViewBox as a child widget.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     viewerButtons : QtViewerButtons
@@ -295,9 +293,8 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-        self.view = self.canvas.central_widget.add_view(border_width=0)
         self.camera = VispyCamera(
-            self.view, self.viewer.camera, self.viewer.dims
+            self.canvas.view, self.viewer.camera, self.viewer.dims
         )
         self.canvas.scene_canvas.events.draw.connect(self.camera.on_draw)
 
@@ -443,12 +440,12 @@ class QtViewer(QSplitter):
         self.axes = VispyAxesOverlay(
             overlay=self.viewer.axes,
             viewer=self.viewer,
-            parent=self.view.scene,
+            parent=self.canvas.view.scene,
         )
         self.scale_bar = VispyScaleBarOverlay(
             overlay=self.viewer.scale_bar,
             viewer=self.viewer,
-            parent=self.view,
+            parent=self.canvas.view,
             canvas=self.canvas,
         )
         self.canvas.scene_canvas.events.resize.connect(
@@ -457,13 +454,13 @@ class QtViewer(QSplitter):
         self.text_overlay = VispyTextOverlay(
             overlay=self.viewer.text_overlay,
             viewer=self.viewer,
-            parent=self.view,
+            parent=self.canvas.view,
         )
         self.canvas.scene_canvas.events.resize.connect(
             self.text_overlay._on_position_change
         )
         self.interaction_box_visual = VispyInteractionBox(
-            self.viewer, parent=self.view.scene, order=1e6 + 3
+            self.viewer, parent=self.canvas.view.scene, order=1e6 + 3
         )
         self.interaction_box_mousebindings = InteractionBoxMouseBindings(
             self.viewer, self.interaction_box_visual
@@ -561,7 +558,7 @@ class QtViewer(QSplitter):
             if vispy_layer.events is not None:
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
-        vispy_layer.node.parent = self.view.scene
+        vispy_layer.node.parent = self.canvas.view.scene
         self.layer_to_visual[layer] = vispy_layer
         self._reorder_layers()
 
@@ -865,7 +862,7 @@ class QtViewer(QSplitter):
 
     def _on_interactive(self):
         """Link interactive attributes of view and viewer."""
-        self.view.interactive = self.viewer.camera.interactive
+        self.canvas.view.interactive = self.viewer.camera.interactive
 
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""
@@ -879,7 +876,7 @@ class QtViewer(QSplitter):
                 size *= self.viewer.camera.zoom
 
             size = int(size)
-
+            # TODO fix canvas size reference
             # make sure the square fits within the current canvas
             if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
@@ -939,7 +936,7 @@ class QtViewer(QSplitter):
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.scene.transform
+        transform = self.canvas.view.scene.transform
         mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 

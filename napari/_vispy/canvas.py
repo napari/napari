@@ -33,6 +33,7 @@ class VispyCanvas:
         self.viewer = kwargs["parent"].viewer
         self.napari_canvas = kwargs["parent"].viewer.canvas
         self.scene_canvas = SceneCanvas(*args, **kwargs)
+        self.view = self.central_widget.add_view(border_width=0)
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
