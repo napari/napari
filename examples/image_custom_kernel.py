@@ -53,11 +53,11 @@ def gpu_kernel(image: napari.layers.Image, kernel_type: str = 'gaussian', kernel
         gpu_kernel.sigma.hide()
 
     if kernel_type == 'gaussian':
-        image.custom_interpolation_kernel = gaussian_kernel(kernel_size, sigma)
+        image.custom_interpolation_kernel_2d = gaussian_kernel(kernel_size, sigma)
     elif kernel_type == 'sharpen':
-        image.custom_interpolation_kernel = sharpen_kernel()
+        image.custom_interpolation_kernel_2d = sharpen_kernel()
     elif kernel_type == 'ridge_detection':
-        image.custom_interpolation_kernel = ridge_detection_kernel()
+        image.custom_interpolation_kernel_2d = ridge_detection_kernel()
 
 
 viewer.window.add_dock_widget(gpu_kernel)

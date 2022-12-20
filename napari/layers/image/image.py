@@ -143,7 +143,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
-    custom_interpolation_kernel : np.ndarray
+    custom_interpolation_kernel_2d : np.ndarray
         Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Attributes
@@ -204,7 +204,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         {'position', 'normal', 'thickness'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
-    custom_interpolation_kernel : np.ndarray
+    custom_interpolation_kernel_2d : np.ndarray
         Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
     Notes
@@ -248,7 +248,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
-        custom_interpolation_kernel=None,
+        custom_interpolation_kernel_2d=None,
     ):
         if name is None and data is not None:
             name = magic_name(data)
@@ -318,7 +318,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
-            custom_interpolation_kernel=Event,
+            custom_interpolation_kernel_2d=Event,
         )
 
         self._array_like = True
@@ -390,7 +390,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if plane is not None:
             self.plane = plane
         connect_no_arg(self.plane.events, self.events, 'plane')
-        self.custom_interpolation_kernel = custom_interpolation_kernel
+        self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
         # Trigger generation of view slice and thumbnail
         self.refresh()
@@ -693,15 +693,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.plane()
 
     @property
-    def custom_interpolation_kernel(self):
-        return self._custom_interpolation_kernel
+    def custom_interpolation_kernel_2d(self):
+        return self._custom_interpolation_kernel_2d
 
-    @custom_interpolation_kernel.setter
-    def custom_interpolation_kernel(self, value):
+    @custom_interpolation_kernel_2d.setter
+    def custom_interpolation_kernel_2d(self, value):
         if value is None:
             value = [[1]]
-        self._custom_interpolation_kernel = np.array(value, np.float32)
-        self.events.custom_interpolation_kernel()
+        self._custom_interpolation_kernel_2d = np.array(value, np.float32)
+        self.events.custom_interpolation_kernel_2d()
 
     @property
     def loaded(self):
@@ -1119,7 +1119,7 @@ class Image(_ImageBase):
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
                 'data': self.data,
-                'custom_interpolation_kernel': self.custom_interpolation_kernel,
+                'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
             }
         )
         return state
