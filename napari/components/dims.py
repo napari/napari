@@ -76,6 +76,7 @@ class Dims(EventedModel):
     current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+    _play_ready: bool = True  # False if currently awaiting a draw event
 
     # private vars
     _scroll_progress: int = 0
@@ -403,6 +404,10 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
+
+    def enable_play(self, *args):
+        """Enable playing of animation. False if awaiting a draw event"""
+        self._play_ready = True
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:

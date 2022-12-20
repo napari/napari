@@ -44,6 +44,9 @@ class VispyCanvas:
         self.scene_canvas.events.ignore_callback_errors = False
         self.scene_canvas.context.set_depth_func('lequal')
 
+        # Connecting events from SceneCanvas
+        self.scene_canvas.events.draw.connect(self.viewer.dims.enable_play)
+
     @property
     def destroyed(self):
         return self.scene_canvas._backend.destroyed

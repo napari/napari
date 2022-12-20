@@ -227,7 +227,6 @@ class QtViewer(QSplitter):
             size=self.viewer.canvas.size[::-1],
         )
         # TODO: temporary but needs to be moved to VispyCanvas
-        self.canvas.scene_canvas.events.draw.connect(self.dims.enable_play)
 
         self.canvas.scene_canvas.events.mouse_double_click.connect(
             self.on_mouse_double_click
