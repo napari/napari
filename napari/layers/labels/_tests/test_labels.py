@@ -469,19 +469,6 @@ def test_warning_too_many_colors():
         Labels(data, color=colors)
 
 
-def test_add_colors():
-    """Test adding new colors"""
-    # This test no longer makes sense as we no longer use _all_vals
-    # TODO: What should we check instead? Current selected color?
-    data = np.random.randint(20, size=(40, 40))
-    layer = Labels(data)
-
-    layer.selected_label = 51
-
-    layer.show_selected_label = True
-    layer.selected_label = 53
-
-
 def test_metadata():
     """Test setting labels metadata."""
     np.random.seed(0)
@@ -1001,17 +988,15 @@ def test_switching_display_func_during_slicing():
     # assert layer._all_vals.size < 1026
 
 
-def test_add_large_colors():
-    # This test no longer makes sense as we no longer use _all_vals
-    # TODO: Maybe verify that large values map to different things?
-    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
-    label_array[0, :, :] = [[0, 1], [2, 3]]
+@pytest.mark.xfail(
+    reason="labels are converted to float32 before being mapped"
+)
+def test_large_label_values():
+    label_array = 2**23 + np.arange(4, dtype=np.uint64).reshape((2, 2))
     layer = Labels(label_array)
-    # assert len(layer._all_vals) == 4
+    mapped = layer._random_colormap.map(layer.data)
 
-    layer.show_selected_label = True
-    layer.selected_label = int(5e6)
-    # assert layer._all_vals.size < 1026
+    assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
 def test_fill_tensorstore():

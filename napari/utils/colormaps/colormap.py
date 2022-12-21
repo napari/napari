@@ -160,7 +160,8 @@ class LabelColormap(Colormap):
     def map(self, values):
         from napari.utils.colormaps.colormap_utils import low_discrepancy_image
 
-        values = np.atleast_1d(values)
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
 
         # If using selected, disable all others
         if self.use_selection:
