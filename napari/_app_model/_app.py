@@ -89,6 +89,8 @@ class NapariApplication(Application):
             def _callback(*args, **kwargs):
                 self.get_app().commands.execute_command(action.id).result()
 
+        _callback.__name__ = command
+
         action_manager.register_action(
             name=f"{prefix}:{command}",
             command=_callback,
