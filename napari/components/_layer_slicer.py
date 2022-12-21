@@ -81,6 +81,7 @@ class _LayerSlicer:
     @contextmanager
     def force_sync(self):
         """Context manager to temporarily force slicing to be synchronous.
+
         This should only be used from the main thread.
 
         >>> layer_slicer = _LayerSlicer()
