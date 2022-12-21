@@ -739,8 +739,6 @@ class AnimationWorker(QObject):
                 return self.finish()
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
-        # using a singleShot timer here instead of timer.start() because
-        # it makes it easier to update the interval using signals/slots
         self.timer.start()
 
     def finish(self):
