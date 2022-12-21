@@ -428,7 +428,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.camera.interactive = event.interactive
+        if event.source is self.layers.selection.active:
+            self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
