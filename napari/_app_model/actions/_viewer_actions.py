@@ -6,11 +6,20 @@ effect.  Use `app.register_action` to register new actions at runtime.
 """
 from __future__ import annotations
 
-from app_model.types import Action
+from typing import TYPE_CHECKING, List
+
+from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions import GeneratorCallback
-from napari._app_model.constants import CommandId
+from napari._app_model.actions._toggle_action import ViewerToggleAction
+from napari._app_model.constants import CommandId, MenuId
 from napari.components import _viewer_key_bindings as _viewer_actions
+
+if TYPE_CHECKING:
+    from napari.viewer import Viewer
+
+
+VIEWER_ACTIONS: List[Action] = []
 
 # actions ported to app_model from components/_viewer_key_bindings
 VIEWER_ACTIONS = [
@@ -76,3 +85,36 @@ VIEWER_ACTIONS = [
         callback=_viewer_actions.toggle_console_visibility,
     ),
 ]
+
+
+def _ndisplay_toggle(viewer: Viewer):
+    viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
+
+
+def _get_current_ndisplay_is_3D(viewer: Viewer):
+    return viewer.dims.ndisplay == 3
+
+
+# these are separate because they include menu entries
+VIEWER_ACTIONS.extend(
+    [
+        Action(
+            id=CommandId.TOGGLE_VIEWER_NDISPLAY,
+            title=CommandId.TOGGLE_VIEWER_NDISPLAY.title,
+            menus=[
+                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 0}
+            ],
+            callback=_ndisplay_toggle,
+            toggled=ToggleRule(get_current=_get_current_ndisplay_is_3D),
+        ),
+        ViewerToggleAction(
+            id=CommandId.VIEWER_TOGGLE_GRID,
+            title=CommandId.VIEWER_TOGGLE_GRID.title,
+            viewer_attribute="grid",
+            sub_attribute="enabled",
+            menus=[
+                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 0},
+            ],
+        ),
+    ],
+)

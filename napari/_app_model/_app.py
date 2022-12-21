@@ -43,7 +43,7 @@ class NapariApplication(Application):
         )
 
         for action in chain(
-            HELP_ACTIONs,
+            HELP_ACTIONS,
             IMAGE_ACTIONS,
             LAYER_ACTIONS,
             POINTS_ACTIONS,
@@ -54,7 +54,7 @@ class NapariApplication(Application):
 
         # re-register with action_manager shim for keybindings
         for keymapprovider, actions in (
-            (ViewerModel, chain(VIEW_ACTIONS, VIEWER_ACTIONS)),
+            (ViewerModel, VIEWER_ACTIONS),
             (Image, IMAGE_ACTIONS),
             # TODO: (Labels, LABELS_ACTIONS),
             (Points, POINTS_ACTIONS),

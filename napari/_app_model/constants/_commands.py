@@ -99,7 +99,7 @@ class CommandId(str, Enum):
     IMAGE_ORIENT_PLANE_NORMAL_ALONG_X = "napari:image:orient_plane_normal_along_x"
     IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION = "napari:image:orient_plane_normal_along_view_direction"
     IMAGE_HOLD_TO_PAN_ZOOM = "napari:image:hold_to_pan_zoom"
-    IMAGE_ACTIVATE_SELECT_MODE = "napari:image:activate_image_select_mode"
+    IMAGE_ACTIVATE_TRANSFORM_MODE = "napari:image:activate_image_transform_mode"
     IMAGE_ACTIVATE_PAN_ZOOM_MODE = "napari:image:activate_image_pan_zoom_mode"
 
     POINTS_HOLD_TO_PAN_ZOOM = "napari:points:hold_to_pan_zoom"

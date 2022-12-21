@@ -49,7 +49,7 @@ IMAGE_ACTIONS = [
         id=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE,
         title=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE.description,
         short_title=CommandId.IMAGE_ACTIVATE_TRANSFORM_MODE.title,
-        callback=_image_actions.activate_image_select_mode,
+        callback=_image_actions.activate_image_transform_mode,
     ),
     Action(
         id=CommandId.IMAGE_ACTIVATE_PAN_ZOOM_MODE,

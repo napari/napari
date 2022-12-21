@@ -48,7 +48,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
 
 
 @Image.bind_key(KeyCode.Space)
-def hold_to_pan_zoom(layer):
+def hold_to_pan_zoom(layer: Image):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
         # on key press
@@ -61,9 +61,9 @@ def hold_to_pan_zoom(layer):
         layer.mode = prev_mode
 
 
-def activate_image_transform_mode(layer):
+def activate_image_transform_mode(layer: Image):
     layer.mode = Mode.TRANSFORM
 
 
-def activate_image_pan_zoom_mode(layer):
+def activate_image_pan_zoom_mode(layer: Image):
     layer.mode = Mode.PAN_ZOOM
