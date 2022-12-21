@@ -43,7 +43,7 @@ def fail_obj_graph(Klass):
 
     try:
         import objgraph
-    except ImportError:
+    except ModuleNotFoundError:
         return
 
     if not len(Klass._instances) == 0:
