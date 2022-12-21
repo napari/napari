@@ -37,6 +37,9 @@ class _AsyncSliceable(Protocol[_SliceResponse]):
     def _make_slice_request(self, dims: Dims) -> _SliceRequest[_SliceResponse]:
         ...
 
+    def _update_slice_response(self, response: _SliceResponse) -> None:
+        ...
+
 
 class _LayerSlicer:
     """
@@ -83,7 +86,7 @@ class _LayerSlicer:
         >>> layer_slicer = _LayerSlicer()
         >>> layer = Image(...)  # an async-ready layer
         >>> with layer_slice.force_sync():
-        >>>     layer_slicer.slice_layers_async(layers=[layer], dims=Dims())
+        >>>     layer_slicer.submit(layers=[layer], dims=Dims())
         """
         prev = self._force_sync
         self._force_sync = True
@@ -114,27 +117,35 @@ class _LayerSlicer:
                 f'Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).'
             )
 
-    def slice_layers_async(
-        self, layers: Iterable[Layer], dims: Dims
-    ) -> Future[dict]:
-        """This should only be called from the main thread.
+    def submit(
+        self, *, layers: Iterable[Layer], dims: Dims
+    ) -> Optional[Future[dict]]:
+        """Slices the given layers with the given dims.
 
-        Creates a new task and adds it to the _layers_to_task dict. Cancels
-        all tasks currently pending for that layer tuple.
+        Submitting multiple layers at one generates multiple requests, but only ONE task.
 
-        Submitting multiple layers at one generates multiple requests (stored in a dict),
-        but only ONE task.
-
-        If multiple layers are sliced, any task that contains only one of those
-        layers can safely be cancelled. If a single layer is sliced, it will
-        wait for any existing tasks that include that layer AND another layer,
+        This will attempt to cancel all pending slicing tasks that can be entirely
+        replaced the new ones. If multiple layers are sliced, any task that contains
+        only one of those layers can safely be cancelled. If a single layer is sliced,
+        it will wait for any existing tasks that include that layer AND another layer,
         In other words, it will only cancel if the new task will replace the
         slices of all the layers in the pending task.
+
+        This should only be called from the main thread.
+
+        Parameters
+        ----------
+        layers: iterable of layers
+            The layers to slice.
+        dims: Dims
+            The dimensions values associated with the view to be sliced.
+
+        Returns
+        -------
+        future of dict or none
+            A future with a result that maps from a layer to an async layer
+            slice response. Or none if no async slicing tasks were submitted.
         """
-        # Cancel any tasks that are slicing a subset of the layers
-        # being sliced now. This allows us to slice arbitrary sets of
-        # layers with some sensible and not too complex cancellation
-        # policy.
         if existing_task := self._find_existing_task(layers):
             logger.debug('Cancelling task for %s', layers)
             existing_task.cancel()
@@ -151,26 +162,34 @@ class _LayerSlicer:
             else:
                 sync_layers.append(layer)
 
-        # create task for slicing of each request/layer
-        task = self._executor.submit(self._slice_layers, requests)
+        # First maybe submit an async slicing task to start it ASAP.
+        task = None
+        if len(requests) > 0:
+            task = self._executor.submit(self._slice_layers, requests)
+            # Store task before adding done callback to ensure there is always
+            # a task to remove in the done callback.
+            with self._lock_layers_to_task:
+                self._layers_to_task[tuple(requests)] = task
+            task.add_done_callback(self._on_slice_done)
 
-        # submit the sync layers (purposefully placed after async submission)
+        # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
             layer._slice_dims(dims.point, dims.ndisplay, dims.order)
-
-        # store task for cancellation logic
-        # this is purposefully done before adding the done callback to ensure
-        # that the task is added before the done callback can be executed
-        with self._lock_layers_to_task:
-            self._layers_to_task[tuple(requests)] = task
-
-        task.add_done_callback(self._on_slice_done)
 
         return task
 
     def shutdown(self) -> None:
-        """Should be called from the main thread when this is no longer needed."""
-        self._executor.shutdown()
+        """Shuts this down, preventing any new slice tasks from being submitted.
+
+        This should only be called from the main thread.
+        """
+        # Replace with cancel_futures=True in shutdown when we drop support
+        # for Python 3.8
+        with self._lock_layers_to_task:
+            tasks = tuple(self._layers_to_task.values())
+        for task in tasks:
+            task.cancel()
+        self._executor.shutdown(wait=True)
 
     def _slice_layers(self, requests: Dict) -> Dict:
         """
@@ -220,7 +239,7 @@ class _LayerSlicer:
 
     def _find_existing_task(
         self, layers: Iterable[Layer]
-    ) -> Optional[Future[Dict]]:
+    ) -> Optional[Future[dict]]:
         """Find the task associated with a list of layers. Returns the first
         task found for which the layers of the task are a subset of the input
         layers.
