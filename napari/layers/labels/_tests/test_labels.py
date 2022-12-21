@@ -979,15 +979,6 @@ def test_cursor_size_with_negative_scale():
     assert layer.cursor_size > 0
 
 
-def test_switching_display_func_during_slicing():
-    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
-    label_array[0, :, :] = [[0, 1], [2, 3]]
-    layer = Labels(label_array)
-    layer._slice_dims(point=(1, 0, 0))
-    # This test no longer makes sense as we no longer use _all_vals
-    # assert layer._all_vals.size < 1026
-
-
 @pytest.mark.xfail(
     reason="labels are converted to float32 before being mapped"
 )
