@@ -239,7 +239,7 @@ class _LayerSlicer:
 
     def _find_existing_task(
         self, layers: Iterable[Layer]
-    ) -> Optional[Future[dict]]:
+    ) -> Optional[Future[Dict]]:
         """Find the task associated with a list of layers. Returns the first
         task found for which the layers of the task are a subset of the input
         layers.
