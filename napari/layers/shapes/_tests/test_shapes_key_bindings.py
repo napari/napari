@@ -53,7 +53,7 @@ def test_activate_modes():
     assert layer.mode == 'direct'
     key_bindings.activate_select_mode(layer)
     assert layer.mode == 'select'
-    key_bindings.activate_shape_pan_zoom_mode(layer)
+    key_bindings.activate_shapes_pan_zoom_mode(layer)
     assert layer.mode == 'pan_zoom'
     key_bindings.activate_vertex_insert_mode(layer)
     assert layer.mode == 'vertex_insert'
