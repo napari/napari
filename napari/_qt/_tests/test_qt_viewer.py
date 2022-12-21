@@ -677,3 +677,39 @@ def test_create_non_empty_viewer_model(qtbot):
     del viewer
     qtbot.wait(50)
     gc.collect()
+
+
+@skip_local_popups
+@skip_on_win_ci
+def test_label_colors_matching_widget(qtbot, make_napari_viewer):
+    """Make sure the rendered label colors match the QtColorBox widget."""
+    viewer = make_napari_viewer(show=True)
+    np.random.seed(0)
+    data = np.ones((2, 2), dtype=np.uint64)
+    layer = viewer.add_labels(data)
+    layer.opacity = 1.0  # QtColorBox & single layer are blending differently
+
+    test_colors = np.concatenate(
+        (
+            np.arange(1, 10, dtype=np.uint64),
+            np.random.randint(2**20, size=(20), dtype=np.uint64),
+        )
+    )
+
+    for label in test_colors:
+        # Change color & selected color to the same label
+        layer.data = np.full((2, 2), label, dtype=np.uint64)
+        layer.selected_label = label
+
+        qtbot.wait(
+            100
+        )  # wait for .update() to be called on QtColorBox from Qt
+
+        color_box_color = viewer.window._qt_viewer.controls.widgets[
+            layer
+        ].colorBox.color
+        screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
+        shape = np.array(screenshot.shape[:2])
+        middle_pixel = screenshot[tuple(shape // 2)]
+
+        np.testing.assert_equal(color_box_color, middle_pixel)
