@@ -54,8 +54,6 @@ from napari.utils.translations import trans
 InstallerTypes = Literal['pip', 'mamba']
 
 
-DEFAULT_CHANNEL = "conda-forge"
-
 # TODO: add error icon and handle pip install errors
 
 
@@ -992,7 +990,7 @@ class QtPluginDialog(QDialog):
         self.installer = InstallerQueue()
         self.setWindowTitle(trans._('Plugin Manager'))
         self.setup_ui()
-        self.setWindowTitle('napari Plugin Manager')
+        self.setWindowTitle('Plugin Manager')
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
         self.installer.finished.connect(self._on_installer_done)

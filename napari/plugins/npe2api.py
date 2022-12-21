@@ -15,8 +15,6 @@ from napari.plugins.utils import normalized_name
 
 PyPIname = str
 
-DEFAULT_CHANNEL = "conda-forge"
-
 
 @lru_cache
 def _user_agent() -> str:
