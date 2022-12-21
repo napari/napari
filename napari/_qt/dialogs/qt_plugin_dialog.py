@@ -473,7 +473,7 @@ class PluginListItem(QFrame):
             self.action_button.setVisible(False)
         elif (
             action_name == 'uninstall' or action_name == 'install'
-        ) and update is False:
+        ) and not update:
             self.action_button.setVisible(False)
             self.cancel_btn.setVisible(True)
         elif action_name == 'cancel':
