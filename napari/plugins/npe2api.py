@@ -45,7 +45,7 @@ def _user_agent() -> str:
 
 
 class SummaryDict(TypedDict):
-    """Objects returned at https://npe2api-5lai6hg8a-napari.vercel.app/api/extended_summary ."""
+    """Objects returned at https://npe2api.vercel.app/api/extended_summary ."""
 
     name: PyPIname
     version: str
