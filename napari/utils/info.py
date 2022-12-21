@@ -2,6 +2,7 @@ import os
 import platform
 import subprocess
 import sys
+from importlib.metadata import PackageNotFoundError, version
 
 import napari
 
@@ -121,10 +122,9 @@ def sys_info(as_html=False):
     loaded = {}
     for module, name in modules:
         try:
-            loaded[module] = __import__(module)
-            text += f"<b>{name}</b>: {loaded[module].__version__}<br>"
-        except Exception as e:
-            text += f"<b>{name}</b>: Import failed ({e})<br>"
+            text += f"<b>{name}</b>: {version(module)}<br>"
+        except PackageNotFoundError as e:
+            text += f"<b>{name}</b>: version detect failed failed ({e})<br>"
 
     text += "<br><b>OpenGL:</b><br>"
 
