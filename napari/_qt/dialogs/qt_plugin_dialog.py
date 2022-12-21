@@ -468,7 +468,7 @@ class PluginListItem(QFrame):
 
         """
         self.item_status.setText(text)
-        if action_name == 'install' and update is True:
+        if action_name == 'install' and update:
             self.cancel_btn.setVisible(True)
             self.action_button.setVisible(False)
         elif (
