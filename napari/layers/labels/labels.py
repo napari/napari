@@ -25,11 +25,7 @@ from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils import config
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import (
-    color_dict_to_colormap,
-    label_colormap,
-    low_discrepancy_image,
-)
+from napari.utils.colormaps import label_colormap, low_discrepancy_image
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
@@ -630,13 +626,43 @@ class Labels(_ImageBase):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            custom_colormap, label_color_index = color_dict_to_colormap(
-                self.color
+            none_color = self.color.pop(None, [0.0, 0.0, 0.0, 0.0])
+            # np.fromiter is >2x faster than np.array(list(iter))...
+            dict_values = np.fromiter(
+                self.color.keys(), dtype=np.float32, count=len(self.color)
             )
-            super()._set_colormap(custom_colormap)
-            self._label_color_index = label_color_index
+            # ... but np.fromiter only works for 1D arrays
+            dict_colors = np.array(list(self.color.values()))
+            img_values = np.unique(self._data_view)  # use only current slice
+            missing_values = np.setdiff1d(
+                img_values, dict_values, assume_unique=True
+            )
+            values = np.concatenate([dict_values, missing_values])
+            colors = np.concatenate(
+                [
+                    dict_colors,
+                    np.repeat([none_color], len(missing_values), axis=0),
+                ],
+                axis=0,
+            )
+            float_values = low_discrepancy_image(values, seed=self.seed)
+            in_order_indices = np.argsort(float_values)
+            sorted_float_values = float_values[in_order_indices]
+            sorted_colors = colors[in_order_indices]
+            self._saved_colors = self.colormap.colors
+            self._saved_controls = self.colormap.controls
+            self.colormap.colors = sorted_colors
+            self.colormap.controls = np.concatenate(
+                [
+                    [sorted_float_values[0] / 2],
+                    (sorted_float_values[1:] + sorted_float_values[:-1]) / 2,
+                    [1],
+                ]
+            )
         elif color_mode == LabelColorMode.AUTO:
-            self._label_color_index = {}
+            if hasattr(self, '_saved_colors'):
+                self.colormap.colors = self._saved_colors
+                self.colormap.controls = self._saved_controls
             super()._set_colormap(self._random_colormap)
 
         else:
@@ -819,15 +845,7 @@ class Labels(_ImageBase):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            u, inv = np.unique(raw_modified, return_inverse=True)
-            image = np.array(
-                [
-                    self._label_color_index[x]
-                    if x in self._label_color_index
-                    else self._label_color_index[None]
-                    for x in u
-                ]
-            )[inv].reshape(raw_modified.shape)
+            image = self._as_type(raw_modified)
         elif self._color_mode == LabelColorMode.AUTO:
             # TODO: Trigger _selected_label mode in shader
             # TODO: Check not self.show_selected_label?
