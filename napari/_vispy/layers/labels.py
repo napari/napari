@@ -153,7 +153,7 @@ class LabelLayerNode(ImageLayerNode):
 
         self._volume_node = VolumeNode(
             np.zeros((1, 1, 1), dtype=np.float32),
-            clim=[0, 1],
+            clim=[0, 2**23 - 1],
             texture_format=texture_format,
         )
 

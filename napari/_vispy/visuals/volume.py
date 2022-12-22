@@ -115,8 +115,6 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
-        float phi_mod = 0.6180339887498948482;  // phi - 1
-        float value = 0.0;
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
@@ -129,7 +127,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $get_data(iloc);
-                color = applyColormap(color.g);
+                color = low_disc_plus_cmap(color.r);
                 if (floatNotEqual(color.a, 0) ) {
                     // when the value mapped to non-transparent color is reached
                     // calculate the color (apply lighting effects)
