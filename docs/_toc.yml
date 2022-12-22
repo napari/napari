@@ -110,6 +110,7 @@ subtrees:
               - file: naps/3-spaces
               - file: naps/4-async-slicing
               - file: naps/5-new-logo
+              - file: naps/6-contributable-menus
           - file: developers/documentation/index
             subtrees:
             - entries:
