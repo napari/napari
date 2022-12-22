@@ -394,6 +394,7 @@ class Labels(_ImageBase):
         self._seed = seed
         self.colormap.seed = seed
         self._selected_color = self.get_color(self.selected_label)
+        self.events.colormap()  # Will update the LabelVispyColormap shader
         self.refresh()
         self.events.selected_label()
 
