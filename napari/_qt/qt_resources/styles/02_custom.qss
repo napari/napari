@@ -819,3 +819,18 @@ QtLayerList::indicator:checked {
   min-height: 36px;
   min-width: 36px;
 }
+
+/* --------------- Menus (application and context menus) ---------------- */
+
+QModelMenu::separator {
+	height: 1 px;
+	background: {{ opacity(text, 90) }};
+	margin-left: 17 px;
+	margin-right: 6 px;
+	margin-top: 5 px;
+	margin-bottom: 3 px;
+}
+
+QModelMenu {
+	padding: 6 px;
+}

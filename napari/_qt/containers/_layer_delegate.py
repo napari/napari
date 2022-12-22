@@ -193,7 +193,9 @@ class LayerDelegate(QStyledItemDelegate):
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
         if not hasattr(self, '_context_menu'):
-            self._context_menu = build_qmodel_menu(MenuId.LAYERLIST_CONTEXT)
+            self._context_menu = build_qmodel_menu(
+                MenuId.LAYERLIST_CONTEXT, parent=parent
+            )
 
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(get_context(layer_list))
