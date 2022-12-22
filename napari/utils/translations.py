@@ -51,7 +51,7 @@ def _get_display_name(
         )
         loc = babel.Locale.parse(locale)
         dislay_name = loc.get_display_name(display_locale).capitalize()
-    except ImportError:
+    except ModuleNotFoundError:
         dislay_name = display_locale.capitalize()
 
     return dislay_name
@@ -88,7 +88,7 @@ def _is_valid_locale(locale: str) -> bool:
 
         babel.Locale.parse(locale)
         valid = True
-    except ImportError:
+    except ModuleNotFoundError:
         valid = True
     except ValueError:
         pass
