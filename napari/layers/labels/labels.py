@@ -626,6 +626,8 @@ class Labels(_ImageBase):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
+            # we remove the none color to avoid issues when converting keys to
+            # float; will add back at the end of this sequence
             none_color = self.color.pop(None, [0.0, 0.0, 0.0, 0.0])
             # np.fromiter is >2x faster than np.array(list(iter))...
             dict_values = np.fromiter(
@@ -659,6 +661,8 @@ class Labels(_ImageBase):
                     [1],
                 ]
             )
+            # re-add none color:
+            self.color[None] = none_color
         elif color_mode == LabelColorMode.AUTO:
             if hasattr(self, '_saved_colors'):
                 self.colormap.colors = self._saved_colors
