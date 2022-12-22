@@ -31,13 +31,11 @@ class InteractionBox(Compound):
         self._marker_color = (1, 1, 1, 1)
         self._marker_size = 10
         self._highlight_width = 2
-        # TODO: change to array (square + circle for handle) after #5312
-        self._marker_symbol = 'square'
+        # squares for corners, diamonds for midpoints, disc for rotation handle
+        self._marker_symbol = ['square'] * 4 + ['diamond'] * 4 + ['disc']
         self._edge_color = (0, 0, 1, 1)
 
         super().__init__([Line(), Markers(antialias=0)], *args, **kwargs)
-        # TODO: vispy 0.12 will allow to set different symbols per marker
-        self.markers.symbol = self._marker_symbol
 
     @property
     def line(self):
@@ -65,7 +63,7 @@ class InteractionBox(Compound):
                 pos=vertices,
                 size=self._marker_size,
                 face_color=self._marker_color,
-                # symbol=self._marker_symbol,
+                symbol=self._marker_symbol,
                 edge_width=marker_edges,
                 edge_color=self._edge_color,
             )
