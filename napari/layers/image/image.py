@@ -81,8 +81,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     gamma : float
         Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported
-        modes.
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
@@ -188,10 +191,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     gamma : float
         Gamma correction for determining colormap linearity.
     interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported
-        modes. 'custom' is a special value which uses 'linear' interpolation
-        to sample the texture with a custom convoution kernel (provided with
-        'custom_interpolation_kernel_2d') around the pixel.
+        Interpolation mode used by vispy. Must be one of our supported modes.
+        'custom' is a special mode for 2D interpolation in which a regular grid
+        of samples are taken from the texture around a position using 'linear'
+        interpolation before being multiplied with a custom interpolation kernel
+        (provided with 'custom_interpolation_kernel_2d').
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
