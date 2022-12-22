@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QPoint, QSize, Qt, QTimer, Signal
+from qtpy.QtCore import QPoint, QSize, Qt, Signal
 from qtpy.QtGui import QMovie, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
@@ -124,6 +124,10 @@ class LayerDelegate(QStyledItemDelegate):
         option.decorationPosition = option.Right  # put icon on the right
         option.features |= option.HasDecoration
 
+    def timerEvent(self, event):
+        self._check_loaded()
+        self.killTimer(event.timerId())
+
     def _check_loaded(self):
         """
         Check loading state of the layer and pause loading movie if necessary.
@@ -151,7 +155,7 @@ class LayerDelegate(QStyledItemDelegate):
             # prevent blinking from the loading indicator
             # when pausing the movie.
             self.layer_index = index
-            QTimer.singleShot(100, self._check_loaded)
+            self.startTimer(100)
         elif not loaded:
             self.load_movie.start()
 
