@@ -853,6 +853,45 @@ class Labels(_ImageBase):
             raise ValueError("Unsupported Color Mode")
         return image
 
+    def _update_thumbnail(self):
+        """Update the thumbnail with current data and colormap.
+
+        This is overridden from _ImageBase because we don't need to do things
+        like adjusting gamma or changing the data based on the contrast
+        limits.
+        """
+        if not self.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
+            return
+
+        image = self._slice.thumbnail.view
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
+            # we are only using the current slice so `image` will never be
+            # bigger than 3. If we are in this clause, it is exactly 3, so we
+            # use max projection. For labels, ideally we would use "first
+            # nonzero projection", but we leave that for a future PR. (TODO)
+            image = np.max(image, axis=0)
+        imshape = np.array(image.shape[:2])
+        thumbshape = np.array(self._thumbnail_shape[:2])
+
+        raw_zoom_factor = np.min(thumbshape / imshape)
+        new_shape = np.clip(
+            raw_zoom_factor * imshape, a_min=1, a_max=thumbshape
+        )
+        zoom_factor = tuple(new_shape / imshape)
+
+        # warning filter can be removed with SciPy 1.4
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            downsampled = ndi.zoom(
+                image, zoom_factor, prefilter=False, order=0
+            )
+        color_array = self.colormap.map(downsampled.ravel())
+        colormapped = color_array.reshape(downsampled.shape + (4,))
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = colormapped
+
     def new_colormap(self):
         self.seed = np.random.rand()
 
