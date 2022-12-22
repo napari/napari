@@ -13,34 +13,37 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from ...utils._dask_utils import configure_dask
-from ...utils._magicgui import (
-    add_layer_to_viewer,
-    add_layers_to_viewer,
-    get_layers,
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils.interactivity_utils import (
+    drag_data_to_projected_distance,
 )
-from ...utils.events import EmitterGroup, Event
-from ...utils.events.event import WarningEmitter
-from ...utils.geometry import (
-    find_front_back_face,
-    intersect_line_with_axis_aligned_bounding_box_3d,
-)
-from ...utils.key_bindings import KeymapProvider
-from ...utils.mouse_bindings import MousemapProvider
-from ...utils.naming import magic_name
-from ...utils.status_messages import generate_layer_coords_status
-from ...utils.transforms import Affine, CompositeAffine, TransformChain
-from ...utils.translations import trans
-from ..utils.interactivity_utils import drag_data_to_projected_distance
-from ..utils.layer_utils import (
+from napari.layers.utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
     get_extent_world,
 )
-from ..utils.plane import ClippingPlane, ClippingPlaneList
-from ._base_constants import Blending
+from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+from napari.utils._dask_utils import configure_dask
+from napari.utils._magicgui import (
+    add_layer_to_viewer,
+    add_layers_to_viewer,
+    get_layers,
+)
+from napari.utils.events import EmitterGroup, Event
+from napari.utils.events.event import WarningEmitter
+from napari.utils.geometry import (
+    find_front_back_face,
+    intersect_line_with_axis_aligned_bounding_box_3d,
+)
+from napari.utils.key_bindings import KeymapProvider
+from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.naming import magic_name
+from napari.utils.status_messages import generate_layer_coords_status
+from napari.utils.transforms import Affine, CompositeAffine, TransformChain
+from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -237,11 +240,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if scale is not None and not np.all(scale):
             raise ValueError(
-                f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
+                trans._(
+                    "Layer {name} is invalid because it has scale values of 0. The layer's scale is currently {scale}",
+                    deferred=True,
+                    name=repr(name),
+                    scale=repr(scale),
+                )
             )
 
         # Needs to be imported here to avoid circular import in _source
-        from .._source import current_source
+        from napari.layers._source import current_source
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -261,8 +269,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
-        self._ndisplay = 2
-        self._dims_order = list(range(ndim))
+
+        self._slice_input = _SliceInput(
+            ndisplay=2,
+            point=(0,) * ndim,
+            order=tuple(range(ndim)),
+        )
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -299,7 +311,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ]
         )
 
-        self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
         self._array_like = False
@@ -332,6 +343,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            extent=Event,
             _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
@@ -540,7 +552,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._update_dims()
+        self._clear_extent()
         self.events.scale()
 
     @property
@@ -551,7 +563,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._update_dims()
+        self._clear_extent()
         self.events.translate()
 
     @property
@@ -562,7 +574,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._update_dims()
+        self._clear_extent()
         self.events.rotate()
 
     @property
@@ -573,7 +585,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._update_dims()
+        self._clear_extent()
         self.events.shear()
 
     @property
@@ -589,7 +601,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._update_dims()
+        self._clear_extent()
         self.events.affine()
 
     @property
@@ -637,67 +649,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    @property
-    def _dims_displayed(self):
-        """To be removed displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        return self._dims_order[-self._ndisplay :]
-
-    @property
-    def _dims_not_displayed(self):
-        """To be removed not displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        return self._dims_order[: -self._ndisplay]
-
-    @property
-    def _dims_displayed_order(self):
-        """To be removed order of displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        displayed = self._dims_displayed
-        # equivalent to: order = np.argsort(displayed)
-        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
-
-    def _update_dims(self, event=None):
-        """Update the dims model and clear the extent cache.
-
-        This function needs to be called whenever data or transform information
-        changes, and should be called before events get emitted.
-        """
-        from ...components.dims import reorder_after_dim_reduction
-
+    def _update_dims(self):
+        """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
-            self._dims_point = self._dims_point[-ndim:]
-            self._dims_order = list(
-                reorder_after_dim_reduction(self._dims_order[-ndim:])
-            )
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
-            self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
-            self._dims_order = list(range(ndim - old_ndim)) + [
-                o + ndim - old_ndim for o in self._dims_order
-            ]
+
+        self._slice_input = self._slice_input.with_ndim(ndim)
 
         self._ndim = ndim
-        if 'extent' in self.__dict__:
-            del self.extent
 
-        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
+        self._clear_extent()
 
     @property
     @abstractmethod
@@ -748,53 +716,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             step=abs(data_to_world.scale),
         )
 
+    def _clear_extent(self):
+        """Clears the cached extent.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any related events get emitted
+        so that they use the updated extent values.
+        """
+        if 'extent' in self.__dict__:
+            del self.extent
+        self.events.extent()
+        self.refresh()
+
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-
-        if len(self._dims_not_displayed) == 0:
-            # all dims are displayed dimensions
+        if len(self._slice_input.not_displayed) == 0:
+            # All dims are displayed dimensions
             return (slice(None),) * self.ndim
-
-        if self.ndim > self._ndisplay:
-            inv_transform = self._data_to_world.inverse
-            # Subspace spanned by non displayed dimensions
-            non_displayed_subspace = np.zeros(self.ndim)
-            for d in self._dims_not_displayed:
-                non_displayed_subspace[d] = 1
-            # Map subspace through inverse transform, ignoring translation
-            _inv_transform = Affine(
-                ndim=self.ndim,
-                linear_matrix=inv_transform.linear_matrix,
-                translate=None,
-            )
-            mapped_nd_subspace = _inv_transform(non_displayed_subspace)
-            # Look at displayed subspace
-            displayed_mapped_subspace = (
-                mapped_nd_subspace[d] for d in self._dims_displayed
-            )
-            # Check that displayed subspace is null
-            if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
-                warnings.warn(
-                    trans._(
-                        'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
-                )
-
-        slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
-        world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
-        data_pts = slice_inv_transform(world_pts)
-        if getattr(self, "_round_index", True):
-            # A round is taken to convert these values to slicing integers
-            data_pts = np.round(data_pts).astype(int)
-
-        indices = [slice(None)] * self.ndim
-        for i, ax in enumerate(self._dims_not_displayed):
-            indices[ax] = data_pts[i]
-
-        return tuple(indices)
+        return self._slice_input.data_indices(
+            self._data_to_world.inverse,
+            getattr(self, '_round_index', True),
+        )
 
     @abstractmethod
     def _get_ndim(self):
@@ -972,48 +915,45 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
         """
-        if point is None:
-            ndim = self.ndim
-        else:
-            ndim = len(point)
+        slice_input = self._make_slice_input(point, ndisplay, order)
 
-        if order is None:
-            order = list(range(ndim))
-
-        # adjust the order of the global dims based on the number of
-        # dimensions that a layer has - for example a global order of
-        # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
-        # or -> [1, 0, 2] for a layer with three as that corresponds to
-        # the relative order of the last two and three dimensions
-        # respectively
-        order = self._world_to_data_dims_displayed(order, ndim_world=ndim)
-
-        if point is None:
-            point = [0] * ndim
-            nd = min(self.ndim, ndisplay)
-            for i in order[-nd:]:
-                point[i] = slice(None)
-        else:
-            point = list(point)
-
-        # If no slide data has changed, then do nothing
-        offset = ndim - self.ndim
-        if (
-            np.all(order == self._dims_order)
-            and ndisplay == self._ndisplay
-            and np.all(point[offset:] == self._dims_point)
-        ):
+        if self._slice_input == slice_input:
             return
 
-        self._dims_order = order
-        if self._ndisplay != ndisplay:
-            self._ndisplay = ndisplay
+        old_ndisplay = self._slice_input.ndisplay
+        self._slice_input = slice_input
+
+        if old_ndisplay != ndisplay:
             self.events._ndisplay()
 
-        # Update the point values
-        self._dims_point = point[offset:]
-        self._update_dims()
+        self.refresh()
         self._set_editable()
+
+    def _make_slice_input(
+        self, point=None, ndisplay=2, order=None
+    ) -> _SliceInput:
+        if point is None:
+            point = (0,) * self.ndim
+        else:
+            point = tuple(point)
+
+        ndim = len(point)
+
+        if order is None:
+            order = tuple(range(ndim))
+
+        # Correspondence between dimensions across all layers and
+        # dimensions of this layer.
+        point = point[-self.ndim :]
+        order = tuple(
+            self._world_to_layer_dims(world_dims=order, ndim_world=ndim)
+        )
+
+        return _SliceInput(
+            ndisplay=ndisplay,
+            point=point,
+            order=order,
+        )
 
     @abstractmethod
     def _update_thumbnail(self):
@@ -1202,7 +1142,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
+            self.events.set_data()
             self._update_thumbnail()
             self._set_highlight(force=True)
 
@@ -1326,38 +1266,41 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
 
-    def _world_to_data_dims_displayed(
-        self, dims_displayed: List[int], ndim_world: int
+    def _world_to_layer_dims(
+        self, *, world_dims: List[int], ndim_world: int
     ) -> List[int]:
-        """Convert indices of displayed dims from world to data coordinates.
+        """Map world dimensions to layer dimensions while maintaining order.
 
-        This accounts for differences in dimensionality between the world
-        and the data coordinates. For example a world dims order of
-        [2, 1, 0, 3] would be [0, 1] for a layer that only has two dimensions
-        or [1, 0, 2] for a layer with three as that corresponds to the
-        relative order of the last two and three dimensions respectively
+        This is used to map dimensions from the full world space defined by ``Dims``
+        to the subspace that a layer inhabits, so that those can be used to index the
+        layer's data and associated coordinates.
+
+        For example a world ``Dims.order`` of [2, 1, 0, 3] would map to [0, 1] for a
+        layer with two dimensions and [1, 0, 2] for a layer with three dimensions
+        as those correspond to the relative order of the last two and three world dimensions
+        respectively.
 
         Parameters
         ----------
-        dims_displayed : List[int]
-            The world displayed dimensions.
+        world_dims : List[int]
+            The world dimensions.
         ndim_world : int
             The number of dimensions in the world coordinate system.
 
         Returns
         -------
-        dims_displayed_data : List[int]
-            The displayed dimensions in data coordinates.
+        List[int]
+            The corresponding layer dimensions with the same ordering as the given world dimensions.
         """
         offset = ndim_world - self.ndim
-        order = np.array(dims_displayed)
+        order = np.array(world_dims)
         if offset <= 0:
             return list(range(-offset)) + list(order - offset)
         else:
             return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
-        """An axis aligned (self._ndisplay, 2) bounding box around the data"""
+        """An axis aligned (ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed].T
 
     def click_plane_from_click_data(
@@ -1533,20 +1476,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return start_point, end_point
 
-    @property
-    def _displayed_axes(self):
-        # assignment upfront to avoid repeated computation of properties
-        _dims_displayed = self._dims_displayed
-        _dims_displayed_order = self._dims_displayed_order
-        displayed_axes = [_dims_displayed[i] for i in _dims_displayed_order]
-        return displayed_axes
-
-    @property
-    def _corner_pixels_displayed(self):
-        displayed_axes = self._displayed_axes
-        corner_pixels_displayed = self.corner_pixels[:, displayed_axes]
-        return corner_pixels_displayed
-
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
@@ -1567,11 +1496,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         self.scale_factor = scale_factor
 
-        displayed_axes = self._displayed_axes
-        # must adjust displayed_axes according to _dims_order
-        displayed_axes = np.asarray(
-            [self._dims_order[d] for d in displayed_axes]
-        )
+        displayed_axes = self._slice_input.displayed
+
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not
         # remain top-left and bottom-right after transformations.
@@ -1592,7 +1518,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
 
-        if self._ndisplay == 2 and self.multiscale:
+        if self._slice_input.ndisplay == 2 and self.multiscale:
             level, scaled_corners = compute_multiscale_level_and_corners(
                 data_bbox_int,
                 shape_threshold,
@@ -1619,12 +1545,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
-            displayed_extent = self.extent.data[:, displayed_axes]
-            data_bbox_clipped = np.clip(
-                data_bbox_int, displayed_extent[0], displayed_extent[1]
-            )
             corners = np.zeros((2, self.ndim), dtype=int)
-            corners[:, displayed_axes] = data_bbox_clipped
+            # Some empty layers (e.g. Points) may have a data extent that only
+            # contains nans, in which case the integer valued corner pixels
+            # cannot be meaningfully set.
+            displayed_extent = self.extent.data[:, displayed_axes]
+            if not np.all(np.isnan(displayed_extent)):
+                data_bbox_clipped = np.clip(
+                    data_bbox_int, displayed_extent[0], displayed_extent[1]
+                )
+                corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
     def _get_source_info(self):
@@ -1717,7 +1647,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         source_info = self._get_source_info()
         source_info['coordinates'] = generate_layer_coords_status(
-            position, value
+            position[-self.ndim :], value
         )
         return source_info
 
@@ -1772,7 +1702,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         list of str
             File paths of any files that were written.
         """
-        from ...plugins.io import save_layers
+        from napari.plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
 
@@ -1832,8 +1762,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         >>> Layer.create(*data)
 
         """
-        from ... import layers
-        from ..image._image_utils import guess_labels
+        from napari import layers
+        from napari.layers.image._image_utils import guess_labels
 
         layer_type = (layer_type or '').lower()
 

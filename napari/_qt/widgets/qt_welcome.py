@@ -12,9 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 
 class QtWelcomeLabel(QLabel):

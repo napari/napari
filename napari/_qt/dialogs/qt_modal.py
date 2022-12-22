@@ -2,7 +2,7 @@ from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtPopup(QDialog):

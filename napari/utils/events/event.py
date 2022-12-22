@@ -70,7 +70,7 @@ from typing import (
 
 from vispy.util.logs import _handle_exception
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 class Event:
@@ -763,7 +763,9 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             self._emitting = False
-            if event._pop_source() != self.source:
+            ps = event._pop_source()
+            if ps is not self.source:
+
                 raise RuntimeError(
                     trans._(
                         "Event source-stack mismatch.",
@@ -1235,7 +1237,7 @@ _log_event_stack = _noop
 def set_event_tracing_enabled(enabled=True, cfg=None):
     global _log_event_stack
     if enabled:
-        from .debugging import log_event_stack
+        from napari.utils.events.debugging import log_event_stack
 
         if cfg is not None:
             _log_event_stack = partial(log_event_stack, cfg=cfg)

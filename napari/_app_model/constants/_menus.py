@@ -17,6 +17,12 @@ from enum import Enum
 class MenuId(str, Enum):
     """Id representing a menu somewhere in napari."""
 
+    MENUBAR_VIEW = 'napari/view'
+    VIEW_AXES = 'napari/view/axes'
+    VIEW_SCALEBAR = 'napari/view/scalebar'
+
+    MENUBAR_HELP = 'napari/help'
+
     LAYERLIST_CONTEXT = 'napari/layers/context'
     LAYERS_CONVERT_DTYPE = 'napari/layers/convert_dtype'
     LAYERS_PROJECT = 'napari/layers/project'
@@ -28,6 +34,7 @@ class MenuId(str, Enum):
 # XXX: the structure/usage pattern of this class may change in the future
 class MenuGroup:
     NAVIGATION = 'navigation'  # always the first group in any menu
+    RENDER = '1_render'
 
     class LAYERLIST_CONTEXT:
         CONVERSION = '1_conversion'

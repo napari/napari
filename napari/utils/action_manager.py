@@ -7,14 +7,15 @@ from functools import cached_property
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-from ..utils.events import EmitterGroup
-from .interactions import Shortcut
-from .translations import trans
+from napari.utils.events import EmitterGroup
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
     from typing import Protocol
 
-    from .key_bindings import KeymapProvider
+    from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
         def connect(self, callback: Callable) -> None:
@@ -40,14 +41,14 @@ class Action:
     repeatable: bool = False
 
     @cached_property
-    def injected(self) -> Callable:
+    def injected(self) -> Callable[..., Future]:
         """command with napari objects injected.
 
         This will inject things like the current viewer, or currently selected
         layer into the commands.  See :func:`inject_napari_dependencies` for
         details.
         """
-        from .._app_model import get_app
+        from napari._app_model import get_app
 
         return get_app().injection_store.inject(self.command)
 
@@ -218,7 +219,10 @@ class ActionManager:
         if action := self._actions.get(name):
             if isgeneratorfunction(action):
                 raise ValueError(
-                    'bind_button cannot be used with generator functions'
+                    trans._(
+                        '`bind_button` cannot be used with generator functions',
+                        deferred=True,
+                    )
                 )
 
         button.clicked.connect(lambda: self.trigger(name))
@@ -347,25 +351,25 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_layer_actions(self, layer) -> dict:
+    def _get_provider_actions(self, provider) -> dict:
         """
-        Get actions filtered by the given layer.
+        Get actions filtered by the given provider.
 
         Parameters
         ----------
-        layer : Layer
-            Layer to use for actions filtering.
+        provider : KeymapProvider
+            Provider to use for actions filtering.
 
         Returns
         -------
-        layer_actions: dict
-            Dictionary of names of actions with action values for a layer.
+        provider_actions: dict
+            Dictionary of names of actions with action values for a provider.
 
         """
         return {
             name: action
             for name, action in self._actions.items()
-            if action and layer == action.keymapprovider
+            if action and provider == action.keymapprovider
         }
 
     def _get_active_shortcuts(self, active_keymap):

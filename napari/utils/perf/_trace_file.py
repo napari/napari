@@ -4,7 +4,7 @@ import json
 from time import perf_counter_ns
 from typing import List
 
-from ._event import PerfEvent
+from napari.utils.perf._event import PerfEvent
 
 
 class PerfTraceFile:

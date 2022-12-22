@@ -20,9 +20,8 @@ from napari.plugins.utils import (
     get_filename_patterns_for_reader,
     get_potential_readers,
 )
-
-from ...settings import get_settings
-from ...utils.translations import trans
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 
 class Extension2ReaderTable(QWidget):
@@ -120,7 +119,7 @@ class Extension2ReaderTable(QWidget):
         ):
             self._add_reader_choice(i, plugin_name, display_name)
 
-        add_btn = QPushButton('Add')
+        add_btn = QPushButton(trans._('Add'))
         add_btn.setToolTip(trans._('Save reader preference for pattern'))
         add_btn.clicked.connect(self._save_new_preference)
 
