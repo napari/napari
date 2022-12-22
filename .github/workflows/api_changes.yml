@@ -72,19 +72,19 @@ jobs:
 
       - name: Upload changes
         uses: actions/upload-artifact@v3
-        if: $CHANGES_FOUND == 'true'
+        if: ${{ env.CHANGES_FOUND == 'true' && github.event_name == 'pull_request' }}
         with:
           name: api_changes.log
           path: api_changes.log
 
       - name: Comment PR
-        if: ${{ CHANGES_FOUND == 'true' && github.event_name == 'pull_request' }}
+        if: ${{ env.CHANGES_FOUND == 'true' && github.event_name == 'pull_request' }}
         uses: thollander/actions-comment-pull-request@v2
         with:
           filePath: api_changes.log
 
       - name: Add label to PR
-        if: ${{ CHANGES_FOUND == 'true' && github.event_name == 'pull_request' }}
+        if: ${{ env.CHANGES_FOUND == 'true' && github.event_name == 'pull_request' }}
         uses: actions/github-script@v6
         with:
           script: |
