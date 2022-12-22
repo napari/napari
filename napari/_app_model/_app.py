@@ -2,16 +2,26 @@ from __future__ import annotations
 
 from functools import lru_cache
 from itertools import chain
-from typing import Dict
+from typing import Callable, Dict, Set
 
 from app_model import Application
+from app_model.types import Action
 
 from napari._app_model._submenus import SUBMENUS
+from napari._app_model.actions import GeneratorCallback, RepeatableAction
 from napari._app_model.actions._help_actions import HELP_ACTIONS
+from napari._app_model.actions._image_actions import IMAGE_ACTIONS
+from napari._app_model.actions._labels_actions import LABELS_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
+from napari._app_model.actions._points_actions import POINTS_ACTIONS
+from napari._app_model.actions._shapes_actions import SHAPES_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
+from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
+from napari.components.viewer_model import ViewerModel
+from napari.layers import Image, Labels, Points, Shapes
+from napari.utils.action_manager import action_manager
 from napari.utils.key_bindings import _bind_plugin_key
 
 APP_NAME = 'napari'
@@ -55,21 +65,124 @@ class NapariApplication(Application):
         # adopt asynchronous command execution.
         super().__init__(app_name, raise_synchronous_exceptions=True)
 
+        self._repeatable_actions: Set[str] = set()
+
         self.injection_store.namespace = _napari_names  # type: ignore [assignment]
         self.injection_store.register(
             providers=PROVIDERS, processors=PROCESSORS
         )
 
-        for action in chain(HELP_ACTIONS, LAYER_ACTIONS, VIEW_ACTIONS):
+        for action in chain(
+            HELP_ACTIONS,
+            IMAGE_ACTIONS,
+            LABELS_ACTIONS,
+            LAYER_ACTIONS,
+            POINTS_ACTIONS,
+            SHAPES_ACTIONS,
+            VIEW_ACTIONS,
+            VIEWER_ACTIONS,
+        ):
             self.register_action(action)
+
+        # re-register with action_manager shim for keybindings
+        for keymapprovider, actions in (
+            (ViewerModel, VIEWER_ACTIONS),
+            (Image, IMAGE_ACTIONS),
+            (Labels, LABELS_ACTIONS),
+            (Points, POINTS_ACTIONS),
+            (Shapes, SHAPES_ACTIONS),
+        ):
+            for action in actions:
+                self._register_action_manager_shim(action, keymapprovider)
 
         self.menus.append_menu_items(SUBMENUS)
 
         self.keybindings.registered.connect(populate_plugin_keymap)
 
+    def _register_action_manager_shim(self, action: Action, keymapprovider):
+        """Shim from app-model Action to action_manager for keybinding"""
+        # TODO: remove this once keybind handling is ported to app-model
+        # this is a hack because action_manager actions can only be
+        # "prefix:suffix", while app-model supports extra levels of nesting
+        # e.g.
+        #     app-model allows "napari:viewer:toggle_theme"
+        #     action_manager wants "napari:toggle_theme"
+        # so this hack works if we keep the prefix and suffix the same when
+        # porting to app-model
+        prefix, *group, command = action.id.split(":")
+
+        if isinstance(action.callback, GeneratorCallback):
+
+            def _callback(*args, **kwargs):
+                self.get_app().commands.execute_command(action.id).result()
+                yield
+                self.get_app().commands.execute_command(action.id).result()
+
+        else:
+
+            def _callback(*args, **kwargs):
+                return (
+                    self.get_app().commands.execute_command(action.id).result()
+                )
+
+        _callback.__name__ = command
+
+        action_manager.register_action(
+            name=f"{prefix}:{command}",
+            command=_callback,
+            description=action.title,
+            keymapprovider=keymapprovider,
+            repeatable=isinstance(action, RepeatableAction),
+        )
+
     @classmethod
     def get_app(cls) -> NapariApplication:
         return Application.get_app(APP_NAME) or cls()
+
+    def register_action(self, action: Action) -> Callable[[], None]:
+        dispose = super().register_action(action)
+        if isinstance(action, RepeatableAction) and action.repeatable:
+            self.set_action_repeatable(action.id, True)
+
+            def _dispose():
+                dispose()
+                self._repeatable_actions.remove(action.id)
+
+            return _dispose
+        return dispose
+
+    def set_action_repeatable(self, action_id: str, repeatable: bool):
+        """Registers an action as repeatable or not.
+
+        Parameters
+        ----------
+        action_id : str
+            Unique identifier of the action.
+        repeatable : bool
+            Whether or not to set the action as repeatable.
+        """
+        if action_id not in self.commands:
+            raise ValueError(f'Command {id!r} not registered')
+
+        if repeatable:
+            self._repeatable_actions.add(action_id)
+        elif self.action_is_repeatable(action_id):
+            self._repeatable_actions.remove(action_id)
+
+    def action_is_repeatable(self, action_id: str) -> bool:
+        """Determines if an action is repeatable.
+
+        Parameters
+        ----------
+        action_id : str
+            Unique identifier of the action.
+
+        Returns
+        -------
+        bool
+            Whether the action is repeatable or not.
+        """
+        return action_id in self._repeatable_actions
 
 
 @lru_cache(maxsize=1)

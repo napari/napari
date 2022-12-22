@@ -3,6 +3,7 @@
 View actions that do require Qt should go in
 `napari/_qt/_qapp_model/qactions/_view.py`.
 """
+from __future__ import annotations
 
 from typing import List
 
@@ -46,18 +47,14 @@ def _get_current_tooltip_visibility():
     return get_settings().appearance.layer_tooltip_visibility
 
 
-VIEW_ACTIONS.extend(
-    [
-        # TODO: this could be made into a toggle setting Action subclass
-        # using a similar pattern to the above ViewerToggleAction classes
-        Action(
-            id=CommandId.TOGGLE_LAYER_TOOLTIPS,
-            title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
-            menus=[
-                {'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}
-            ],
-            callback=_tooltip_visibility_toggle,
-            toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
-        ),
-    ]
+VIEW_ACTIONS.append(
+    # TODO: this could be made into a toggle setting Action subclass
+    # using a similar pattern to the above ViewerToggleAction classes
+    Action(
+        id=CommandId.TOGGLE_LAYER_TOOLTIPS,
+        title=CommandId.TOGGLE_LAYER_TOOLTIPS.title,
+        menus=[{'id': MenuId.MENUBAR_VIEW, 'group': '1_render', 'order': 10}],
+        callback=_tooltip_visibility_toggle,
+        toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
+    ),
 )
