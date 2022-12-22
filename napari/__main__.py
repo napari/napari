@@ -125,6 +125,7 @@ def parse_sys_argv():
         + "\n".join(kwarg_options),
     )
     parser.add_argument('paths', nargs='*', help='path(s) to view.')
+    parser.add_argument('path', nargs='*', help='path(s) to view.')
     parser.add_argument(
         '-v',
         '--verbose',
