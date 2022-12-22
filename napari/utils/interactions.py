@@ -242,7 +242,7 @@ KEY_SYMBOLS = {
 
 joinchar = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update({'Ctrl': '⌘', 'Alt': '⌥', 'Meta': '⌃'})
+    KEY_SYMBOLS.update({'Ctrl': '⌃', 'Alt': '⌥', 'Meta': '⌘'})
     joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
