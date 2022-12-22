@@ -127,6 +127,11 @@ def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
 
 
+def _get_preserve_labels_toggled(layer: Labels):
+    """Whether 'preserve labels' should appear toggled (e.g. in menu items)"""
+    return layer.preserve_labels
+
+
 @Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""

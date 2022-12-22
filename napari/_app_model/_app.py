@@ -11,14 +11,16 @@ from napari._app_model._submenus import SUBMENUS
 from napari._app_model.actions import GeneratorCallback, RepeatableAction
 from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._image_actions import IMAGE_ACTIONS
+from napari._app_model.actions._labels_actions import LABELS_ACTIONS
 from napari._app_model.actions._layer_actions import LAYER_ACTIONS
 from napari._app_model.actions._points_actions import POINTS_ACTIONS
+from napari._app_model.actions._shapes_actions import SHAPES_ACTIONS
 from napari._app_model.actions._view_actions import VIEW_ACTIONS
 from napari._app_model.actions._viewer_actions import VIEWER_ACTIONS
 from napari._app_model.injection._processors import PROCESSORS
 from napari._app_model.injection._providers import PROVIDERS
 from napari.components.viewer_model import ViewerModel
-from napari.layers import Image, Points
+from napari.layers import Image, Labels, Points, Shapes
 from napari.utils.action_manager import action_manager
 
 APP_NAME = 'napari'
@@ -45,8 +47,10 @@ class NapariApplication(Application):
         for action in chain(
             HELP_ACTIONS,
             IMAGE_ACTIONS,
+            LABELS_ACTIONS,
             LAYER_ACTIONS,
             POINTS_ACTIONS,
+            SHAPES_ACTIONS,
             VIEW_ACTIONS,
             VIEWER_ACTIONS,
         ):
@@ -56,9 +60,9 @@ class NapariApplication(Application):
         for keymapprovider, actions in (
             (ViewerModel, VIEWER_ACTIONS),
             (Image, IMAGE_ACTIONS),
-            # TODO: (Labels, LABELS_ACTIONS),
+            (Labels, LABELS_ACTIONS),
             (Points, POINTS_ACTIONS),
-            # TODO: (Shapes, SHAPES_ACTIONS),
+            (Shapes, SHAPES_ACTIONS),
         ):
             for action in actions:
                 self._register_action_manager_shim(action, keymapprovider)

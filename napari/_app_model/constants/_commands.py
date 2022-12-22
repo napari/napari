@@ -102,6 +102,21 @@ class CommandId(str, Enum):
     IMAGE_ACTIVATE_TRANSFORM_MODE = "napari:image:activate_image_transform_mode"
     IMAGE_ACTIVATE_PAN_ZOOM_MODE = "napari:image:activate_image_pan_zoom_mode"
 
+    LABELS_HOLD_TO_PAN_ZOOM = "napari:labels:hold_to_pan_zoom"
+    LABELS_ACTIVATE_PAINT_MODE = "napari:labels:activate_paint_mode"
+    LABELS_ACTIVATE_FILL_MODE = "napari:labels:activate_fill_mode"
+    LABELS_ACTIVATE_PAN_ZOOM_MODE = "napari:labels:activate_label_pan_zoom_mode"
+    LABELS_ACTIVATE_PICKER_MODE = "napari:labels:activate_label_picker_mode"
+    LABELS_ACTIVATE_ERASE_MODE = "napari:labels:activate_label_erase_mode"
+    LABELS_NEW_LABEL = "napari:labels:new_label"
+    LABELS_DECREMENT_ID = "napari:labels:decrease_label_id"
+    LABELS_INCREMENT_ID = "napari:labels:increase_label_id"
+    LABELS_DECREASE_BRUSH_SIZE = "napari:labels:decrease_brush_size"
+    LABELS_INCREASE_BRUSH_SIZE = "napari:labels:increase_brush_size"
+    LABELS_TOGGLE_PRESERVE_LABELS = "napari:labels:toggle_preserve_labels"
+    LABELS_UNDO = "napari:labels:undo"
+    LABELS_REDO = "napari:labels:redo"
+
     POINTS_HOLD_TO_PAN_ZOOM = "napari:points:hold_to_pan_zoom"
     POINTS_ACTIVATE_ADD_MODE = "napari:points:activate_points_add_mode"
     POINTS_ACTIVATE_SELECT_MODE = "napari:points:activate_points_select_mode"
@@ -111,6 +126,26 @@ class CommandId(str, Enum):
     POINTS_SELECT_ALL_IN_SLICE = "napari:points:select_all_in_slice"
     POINTS_SELECT_ALL_DATA = "napari:points:select_all_data"
     POINTS_DELETE_SELECTED = "napari:points:delete_selected_points"
+
+    SHAPES_HOLD_TO_PAN_ZOOM = "napari:shapes:hold_to_pan_zoom"
+    SHAPES_HOLD_TO_LOCK_ASPECT_RATIO = "napari:shapes:hold_to_lock_aspect_ratio"
+    SHAPES_ACTIVATE_ADD_RECTANGLE_MODE = "napari:shapes:activate_add_rectangle_mode"
+    SHAPES_ACTIVATE_ADD_ELLIPSE_MODE = "napari:shapes:activate_add_ellipse_mode"
+    SHAPES_ACTIVATE_ADD_LINE_MODE = "napari:shapes:activate_add_line_mode"
+    SHAPES_ACTIVATE_ADD_PATH_MODE = "napari:shapes:activate_add_path_mode"
+    SHAPES_ACTIVATE_ADD_POLYGON_MODE = "napari:shapes:activate_add_polygon_mode"
+    SHAPES_ACTIVATE_DIRECT_MODE = "napari:shapes:activate_direct_mode"
+    SHAPES_ACTIVATE_SELECT_MODE = "napari:shapes:activate_select_mode"
+    SHAPES_ACTIVATE_PAN_ZOOM_MODE = "napari:shapes:activate_shape_pan_zoom_mode"
+    SHAPES_ACTIVATE_VERTEX_INSERT_MODE = "napari:shapes:activate_vertex_insert_mode"
+    SHAPES_ACTIVATE_VERTEX_REMOVE_MODE = "napari:shapes:activate_vertex_remove_mode"
+    SHAPES_COPY = "napari:shapes:copy_selected_shapes"
+    SHAPES_PASTE = "napari:shapes:paste_shape"
+    SHAPES_SELECT_ALL = "napari:shapes:select_all_shapes"
+    SHAPES_DELETE = "napari:shapes:delete_selected_shapes"
+    SHAPES_MOVE_TO_FRONT = "napari:shapes:move_shapes_selection_to_front"
+    SHAPES_MOVE_TO_BACK = "napari:shapes:move_shapes_selection_to_back"
+    SHAPES_FINISH_DRAWING_SHAPE = "napari:shapes:finish_drawing_shape"
 
     @property
     def title(self) -> str:
@@ -215,5 +250,40 @@ _COMMAND_INFO = {
     CommandId.POINTS_SELECT_ALL_IN_SLICE: _i(trans._('Select all in current slice'), trans._('select all points in the current view slice'),),
     CommandId.POINTS_SELECT_ALL_DATA: _i(trans._('Select all in layer'), trans._('select all points in the layer'),),
     CommandId.POINTS_DELETE_SELECTED: _i(trans._('Delete points'), trans._('delete all selected points'),),
+
+    CommandId.LABELS_HOLD_TO_PAN_ZOOM: _i(trans._('Hold to pan/zoom'), trans._('hold to pan and zoom in the viewer'),),
+    CommandId.LABELS_ACTIVATE_PAINT_MODE: _i(trans._('Paint'), trans._('activate the paint brush'),),
+    CommandId.LABELS_ACTIVATE_FILL_MODE: _i(trans._('Fill'), trans._('activate the fill bucket'),),
+    CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.LABELS_ACTIVATE_PICKER_MODE: _i(trans._('Pick mode'),),
+    CommandId.LABELS_ACTIVATE_ERASE_MODE: _i(trans._('Erase'), trans._('activate the label eraser'),),
+    CommandId.LABELS_NEW_LABEL: _i(trans._('New label'), trans._('set the currently selected label to the largest used label plus one'),),
+    CommandId.LABELS_DECREMENT_ID: _i(trans._('Decrement label'), trans._('decrease the currently selected label by one'),),
+    CommandId.LABELS_INCREMENT_ID: _i(trans._('Increment label'), trans._('increase the currently selected label by one'),),
+    CommandId.LABELS_DECREASE_BRUSH_SIZE: _i(trans._('Decrease brush size'),),
+    CommandId.LABELS_INCREASE_BRUSH_SIZE: _i(trans._('Increase brush size'),),
+    CommandId.LABELS_TOGGLE_PRESERVE_LABELS: _i(trans._('Toggle preserve labels'),),
+    CommandId.LABELS_UNDO: _i(trans._('Undo'), trans._('undo the last paint or fill action since the view slice has changed'),),
+    CommandId.LABELS_REDO: _i(trans._('Redo'), trans._('redo any previously undone actions'),),
+
+    CommandId.SHAPES_HOLD_TO_PAN_ZOOM: _i(trans._('Hold to pan/zoom'), trans._('hold to pan and zoom in the viewer'),),
+    CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO: _i(trans._('Hold to lock aspect ratio'), trans._('hold to lock aspect ratio when resizing a shape'),),
+    CommandId.SHAPES_ACTIVATE_ADD_RECTANGLE_MODE: _i(trans._('Add rectangles'), trans._('activate add rectangle tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_ELLIPSE_MODE: _i(trans._('Add ellipses'), trans._('activate add ellipse tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_LINE_MODE: _i(trans._('Add lines'), trans._('activate add line tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_PATH_MODE: _i(trans._('Add paths'), trans._('activate add path tool'),),
+    CommandId.SHAPES_ACTIVATE_ADD_POLYGON_MODE: _i(trans._('Add polygons'), trans._('activate add polygon tool'),),
+    CommandId.SHAPES_ACTIVATE_DIRECT_MODE: _i(trans._('Select vertices'), trans._('activate vertex selection tool'),),
+    CommandId.SHAPES_ACTIVATE_SELECT_MODE: _i(trans._('Select shapes'), trans._('activate shape selection tool'),),
+    CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
+    CommandId.SHAPES_ACTIVATE_VERTEX_INSERT_MODE: _i(trans._('Insert vertex'), trans._('activate vertex insertion tool'),),
+    CommandId.SHAPES_ACTIVATE_VERTEX_REMOVE_MODE: _i(trans._('Remove vertex'), trans._('activate vertex deletion tool'),),
+    CommandId.SHAPES_COPY: _i(trans._('Copy'), trans._('copy any selected shapes'),),
+    CommandId.SHAPES_PASTE: _i(trans._('Paste'), trans._('paste any copied shapes'),),
+    CommandId.SHAPES_SELECT_ALL: _i(trans._('Select all'), trans._('select all shapes in the current view slice'),),
+    CommandId.SHAPES_DELETE: _i(trans._('Delete'), trans._('delete any selected shapes'),),
+    CommandId.SHAPES_MOVE_TO_FRONT: _i(trans._('Move to front'),),
+    CommandId.SHAPES_MOVE_TO_BACK: _i(trans._('Move to back'),),
+    CommandId.SHAPES_FINISH_DRAWING_SHAPE: _i(trans._('Finish drawing shape'), trans._('finish any drawing, for example using the path or polygon tool'),),
 }
 # fmt: on
