@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from app_model.types import Action
 
-from napari._app_model.actions import GeneratorCallback
+from napari._app_model.actions import AttrRestoreCallback, GeneratorCallback
 from napari._app_model.constants import CommandId
 from napari.layers.points import _points_key_bindings as _points_actions
 
@@ -21,22 +21,27 @@ POINTS_ACTIONS = [
         short_title=CommandId.POINTS_HOLD_TO_PAN_ZOOM.title,
         callback=GeneratorCallback(_points_actions.hold_to_pan_zoom),
     ),
-    # TODO: register_points_mode_action (register_layer_attr_action)
-    # Action(
-    #     id=CommandId.ACTIVATE_ADD_MODE,
-    #     title=CommandId.ACTIVATE_ADD_MODE.title,
-    #     callback=_points_actions.activate_points_add_mode,
-    # ),
-    # Action(
-    #     id=CommandId.ACTIVATE_SELECT_MODE,
-    #     title=CommandId.ACTIVATE_SELECT_MODE.title,
-    #     callback=_points_actions.activate_points_select_mode,
-    # ),
-    # Action(
-    #     id=CommandId.ACTIVATE_PAN_ZOOM_MODE,
-    #     title=CommandId.ACTIVATE_PAN_ZOOM_MODE.title,
-    #     callback=_points_actions.activate_points_pan_zoom_mode,
-    # ),
+    Action(
+        id=CommandId.POINTS_ACTIVATE_ADD_MODE,
+        title=CommandId.POINTS_ACTIVATE_ADD_MODE.title,
+        callback=AttrRestoreCallback(
+            _points_actions.activate_points_add_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.POINTS_ACTIVATE_SELECT_MODE,
+        title=CommandId.POINTS_ACTIVATE_SELECT_MODE.title,
+        callback=AttrRestoreCallback(
+            _points_actions.activate_points_select_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE,
+        title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.title,
+        callback=AttrRestoreCallback(
+            _points_actions.activate_points_pan_zoom_mode, "mode"
+        ),
+    ),
     Action(
         id=CommandId.POINTS_COPY,
         title=CommandId.POINTS_COPY.description,

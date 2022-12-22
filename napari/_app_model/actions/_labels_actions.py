@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from app_model.types import Action, ToggleRule
 
-from napari._app_model.actions import GeneratorCallback, RepeatableAction
+from napari._app_model.actions import (
+    AttrRestoreCallback,
+    GeneratorCallback,
+    RepeatableAction,
+)
 from napari._app_model.constants import CommandId
 from napari.layers.labels import _labels_key_bindings as _labels_actions
 
@@ -21,12 +25,45 @@ LABELS_ACTIONS = [
         short_title=CommandId.LABELS_HOLD_TO_PAN_ZOOM.title,
         callback=GeneratorCallback(_labels_actions.hold_to_pan_zoom),
     ),
-    # TODO: register_labels_mode_action (register_layer_attr_action)
-    # CommandId.LABELS_ACTIVATE_PAINT_MODE: _i(trans._('Paint'), trans._('activate the paint brush'),),
-    # CommandId.LABELS_ACTIVATE_FILL_MODE: _i(trans._('Fill'), trans._('activate the fill bucket'),),
-    # CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE: _i(trans._('Pan/zoom'), trans._('activate pan/zoom mode'),),
-    # CommandId.LABELS_ACTIVATE_PICKER_MODE: _i(trans._('Pick mode'),),
-    # CommandId.LABELS_ACTIVATE_ERASE_MODE: _i(trans._('Erase'), trans._('activate the label eraser'),),
+    Action(
+        id=CommandId.LABELS_ACTIVATE_PAINT_MODE,
+        title=CommandId.LABELS_ACTIVATE_PAINT_MODE.description,
+        short_title=CommandId.LABELS_ACTIVATE_PAINT_MODE.title,
+        callback=AttrRestoreCallback(
+            _labels_actions.activate_paint_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.LABELS_ACTIVATE_FILL_MODE,
+        title=CommandId.LABELS_ACTIVATE_FILL_MODE.description,
+        short_title=CommandId.LABELS_ACTIVATE_FILL_MODE.title,
+        callback=AttrRestoreCallback(
+            _labels_actions.activate_fill_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE,
+        title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.description,
+        short_title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.title,
+        callback=AttrRestoreCallback(
+            _labels_actions.activate_label_pan_zoom_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.LABELS_ACTIVATE_PICKER_MODE,
+        title=CommandId.LABELS_ACTIVATE_PICKER_MODE.title,
+        callback=AttrRestoreCallback(
+            _labels_actions.activate_label_picker_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.LABELS_ACTIVATE_ERASE_MODE,
+        title=CommandId.LABELS_ACTIVATE_ERASE_MODE.description,
+        short_title=CommandId.LABELS_ACTIVATE_ERASE_MODE.title,
+        callback=AttrRestoreCallback(
+            _labels_actions.activate_label_erase_mode, "mode"
+        ),
+    ),
     Action(
         id=CommandId.LABELS_NEW_LABEL,
         title=CommandId.LABELS_NEW_LABEL.description,

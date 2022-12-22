@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from app_model.types import Action
 
-from napari._app_model.actions import GeneratorCallback
+from napari._app_model.actions import AttrRestoreCallback, GeneratorCallback
 from napari._app_model.constants import CommandId
 from napari.layers.shapes import _shapes_key_bindings as _shapes_actions
 
@@ -27,17 +27,86 @@ SHAPES_ACTIONS = [
         short_title=CommandId.SHAPES_HOLD_TO_LOCK_ASPECT_RATIO.title,
         callback=GeneratorCallback(_shapes_actions.hold_to_lock_aspect_ratio),
     ),
-    # TODO: register_shapes_mode_action (register_layer_attr_action)
-    # SHAPES_ACTIVATE_ADD_RECTANGLE_MODE = "napari:shapes:activate_add_rectangle_mode"
-    # SHAPES_ACTIVATE_ADD_ELLIPSE_MODE = "napari:shapes:activate_add_ellipse_mode"
-    # SHAPES_ACTIVATE_ADD_LINE_MODE = "napari:shapes:activate_add_line_mode"
-    # SHAPES_ACTIVATE_ADD_PATH_MODE = "napari:shapes:activate_add_path_mode"
-    # SHAPES_ACTIVATE_ADD_POLYGON_MODE = "napari:shapes:activate_add_polygon_mode"
-    # SHAPES_ACTIVATE_DIRECT_MODE = "napari:shapes:activate_direct_mode"
-    # SHAPES_ACTIVATE_SELECT_MODE = "napari:shapes:activate_select_mode"
-    # SHAPES_ACTIVATE_PAN_ZOOM_MODE = "napari:shapes:activate_shape_pan_zoom_mode"
-    # SHAPES_ACTIVATE_VERTEX_INSERT_MODE = "napari:shapes:activate_vertex_insert_mode"
-    # SHAPES_ACTIVATE_VERTEX_REMOVE_MODE = "napari:shapes:activate_vertex_remove_mode"
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_ADD_RECTANGLE_MODE,
+        title=CommandId.SHAPES_ACTIVATE_ADD_RECTANGLE_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_ADD_RECTANGLE_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_add_rectangle_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_ADD_ELLIPSE_MODE,
+        title=CommandId.SHAPES_ACTIVATE_ADD_ELLIPSE_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_ADD_ELLIPSE_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_add_ellipse_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_ADD_LINE_MODE,
+        title=CommandId.SHAPES_ACTIVATE_ADD_LINE_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_ADD_LINE_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_add_line_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_ADD_PATH_MODE,
+        title=CommandId.SHAPES_ACTIVATE_ADD_PATH_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_ADD_PATH_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_add_path_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_ADD_POLYGON_MODE,
+        title=CommandId.SHAPES_ACTIVATE_ADD_POLYGON_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_ADD_POLYGON_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_add_polygon_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_DIRECT_MODE,
+        title=CommandId.SHAPES_ACTIVATE_DIRECT_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_DIRECT_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_direct_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_SELECT_MODE,
+        title=CommandId.SHAPES_ACTIVATE_SELECT_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_SELECT_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_select_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE,
+        title=CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_shape_pan_zoom_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_VERTEX_INSERT_MODE,
+        title=CommandId.SHAPES_ACTIVATE_VERTEX_INSERT_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_VERTEX_INSERT_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_vertex_insert_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_VERTEX_REMOVE_MODE,
+        title=CommandId.SHAPES_ACTIVATE_VERTEX_REMOVE_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_VERTEX_REMOVE_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_vertex_remove_mode, "mode"
+        ),
+    ),
     Action(
         id=CommandId.SHAPES_COPY,
         title=CommandId.SHAPES_COPY.description,

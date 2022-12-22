@@ -91,7 +91,9 @@ class NapariApplication(Application):
         else:
 
             def _callback(*args, **kwargs):
-                self.get_app().commands.execute_command(action.id).result()
+                return (
+                    self.get_app().commands.execute_command(action.id).result()
+                )
 
         _callback.__name__ = command
 

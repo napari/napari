@@ -1,7 +1,11 @@
-from inspect import isgeneratorfunction, signature
+import functools
+import inspect
+from typing import Callable
 
 from app_model.types import Action
 from pydantic import Field
+
+from napari.utils.translations import trans
 
 
 class RepeatableAction(Action):
@@ -19,11 +23,11 @@ class GeneratorCallback:
     as-needed.
     """
 
-    def __init__(self, func):
-        if not isgeneratorfunction(func):
+    def __init__(self, func: Callable):
+        if not inspect.isgeneratorfunction(func):
             raise TypeError(f"'{func.__name__}' is not a generator function")
         self.func = func
-        self.__signature__ = signature(self.func)
+        self.__signature__ = inspect.signature(self.func)
         self._gen = None
 
     def __call__(self, *args, **kwargs):
@@ -33,3 +37,49 @@ class GeneratorCallback:
             next(self._gen)
         except StopIteration:
             self._gen = None
+
+
+class AttrRestoreCallback:
+    """Wrapper for callbacks that should restore the value of some attribute after running.
+
+    This takes a function and an attribute_name, and turns it into a
+    GeneratorCallback that will restore attribute_name on the injected object to
+    its previous state.
+
+    See napari.layers.utils.layer_utils.register_layer_attr_action for more info.
+    """
+
+    def __init__(self, func: Callable, attribute_name: str):
+        sig = inspect.signature(func)
+        try:
+            first_variable_name = next(iter(sig.parameters))
+        except StopIteration:
+            raise RuntimeError(
+                trans._(
+                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    deferred=True,
+                ),
+            )
+
+        # create a wrapper that stores the previous state of obj.attribute_name
+        # and returns a callback to restore it
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            if args:
+                obj = args[0]
+            else:
+                obj = kwargs[first_variable_name]
+            prev_mode = getattr(obj, attribute_name)
+            func(*args, **kwargs)
+
+            def _callback():
+                setattr(obj, attribute_name, prev_mode)
+
+            return _callback
+
+        self.attribute_name = attribute_name
+        self.func = _wrapper
+        self.__signature__ = inspect.signature(_wrapper)
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
