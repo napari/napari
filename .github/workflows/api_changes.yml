@@ -60,7 +60,7 @@ jobs:
           echo "CONTENDER_REF=$CONTENDER_REF" >> $GITHUB_ENV
 
           # run griffe to detect changes
-          griffe check napari -b ${BASE_REF} -a ${CONTENDER_REF} | tee api_changes.log
+          griffe check napari -b ${BASE_REF} -a ${CONTENDER_REF} &> api_changes.log
 
           if [ -s api_changes.log ]; then
             echo "Changes found"
