@@ -31,7 +31,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from napari._qt.widgets.qt_welcome import QtWidgetOverlay
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
-from napari.components.overlays import CanvasOverlay, SceneOverlay
+from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
@@ -438,7 +438,7 @@ class QtViewer(QSplitter):
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
-    def _add_overlay(self, overlay):
+    def _add_overlay(self, overlay: Overlay):
         vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
 
         if isinstance(overlay, CanvasOverlay):
