@@ -14,31 +14,11 @@ from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.types import DTypeLike
 
-"""
-Cases to consider
-- single + multiple layers that supports async (all of layers do support async)
-- single + multiple layers that don't support async (all of layers do not support async)
-- mix of layers that do and don't support async
-
-Behaviors we want to test:
-scheduling logic of the slicer (and not correctness of the slice response value)
-
-- for layers that support async, the slice task should not be run on the main
-  thread (we don't want to block the calling)
-- for layers that do not support async, slicing should always be done once
-  the method returns
-- slice requests should be run on the main thread
-- pending tasks are cancelled (at least when the new task will slice all
-  layers for the pending task)
-
-The fake request, response, and layers exist to give structure against which to
-test (class instances and attributes) and to remain isolated from the existing
-codebase. They represent what will become real classes in the codebase which
-have additional methods and properties that don't currently exist.
-
-Run all tests with:
-pytest napari/components/_tests/test_layer_slicer.py -svv
-"""
+# The following fakes are used to control execution of slicing across
+# multiple threads, while also allowing us to mimic real classes
+# (like layers) in the code base. This allows us to assert state and
+# conditions that may only be temporarily true at different stages of
+# an asynchronous task.
 
 
 @dataclass(frozen=True)
