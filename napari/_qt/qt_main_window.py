@@ -68,7 +68,7 @@ from napari.plugins import plugin_manager
 from napari.settings import get_settings
 from napari.utils import perf
 from napari.utils._proxies import PublicOnlyProxy
-from napari.utils.io import imsaveCHANGE
+from napari.utils.io import imsave
 from napari.utils.misc import (
     in_ipython,
     in_jupyter,
@@ -1415,7 +1415,7 @@ class Window:
         """
         img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
-            imsaveCHANGE(path, img)  # scikit-image imsave method
+            imsave(path, img)  # scikit-image imsave method
         return img
 
     def clipboard(self, flash=True, canvas_only=False):

@@ -55,7 +55,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
-from napari.utils.io import imsaveCHANGE
+from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.theme import get_theme
@@ -712,7 +712,7 @@ class QtViewer(QSplitter):
 
         img = QImg2array(self._screenshot(flash))
         if path is not None:
-            imsaveCHANGE(path, img)  # scikit-image imsave method
+            imsave(path, img)  # scikit-image imsave method
         return img
 
     def clipboard(self, flash=True):
