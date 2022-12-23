@@ -123,7 +123,9 @@ def _same_type(s: LayerSel) -> bool:
 
 
 def _active_is_image_3d(s: LayerSel) -> bool:
-    return _active_type(s) == "image" and _active_ndim(s) > 2
+    return (
+        _active_type(s) == "image" and _active_ndim(s) and _active_ndim(s) > 2
+    )
 
 
 class LayerListContextKeys(ContextNamespace['LayerSel']):
