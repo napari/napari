@@ -40,6 +40,7 @@ jobs:
           pip install griffe
 
       - name: Run griffe
+        id: run_griffe
         run: |
           if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
             EVENT_NAME="PR ${{ github.event.pull_request.number }}"
@@ -63,7 +64,7 @@ jobs:
           if ! griffe check napari -b ${BASE_REF} -a ${CONTENDER_REF} &> api_changes.log ; then
             echo "Changes found"
             echo "CHANGES_FOUND=true" >> $GITHUB_ENV
-            echo "MESSAGE=$(<api_changes.log)" >> $GITHUB_ENV
+            echo "::set-output name=MESSAGE::$(cat api_changes.log)"
           else
             echo "No changes found"
             echo "CHANGES_FOUND=false" >> $GITHUB_ENV
@@ -84,7 +85,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: env.MESSAGE
+              body: steps.run_griffe.outputs.MESSAGE
             })
 
       - name: Add label to PR
