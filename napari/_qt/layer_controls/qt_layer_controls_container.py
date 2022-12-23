@@ -108,6 +108,12 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
+        viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+
+    def _on_ndisplay_change(self, event):
+        widget = self.currentWidget()
+        if widget is not self.empty_widget:
+            widget._on_ndisplay_change(event)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

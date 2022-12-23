@@ -3,7 +3,7 @@ from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
-from napari.utils.events import disconnect_events
+from napari.utils.events import Event, disconnect_events
 from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
@@ -130,6 +130,13 @@ class QtLayerControls(QFrame):
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)
             )
+
+    def _on_ndisplay_change(self, event: Event):
+        """Receive a change to the number of dimensions displayed in the viewer.
+
+        This is needed because some layer controls may have options that are specific
+        to 2D or 3D visualization only
+        """
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)

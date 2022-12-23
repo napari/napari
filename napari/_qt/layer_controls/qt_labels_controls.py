@@ -29,7 +29,7 @@ from napari.layers.labels._labels_constants import (
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
-from napari.utils.events import disconnect_events
+from napari.utils.events import Event, disconnect_events
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -478,9 +478,9 @@ class QtLabelsControls(QtLayerControls):
             )
             self.renderComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self):
-        """Toggle between 2D and 3D visualization modes."""
-        if self.layer._slice_input.ndisplay == 2:
+    def _on_ndisplay_change(self, event: Event):
+        ndisplay = event.value
+        if ndisplay == 2:
             self.renderComboBox.hide()
             self.renderLabel.hide()
         else:

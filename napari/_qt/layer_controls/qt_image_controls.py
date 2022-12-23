@@ -22,6 +22,7 @@ from napari.layers.image._image_constants import (
     VolumeDepiction,
 )
 from napari.utils.action_manager import action_manager
+from napari.utils.events import Event
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -72,7 +73,6 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
         self.layer.plane.events.thickness.connect(
             self._on_plane_thickness_change
@@ -355,7 +355,7 @@ class QtImageControls(QtBaseImageControls):
             self.interpComboBox.addItems(interp_names)
             self.interpComboBox.setCurrentText(interp)
 
-    def _on_ndisplay_change(self):
+    def _on_ndisplay_change(self, event: Event):
         """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
         self._toggle_plane_parameter_visibility()
