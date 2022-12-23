@@ -1,5 +1,4 @@
 import os
-from sys import platform
 from unittest.mock import patch
 
 import numpy as np
@@ -271,8 +270,8 @@ def test_slider_press_updates_last_used(qtbot):
 
 
 @pytest.mark.skipif(
-    os.environ.get('CI') and platform == 'win32',
-    reason='not working in windows VM',
+    os.getenv('CI', '0') != '0',
+    reason='Sometimes aborting in various CI environments',
 )
 def test_play_button(qtbot):
     """test that the play button and its popup dialog work"""
@@ -319,6 +318,10 @@ def test_slice_labels(qtbot):
     assert dims.point[0] == 8
 
 
+@pytest.mark.skipif(
+    os.getenv('CI', '0') != '0',
+    reason='Sometimes hanging in various CI environments',
+)
 def test_not_playing_after_ndim_changes(qtbot):
     """See https://github.com/napari/napari/issues/3998"""
     dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
@@ -334,6 +337,10 @@ def test_not_playing_after_ndim_changes(qtbot):
     qtbot.waitUntil(lambda: view._animation_worker is None)
 
 
+@pytest.mark.skipif(
+    os.getenv('CI', '0') != '0',
+    reason='Sometimes hanging in various CI environments',
+)
 def test_not_playing_after_ndisplay_changes(qtbot):
     """See https://github.com/napari/napari/issues/3998"""
     dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
