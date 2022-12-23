@@ -6,7 +6,7 @@ import numpy as np
 from napari.utils.translations import trans
 
 
-def imsave(filename: str, data: np.ndarray):
+def imsaveCHANGE(filename: str, data: np.ndarray):
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters

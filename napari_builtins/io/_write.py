@@ -7,7 +7,7 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 
 from napari.types import FullLayerData
-from napari.utils.io import imsave
+from napari.utils.io import imsaveCHANGE
 from napari.utils.misc import abspath_or_url
 
 
@@ -119,7 +119,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
         ext = '.tif'
 
     if ext in imsave_extensions():
-        imsave(path, data)
+        imsaveCHANGE(path, data)
         return path
 
     return None

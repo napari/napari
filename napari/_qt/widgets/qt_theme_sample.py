@@ -43,7 +43,7 @@ from superqt import QRangeSlider
 
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.utils import QImg2array
-from napari.utils.io import imsave
+from napari.utils.io import imsaveCHANGE
 
 blurb = """
 <h3>Heading</h3>
@@ -149,7 +149,7 @@ class SampleWidget(QWidget):
     def screenshot(self, path=None):
         img = self.grab().toImage()
         if path is not None:
-            imsave(path, QImg2array(img))
+            imsaveCHANGE(path, QImg2array(img))
         return QImg2array(img)
 
 
