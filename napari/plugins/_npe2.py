@@ -19,6 +19,7 @@ from npe2 import io_utils
 from npe2 import plugin_manager as pm
 from npe2.manifest import contributions
 
+from napari.utils.shortcuts import plugins_shortcuts
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -365,10 +366,9 @@ def _npe2_manifest_to_actions(
                     subitem = _npe2_submenu_to_app_model(item)
                     submenus.append((menu_id, subitem))
 
-    key_bindings: DefaultDict[str, List[KeyBindingRule]] = DefaultDict(list)
     for key_bind in mf.contributions.keybindings or ():
         # TODO: once supported, add when conditional
-        key_bindings[key_bind.command].append(
+        plugins_shortcuts[key_bind.command].append(
             KeyBindingRule(
                 primary=key_bind.key,
                 win=key_bind.win,
@@ -387,7 +387,6 @@ def _npe2_manifest_to_actions(
             enablement=cmd.enablement,
             callback=cmd.python_name or '',
             menus=cmds.get(cmd.id),
-            keybindings=key_bindings.get(cmd.id),
         )
         for cmd in mf.contributions.commands or ()
     ]

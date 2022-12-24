@@ -1,4 +1,10 @@
-from app_model.types import KeyBinding, KeyCode, KeyMod
+from collections import defaultdict
+from typing import (
+    Dict,
+    List,
+)
+
+from app_model.types import KeyBinding, KeyCode, KeyMod, KeyBindingRule
 
 default_shortcuts = {
     'napari:toggle_console_visibility': [
@@ -76,3 +82,5 @@ default_shortcuts = {
     name: [KeyBinding.from_int(kb) for kb in value]
     for name, value in default_shortcuts.items()
 }
+
+plugins_shortcuts: Dict[str, List[KeyBindingRule]] = defaultdict(list)
