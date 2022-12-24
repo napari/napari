@@ -3,7 +3,6 @@ import re
 import sys
 from enum import Enum, auto
 from functools import partial
-import sys
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
@@ -586,6 +585,10 @@ class QPluginList(QListWidget):
     ):
         """Determine which action is called (install, uninstall, update, cancel).
         Update buttons appropriately and run the action."""
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5afb792e (make updates to tool so that proper source is used to install)
         tool = (
             InstallerTools.CONDA
             if item.widget.source_choice_dropdown.currentText() == 'Conda'
@@ -1026,7 +1029,6 @@ class QtPluginDialog(QDialog):
         self,
         packages: Sequence[str] = (),
         versions: Optional[Sequence[str]] = None,
-        installer: Optional[InstallerTypes] = None,
     ):
         if not packages:
             _packages = self.direct_entry_edit.text()
