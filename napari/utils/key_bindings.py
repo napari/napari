@@ -41,8 +41,7 @@ from collections import ChainMap
 from types import MethodType
 from typing import Callable, Mapping, Union
 
-from app_model.types import KeyBinding, KeyCode, KeyMod
-from vispy.util import keys
+from app_model.types import KeyBinding, KeyCode
 
 from napari.utils.translations import trans
 
@@ -69,47 +68,6 @@ KEY_SUBS = {
 
 _UNDEFINED = object()
 
-_VISPY_SPECIAL_KEYS = [
-    keys.SHIFT,
-    keys.CONTROL,
-    keys.ALT,
-    keys.META,
-    keys.UP,
-    keys.DOWN,
-    keys.LEFT,
-    keys.RIGHT,
-    keys.PAGEUP,
-    keys.PAGEDOWN,
-    keys.INSERT,
-    keys.DELETE,
-    keys.HOME,
-    keys.END,
-    keys.ESCAPE,
-    keys.BACKSPACE,
-    keys.F1,
-    keys.F2,
-    keys.F3,
-    keys.F4,
-    keys.F5,
-    keys.F6,
-    keys.F7,
-    keys.F8,
-    keys.F9,
-    keys.F10,
-    keys.F11,
-    keys.F12,
-    keys.SPACE,
-    keys.ENTER,
-    keys.TAB,
-]
-
-_VISPY_MODS = {
-    keys.CONTROL: KeyMod.CtrlCmd,
-    keys.SHIFT: KeyMod.Shift,
-    keys.ALT: KeyMod.Alt,
-    keys.META: KeyMod.WinCtrl,
-}
-
 # TODO: add this to app-model instead
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
@@ -131,7 +89,20 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
         for k, v in KEY_SUBS.items():
             key_bind = key_bind.replace(k, v)
 
-    return KeyBinding.validate(key_bind)
+    key_bind = KeyBinding.validate(key_bind)
+
+    # remove redundant modifiers e.g. Shift+Shift
+    for part in key_bind.parts:
+        if part.key == KeyCode.Ctrl:
+            part.ctrl = False
+        elif part.key == KeyCode.Shift:
+            part.shift = False
+        elif part.key == KeyCode.Alt:
+            part.alt = False
+        elif part.key == KeyCode.Meta:
+            part.meta = False
+
+    return key_bind
 
 
 def bind_key(
@@ -278,30 +249,6 @@ def _bind_plugin_key(
     return bind_key(_get_plugin_keymap(), key_bind, func, overwrite=overwrite)
 
 
-def _vispy2appmodel(event) -> KeyBinding:
-    key, modifiers = event.key.name, event.modifiers
-    if len(key) == 1 and key.isalpha():  # it's a letter
-        key = key.upper()
-        cond = lambda m: True  # noqa: E731
-    elif key in _VISPY_SPECIAL_KEYS:
-        # remove redundant information i.e. an output of 'Shift-Shift'
-        cond = lambda m: m != key  # noqa: E731
-    else:
-        # Shift is consumed to transform key
-
-        # bug found on OSX: Command will cause Shift to not
-        # transform the key so do not consume it
-        # note: 'Control' is OSX Command key
-        cond = lambda m: m != 'Shift' or 'Control' in modifiers  # noqa: E731
-
-    kb = KeyCode.from_string(KEY_SUBS.get(key, key))
-
-    for key in filter(lambda key: key in modifiers and cond(key), _VISPY_MODS):
-        kb |= _VISPY_MODS[key]
-
-    return coerce_keybinding(kb)
-
-
 class KeybindingDescriptor:
     """Descriptor which transforms ``func`` into a method with the first
     argument bound to ``class_keymap`` or ``keymap`` depending on if it was
@@ -420,15 +367,33 @@ class KeymapHandler:
 
         return active_keymap_final
 
-    def press_key(self, key_bind):
+    def press_key(self, key_bind, is_auto_repeat=False):
         """Simulate a key press to activate a keybinding.
 
         Parameters
         ----------
         key_bind : keybinding-like
             Key combination.
+        is_auto_repeat : bool, optional
+            If this key press was triggered by holding down a key.
         """
+        from napari.utils.action_manager import action_manager
+
         key_bind = coerce_keybinding(key_bind)
+
+        repeatables = {
+            *action_manager._get_repeatable_shortcuts(self.active_keymap),
+            "Up",
+            "Down",
+            "Left",
+            "Right",
+        }
+
+        if is_auto_repeat and key_bind not in repeatables:
+            # pass if key is held down and not in list of repeatables
+            # e.g. arrow keys used for scrolling
+            return
+
         keymap = self.active_keymap
         if key_bind in keymap:
             func = keymap[key_bind]
@@ -491,56 +456,3 @@ class KeymapHandler:
                     callback()
             else:
                 next(val)  # call function
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-
-        Parameters
-        ----------
-        event : vispy.util.event.Event
-            The vispy key press event that triggered this method.
-        """
-        from napari.utils.action_manager import action_manager
-
-        if event.key is None:
-            # TODO determine when None key could be sent.
-            return
-
-        kb = _vispy2appmodel(event)
-
-        repeatables = {
-            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            "Up",
-            "Down",
-            "Left",
-            "Right",
-        }
-
-        if (
-            event.native is not None
-            and event.native.isAutoRepeat()
-            and kb not in repeatables
-        ) or event.key is None:
-            # pass if no key is present or if the shortcut combo is held down,
-            # unless the combo being held down is one of the autorepeatables or
-            # one of the navigation keys (helps with scrolling).
-            return
-
-        self.press_key(kb)
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-
-        Parameters
-        ----------
-        event : vispy.util.event.Event
-            The vispy key release event that triggered this method.
-        """
-        if event.key is None or (
-            # on linux press down is treated as multiple press and release
-            event.native is not None
-            and event.native.isAutoRepeat()
-        ):
-            return
-        kb = _vispy2appmodel(event)
-        self.release_key(kb)

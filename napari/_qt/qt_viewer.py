@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
 import numpy as np
+from app_model.backends.qt import qkey2modelkey, qmods2modelmods
+from app_model.types import KeyBinding
 from qtpy.QtCore import QCoreApplication, QObject, Qt
-from qtpy.QtGui import QCursor, QGuiApplication
+from qtpy.QtGui import QCursor, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari._qt.containers import QtLayerList
@@ -146,6 +148,24 @@ def _extension_string_for_layers(
         # multiple layers.
         ext_str = trans._("All Files (*);;")
     return ext_str, []
+
+
+def _qkeyevent2keybinding(event: QKeyEvent) -> KeyBinding:
+    """Extract a Qt key event's information into an app-model keybinding.
+
+    Parameters
+    ----------
+    event : QKeyEvent
+        Triggering event.
+
+    Returns
+    -------
+    KeyBinding
+        Key combination extracted from the event.
+    """
+    return KeyBinding.from_int(
+        qmods2modelmods(event.modifiers()) | qkey2modelkey(event.key())
+    )
 
 
 class QtViewer(QSplitter):
@@ -421,12 +441,8 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_move.connect(self.on_mouse_move)
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
-        self.canvas.events.key_press.connect(
-            self._key_map_handler.on_key_press
-        )
-        self.canvas.events.key_release.connect(
-            self._key_map_handler.on_key_release
-        )
+        self.canvas.events.key_press.connect(self._on_key_press)
+        self.canvas.events.key_release.connect(self._on_key_release)
         self.canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
         self.canvas.events.draw.connect(self.on_draw)
         self.canvas.events.resize.connect(self.on_resize)
@@ -897,6 +913,28 @@ class QtViewer(QSplitter):
 
         self.canvas.native.setCursor(q_cursor)
 
+    def _on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key press event that triggered this method.
+        """
+        if event.native is not None:
+            self.keyPressEvent(event.native)
+
+    def _on_key_release(self, event):
+        """Called whenever key released in canvas.
+
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key release event that triggered this method.
+        """
+        if event.native is not None:
+            self.keyReleaseEvent(event.native)
+
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
 
@@ -1134,10 +1172,15 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
-        self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
+        if event.key() == Qt.Key.Key_unknown:
+            return
+
+        key_bind = _qkeyevent2keybinding(event)
+
+        self._key_map_handler.press_key(key_bind, event.isAutoRepeat())
         event.accept()
 
     def keyReleaseEvent(self, event):
@@ -1145,10 +1188,16 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtGui.QKeyEvent
             Event from the Qt context.
         """
-        self.canvas._backend._keyEvent(self.canvas.events.key_release, event)
+        if event.key == Qt.Key.Key_unknown or event.isAutoRepeat():
+            # on linux press down is treated as multiple press and release
+            return
+
+        key_bind = _qkeyevent2keybinding(event)
+
+        self._key_map_handler.release_key(key_bind)
         event.accept()
 
     def dragEnterEvent(self, event):
