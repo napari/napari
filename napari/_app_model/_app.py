@@ -42,6 +42,8 @@ def _bindable_cmd(app, cmd_id):
 def populate_plugin_keymap():
     """Populate the global plugin keymap from the app's keybinding registry."""
     app = NapariApplication.get_app()
+    from napari.utils.key_bindings import _get_plugin_keymap
+    _get_plugin_keymap().clear()
     for kb_rule in app.keybindings:
         # skip built-in keybinds
         if kb_rule.command_id.startswith('napari:'):

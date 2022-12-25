@@ -437,12 +437,8 @@ class ShortcutEditor(QWidget):
                         if keybinding.command_id == current_action:
                             unbinds.append(keybinding)
 
-                    # TODO remove the debug logging showing the app model unbinding doesn't work
-                    print(f"Before {len(self._app.keybindings._keybindings)}")
-                    print(f'len {len(unbinds)}')
                     for unbind in unbinds:
                         self._app.keybindings._keybindings.remove(unbind)
-                    print(f"After {len(self._app.keybindings._keybindings)}")
                 else:
                     action_manager.unbind_shortcut(current_action)
                 shortcuts_list = list(current_shortcuts)
