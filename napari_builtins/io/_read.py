@@ -19,7 +19,7 @@ from napari.utils.translations import trans
 
 try:
     import imageio.v2 as imageio
-except ImportError:
+except ModuleNotFoundError:
     import imageio  # type: ignore
 
 IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
