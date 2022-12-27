@@ -590,13 +590,15 @@ class QPluginList(QListWidget):
                 widget.set_busy(trans._("updating..."), action_name, update)
                 widget.action_button.setDisabled(True)
             else:
-                widget.set_busy(trans._("installing..."), update)
+                if version:
+                    pkg_name += f"=={item.widget.version_choice_dropdown.currentText()}"
                 widget.set_busy(trans._("installing..."), action_name, update)
 
             job_id = self.installer.install(
                 tool=tool,
                 pkgs=[pkg_name],
                 # origins="TODO",
+                upgrade=update,
             )
             if self._warn_dialog:
                 self._warn_dialog.exec_()
@@ -608,6 +610,7 @@ class QPluginList(QListWidget):
                 tool=tool,
                 pkgs=[pkg_name],
                 # origins="TODO",
+                upgrade=False,
             )
             widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:

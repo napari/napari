@@ -57,10 +57,13 @@ class AbstractInstallerTool:
     pkgs: Tuple[str, ...]
     origins: Tuple[str, ...] = ()
     prefix: Optional[str] = None
+    upgrade: Optional[bool] = False
 
     @property
     def ident(self):
-        return hash((self.action, *self.pkgs, *self.origins, self.prefix))
+        return hash(
+            (self.action, *self.pkgs, *self.origins, self.prefix, self.upgrade)
+        )
 
     # abstract method
     @classmethod
@@ -107,7 +110,15 @@ class PipInstallerTool(AbstractInstallerTool):
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
         if self.action == InstallerActions.INSTALL:
-            args += ['install', '--upgrade', '-c', self._constraints_file()]
+            if self.upgrade:
+                args += [
+                    'install',
+                    '--upgrade',
+                    '-c',
+                    self._constraints_file(),
+                ]
+            else:
+                args += ['install', '-c', self._constraints_file()]
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
         elif self.action == InstallerActions.UNINSTALL:
@@ -258,6 +269,7 @@ class InstallerQueue(QProcess):
         *,
         prefix: Optional[str] = None,
         origins: Sequence[str] = (),
+        upgrade: bool = False,
         **kwargs,
     ) -> JobId:
         """Install packages in `pkgs` into `prefix` using `tool` with additional
@@ -285,6 +297,7 @@ class InstallerQueue(QProcess):
             pkgs=pkgs,
             prefix=prefix,
             origins=origins,
+            upgrade=upgrade,
             **kwargs,
         )
         return self._queue_item(item)
@@ -392,10 +405,16 @@ class InstallerQueue(QProcess):
         pkgs: Sequence[str],
         prefix: Optional[str] = None,
         origins: Sequence[str] = (),
+        upgrade: bool = False,
         **kwargs,
     ) -> AbstractInstallerTool:
         return self._get_tool(tool)(
-            pkgs=pkgs, action=action, origins=origins, prefix=prefix, **kwargs
+            pkgs=pkgs,
+            action=action,
+            origins=origins,
+            prefix=prefix,
+            upgrade=upgrade,
+            **kwargs,
         )
 
     def _queue_item(self, item: AbstractInstallerTool) -> JobId:
