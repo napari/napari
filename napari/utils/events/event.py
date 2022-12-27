@@ -763,7 +763,9 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             self._emitting = False
-            if event._pop_source() != self.source:
+            ps = event._pop_source()
+            if ps is not self.source:
+
                 raise RuntimeError(
                     trans._(
                         "Event source-stack mismatch.",
