@@ -38,13 +38,13 @@ class ViewerStatusBar(QStatusBar):
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum
         )
 
-        self._plugin_reader = QElidingLabel(trans._(''))
+        self._plugin_reader = QLabel(trans._(''))
         self._plugin_reader.setObjectName('plugin-reader status')
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setContentsMargins(0, 0, 0, 0)
-        self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
+        # self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
         self._plugin_reader.setSizePolicy(
-            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
         )
 
         self._source_type = QLabel('')
