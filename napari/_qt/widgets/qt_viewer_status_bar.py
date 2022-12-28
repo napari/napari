@@ -1,5 +1,5 @@
 """Status bar widget on the viewer MainWindow"""
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -78,46 +78,33 @@ class ViewerStatusBar(QStatusBar):
 
     def setStatusText(
         self,
-        text: str = None,
-        layer_base=None,
+        text: str = "",
+        layer_base: str = "",
         source_type=None,
-        plugin=None,
-        coordinates=None,
+        plugin: str = "",
+        coordinates: str = "",
     ) -> None:
         # The method used to set a single value as the status and not
         # all the layer information.
 
-        if text:
-            self._status.setText(text)
-        else:
-            self._status.setText('')
+        self._status.setText(text)
 
-        if layer_base:
-            self._layer_base.show()
-            self._layer_base.setText(layer_base)
-        else:
-            self._layer_base.hide()
+        self._layer_base.setVisible(bool(layer_base))
+        self._layer_base.setText(layer_base)
 
+        self._source_type.setVisible(bool(source_type))
         if source_type:
-            self._source_type.show()
             self._source_type.setText(f'{source_type}: ')
-        else:
-            self._source_type.hide()
 
-        if plugin:
-            self._plugin_reader.show()
-            self._plugin_reader.setText(plugin)
-        else:
-            self._plugin_reader.hide()
+        self._plugin_reader.setVisible(bool(plugin))
 
-        if coordinates:
-            self._coordinates.show()
-            self._coordinates.setText(coordinates)
-        else:
-            self._coordinates.hide()
+        self._plugin_reader.setText(plugin)
+
+        self._coordinates.setVisible(bool(coordinates))
+        self._coordinates.setText(coordinates)
 
     def _toggle_activity_dock(self, visible: Optional[bool] = None):
-        par: _QtMainWindow = self.parent()
+        par = cast(_QtMainWindow, self.parent())
         if visible is None:
             visible = not par._activity_dialog.isVisible()
         if visible:
