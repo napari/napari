@@ -51,13 +51,16 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)
 
 
-def running_as_bundled_app() -> bool:
+def running_as_bundled_app(*, check_conda=True) -> bool:
     """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
+    if (
+        check_conda
+        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
+    ):
         return True
 
     try:
