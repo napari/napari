@@ -35,7 +35,7 @@ class ViewerStatusBar(QStatusBar):
         self._layer_base.setMinimumSize(100, 16)
         self._layer_base.setContentsMargins(0, 0, 0, 0)
         self._layer_base.setSizePolicy(
-            QSizePolicy.Minimum, QSizePolicy.Maximum
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum
         )
 
         self._plugin_reader = QElidingLabel(trans._(''))
@@ -43,21 +43,28 @@ class ViewerStatusBar(QStatusBar):
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setContentsMargins(0, 0, 0, 0)
         self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
+        self._plugin_reader.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum
+        )
 
         self._source_type = QLabel('')
         self._source_type.setObjectName('source-type status')
         self._source_type.setContentsMargins(0, 0, 0, 0)
 
-        self._coordinates = QLabel('')
+        self._coordinates = QElidingLabel('')
         self._coordinates.setObjectName('coordinates status')
+        self._coordinates.setMinimumSize(100, 16)
         self._coordinates.setContentsMargins(0, 0, 0, 0)
+        self._coordinates.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum
+        )
 
         layout.addWidget(self._status)
         layout.addWidget(self._layer_base)
         layout.addWidget(self._source_type)
         layout.addWidget(self._plugin_reader)
         layout.addWidget(self._coordinates)
-        layout.addStretch(0)
+        # layout.addStretch(0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
@@ -67,8 +74,10 @@ class ViewerStatusBar(QStatusBar):
         self._help = QElidingLabel('')
         self._help.setObjectName('help status')
         self._help.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self._help.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-        layout.addWidget(self._help, 1)
+        self._help.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        )
+        layout.addWidget(self._help)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
@@ -91,7 +100,6 @@ class ViewerStatusBar(QStatusBar):
     ) -> None:
         # The method used to set a single value as the status and not
         # all the layer information.
-
         self._status.setText(text)
 
         self._layer_base.setVisible(bool(layer_base))
@@ -107,6 +115,15 @@ class ViewerStatusBar(QStatusBar):
 
         self._coordinates.setVisible(bool(coordinates))
         self._coordinates.setText(coordinates)
+
+        if coordinates:
+            self._help.setSizePolicy(
+                QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+            )
+        else:
+            self._help.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            )
 
     def _toggle_activity_dock(self, visible: Optional[bool] = None):
         par = cast(_QtMainWindow, self.parent())
