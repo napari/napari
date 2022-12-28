@@ -2191,6 +2191,8 @@ def test_editing_4d():
             )
         ]
     )
+    # check if set data doe not end with an exception
+    # https://github.com/napari/napari/issues/5379
     viewer.layers['rois'].data = [
         np.around(x) for x in viewer.layers['rois'].data
     ]
