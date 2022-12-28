@@ -30,6 +30,7 @@ class ViewerStatusBar(QStatusBar):
         self._status.setContentsMargins(0, 0, 0, 0)
 
         self._layer_base = QElidingLabel(trans._(''))
+        self._layer_base.setObjectName('layer_base status')
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
         self._layer_base.setMinimumSize(100, 16)
         self._layer_base.setContentsMargins(0, 0, 0, 0)
@@ -38,14 +39,17 @@ class ViewerStatusBar(QStatusBar):
         )
 
         self._plugin_reader = QElidingLabel(trans._(''))
+        self._plugin_reader.setObjectName('plugin-reader status')
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setContentsMargins(0, 0, 0, 0)
         self._plugin_reader.setElideMode(Qt.TextElideMode.ElideMiddle)
 
         self._source_type = QLabel('')
+        self._source_type.setObjectName('source-type status')
         self._source_type.setContentsMargins(0, 0, 0, 0)
 
         self._coordinates = QLabel('')
+        self._coordinates.setObjectName('coordinates status')
         self._coordinates.setContentsMargins(0, 0, 0, 0)
 
         layout.addWidget(self._status)
@@ -61,6 +65,7 @@ class ViewerStatusBar(QStatusBar):
 
         self.addWidget(main_widget, 1)
         self._help = QElidingLabel('')
+        self._help.setObjectName('help status')
         self._help.setAlignment(Qt.AlignmentFlag.AlignRight)
         self._help.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         layout.addWidget(self._help, 1)
