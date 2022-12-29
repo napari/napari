@@ -47,7 +47,8 @@ import napari
 viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![napari viewer showing an image of an astronaut.](https://github.com/napari/docs/blob/main/docs/images/screenshot-add-image.png)
+<img width="1198" alt="napari viewer showing cells in 3d." src="https://user-images.githubusercontent.com/44469195/209934762-aba0c2c0-5829-43ac-96f1-ce55707860b4.png">
+
 
 To use napari from inside a script, use `napari.run()`:
 
