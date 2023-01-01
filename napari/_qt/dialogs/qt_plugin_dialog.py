@@ -66,18 +66,7 @@ def is_conda_package(pkg: str):
     # with the template `<package-name>-<version>-<build-string>.json` saved within a `conda-meta` folder within
     # the given environment of interest.
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    try:
-        if conda_meta_dir.is_dir():
-            for fname in conda_meta_dir.iterdir():
-                if fname.suffix == '.json':
-                    *name, _, _ = fname.name.rsplit('-')
-                    name = "-".join(name)
-                    if pkg == name:
-                        return True
-    except FileNotFoundError:
-        return False
-
-    return False
+	return any(True for _ in conda_meta_dir.glob(f"{name}-*-*.json"))
 
 
 class PluginListItem(QFrame):
