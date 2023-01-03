@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from enum import Enum, auto
 from functools import partial
@@ -67,7 +68,10 @@ def is_conda_package(pkg: str):
     # the given environment of interest.
 
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    return any(True for _ in conda_meta_dir.glob(f"{pkg}-*-*.json"))
+    return any(
+        re.match(rf"{pkg}-[^-]+-[^-]+.json", p.name)
+        for p in conda_meta_dir.glob(f"{pkg}-*-*.json")
+    )
 
 
 class PluginListItem(QFrame):
@@ -493,10 +497,12 @@ class QPluginList(QListWidget):
         if project_info.home_page:
             import webbrowser
 
+            # FIXME: Partial may lead to leak memory when connecting to Qt signals.
             widg.plugin_name.clicked.connect(
                 partial(webbrowser.open, project_info.home_page)
             )
 
+        # FIXME: Partial may lead to leak memory when connecting to Qt signals.
         widg.action_button.clicked.connect(
             partial(
                 self.handle_action,
