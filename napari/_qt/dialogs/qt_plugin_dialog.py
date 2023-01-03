@@ -77,7 +77,7 @@ def is_conda_package(pkg: str):
     )
 
 
-def is_conda_package(pkg):
+def is_conda_package(pkg: str):
     """Determines if plugin was installed through conda.
 
     Returns
