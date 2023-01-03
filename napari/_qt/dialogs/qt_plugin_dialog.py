@@ -4,7 +4,7 @@ from enum import Enum, auto
 from functools import partial
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
@@ -54,7 +54,7 @@ from napari.utils.translations import trans
 # TODO: add error icon and handle pip install errors
 
 
-def is_conda_package(pkg):
+def is_conda_package(pkg: str):
     """Determines if plugin was installed through conda.
 
     Returns
@@ -104,8 +104,8 @@ class PluginListItem(QFrame):
         super().__init__(parent)
         self.url = url
         self._versions = {}
-        self._versions['Conda'] = versions_conda
-        self._versions['PyPI'] = versions_pypi
+        self._versions_conda = versions_conda
+        self._versions_pypi = versions_pypi
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
 
@@ -326,10 +326,10 @@ class PluginListItem(QFrame):
         self.version_choice_text = QLabel('Version:')
         self.source_choice_dropdown = QComboBox()
 
-        if len(self._versions['PyPI']) > 0:
+        if len(self._versions_pypi) > 0:
             self.source_choice_dropdown.addItem('PyPI')
 
-        if len(self._versions['Conda']) > 0:
+        if len(self._versions_conda) > 0:
             self.source_choice_dropdown.addItem('Conda')
 
         self.source_choice_dropdown.currentTextChanged.connect(
@@ -399,10 +399,12 @@ class PluginListItem(QFrame):
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.info_widget.setLayout(info_layout)
 
-    def _populate_version_dropdown(self, source):
+    def _populate_version_dropdown(self, source: Literal["PyPI", "Conda"]):
         """Display the versions available after selecting a source: pypi or conda."""
-
-        versions = self._versions[source]
+        if source == 'PyPI':
+            versions = self._versions_pypi
+        else:
+            versions = self._versions_conda
         self.version_choice_dropdown.clear()
         if len(versions) > 0:
             for version in versions:
@@ -451,7 +453,7 @@ class QPluginList(QListWidget):
     @Slot(PackageMetadata)
     def addItem(
         self,
-        project_info_versions: Tuple[PackageMetadata, list, list],
+        project_info_versions: Tuple[PackageMetadata, List[str], List[str]],
         installed=False,
         plugin_name=None,
         enabled=True,
