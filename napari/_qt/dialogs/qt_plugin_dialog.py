@@ -90,7 +90,10 @@ def is_conda_package(pkg: str):
     # the given environment of interest.
 
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    return any(True for _ in conda_meta_dir.glob(f"{pkg}-*-*.json"))
+    return any(
+        re.match(rf"{pkg}-[^-]+-[^-]+.json", p.name)
+        for p in conda_meta_dir.glob(f"{pkg}-*-*.json")
+    )
 
 
 class PluginListItem(QFrame):
