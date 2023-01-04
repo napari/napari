@@ -7,6 +7,11 @@ class BaseMagicSetting(QObject):
     """
 
     valueChanged = Signal(dict)
+    
+    def get_mgui(self):
+        """Get magic gui widget."""
+        raise NotImplementedError()
+
 
     def __init__(self, description=None):
         super().__init__()
