@@ -47,6 +47,8 @@ class CommandId(str, Enum):
     NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
+    NAPARI_SHOW_SHORTCUTS = "napari:window:show_shortcuts"
+
     # Layer menubar
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
@@ -191,6 +193,8 @@ _COMMAND_INFO = {
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
     CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub'), ),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
+
+    CommandId.NAPARI_SHOW_SHORTCUTS: _i(trans._('Show all key bindings'),),
 
     # Layer menubar
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),

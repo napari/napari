@@ -8,7 +8,6 @@ from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari._qt.menus._util import NapariMenu, populate_menu
-from napari.components._viewer_key_bindings import register_viewer_action
 from napari.errors.reader_errors import MultipleReaderError
 from napari.settings import get_settings
 from napari.utils.history import get_save_history, update_save_history
@@ -253,7 +252,6 @@ class FileMenu(NapariMenu):
         self._win._qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
-@register_viewer_action(trans._("Show all key bindings"))
 def show_shortcuts(viewer: 'Viewer'):
     viewer.window.file_menu._open_preferences()
     pref_list = viewer.window.file_menu._pref_dialog._list
