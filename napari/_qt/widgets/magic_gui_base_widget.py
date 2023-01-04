@@ -15,7 +15,7 @@ class BaseMagicSetting(QObject):
 
     def __init__(self, description=None):
         super().__init__()
-        self._widget = self.MAGIC_GUI()
+        self._widget = self.get_mgui()
         self._description = description
 
         @self._widget.changed.connect
