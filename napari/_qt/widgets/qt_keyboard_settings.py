@@ -314,7 +314,7 @@ class ShortcutEditor(QWidget):
         action_name = self._table.item(row, self._action_col).text()
 
         if action_name in self._app.commands._commands:
-            shortcuts = [str(keybinding.keybinding) for keybinding in self._app.keybindings._keybindings
+            shortcuts = [str(keybinding.keybinding) for keybinding in self._app.keybindings
                          if keybinding.command_id == action_name]
         else:
             shortcuts = action_manager._shortcuts.get(action_name, [])
@@ -415,7 +415,7 @@ class ShortcutEditor(QWidget):
             current_action = self._table.item(row, self._action_col).text()
 
             # get the original shortcuts
-            if current_action in self._app.commands._commands:
+            if current_action in self._app.commands:
                 current_shortcuts = [
                     shortcut for shortcut in self._app.keybindings._keybindings if shortcut.command_id == current_action
                 ]
