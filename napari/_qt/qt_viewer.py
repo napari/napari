@@ -39,7 +39,6 @@ from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.utils import config, perf
-from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.history import (
@@ -47,13 +46,6 @@ from napari.utils.history import (
     get_save_history,
     update_open_history,
     update_save_history,
-)
-from napari.utils.interactions import (
-    mouse_double_click_callbacks,
-    mouse_move_callbacks,
-    mouse_press_callbacks,
-    mouse_release_callbacks,
-    mouse_wheel_callbacks,
 )
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
@@ -225,24 +217,11 @@ class QtViewer(QSplitter):
         )
         # TODO: temporary but needs to be moved to VispyCanvas
 
-        self.canvas.scene_canvas.events.mouse_double_click.connect(
-            self.on_mouse_double_click
-        )
-        self.canvas.scene_canvas.events.mouse_move.connect(self.on_mouse_move)
-        self.canvas.scene_canvas.events.mouse_press.connect(
-            self.on_mouse_press
-        )
-        self.canvas.scene_canvas.events.mouse_release.connect(
-            self.on_mouse_release
-        )
         self.canvas.scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
         )
         self.canvas.scene_canvas.events.key_release.connect(
             self._key_map_handler.on_key_release
-        )
-        self.canvas.scene_canvas.events.mouse_wheel.connect(
-            self.on_mouse_wheel
         )
         self.canvas.scene_canvas.events.draw.connect(self.on_draw)
         self.canvas.scene_canvas.events.resize.connect(self.on_resize)
@@ -915,36 +894,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def _map_canvas2world(self, position):
-        """Map position from canvas pixels into world coordinates.
-
-        Parameters
-        ----------
-        position : 2-tuple
-            Position in canvas (x, y).
-
-        Returns
-        -------
-        coords : tuple
-            Position in world coordinates, matches the total dimensionality
-            of the viewer.
-        """
-        nd = self.viewer.dims.ndisplay
-        transform = self.canvas.view.scene.transform
-        mapped_position = transform.imap(list(position))[:nd]
-        position_world_slice = mapped_position[::-1]
-
-        # handle position for 3D views of 2D data
-        nd_point = len(self.viewer.dims.point)
-        if nd_point < nd:
-            position_world_slice = position_world_slice[-nd_point:]
-
-        position_world = list(self.viewer.dims.point)
-        for i, d in enumerate(self.viewer.dims.displayed):
-            position_world[d] = position_world_slice[i]
-
-        return tuple(position_world)
-
     @property
     def _canvas_corners_in_world(self):
         """Location of the corners of canvas in world coordinates.
@@ -955,8 +904,10 @@ class QtViewer(QSplitter):
             Coordinates of top left and bottom right canvas pixel in the world.
         """
         # Find corners of canvas in world coordinates
-        top_left = self._map_canvas2world([0, 0])
-        bottom_right = self._map_canvas2world(self.viewer.canvas.size[::-1])
+        top_left = self.canvas._map_canvas2world([0, 0])
+        bottom_right = self.canvas._map_canvas2world(
+            self.viewer.canvas.size[::-1]
+        )
         return np.array([top_left, bottom_right])
 
     def on_resize(self, event):
@@ -966,124 +917,6 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self.viewer.canvas.size = tuple(self.canvas.scene_canvas.size[::-1])
-
-    def _process_mouse_event(self, mouse_callbacks, event):
-        """Add properties to the mouse event before passing the event to the
-        napari events system. Called whenever the mouse moves or is clicked.
-        As such, care should be taken to reduce the overhead in this function.
-        In future work, we should consider limiting the frequency at which
-        it is called.
-
-        This method adds following:
-            position: the position of the click in world coordinates.
-            view_direction: a unit vector giving the direction of the camera in
-                world coordinates.
-            up_direction: a unit vector giving the direction of the camera that is
-                up in world coordinates.
-            dims_displayed: a list of the dimensions currently being displayed
-                in the viewer. This comes from viewer.dims.displayed.
-            dims_point: the indices for the data in view in world coordinates.
-                This comes from viewer.dims.point
-
-        Parameters
-        ----------
-        mouse_callbacks : function
-            Mouse callbacks function.
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        if event.pos is None:
-            return
-
-        # Add the view ray to the event
-        event.view_direction = self.viewer.camera.calculate_nd_view_direction(
-            self.viewer.dims.ndim, self.viewer.dims.displayed
-        )
-        event.up_direction = self.viewer.camera.calculate_nd_up_direction(
-            self.viewer.dims.ndim, self.viewer.dims.displayed
-        )
-
-        # Update the cursor position
-        self.viewer.cursor._view_direction = event.view_direction
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-
-        # Add the cursor position to the event
-        event.position = self.viewer.cursor.position
-
-        # Add the displayed dimensions to the event
-        event.dims_displayed = list(self.viewer.dims.displayed)
-
-        # Add the current dims indices
-        event.dims_point = list(self.viewer.dims.point)
-
-        # Put a read only wrapper on the event
-        event = ReadOnlyWrapper(event)
-        mouse_callbacks(self.viewer, event)
-
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_callbacks(layer, event)
-
-    def on_mouse_wheel(self, event):
-        """Called whenever mouse wheel activated in canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_wheel_callbacks, event)
-
-    def on_mouse_double_click(self, event):
-        """Called whenever a mouse double-click happen on the canvas
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method. The `event.type` will always be `mouse_double_click`
-
-        Notes
-        -----
-
-        Note that this triggers in addition to the usual mouse press and mouse release.
-        Therefore a double click from the user will likely triggers the following event in sequence:
-
-             - mouse_press
-             - mouse_release
-             - mouse_double_click
-             - mouse_release
-        """
-        self._process_mouse_event(mouse_double_click_callbacks, event)
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_press_callbacks, event)
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_move_callbacks, event)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_release_callbacks, event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
