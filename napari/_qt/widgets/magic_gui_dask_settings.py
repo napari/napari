@@ -14,4 +14,5 @@ def dask_settings(dask_enabled=True, cache=15.0) -> dict:
 class MagicDaskSettingsWidget(BaseMagicSetting):
     """Class for use in json schema widget builder for dask settings."""
 
-    MAGIC_GUI = dask_settings
+    def get_mgui(self):
+        return dask_settings()
