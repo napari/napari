@@ -6,7 +6,6 @@ class BaseMagicSetting(QObject):
     buider.
     """
 
-    MAGIC_GUI = None
     valueChanged = Signal(dict)
 
     def __init__(self, description=None):
