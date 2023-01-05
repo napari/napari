@@ -10,6 +10,10 @@ You can find more videos of talks, tutorials and demos on the
 ## Workshops
 
 *Workshops are listed from newest to oldest.*
+* November 2022, napari foundation grant onboarding
+  * [Getting started with napari plugin development slide deck](https://docs.google.com/presentation/d/15lrFRLPm9bfmU4hgcVwoduIJr5bqhoHo7ZeWLO6H_Us/edit?usp=sharing)
+  * [Watch it here](https://drive.google.com/file/d/1IYDV-GTGEYh5j_tvBaWYEZ_tQXTqmJkr/view?usp=share_link)
+
 
 * September 2022, Helmholtz Imaging Summer Academy
   * [Image analysis with Python and Napari](https://biapol.github.io/HIP_Introduction_to_Napari_and_image_processing_with_Python_2022/intro.html) 
