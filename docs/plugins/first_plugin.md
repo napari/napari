@@ -54,14 +54,16 @@ cd napari-hello
 In your root `napari-hello` folder, create a `pyproject.toml` and `setup.cfg` file,
 then create a `napari_hello` directory with a single `__init__.py` file inside of it.
 
-````{tabbed} macOS / Linux
+::::{tab-set}
+
+:::{tab-item} macOS / Linux
 ```sh
 mkdir napari_hello
 touch napari_hello/__init__.py napari_hello/napari.yaml pyproject.toml setup.cfg
 ```
-````
+:::
 
-````{tabbed} Windows
+:::{tab-item} Windows
 ```bat
 mkdir napari_hello
 copy /b napari_hello\__init__.py +,,
@@ -69,7 +71,9 @@ copy /b napari_hello\napari.yaml +,,
 copy /b pyproject.toml +,,
 copy /b setup.cfg +,,
 ```
-````
+:::
+
+::::
 
 Your project should now look like this:
 

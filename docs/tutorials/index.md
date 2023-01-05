@@ -1,3 +1,4 @@
+(napari-tutorials)=
 # napari tutorials
 
 These tutorials will help you explore the main usage modes and methods of

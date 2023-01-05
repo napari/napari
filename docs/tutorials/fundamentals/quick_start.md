@@ -11,7 +11,7 @@ kernelspec:
   language: python
   name: python3
 ---
-
+(napari-quick-start)=
 # napari quick start
 
 +++
