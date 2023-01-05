@@ -34,7 +34,7 @@ cd napari-docs/
 To reduce confusion and possible conflicts, the `docs` fork is being cloned into
 a local repository folder named `napari-docs`. Alternately, you could also
 rename the repository when forking `napari/docs`.
-```
+````
 
 - **If you wish to add/amend documentation that does not contain code, you will
   require a clean conda environment with napari docs dependencies installed.**
