@@ -23,6 +23,7 @@ import qtgallery
 from jinja2.filters import FILTERS
 
 import napari
+from napari._version import __version_tuple__
 
 release = napari.__version__
 version = "dev" if "dev" in release else release
@@ -152,6 +153,13 @@ myst_enable_extensions = [
 ]
 
 myst_heading_anchors = 3
+
+version_string = '.'.join(str(x) for x in __version_tuple__[:3])
+
+myst_substitutions = {
+   "napari_conda_version": f"`napari={version_string}`",
+   "napari_version": version_string,
+ }
 
 nb_output_stderr = 'show'
 

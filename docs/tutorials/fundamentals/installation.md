@@ -116,8 +116,20 @@ If you want to install napari with PySide2 as the backend you need to install it
 
 ```sh
 conda install -c conda-forge "napari=*=*pyside2"
-```  
+``` 
+````
 
+````{note}
+In some cases, `conda`'s default solver can struggle to find out which packages need to be
+installed for napari. If it takes too long or you get the wrong version of napari 
+(see below), consider:
+1. Overriding your default channels to use only `conda-forge` by adding `--override-channels`
+and specifying the napari and Python versions explicitly. For example, use `python=3.9` to get 
+Python 3.9 and {{ napari_conda_version }} to specify the napari version as 
+{{ napari_version }}, the current release.
+2. You can try installing [`mamba`](https://github.com/mamba-org/mamba) in your base
+environment with `conda install -n base -c conda-forge mamba` and use its faster solver
+by replacing `conda` for `mamba` in the above instructions.
 ````
 
 
@@ -143,6 +155,10 @@ napari
 
 An empty napari viewer should appear as follows.
 
+````{note}
+You can check the napari version, to ensure it's what you expect, for example
+the current release {{ napari_version }}, using command: `napari --version` .
+````
 ![macOS desktop with a napari viewer window without any image opened in the foreground, and a terminal in the background with the appropriate conda environment activated (if applicable) and the command to open napari entered.](../assets/tutorials/launch_cli_empty.png)
 
 ## Choosing a different Qt backend
