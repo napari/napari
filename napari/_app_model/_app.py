@@ -22,7 +22,7 @@ from napari._app_model.injection._providers import PROVIDERS
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Image, Labels, Points, Shapes
 from napari.utils.action_manager import action_manager
-from napari.utils.key_bindings import _bind_plugin_key
+from napari.utils.key_bindings import _bind_plugin_key, _get_plugin_keymap
 
 APP_NAME = 'napari'
 
@@ -42,7 +42,6 @@ def _bindable_cmd(app, cmd_id):
 def populate_plugin_keymap():
     """Populate the global plugin keymap from the app's keybinding registry."""
     app = NapariApplication.get_app()
-    from napari.utils.key_bindings import _get_plugin_keymap
     _get_plugin_keymap().clear()
     for kb_rule in app.keybindings:
         # skip built-in keybinds

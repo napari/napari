@@ -237,7 +237,7 @@ class ShortcutEditor(QWidget):
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
 
-                if isinstance(action, Action):  # action is registered through keymap handler
+                if isinstance(action, action_manager.Action):  # action is registered through keymap handler
                     description = action.description
                     tooltip = action_name
                     shortcuts = action_manager._shortcuts.get(action_name, [])
@@ -348,7 +348,7 @@ class ShortcutEditor(QWidget):
                 message = trans._(
                     "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
                     new_shortcut=new_shortcut,
-                    action_description=action.description if isinstance(action, Action) else self._app.commands[action_name].title,
+                    action_description=action.description if isinstance(action, action_manager.Action) else self._app.commands[action_name].title,
                 )
                 self._show_warning(new_shortcut, action, row, message)
 
