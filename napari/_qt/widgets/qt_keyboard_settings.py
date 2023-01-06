@@ -154,13 +154,13 @@ class ShortcutEditor(QWidget):
         self._app.keybindings._keybindings.clear()
 
         for (
-            action_name,
+            action,
             shortcuts,
         ) in get_settings().shortcuts.shortcuts.items():
-            if action_name not in self._app.commands:
-                action_manager.unbind_shortcut(action_name)
+            if action not in self._app.commands:
+                action_manager.unbind_shortcut(action)
                 for shortcut in shortcuts:
-                    action_manager.bind_shortcut(action_name, shortcut)
+                    action_manager.bind_shortcut(action, shortcut)
 
         for command_id, keybindings in plugins_shortcuts.items():
             for keybinding in keybindings:
@@ -348,7 +348,7 @@ class ShortcutEditor(QWidget):
                 message = trans._(
                     "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
                     new_shortcut=new_shortcut,
-                    action_description=action.description,
+                    action_description=action.description if isinstance(action, Action) else self._app.commands[action_name].title,
                 )
                 self._show_warning(new_shortcut, action, row, message)
 
