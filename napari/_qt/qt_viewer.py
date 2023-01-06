@@ -222,10 +222,6 @@ class QtViewer(QSplitter):
         self.canvas.scene_canvas.events.key_release.connect(
             self._key_map_handler.on_key_release
         )
-        self.canvas.scene_canvas.events.resize.connect(self.on_resize)
-        self.canvas.bgcolor = transform_color(
-            get_theme(self.viewer.theme, False).canvas.as_hex()
-        )[0]
 
         # Stacked widget to provide a welcome page
         self._canvas_overlay = QtWidgetOverlay(
@@ -891,14 +887,6 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
-
-    def on_resize(self, event):
-        """Called whenever canvas is resized.
-
-        event : vispy.util.event.Event
-            The vispy event that triggered this method.
-        """
-        self.viewer.canvas.size = tuple(self.canvas.scene_canvas.size[::-1])
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""

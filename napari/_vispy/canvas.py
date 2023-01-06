@@ -69,6 +69,7 @@ class VispyCanvas:
         self.scene_canvas.events.mouse_press.connect(self.on_mouse_press)
         self.scene_canvas.events.mouse_release.connect(self.on_mouse_release)
         self.scene_canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
+        self.scene_canvas.events.resize.connect(self.on_resize)
         self.scene_canvas.events.draw.connect(self.on_draw)
         self.napari_canvas.events.bg_color.connect(self._on_background_change)
         self.destroyed.connect(self._disconnect_background_change)
@@ -324,3 +325,11 @@ class VispyCanvas:
                 ],
                 shape_threshold=self.viewer.canvas.size,
             )
+
+    def on_resize(self, event):
+        """Called whenever canvas is resized.
+
+        event : vispy.util.event.Event
+            The vispy event that triggered this method.
+        """
+        self.viewer.canvas.size = tuple(self.scene_canvas.size[::-1])
