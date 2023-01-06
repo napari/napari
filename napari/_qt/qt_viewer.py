@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
-import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
@@ -223,7 +222,6 @@ class QtViewer(QSplitter):
         self.canvas.scene_canvas.events.key_release.connect(
             self._key_map_handler.on_key_release
         )
-        self.canvas.scene_canvas.events.draw.connect(self.on_draw)
         self.canvas.scene_canvas.events.resize.connect(self.on_resize)
         self.canvas.bgcolor = transform_color(
             get_theme(self.viewer.theme, False).canvas.as_hex()
@@ -894,22 +892,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    @property
-    def _canvas_corners_in_world(self):
-        """Location of the corners of canvas in world coordinates.
-
-        Returns
-        -------
-        corners : 2-tuple
-            Coordinates of top left and bottom right canvas pixel in the world.
-        """
-        # Find corners of canvas in world coordinates
-        top_left = self.canvas._map_canvas2world([0, 0])
-        bottom_right = self.canvas._map_canvas2world(
-            self.viewer.canvas.size[::-1]
-        )
-        return np.array([top_left, bottom_right])
-
     def on_resize(self, event):
         """Called whenever canvas is resized.
 
@@ -917,33 +899,6 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self.viewer.canvas.size = tuple(self.canvas.scene_canvas.size[::-1])
-
-    def on_draw(self, event):
-        """Called whenever the canvas is drawn.
-
-        This is triggered from vispy whenever new data is sent to the canvas or
-        the camera is moved and is connected in the `QtViewer`.
-        """
-        # The canvas corners in full world coordinates (i.e. across all layers).
-        canvas_corners_world = self._canvas_corners_in_world
-        for layer in self.viewer.layers:
-            # The following condition should mostly be False. One case when it can
-            # be True is when a callback connected to self.viewer.dims.events.ndisplay
-            # is executed before layer._slice_input has been updated by another callback
-            # (e.g. when changing self.viewer.dims.ndisplay from 3 to 2).
-            displayed_sorted = sorted(layer._slice_input.displayed)
-            nd = len(displayed_sorted)
-            if nd > self.viewer.dims.ndisplay:
-                displayed_axes = displayed_sorted
-            else:
-                displayed_axes = self.viewer.dims.displayed[-nd:]
-            layer._update_draw(
-                scale_factor=1 / self.viewer.camera.zoom,
-                corner_pixels_displayed=canvas_corners_world[
-                    :, displayed_axes
-                ],
-                shape_threshold=self.viewer.canvas.size,
-            )
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
