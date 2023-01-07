@@ -93,9 +93,13 @@ class ActionManager:
 
     def _validate_action_name(self, name):
         if len(name.split(':')) != 2:
-            return False  # this action comes from app_model
-        else:
-            return True
+            raise ValueError(
+                trans._(
+                    'Action names need to be in the form `package:name`, got {name!r}',
+                    name=name,
+                    deferred=True,
+                )
+            )
 
     def register_action(
         self,
@@ -155,11 +159,11 @@ class ActionManager:
 
         """
 
-        if self._validate_action_name(name):
-            self._actions[name] = Action(
-                command, description, keymapprovider, repeatable
-            )
-            self._update_shortcut_bindings(name)
+        self._validate_action_name(name)
+        self._actions[name] = Action(
+            command, description, keymapprovider, repeatable
+        )
+        self._update_shortcut_bindings(name)
 
     def _update_shortcut_bindings(self, name: str):
         """
@@ -282,8 +286,7 @@ class ActionManager:
             this warning will be emitted.
 
         """
-        if not self._validate_action_name(name):
-            return
+        self._validate_action_name(name)
 
         action = self._actions.get(name, None)
         if action is None:
