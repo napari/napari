@@ -183,7 +183,7 @@ QtModePushButton[mode="delete_shape"] {
 }
 
 QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
-  background-color: {{ warning }};
+  background-color: {{ error }};
 }
 
 
@@ -226,12 +226,12 @@ QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
 }
 
 QtPlayButton[playing=True]:hover {
-  background-color: {{ lighten(warning, 10) }};
+  background-color: {{ lighten(error, 10) }};
 }
 
 QtPlayButton[playing=True] {
     image: url("theme_{{ id }}:/square.svg");
-    background-color: {{ warning }};
+    background-color: {{ error }};
     height: 12px;
     width: 12px;
     padding: 2px;
