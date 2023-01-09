@@ -179,7 +179,7 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR: _i(trans._('Scale Bar Visible')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_COLORED: _i(trans._('Scale Bar Colored')),
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
-    CommandId.TOGGLE_VIEWER_NDISPLAY : _i(trans._('3D Canvas')),
+    CommandId.TOGGLE_VIEWER_NDISPLAY : _i(trans._('Toggle nDisplay')),
 
     # Help menubar
     CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started'), ),
@@ -219,7 +219,7 @@ _COMMAND_INFO = {
     CommandId.LAYER_PROJECT_MEDIAN: _i(trans._('Median projection'),),
 
     CommandId.VIEWER_RESET_SCROLL: _i(trans._('Reset scroll'), trans._('Reset dims scroll progress'),),
-    CommandId.VIEWER_CYCLE_THEME: _i(trans._('Cycle theme'),),
+    CommandId.VIEWER_TOGGLE_THEME: _i(trans._('Toggle theme'), trans._('Toggle current viewer theme')),
     CommandId.VIEWER_RESET_VIEW: _i(trans._('Reset view'), trans._('Reset view to original state.'),),
     CommandId.VIEWER_INC_DIMS_LEFT: _i(trans._('Increment dims left'),),
     CommandId.VIEWER_INC_DIMS_RIGHT: _i(trans._('Increment dims right'),),
