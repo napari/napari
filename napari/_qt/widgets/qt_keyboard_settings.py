@@ -29,6 +29,7 @@ from napari.settings import get_settings
 from napari.utils.action_manager import Action as ActionManagerAction
 from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
+from napari.utils.key_bindings import coerce_keybinding
 from napari.utils.shortcuts import plugins_shortcuts
 from napari.utils.translations import trans
 
@@ -470,7 +471,10 @@ class ShortcutEditor(QWidget):
                     for short in shortcuts_list:
                         if current_action in self._app.commands:
                             self._app.keybindings.register_keybinding_rule(
-                                current_action, KeyBindingRule(primary=short)
+                                current_action,
+                                KeyBindingRule(
+                                    primary=coerce_keybinding(short)
+                                ),
                             )
                         else:
                             action_manager.bind_shortcut(current_action, short)

@@ -421,6 +421,8 @@ class QtViewer(QSplitter):
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
+            if action.count(':') != 1:  # not an original action manager action
+                continue
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)
