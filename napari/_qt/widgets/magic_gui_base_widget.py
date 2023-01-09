@@ -7,11 +7,10 @@ class BaseMagicSetting(QObject):
     """
 
     valueChanged = Signal(dict)
-    
+
     def get_mgui(self):
         """Get magic gui widget."""
         raise NotImplementedError()
-
 
     def __init__(self, description=None):
         super().__init__()
@@ -55,5 +54,7 @@ class BaseMagicSetting(QObject):
         value: str
             Tooltip for widget.
         """
-        for widget in self._widget._list:
-            widget.tooltip = value
+
+        if value:
+            for widget in self._widget._list:
+                widget.tooltip = value
