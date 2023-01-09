@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from napari.components.viewer_model import ViewerModel
+from napari.utils.action_manager import action_manager
+from napari.utils.theme import available_themes, get_system_theme
+
 if TYPE_CHECKING:
     from napari.viewer import Viewer
-
-from napari.components.viewer_model import ViewerModel
-from napari.settings import get_settings
-from napari.utils.action_manager import action_manager
-from napari.utils.theme import available_themes
 
 
 def register_viewer_action(description):
@@ -39,13 +38,25 @@ def reset_scroll_progress(viewer: Viewer):
     viewer.dims._scroll_progress = 0
 
 
-def cycle_theme(viewer: Viewer):
-    """Toggle theme for viewer"""
-    settings = get_settings()
+# Making this an action makes vispy really unhappy during the tests
+# on mac only with:
+# ```
+# RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
+# ```
+def toggle_theme(viewer: Viewer):
+    """Toggle theme for current viewer"""
     themes = available_themes()
-    current_theme = settings.appearance.theme
-    idx = (themes.index(current_theme) + 1) % len(themes)
-    settings.appearance.theme = themes[idx]
+    current_theme = viewer.theme
+    # Check what the system theme is, to toggle properly
+    if current_theme == 'system':
+        current_theme = get_system_theme()
+    idx = themes.index(current_theme)
+    idx = (idx + 1) % len(themes)
+    # Don't toggle to system, just among actual themes
+    if themes[idx] == 'system':
+        idx = (idx + 1) % len(themes)
+
+    viewer.theme = themes[idx]
 
 
 def reset_view(viewer: Viewer):

@@ -30,9 +30,9 @@ VIEWER_ACTIONS = [
         callback=GeneratorCallback(_viewer_actions.reset_scroll_progress),
     ),
     Action(
-        id=CommandId.VIEWER_CYCLE_THEME,
-        title=CommandId.VIEWER_CYCLE_THEME.title,
-        callback=_viewer_actions.cycle_theme,
+        id=CommandId.VIEWER_TOGGLE_THEME,
+        title=CommandId.VIEWER_TOGGLE_THEME.title,
+        callback=_viewer_actions.toggle_theme,
     ),
     Action(
         id=CommandId.VIEWER_RESET_VIEW,

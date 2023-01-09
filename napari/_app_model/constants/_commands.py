@@ -79,7 +79,7 @@ class CommandId(str, Enum):
 
     # Viewer Actions
     VIEWER_RESET_SCROLL = "napari:viewer:reset_scroll_progress"
-    VIEWER_CYCLE_THEME = "napari:viewer:toggle_theme"
+    VIEWER_TOGGLE_THEME = "napari:viewer:toggle_theme"
     VIEWER_RESET_VIEW = "napari:viewer:reset_view"
     VIEWER_INC_DIMS_LEFT = "napari:viewer:increment_dims_left"
     VIEWER_INC_DIMS_RIGHT = "napari:viewer:increment_dims_right"
