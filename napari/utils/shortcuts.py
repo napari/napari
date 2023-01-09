@@ -1,10 +1,7 @@
 from collections import defaultdict
-from typing import (
-    Dict,
-    List,
-)
+from typing import Dict, List
 
-from app_model.types import KeyBinding, KeyCode, KeyMod, KeyBindingRule
+from app_model.types import KeyBinding, KeyBindingRule, KeyCode, KeyMod
 
 default_shortcuts = {
     'napari:toggle_console_visibility': [
