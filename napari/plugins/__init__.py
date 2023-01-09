@@ -1,6 +1,6 @@
 from functools import lru_cache
-from app_model.types import KeyBindingRule
 
+from app_model.types import KeyBindingRule
 from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
@@ -67,14 +67,18 @@ def _initialize_plugins():
     _install_npe2_themes()
 
     # FIXME is this the right place to initialize plugin keybindings?
-    from napari.utils.shortcuts import plugins_shortcuts
     from napari._app_model import get_app
+    from napari.utils.shortcuts import plugins_shortcuts
 
     shortcut_settings = get_settings().shortcuts.shortcuts
     for command, keybinding_rules in plugins_shortcuts.items():
         if command in shortcut_settings:
             for keybinding in shortcut_settings[command]:
-                get_app().keybindings.register_keybinding_rule(command, KeyBindingRule(primary=str(keybinding)))
+                get_app().keybindings.register_keybinding_rule(
+                    command, KeyBindingRule(primary=str(keybinding))
+                )
         else:
             for keybinding_rule in keybinding_rules:
-                get_app().keybindings.register_keybinding_rule(command, keybinding_rule)
+                get_app().keybindings.register_keybinding_rule(
+                    command, keybinding_rule
+                )
