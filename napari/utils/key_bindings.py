@@ -35,6 +35,7 @@ To create a keymap that will block others, ``bind_key(..., ...)```.
 
 import contextlib
 import inspect
+import sys
 import time
 from collections import ChainMap
 from types import MethodType
@@ -45,9 +46,9 @@ from vispy.util import keys
 
 from napari.utils.translations import trans
 
-try:  # remove after min py version 3.10+
+if sys.version_info >= (3, 10):
     from types import EllipsisType
-except ImportError:
+else:
     EllipsisType = type(Ellipsis)
 
 KeyBindingLike = Union[KeyBinding, str, int]
