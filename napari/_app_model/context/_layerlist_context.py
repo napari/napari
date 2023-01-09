@@ -122,6 +122,14 @@ def _same_type(s: LayerSel) -> bool:
     return len({x._type_string for x in s}) == 1
 
 
+def _active_is_image_3d(s: LayerSel) -> bool:
+    return (
+        _active_type(s) == "image"
+        and _active_ndim(s) is not None
+        and (_active_ndim(s) > 3 or (_active_ndim(s) > 2 and not _is_rgb(s)))
+    )
+
+
 class LayerListContextKeys(ContextNamespace['LayerSel']):
     """These are the available context keys relating to a LayerList.
 
@@ -206,6 +214,11 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         trans._("Shape of the active layer, or `None` if nothing is active."),
         _active_shape,
     )
+    active_layer_is_image_3d = ContextKey(
+        False,
+        trans._("True when the active layer is a 3D image."),
+        _active_is_image_3d,
+    )
     active_layer_dtype = ContextKey(
         None,
         trans._("Dtype of the active layer, or `None` if nothing is active."),
@@ -220,4 +233,9 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._("True when all selected layers are of the same type."),
         _same_type,
+    )
+    all_selected_layers_labels = ContextKey(
+        False,
+        trans._("True when all selected layers are labels."),
+        _only_labels,
     )

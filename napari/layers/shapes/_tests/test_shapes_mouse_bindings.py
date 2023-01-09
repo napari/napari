@@ -396,6 +396,65 @@ def test_drag_shape(create_known_shapes_layer, Event):
     np.testing.assert_allclose(layer.data[0], orig_data + [10, 5])
 
 
+def test_rotate_shape(create_known_shapes_layer, Event):
+    """Select and drag handle to rotate shape."""
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = 'select'
+    layer.selected_data = {1}
+    # get the position of the rotation handle
+    position = tuple(layer._selected_box[9])
+    # get the vertexes
+    original_data = layer.data[1].copy()
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=True,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_press_callbacks(layer, event)
+    # start drag event
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # drag in the handle to bottom midpoint vertex to rotate 180 degrees
+    position = tuple(tuple(layer._selected_box[3]))
+    # Simulate move, click, and release
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_move_callbacks(layer, event)
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=True,
+            modifiers=[],
+            position=position,
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check shape was rotated
+    np.testing.assert_allclose(layer.data[1][2], original_data[0])
+
+
 def test_drag_vertex(create_known_shapes_layer, Event):
     """Select and drag vertex."""
     layer, n_shapes, _ = create_known_shapes_layer
