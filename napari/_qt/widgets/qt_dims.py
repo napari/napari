@@ -309,7 +309,6 @@ class QtDims(QWidget):
 
     @Slot()
     def cleaned_worker(self):
-        print("aaaa")
         self._animation_thread = None
         self._animation_worker = None
         self.enable_play()
