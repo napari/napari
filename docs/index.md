@@ -95,7 +95,7 @@ you can install via pip, conda-forge, or from source.
 ### From pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with Python
-3.8-3.10 using pip:
+{{ python_version_range }} using pip:
 
 ```sh
 pip install "napari[all]"
@@ -107,13 +107,11 @@ _(See `Specifying a GUI Backend` below for an explanation of the `[all]` notatio
 While not strictly required, it is *highly* recommended to install
 napari into a clean virtual environment using an environment manager like
 [conda](https://docs.conda.io/en/latest/miniconda.html) or
-[venv](https://docs.python.org/3/library/venv.html).  For example, with `conda`:
+[venv](https://docs.python.org/3/library/venv.html). 
+This should be set up before you install napari. For example, setting with
+up a Python {{ python_version }} environment with `conda`:
 
-```sh
-conda create -y -n napari-env -c conda-forge python=3.9
-conda activate napari-env
-pip install "napari[all]"
-```
+{{ conda_create_env }}
 ````
 
 ### From conda

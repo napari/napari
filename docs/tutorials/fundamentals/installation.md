@@ -35,7 +35,7 @@ interact with the app. It is the best way to install napari and make full use of
 all its features.
 
 It requires:
-- [Python 3.8 or higher](https://www.python.org/downloads/)
+- [Python >={{ python_minimum_version }}](https://www.python.org/downloads/)
 - the ability to install python packages via [pip](https://pypi.org/project/pip/) OR [conda-forge](https://conda-forge.org/docs/user/introduction.html)
 
 You may also want:
@@ -65,12 +65,10 @@ napari into a clean virtual environment using an environment manager like
 [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or
 [venv](https://docs.python.org/3/library/venv.html).
 
-This should be set up *before* you install napari. For example, with `conda`:
+This should be set up *before* you install napari. For example, setting with
+up a Python {{ python_version }} environment with `conda`:
 
-```sh
-conda create -y -n napari-env -c conda-forge python=3.9
-conda activate napari-env
-```
+{{ conda_create_env }}
 ````
 
 Choose one of the options below to install napari as a Python package.
@@ -79,7 +77,7 @@ Choose one of the options below to install napari as a Python package.
 :class: dropdown
 
 napari can be installed on most macOS, Linux, and Windows systems with Python
-3.7, 3.8, and 3.9 using pip:
+{{ python_version_range }} using pip:
 
 ```sh
 python -m pip install "napari[all]"
@@ -124,9 +122,10 @@ In some cases, `conda`'s default solver can struggle to find out which packages 
 installed for napari. If it takes too long or you get the wrong version of napari 
 (see below), consider:
 1. Overriding your default channels to use only `conda-forge` by adding `--override-channels`
-and specifying the napari and Python versions explicitly. For example, use `python=3.9` to get 
-Python 3.9 and {{ napari_conda_version }} to specify the napari version as 
+and specifying the napari and Python versions explicitly. For example, use {{ python_version_code }}
+to get Python {{ python_version }} and {{ napari_conda_version }} to specify the napari version as 
 {{ napari_version }}, the current release.
+
 2. You can try installing [`mamba`](https://github.com/mamba-org/mamba) in your base
 environment with `conda install -n base -c conda-forge mamba` and use its faster solver
 by replacing `conda` for `mamba` in the above instructions.
@@ -202,8 +201,10 @@ extended with napari plugins installed directly via the app.
 
 To access the cross platform bundles you can visit our [release
 page](https://github.com/napari/napari/releases) and scroll to the release you
-are interested in and expand the `assets` tab to get a view that looks like
-this:
+are interested in. For example, the bundles for napari {{ napari_version }} can be
+accessed {{ '[here](https://github.com/napari/napari/releases/tag/vNAPARI_VER)'.replace('NAPARI_VER', napari_version) }}.
+To get to the download link, just scroll all the way to bottom of the page and 
+expand the `Assets` section to get a view that looks like this:
 
 ![Cropped screenshot from GitHub with the Assets section (or "tab") expanded, containing links to download the app in the form of zip files for Linux, macOS, Windows, in addition to other links.](../assets/tutorials/installation/bundle_assets.png)
 
