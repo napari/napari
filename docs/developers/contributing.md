@@ -75,11 +75,11 @@ export NAPARI_REBUILD_RESOURCES=1
 ```
 
 Icons are typically used inside of one of our `stylesheet.qss` files, with the
-`{{ folder }}` variable used to expand the current theme name.
+`{{ id }}` variable used to expand the current theme name.
 
 ```css
 QtDeleteButton {
-   image: url("theme_{{ name }}:/delete.svg");
+   image: url("theme_{{ id }}:/delete.svg");
 }
 ```
 
@@ -107,14 +107,14 @@ register_theme('blue', blue_theme)
 
 
 To test out the theme, use the
-`theme_sample.py` file from the command line as follows:
+`qt_theme_sample.py` file from the command line as follows:
 
 ```sh
-python -m napari._qt.theme_sample
+python -m napari._qt.widgets.qt_theme_sample
 ```
 *note*: you may specify a theme with one additional argument on the command line:
 ```sh
-python -m napari._qt.theme_sample dark
+python -m napari._qt.widgets.qt_theme_sample dark
 ```
 (providing no arguments will show all themes in `theme.py`)
 
