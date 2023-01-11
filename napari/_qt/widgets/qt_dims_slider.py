@@ -416,7 +416,6 @@ class QtDimSliderWidget(QWidget):
         worker.finished.connect(self.qt_dims.cleaned_worker)
         thread.finished.connect(self.play_stopped)
         self.play_started.emit()
-        self.thread = thread
         return worker, thread
 
 
