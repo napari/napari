@@ -655,6 +655,9 @@ class Shapes(Layer):
             )
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view.slice_key = np.array(self._slice_indices)[
+            self._slice_input.not_displayed
+        ]
         self.add(
             data,
             shape_type=shape_type,
