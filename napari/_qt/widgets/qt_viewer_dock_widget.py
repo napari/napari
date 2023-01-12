@@ -64,7 +64,7 @@ class QtViewerDockWidget(QDockWidget):
         Whether to add stretch to the bottom of vertical widgets (pushing
         widgets up towards the top of the allotted area, instead of letting
         them distribute across the vertical space).  By default, True.
-    add_custom_title_bar : bool, optional
+    use_napari_title_bar : bool, optional
         Whether to add a custom title bar containing the widget name and
         buttons for closing, hiding, and floating the dock widget. By default, True.
     """
