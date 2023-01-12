@@ -2,11 +2,12 @@ import time
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import Tuple, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
 import pytest
 
+from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
@@ -127,7 +128,8 @@ def test_submit_with_one_async_layer_no_block(layer_slicer):
 
     future = layer_slicer.submit(layers=[layer], dims=Dims())
 
-    assert future.result()[layer].id == 1
+    assert _wait_for_result(future)[layer].id == 1
+    assert _wait_for_result(future)[layer].id == 1
 
 
 def test_submit_with_multiple_async_layer_no_block(layer_slicer):
@@ -136,8 +138,8 @@ def test_submit_with_multiple_async_layer_no_block(layer_slicer):
 
     future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
-    assert future.result()[layer1].id == 1
-    assert future.result()[layer2].id == 1
+    assert _wait_for_result(future)[layer1].id == 1
+    assert _wait_for_result(future)[layer2].id == 1
 
 
 def test_submit_emits_ready_event_when_done(layer_slicer):
@@ -151,7 +153,7 @@ def test_submit_emits_ready_event_when_done(layer_slicer):
     layer_slicer.events.ready.connect(on_done)
 
     future = layer_slicer.submit(layers=[layer], dims=Dims())
-    actual_result = future.result()
+    actual_result = _wait_for_result(future)
 
     assert actual_result is event_result
 
@@ -187,8 +189,9 @@ def test_submit_with_mixed_layers(layer_slicer):
 
     future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
-    assert future.result()[layer1].id == 1
-    assert layer2 not in future.result()
+    result = _wait_for_result(future)
+    assert result[layer1].id == 1
+    assert layer2 not in result
     assert layer2.slice_count == 1
 
 
@@ -201,7 +204,7 @@ def test_submit_lock_blocking(layer_slicer):
         blocked = layer_slicer.submit(layers=[layer], dims=dims)
         assert not blocked.done()
 
-    assert blocked.result()[layer].id == 1
+    assert _wait_for_result(blocked)[layer].id == 1
 
 
 def test_submit_multiple_calls_cancels_pending(layer_slicer):
@@ -210,6 +213,7 @@ def test_submit_multiple_calls_cancels_pending(layer_slicer):
 
     with layer.lock:
         blocked = layer_slicer.submit(layers=[layer], dims=dims)
+        _wait_until_running(blocked)
         pending = layer_slicer.submit(layers=[layer], dims=dims)
         assert not pending.running()
         layer_slicer.submit(layers=[layer], dims=dims)
@@ -229,7 +233,7 @@ def test_slice_layers_mixed_allows_sync_to_run(layer_slicer):
         assert layer2.slice_count == 1
         assert not blocked.done()
 
-    assert blocked.result()[layer1].id == 1
+    assert _wait_for_result(blocked)[layer1].id == 1
 
 
 def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
@@ -243,7 +247,7 @@ def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
         assert layer2.slice_count == 1
         assert not blocked.done()
 
-    assert blocked.result()[layer1].id == 1
+    assert _wait_for_result(blocked)[layer1].id == 1
 
 
 def test_submit_with_multiple_async_layer_with_all_locked(
@@ -258,8 +262,8 @@ def test_submit_with_multiple_async_layer_with_all_locked(
         blocked = layer_slicer.submit(layers=[layer1, layer2], dims=dims)
         assert not blocked.done()
 
-    assert blocked.result()[layer1].id == 1
-    assert blocked.result()[layer2].id == 1
+    assert _wait_for_result(blocked)[layer1].id == 1
+    assert _wait_for_result(blocked)[layer2].id == 1
 
 
 def test_submit_task_to_layers_lock(layer_slicer):
@@ -272,7 +276,7 @@ def test_submit_task_to_layers_lock(layer_slicer):
         task = layer_slicer.submit(layers=[layer], dims=dims)
         assert task in layer_slicer._layers_to_task.values()
 
-    assert task.result()[layer].id == 1
+    assert _wait_for_result(task)[layer].id == 1
     assert task not in layer_slicer._layers_to_task
 
 
@@ -306,10 +310,10 @@ def test_submit_exception_subthread_on_result(layer_slicer):
     layer = FakeAsyncLayerError()
     future = layer_slicer.submit(layers=[layer], dims=Dims())
 
-    done, _ = wait([future], timeout=5)
+    done, _ = wait([future], timeout=DEFAULT_TIMEOUT_SECS)
     assert done, 'Test future did not complete within timeout.'
     with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
-        future.result()
+        _wait_for_result(future)
 
 
 def test_wait_until_idle(layer_slicer, single_threaded_executor):
@@ -326,17 +330,13 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
         # holding the layer's slice lock, so submit it to be executed
         # on another thread and also wait for it to start.
         wait_future = single_threaded_executor.submit(
-            layer_slicer.wait_until_idle
+            layer_slicer.wait_until_idle,
+            timeout=DEFAULT_TIMEOUT_SECS,
         )
         _wait_until_running(wait_future)
 
-    wait_future.result()
+    _wait_for_result(wait_future)
     assert len(layer_slicer._layers_to_task) == 0
-
-
-def _wait_until_running(future: Future):
-    while not future.running():
-        time.sleep(0.01)
 
 
 def test_force_sync_on_sync_layer(layer_slicer):
@@ -378,7 +378,7 @@ def test_submit_with_one_3d_image(layer_slicer):
         future = layer_slicer.submit(layers=[layer], dims=dims)
         assert not future.done()
 
-    layer_result = future.result()[layer]
+    layer_result = _wait_for_result(future)[layer]
     np.testing.assert_equal(layer_result.data, data[2, :, :])
 
 
@@ -412,3 +412,21 @@ def test_submit_after_shutdown_raises():
     layer_slicer.shutdown()
     with pytest.raises(RuntimeError):
         layer_slicer.submit(layers=[FakeAsyncLayer()], dims=Dims())
+
+
+def _wait_until_running(future: Future):
+    """Waits until the given future is running using a default finite timeout."""
+    sleep_secs = 0.01
+    total_sleep_secs = 0
+    while not future.running():
+        time.sleep(sleep_secs)
+        total_sleep_secs += sleep_secs
+        if total_sleep_secs > DEFAULT_TIMEOUT_SECS:
+            raise TimeoutError(
+                f'Future did not start running after a timeout of {DEFAULT_TIMEOUT_SECS} seconds.'
+            )
+
+
+def _wait_for_result(future: Future) -> Any:
+    """Waits until the given future is finished using a default finite timeout, and returns its result."""
+    return future.result(timeout=DEFAULT_TIMEOUT_SECS)
