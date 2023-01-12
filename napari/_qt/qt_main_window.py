@@ -897,7 +897,7 @@ class Window:
                 The shortcut parameter is deprecated since version 0.4.8, please use
                 the action and shortcut manager APIs. The new action manager and
                 shortcut API allow user configuration and localisation.
-        add_custom_title_bar : bool, optional
+        use_napari_title_bar : bool, optional
             Whether to add a custom title bar with buttons for closing, hiding, and floating the dock widget. By default, True.
         tabify : bool
             Flag to tabify dockwidget or not.
