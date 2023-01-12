@@ -267,12 +267,15 @@ QLabel#logo_silhouette {
 
 /* ------------------------------------------------------ */
 
+QFrame#empty_controls_widget {
+    min-height: 295px;
+    min-width: 240px;
+}
+
 QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 295px;
-    min-width: 240px;
     margin-left: 10px;
     margin-right: 8px;
     margin-bottom: 4px;
