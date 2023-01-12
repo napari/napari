@@ -1,4 +1,5 @@
 from typing import Optional, Tuple
+from weakref import ref
 
 import numpy as np
 from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
@@ -413,10 +414,9 @@ class QtDimSliderWidget(QWidget):
             _start_thread=True,
             _connect={'frame_requested': self.qt_dims._set_frame},
         )
-        worker.finished.connect(self.qt_dims.cleaned_worker)
+        thread.finished.connect(self.qt_dims.cleaned_worker)
         thread.finished.connect(self.play_stopped)
         self.play_started.emit()
-        self.thread = thread
         return worker, thread
 
 
@@ -488,9 +488,11 @@ class QtPlayButton(QPushButton):
 
     play_requested = Signal(int)  # axis, fps
 
-    def __init__(self, dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP):
+    def __init__(
+        self, qt_dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP
+    ):
         super().__init__()
-        self.dims = dims
+        self.qt_dims_ref = ref(qt_dims)
         self.axis = axis
         self.reverse = reverse
         self.fps = fps
@@ -553,8 +555,11 @@ class QtPlayButton(QPushButton):
 
     def _on_click(self):
         """Toggle play/stop animation control."""
+        qt_dims = self.qt_dims_ref()
+        if not qt_dims:
+            return None
         if self.property('playing') == "True":
-            return self.dims.stop()
+            return qt_dims.stop()
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
