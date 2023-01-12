@@ -318,6 +318,8 @@ class QtCustomTitleBar(QLabel):
         parent,
         title: str = '',
         vertical=False,
+        hide_btn=True,
+        float_btn=True,
         close_btn=True,
     ):
         super().__init__(parent)
@@ -334,6 +336,20 @@ class QtCustomTitleBar(QLabel):
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         )
 
+        self.hide_button = QPushButton(self)
+        self.hide_button.setToolTip(trans._('hide this panel'))
+        self.hide_button.setObjectName("QTitleBarHideButton")
+        self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
+        self.hide_button.clicked.connect(lambda: self.parent().close())
+
+        self.float_button = QPushButton(self)
+        self.float_button.setToolTip(trans._('float this panel'))
+        self.float_button.setObjectName("QTitleBarFloatButton")
+        self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
+        self.float_button.clicked.connect(
+            lambda: self.parent().setFloating(not self.parent().isFloating())
+        )
+
         if close_btn:
             self.close_button = QPushButton(self)
             self.close_button.setToolTip(trans._('close this panel'))
@@ -348,10 +364,16 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
-            if close_btn:
+            if hide_btn:
                 layout.addWidget(
-                    self.close_button, 0, Qt.AlignmentFlag.AlignHCenter
+                    self.hide_button, 0, Qt.AlignmentFlag.AlignHCenter
                 )
+            layout.addWidget(
+                self.float_button, 0, Qt.AlignmentFlag.AlignHCenter
+            )
+            layout.addWidget(
+                self.close_button, 0, Qt.AlignmentFlag.AlignHCenter
+            )
             layout.addWidget(line, 0, Qt.AlignmentFlag.AlignHCenter)
             self.title.hide()
 
@@ -360,6 +382,8 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(8, 1, 8, 0)
             line.setFixedHeight(1)
+            layout.addWidget(self.hide_button)
+            layout.addWidget(self.float_button)
             if close_btn:
                 layout.addWidget(self.close_button)
             layout.addWidget(line)
