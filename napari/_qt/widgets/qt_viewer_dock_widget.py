@@ -152,13 +152,15 @@ class QtViewerDockWidget(QDockWidget):
         self.dockLocationChanged.connect(self._set_title_orientation)
 
         # add custom title bar
-        if add_custom_title_bar:
+        if use_napari_title_bar:
             self.title = QtCustomTitleBar(
                 self,
                 title=self.name,
                 close_btn=close_btn,
             )
             self.setTitleBarWidget(self.title)
+        else:
+            self.title = None
         self.visibilityChanged.connect(self._on_visibility_changed)
 
     @property
