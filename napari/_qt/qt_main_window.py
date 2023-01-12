@@ -943,7 +943,7 @@ class Window:
                 area=area,
                 allowed_areas=allowed_areas,
                 add_vertical_stretch=add_vertical_stretch,
-                add_custom_title_bar=add_custom_title_bar,
+                use_napari_title_bar=use_napari_title_bar,
             )
 
         self._add_viewer_dock_widget(dock_widget, tabify=tabify, menu=menu)
