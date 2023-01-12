@@ -43,7 +43,6 @@ QWidget[emphasized="true"] > QFrame {
     background-color: {{ foreground }};
 }
 
-
 /* ------------ QAbstractScrollArea ------------- */
 
 /* QAbstractScrollArea is the superclass */ 

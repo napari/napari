@@ -7,6 +7,10 @@ on:
       - main
       - "v*x"
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   manifest:
     # make sure all necessary files will be bundled in the release
