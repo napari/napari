@@ -863,7 +863,7 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
-        add_custom_title_bar=True,
+        use_napari_title_bar=True,
         tabify: bool = False,
         menu: Optional[QMenu] = None,
     ):
