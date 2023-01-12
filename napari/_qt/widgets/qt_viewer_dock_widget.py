@@ -87,7 +87,7 @@ class QtViewerDockWidget(QDockWidget):
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
-        self.add_custom_title_bar = add_custom_title_bar
+        self.use_napari_title_bar = use_napari_title_bar
         self._close_btn = close_btn
 
         areas = {
