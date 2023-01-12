@@ -80,7 +80,7 @@ class QtViewerDockWidget(QDockWidget):
         shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,
-        add_custom_title_bar=True,
+        use_napari_title_bar=True,
         close_btn=True,
     ):
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
