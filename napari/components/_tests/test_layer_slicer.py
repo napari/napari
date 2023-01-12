@@ -197,7 +197,7 @@ def test_submit_multiple_calls_cancels_pending(layer_slicer):
     assert pending.cancelled()
 
 
-def test_slice_layers_mixed_allows_sync_to_run(layer_slicer):
+def test_submit_mixed_allows_sync_to_run(layer_slicer):
     """ensure that a blocked async slice doesn't block sync slicing"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
@@ -211,7 +211,7 @@ def test_slice_layers_mixed_allows_sync_to_run(layer_slicer):
     assert _wait_for_result(blocked)[layer1].id == 1
 
 
-def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
+def test_submit_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
     """ensure that a blocked async slice doesn't block sync slicing"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
@@ -255,7 +255,7 @@ def test_submit_task_to_layers_lock(layer_slicer):
     assert task not in layer_slicer._layers_to_task
 
 
-def test_slice_layers_exception_main_thread(layer_slicer):
+def test_submit_exception_main_thread(layer_slicer):
     """Exception is raised on the main thread from an error on the main
     thread immediately when the task is created."""
 
@@ -268,7 +268,7 @@ def test_slice_layers_exception_main_thread(layer_slicer):
         layer_slicer.submit(layers=[layer], dims=Dims())
 
 
-def test_slice_layers_exception_subthread_on_result(layer_slicer):
+def test_submit_exception_subthread_on_result(layer_slicer):
     """Exception is raised on the main thread from an error on a subthread
     only after result is called, not upon submission of the task."""
 
@@ -317,7 +317,7 @@ def test_wait_until_idle(layer_slicer, single_threaded_executor):
     assert len(layer_slicer._layers_to_task) == 0
 
 
-def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
+def test_force_sync_on_sync_layer(layer_slicer):
     layer = FakeSyncLayer()
 
     with layer_slicer.force_sync():
@@ -329,7 +329,7 @@ def test_layer_slicer_force_sync_on_sync_layer(layer_slicer):
     assert not layer_slicer._force_sync
 
 
-def test_layer_slicer_force_sync_on_async_layer(layer_slicer):
+def test_force_sync_on_async_layer(layer_slicer):
     layer = FakeAsyncLayer()
 
     with layer_slicer.force_sync():
