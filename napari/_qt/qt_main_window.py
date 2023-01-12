@@ -933,7 +933,7 @@ class Window:
                 allowed_areas=allowed_areas,
                 shortcut=shortcut,
                 add_vertical_stretch=add_vertical_stretch,
-                add_custom_title_bar=add_custom_title_bar,
+                use_napari_title_bar=use_napari_title_bar,
             )
         else:
             dock_widget = QtViewerDockWidget(
