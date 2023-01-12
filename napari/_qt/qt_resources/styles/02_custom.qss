@@ -268,7 +268,7 @@ QLabel#logo_silhouette {
 /* ------------------------------------------------------ */
 
 QFrame#empty_controls_widget {
-    min-height: 295px;
+    min-height: 225px;
     min-width: 240px;
 }
 
