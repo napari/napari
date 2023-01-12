@@ -24,7 +24,6 @@ callable methods will be stubbed.
 """
 import importlib
 import inspect
-import sys
 import textwrap
 import typing
 import warnings

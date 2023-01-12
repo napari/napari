@@ -586,15 +586,15 @@ QPushButton#install_button:disabled {
 }
 
 QPushButton#remove_button {
-  background-color: {{ warning }}
+  background-color: {{ error }}
 }
 
 QPushButton#remove_button:hover {
-  background-color: {{ lighten(warning, 10) }}
+  background-color: {{ lighten(error, 10) }}
 }
 
 QPushButton#remove_button:pressed {
-  background-color: {{ darken(warning, 10) }}
+  background-color: {{ darken(error, 10) }}
 }
 
 QPushButton#busy_button:pressed {
@@ -673,7 +673,7 @@ QPushButton#close_button:disabled {
 }
 
 #success_label {
-  image: url("theme_{{ name }}:/check.svg");
+  image: url("theme_{{ id }}:/check.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -815,6 +815,10 @@ QtLayerList::indicator:checked {
 }
 
 
+#error_icon_btn {
+  qproperty-icon: url("theme_{{ id }}:/error.svg");
+}
+
 #warning_icon_btn {
   qproperty-icon: url("theme_{{ id }}:/warning.svg");
 }
@@ -833,7 +837,7 @@ QtLayerList::indicator:checked {
 
 /* --------------- Menus (application and context menus) ---------------- */
 
-QModelMenu::separator {
+QMenu::separator, QModelMenu::separator {
 	height: 1 px;
 	background: {{ opacity(text, 90) }};
 	margin-left: 17 px;
@@ -842,6 +846,14 @@ QModelMenu::separator {
 	margin-bottom: 3 px;
 }
 
-QModelMenu {
+QMenu:disabled, QModelMenu:disabled {
+  background-color: {{ background }};
+  selection-background-color: transparent;
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
+
+QMenu, QModelMenu {
 	padding: 6 px;
 }
