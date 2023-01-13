@@ -59,7 +59,7 @@ def _only_points(s: LayerSel) -> bool:
 
 
 def _n_selected_points(s: LayerSel) -> int:
-    return sum(x._type_string == "labels" for x in s)
+    return sum(x._type_string == "points" for x in s)
 
 
 def _only_shapes(s: LayerSel) -> bool:
