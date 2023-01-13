@@ -49,7 +49,7 @@ jobs:
           python -c 'import napari.layers; print(napari.layers.__doc__)'
 
       - name: Build Docs
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         env:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
