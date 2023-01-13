@@ -1,8 +1,8 @@
 from collections import OrderedDict
 from enum import auto
 
-from ...utils.misc import StringEnum
-from ...utils.translations import trans
+from napari.utils.misc import StringEnum
+from napari.utils.translations import trans
 
 
 class Interpolation(StringEnum):
@@ -15,8 +15,8 @@ class Interpolation(StringEnum):
     """
 
     BESSEL = auto()
-    BICUBIC = auto()
-    BILINEAR = auto()
+    CUBIC = auto()
+    LINEAR = auto()
     BLACKMAN = auto()
     CATROM = auto()
     GAUSSIAN = auto()
@@ -33,19 +33,12 @@ class Interpolation(StringEnum):
     @classmethod
     def view_subset(cls):
         return (
-            cls.BICUBIC,
-            cls.BILINEAR,
+            cls.CUBIC,
+            cls.LINEAR,
             cls.KAISER,
             cls.NEAREST,
             cls.SPLINE36,
         )
-
-
-class Interpolation3D(StringEnum):
-    """INTERPOLATION: Vispy interpolation mode for volume rendering."""
-
-    LINEAR = auto()
-    NEAREST = auto()
 
 
 class Mode(StringEnum):
@@ -64,23 +57,24 @@ class ImageRendering(StringEnum):
     """Rendering: Rendering mode for the layer.
 
     Selects a preset rendering mode in vispy
-        * translucent: voxel colors are blended along the view ray until
-          the result is opaque.
-        * mip: maximum intensity projection. Cast a ray and display the
-          maximum value that was encountered.
-        * minip: minimum intensity projection. Cast a ray and display the
-          minimum value that was encountered.
-        * attenuated_mip: attenuated maximum intensity projection. Cast a
-          ray and attenuate values based on integral of encountered values,
-          display the maximum value that was encountered after attenuation.
-          This will make nearer objects appear more prominent.
-        * additive: voxel colors are added along the view ray until
-          the result is saturated.
-        * iso: isosurface. Cast a ray until a certain threshold is
-          encountered. At that location, lighning calculations are
-          performed to give the visual appearance of a surface.
-        * average: average intensity projection. Cast a ray and display the
-          average of values that were encountered.
+
+    * translucent: voxel colors are blended along the view ray until
+      the result is opaque.
+    * mip: maximum intensity projection. Cast a ray and display the
+      maximum value that was encountered.
+    * minip: minimum intensity projection. Cast a ray and display the
+      minimum value that was encountered.
+    * attenuated_mip: attenuated maximum intensity projection. Cast a
+      ray and attenuate values based on integral of encountered values,
+      display the maximum value that was encountered after attenuation.
+      This will make nearer objects appear more prominent.
+    * additive: voxel colors are added along the view ray until
+      the result is saturated.
+    * iso: isosurface. Cast a ray until a certain threshold is
+      encountered. At that location, lighning calculations are
+      performed to give the visual appearance of a surface.
+    * average: average intensity projection. Cast a ray and display the
+      average of values that were encountered.
     """
 
     TRANSLUCENT = auto()

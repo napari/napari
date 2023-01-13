@@ -1,7 +1,9 @@
 """Miscellaneous utility functions.
 """
+
 import builtins
 import collections.abc
+import contextlib
 import importlib.metadata
 import inspect
 import itertools
@@ -19,7 +21,10 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
+    List,
     Optional,
+    Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -27,7 +32,7 @@ from typing import (
 
 import numpy as np
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import packaging.version
@@ -46,13 +51,16 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.LegacyVersion(v)
 
 
-def running_as_bundled_app() -> bool:
+def running_as_bundled_app(*, check_conda=True) -> bool:
     """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
+    if (
+        check_conda
+        and (Path(sys.executable).parent / ".napari_is_bundled").exists()
+    ):
         return True
 
     try:
@@ -99,6 +107,19 @@ def in_ipython() -> bool:
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
+def in_python_repl() -> bool:
+    """Return true if we're running in a Python REPL."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
+            sys, 'ps1'
+        )
     except Exception:
         pass
     return False
@@ -438,23 +459,26 @@ def ensure_n_tuple(val, n, fill=0):
 
 
 def ensure_layer_data_tuple(val):
-    if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
-        raise TypeError(
-            trans._(
-                'Not a valid layer data tuple: {value!r}',
-                deferred=True,
-                value=val,
-            )
-        )
+    msg = trans._(
+        'Not a valid layer data tuple: {value!r}',
+        deferred=True,
+        value=val,
+    )
+    if not isinstance(val, tuple) and val:
+        raise TypeError(msg)
+    if len(val) > 1:
+        if not isinstance(val[1], dict):
+            raise TypeError(msg)
+        if len(val) > 2 and not isinstance(val[2], str):
+            raise TypeError(msg)
     return val
 
 
-def ensure_list_of_layer_data_tuple(val):
-    if isinstance(val, list) and len(val):
-        try:
+def ensure_list_of_layer_data_tuple(val) -> List[tuple]:
+    # allow empty list to be returned but do nothing in that case
+    if isinstance(val, list):
+        with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
-        except TypeError:
-            pass
     raise TypeError(
         trans._('Not a valid list of layer data tuples!', deferred=True)
     )
@@ -689,3 +713,63 @@ def install_certifi_opener():
     https_handler = request.HTTPSHandler(context=context)
     opener = request.build_opener(https_handler)
     request.install_opener(opener)
+
+
+def reorder_after_dim_reduction(order: Sequence[int]) -> Tuple[int, ...]:
+    """Ensure current dimension order is preserved after dims are dropped.
+
+    This is similar to :func:`scipy.stats.rankdata`, but only deals with
+    unique integers (like dimension indices), so is simpler and faster.
+
+    Parameters
+    ----------
+    order : Sequence[int]
+        The data to reorder.
+
+    Returns
+    -------
+    Tuple[int, ...]
+        A permutation of ``range(len(order))`` that is consistent with the input order.
+
+    Examples
+    --------
+    >>> reorder_after_dim_reduction([2, 0])
+    (1, 0)
+
+    >>> reorder_after_dim_reduction([0, 1, 2])
+    (0, 1, 2)
+
+    >>> reorder_after_dim_reduction([4, 0, 2])
+    (2, 0, 1)
+    """
+    # A single argsort works for strictly increasing/decreasing orders,
+    # but not for arbitrary orders.
+    return tuple(argsort(argsort(order)))
+
+
+def argsort(values: Sequence[int]) -> List[int]:
+    """Equivalent to :func:`numpy.argsort` but faster in some cases.
+
+    Parameters
+    ----------
+    values : Sequence[int]
+        The integer values to sort.
+
+    Returns
+    -------
+    List[int]
+        The indices that when used to index the input values will produce
+        the values sorted in increasing order.
+
+    Examples
+    --------
+    >>> argsort([2, 0])
+    [1, 0]
+
+    >>> argsort([0, 1, 2])
+    [0, 1, 2]
+
+    >>> argsort([4, 0, 2])
+    [1, 2, 0]
+    """
+    return sorted(range(len(values)), key=values.__getitem__)

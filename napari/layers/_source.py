@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Optional, Tuple
 
 from magicgui.widgets import FunctionGui
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
+
+from napari.layers.base.base import Layer
 
 
 class Source(BaseModel):
@@ -22,16 +25,23 @@ class Source(BaseModel):
         `viewer.open_sample`.
     widget: FunctionGui, optional
         magicgui widget, if the layer was added via a magicgui widget.
+    parent: Layer, optional
+        parent layer if the layer is a duplicate.
     """
 
     path: Optional[str] = None
     reader_plugin: Optional[str] = None
     sample: Optional[Tuple[str, str]] = None
     widget: Optional[FunctionGui] = None
+    parent: Optional[Layer] = None
 
     class Config:
         arbitrary_types_allowed = True
         frozen = True
+
+    @validator('parent')
+    def make_weakref(cls, layer: Layer):
+        return weakref.ref(layer)
 
     def __deepcopy__(self, memo):
         """Custom deepcopy implementation.
@@ -72,7 +82,7 @@ def layer_source(**source_kwargs):
 
     Parameters
     ----------
-    **source_kwargs :
+    **source_kwargs
         keys/values should be valid parameters for :class:`Source`.
 
     Examples

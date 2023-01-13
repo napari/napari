@@ -1,12 +1,13 @@
 from numbers import Integral
+from typing import Literal  # Added to typing in 3.8
 from typing import Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
-from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils.events import EventedModel
-from ..utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.misc import argsort, reorder_after_dim_reduction
+from napari.utils.translations import trans
 
 
 class Dims(EventedModel):
@@ -155,7 +156,7 @@ class Dims(EventedModel):
     def nsteps(self) -> Tuple[int, ...]:
         """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
-            int((max_val - min_val) // step_size)
+            int((max_val - min_val) / step_size)
             for min_val, max_val, step_size in self.range
         )
 
@@ -183,10 +184,7 @@ class Dims(EventedModel):
 
     @property
     def displayed_order(self) -> Tuple[int, ...]:
-        displayed = self.displayed
-        # equivalent to: order = np.argsort(self.displayed)
-        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        return tuple(order)
+        return tuple(argsort(self.displayed))
 
     def set_range(
         self,
@@ -347,6 +345,16 @@ class Dims(EventedModel):
         self.current_step = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
 
+    def transpose(self):
+        """Transpose displayed dimensions.
+
+        This swaps the order of the last two displayed dimensions.
+        The order of the displayed is taken from Dims.order.
+        """
+        order = list(self.order)
+        order[-2], order[-1] = order[-1], order[-2]
+        self.order = order
+
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
 
@@ -395,30 +403,6 @@ class Dims(EventedModel):
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
-
-    def _transpose(self):
-        """Transpose displayed dimensions."""
-        order = list(self.order)
-        order[-2], order[-1] = order[-1], order[-2]
-        self.order = order
-
-
-def reorder_after_dim_reduction(order):
-    """Ensure current dimension order is preserved after dims are dropped.
-
-    Parameters
-    ----------
-    order : tuple
-        The data to reorder.
-
-    Returns
-    -------
-    arr : tuple
-        The original array with the unneeded dimension
-        thrown away.
-    """
-    arr = sorted(range(len(order)), key=lambda x: order[x])
-    return tuple(arr)
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:

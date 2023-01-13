@@ -8,9 +8,9 @@ from functools import lru_cache
 from typing import Generator, Optional, Tuple
 from urllib import error, request
 
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata
 
-from .utils import normalized_name
+from napari.plugins.utils import normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
@@ -28,9 +28,9 @@ def hub_plugin_info(
     ----------
     name : str
         name of the package
-    min_dev_statur : int, optional
+    min_dev_status : int, optional
         Development status. Default is 3.
-    conda_forge: bool, optional
+    conda_forge : bool, optional
         Check if package is available in conda-forge. Default is True.
 
     Returns
@@ -44,6 +44,21 @@ def hub_plugin_info(
     except error.HTTPError:
         return None, False
 
+    # If the napari hub returns an info dict missing the required keys,
+    # simply return None, False like the above except
+    if (
+        not {
+            'name',
+            'version',
+            'authors',
+            'summary',
+            'license',
+            'project_site',
+        }
+        <= info.keys()
+    ):
+        return None, False
+
     version = info["version"]
     norm_name = normalized_name(info["name"])
     is_available_in_conda_forge = True
@@ -55,9 +70,12 @@ def hub_plugin_info(
         try:
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
-                if version in anaconda_info.get("versions", []):
-                    is_available_in_conda_forge = True
+                versions = anaconda_info.get("versions", [])
+                if versions:
+                    if version not in versions:
+                        version = versions[-1]
 
+                    is_available_in_conda_forge = True
         except error.HTTPError:
             pass
 

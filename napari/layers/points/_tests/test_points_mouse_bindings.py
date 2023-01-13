@@ -59,7 +59,7 @@ def create_known_points_layer_2d():
 
 @pytest.fixture
 def create_known_points_layer_3d():
-    """Create points layer with known coordinates
+    """Create 3D points layer with known coordinates displayed in 3D.
 
     Returns
     -------
@@ -76,15 +76,11 @@ def create_known_points_layer_3d():
     n_points = len(data)
 
     layer = Points(data, size=1)
-    # extra variables usually set when layer is added to viewer must be declared
-    # for certain 3D related methods.
-    # e.g. Points._display_bounding_box_augmented, Points.get_ray_intersections
-    layer._indices_view = np.array([0, 1, 2, 3])
-    layer._ndisplay = 3
+    layer._slice_dims(ndisplay=3)
 
     assert np.all(layer.data == data)
     assert layer.ndim == 3
-    assert len(layer._dims_displayed) == 3
+    assert len(layer._slice_input.displayed) == 3
     assert len(layer.data) == n_points
     assert len(layer._view_size) == n_points
     assert len(layer.selected_data) == 0
@@ -681,3 +677,195 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
 
     # Check all points selected as drag box contains them
     assert len(layer.selected_data) == 0
+
+
+@pytest.mark.parametrize(
+    'pre_selection,on_point,modifier',
+    [
+        (set(), True, []),
+        ({0}, True, []),
+        ({0, 1, 2}, True, []),
+        ({1, 2}, True, []),
+        (set(), True, ['Shift']),
+        ({0}, True, ['Shift']),
+        ({0, 1, 2}, True, ['Shift']),
+        ({1, 2}, True, ['Shift']),
+        (set(), False, []),
+        ({0}, False, []),
+        ({0, 1, 2}, False, []),
+        ({1, 2}, False, []),
+        (set(), False, ['Shift']),
+        ({0}, False, ['Shift']),
+        ({0, 1, 2}, False, ['Shift']),
+        ({1, 2}, False, ['Shift']),
+    ],
+)
+def test_drag_start_selection(
+    create_known_points_layer_2d, pre_selection, on_point, modifier
+):
+    """Check layer drag start and drag box behave as expected."""
+    layer, n_points, known_non_point = create_known_points_layer_2d
+    layer.mode = 'select'
+    layer.selected_data = pre_selection
+
+    if on_point:
+        initial_position = tuple(layer.data[0])
+    else:
+        initial_position = tuple(known_non_point)
+    zero_pos = [0, 0]
+    initial_position_1 = tuple(layer.data[1])
+    diff_data_1 = [
+        layer.data[1, 0] - layer.data[0, 0],
+        layer.data[1, 1] - layer.data[0, 1],
+    ]
+
+    assert layer._drag_start is None
+    assert layer._drag_box is None
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press', position=initial_position, modifiers=modifier
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    if modifier:
+        if not on_point:
+            assert layer.selected_data == pre_selection
+        elif 0 in pre_selection:
+            assert layer.selected_data == pre_selection - {0}
+        else:
+            assert layer.selected_data == pre_selection | {0}
+    elif not on_point:
+        assert layer.selected_data == set()
+    elif 0 in pre_selection:
+        assert layer.selected_data == pre_selection
+    else:
+        assert layer.selected_data == {0}
+
+    if len(layer.selected_data) > 0:
+        center = layer.data[list(layer.selected_data), :].mean(axis=0)
+    else:
+        center = [0, 0]
+
+    if not modifier:
+        start_position = [
+            initial_position[0] - center[0],
+            initial_position[1] - center[1],
+        ]
+    else:
+        start_position = initial_position
+
+    is_point_move = len(layer.selected_data) > 0 and on_point and not modifier
+
+    np.testing.assert_array_equal(layer._drag_start, start_position)
+
+    # Simulate drag start on a different position
+    offset_position = [initial_position[0] + 20, initial_position[1] + 20]
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=offset_position,
+            modifiers=modifier,
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Initial mouse_move is already considered a move and not a press.
+    # Therefore, the _drag_start value should be identical and the data or drag_box should reflect
+    # the mouse position.
+    np.testing.assert_array_equal(layer._drag_start, start_position)
+    if is_point_move:
+        if 1 in layer.selected_data and 0 in layer.selected_data:
+            np.testing.assert_array_equal(
+                layer.data[1],
+                [
+                    offset_position[0] + diff_data_1[0],
+                    offset_position[1] + diff_data_1[1],
+                ],
+            )
+        elif 1 not in layer.selected_data:
+            np.testing.assert_array_equal(layer.data[1], initial_position_1)
+
+        if 0 in layer.selected_data:
+            np.testing.assert_array_equal(
+                layer.data[0], [offset_position[0], offset_position[1]]
+            )
+        else:
+            assert False, 'Unreachable code'  # pragma: no cover
+    else:
+        np.testing.assert_array_equal(
+            layer._drag_box, [initial_position, offset_position]
+        )
+
+    # Simulate drag start on new different position
+    offset_position = zero_pos
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=offset_position,
+            modifiers=modifier,
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Initial mouse_move is already considered a move and not a press.
+    # Therefore, the _drag_start value should be identical and the data or drag_box should reflect
+    # the mouse position.
+    np.testing.assert_array_equal(layer._drag_start, start_position)
+    if is_point_move:
+        if 1 in layer.selected_data and 0 in layer.selected_data:
+            np.testing.assert_array_equal(
+                layer.data[1],
+                [
+                    offset_position[0] + diff_data_1[0],
+                    offset_position[1] + diff_data_1[1],
+                ],
+            )
+        elif 1 not in layer.selected_data:
+            np.testing.assert_array_equal(layer.data[1], initial_position_1)
+
+        if 0 in layer.selected_data:
+            np.testing.assert_array_equal(
+                layer.data[0], [offset_position[0], offset_position[1]]
+            )
+        else:
+            assert False, 'Unreachable code'  # pragma: no cover
+    else:
+        np.testing.assert_array_equal(
+            layer._drag_box, [initial_position, offset_position]
+        )
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=True, modifiers=modifier)
+    )
+    mouse_release_callbacks(layer, event)
+
+    if on_point and 0 in pre_selection and modifier:
+        assert layer.selected_data == pre_selection - {0}
+    elif on_point and 0 in pre_selection and not modifier:
+        assert layer.selected_data == pre_selection
+    elif on_point and 0 not in pre_selection and modifier:
+        assert layer.selected_data == pre_selection | {0}
+    elif on_point and 0 not in pre_selection and not modifier:
+        assert layer.selected_data == {0}
+    elif 0 in pre_selection and modifier:
+        assert 0 not in layer.selected_data
+        assert layer.selected_data == (set(range(n_points)) - pre_selection)
+    elif 0 in pre_selection and not modifier:
+        assert 0 in layer.selected_data
+        assert layer.selected_data == set(range(n_points))
+    elif 0 not in pre_selection and modifier:
+        assert 0 in layer.selected_data
+        assert layer.selected_data == (set(range(n_points)) - pre_selection)
+    elif 0 not in pre_selection and not modifier:
+        assert 0 in layer.selected_data
+        assert layer.selected_data == set(range(n_points))
+    else:
+        assert False, 'Unreachable code'  # pragma: no cover
+    assert layer._drag_box is None
+    assert layer._drag_start is None

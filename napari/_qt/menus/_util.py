@@ -1,3 +1,4 @@
+import contextlib
 from typing import TYPE_CHECKING, Callable, List, Union
 
 from qtpy.QtWidgets import QAction, QMenu
@@ -5,7 +6,7 @@ from qtpy.QtWidgets import QAction, QMenu
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
-    from ...utils.events import EventEmitter
+    from napari.utils.events import EventEmitter
 
     try:
         from qtpy.QtCore import SignalInstance
@@ -87,7 +88,10 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
             continue
         action: QAction = menu.addAction(ax['text'])
         if 'slot' in ax:
-            action.triggered.connect(ax['slot'])
+            if ax.get("checkable"):
+                action.toggled.connect(ax['slot'])
+            else:
+                action.triggered.connect(ax['slot'])
         action.setShortcut(ax.get('shortcut', ''))
         action.setStatusTip(ax.get('statusTip', ''))
         if 'menuRole' in ax:
@@ -122,18 +126,14 @@ class NapariMenu(QMenu):
         for ax in self.actions():
             ax.setData(None)
 
-            try:
+            with contextlib.suppress(AttributeError):
                 ax._destroy()
-            except AttributeError:
-                pass
-
         if self in self._INSTANCES:
             self._INSTANCES.remove(self)
 
     def update(self, event=None):
         """Update action enabled/disabled state based on action data."""
         for ax in self.actions():
-            data = ax.data()
-            if data:
+            if data := ax.data():
                 enabled_func = data.get('enabled', lambda event: True)
                 ax.setEnabled(bool(enabled_func(event)))

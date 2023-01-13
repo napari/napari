@@ -65,19 +65,22 @@ ignore = [
   "tox.ini",
   "napari/_qt/qt_resources/_qt_resources_*.py",
   "*.pyi",  # added by make typestubs
-  "binder/Desktop/napari.desktop",
-  "binder/apt.txt",
-  "binder/environment.yml",
-  "binder/postBuild",
-  "binder/xfce4-panel.xml",
-  "binder/xsettings.xml",
+  "binder/*",
   ".env_sample",
+  ".devcontainer/*",
+  "napari/resources/icons/_themes/*/*.svg"
 ]
 
 [tool.isort]
 profile = "black"
 line_length = 79
 skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
+
+[tool.ruff]
+line-length = 120
+ignore = ["E501"]
+per-file-ignores = {"napari/_vispy/__init__.py" = ["E402"]}
+target-version = "py38"
 
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
@@ -103,12 +106,17 @@ filterwarnings = [
   "ignore:numpy.ufunc size changed:RuntimeWarning",
   "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
-  "ignore:.*Themes were changed to use evented model",  # specifying the full is not working here so glob pattern is used instead
   "ignore:distutils Version classes are deprecated::",
+  "ignore:There is no current event loop:DeprecationWarning:",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously",
+    "examples: Test of examples",
+    "disable_qthread_start: Disable thread start in this Test",
+    "disable_qthread_pool_start: Disable strarting QRunnable using QThreadPool start in this Test",
+    "disable_qtimer_start: Disable timer start in this Test",
+    "disable_qanimation_start: Disable animation start in this Test",
 ]
 
 [tool.mypy]

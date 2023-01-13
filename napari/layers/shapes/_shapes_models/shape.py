@@ -2,14 +2,15 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from ....utils.translations import trans
-from .._shapes_utils import (
+from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_mask,
     poly_to_mask,
     triangulate_edge,
     triangulate_face,
 )
+from napari.utils.misc import argsort
+from napari.utils.translations import trans
 
 
 class Shape(ABC):
@@ -213,13 +214,10 @@ class Shape(ABC):
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face:
-            clean_data = np.array(
-                [
-                    p
-                    for i, p in enumerate(data)
-                    if i == 0 or not np.all(p == data[i - 1])
-                ]
+            idx = np.concatenate(
+                [[True], ~np.all(data[1:] == data[:-1], axis=-1)]
             )
+            clean_data = data[idx].copy()
 
             if not is_collinear(clean_data[:, -2:]):
                 if clean_data.shape[1] == 2:
@@ -426,11 +424,7 @@ class Shape(ABC):
                         self.slice_key[0, j], self.slice_key[1, j] + 1
                     )
                 j += 1
-            # equivalent to: displayed_order = np.argsort(self.dims_displayed)
-            dims_displayed = self.dims_displayed
-            displayed_order = sorted(
-                range(len(dims_displayed)), key=lambda x: dims_displayed[x]
-            )
+            displayed_order = argsort(self.dims_displayed)
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:
             mask = mask_p

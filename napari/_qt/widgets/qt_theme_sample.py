@@ -11,7 +11,7 @@ $ python -m napari._qt.theme_sample
 
 To generate a screenshot within python:
 
->>> from napari._qt.theme_sample import SampleWidget
+>>> from napari._qt.widgets.qt_theme_sample import SampleWidget
 >>> widg = SampleWidget(theme='dark')
 >>> screenshot = widg.screenshot()
 """
@@ -41,9 +41,9 @@ from qtpy.QtWidgets import (
 )
 from superqt import QRangeSlider
 
-from ...utils.io import imsave
-from ..qt_resources import get_stylesheet
-from ..utils import QImg2array
+from napari._qt.qt_resources import get_stylesheet
+from napari._qt.utils import QImg2array
+from napari.utils.io import imsave
 
 blurb = """
 <h3>Heading</h3>
@@ -104,7 +104,7 @@ class SampleWidget(QWidget):
         chk = QCheckBox('tristate')
         chk.setToolTip('I am a tooltip')
         chk.setTristate(True)
-        chk.setCheckState(Qt.PartiallyChecked)
+        chk.setCheckState(Qt.CheckState.PartiallyChecked)
         chk3 = QCheckBox('checked')
         chk3.setChecked(True)
         hbox.addWidget(QCheckBox('unchecked'))
@@ -114,13 +114,13 @@ class SampleWidget(QWidget):
 
         lay.addWidget(TabDemo(emphasized=emphasized))
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QSlider(Qt.Orientation.Horizontal)
         sld.setValue(50)
         lay.addWidget(sld)
-        scroll = QScrollBar(Qt.Horizontal)
+        scroll = QScrollBar(Qt.Orientation.Horizontal)
         scroll.setValue(50)
         lay.addWidget(scroll)
-        lay.addWidget(QRangeSlider(Qt.Horizontal, self))
+        lay.addWidget(QRangeSlider(Qt.Orientation.Horizontal, self))
         text = QTextEdit()
         text.setMaximumHeight(100)
         text.setHtml(blurb)
@@ -133,7 +133,7 @@ class SampleWidget(QWidget):
         prog = QProgressBar()
         prog.setValue(50)
         lay.addWidget(prog)
-        groupBox = QGroupBox("Exclusive Radio Buttons")
+        group_box = QGroupBox("Exclusive Radio Buttons")
         radio1 = QRadioButton("&Radio button 1")
         radio2 = QRadioButton("R&adio button 2")
         radio3 = QRadioButton("Ra&dio button 3")
@@ -143,8 +143,8 @@ class SampleWidget(QWidget):
         hbox.addWidget(radio2)
         hbox.addWidget(radio3)
         hbox.addStretch(1)
-        groupBox.setLayout(hbox)
-        lay.addWidget(groupBox)
+        group_box.setLayout(hbox)
+        lay.addWidget(group_box)
 
     def screenshot(self, path=None):
         img = self.grab().toImage()
@@ -156,8 +156,8 @@ class SampleWidget(QWidget):
 if __name__ == "__main__":
     import sys
 
-    from ...utils.theme import available_themes
-    from ..qt_event_loop import get_app
+    from napari._qt.qt_event_loop import get_app
+    from napari.utils.theme import available_themes
 
     themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
     app = get_app()

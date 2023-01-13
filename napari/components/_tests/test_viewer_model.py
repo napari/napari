@@ -1,8 +1,15 @@
+import time
+
 import numpy as np
 import pytest
+from npe2 import DynamicPlugin
 
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
+from napari.errors import MultipleReaderError, ReaderPluginError
+from napari.errors.reader_errors import NoAvailableReaderError
+from napari.layers import Image
+from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
 
@@ -92,6 +99,21 @@ def test_add_multiscale():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     viewer.add_image(data, multiscale=True)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_multiscale_image_with_negative_floats():
+    """See https://github.com/napari/napari/issues/5257"""
+    viewer = ViewerModel()
+    shapes = [(20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.float64) for s in shapes]
+    data[0][-4:, -2:] = -1
+    data[1][-2:, -1:] = -1
+
+    viewer.add_image(data, multiscale=True)
+
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
@@ -571,6 +593,9 @@ def test_active_layer_status_update():
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
 
+    # wait 1 s to avoid the cursor event throttling
+    time.sleep(1)
+    viewer.mouse_over_canvas = True
     viewer.cursor.position = [1, 1, 1, 1, 1]
     assert viewer.status == viewer.layers.selection.active.get_status(
         viewer.cursor.position, world=True
@@ -775,10 +800,144 @@ def test_status_tooltip(Layer, data, ndim):
     layer = Layer(data)
     viewer.layers.append(layer)
     viewer.cursor.position = (1,) * ndim
-    viewer._on_cursor_position_change()
 
 
 def test_viewer_object_event_sources():
     viewer = ViewerModel()
     assert viewer.cursor.events.source is viewer.cursor
     assert viewer.camera.events.source is viewer.camera
+
+
+def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
+    """Assert error is returned when multiple plugins are available to read."""
+    viewer = ViewerModel()
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    with pytest.raises(
+        MultipleReaderError, match='Multiple plugins found capable'
+    ):
+        viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_or_get_error_no_plugin():
+    """Assert error is raised when no plugin is available."""
+    viewer = ViewerModel()
+
+    with pytest.raises(
+        NoAvailableReaderError, match='No plugin found capable of reading'
+    ):
+        viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_or_get_error_builtins(builtins: DynamicPlugin, tmp_path):
+    """Test builtins is available to read npy files."""
+    viewer = ViewerModel()
+
+    f_pth = tmp_path / 'my-file.npy'
+    data = np.random.random((10, 10))
+    np.save(f_pth, data)
+
+    added = viewer._open_or_raise_error([str(f_pth)])
+    assert len(added) == 1
+    layer = added[0]
+    assert isinstance(layer, Image)
+    np.testing.assert_allclose(layer.data, data)
+    assert layer.source.reader_plugin == builtins.name
+
+
+def test_open_or_get_error_prefered_plugin(
+    tmp_path, builtins: DynamicPlugin, tmp_plugin: DynamicPlugin
+):
+    """Test plugin preference is respected."""
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+    np.save(pth, np.random.random((10, 10)))
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.npy'])
+    def _(path):
+        ...
+
+    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
+
+    added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.name
+
+
+def test_open_or_get_error_cant_find_plugin(tmp_path, builtins: DynamicPlugin):
+    """Test user is warned and only plugin used if preferred plugin missing."""
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+    np.save(pth, np.random.random((10, 10)))
+
+    get_settings().plugins.extension2reader = {'*.npy': 'fake-reader'}
+
+    with pytest.warns(RuntimeWarning, match="Can't find fake-reader plugin"):
+        added = viewer._open_or_raise_error([str(pth)])
+    assert len(added) == 1
+    assert added[0].source.reader_plugin == builtins.name
+
+
+def test_open_or_get_error_no_prefered_plugin_many_available(
+    tmp_plugin: DynamicPlugin,
+):
+    """Test MultipleReaderError raised if preferred plugin missing."""
+    viewer = ViewerModel()
+    tmp2 = tmp_plugin.spawn(register=True)
+
+    @tmp_plugin.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    @tmp2.contribute.reader(filename_patterns=['*.fake'])
+    def _(path):
+        ...
+
+    get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
+
+    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
+        with pytest.raises(
+            MultipleReaderError, match='Multiple plugins found capable'
+        ):
+            viewer._open_or_raise_error(['my_file.fake'])
+
+
+def test_open_or_get_error_preferred_fails(builtins, tmp_path):
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+
+    get_settings().plugins.extension2reader = {'*.npy': builtins.name}
+
+    with pytest.raises(
+        ReaderPluginError, match='Tried opening with napari, but failed.'
+    ):
+        viewer._open_or_raise_error([str(pth)])
+
+
+def test_slice_order_with_mixed_dims():
+    viewer = ViewerModel(ndisplay=2)
+    image_2d = viewer.add_image(np.zeros((4, 5)))
+    image_3d = viewer.add_image(np.zeros((3, 4, 5)))
+    image_4d = viewer.add_image(np.zeros((2, 3, 4, 5)))
+
+    # With standard ordering, the shapes of the slices match,
+    # so are trivially numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (4, 5)
+    assert image_4d._slice.image.view.shape == (4, 5)
+
+    viewer.dims.order = (2, 1, 0, 3)
+
+    # With non-standard ordering, the shapes of the slices do not match,
+    # and are not numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (3, 5)
+    assert image_4d._slice.image.view.shape == (2, 5)

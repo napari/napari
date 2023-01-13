@@ -3,141 +3,90 @@ These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
 import json
-import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
-from typing import Dict, Generator, List, Optional, Tuple
-from urllib import error, parse, request
+from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
+from urllib.request import Request, urlopen
 
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata
 
-from .utils import normalized_name
+from napari.plugins.utils import normalized_name
 
-PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
-
-setup_py_entrypoint = re.compile(
-    r"entry_points\s?=\s?([^}]*napari.plugin[^}]*)}"
-)
-setup_py_pypi_name = re.compile(
-    r"setup\s?\(.*name\s?=\s?['\"]([^'\"]+)['\"]", re.DOTALL
-)
+PyPIname = str
 
 
-@lru_cache(maxsize=1024)
-def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
-    """Search for packages starting with ``prefix`` on pypi.
+@lru_cache
+def _user_agent() -> str:
+    """Return a user agent string for use in http requests."""
+    import platform
 
-    Packages using naming convention: http://bit.ly/pynaming-convention
-    can be autodiscovered on pypi using the SIMPLE API:
-    https://peps.python.org/pep-0503/
+    from napari import __version__
+    from napari.utils import misc
 
-    Returns
-    -------
-    dict
-        {name: url} for all packages at pypi that start with ``prefix``
-    """
+    if misc.running_as_bundled_app():
+        env = 'briefcase'
+    elif misc.running_as_constructor_app():
+        env = 'constructor'
+    elif misc.in_jupyter():
+        env = 'jupyter'
+    elif misc.in_ipython():
+        env = 'ipython'
+    else:
+        env = 'python'
 
-    with request.urlopen(PYPI_SIMPLE_API_URL) as response:
-        html = response.read().decode()
-
-    return {
-        name: PYPI_SIMPLE_API_URL + url
-        for url, name in re.findall(
-            f'<a href="/simple/(.+)">({prefix}.*)</a>', html
-        )
-    }
-
-
-@lru_cache(maxsize=1024)
-def get_packages_by_classifier(classifier: str) -> List[str]:
-    """Search for packages declaring ``classifier`` on PyPI
-
-    Yields
-    ------
-    name : str
-        name of all packages at pypi that declare ``classifier``
-    """
-    packages = []
-    page = 1
-    pattern = re.compile('class="package-snippet__name">(.+)</span>')
-    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}&page="
-    while True:
-        try:
-            with request.urlopen(f'{url}{page}') as response:
-                html = response.read().decode()
-                packages.extend(pattern.findall(html))
-            page += 1
-        except error.HTTPError:
-            break
-    return packages
+    parts = [
+        ('napari', __version__),
+        ('runtime', env),
+        (platform.python_implementation(), platform.python_version()),
+        (platform.system(), platform.release()),
+    ]
+    return ' '.join(f'{k}/{v}' for k, v in parts)
 
 
-@lru_cache(maxsize=1024)
-def get_package_versions(name: str) -> List[str]:
-    """Get available versions of a package on pypi
+class SummaryDict(TypedDict):
+    """Objects returned at https://npe2api.vercel.app/api/summary ."""
 
-    Parameters
-    ----------
-    name : str
-        name of the package
-
-    Returns
-    -------
-    tuple
-        versions available on pypi
-    """
-    with request.urlopen(PYPI_SIMPLE_API_URL + name) as response:
-        html = response.read()
-
-    return re.findall(f'>{name}-(.+).tar', html.decode())
+    name: PyPIname
+    version: str
+    display_name: str
+    summary: str
+    author: str
+    license: str
+    home_page: str
 
 
-@lru_cache(maxsize=1024)
-def ensure_published_at_pypi(
-    name: str, min_dev_status=3
-) -> Optional[PackageMetadata]:
-    """Return name if ``name`` is a package in PyPI with dev_status > min."""
-    try:
-        with request.urlopen(f'https://pypi.org/pypi/{name}/json') as resp:
-            info = json.loads(resp.read().decode()).get("info")
-    except error.HTTPError:
-        return None
-    classifiers = info.get("classifiers")
-    for i in range(1, min_dev_status):
-        if any(f'Development Status :: {1}' in x for x in classifiers):
-            return None
-
-    return PackageMetadata(
-        metadata_version="1.0",
-        name=normalized_name(info["name"]),
-        version=info["version"],
-        summary=info["summary"],
-        home_page=info["home_page"],
-        author=info["author"],
-        license=info["license"] or "UNKNOWN",
-    )
+@lru_cache
+def pypi_plugin_summaries() -> List[SummaryDict]:
+    """Return PackageMetadata object for all known napari plugins."""
+    url = "https://npe2api.vercel.app/api/summary"
+    with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
+        return json.load(resp)
 
 
-def iter_napari_plugin_info(
-    skip={'napari-plugin-engine'},
-) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
-    """Return a generator that yields ProjectInfo of available napari plugins.
+@lru_cache
+def conda_map() -> Dict[PyPIname, Optional[str]]:
+    """Return map of PyPI package name to conda_channel/package_name ()."""
+    url = "https://npe2api.vercel.app/api/conda"
+    with urlopen(Request(url, headers={'User-Agent': _user_agent()})) as resp:
+        return json.load(resp)
 
-    By default, requires that packages are at least "Alpha" stage of
-    development.  to allow lower, change the ``min_dev_status`` argument to
-    ``ensure_published_at_pypi``.
-    """
-    already_yielded = []
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [
-            executor.submit(ensure_published_at_pypi, name)
-            for name in get_packages_by_classifier("Framework :: napari")
-            if name not in skip
-        ]
 
-        for future in as_completed(futures):
-            info = future.result()
-            if info and info not in already_yielded:
-                already_yielded.append(info)
-                # `False` To match hub API on conda-forge availability
-                yield (info, True)
+def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
+    """Iterator of tuples of ProjectInfo, Conda availability for all napari plugins."""
+    with ThreadPoolExecutor() as executor:
+        data = executor.submit(pypi_plugin_summaries)
+        _conda = executor.submit(conda_map)
+
+    conda = _conda.result()
+    for info in data.result():
+        _info = cast(Dict[str, str], dict(info))
+        # TODO: use this better.
+        # this would require changing the api that qt_plugin_dialog expects to
+        # receive (and it doesn't currently receive this from the hub API)
+        _info.pop("display_name", None)
+
+        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
+        # parity with the hub api.  change this later.
+        name = _info.pop("name")
+        meta = PackageMetadata(name=normalized_name(name), **_info)
+        yield meta, (name in conda)

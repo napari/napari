@@ -5,12 +5,12 @@ from weakref import WeakSet
 
 import magicgui as mgui
 
-from .components.viewer_model import ViewerModel
-from .utils import _magicgui, config
+from napari.components.viewer_model import ViewerModel
+from napari.utils import _magicgui, config
 
 if TYPE_CHECKING:
     # helpful for IDE support
-    from ._qt.qt_main_window import Window
+    from napari._qt.qt_main_window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -20,17 +20,17 @@ class Viewer(ViewerModel):
     Parameters
     ----------
     title : string, optional
-        The title of the viewer window. by default 'napari'.
+        The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. by default 2.
+        Number of displayed dimensions. By default 2.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3. by default None
+        ndisplay is 2 or 3. By default None
     axis_labels : list of str, optional
-        Dimension names. by default they are labeled with sequential numbers
+        Dimension names. By default they are labeled with sequential numbers
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation. By default True.
     """
 
     _window: 'Window' = None  # type: ignore
@@ -54,9 +54,15 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        # we delay initialization of plugin system to the first instantiation
+        # of a viewer... rather than just on import of plugins module
+        from napari.plugins import _initialize_plugins
+
         # having this import here makes all of Qt imported lazily, upon
         # instantiating the first Viewer.
-        from .window import Window
+        from napari.window import Window
+
+        _initialize_plugins()
 
         self._window = Window(self, show=show)
         self._instances.add(self)
@@ -140,7 +146,7 @@ class Viewer(ViewerModel):
         self.window.close()
 
         if config.async_loading:
-            from .components.experimental.chunk import chunk_loader
+            from napari.components.experimental.chunk import chunk_loader
 
             # TODO_ASYNC: Find a cleaner way to do this? This fixes some
             # tests. We are telling the ChunkLoader that this layer is
@@ -162,7 +168,7 @@ class Viewer(ViewerModel):
 
         Returns
         -------
-        int :
+        int
             number of viewer closed.
 
         """

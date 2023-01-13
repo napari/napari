@@ -7,24 +7,28 @@ from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy import PYQT5
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .. import __version__
-from ..settings import get_settings
-from ..utils import config, perf
-from ..utils.notifications import (
+from napari import Viewer, __version__
+from napari._qt.dialogs.qt_notification import NapariQtNotification
+from napari._qt.qt_event_filters import QtToolTipEventFilter
+from napari._qt.qthreading import (
+    register_threadworker_processors,
+    wait_for_workers_to_quit,
+)
+from napari._qt.utils import _maybe_allow_interrupt
+from napari.resources._icons import _theme_path
+from napari.settings import get_settings
+from napari.utils import config, perf
+from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
 )
-from ..utils.perf import perf_config
-from ..utils.translations import trans
-from .dialogs.qt_notification import NapariQtNotification
-from .qt_event_filters import QtToolTipEventFilter
-from .qt_resources import _register_napari_resources
-from .qthreading import wait_for_workers_to_quit
-from .utils import _maybe_allow_interrupt
+from napari.utils.perf import perf_config
+from napari.utils.theme import _themes
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -136,8 +140,12 @@ def get_app(
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
         if PYQT5:
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-            QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
+            )
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
+            )
 
         argv = sys.argv.copy()
         if sys.platform == "darwin" and not argv[0].endswith("napari"):
@@ -147,7 +155,9 @@ def get_app(
             argv[0] = "napari"
 
         if perf_config and perf_config.trace_qt_events:
-            from .perf.qt_event_tracing import QApplicationWithTracing
+            from napari._qt.perf.qt_event_tracing import (
+                QApplicationWithTracing,
+            )
 
             app = QApplicationWithTracing(argv)
         else:
@@ -190,9 +200,18 @@ def get_app(
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
 
-        # this will register all of our resources (icons) with Qt, so that they
-        # can be used in qss files and elsewhere.
-        _register_napari_resources()
+        # Setup search paths for currently installed themes.
+        for name in _themes:
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        # When a new theme is added, at it to the search path.
+        @_themes.events.changed.connect
+        @_themes.events.added.connect
+        def _(event):
+            name = event.key
+            QDir.addSearchPath(f'theme_{name}', str(_theme_path(name)))
+
+        register_threadworker_processors()
 
     _app_ref = app  # prevent garbage collection
 
@@ -204,6 +223,8 @@ def get_app(
 
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
+    for v in list(Viewer._instances):
+        v.close()
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
     if (
@@ -227,13 +248,13 @@ def quit_app():
 
     if config.monitor:
         # Stop the monitor service if we were using it
-        from ..components.experimental.monitor import monitor
+        from napari.components.experimental.monitor import monitor
 
         monitor.stop()
 
     if config.async_loading:
         # Shutdown the chunkloader
-        from ..components.experimental.chunk import chunk_loader
+        from napari.components.experimental.chunk import chunk_loader
 
         chunk_loader.shutdown()
 
@@ -273,7 +294,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     app = get_app()
     splash = None
     if startup_logo and app.applicationName() == 'napari':
-        from .widgets.qt_splash_screen import NapariSplashScreen
+        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()

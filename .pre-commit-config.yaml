@@ -1,17 +1,31 @@
 repos:
+-   repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.1
+    hooks:
+    -   id: absolufy-imports
+        exclude: _vendor|vendored|examples
+-   repo: https://github.com/hadialqattan/pycln
+    rev: v2.1.2
+    hooks:
+    - id: pycln
 -   repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+    rev: 5.11.4
     hooks:
     - id: isort
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.12.0
     hooks:
     - id: black
       pass_filenames: true
       exclude: _vendor|vendored|examples
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.206
+    hooks:
+      - id: ruff
+        exclude: _vendor|vendored
 -   repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+    rev: 6.0.0
     hooks:
     - id: flake8
       additional_dependencies: [flake8-typing-imports]
@@ -19,13 +33,13 @@ repos:
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.1
+    rev: v3.3.1
     hooks:
     - id: pyupgrade
       args: ["--py38-plus", "--keep-runtime-typing"]
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/seddonym/import-linter
-    rev: v1.2.6
+    rev: v1.6.0
     hooks:
     - id: import-linter
       stages: [manual]

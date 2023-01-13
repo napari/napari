@@ -9,8 +9,8 @@ from enum import auto
 from types import TracebackType
 from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
 
-from .events import Event, EventEmitter
-from .misc import StringEnum
+from napari.utils.events import Event, EventEmitter
+from napari.utils.misc import StringEnum
 
 try:
     from napari_error_reporter import capture_exception, install_error_reporter
@@ -38,6 +38,7 @@ __all__ = [
     'WarningNotification',
     'NotificationManager',
     'show_info',
+    'show_error',
     'show_console_notification',
 ]
 
@@ -137,6 +138,10 @@ class Notification(Event):
 
 
 class ErrorNotification(Notification):
+    """
+    Notification at an Error severity level.
+    """
+
     exception: BaseException
 
     def __init__(self, exception: BaseException, *args, **kwargs):
@@ -146,7 +151,7 @@ class ErrorNotification(Notification):
         self.exception = exception
 
     def as_html(self):
-        from ._tracebacks import get_tb_formatter
+        from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
         exc_info = (
@@ -156,8 +161,19 @@ class ErrorNotification(Notification):
         )
         return fmt(exc_info, as_html=True)
 
+    def as_text(self):
+        from napari.utils._tracebacks import get_tb_formatter
+
+        fmt = get_tb_formatter()
+        exc_info = (
+            self.exception.__class__,
+            self.exception,
+            self.exception.__traceback__,
+        )
+        return fmt(exc_info, as_html=False, color="NoColor")
+
     def __str__(self):
-        from ._tracebacks import get_tb_formatter
+        from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
         exc_info = (
@@ -169,6 +185,10 @@ class ErrorNotification(Notification):
 
 
 class WarningNotification(Notification):
+    """
+    Notification at a Warning severity level.
+    """
+
     warning: Warning
 
     def __init__(
@@ -317,12 +337,38 @@ notification_manager = NotificationManager()
 
 
 def show_info(message: str):
-    notification_manager.receive_info(message)
+    """
+    Show an info message in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.INFO)
+    )
+
+
+def show_warning(message: str):
+    """
+    Show a warning in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.WARNING)
+    )
+
+
+def show_error(message: str):
+    """
+    Show an error in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.ERROR)
+    )
 
 
 def show_console_notification(notification: Notification):
+    """
+    Show a notification in the console.
+    """
     try:
-        from ..settings import get_settings
+        from napari.settings import get_settings
 
         if (
             notification.severity

@@ -1,7 +1,12 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
+Add shapes
+==========
+
+Display one shapes layer ontop of one image layer using the ``add_shapes`` and
+``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -65,7 +70,7 @@ layer = viewer.add_shapes(
     name='shapes',
 )
 
-# shapes of each type can also be added via their respective add_<shape_type> method 
+# shapes of each type can also be added via their respective add_<shape_type> method
 # e.g. for the polygons above:
 
 # layer = viewer.add_shapes(name='shapes') # create empty layer
@@ -73,7 +78,7 @@ layer = viewer.add_shapes(
 #     polygons,
 #     edge_width=1,
 #     edge_color='coral',
-#     face_color='royalblue',    
+#     face_color='royalblue',
 # )
 
 
@@ -95,4 +100,5 @@ layer.add(
 # To save layers to svg:
 # viewer.layers.save('viewer.svg', plugin='svg')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

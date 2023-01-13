@@ -1,4 +1,12 @@
-"""Basic example of using magicgui to create an Image Arithmetic GUI in napari."""
+"""
+magicgui Image Arithmetic
+=========================
+
+Basic example of using magicgui to create an Image Arithmetic GUI in napari.
+
+.. tags:: gui
+"""
+
 import enum
 import numpy as np
 import napari
@@ -42,4 +50,5 @@ viewer.add_image(np.random.rand(20, 20), name="Layer 2")
 # Add our magic function to napari
 viewer.window.add_function_widget(image_arithmetic)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

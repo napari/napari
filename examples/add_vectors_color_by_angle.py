@@ -1,7 +1,11 @@
 """
+Add vectors color by angle
+==========================
+
 This example generates a set of vectors in a spiral pattern.
 The color of the vectors is mapped to their 'angle' feature.
 
+.. tags:: visualization-advanced
 """
 
 import napari
@@ -53,4 +57,5 @@ layer = viewer.add_vectors(
 # set the edge color mode to colormap
 layer.edge_color_mode = 'colormap'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

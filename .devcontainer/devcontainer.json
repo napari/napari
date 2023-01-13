@@ -1,0 +1,47 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.233.0/containers/python-3-miniconda
+{
+	"name": "Miniconda (Python 3)",
+	"build": { 
+		"context": "..",
+		"dockerfile": "Dockerfile",
+		"args": {
+			"NODE_VERSION": "none"
+		}
+	},
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"python.defaultInterpreterPath": "/opt/conda/bin/python",
+		"python.linting.enabled": true,
+		"python.linting.mypyEnabled": true,
+		"python.linting.flake8Enabled": true,
+		"python.formatting.blackPath": "/opt/conda/bin/black",
+		"python.linting.flake8Path": "/opt/conda/bin/flake8",
+		"python.linting.mypyPath": "/opt/conda/bin/mypy",
+	},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"ms-python.python",
+		"ms-python.vscode-pylance"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [5900, 5901, 6080],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "pip install -U pip && pip install -e .[pyqt, dev] && pre-commit install",
+
+	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode",
+	"features": {
+		"git": "os-provided",
+		"github-cli": "latest",
+		"desktop-lite": {
+			"password": "napari",
+			"webPort": "6080",
+			"vncPort": "5901"
+		}
+	}
+}

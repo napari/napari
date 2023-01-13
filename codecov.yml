@@ -1,12 +1,38 @@
 ignore:
   - napari/_version.py
   - napari/resources
+  - napari/benchmarks
 coverage:
   status:
     project:
-      default:
+      default: false
+      library:
         target: auto
+        paths: ['!.*/_tests/.*']
+        threshold: 1%
+      qt:
+        target: auto
+        paths: ['napari/_qt/.*', '!.*/_tests/.*']
+        threshold: 1%
+      layers:
+        target: auto
+        paths: [ 'napari/layers/.*', '!.*/_tests/.*' ]
+        threshold: 1%
+      utils:
+        target: auto
+        paths: [ 'napari/utils/.*', '!.*/_tests/.*' ]
+        threshold: 2%
+      tests:
+        target: auto
+        paths: ['.*/_tests/.*']
         threshold: 1%  # coverage can drop by up to 1% while still posting success
-    patch: off
+    patch:
+      default:
+        threshold: 1%
+        target: 0%
+codecov:
+  notify:
+    after_n_builds: 11
 comment:
   require_changes: true  # if true: only post the PR comment if coverage changes
+  after_n_builds: 11

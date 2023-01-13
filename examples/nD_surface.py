@@ -1,5 +1,10 @@
 """
+nD surface
+==========
+
 Display a 3D surface
+
+.. tags:: visualization-nD
 """
 
 import numpy as np
@@ -16,4 +21,5 @@ values = np.linspace(0, 1, len(data))
 # add the surface
 layer = viewer.add_surface((data, faces, values))
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

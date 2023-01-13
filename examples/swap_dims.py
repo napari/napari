@@ -1,5 +1,10 @@
 """
+Swap dims
+=========
+
 Display a 4-D image and points layer and swap the displayed dimensions
+
+.. tags:: visualization-nD
 """
 
 import numpy as np
@@ -34,4 +39,5 @@ viewer.add_points(
 
 viewer.dims.order = (0, 2, 1, 3)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

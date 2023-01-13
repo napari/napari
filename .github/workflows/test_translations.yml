@@ -4,17 +4,19 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '0 1 * * *'
+  workflow_dispatch:
 
 jobs:
   translations:
     name: Check missing translations
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
       - name: Install napari
         run: |
           pip install -e .[all]

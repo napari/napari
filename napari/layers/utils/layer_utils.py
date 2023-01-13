@@ -1,19 +1,26 @@
 from __future__ import annotations
 
+import functools
+import inspect
 import warnings
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import dask
 import numpy as np
 import pandas as pd
 
-from ...utils.action_manager import action_manager
-from ...utils.events.custom_types import Array
-from ...utils.transforms import Affine
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.events.custom_types import Array
+from napari.utils.transforms import Affine
+from napari.utils.translations import trans
 
 
-def register_layer_action(keymapprovider, description: str, shortcuts=None):
+def register_layer_action(
+    keymapprovider,
+    description: str,
+    repeatable: bool = False,
+    shortcuts: str = None,
+):
     """
     Convenient decorator to register an action with the current Layers
 
@@ -29,6 +36,8 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     description : str
         The description of the action, this will typically be translated and
         will be what will be used in tooltips.
+    repeatable : bool
+        A flag indicating whether the action autorepeats when key is held
     shortcuts : str | List[str]
         Shortcut to bind by default to the action we are registering.
 
@@ -49,6 +58,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
             command=func,
             description=description,
             keymapprovider=keymapprovider,
+            repeatable=repeatable,
         )
         if shortcuts:
             if isinstance(shortcuts, str):
@@ -59,6 +69,75 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
         return func
 
     return _inner
+
+
+def register_layer_attr_action(
+    keymapprovider,
+    description: str,
+    attribute_name: str,
+    shortcuts=None,
+):
+    """
+    Convenient decorator to register an action with the current Layers.
+    This will get and restore attribute from function first argument.
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+
+    Parameters
+    ----------
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    attribute_name : str
+        The name of the attribute to be restored if key is hold over `get_settings().get_settings().application.hold_button_delay.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
+    """
+
+    def _handle(func):
+        sig = inspect.signature(func)
+        try:
+            first_variable_name = next(iter(sig.parameters))
+        except StopIteration:
+            raise RuntimeError(
+                trans._(
+                    "If actions has no arguments there is no way to know what to set the attribute to.",
+                    deferred=True,
+                ),
+            )
+
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            if args:
+                obj = args[0]
+            else:
+                obj = kwargs[first_variable_name]
+            prev_mode = getattr(obj, attribute_name)
+            func(*args, **kwargs)
+
+            def _callback():
+                setattr(obj, attribute_name, prev_mode)
+
+            return _callback
+
+        repeatable = False  # attribute actions are always non-repeatable
+        register_layer_action(
+            keymapprovider, description, repeatable, shortcuts
+        )(_wrapper)
+        return func
+
+    return _handle
 
 
 def _nanmin(array):
@@ -250,79 +329,6 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
-def prepare_properties(
-    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
-    choices: Optional[Dict[str, Array]] = None,
-    num_data: int = 0,
-    save_choices: bool = False,
-) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-    """Prepare properties and choices into standard forms.
-    Parameters
-    ----------
-    properties : dict[str, Array] or DataFrame
-        The property values.
-    choices : dict[str, Array]
-        The property value choices.
-    num_data : int
-        The length of data that the properties represent (e.g. number of points).
-    save_choices : bool
-        If true, always return all of the properties in choices.
-    Returns
-    -------
-    properties: dict[str, np.ndarray]
-        A dictionary where the key is the property name and the value
-        is an ndarray of property values.
-    choices: dict[str, np.ndarray]
-        A dictionary where the key is the property name and the value
-        is an ndarray of unique property value choices.
-    """
-    # If there is no data, non-empty properties represent choices as a deprecated behavior.
-    if num_data == 0 and properties:
-        warnings.warn(
-            trans._(
-                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        choices = properties
-        properties = {}
-
-    properties = validate_properties(properties, expected_len=num_data)
-    choices = _validate_property_choices(choices)
-
-    # Populate the new choices by using the property keys and merging the
-    # corresponding unique property and choices values.
-    new_choices = {
-        k: np.unique(np.concatenate((v, choices.get(k, []))))
-        for k, v in properties.items()
-    }
-
-    # If there are no properties, and thus no new choices, populate new choices
-    # from the input choices, and initialize property values as missing or empty.
-    if len(new_choices) == 0:
-        new_choices = {k: np.unique(v) for k, v in choices.items()}
-        if len(new_choices) > 0:
-            if num_data > 0:
-                properties = {
-                    k: np.array([None] * num_data) for k in new_choices
-                }
-            else:
-                properties = {
-                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
-                }
-
-    # For keys that are in the input choices, but not in the new choices,
-    # sometimes add appropriate array values to new choices and properties.
-    if save_choices:
-        for k, v in choices.items():
-            if k not in new_choices:
-                new_choices[k] = np.unique(v)
-                properties[k] = np.array([None] * num_data)
-
-    return properties, new_choices
-
-
 def get_current_properties(
     properties: Dict[str, np.ndarray],
     choices: Dict[str, np.ndarray],
@@ -501,7 +507,7 @@ def compute_multiscale_level(
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
-    # Find the highest resolution level allowed
+    # Find the highest level (lowest resolution) allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
     if len(locations) > 0:
         level = locations[-1][0]
@@ -807,7 +813,7 @@ class _FeatureTable:
         if size < current_size:
             self.remove(range(size, current_size))
         elif size > current_size:
-            to_append = pd.concat([self._defaults] * (size - current_size))
+            to_append = self._defaults.iloc[np.zeros(size - current_size)]
             self.append(to_append)
 
     def append(self, to_append: pd.DataFrame) -> None:
@@ -828,11 +834,6 @@ class _FeatureTable:
         indices : Any
             The indices of the rows to remove. Must be usable as the labels parameter
             to pandas.DataFrame.drop.
-
-        Returns
-        -------
-        pd.DataFrame
-            The resulting features table, which contain copies of the existing data.
         """
         self._values = self._values.drop(labels=indices, axis=0).reset_index(
             drop=True
@@ -912,6 +913,15 @@ def _validate_features(
     """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
+    elif isinstance(features, dict):
+        # Convert all array-like objects into a numpy array.
+        # This section was introduced due to an unexpected behavior when using
+        # a pandas Series with mixed indices as input.
+        # This way should handle all array-like objects correctly.
+        # See https://github.com/napari/napari/pull/4755 for more details.
+        features = {
+            key: np.array(value, copy=False) for key, value in features.items()
+        }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
@@ -982,3 +992,18 @@ def _warn_about_deprecated_current_properties():
         DeprecationWarning,
         stacklevel=2,
     )
+
+
+def _unique_element(array: Array) -> Optional[Any]:
+    """
+    Returns the unique element along the 0th axis, if it exists; otherwise, returns None.
+
+    This is faster than np.unique, does not require extra tricks for nD arrays, and
+    does not fail for non-sortable elements.
+    """
+    if len(array) == 0:
+        return None
+    el = array[0]
+    if np.any(array[1:] != el):
+        return None
+    return el

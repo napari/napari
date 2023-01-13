@@ -20,7 +20,9 @@ def test_settings(tmp_path):
         class Config:
             env_prefix = 'testnapari_'
 
-    return TestSettings(tmp_path / 'test_settings.yml')
+    return TestSettings(
+        tmp_path / 'test_settings.yml', schema_version=CURRENT_SCHEMA_VERSION
+    )
 
 
 def test_settings_file(test_settings):
@@ -160,14 +162,14 @@ def test_custom_theme_settings(test_settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         test_settings.appearance.theme = custom_theme_name
 
-    blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark', True)
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
         primary='rgb(80, 88, 108)',
         current='rgb(184, 112, 0)',
     )
-    register_theme(custom_theme_name, blue_theme)
+    register_theme(custom_theme_name, blue_theme, "test")
 
     # Theme registered, should pass validation
     test_settings.appearance.theme = custom_theme_name
@@ -211,8 +213,8 @@ def test_settings_env_variables(monkeypatch):
 
     # can also use json in nested vars
     assert NapariSettings(None).plugins.extension2reader == {}
-    monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{".zarr": "hi"}')
-    assert NapariSettings(None).plugins.extension2reader == {".zarr": "hi"}
+    monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{"*.zarr": "hi"}')
+    assert NapariSettings(None).plugins.extension2reader == {"*.zarr": "hi"}
 
 
 def test_settings_env_variables_fails(monkeypatch):
@@ -293,14 +295,16 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
 
 
 def test_get_settings(tmp_path):
-    s = settings.get_settings(tmp_path)
-    assert s.config_path == tmp_path
+    p = f'{tmp_path}.yaml'
+    s = settings.get_settings(p)
+    assert str(s.config_path) == str(p)
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
-    settings.get_settings(tmp_path)
+    p = f'{tmp_path}.yaml'
+    settings.get_settings(p)
     with pytest.raises(Exception) as e:
-        settings.get_settings(tmp_path)
+        settings.get_settings(p)
 
     assert 'The path can only be set once per session' in str(e)
 

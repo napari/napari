@@ -1,7 +1,12 @@
+"""
+Points over time
+================
+
+.. tags:: visualization-advanced
+"""
 import napari
 import numpy as np
 import dask.array as da
-from skimage import data
 
 
 image4d = da.random.random(
@@ -35,4 +40,5 @@ viewer.dims.events.current_step.connect(
         )
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

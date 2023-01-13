@@ -1,6 +1,11 @@
 """
-Display a points layer on top of an image layer using the add_points and
-add_image APIs
+Add points with features
+========================
+
+Display a points layer on top of an image layer using the ``add_points`` and
+``add_image`` APIs
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -58,4 +63,5 @@ def toggle_point_annotation(viewer):
         points_layer.refresh_colors(update_color_mapping=False)
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

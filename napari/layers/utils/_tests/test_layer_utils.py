@@ -12,9 +12,10 @@ from napari.layers.utils.layer_utils import (
     dataframe_to_properties,
     dims_displayed_world_to_layer,
     get_current_properties,
-    prepare_properties,
+    register_layer_attr_action,
     segment_normal,
 )
+from napari.utils.key_bindings import KeymapHandler, KeymapProvider
 
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
@@ -105,71 +106,6 @@ def test_dataframe_to_properties():
     properties_df = pd.DataFrame(properties)
     converted_properties = dataframe_to_properties(properties_df)
     np.testing.assert_equal(converted_properties, properties)
-
-
-def test_prepare_properties_with_empty_properties():
-    assert prepare_properties({}) == ({}, {})
-
-
-def test_prepare_properties_with_empty_properties_and_choices():
-    assert prepare_properties({}, {}) == ({}, {})
-
-
-def test_prepare_properties_with_properties_then_choices_from_properties():
-    properties, choices = prepare_properties({"aa": [1, 2]}, num_data=2)
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 2])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_choices_then_properties_are_none():
-    properties, choices = prepare_properties({}, {"aa": [1, 2]}, num_data=2)
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [None, None])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_properties_and_choices():
-    properties, choices = prepare_properties({"aa": [1, 2, 1]}, num_data=3)
-    assert np.array_equal(properties["aa"], [1, 2, 1])
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
-def test_prepare_properties_with_properties_and_choices_then_merge_choice_values():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2]}, num_data=2
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-
-
-def test_prepare_properties_with_properties_and_choices_then_skip_choice_keys():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}, num_data=2
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-
-
-def test_prepare_properties_with_properties_and_choices_and_save_choices():
-    properties, choices = prepare_properties(
-        {"aa": [1, 3]},
-        {"aa": [1, 2], "bb": [7, 6]},
-        num_data=2,
-        save_choices=True,
-    )
-    assert list(properties.keys()) == ["aa", "bb"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert np.array_equal(properties["bb"], [None, None])
-    assert list(choices.keys()) == ["aa", "bb"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    assert np.array_equal(choices["bb"], [6, 7])
 
 
 def test_get_current_properties_with_properties_then_last_values():
@@ -398,6 +334,7 @@ def test_feature_table_resize_smaller():
 
 def test_feature_table_resize_larger():
     feature_table = _make_feature_table()
+    expected_dtypes = feature_table.values.dtypes
 
     feature_table.resize(6)
 
@@ -411,6 +348,7 @@ def test_feature_table_resize_larger():
         features['confidence'],
         [0.2, 0.5, 1, 0.8, 0.8, 0.8],
     )
+    np.testing.assert_array_equal(features.dtypes, expected_dtypes)
 
 
 def test_feature_table_append():
@@ -459,3 +397,53 @@ def test_feature_table_from_layer_with_custom_index_and_num_data():
     feature_table = _FeatureTable.from_layer(features=features, num_data=2)
     expected = features.reset_index(drop=True)
     pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+def test_feature_table_from_layer_with_unordered_pd_series_properties():
+    properties = {
+        'a': pd.Series([1, 3], index=[3, 4]),
+        'b': pd.Series([7.5, -2.1], index=[1, 2]),
+    }
+    feature_table = _FeatureTable.from_layer(properties=properties, num_data=2)
+    expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
+    pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+def test_feature_table_from_layer_with_unordered_pd_series_features():
+    features = {
+        'a': pd.Series([1, 3], index=[3, 4]),
+        'b': pd.Series([7.5, -2.1], index=[1, 2]),
+    }
+    feature_table = _FeatureTable.from_layer(features=features, num_data=2)
+    expected = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[0, 1])
+    pd.testing.assert_frame_equal(feature_table.values, expected)
+
+
+def test_register_label_attr_action(monkeypatch):
+    monkeypatch.setattr(time, "time", lambda: 1)
+
+    class Foo(KeymapProvider):
+        def __init__(self):
+            super().__init__()
+            self.value = 0
+
+    foo = Foo()
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [foo]
+
+    @register_layer_attr_action(Foo, "value desc", "value", "K")
+    def set_value_1(x):
+        x.value = 1
+
+    handler.press_key("K")
+    assert foo.value == 1
+    handler.release_key("K")
+    assert foo.value == 1
+
+    foo.value = 0
+    handler.press_key("K")
+    assert foo.value == 1
+    monkeypatch.setattr(time, "time", lambda: 2)
+    handler.release_key("K")
+    assert foo.value == 0

@@ -4,19 +4,23 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from ..utils._base import _DEFAULT_CONFIG_PATH
-from ..utils.translations import trans
-from ._appearance import AppearanceSettings
-from ._application import ApplicationSettings
-from ._base import _NOT_SET, EventedConfigFileSettings, _remove_empty_dicts
-from ._experimental import ExperimentalSettings
-from ._fields import Version
-from ._plugins import PluginsSettings
-from ._shortcuts import ShortcutsSettings
+from napari.settings._appearance import AppearanceSettings
+from napari.settings._application import ApplicationSettings
+from napari.settings._base import (
+    _NOT_SET,
+    EventedConfigFileSettings,
+    _remove_empty_dicts,
+)
+from napari.settings._experimental import ExperimentalSettings
+from napari.settings._fields import Version
+from napari.settings._plugins import PluginsSettings
+from napari.settings._shortcuts import ShortcutsSettings
+from napari.utils._base import _DEFAULT_CONFIG_PATH
+from napari.utils.translations import trans
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
-CURRENT_SCHEMA_VERSION = Version(0, 4, 0)
+CURRENT_SCHEMA_VERSION = Version(0, 5, 0)
 
 
 class NapariSettings(EventedConfigFileSettings):
@@ -101,7 +105,7 @@ class NapariSettings(EventedConfigFileSettings):
 
     def _maybe_migrate(self):
         if self.schema_version < CURRENT_SCHEMA_VERSION:
-            from ._migrations import do_migrations
+            from napari.settings._migrations import do_migrations
 
             do_migrations(self)
 

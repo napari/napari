@@ -11,9 +11,9 @@ def test_interpolation_combobox(qtbot):
     qtbot.addWidget(qtctrl)
     combo = qtctrl.interpComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
-    assert opts == {'bicubic', 'bilinear', 'kaiser', 'nearest', 'spline36'}
+    assert opts == {'cubic', 'linear', 'kaiser', 'nearest', 'spline36'}
     # programmatically adding approved interpolation works
-    layer.interpolation = 'lanczos'
+    layer.interpolation2d = 'lanczos'
     assert combo.findText('lanczos') == 5
 
 
@@ -66,10 +66,16 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
     qtbot.addWidget(qtctrl)
 
     layer.depiction = 'volume'
-    assert qtctrl.planeControls.isHidden()
+    assert qtctrl.planeThicknessSlider.isHidden()
+    assert qtctrl.planeThicknessLabel.isHidden()
+    assert qtctrl.planeNormalButtons.isHidden()
+    assert qtctrl.planeNormalLabel.isHidden()
 
     layer.depiction = 'plane'
-    assert not qtctrl.planeControls.isHidden()  # isVisible() != not isHidden()
+    assert not qtctrl.planeThicknessSlider.isHidden()
+    assert not qtctrl.planeThicknessLabel.isHidden()
+    assert not qtctrl.planeNormalButtons.isHidden()
+    assert not qtctrl.planeNormalLabel.isHidden()
 
 
 def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
@@ -80,10 +86,16 @@ def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
 
     layer._slice_dims(ndisplay=3)
     layer.depiction = 'plane'
-    assert not qtctrl.planeControls.isHidden()  # isVisible() != not isHidden()
+    assert not qtctrl.planeThicknessSlider.isHidden()
+    assert not qtctrl.planeThicknessLabel.isHidden()
+    assert not qtctrl.planeNormalButtons.isHidden()
+    assert not qtctrl.planeNormalLabel.isHidden()
 
     layer._slice_dims(ndisplay=2)
-    assert qtctrl.planeControls.isHidden()
+    assert qtctrl.planeThicknessSlider.isHidden()
+    assert qtctrl.planeThicknessLabel.isHidden()
+    assert qtctrl.planeNormalButtons.isHidden()
+    assert qtctrl.planeNormalLabel.isHidden()
 
 
 def test_plane_slider_value_change(qtbot):
@@ -92,10 +104,7 @@ def test_plane_slider_value_change(qtbot):
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
     layer.plane.thickness *= 2
-    assert (
-        qtctrl.planeControls.planeThicknessSlider.value()
-        == layer.plane.thickness
-    )
+    assert qtctrl.planeThicknessSlider.value() == layer.plane.thickness
 
 
 def test_auto_contrast_buttons(qtbot):

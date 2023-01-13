@@ -1,3 +1,9 @@
+"""
+Action manager
+==============
+
+.. tags:: gui, experimental
+"""
 from random import shuffle
 
 import numpy as np
@@ -39,7 +45,7 @@ layer_buttons = viewer.window.qt_viewer.layerButtons
 # Button do not need to do anything, just need to be pretty; all the action
 # binding and (un) binding will be done with the action manager, idem for
 # setting the tooltip.
-rot_button = QtViewerPushButton(None, 'warning')
+rot_button = QtViewerPushButton('warning')
 layer_buttons.layout().insertWidget(3, rot_button)
 
 
@@ -81,19 +87,19 @@ for c in callbacks:
     c()
 
 
-# We can set the action manager in debug mode, to help us figure out which 
+# We can set the action manager in debug mode, to help us figure out which
 # button is triggering which action. This will update the tooltips of the buttons
 # to include the name of the action in between square brackets.
 
 action_manager._debug(True)
 
-# Let's also modify some existing shortcuts, by unbinding a few existing actions, 
+# Let's also modify some existing shortcuts, by unbinding a few existing actions,
 # and rebinding them with new shortcuts; below we change the add and select mode
 # to be the = (same as + key on US Keyboards but without modifiers) and - keys.
 # unbinding returns the old key if it exists; but we don't use it.
 
 # in practice you likely don't need to modify the shortcuts this way as it will
-# be implemented in settings, though you could imagine a plugin that would 
+# be implemented in settings, though you could imagine a plugin that would
 # allow toggling between many keymaps.
 
 settings = {
@@ -106,4 +112,5 @@ for action, key in settings.items():
    _old_shortcut = action_manager.unbind_shortcut(action)
    action_manager.bind_shortcut(action, key)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

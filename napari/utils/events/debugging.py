@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, ClassVar, Set
 
 from pydantic import BaseSettings, Field, PrivateAttr
 
-from ...utils.misc import ROOT_DIR
-from ...utils.translations import trans
+from napari.utils.misc import ROOT_DIR
+from napari.utils.translations import trans
 
 try:
     from rich import print
-except ImportError:
+except ModuleNotFoundError:
     print(
         trans._(
             "TIP: run `pip install rich` for much nicer event debug printout."
@@ -19,11 +19,11 @@ except ImportError:
     )
 try:
     import dotenv
-except ImportError:
+except ModuleNotFoundError:
     dotenv = None  # type: ignore
 
 if TYPE_CHECKING:
-    from .event import Event
+    from napari.utils.events.event import Event
 
 
 class EventDebugSettings(BaseSettings):

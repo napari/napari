@@ -210,3 +210,79 @@ def test_shading():
     # set shading as keyword argument
     layer = Surface(data, shading=shading)
     assert layer.shading == shading
+
+
+@pytest.mark.parametrize(
+    "ray_start,ray_direction,expected_value,expected_index",
+    [
+        ([0, 1, 1], [1, 0, 0], 2, 0),
+        ([10, 1, 1], [-1, 0, 0], 2, 1),
+    ],
+)
+def test_get_value_3d(
+    ray_start, ray_direction, expected_value, expected_index
+):
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+    surface_layer = Surface((vertices, faces, values))
+
+    surface_layer._slice_dims([0, 0, 0], ndisplay=3)
+    value, index = surface_layer.get_value(
+        position=ray_start,
+        view_direction=ray_direction,
+        dims_displayed=[0, 1, 2],
+        world=False,
+    )
+    assert index == expected_index
+    np.testing.assert_allclose(value, expected_value)
+
+
+@pytest.mark.parametrize(
+    "ray_start,ray_direction,expected_value,expected_index",
+    [
+        ([0, 0, 1, 1], [0, 1, 0, 0], 2, 0),
+        ([0, 10, 1, 1], [0, -1, 0, 0], 2, 1),
+    ],
+)
+def test_get_value_3d_nd(
+    ray_start, ray_direction, expected_value, expected_index
+):
+    vertices = np.array(
+        [
+            [0, 3, 0, 0],
+            [0, 3, 0, 3],
+            [0, 3, 3, 0],
+            [0, 5, 0, 0],
+            [0, 5, 0, 3],
+            [0, 5, 3, 0],
+            [0, 2, 50, 50],
+            [0, 2, 50, 100],
+            [0, 2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+    surface_layer = Surface((vertices, faces, values))
+
+    surface_layer._slice_dims([0, 0, 0, 0], ndisplay=3)
+    value, index = surface_layer.get_value(
+        position=ray_start,
+        view_direction=ray_direction,
+        dims_displayed=[1, 2, 3],
+        world=False,
+    )
+    assert index == expected_index
+    np.testing.assert_allclose(value, expected_value)

@@ -5,16 +5,16 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..base import Layer
-from ..utils._color_manager_constants import ColorMode
-from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import fix_data_vectors, generate_vector_meshes
+from napari.layers.base import Layer
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_transformations import ColorType
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.vectors._vector_utils import fix_data_vectors
+from napari.utils.colormaps import Colormap, ValidColormapArg
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class Vectors(Layer):
@@ -135,21 +135,10 @@ class Vectors(Layer):
         colors for the M in view vectors
     _view_indices : (1, M) array
         indices for the M in view vectors
-    _view_vertices : (4M, 2) or (8M, 2) np.ndarray
-        the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
-    _view_faces : (2M, 3) or (4M, 3) np.ndarray
-        indices of the _mesh_vertices that form the faces of the M in view vectors.
-        Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _view_alphas : (M,) or float
         relative opacity for the M in view vectors
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
-    _mesh_vertices : (4N, 2) array
-        The four corner points for the mesh representation of each vector as as
-        rectangle in the slice that it starts in.
-    _mesh_triangles : (2N, 3) array
-        The integer indices of the `_mesh_vertices` that form the two triangles
-        for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
         The maximum number of vectors that will ever be used to render the
         thumbnail. If more vectors are present then they are randomly
@@ -229,15 +218,7 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._data = data
-
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self._displayed_stored = None
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -260,13 +241,11 @@ class Vectors(Layer):
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
         self._displayed_stored = []
-        self._view_vertices = []
-        self._view_faces = []
         self._view_indices = []
         self._view_alphas = []
 
         # now that everything is set up, make the layer visible (if set to visible)
-        self._update_dims()
+        self.refresh()
         self.visible = visible
 
     @property
@@ -280,15 +259,6 @@ class Vectors(Layer):
 
         self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
-
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
 
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
@@ -392,7 +362,9 @@ class Vectors(Layer):
             {
                 'length': self.length,
                 'edge_width': self.edge_width,
-                'edge_color': self.edge_color,
+                'edge_color': self.edge_color
+                if self.data.size
+                else [self._edge.current_color],
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
@@ -449,15 +421,6 @@ class Vectors(Layer):
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self._edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
-
         self.events.edge_width()
         self.refresh()
 
@@ -469,15 +432,6 @@ class Vectors(Layer):
     @length.setter
     def length(self, length: Union[int, float]):
         self._length = float(length)
-
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self._length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
 
         self.events.length()
         self.refresh()
@@ -624,7 +578,7 @@ class Vectors(Layer):
         face_color[:, -1] *= self._view_alphas
         face_color = np.repeat(face_color, 2, axis=0)
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
@@ -636,8 +590,8 @@ class Vectors(Layer):
 
         Parameters
         ----------
-        dims_indices : sequence of int or slice
-            Indices to slice with.
+        dims_indices : sequence of int, float or slice objects
+            Indices of the slicing plane
 
         Returns
         -------
@@ -650,15 +604,29 @@ class Vectors(Layer):
             while vectors passing through the current slice are assigned progressively lower
             values, based on how far from the current slice they originate.
         """
-        not_disp = list(self._dims_not_displayed)
-        indices = np.array(dims_indices)
+
         if len(self.data) > 0:
-            data = self.data[:, 0, not_disp]
-            distances = abs(data - indices[not_disp])
+            dims_not_displayed = self._slice_input.not_displayed
+
+            # We want a numpy array so we can use fancy indexing with the non-displayed
+            # indices, but as dims_indices can (and often/always does) contain slice
+            # objects, the array has dtype=object which is then very slow for the
+            # arithmetic below.
+            # promote slicing plane to array so we can index into it, project as type float
+            not_disp_indices = np.array(dims_indices)[
+                dims_not_displayed
+            ].astype(float)
+            # get the anchor points (starting positions) of the vector layers in not displayed dims
+            data = self.data[:, 0, dims_not_displayed]
+            # calculate distances from anchor points to the slicing plane
+            distances = abs(data - not_disp_indices)
+            # if we need to include vectors that are out of this slice
             if self.out_of_slice_display is True:
+                # get the scaled projected vectors
                 projected_lengths = abs(
-                    self.data[:, 1, not_disp] * self.length
+                    self.data[:, 1, dims_not_displayed] * self.length
                 )
+                # find where the distance to plane is less than the scaled vector
                 matches = np.all(distances <= projected_lengths, axis=1)
                 alpha_match = projected_lengths[matches]
                 alpha_match[alpha_match == 0] = 1
@@ -670,7 +638,6 @@ class Vectors(Layer):
             else:
                 matches = np.all(distances <= 0.5, axis=1)
                 alpha = 1.0
-
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices, alpha
         else:
@@ -680,21 +647,10 @@ class Vectors(Layer):
         """Sets the view given the indices to slice with."""
 
         indices, alphas = self._slice_data(self._slice_indices)
-        if not self._dims_displayed == self._displayed_stored:
-            vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims_displayed)],
-                self.edge_width,
-                self.length,
-            )
-            self._mesh_vertices = vertices
-            self._mesh_triangles = triangles
-            self._displayed_stored = copy(self._dims_displayed)
 
-        vertices = self._mesh_vertices
-        disp = list(self._dims_displayed)
+        disp = self._slice_input.displayed
 
         if len(self.data) == 0:
-            faces = []
             self._view_data = np.empty((0, 2, 2))
             self._view_indices = []
         elif self.ndim > 2:
@@ -702,78 +658,61 @@ class Vectors(Layer):
             self._view_indices = indices
             self._view_alphas = alphas
             self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
-            if len(indices) == 0:
-                faces = []
-            else:
-                keep_inds = np.repeat(2 * indices, 2)
-                keep_inds[1::2] = keep_inds[1::2] + 1
-                if self._ndisplay == 3:
-                    keep_inds = np.concatenate(
-                        [
-                            keep_inds,
-                            len(self._mesh_triangles) // 2 + keep_inds,
-                        ],
-                        axis=0,
-                    )
-                faces = self._mesh_triangles[keep_inds]
         else:
-            faces = self._mesh_triangles
             self._view_data = self.data[:, :, disp]
             self._view_indices = np.arange(self.data.shape[0])
             self._view_alphas = 1.0
 
-        if len(faces) == 0:
-            self._view_vertices = []
-            self._view_faces = []
-        else:
-            self._view_vertices = vertices
-            self._view_faces = faces
-
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
-        # calculate min vals for the vertices and pad with 0.5
-        # the offset is needed to ensure that the top left corner of the
-        # vectors corresponds to the top left corner of the thumbnail
-        de = self._extent_data
-        offset = (np.array([de[0, d] for d in self._dims_displayed]) + 0.5)[
-            -2:
-        ]
-        # calculate range of values for the vertices and pad with 1
-        # padding ensures the entire vector can be represented in the thumbnail
-        # without getting clipped
-        shape = np.ceil(
-            [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
-        ).astype(int)[-2:]
-        zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
-
-        # vectors = copy(self._data_view[:, :, -2:])
-        if self._view_data.shape[0] > self._max_vectors_thumbnail:
-            thumbnail_indices = np.random.randint(
-                0, self._view_data.shape[0], self._max_vectors_thumbnail
-            )
-            vectors = copy(self._view_data[thumbnail_indices, :, -2:])
-            thumbnail_color_indices = self._view_indices[thumbnail_indices]
-        else:
-            vectors = copy(self._view_data[:, :, -2:])
-            thumbnail_color_indices = self._view_indices
-        vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
-        downsampled = (vectors - offset) * zoom_factor
-        downsampled = np.clip(
-            downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
-        )
+        # Set the default thumbnail to black, opacity 1
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        edge_colors = self._edge.colors[thumbnail_color_indices]
-        for v, ec in zip(downsampled, edge_colors):
-            start = v[0]
-            stop = v[1]
-            step = int(np.ceil(np.max(abs(stop - start))))
-            x_vals = np.linspace(start[0], stop[0], step)
-            y_vals = np.linspace(start[1], stop[1], step)
-            for x, y in zip(x_vals, y_vals):
-                colormapped[int(x), int(y), :] = ec
-        colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
+        if len(self.data) == 0:
+            self.thumbnail = colormapped
+        else:
+            # calculate min vals for the vertices and pad with 0.5
+            # the offset is needed to ensure that the top left corner of the
+            # vectors corresponds to the top left corner of the thumbnail
+            de = self._extent_data
+            offset = (
+                np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
+            )[-2:]
+            # calculate range of values for the vertices and pad with 1
+            # padding ensures the entire vector can be represented in the thumbnail
+            # without getting clipped
+            shape = np.ceil(
+                [de[1, d] - de[0, d] + 1 for d in self._slice_input.displayed]
+            ).astype(int)[-2:]
+            zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+
+            if self._view_data.shape[0] > self._max_vectors_thumbnail:
+                thumbnail_indices = np.random.randint(
+                    0, self._view_data.shape[0], self._max_vectors_thumbnail
+                )
+                vectors = copy(self._view_data[thumbnail_indices, :, -2:])
+                thumbnail_color_indices = self._view_indices[thumbnail_indices]
+            else:
+                vectors = copy(self._view_data[:, :, -2:])
+                thumbnail_color_indices = self._view_indices
+            vectors[:, 1, :] = (
+                vectors[:, 0, :] + vectors[:, 1, :] * self.length
+            )
+            downsampled = (vectors - offset) * zoom_factor
+            downsampled = np.clip(
+                downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
+            )
+            edge_colors = self._edge.colors[thumbnail_color_indices]
+            for v, ec in zip(downsampled, edge_colors):
+                start = v[0]
+                stop = v[1]
+                step = int(np.ceil(np.max(abs(stop - start))))
+                x_vals = np.linspace(start[0], stop[0], step)
+                y_vals = np.linspace(start[1], stop[1], step)
+                for x, y in zip(x_vals, y_vals):
+                    colormapped[int(x), int(y), :] = ec
+            colormapped[..., 3] *= self.opacity
+            self.thumbnail = colormapped
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

@@ -9,7 +9,7 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 texture_dtypes = [
     np.dtype(np.uint8),
@@ -112,13 +112,39 @@ def fix_data_dtype(data):
 
 
 BLENDING_MODES = {
-    'opaque': dict(preset='opaque'),
-    'translucent': dict(preset='translucent'),
+    'opaque': dict(
+        depth_test=True,
+        cull_face=False,
+        blend=False,
+        blend_func=('one', 'zero'),
+        blend_equation='func_add',
+    ),
+    'translucent': dict(
+        depth_test=True,
+        cull_face=False,
+        blend=True,
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation='func_add',
+    ),
     'translucent_no_depth': dict(
         depth_test=False,
         cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation='func_add',  # see vispy/vispy#2324
     ),
-    'additive': dict(preset='additive'),
+    'additive': dict(
+        depth_test=False,
+        cull_face=False,
+        blend=True,
+        blend_func=('src_alpha', 'one'),
+        blend_equation='func_add',
+    ),
+    'minimum': dict(
+        depth_test=False,
+        cull_face=False,
+        blend=True,
+        blend_func=('one', 'one'),
+        blend_equation='min',
+    ),
 }

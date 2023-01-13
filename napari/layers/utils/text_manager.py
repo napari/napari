@@ -1,17 +1,29 @@
 import warnings
 from copy import deepcopy
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from pydantic import PositiveInt, validator
 
-from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..base._base_constants import Blending
-from ._text_constants import Anchor, TextMode
-from ._text_utils import format_text_properties, get_text_anchors
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._text_constants import Anchor
+from napari.layers.utils._text_utils import get_text_anchors
+from napari.layers.utils.color_encoding import (
+    ColorArray,
+    ColorEncoding,
+    ConstantColorEncoding,
+)
+from napari.layers.utils.layer_utils import _validate_features
+from napari.layers.utils.string_encoding import (
+    ConstantStringEncoding,
+    StringArray,
+    StringEncoding,
+)
+from napari.layers.utils.style_encoding import _get_style_values
+from napari.utils.events import Event, EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class TextManager(EventedModel):
@@ -19,100 +31,133 @@ class TextManager(EventedModel):
 
     Parameters
     ----------
+    features : Any
+        The features table of a layer.
+    values : array-like
+        The array of strings manually specified.
+        .. deprecated:: 0.4.16
+            `values` is deprecated. Use `string` instead.
     text : str
         A a property name or a format string containing property names.
         This will be used to fill out string values n_text times using the
         data in properties.
+        .. deprecated:: 0.4.16
+            `text` is deprecated. Use `string` instead.
     n_text : int
         The number of text elements to initially display, which should match
         the number of elements (e.g. points) in a layer.
+        .. deprecated:: 0.4.16
+            `n_text` is deprecated. Its value is implied by `features` instead.
     properties: dict
         Stores properties data that will be used to generate strings from the
         given text. Typically comes from a layer.
+        .. deprecated:: 0.4.16
+            `properties` is deprecated. Use `features` instead.
 
     Attributes
     ----------
+    string : StringEncoding
+        Defines the string for each text element.
     values : np.ndarray
-        The text values to be displayed.
+        The encoded string values.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-    color : array
-        Font color for the text as an [R, G, B, A] array. Can also be expressed
-        as a string on construction or setting.
+    color : ColorEncoding
+        Defines the color for each text element.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
-        Note that 'opaque` blending is not allowed, as it colors the bounding box
+        Note that 'opaque' blending is not allowed, as it colors the bounding box
         surrounding the text, and if given, 'translucent' will be used instead.
     anchor : Anchor
         The location of the text origin relative to the bounding box.
         Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
     translation : np.ndarray
-        Offset from the anchor point.
+        Offset from the anchor point in data coordinates.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
-    values: Array[str] = []
+    string: StringEncoding = ConstantStringEncoding(constant='')
+    color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (4,)] = 'cyan'
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    _mode: TextMode = TextMode.NONE
-    _text_format_string: str = ''
 
-    def __init__(self, text=None, n_text=None, properties=None, **kwargs):
-        super().__init__(**kwargs)
-        if 'values' in kwargs:
-            text = kwargs['values']
-            n_text = len(text)
-        self._set_text(text, n_text, properties=properties)
-
-    def _set_text(
-        self,
-        text: Optional[str],
-        n_text: int,
-        properties: Optional[dict] = None,
+    def __init__(
+        self, text=None, properties=None, n_text=None, features=None, **kwargs
     ):
-        if properties is None:
-            properties = {}
-        if text is None:
-            text = np.empty(0)
-        if len(properties) == 0 or len(text) == 0:
-            # set text mode to NONE if no props/text are provided
-            self._mode = TextMode.NONE
-            self._text_format_string = ''
-            self.values = np.empty(0)
+        if n_text is not None:
+            _warn_about_deprecated_n_text_parameter()
+        if properties is not None:
+            _warn_about_deprecated_properties_parameter()
+            features = _validate_features(properties, num_data=n_text)
         else:
-            formatted_text, text_mode = format_text_properties(
-                text, n_text, properties
-            )
-            self._text_format_string = text
-            self._mode = text_mode
-            self.values = formatted_text
+            features = _validate_features(features)
+        if 'values' in kwargs:
+            _warn_about_deprecated_values_parameter()
+            values = kwargs.pop('values')
+            if 'string' not in kwargs:
+                kwargs['string'] = values
+        if text is not None:
+            _warn_about_deprecated_text_parameter()
+            kwargs['string'] = text
+        super().__init__(**kwargs)
+        self.events.add(values=Event)
+        self.apply(features)
 
-    def refresh_text(self, properties: dict):
+    @property
+    def values(self):
+        return self.string._values
+
+    def __setattr__(self, key, value):
+        if key == 'values':
+            self.string = value
+        else:
+            super().__setattr__(key, value)
+
+    def refresh(self, features: Any) -> None:
+        """Refresh all encoded values using new layer features.
+
+        Parameters
+        ----------
+        features : Any
+            The features table of a layer.
+        """
+        self.string._clear()
+        self.color._clear()
+        self.string._apply(features)
+        self.events.values()
+        self.color._apply(features)
+        # Trigger the main event for vispy layers.
+        self.events(Event(type='refresh'))
+
+    def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
 
         Parameters
         ----------
-        properties : dict
+        properties : Dict[str, np.ndarray]
             The new properties from the layer
         """
-        self._set_text(
-            self._text_format_string,
-            n_text=len(self.values),
-            properties=properties,
+        warnings.warn(
+            trans._(
+                'TextManager.refresh_text is deprecated since 0.4.16. Use TextManager.refresh instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
         )
+        features = _validate_features(properties)
+        self.refresh(features)
 
     def add(self, properties: dict, n_text: int):
-        """Add a text element using the current format string
+        """Adds a number of a new text elements.
 
         Parameters
         ----------
@@ -121,13 +166,26 @@ class TextManager(EventedModel):
         n_text : int
             The number of text elements to add
         """
-        if self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
-            new_text, _ = format_text_properties(
-                self._text_format_string, n_text=n_text, properties=properties
-            )
-            self.values = np.concatenate((self.values, new_text))
+        warnings.warn(
+            trans._(
+                'TextManager.add is deprecated since 0.4.16. Use TextManager.apply instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        features = pd.DataFrame(
+            {
+                name: np.repeat(value, n_text, axis=0)
+                for name, value in properties.items()
+            }
+        )
+        values = self.string(features)
+        self.string._append(values)
+        self.events.values()
+        colors = self.color(features)
+        self.color._append(colors)
 
-    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
+    def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
 
         Parameters
@@ -135,13 +193,43 @@ class TextManager(EventedModel):
         indices_to_remove : set, list, np.ndarray
             The indices of the text elements to remove.
         """
-        if self._mode != TextMode.NONE:
-            selected_indices = list(indices_to_remove)
-            if len(selected_indices) > 0:
-                self.values = np.delete(self.values, selected_indices, axis=0)
+        if isinstance(indices_to_remove, set):
+            indices_to_remove = list(indices_to_remove)
+        self.string._delete(indices_to_remove)
+        self.events.values()
+        self.color._delete(indices_to_remove)
+
+    def apply(self, features: Any):
+        """Applies any encodings to be the same length as the given features,
+        generating new values or removing extra values only as needed.
+
+        Parameters
+        ----------
+        features : Any
+            The features table of a layer.
+        """
+        self.string._apply(features)
+        self.events.values()
+        self.color._apply(features)
+
+    def _copy(self, indices: List[int]) -> dict:
+        """Copies all encoded values at the given indices."""
+        return {
+            'string': _get_style_values(self.string, indices),
+            'color': _get_style_values(self.color, indices),
+        }
+
+    def _paste(self, *, string: StringArray, color: ColorArray):
+        """Pastes encoded values to the end of the existing values."""
+        self.string._append(string)
+        self.events.values()
+        self.color._append(color)
 
     def compute_text_coords(
-        self, view_data: np.ndarray, ndisplay: int
+        self,
+        view_data: np.ndarray,
+        ndisplay: int,
+        order: Optional[Tuple[int, ...]] = None,
     ) -> Tuple[np.ndarray, str, str]:
         """Calculate the coordinates for each text element in view
 
@@ -151,6 +239,9 @@ class TextManager(EventedModel):
             The in view data from the layer
         ndisplay : int
             The number of dimensions being displayed in the viewer
+        order : tuple of ints, optional
+            The display order of the dimensions in the layer.
+            If None, implies ``range(ndisplay)``.
 
         Returns
         -------
@@ -164,7 +255,20 @@ class TextManager(EventedModel):
         anchor_coords, anchor_x, anchor_y = get_text_anchors(
             view_data, ndisplay, self.anchor
         )
-        text_coords = anchor_coords + self.translation
+        # The translation should either be a scalar or be as long as
+        # the dimensionality of the associated layer.
+        # We do not have direct knowledge of that dimensionality, but
+        # can infer enough information to get the translation coordinates
+        # that need to offset the anchor coordinates.
+        ndim_coords = min(ndisplay, anchor_coords.shape[1])
+        translation = self.translation
+        if translation.size > 1:
+            if order is None:
+                translation = self.translation[-ndim_coords:]
+            else:
+                order_displayed = list(order[-ndim_coords:])
+                translation = self.translation[order_displayed]
+        text_coords = anchor_coords + translation
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
@@ -180,33 +284,34 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        if len(indices_view) > 0 and self._mode in [
-            TextMode.FORMATTED,
-            TextMode.PROPERTY,
-        ]:
-            return self.values[indices_view]
-        return np.empty((0,), dtype=str)
+        values = _get_style_values(self.string, indices_view)
+        return (
+            np.broadcast_to(values, len(indices_view))
+            if values.ndim == 0
+            else values
+        )
+
+    def _view_color(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        return _get_style_values(self.color, indices_view, value_ndim=1)
 
     @classmethod
     def _from_layer(
         cls,
         *,
-        text: Union['TextManager', dict, str, None],
-        n_text: int,
-        properties: Dict[str, np.ndarray],
+        text: Union['TextManager', dict, str, Sequence[str], None],
+        features: Any,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
         Parameters
         ----------
-        text : Union[TextManager, dict, str, None]
+        text : Union[TextManager, dict, str, Sequence[str], None]
             An instance of TextManager, a dict that contains some of its state,
-            a string that should be a property name, or a format string.
-        n_text : int
-            The number of text elements to initially display, which should match
-            the number of elements (e.g. points) in a layer.
-        properties : Dict[str, np.ndarray]
-            The properties of a layer.
+            a string that may be a format string or a feature name, or a
+            sequence of strings specified manually.
+        features : Any
+            The features table of a layer.
 
         Returns
         -------
@@ -216,18 +321,18 @@ class TextManager(EventedModel):
             kwargs = text.dict()
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
+        elif text is None:
+            kwargs = {'string': ConstantStringEncoding(constant='')}
         else:
-            kwargs = {'text': text}
-        kwargs['n_text'] = n_text
-        kwargs['properties'] = properties
+            kwargs = {'string': text}
+        kwargs['features'] = features
         return cls(**kwargs)
 
     def _update_from_layer(
         self,
         *,
         text: Union['TextManager', dict, str, None],
-        n_text: int,
-        properties: Dict[str, np.ndarray],
+        features: Any,
     ):
         """Updates this in-place from a layer.
 
@@ -241,27 +346,24 @@ class TextManager(EventedModel):
         See :meth:`TextManager._from_layer`.
         """
         # Create a new instance from the input to populate all fields.
-        new_manager = TextManager._from_layer(
-            text=text, n_text=n_text, properties=properties
-        )
+        new_manager = TextManager._from_layer(text=text, features=features)
 
         # Update a copy of this so that any associated errors are raised
         # before actually making the update. This does not need to be a
         # deep copy because update will only try to reassign fields and
         # should not mutate any existing fields in-place.
+        # Avoid recursion because some fields are also models that may
+        # not share field names/types (e.g. string).
         current_manager = self.copy()
-        current_manager.update(new_manager)
+        current_manager.update(new_manager, recurse=False)
 
         # If we got here, then there were no errors, so update for real.
         # Connected callbacks may raise errors, but those are bugs.
-        self.update(new_manager)
+        self.update(new_manager, recurse=False)
 
-        self._mode = new_manager._mode
-        self._text_format_string = new_manager._text_format_string
-
-    @validator('color', pre=True, always=True)
-    def _check_color(cls, color):
-        return transform_color(color)[0]
+        # Some of the encodings may have changed, so ensure they encode new
+        # values if needed.
+        self.apply(features)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
@@ -280,3 +382,43 @@ class TextManager(EventedModel):
             )
 
         return blending_mode
+
+
+def _warn_about_deprecated_text_parameter():
+    warnings.warn(
+        trans._(
+            'text is a deprecated parameter since 0.4.16. Use string instead.'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_properties_parameter():
+    warnings.warn(
+        trans._(
+            'properties is a deprecated parameter since 0.4.16. Use features instead.'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_n_text_parameter():
+    warnings.warn(
+        trans._(
+            'n_text is a deprecated parameter since 0.4.16. Use features instead.'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_values_parameter():
+    warnings.warn(
+        trans._(
+            'values is a deprecated parameter since 0.4.16. Use string instead.'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )

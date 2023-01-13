@@ -4,13 +4,13 @@ from typing import List, Optional, Tuple
 
 from pydantic import Field, validator
 
-from ..utils._base import _DEFAULT_LOCALE
-from ..utils.events.custom_types import conint
-from ..utils.events.evented_model import EventedModel
-from ..utils.notifications import NotificationSeverity
-from ..utils.translations import trans
-from ._constants import LoopMode
-from ._fields import Language
+from napari.settings._constants import LoopMode
+from napari.settings._fields import Language
+from napari.utils._base import _DEFAULT_LOCALE
+from napari.utils.events.custom_types import conint
+from napari.utils.events.evented_model import EventedModel
+from napari.utils.notifications import NotificationSeverity
+from napari.utils.translations import trans
 
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
@@ -154,6 +154,20 @@ class ApplicationSettings(EventedModel):
         default=-1,
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
+    )
+    confirm_close_window: bool = Field(
+        default=True,
+        title=trans._("Confirm window or application closing"),
+        description=trans._(
+            "Ask for confirmation before closing a napari window or application (all napari windows).",
+        ),
+    )
+    hold_button_delay: float = Field(
+        default=0.5,
+        title=trans._("Delay to treat button as hold in seconds"),
+        description=trans._(
+            "This affects certain actions where a short press and a long press have different behaviors, such as changing the mode of a layer permanently or only during the long press."
+        ),
     )
 
     @validator('window_state')

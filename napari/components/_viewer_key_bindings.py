@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..settings import get_settings
-from ..utils.action_manager import action_manager
-from ..utils.theme import available_themes
-from ..utils.translations import trans
-from .viewer_model import ViewerModel
+from napari.components.viewer_model import ViewerModel
+from napari.utils.action_manager import action_manager
+from napari.utils.theme import available_themes, get_system_theme
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ..viewer import Viewer
+    from napari.viewer import Viewer
 
 
 def register_viewer_action(description):
@@ -22,7 +21,7 @@ def register_viewer_action(description):
 
     def _inner(func):
         action_manager.register_action(
-            name='napari:' + func.__name__,
+            name=f'napari:{func.__name__}',
             command=func,
             description=description,
             keymapprovider=ViewerModel,
@@ -56,18 +55,21 @@ def toggle_ndisplay(viewer: Viewer):
 # ```
 # RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
 # ```
-@register_viewer_action(trans._("Toggle theme."))
-def toggle_theme(viewer: Viewer):
-    """Toggle theme for viewer"""
-    settings = get_settings()
+@register_viewer_action(trans._("Toggle current viewer theme."))
+def toggle_theme(viewer: ViewerModel):
+    """Toggle theme for current viewer"""
     themes = available_themes()
-    current_theme = settings.appearance.theme
+    current_theme = viewer.theme
+    # Check what the system theme is, to toggle properly
+    if current_theme == 'system':
+        current_theme = get_system_theme()
     idx = themes.index(current_theme)
-    idx += 1
-    if idx == len(themes):
-        idx = 0
+    idx = (idx + 1) % len(themes)
+    # Don't toggle to system, just among actual themes
+    if themes[idx] == 'system':
+        idx = (idx + 1) % len(themes)
 
-    settings.appearance.theme = themes[idx]
+    viewer.theme = themes[idx]
 
 
 @register_viewer_action(trans._("Reset view to original state."))
@@ -108,7 +110,7 @@ def roll_axes(viewer: Viewer):
     ),
 )
 def transpose_axes(viewer: Viewer):
-    viewer.dims._transpose()
+    viewer.dims.transpose()
 
 
 @register_viewer_action(trans._("Toggle grid mode."))

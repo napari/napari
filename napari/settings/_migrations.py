@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from importlib.metadata import distributions
 from typing import TYPE_CHECKING, Callable, List, NamedTuple
 
-from ._fields import Version
+from napari.settings._fields import Version
 
 if TYPE_CHECKING:
-    from ._napari_settings import NapariSettings
+    from napari.settings._napari_settings import NapariSettings
 
 _MIGRATORS: List[Migrator] = []
 MigratorF = Callable[['NapariSettings'], None]
@@ -43,6 +43,7 @@ def do_migrations(model: NapariSettings):
                         msg += 'Settings rollback also failed. Please run `napari --reset`.'
                     warnings.warn(msg)
                     return
+    model._maybe_save()
 
 
 @contextmanager
@@ -98,3 +99,19 @@ def v030_v040(model: NapariSettings):
         for ep in dist.entry_points:
             if ep.group == "napari.manifest":
                 model.plugins.disabled_plugins.discard(dist.metadata['Name'])
+
+
+@migrator('0.4.0', '0.5.0')
+def v040_050(model: NapariSettings):
+    """Migrate from v0.4.0 to v0.5.0
+
+    Prior to 0.5.0 existing preferences may have reader extensions
+    preferences saved without a leading *.
+    fnmatch would fail on these so we coerce them to include a *
+    e.g. '.csv' becomes '*.csv'
+    """
+    from napari.settings._utils import _coerce_extensions_to_globs
+
+    current_settings = model.plugins.extension2reader
+    new_settings = _coerce_extensions_to_globs(current_settings)
+    model.plugins.extension2reader = new_settings

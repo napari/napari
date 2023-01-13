@@ -1,13 +1,16 @@
+import pydantic
+import pytest
+
 from napari.layers import Points
 from napari.layers._source import Source, current_source, layer_source
 
 
 def test_layer_source():
     """Test basic layer source assignment mechanism"""
-    with layer_source(path='some_path', reader_plugin='builtins'):
+    with layer_source(path='some_path', reader_plugin='napari'):
         points = Points()
 
-    assert points.source == Source(path='some_path', reader_plugin='builtins')
+    assert points.source == Source(path='some_path', reader_plugin='napari')
 
 
 def test_source_context():
@@ -32,4 +35,18 @@ def test_source_context():
                 path='a', reader_plugin='plug', sample=('samp', 'name')
             )
         assert current_source() == Source(sample=('samp', 'name'))
+
+        point = Points()
+        with layer_source(parent=point):
+            assert current_source() == Source(
+                sample=('samp', 'name'), parent=point
+            )
+    assert current_source() == Source()
+
+
+def test_source_assert_parent():
+    assert current_source() == Source()
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        with layer_source(parent=''):
+            current_source()
     assert current_source() == Source()

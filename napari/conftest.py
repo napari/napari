@@ -1,48 +1,63 @@
-try:
-    __import__('dotenv').load_dotenv()
-except ImportError:
-    pass
+"""
+
+Notes for using the plugin-related fixtures here:
+
+1. The `_mock_npe2_pm` fixture is always used, and it mocks the global npe2 plugin
+   manager instance with a discovery-deficient plugin manager.  No plugins should be
+   discovered in tests without explicit registration.
+2. wherever the builtins need to be tested, the `builtins` fixture should be explicitly
+   added to the test.  (it's a DynamicPlugin that registers our builtins.yaml with the
+   global mock npe2 plugin manager)
+3. wherever *additional* plugins or contributions need to be added, use the `tmp_plugin`
+   fixture, and add additional contributions _within_ the test (not in the fixture):
+    ```python
+    def test_something(tmp_plugin):
+        @tmp_plugin.contribute.reader(filname_patterns=["*.ext"])
+        def f(path): ...
+
+        # the plugin name can be accessed at:
+        tmp_plugin.name
+    ```
+4. If you need a _second_ mock plugin, use `tmp_plugin.spawn(register=True)` to create
+   another one.
+   ```python
+   new_plugin = tmp_plugin.spawn(register=True)
+
+   @new_plugin.contribute.reader(filename_patterns=["*.tiff"])
+   def get_reader(path):
+       ...
+   ```
+"""
+from __future__ import annotations
 
 import os
-from functools import partial
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
+from itertools import chain
 from multiprocessing.pool import ThreadPool
+from typing import TYPE_CHECKING
 from unittest.mock import patch
+from weakref import WeakKeyDictionary
+
+try:
+    __import__('dotenv').load_dotenv()
+except ModuleNotFoundError:
+    pass
+
 
 import dask.threaded
 import numpy as np
-import pooch
 import pytest
 from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
-from napari.plugins._builtins import (
-    napari_write_image,
-    napari_write_labels,
-    napari_write_points,
-    napari_write_shapes,
-)
-from napari.utils import io
 from napari.utils.config import async_loading
+from napari.utils.misc import ROOT_DIR
 
-if not hasattr(pooch.utils, 'file_hash'):
-    setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
-
-try:
-    from skimage.data import image_fetcher
-except ImportError:
-    from skimage.data import data_dir
-
-    class image_fetcher:
-        def fetch(data_name):
-            if data_name.startswith("data/"):
-                data_name = data_name[5:]
-            path = os.path.join(data_dir, data_name)
-            if not os.path.exists(path):
-                raise ValueError(
-                    f"Legacy skimage image_fetcher cannot find file: {path}"
-                )
-            return path
+if TYPE_CHECKING:
+    from npe2._pytest_plugin import TestPluginManager
 
 
 def pytest_addoption(parser):
@@ -63,85 +78,6 @@ def pytest_addoption(parser):
         default=False,
         help="run only asynchronous tests",
     )
-
-
-@pytest.fixture(
-    params=['image', 'labels', 'points', 'points-with-properties', 'shapes']
-)
-def layer_writer_and_data(request):
-    """Fixture that supplies layer io utilities for tests.
-
-    Parameters
-    ----------
-    request : _pytest.fixtures.SubRequest
-        The pytest request object
-
-    Returns
-    -------
-    tuple
-        ``(writer, layer_data, extension, reader, Layer)``
-
-        - writer: a function that can write layerdata to a path
-        - layer_data: the layerdata tuple for this layer
-        - extension: an appropriate extension for this layer type
-        - reader: a function that can read this layer type from a path and
-                  returns a ``(data, meta)`` tuple.
-        - Layer: the Layer class
-    """
-    if request.param == 'image':
-        data = np.random.rand(20, 20)
-        Layer = Image
-        layer = Image(data)
-        writer = napari_write_image
-        extension = '.tif'
-
-        def reader(path):
-            return (io.imread(path), {}, 'image')  # metadata
-
-    elif request.param == 'labels':
-        data = np.random.randint(0, 16000, (32, 32), 'uint64')
-        Layer = Labels
-        layer = Labels(data)
-        writer = napari_write_labels
-        extension = '.tif'
-
-        def reader(path):
-            return (io.imread(path), {}, 'labels')  # metadata
-
-    elif request.param == 'points':
-        data = np.random.rand(20, 2)
-        Layer = Points
-        layer = Points(data)
-        writer = napari_write_points
-        extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='points')
-    elif request.param == 'points-with-properties':
-        data = np.random.rand(20, 2)
-        Layer = Points
-        layer = Points(data, properties={'values': np.random.rand(20)})
-        writer = napari_write_points
-        extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='points')
-    elif request.param == 'shapes':
-        np.random.seed(0)
-        data = [
-            np.random.rand(2, 2),
-            np.random.rand(2, 2),
-            np.random.rand(6, 2),
-            np.random.rand(6, 2),
-            np.random.rand(2, 2),
-        ]
-        shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
-        Layer = Shapes
-        layer = Shapes(data, shape_type=shape_type)
-        writer = napari_write_shapes
-        extension = '.csv'
-        reader = partial(io.csv_to_layer_data, require_type='shapes')
-    else:
-        return None, None, None, None, None
-
-    layer_data = layer.as_layer_data_tuple()
-    return writer, layer_data, extension, reader, Layer
 
 
 @pytest.fixture
@@ -246,31 +182,6 @@ def layers():
     return LayerList(list_of_layers)
 
 
-@pytest.fixture
-def two_pngs():
-    return [image_fetcher.fetch(f'data/{n}.png') for n in ('moon', 'camera')]
-
-
-@pytest.fixture
-def rgb_png():
-    return [image_fetcher.fetch('data/astronaut.png')]
-
-
-@pytest.fixture
-def single_png():
-    return [image_fetcher.fetch('data/camera.png')]
-
-
-@pytest.fixture
-def irregular_images():
-    return [image_fetcher.fetch(f'data/{n}.png') for n in ('camera', 'coins')]
-
-
-@pytest.fixture
-def single_tiff():
-    return [image_fetcher.fetch('data/multipage.tif')]
-
-
 # Currently we cannot run async and async in the invocation of pytest
 # because we get a segfault for unknown reasons. So for now:
 # "pytest" runs sync_only
@@ -321,6 +232,15 @@ def skip_async_only(request):
         pytest.skip("not running with --async_only")
 
 
+@pytest.fixture(autouse=True)
+def skip_examples(request):
+    """Skip examples test if ."""
+    if request.node.get_closest_marker(
+        'examples'
+    ) and request.config.getoption("--skip_examples"):
+        pytest.skip("running with --skip_examples")
+
+
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
@@ -337,6 +257,11 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
 
 @pytest.fixture(autouse=True)
 def fresh_settings(monkeypatch):
+    """This fixture ensures that default settings are used for every test.
+
+    and ensures that changes to settings in a test are reverted, and never
+    saved to disk.
+    """
     from napari import settings
     from napari.settings import NapariSettings
 
@@ -409,3 +334,421 @@ def _no_error_reports():
             yield
     except (ModuleNotFoundError, AttributeError):
         yield
+
+
+@pytest.fixture(autouse=True)
+def _npe2pm(npe2pm, monkeypatch):
+    """Autouse the npe2 mock plugin manager with no registered plugins."""
+    from napari.plugins import NapariPluginManager
+
+    monkeypatch.setattr(NapariPluginManager, 'discover', lambda *_, **__: None)
+    return npe2pm
+
+
+@pytest.fixture
+def builtins(_npe2pm: TestPluginManager):
+    with _npe2pm.tmp_plugin(package='napari') as plugin:
+        yield plugin
+
+
+@pytest.fixture
+def tmp_plugin(_npe2pm: TestPluginManager):
+    with _npe2pm.tmp_plugin() as plugin:
+        plugin.manifest.package_metadata = {'version': '0.1.0', 'name': 'test'}
+        plugin.manifest.display_name = 'Temp Plugin'
+        yield plugin
+
+
+def _event_check(instance):
+    def _prepare_check(name, no_event_):
+        def check(instance, no_event=no_event_):
+            if name in no_event:
+                assert not hasattr(
+                    instance.events, name
+                ), f"event {name} defined"
+            else:
+                assert hasattr(
+                    instance.events, name
+                ), f"event {name} not defined"
+
+        return check
+
+    no_event_set = set()
+    if isinstance(instance, tuple):
+        no_event_set = instance[1]
+        instance = instance[0]
+
+    for name, value in instance.__class__.__dict__.items():
+        if isinstance(value, property) and name[0] != '_':
+            yield _prepare_check(name, no_event_set), instance, name
+
+
+def pytest_generate_tests(metafunc):
+    """Generate separate test for each test toc check if all events are defined."""
+    if 'event_define_check' in metafunc.fixturenames:
+        res = []
+        ids = []
+
+        for obj in metafunc.cls.get_objects():
+            for check, instance, name in _event_check(obj):
+                res.append((check, instance))
+                ids.append(f"{name}-{instance}")
+
+        metafunc.parametrize('event_define_check,obj', res, ids=ids)
+
+
+def pytest_collection_modifyitems(session, config, items):
+    test_order_prefix = [
+        os.path.join("napari", "utils"),
+        os.path.join("napari", "layers"),
+        os.path.join("napari", "components"),
+        os.path.join("napari", "settings"),
+        os.path.join("napari", "plugins"),
+        os.path.join("napari", "_vispy"),
+        os.path.join("napari", "_qt"),
+        os.path.join("napari", "qt"),
+        os.path.join("napari", "_tests"),
+        os.path.join("napari", "_tests", "test_examples.py"),
+    ]
+    test_order = [[] for _ in test_order_prefix]
+    test_order.append([])  # for not matching tests
+    for item in items:
+        index = -1
+        for i, prefix in enumerate(test_order_prefix):
+            if prefix in str(item.fspath):
+                index = i
+        test_order[index].append(item)
+    items[:] = list(chain(*test_order))
+
+
+@pytest.fixture(autouse=True)
+def disable_notification_dismiss_timer(monkeypatch):
+    """
+    This fixture disables starting timer for closing notification
+    by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
+
+    As Qt timer is realised by thread and keep reference to the object,
+    without increase of reference counter object could be garbage collected and
+    cause segmentation fault error when Qt (C++) code try to access it without
+    checking if Python object exists.
+
+    This fixture is used in all tests because it is possible to call Qt code
+    from non Qt test by connection of `NapariQtNotification.show_notification` to
+    `NotificationManager` global instance.
+    """
+
+    with suppress(ImportError):
+        from napari._qt.dialogs.qt_notification import NapariQtNotification
+
+        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_IN_RATE", 0)
+        monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+
+
+@pytest.fixture()
+def single_threaded_executor():
+    executor = ThreadPoolExecutor(max_workers=1)
+    yield executor
+    executor.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def _mock_app():
+    """Mock clean 'test_app' `NapariApplication` instance.
+
+    This is used whenever `napari._app_model.get_app()` is called to return
+    a 'test_app' `NapariApplication` instead of the 'napari'
+    `NapariApplication`.
+
+    Note that `NapariApplication` registers app-model actions, providers and
+    processors. If this is not desired, please create a clean
+    `app_model.Application` in the test. It does not however, register Qt
+    related actions or providers. If this is required for a unit test,
+    `napari._qt._qapp_model.qactions.init_qactions()` can be used within
+    the test.
+    """
+    from app_model import Application
+
+    from napari._app_model._app import NapariApplication, _napari_names
+
+    app = NapariApplication('test_app')
+    app.injection_store.namespace = _napari_names
+    with patch.object(NapariApplication, 'get_app', return_value=app):
+        try:
+            yield app
+        finally:
+            Application.destroy('test_app')
+
+
+def _get_calling_place(depth=1):
+    if not hasattr(sys, "_getframe"):
+        return ""
+    frame = sys._getframe(1 + depth)
+    result = f"{frame.f_code.co_filename}:{frame.f_lineno}"
+    if not frame.f_code.co_filename.startswith(ROOT_DIR):
+        with suppress(ValueError):
+            while not frame.f_code.co_filename.startswith(ROOT_DIR):
+                frame = frame.f_back
+                if frame is None:
+                    break
+            else:
+                result += f" called from\n{frame.f_code.co_filename}:{frame.f_lineno}"
+    return result
+
+
+@pytest.fixture
+def dangling_qthreads(monkeypatch, qtbot, request):
+    from qtpy.QtCore import QThread
+
+    base_start = QThread.start
+    thread_dict = WeakKeyDictionary()
+    # dict of threads that have been started but not yet terminated
+
+    if "disable_qthread_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, priority=QThread.InheritPriority):
+            thread_dict[self] = _get_calling_place()
+            base_start(self, priority)
+
+    monkeypatch.setattr(QThread, 'start', my_start)
+    yield
+
+    dangling_threads_li = []
+
+    for thread, calling in thread_dict.items():
+        try:
+            if thread.isRunning():
+                dangling_threads_li.append((thread, calling))
+        except RuntimeError as e:
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                raise
+
+    for thread, _ in dangling_threads_li:
+        with suppress(RuntimeError):
+            thread.quit()
+            qtbot.waitUntil(thread.isFinished, timeout=2000)
+
+    long_desc = (
+        "If you see this error, it means that a QThread was started in a test "
+        "but not terminated. This can cause segfaults in the test suite. "
+        "Please use the `qtbot` fixture to wait for the thread to finish. "
+        "If you think that the thread is obsolete for this test, you can "
+        "use the `@pytest.mark.disable_qthread_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` method of the "
+        "QThread class to do nothing.\n"
+    )
+
+    if len(dangling_threads_li) > 1:
+        long_desc += " The QThreads were started in:\n"
+    else:
+        long_desc += " The QThread was started in:\n"
+
+    assert not dangling_threads_li, long_desc + "\n".join(
+        x[1] for x in dangling_threads_li
+    )
+
+
+@pytest.fixture
+def dangling_qthread_pool(monkeypatch, request):
+    from qtpy.QtCore import QThreadPool
+
+    base_start = QThreadPool.start
+    threadpool_dict = WeakKeyDictionary()
+    # dict of threadpools that have been used to run QRunnables
+
+    if "disable_qthread_pool_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self, runnable, priority=0):
+            if self not in threadpool_dict:
+                threadpool_dict[self] = []
+            threadpool_dict[self].append(_get_calling_place())
+            base_start(self, runnable, priority)
+
+    monkeypatch.setattr(QThreadPool, 'start', my_start)
+    yield
+
+    dangling_threads_pools = []
+
+    for thread_pool, calling in threadpool_dict.items():
+        if thread_pool.activeThreadCount():
+            dangling_threads_pools.append((thread_pool, calling))
+
+    for thread_pool, _ in dangling_threads_pools:
+        with suppress(RuntimeError):
+            thread_pool.clear()
+            thread_pool.waitForDone(2000)
+
+    long_desc = (
+        "If you see this error, it means that a QThreadPool was used to run "
+        "a QRunnable in a test but not terminated. This can cause segfaults "
+        "in the test suite. Please use the `qtbot` fixture to wait for the "
+        "thread to finish. If you think that the thread is obsolete for this "
+        "use the `@pytest.mark.disable_qthread_pool_start` mark or  `monkeypatch` "
+        "fixture to patch the `start` "
+        "method of the QThreadPool class to do nothing.\n"
+    )
+    if len(dangling_threads_pools) > 1:
+        long_desc += " The QThreadPools were used in:\n"
+    else:
+        long_desc += " The QThreadPool was used in:\n"
+
+    assert not dangling_threads_pools, long_desc + "\n".join(
+        "; ".join(x[1]) for x in dangling_threads_pools
+    )
+
+
+@pytest.fixture
+def dangling_qtimers(monkeypatch, request):
+    from qtpy.QtCore import QTimer
+
+    base_start = QTimer.start
+    timer_dkt = WeakKeyDictionary()
+    single_shot_list = []
+
+    if "disable_qtimer_start" in request.keywords:
+        from pytestqt.qt_compat import qt_api
+
+        def my_start(*_, **__):
+            """dummy function to prevent timer start"""
+
+        _single_shot = my_start
+
+        class OldTimer(QTimer):
+            def start(self, time=None):
+                if time is not None:
+                    base_start(self, time)
+                else:
+                    base_start(self)
+
+        monkeypatch.setattr(qt_api.QtCore, "QTimer", OldTimer)
+        # This monkeypatch is require to keep `qtbot.waitUntil` working
+
+    else:
+
+        def my_start(self, msec=None):
+            timer_dkt[self] = _get_calling_place()
+            if msec is not None:
+                base_start(self, msec)
+            else:
+                base_start(self)
+
+        def single_shot(msec, reciver, method=None):
+            t = QTimer()
+            t.setSingleShot(True)
+            if method is None:
+                t.timeout.connect(reciver)
+            else:
+                t.timeout.connect(getattr(reciver, method))
+            single_shot_list.append((t, _get_calling_place(2)))
+            base_start(t, msec)
+
+        def _single_shot(self, *args):
+            if isinstance(self, QTimer):
+                single_shot(*args)
+            else:
+                single_shot(self, *args)
+
+    monkeypatch.setattr(QTimer, 'start', my_start)
+    monkeypatch.setattr(QTimer, 'singleShot', _single_shot)
+
+    yield
+
+    dangling_timers = []
+
+    for timer, calling in chain(timer_dkt.items(), single_shot_list):
+        if timer.isActive():
+            dangling_timers.append((timer, calling))
+
+    for timer, _ in dangling_timers:
+        with suppress(RuntimeError):
+            timer.stop()
+
+    long_desc = (
+        "If you see this error, it means that a QTimer was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not require a QTimer to pass you could monkeypatch it out. "
+        "If it does require a QTimer, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_timers) > 1:
+        long_desc += "The QTimers were started in:\n"
+    else:
+        long_desc += "The QTimer was started in:\n"
+    assert not dangling_timers, long_desc + "\n".join(
+        x[1] for x in dangling_timers
+    )
+
+
+@pytest.fixture
+def dangling_qanimations(monkeypatch, request):
+    from qtpy.QtCore import QPropertyAnimation
+
+    base_start = QPropertyAnimation.start
+    animation_dkt = WeakKeyDictionary()
+
+    if "disable_qanimation_start" in request.keywords:
+
+        def my_start(*_, **__):
+            """dummy function to prevent thread start"""
+
+    else:
+
+        def my_start(self):
+            animation_dkt[self] = _get_calling_place()
+            base_start(self)
+
+    monkeypatch.setattr(QPropertyAnimation, 'start', my_start)
+    yield
+
+    dangling_animations = []
+
+    for animation, calling in animation_dkt.items():
+        if animation.state() == QPropertyAnimation.Running:
+            dangling_animations.append((animation, calling))
+
+    for animation, _ in dangling_animations:
+        with suppress(RuntimeError):
+            animation.stop()
+
+    long_desc = (
+        "If you see this error, it means that a QPropertyAnimation was started but not stopped. "
+        "This can cause tests to fail, and can also cause segfaults. "
+        "If this test does not require a QPropertyAnimation to pass you could monkeypatch it out. "
+        "If it does require a QPropertyAnimation, you should stop or wait for it to finish before test ends. "
+    )
+    if len(dangling_animations) > 1:
+        long_desc += " The QPropertyAnimations were started in:\n"
+    else:
+        long_desc += " The QPropertyAnimation was started in:\n"
+    assert not dangling_animations, long_desc + "\n".join(
+        x[1] for x in dangling_animations
+    )
+
+
+def pytest_runtest_setup(item):
+    if "qapp" in item.fixturenames:
+        # here we do autouse for dangling fixtures only if qapp is used
+        if "qtbot" not in item.fixturenames:
+            # for proper waiting for threads to finish
+            item.fixturenames.append("qtbot")
+
+        item.fixturenames.extend(
+            [
+                "dangling_qthread_pool",
+                "dangling_qanimations",
+                "dangling_qthreads",
+                "dangling_qtimers",
+            ]
+        )

@@ -1,10 +1,14 @@
 """
+Add vectors
+===========
+
 This example generates an image of vectors
 Vector data is an array of shape (N, 4)
-Each vector position is defined by an (x, y, x-proj, y-proj) element
-    where x and y are the center points
-    where x-proj and y-proj are the vector projections at each center
+Each vector position is defined by an (x, y, x-proj, y-proj) element where
+* x and y are the center points
+* x-proj and y-proj are the vector projections at each center
 
+.. tags:: visualization-basic
 """
 
 import napari
@@ -34,4 +38,5 @@ pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 # add the vectors
 layer = viewer.add_vectors(pos, edge_width=3)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -1,7 +1,0 @@
-sphinx_autodoc_typehints==1.12.0
-Jinja2
-sphinx-tabs
-sphinx-panels
-myst-nb
-napari-sphinx-theme
-sphinx-external-toc

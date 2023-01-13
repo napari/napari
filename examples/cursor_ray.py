@@ -1,8 +1,12 @@
 """
+Cursor ray
+==========
+
 Depict a ray through a layer in 3D to demonstrate interactive 3D functionality
+
+.. tags:: interactivity
 """
 import numpy as np
-
 import napari
 
 sidelength_data = 64
@@ -58,4 +62,5 @@ def on_click(layer, event):
             ray_layer.data = ray_points
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

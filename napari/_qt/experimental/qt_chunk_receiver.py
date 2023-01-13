@@ -2,8 +2,8 @@
 """
 from qtpy.QtCore import QObject, Signal
 
-from ...components.experimental.chunk import chunk_loader
-from ...utils.events import EmitterGroup, Event, EventEmitter
+from napari.components.experimental.chunk import chunk_loader
+from napari.utils.events import EmitterGroup, Event, EventEmitter
 
 
 class QtGuiEvent(QObject):

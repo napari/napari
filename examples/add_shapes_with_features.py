@@ -1,7 +1,12 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
+Add shapes with features
+========================
+
+Display one shapes layer ontop of one image layer using the ``add_shapes`` and
+``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -83,4 +88,5 @@ layer.selected_data = set()
 # To save layers to svg:
 # viewer.layers.save('viewer.svg', plugin='svg')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

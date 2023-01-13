@@ -27,7 +27,7 @@ import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 def transform_color(colors: Any) -> np.ndarray:
@@ -92,10 +92,6 @@ def _handle_str(color: str) -> np.ndarray:
         )
         return np.zeros((1, 4), dtype=np.float32)
 
-    # This line will stay here until vispy adds a "transparent" key
-    # to their color dictionary. A PR was sent and approved, currently
-    # waiting to be merged.
-    color = color.replace("transparent", "#00000000")
     colorarray = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
     if colorarray.shape[1] == 3:
         colorarray = np.column_stack([colorarray, np.float32(1.0)])
@@ -402,25 +398,18 @@ def _create_hex_to_name_dict():
     """
     colordict = get_color_dict()
     hex_to_name = {f"{v.lower()}ff": k for k, v in colordict.items()}
-    hex_to_name["#00000000"] = "transparent"
     return hex_to_name
 
 
 def get_color_namelist():
-    """A wrapper around vispy's get_color_names designed to add a
-    "transparent" (alpha = 0) color to it.
-
-    Once https://github.com/vispy/vispy/pull/1794 is merged this
-    function is no longer necessary.
+    """Gets all the color names supported by napari.
 
     Returns
     -------
-    color_dict : list
-        A list of all valid vispy color names plus "transparent".
+    list[str]
+        All the color names supported by napari.
     """
-    names = get_color_names()
-    names.append('transparent')
-    return names
+    return get_color_names()
 
 
 hex_to_name = _create_hex_to_name_dict()

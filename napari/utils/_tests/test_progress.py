@@ -69,6 +69,10 @@ def test_progress_update():
     pbr.refresh()
     assert pbr.n == 3
 
+    pbr.update()
+    pbr.refresh()
+    assert pbr.n == 4
+
     with assert_progress_added_to_all(pbr):
         pbr.close()
 

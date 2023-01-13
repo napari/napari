@@ -1,8 +1,12 @@
-from typing import Generator, Iterable, List, TypeVar
+from __future__ import annotations
 
-from ..events.containers._nested_list import MaybeNestedIndex
-from ..events.containers._selectable_list import SelectableNestableEventedList
-from .node import Node
+from typing import Generator, Iterable, List, TypeVar, Union
+
+from napari.utils.events.containers._nested_list import MaybeNestedIndex
+from napari.utils.events.containers._selectable_list import (
+    SelectableNestableEventedList,
+)
+from napari.utils.tree.node import Node
 
 NodeType = TypeVar("NodeType", bound=Node)
 
@@ -38,8 +42,34 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     ):
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
-            self, data=children, basetype=basetype
+            self,
+            data=children,
+            basetype=basetype,
+            lookup={str: lambda e: e.name},
         )
+
+    def __newlike__(self, iterable: Iterable):
+        # NOTE: TRICKY!
+        # whenever we slice into a group with group[start:end],
+        # the super().__newlike__() call is going to create a new object
+        # of the same type (Group), and then populate it with items in iterable
+        # ...
+        # However, `Group.insert` changes the parent of each item as
+        # it gets inserted.  (The implication is that no Node can live in
+        # multiple groups at the same time). This means that simply slicing
+        # into a group will actually reparent *all* items in that group
+        # (even if the resulting slice goes unused...).
+        #
+        # So, we call new._list.extend here to avoid that reparenting.
+        # Though this may have its own negative consequences for typing/events?
+        new = type(self)()
+        new._basetypes = self._basetypes
+        new._lookup = self._lookup.copy()
+        new._list.extend(iterable)
+        return new
+
+    def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
+        return super().__getitem__(key)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
@@ -63,11 +93,14 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Return true if ``other`` appears anywhere under this group."""
         return any(item is other for item in self.traverse())
 
-    def traverse(self, leaves_only=False) -> Generator[NodeType, None, None]:
+    def traverse(
+        self, leaves_only=False, with_ancestors=False
+    ) -> Generator[NodeType, None, None]:
         """Recursive all nodes and leaves of the Group tree."""
+        obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield self
-        for child in self:
+            yield obj
+        for child in obj:
             yield from child.traverse(leaves_only)
 
     def _render(self) -> List[str]:

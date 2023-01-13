@@ -8,10 +8,17 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
   schedule:
     - cron: "0 0 * * *"
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+concurrency:
+  group: create-bundle-${{ github.ref }}
+  cancel-in-progress: true
+
 
 name: Create Bundle
 
@@ -35,13 +42,14 @@ jobs:
             python-version: "3.8"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          cache-dependency-path: setup.cfg
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
@@ -67,14 +75,14 @@ jobs:
         if: runner.os != 'Linux'
         run: python bundle.py
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
-        uses: bruceadams/get-release@v1.2.2
+        uses: bruceadams/get-release@v1.3.2
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-release-asset@v1
@@ -85,7 +93,7 @@ jobs:
           asset_content_type: application/zip
       - name: Upload Nightly Build Asset
         if: ${{ github.event_name == 'schedule' }}
-        uses: WebFreak001/deploy-nightly@v1.1.0
+        uses: WebFreak001/deploy-nightly@v2.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

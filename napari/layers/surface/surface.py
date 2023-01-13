@@ -1,16 +1,24 @@
 import warnings
+from typing import List, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events import Event
-from ...utils.translations import trans
-from ..base import Layer
-from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.layer_utils import calc_data_range
-from ._surface_constants import Shading
-from .normals import SurfaceNormals
-from .wireframe import SurfaceWireframe
+from napari.layers.base import Layer
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.surface._surface_constants import Shading
+from napari.layers.surface._surface_utils import (
+    calculate_barycentric_coordinates,
+)
+from napari.layers.surface.normals import SurfaceNormals
+from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils.interactivity_utils import (
+    nd_line_segment_to_displayed_data_ray,
+)
+from napari.layers.utils.layer_utils import calc_data_range
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.events import Event
+from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.translations import trans
 
 
 # Mixin must come before Layer
@@ -73,12 +81,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         One of a list of preset shading modes that determine the lighting model
         using when rendering the surface in 3D.
 
-        * Shading.NONE
-            Corresponds to shading='none'.
-        * Shading.FLAT
-            Corresponds to shading='flat'.
-        * Shading.SMOOTH
-            Corresponds to shading='smooth'.
+        * ``Shading.NONE``
+          Corresponds to ``shading='none'``.
+        * ``Shading.FLAT``
+          Corresponds to ``shading='flat'``.
+        * ``Shading.SMOOTH``
+          Corresponds to ``shading='smooth'``.
     visible : bool
         Whether the layer visual is currently being displayed.
     cache : bool
@@ -118,9 +126,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         One of a list of preset shading modes that determine the lighting model
         using when rendering the surface.
 
-        * 'none'
-        * 'flat'
-        * 'smooth'
+        * ``'none'``
+        * ``'flat'``
+        * ``'smooth'``
     gamma : float
         Gamma correction for determining colormap linearity.
     wireframe : SurfaceWireframe
@@ -195,7 +203,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying verictes, faces, and optionally vertex values, instead got length {length}.',
+                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
                     deferred=True,
                     length=len(data),
                 )
@@ -218,11 +226,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self._ndisplay))
+        self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
-        # Trigger generation of view slice and thumbnail
+        # Trigger generation of view slice and thumbnail.
+        # Use _update_dims instead of refresh here because _get_ndim is
+        # dependent on vertex_values as well as vertices.
         self._update_dims()
 
         # Shading mode
@@ -275,7 +285,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertices = vertices
 
         self._update_dims()
-        self.refresh()
         self.events.data(value=self.data)
         self._set_editable()
 
@@ -289,7 +298,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._vertex_values = vertex_values
 
-        self.refresh()
+        self._update_dims()
         self.events.data(value=self.data)
         self._set_editable()
 
@@ -386,7 +395,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                         deferred=True,
                     )
                 )
-                self._data_view = np.zeros((0, self._ndisplay))
+                self._data_view = np.zeros((0, self._slice_input.ndisplay))
                 self._view_faces = np.zeros((0, 3))
                 self._view_vertex_values = []
                 return
@@ -398,24 +407,26 @@ class Surface(IntensityVisualizationMixin, Layer):
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
-                for d in np.subtract(self._dims_displayed, values_ndim)
+                for d in np.subtract(self._slice_input.displayed, values_ndim)
                 if d >= 0
             ]
             not_disp = [
                 d
-                for d in np.subtract(self._dims_not_displayed, values_ndim)
+                for d in np.subtract(
+                    self._slice_input.not_displayed, values_ndim
+                )
                 if d >= 0
             ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self._dims_not_displayed)
-            disp = list(self._dims_displayed)
+            not_disp = list(self._slice_input.not_displayed)
+            disp = list(self._slice_input.displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif vertex_ndim > self._ndisplay:
+        elif vertex_ndim > self._slice_input.ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
@@ -448,3 +459,68 @@ class Surface(IntensityVisualizationMixin, Layer):
             Value of the data at the coord.
         """
         return None
+
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[None, float, int], None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        vertex : None
+            Index of vertex if any that is at the coordinates. Always returns `None`.
+        """
+        if len(dims_displayed) != 3:
+            # only applies to 3D
+            return None, None
+        if (start_point is None) or (end_point is None):
+            # return None if the ray doesn't intersect the data bounding box
+            return None, None
+
+        start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+
+        # get the mesh triangles
+        mesh_triangles = self._data_view[self._view_faces]
+
+        # get the triangles intersection
+        intersection_index, intersection = find_nearest_triangle_intersection(
+            ray_position=start_position,
+            ray_direction=ray_direction,
+            triangles=mesh_triangles,
+        )
+
+        if intersection_index is None:
+            return None, None
+
+        # add the full nD coords to intersection
+        intersection_point = start_point.copy()
+        intersection_point[dims_displayed] = intersection
+
+        # calculate the value from the intersection
+        triangle_vertex_indices = self._view_faces[intersection_index]
+        triangle_vertices = self._data_view[triangle_vertex_indices]
+        barycentric_coordinates = calculate_barycentric_coordinates(
+            intersection, triangle_vertices
+        )
+        vertex_values = self._view_vertex_values[triangle_vertex_indices]
+        intersection_value = (barycentric_coordinates * vertex_values).sum()
+
+        return intersection_value, intersection_index

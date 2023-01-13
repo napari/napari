@@ -13,17 +13,17 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.misc import in_ipython
-from ...utils.translations import trans
-from ..dialogs.qt_modal import QtPopup
-from .qt_dims_sorter import QtDimsSorter
-from .qt_spinbox import QtSpinBox
-from .qt_tooltip import QtToolTipLabel
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
+from napari._qt.widgets.qt_spinbox import QtSpinBox
+from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ...viewer import Viewer
+    from napari.viewer import ViewerModel
 
 
 class QtLayerButtons(QFrame):
@@ -48,7 +48,7 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'Viewer'):
+    def __init__(self, viewer: 'ViewerModel'):
         super().__init__()
 
         self.viewer = viewer
@@ -112,7 +112,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'Viewer'):
+    def __init__(self, viewer: 'ViewerModel'):
         super().__init__()
 
         self.viewer = viewer
@@ -121,12 +121,12 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        if in_ipython():
+        if in_ipython() or in_jupyter() or in_python_repl():
             self.consoleButton.setEnabled(False)
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
-        rdb.setContextMenuPolicy(Qt.CustomContextMenu)
+        rdb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
         self.transposeDimsButton = QtViewerPushButton(
@@ -141,7 +141,7 @@ class QtViewerButtons(QFrame):
         self.gridViewButton = gvb
         gvb.setCheckable(True)
         gvb.setChecked(viewer.grid.enabled)
-        gvb.setContextMenuPolicy(Qt.CustomContextMenu)
+        gvb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         gvb.customContextMenuRequested.connect(self._open_grid_popup)
 
         @self.viewer.grid.events.enabled.connect
@@ -154,7 +154,7 @@ class QtViewerButtons(QFrame):
         self.ndisplayButton = ndb
         ndb.setCheckable(True)
         ndb.setChecked(self.viewer.dims.ndisplay == 3)
-        ndb.setContextMenuPolicy(Qt.CustomContextMenu)
+        ndb.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         ndb.customContextMenuRequested.connect(self.open_perspective_popup)
 
         @self.viewer.dims.events.ndisplay.connect
@@ -178,8 +178,8 @@ class QtViewerButtons(QFrame):
             return
 
         # make slider connected to perspective parameter
-        sld = QSlider(Qt.Horizontal, self)
-        sld.setRange(0, max(90, self.viewer.camera.perspective))
+        sld = QSlider(Qt.Orientation.Horizontal, self)
+        sld.setRange(0, max(90, int(self.viewer.camera.perspective)))
         sld.setValue(self.viewer.camera.perspective)
         sld.valueChanged.connect(
             lambda v: setattr(self.viewer.camera, 'perspective', v)
@@ -237,7 +237,7 @@ class QtViewerButtons(QFrame):
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
         stride_not = self.viewer.grid.__fields__['stride'].type_.ne
         grid_stride.setObjectName("gridStrideBox")
-        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
         grid_stride.setProhibitValue(stride_not)
         grid_stride.setValue(self.viewer.grid.stride)
@@ -247,7 +247,7 @@ class QtViewerButtons(QFrame):
         width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
         width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
         grid_width.setObjectName("gridWidthBox")
-        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
         grid_width.setProhibitValue(width_not)
         grid_width.setValue(self.viewer.grid.shape[1])
@@ -261,7 +261,7 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
         )
         grid_height.setObjectName("gridStrideBox")
-        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(height_min)
         grid_height.setProhibitValue(height_not)
         grid_height.setValue(self.viewer.grid.shape[0])
@@ -399,7 +399,7 @@ class QtDeleteButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
         event.accept()
@@ -417,7 +417,7 @@ def _omit_viewer_args(constructor):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated and should not be used"
+                    "viewer argument is deprecated since 0.4.14 and should not be used"
                 ),
                 category=FutureWarning,
                 stacklevel=2,
@@ -426,7 +426,7 @@ def _omit_viewer_args(constructor):
         if "viewer" in kwargs:
             warnings.warn(
                 trans._(
-                    "viewer argument is deprecated and should not be used"
+                    "viewer argument is deprecated since 0.4.14 and should not be used"
                 ),
                 category=FutureWarning,
                 stacklevel=2,
@@ -450,11 +450,6 @@ class QtViewerPushButton(QPushButton):
         callable to be triggered on button click
     action : str
         action name to be triggered on button click
-
-    Attributes
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
     """
 
     @_omit_viewer_args
@@ -469,74 +464,3 @@ class QtViewerPushButton(QPushButton):
             self.clicked.connect(slot)
         if action:
             action_manager.bind_button(action, self)
-
-
-class QtStateButton(QtViewerPushButton):
-    """Button to toggle between two states.
-    Parameters
-    ----------
-    button_name : str
-        A string that will be used in qss to style the button with the
-        QtStateButton[mode=...] selector,
-    target : object
-        object on which you want to change the property when button pressed.
-    attribute:
-        name of attribute on `object` you wish to change.
-    events: EventEmitter
-        event emitter that will trigger when value is changed
-    onstate: Any
-        value to use for ``setattr(object, attribute, onstate)`` when clicking
-        this button
-    offstate: Any
-        value to use for ``setattr(object, attribute, offstate)`` when clicking
-        this button.
-    """
-
-    def __init__(
-        self,
-        button_name,
-        target,
-        attribute,
-        events,
-        onstate=True,
-        offstate=False,
-    ):
-        warnings.warn(
-            trans._(
-                "QtStateButton is deprecated and will be removed in 0.4.14"
-            ),
-            stacklevel=2,
-            category=FutureWarning,
-        )
-        super().__init__(button_name)
-        self.setCheckable(True)
-
-        self._target = target
-        self._attribute = attribute
-        self._onstate = onstate
-        self._offstate = offstate
-        self._events = events
-        self._events.connect(self._on_change)
-        self.clicked.connect(self.change)
-        self._on_change()
-
-    def change(self):
-        """Toggle between the multiple states of this button."""
-        if self.isChecked():
-            newstate = self._onstate
-        else:
-            newstate = self._offstate
-        setattr(self._target, self._attribute, newstate)
-
-    def _on_change(self, event=None):
-        """Called wen mirrored value changes
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        with self._events.blocker():
-            if self.isChecked() != (
-                getattr(self._target, self._attribute) == self._onstate
-            ):
-                self.toggle()

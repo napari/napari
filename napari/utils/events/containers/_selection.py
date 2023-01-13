@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
-from ...translations import trans
-from ..event import EmitterGroup
-from ._set import EventedSet
+from napari.utils.events.containers._set import EventedSet
+from napari.utils.events.event import EmitterGroup
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -12,9 +12,9 @@ _S = TypeVar("_S")
 
 
 class Selection(EventedSet[_T]):
-    """An model of selected items, with a `active` and `current` item.
+    """A model of selected items, with ``active`` and ``current`` item.
 
-    There can only be one `active` and one `current` item, but there can be
+    There can only be one ``active`` and one ``current` item, but there can be
     multiple selected items.  An "active" item is defined as a single selected
     item (if multiple items are selected, there is no active item).  The
     "current" item is mostly useful for (e.g.) keyboard actions: even with

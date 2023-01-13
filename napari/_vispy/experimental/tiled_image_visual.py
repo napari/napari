@@ -16,11 +16,11 @@ import numpy as np
 from vispy.scene.visuals import Image
 from vispy.visuals.shaders import Function, FunctionChain
 
-from ...layers.image.experimental import OctreeChunk
-from ...types import ArrayLike
-from ...utils.translations import trans
-from .texture_atlas import TextureAtlas2D
-from .tile_set import TileSet
+from napari._vispy.experimental.texture_atlas import TextureAtlas2D
+from napari._vispy.experimental.tile_set import TileSet
+from napari.layers.image.experimental import OctreeChunk
+from napari.types import ArrayLike
+from napari.utils.translations import trans
 
 # Shape of she whole texture in tiles. Hardcode for now. We hope to make
 # TiledImageVisuals support multiple texture sizes and multiple tile
@@ -123,7 +123,7 @@ class TiledImageVisual(Image):
         TextureAtlas2D
             The newly created texture atlas.
         """
-        interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
+        interp = 'linear' if self._interpolation == 'linear' else 'nearest'
         return TextureAtlas2D(
             tile_shape,
             SHAPE_IN_TILES,

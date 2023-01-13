@@ -4,42 +4,50 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, Sequence, Union
+from contextlib import nullcontext
+from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils import config
-from ...utils._dtype import get_dtype_limits, normalize_dtype
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events import Event
-from ...utils.naming import magic_name
-from ...utils.translations import trans
-from .._data_protocols import LayerDataProtocol
-from .._multiscale_data import MultiScaleData
-from ..base import Layer, no_op
-from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.layer_utils import calc_data_range
-from ..utils.plane import SlicingPlane
-from ._image_constants import (
+from napari.layers._data_protocols import LayerDataProtocol
+from napari.layers._multiscale_data import MultiScaleData
+from napari.layers.base import Layer, no_op
+from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
-    Interpolation3D,
     Mode,
     VolumeDepiction,
 )
-from ._image_mouse_bindings import (
+from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
 )
-from ._image_mouse_bindings import (
+from napari.layers.image._image_mouse_bindings import (
     set_plane_position as plane_double_click_callback,
 )
-from ._image_slice import ImageSlice
-from ._image_slice_data import ImageSliceData
-from ._image_utils import guess_multiscale, guess_rgb
+from napari.layers.image._image_slice import ImageSlice
+from napari.layers.image._image_slice_data import ImageSliceData
+from napari.layers.image._image_utils import guess_multiscale, guess_rgb
+from napari.layers.image._slice import _ImageSliceRequest, _ImageSliceResponse
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.utils._slice_input import _SliceInput
+from napari.layers.utils.layer_utils import calc_data_range
+from napari.layers.utils.plane import SlicingPlane
+from napari.utils import config
+from napari.utils._dask_utils import DaskIndexer
+from napari.utils._dtype import get_dtype_limits, normalize_dtype
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.events import Event
+from napari.utils.events.event import WarningEmitter
+from napari.utils.events.event_utils import connect_no_arg
+from napari.utils.migrations import rename_argument
+from napari.utils.misc import reorder_after_dim_reduction
+from napari.utils.naming import magic_name
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ...components.experimental.chunk import ChunkRequest
+    from napari.components import Dims
+    from napari.components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -209,6 +217,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
+    @rename_argument("interpolation", "interpolation2d", "0.6.0")
     def __init__(
         self,
         data,
@@ -217,9 +226,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         colormap='gray',
         contrast_limits=None,
         gamma=1,
-        interpolation='nearest',
+        interpolation2d='nearest',
+        interpolation3d='linear',
         rendering='mip',
-        iso_threshold=0.5,
+        iso_threshold=None,
         attenuation=0.05,
         name=None,
         metadata=None,
@@ -256,8 +266,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             data = MultiScaleData(data)
 
         # Determine if rgb
-        if rgb is None:
-            rgb = guess_rgb(data.shape)
+        rgb_guess = guess_rgb(data.shape)
+        if rgb and not rgb_guess:
+            raise ValueError(
+                trans._(
+                    "'rgb' was set to True but data does not have suitable dimensions."
+                )
+            )
+        elif rgb is None:
+            rgb = rgb_guess
 
         # Determine dimensionality of the data
         ndim = len(data.shape)
@@ -284,8 +301,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         self.events.add(
             mode=Event,
-            interpolation=Event,
+            interpolation=WarningEmitter(
+                trans._(
+                    "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
+                    deferred=True,
+                ),
+                type='select',
+            ),
+            interpolation2d=Event,
+            interpolation3d=Event,
             rendering=Event,
+            plane=Event,
             depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
@@ -312,7 +338,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._data_level = 0
             self._thumbnail_level = 0
-        displayed_axes = self._displayed_axes
+        displayed_axes = self._slice_input.displayed
         self.corner_pixels[1][displayed_axes] = self.level_shapes[
             self._data_level
         ][displayed_axes]
@@ -321,7 +347,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
-        self._iso_threshold = iso_threshold
         self._attenuation = attenuation
         self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
         self._mode = Mode.PAN_ZOOM
@@ -340,24 +365,30 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-        self.colormap = colormap
+        if iso_threshold is None:
+            cmin, cmax = self.contrast_limits_range
+            self._iso_threshold = cmin + (cmax - cmin) / 2
+        else:
+            self._iso_threshold = iso_threshold
+        # using self.colormap = colormap uses the setter in *derived* classes,
+        # where the intention here is to use the base setter, so we use the
+        # _set_colormap method. This is important for Labels layers, because
+        # we don't want to use get_color before set_view_slice has been
+        # triggered (self.refresh(), below).
+        self._set_colormap(colormap)
         self.contrast_limits = self._contrast_limits
-        self._interpolation = {
-            2: Interpolation.NEAREST,
-            3: (
-                Interpolation3D.NEAREST
-                if self.__class__.__name__ == 'Labels'
-                else Interpolation3D.LINEAR
-            ),
-        }
-        self.interpolation = interpolation
+        self._interpolation2d = Interpolation.NEAREST
+        self._interpolation3d = Interpolation.NEAREST
+        self.interpolation2d = interpolation2d
+        self.interpolation3d = interpolation3d
         self.rendering = rendering
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
+        connect_no_arg(self.plane.events, self.events, 'plane')
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
@@ -370,21 +401,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1,) * self._ndisplay + (3,))
+            return np.zeros((1,) * self._slice_input.ndisplay + (3,))
         else:
-            return np.zeros((1,) * self._ndisplay)
+            return np.zeros((1,) * self._slice_input.ndisplay)
 
-    def _get_order(self):
-        """Return the order of the displayed dimensions."""
+    def _get_order(self) -> Tuple[int]:
+        """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
+        order = reorder_after_dim_reduction(self._slice_input.displayed)
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims_displayed_order + (
-                max(self._dims_displayed_order) + 1,
-            )
+            return order + (max(order) + 1,)
         else:
-            return self._dims_displayed_order
+            return order
 
     @property
     def _data_view(self):
@@ -392,6 +422,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._slice.image.view
 
     def _calc_data_range(self, mode='data'):
+        """
+        Calculate the range of the data values in the currently viewed slice
+        or full data array
+        """
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
         elif mode == 'slice':
@@ -462,7 +496,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.refresh()
 
     @property
-    def level_shapes(self):
+    def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the multiscale or just of image."""
         shapes = self.data.shapes if self.multiscale else [self.data.shape]
         if self.rgb:
@@ -470,7 +504,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def downsample_factors(self):
+    def downsample_factors(self) -> np.ndarray:
         """list: Downsample factors for each level of the multiscale."""
         return np.divide(self.level_shapes[0], self.level_shapes)
 
@@ -506,7 +540,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         vispy/gloo/glsl/misc/spatial_filters.frag
 
         Options include:
-        'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+        'bessel', 'cubic', 'linear', 'blackman', 'catrom', 'gaussian',
         'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
         'nearest', 'spline16', 'spline36'
 
@@ -515,18 +549,83 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self._ndisplay])
+        warnings.warn(
+            trans._(
+                "Interpolation attribute is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return str(
+            self._interpolation2d
+            if self._slice_input.ndisplay == 2
+            else self._interpolation3d
+        )
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self._ndisplay == 3:
-            self._interpolation[self._ndisplay] = Interpolation3D(
-                interpolation
-            )
+        warnings.warn(
+            trans._(
+                "Interpolation setting is deprecated since 0.4.17. Please use interpolation2d or interpolation3d",
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        if self._slice_input.ndisplay == 3:
+            self.interpolation3d = interpolation
         else:
-            self._interpolation[self._ndisplay] = Interpolation(interpolation)
-        self.events.interpolation(value=self._interpolation[self._ndisplay])
+            if interpolation == 'bilinear':
+                interpolation = 'linear'
+                warnings.warn(
+                    trans._(
+                        "'bilinear' is invalid for interpolation2d (introduced in napari 0.4.17). "
+                        "Please use 'linear' instead, and please set directly the 'interpolation2d' attribute'.",
+                    ),
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+            self.interpolation2d = interpolation
+
+    @property
+    def interpolation2d(self):
+        return str(self._interpolation2d)
+
+    @interpolation2d.setter
+    def interpolation2d(self, value):
+        if value == 'bilinear':
+            raise ValueError(
+                trans._(
+                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
+                ),
+            )
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        self._interpolation2d = Interpolation(value)
+        self.events.interpolation2d(value=self._interpolation2d)
+        self.events.interpolation(value=self._interpolation2d)
+
+    @property
+    def interpolation3d(self):
+        return str(self._interpolation3d)
+
+    @interpolation3d.setter
+    def interpolation3d(self, value):
+        if value == 'bicubic':
+            value = 'cubic'
+            warnings.warn(
+                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        self._interpolation3d = Interpolation(value)
+        self.events.interpolation3d(value=self._interpolation3d)
+        self.events.interpolation(value=self._interpolation3d)
 
     @property
     def depiction(self):
@@ -582,6 +681,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @plane.setter
     def plane(self, value: Union[dict, SlicingPlane]):
         self._plane.update(value)
+        self.events.plane()
 
     @property
     def loaded(self):
@@ -648,114 +748,115 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
-    def _set_view_slice(self):
-        """Set the view given the indices to slice with."""
+    def _set_view_slice(self) -> None:
+        """Set the slice output based on this layer's current state."""
+        # Initializes an ImageSlice for the old experimental async code.
         self._new_empty_slice()
-        not_disp = self._dims_not_displayed
 
-        # Check if requested slice outside of data range
-        indices = np.array(self._slice_indices)
-        extent = self._extent_data
-        if np.any(
-            np.less(
-                [indices[ax] for ax in not_disp],
-                [extent[0, ax] for ax in not_disp],
-            )
-        ) or np.any(
-            np.greater_equal(
-                [indices[ax] for ax in not_disp],
-                [extent[1, ax] for ax in not_disp],
-            )
-        ):
-            return
+        # Skip if any non-displayed data indices are out of bounds.
+        # This can happen when slicing layers with different extents.
+        indices = self._slice_indices
+        for d in self._slice_input.not_displayed:
+            if (indices[d] < 0) or (indices[d] >= self._extent_data[1][d]):
+                return
+
+        # For the old experimental async code.
         self._empty = False
 
-        if self.multiscale:
-            if self._ndisplay == 3:
-                # If 3d redering just show lowest level of multiscale
-                warnings.warn(
-                    trans._(
-                        'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
-                )
-                self.data_level = len(self.data) - 1
-
-            # Slice currently viewed level
-            level = self.data_level
-            indices = np.array(self._slice_indices)
-            downsampled_indices = (
-                indices[not_disp] / self.downsample_factors[level, not_disp]
-            )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
-            )
-            indices[not_disp] = downsampled_indices
-
-            scale = np.ones(self.ndim)
-            for d in self._dims_displayed:
-                scale[d] = self.downsample_factors[self.data_level][d]
-            self._transforms['tile2data'].scale = scale
-
-            if self._ndisplay == 2:
-                for d in self._displayed_axes:
-                    indices[d] = slice(
-                        self.corner_pixels[0, d],
-                        self.corner_pixels[1, d],
-                        1,
-                    )
-                self._transforms['tile2data'].translate = (
-                    self.corner_pixels[0] * self._transforms['tile2data'].scale
-                )
-            image = self.data[level][tuple(indices)]
-            image_indices = indices
-
-            # Slice thumbnail
-            indices = np.array(self._slice_indices)
-            downsampled_indices = (
-                indices[not_disp]
-                / self.downsample_factors[self._thumbnail_level, not_disp]
-            )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices,
-                0,
-                self.level_shapes[self._thumbnail_level, not_disp] - 1,
-            )
-            indices[not_disp] = downsampled_indices
-
-            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
-        else:
-            self._transforms['tile2data'].scale = np.ones(self.ndim)
-            image_indices = self._slice_indices
-            image = self.data[image_indices]
-
-            # For single-scale we don't request a separate thumbnail_source
-            # from the ChunkLoader because in ImageSlice.chunk_loaded we
-            # call request.thumbnail_source() and it knows to just use the
-            # image itself is there is no explicit thumbnail_source.
-            thumbnail_source = None
-
-        # Load our images, might be sync or async.
-        data = self._SliceDataClass(
-            self, image_indices, image, thumbnail_source
+        # The new slicing code makes a request from the existing state and
+        # executes the request on the calling thread directly.
+        # For async slicing, the calling thread will not be the main thread.
+        request = self._make_slice_request_internal(
+            slice_input=self._slice_input,
+            indices=indices,
+            lazy=True,
+            dask_indexer=nullcontext,
         )
-        self._load_slice(data)
-        if self._keep_auto_contrast or self._should_calc_clims:
+        response = request()
+        self._update_slice_response(response)
+
+    def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
+        """Make an image slice request based on the given dims and this image."""
+        slice_input = self._make_slice_input(
+            dims.point, dims.ndisplay, dims.order
+        )
+        # TODO: for the existing sync slicing, indices is passed through
+        # to avoid some performance issues related to the evaluation of the
+        # data-to-world transform and its inverse. Async slicing currently
+        # absorbs these performance issues here, but we can likely improve
+        # things either by caching the world-to-data transform on the layer
+        # or by lazily evaluating it in the slice task itself.
+        indices = slice_input.data_indices(self._data_to_world.inverse)
+        return self._make_slice_request_internal(
+            slice_input=slice_input,
+            indices=indices,
+            lazy=False,
+            dask_indexer=self.dask_optimized_slicing,
+        )
+
+    def _make_slice_request_internal(
+        self,
+        *,
+        slice_input: _SliceInput,
+        indices: Tuple[Union[int, slice], ...],
+        lazy: bool,
+        dask_indexer: DaskIndexer,
+    ) -> _ImageSliceRequest:
+        """Needed to support old-style sync slicing through _slice_dims and
+        _set_view_slice.
+
+        This is temporary scaffolding that should go away once we have completed
+        the async slicing project: https://github.com/napari/napari/issues/4795
+        """
+        return _ImageSliceRequest(
+            dims=slice_input,
+            data=self.data,
+            dask_indexer=dask_indexer,
+            indices=indices,
+            multiscale=self.multiscale,
+            corner_pixels=self.corner_pixels,
+            rgb=self.rgb,
+            data_level=self.data_level,
+            thumbnail_level=self._thumbnail_level,
+            level_shapes=self.level_shapes,
+            downsample_factors=self.downsample_factors,
+            lazy=lazy,
+        )
+
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
+        """Update the slice output state currently on the layer."""
+        self._slice_input = response.dims
+
+        # For the old experimental async code.
+        self._empty = False
+        slice_data = self._SliceDataClass(
+            layer=self,
+            indices=response.indices,
+            image=response.data,
+            thumbnail_source=response.thumbnail,
+        )
+
+        self._transforms[0] = response.tile_to_data
+
+        # For the old experimental async code, where loading might be sync
+        # or async.
+        self._load_slice(slice_data)
+
+        # Maybe reset the contrast limits based on the new slice.
+        if self._should_calc_clims:
+            self.reset_contrast_limits_range()
             self.reset_contrast_limits()
             self._should_calc_clims = False
+        elif self._keep_auto_contrast:
+            self.reset_contrast_limits()
 
     @property
     def _SliceDataClass(self):
         # Use special ChunkedSlideData for async.
         if config.async_loading:
-            from .experimental._chunked_slice_data import ChunkedSliceData
+            from napari.layers.image.experimental._chunked_slice_data import (
+                ChunkedSliceData,
+            )
 
             return ChunkedSliceData
         return ImageSliceData
@@ -823,7 +924,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         image = self._slice.thumbnail.view
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
@@ -908,8 +1009,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self._dims_displayed], shape)):
-            value = raw[tuple(coord[self._dims_displayed])]
+        if self.ndim < len(coord):
+            # handle 3D views of 2D data by omitting extra coordinate
+            offset = len(coord) - len(shape)
+            coord = coord[[d + offset for d in self._slice_input.displayed]]
+        else:
+            coord = coord[self._slice_input.displayed]
+
+        if all(0 <= c < s for c, s in zip(coord, shape)):
+            value = raw[tuple(coord)]
         else:
             value = None
 
@@ -917,6 +1025,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+        """Adjust position for offset between viewer and data coordinates.
+
+        VisPy considers the coordinate system origin to be the canvas corner,
+        while napari considers the origin to be the **center** of the corner
+        pixel. To get the correct value under the mouse cursor, we need to
+        shift the position by 0.5 pixels on each axis.
+        """
+        return [p + 0.5 for p in position]
 
     # For async we add an on_chunk_loaded() method.
     if config.async_loading:
@@ -987,7 +1105,8 @@ class Image(_ImageBase):
                 'multiscale': self.multiscale,
                 'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
+                'interpolation2d': self.interpolation2d,
+                'interpolation3d': self.interpolation3d,
                 'rendering': self.rendering,
                 'depiction': self.depiction,
                 'plane': self.plane.dict(),
@@ -1001,10 +1120,13 @@ class Image(_ImageBase):
 
 
 if config.async_octree:
-    from ..image.experimental.octree_image import _OctreeImageBase
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     class Image(Image, _OctreeImageBase):
         pass
+
+
+Image.__doc__ = _ImageBase.__doc__
 
 
 class _weakref_hide:

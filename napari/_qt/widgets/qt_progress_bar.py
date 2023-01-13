@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.progress import progress
+from napari.utils.progress import progress
 
 
 class QtLabeledProgressBar(QWidget):
@@ -21,7 +21,7 @@ class QtLabeledProgressBar(QWidget):
         self, parent: Optional[QWidget] = None, prog: progress = None
     ) -> None:
         super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self.progress = prog
 
@@ -74,9 +74,6 @@ class QtLabeledProgressBar(QWidget):
     def _set_total(self, event):
         self.setRange(0, event.value)
 
-    def _close(self, event):
-        super().close()
-
 
 class QtProgressBarGroup(QWidget):
     """One or more QtLabeledProgressBars with a QFrame line separator at the bottom"""
@@ -87,7 +84,7 @@ class QtProgressBarGroup(QWidget):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
 
         pbr_group_layout = QVBoxLayout()
         pbr_group_layout.addWidget(qt_progress_bar)

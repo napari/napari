@@ -8,36 +8,16 @@ import numpy as np
 import pandas as pd
 from vispy.color import get_color_names
 
-from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
-from ...utils.colormaps.colormap_utils import ColorType
-from ...utils.colormaps.standardize_color import (
-    hex_to_name,
-    rgb_to_hex,
-    transform_color,
-)
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.misc import ensure_iterable
-from ...utils.translations import trans
-from ..base import Layer, no_op
-from ..utils.color_manager_utils import guess_continuous, map_property
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
-)
-from ..utils.layer_utils import _FeatureTable
-from ..utils.text_manager import TextManager
-from ._shape_list import ShapeList
-from ._shapes_constants import (
-    BACKSPACE,
+from napari.layers.base import Layer, no_op
+from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._shapes_constants import (
     Box,
     ColorMode,
     Mode,
     ShapeType,
     shape_classes,
 )
-from ._shapes_mouse_bindings import (
+from napari.layers.shapes._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -49,7 +29,7 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import (
+from napari.layers.shapes._shapes_utils import (
     create_box,
     extract_shape_type,
     get_default_shape_type,
@@ -57,43 +37,33 @@ from ._shapes_utils import (
     number_of_shapes,
     validate_num_vertices,
 )
+from napari.layers.utils.color_manager_utils import (
+    guess_continuous,
+    map_property,
+)
+from napari.layers.utils.color_transformations import (
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
+from napari.layers.utils.interactivity_utils import (
+    nd_line_segment_to_displayed_data_ray,
+)
+from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
+from napari.layers.utils.text_manager import TextManager
+from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.colormap_utils import ColorType
+from napari.utils.colormaps.standardize_color import (
+    hex_to_name,
+    rgb_to_hex,
+    transform_color,
+)
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import ensure_iterable
+from napari.utils.translations import trans
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
-
-
-_REV_SHAPE_HELP = {
-    trans._('hold <space> to pan/zoom'): {
-        Mode.VERTEX_INSERT,
-        Mode.VERTEX_REMOVE,
-        Mode.ADD_RECTANGLE,
-        Mode.ADD_ELLIPSE,
-        Mode.ADD_LINE,
-        Mode.TRANSFORM,
-    },
-    trans._(
-        'hold <space> to pan/zoom, press <esc>, or double click to finish drawing'
-    ): {
-        Mode.ADD_PATH,
-        Mode.ADD_POLYGON,
-    },
-    trans._(
-        'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
-        BACKSPACE=BACKSPACE,
-    ): {Mode.SELECT, Mode.DIRECT},
-    trans._('enter a selection mode to edit shape properties'): {
-        Mode.PAN_ZOOM
-    },
-}
-
-
-# This avoid duplicating the trans._ help messages above
-# as some modes have the same help.
-# while most tooling will recognise identical messages,
-# this can lead to human error.
-_FWD_SHAPE_HELP = {}
-for t, modes in _REV_SHAPE_HELP.items():
-    for m in modes:
-        _FWD_SHAPE_HELP[m] = t
 
 
 class Shapes(Layer):
@@ -491,7 +461,7 @@ class Shapes(Layer):
         self._allow_thumbnail_update = True
 
         self._display_order_stored = []
-        self._ndisplay_stored = self._ndisplay
+        self._ndisplay_stored = self._slice_input.ndisplay
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -508,9 +478,9 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._data_view = ShapeList(ndisplay=self._ndisplay)
+        self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
-            list(self._dims_not_displayed)
+            self._slice_input.not_displayed
         ]
 
         self._value = (None, None)
@@ -584,12 +554,11 @@ class Shapes(Layer):
 
         self._text = TextManager._from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self.features,
         )
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
@@ -685,7 +654,10 @@ class Shapes(Layer):
                 )
             )
 
-        self._data_view = ShapeList()
+        self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view.slice_key = np.array(self._slice_indices)[
+            self._slice_input.not_displayed
+        ]
         self.add(
             data,
             shape_type=shape_type,
@@ -752,8 +724,8 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        if self.text.values is not None:
-            self.refresh_text()
+        self.text.refresh(self.features)
+
         self.events.properties()
         self.events.features()
 
@@ -1190,42 +1162,42 @@ class Shapes(Layer):
             selected_face_colors = self._data_view._face_color[
                 selected_data_indices
             ]
-            face_colors = np.unique(selected_face_colors, axis=0)
-            if len(face_colors) == 1:
-                face_color = face_colors[0]
+            if (
+                unique_face_color := _unique_element(selected_face_colors)
+            ) is not None:
                 with self.block_update_properties():
-                    self.current_face_color = face_color
+                    self.current_face_color = unique_face_color
 
             selected_edge_colors = self._data_view._edge_color[
                 selected_data_indices
             ]
-            edge_colors = np.unique(selected_edge_colors, axis=0)
-            if len(edge_colors) == 1:
-                edge_color = edge_colors[0]
+            if (
+                unique_edge_color := _unique_element(selected_edge_colors)
+            ) is not None:
                 with self.block_update_properties():
-                    self.current_edge_color = edge_color
+                    self.current_edge_color = unique_edge_color
 
-            edge_width = list(
-                {self._data_view.shapes[i].edge_width for i in selected_data}
+            unique_edge_width = _unique_element(
+                np.array(
+                    [
+                        self._data_view.shapes[i].edge_width
+                        for i in selected_data
+                    ]
+                )
             )
-            if len(edge_width) == 1:
-                edge_width = edge_width[0]
+            if unique_edge_width is not None:
                 with self.block_update_properties():
-                    self.current_edge_width = edge_width
+                    self.current_edge_width = unique_edge_width
 
-            properties = {}
+            unique_properties = {}
             for k, v in self.properties.items():
-                # pandas uses `object` as dtype for strings by default, which
-                # combined with the axis argument breaks np.unique
-                axis = 0 if v.ndim > 1 else None
-                properties[k] = np.unique(v[selected_data_indices], axis=axis)
+                unique_properties[k] = _unique_element(
+                    v[selected_data_indices]
+                )
 
-            n_unique_properties = np.array(
-                [len(v) for v in properties.values()]
-            )
-            if np.all(n_unique_properties == 1):
+            if all(p is not None for p in unique_properties.values()):
                 with self.block_update_properties():
-                    self.current_properties = properties
+                    self.current_properties = unique_properties
 
     def _set_color(self, color, attribute: str):
         """Set the face_color or edge_color property
@@ -1280,7 +1252,6 @@ class Shapes(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-
         self._refresh_color('face', update_color_mapping)
         self._refresh_color('edge', update_color_mapping)
 
@@ -1308,7 +1279,6 @@ class Shapes(Layer):
             if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                 colors = self._map_color(attribute, update_color_mapping)
                 setattr(self._data_view, f'{attribute}_color', colors)
-
                 color_event = getattr(self.events, f'{attribute}_color')
                 color_event()
 
@@ -1560,6 +1530,9 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
+        # This may be triggered when the string encoding instance changed,
+        # in which case it has no cached values, so generate them here.
+        self.text.string._apply(self.features)
         return self.text.view_text(self._indices_view)
 
     @property
@@ -1575,6 +1548,9 @@ class Shapes(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+        ndisplay = self._slice_input.ndisplay
+        order = self._slice_input.order
+
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
             self._data_view.data[i] for i in self._indices_view
@@ -1582,13 +1558,19 @@ class Shapes(Layer):
 
         # get the coordinates for the dimensions being displayed
         sliced_in_view_coords = [
-            position[:, self._dims_displayed]
+            position[:, self._slice_input.displayed]
             for position in in_view_shapes_coords
         ]
 
         return self.text.compute_text_coords(
-            sliced_in_view_coords, self._ndisplay
+            sliced_in_view_coords, ndisplay, order
         )
+
+    @property
+    def _view_text_color(self) -> np.ndarray:
+        """Get the colors of the text elements at the given indices."""
+        self.text.color._apply(self.features)
+        return self.text._view_color(self._indices_view)
 
     @property
     def mode(self):
@@ -1612,7 +1594,6 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        old_mode = self._mode
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
@@ -1626,8 +1607,6 @@ class Shapes(Layer):
 
         old_mode = self._mode
         self._mode = mode
-
-        self.help = _FWD_SHAPE_HELP[mode]
 
         draw_modes = {
             Mode.SELECT,
@@ -1649,7 +1628,7 @@ class Shapes(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._ndisplay == 3:
+            if self._slice_input.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -2010,23 +1989,9 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            if len(self.properties) > 0:
-                first_prop_key = next(iter(self.properties))
-                n_prop_values = len(self.properties[first_prop_key])
-            else:
-                n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            if total_shapes > n_prop_values:
-                n_props_to_add = total_shapes - n_prop_values
-                self.text.add(self.current_properties, n_props_to_add)
-            if total_shapes < n_prop_values:
-                n_props_to_remove = n_prop_values - total_shapes
-                indices_to_remove = np.arange(n_prop_values)[
-                    -n_props_to_remove:
-                ]
-                self.text.remove(indices_to_remove)
-
+            self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -2236,25 +2201,41 @@ class Shapes(Layer):
 
             self._add_shapes_to_view(shape_inputs, self._data_view)
 
-        self._display_order_stored = copy(self._dims_order)
-        self._ndisplay_stored = copy(self._ndisplay)
+        self._display_order_stored = copy(self._slice_input.order)
+        self._ndisplay_stored = copy(self._slice_input.ndisplay)
         self._update_dims()
 
     def _add_shapes_to_view(self, shape_inputs, data_view):
         """Build new shapes and add them to the _data_view"""
-        for d, st, ew, ec, fc, z in shape_inputs:
 
-            shape_cls = shape_classes[ShapeType(st)]
-            shape = shape_cls(
-                d,
-                edge_width=ew,
-                z_index=z,
-                dims_order=self._dims_order,
-                ndisplay=self._ndisplay,
+        shape_inputs = tuple(shape_inputs)
+
+        # build all shapes
+        sh_inp = tuple(
+            (
+                shape_classes[ShapeType(st)](
+                    d,
+                    edge_width=ew,
+                    z_index=z,
+                    dims_order=self._slice_input.order,
+                    ndisplay=self._slice_input.ndisplay,
+                ),
+                ec,
+                fc,
             )
+            for d, st, ew, ec, fc, z in shape_inputs
+        )
 
-            # Add shape
-            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
+        shapes, edge_colors, face_colors = tuple(zip(*sh_inp))
+
+        # Add all shapes at once (faster than adding them one by one)
+        data_view.add(
+            shape=shapes,
+            edge_color=edge_colors,
+            face_color=face_colors,
+            z_refresh=False,
+        )
+
         data_view._update_z_order()
 
     @property
@@ -2266,8 +2247,7 @@ class Shapes(Layer):
     def text(self, text):
         self._text._update_from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self.features,
         )
 
     def refresh_text(self):
@@ -2275,25 +2255,26 @@ class Shapes(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh(self.features)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._ndisplay == self._ndisplay_stored:
+        ndisplay = self._slice_input.ndisplay
+        if not ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(self.ndim, self._ndisplay)
-            self._ndisplay_stored = copy(self._ndisplay)
+            self._data_view.ndisplay = min(self.ndim, ndisplay)
+            self._ndisplay_stored = ndisplay
             self._clipboard = {}
 
-        if not self._dims_order == self._display_order_stored:
+        if not self._slice_input.order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims_order)
-            self._display_order_stored = copy(self._dims_order)
+            self._data_view.update_dims_order(self._slice_input.order)
+            self._display_order_stored = copy(self._slice_input.order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
         slice_key = np.array(self._slice_indices)[
-            list(self._dims_not_displayed)
+            self._slice_input.not_displayed
         ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
@@ -2549,12 +2530,14 @@ class Shapes(Layer):
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
             de = self._extent_data
-            offset = np.array([de[0, d] for d in self._dims_displayed]) + 0.5
+            offset = (
+                np.array([de[0, d] for d in self._slice_input.displayed]) + 0.5
+            )
             # calculate range of values for the vertices and pad with 1
             # padding ensures the entire shape can be represented in the thumbnail
             # without getting clipped
             shape = np.ceil(
-                [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
+                [de[1, d] - de[0, d] + 1 for d in self._slice_input.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -2663,13 +2646,13 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._ndisplay == 3:
+        if self._slice_input.ndisplay == 3:
             return (None, None)
 
         if self._is_moving:
             return self._moving_value
 
-        coord = [position[i] for i in self._dims_displayed]
+        coord = [position[i] for i in self._slice_input.displayed]
 
         # Check selected shapes
         value = None
@@ -2753,7 +2736,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[float, int], None]:
+    ) -> Tuple[Union[None, float, int], Union[None, np.ndarray]]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -2773,41 +2756,34 @@ class Shapes(Layer):
 
         Returns
         -------
-        value
+        value Union[None, float, int]
             The data value along the supplied ray.
-        intersection_point : np.ndarray
+        intersection_point : Union[None, np.ndarray]
             (n,) array containing the point where the ray intersects the first shape
             (i.e., the shape most in the foreground). The coordinate is in layer
             coordinates.
         """
-        if len(dims_displayed) == 3:
-            if (start_point is not None) and (end_point is not None):
-                # Get the normal vector of the click plane
-                start_position_view = start_point[dims_displayed]
-                end_position_view = end_point[dims_displayed]
-                ray_direction = end_position_view - start_position_view
-                ray_direction_normed = ray_direction / np.linalg.norm(
-                    ray_direction
-                )
-                # step the start position back a little bit to be able to detect shapes
-                # that contain the start_position
-                start_position_view = (
-                    start_position_view - 0.1 * ray_direction_normed
-                )
-                value, intersection = self._data_view._inside_3d(
-                    start_position_view, ray_direction_normed
-                )
+        if len(dims_displayed) != 3:
+            # return None if in 2D mode
+            return None, None
+        if (start_point is None) or (end_point is None):
+            # return None if the ray doesn't intersect the data bounding box
+            return None, None
 
-                # add the full nD coords to intersection
-                intersection_point = start_point.copy()
-                intersection_point[dims_displayed] = intersection
+        # Get the normal vector of the click plane
+        start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+        value, intersection = self._data_view._inside_3d(
+            start_position, ray_direction
+        )
 
-            else:
-                value = None
-                intersection_point = None
-        else:
-            value = None
-            intersection_point = None
+        # add the full nD coords to intersection
+        intersection_point = start_point.copy()
+        intersection_point[dims_displayed] = intersection
+
         return value, intersection_point
 
     def get_index_and_intersection(
@@ -2886,11 +2862,8 @@ class Shapes(Layer):
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
+                'text': self.text._copy(index),
             }
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2901,28 +2874,23 @@ class Shapes(Layer):
             # Calculate offset based on dimension shifts
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
-                for i in self._dims_not_displayed
+                for i in self._slice_input.not_displayed
             ]
 
             self._feature_table.append(self._clipboard['features'])
+            self.text._paste(**self._clipboard['text'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self._dims_not_displayed] = data[
-                    :, self._dims_not_displayed
-                ] + np.array(offset)
+                not_disp = self._slice_input.not_displayed
+                data[:, not_disp] = data[:, not_disp] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]
                 edge_color = self._clipboard['edge_color'][i]
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
-                )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
                 )
 
             self.selected_data = set(

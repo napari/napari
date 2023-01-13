@@ -1,5 +1,6 @@
 import os
 from importlib.metadata import distribution
+from unittest.mock import patch
 
 import pytest
 
@@ -46,6 +47,18 @@ def test_migration_works(_test_migrator):
     assert settings.appearance.theme == 'light'
 
 
+def test_migration_saves(_test_migrator):
+    @_test_migrator('0.1.0', '0.2.0')
+    def _(model: NapariSettings):
+        ...
+
+    with patch.object(NapariSettings, 'save') as mock:
+        mock.assert_not_called()
+        settings = NapariSettings(config_path='junk', schema_version='0.1.0')
+        assert settings.schema_version == '0.2.0'
+        mock.assert_called()
+
+
 def test_failed_migration_leaves_version(_test_migrator):
     # if an error occurs IN the migrator, the version should stay
     # where it was before the migration, and any changes reverted.
@@ -86,3 +99,19 @@ def test_030_to_040_migration():
     )
     assert 'napari-svg' not in settings.plugins.disabled_plugins
     assert 'napari' not in settings.plugins.disabled_plugins
+
+
+@pytest.mark.skipif(
+    bool(os.environ.get('MIN_REQ')), reason='not relevant for MIN_REQ'
+)
+def test_040_to_050_migration():
+    # Prior to 0.5.0 existing preferences may have reader extensions
+    # preferences saved without a leading *.
+    # fnmatch would fail on these so we coerce them to include a *
+    # e.g. '.csv' becomes '*.csv'
+    settings = NapariSettings(
+        schema_version='0.4.0',
+        plugins={'extension2reader': {'.tif': 'napari'}},
+    )
+    assert '.tif' not in settings.plugins.extension2reader
+    assert '*.tif' in settings.plugins.extension2reader

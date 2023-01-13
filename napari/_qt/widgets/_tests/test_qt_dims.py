@@ -279,15 +279,19 @@ def test_play_button(qtbot):
     ndim = 3
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
-    button = view.slider_widgets[0].play_button
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitSignal(view._animation_thread.started, timeout=5000)
+    slider = view.slider_widgets[0]
+    button = slider.play_button
 
-    with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
-        qtbot.mouseClick(button, Qt.LeftButton)
-
-    qtbot.wait(100)
+    # Need looping playback so that it does not stop before we can assert that.
+    assert slider.loop_mode == 'loop'
     assert not view.is_playing
+
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
@@ -313,3 +317,47 @@ def test_slice_labels(qtbot):
     label_edit.setText(str(8))
     label_edit.editingFinished.emit()
     assert dims.point[0] == 8
+
+
+def test_not_playing_after_ndim_changes(qtbot):
+    """See https://github.com/napari/napari/issues/3998"""
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    # Loop to prevent finishing before the assertions in this test.
+    view.play(loop_mode='loop')
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    dims.ndim = 2
+
+    qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
+
+
+def test_not_playing_after_ndisplay_changes(qtbot):
+    """See https://github.com/napari/napari/issues/3998"""
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    # Loop to prevent finishing before the assertions in this test.
+    view.play(loop_mode='loop')
+    qtbot.waitUntil(lambda: view.is_playing)
+
+    dims.ndisplay = 3
+
+    qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.waitUntil(lambda: view._animation_worker is None)
+
+
+def test_set_axis_labels_after_ndim_changes(qtbot):
+    """See https://github.com/napari/napari/issues/3753"""
+    dims = Dims(ndim=3, ndisplay=2)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    dims.ndim = 2
+    dims.axis_labels = ['y', 'x']
+
+    assert len(view.slider_widgets) == 2
+    assert view.slider_widgets[0].axis_label.text() == 'y'
+    assert view.slider_widgets[1].axis_label.text() == 'x'

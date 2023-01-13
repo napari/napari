@@ -1,5 +1,10 @@
 """
+Pass colormaps
+==============
+
 Add named or unnamed vispy colormaps to existing layers.
+
+.. tags:: visualization-basic
 """
 
 import numpy as np
@@ -22,4 +27,5 @@ blayer = v.add_image(
     bch, name='blue channel', colormap='blue', blending='additive'
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

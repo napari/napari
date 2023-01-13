@@ -4,7 +4,7 @@ from typing import List, Optional, Sequence, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ._base_item_model import _BaseEventedItemModel
+from napari._qt.containers._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = "application/x-list-index"
@@ -59,7 +59,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         bool ``True`` if the `data` and `action` were handled by the model;
             otherwise returns ``False``.
         """
-        if not data or action != Qt.MoveAction:
+        if not data or action != Qt.DropAction.MoveAction:
             return False
         if not data.hasFormat(self.mimeTypes()[0]):
             return False

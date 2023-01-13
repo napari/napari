@@ -1,6 +1,11 @@
 """
-Display a labels layer above of an image layer using the add_labels and
-add_image APIs
+Labels 2D
+=========
+
+Display a labels layer above of an image layer using the ``add_labels`` and
+``add_image`` APIs
+
+.. tags:: visualization-basic
 """
 
 from skimage import data
@@ -23,4 +28,5 @@ label_layer = viewer.add_labels(labels, name='segmentation')
 label_layer.mode = 'PICK'
 print(f'The color of label 5 is {label_layer.get_color(5)}')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

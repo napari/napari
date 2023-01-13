@@ -3,10 +3,10 @@ from typing import Callable, Dict, Generator
 
 import numpy as np
 
-from ..types import ExcInfo
+from napari.types import ExcInfo
 
 
-def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
+def get_tb_formatter() -> Callable[[ExcInfo, bool, str], str]:
     """Return a formatter callable that uses IPython VerboseTB if available.
 
     Imports IPython lazily if available to take advantage of ultratb.VerboseTB.
@@ -52,7 +52,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
             np.set_string_function(None)
             return tb_text
 
-    except ImportError:
+    except ModuleNotFoundError:
         import cgitb
         import traceback
 

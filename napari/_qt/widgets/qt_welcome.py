@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -12,7 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import trans
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 
 class QtWelcomeLabel(QLabel):
@@ -44,8 +46,8 @@ class QtWelcomeWidget(QWidget):
         # Widget setup
         self.setAutoFillBackground(True)
         self.setAcceptDrops(True)
-        self._image.setAlignment(Qt.AlignCenter)
-        self._label.setAlignment(Qt.AlignCenter)
+        self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()
@@ -53,14 +55,16 @@ class QtWelcomeWidget(QWidget):
 
         # TODO: Use action manager for shortcut query and handling
         shortcut_layout = QFormLayout()
-        sc = QKeySequence('Ctrl+O').toString(QKeySequence.NativeText)
+        sc = QKeySequence('Ctrl+O', QKeySequence.PortableText).toString(
+            QKeySequence.NativeText
+        )
         shortcut_layout.addRow(
             QtShortcutLabel(sc),
             QtShortcutLabel(trans._("open image(s)")),
         )
-        sc = QKeySequence('Ctrl+Alt+/').toString(QKeySequence.NativeText)
+        self._shortcut_label = QtShortcutLabel("")
         shortcut_layout.addRow(
-            QtShortcutLabel(sc),
+            self._shortcut_label,
             QtShortcutLabel(trans._("show all key bindings")),
         )
         shortcut_layout.setSpacing(0)
@@ -74,6 +78,24 @@ class QtWelcomeWidget(QWidget):
         layout.addStretch()
 
         self.setLayout(layout)
+        self._show_shortcuts_updated()
+        action_manager.events.shorcut_changed.connect(
+            self._show_shortcuts_updated
+        )
+
+    def minimumSizeHint(self):
+        """
+        Overwrite minimum size to allow creating small viewer instance
+        """
+        return QSize(100, 100)
+
+    def _show_shortcuts_updated(self):
+        shortcut_list = list(
+            action_manager._shortcuts["napari:show_shortcuts"]
+        )
+        if not shortcut_list:
+            return
+        self._shortcut_label.setText(Shortcut(shortcut_list[0]).platform)
 
     def paintEvent(self, event):
         """Override Qt method.
@@ -109,11 +131,13 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragEnterEvent
             Event from the Qt context.
         """
         self._update_property("drag", True)
         if event.mimeData().hasUrls():
+            viewer = self.parentWidget().nativeParentWidget()._qt_viewer
+            viewer._set_drag_status()
             event.accept()
         else:
             event.ignore()
@@ -125,7 +149,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDragLeaveEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)
@@ -137,7 +161,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)
@@ -151,6 +175,8 @@ class QtWidgetOverlay(QStackedWidget):
 
     sig_dropped = Signal("QEvent")
     resized = Signal()
+    leave = Signal()
+    enter = Signal()
 
     def __init__(self, parent, widget):
         super().__init__(parent)
@@ -170,5 +196,16 @@ class QtWidgetOverlay(QStackedWidget):
         self.setCurrentIndex(int(visible))
 
     def resizeEvent(self, event):
+        """Emit our own event when canvas was resized."""
         self.resized.emit()
         return super().resizeEvent(event)
+
+    def enterEvent(self, event):
+        """Emit our own event when mouse enters the canvas."""
+        self.enter.emit()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        """Emit our own event when mouse leaves the canvas."""
+        self.leave.emit()
+        super().leaveEvent(event)

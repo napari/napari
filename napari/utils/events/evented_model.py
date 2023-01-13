@@ -5,16 +5,20 @@ from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
+from app_model.types import KeyBinding
 from pydantic import BaseModel, PrivateAttr, main, utils
 
-from ...utils.misc import pick_equality_operator
-from ..translations import trans
-from .event import EmitterGroup, Event
+from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.misc import pick_equality_operator
+from napari.utils.translations import trans
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
 # it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
-_BASE_JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
+_BASE_JSON_ENCODERS = {
+    np.ndarray: lambda arr: arr.tolist(),
+    KeyBinding: lambda v: str(v),
+}
 
 
 @contextmanager
@@ -186,8 +190,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
         # whether to validate field defaults (default: False)
-        # see https://github.com/napari/napari/pull/4138 before changing.
-        validate_all = False
+        validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
@@ -198,13 +201,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         self._events.source = self
         # add event emitters for each field which is mutable
-        event_names = [
+        field_events = [
             name
             for name, field in self.__fields__.items()
             if field.field_info.allow_mutation
         ]
-        event_names.extend(self.__property_setters__)
-        self._events.add(**dict.fromkeys(event_names))
+
+        self._events.add(
+            **dict.fromkeys(field_events + list(self.__property_setters__))
+        )
+
+        # while seemingly redundant, this next line is very important to maintain
+        # correct sources; see https://github.com/napari/napari/pull/4138
+        # we solve it by re-setting the source after initial validation, which allows
+        # us to use `validate_all = True`
+        self._reset_event_source()
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
@@ -241,6 +252,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @property
     def events(self) -> EmitterGroup:
         return self._events
+
+    def _reset_event_source(self):
+        """
+        set the event sources of self and all the children to the correct values
+        """
+        # events are all messed up due to objects being probably
+        # recreated arbitrarily during validation
+        self.events.source = self
+        for name in self.__fields__:
+            child = getattr(self, name)
+            if isinstance(child, EventedModel):
+                # TODO: this isinstance check should be EventedMutables in the future
+                child._reset_event_source()
+            elif name in self.events.emitters:
+                getattr(self.events, name).source = self
 
     @property
     def _defaults(self):
@@ -304,6 +330,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """
+        if self is other:
+            return True
         if not isinstance(other, EventedModel):
             return self.dict() == other
 

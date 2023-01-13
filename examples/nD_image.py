@@ -1,5 +1,10 @@
 """
-Display one 4-D image layer using the add_image API
+nD image
+========
+
+Display one 4-D image layer using the :func:`view_image` API.
+
+.. tags:: visualization-nD
 """
 
 import numpy as np
@@ -18,4 +23,5 @@ blobs = np.stack(
 )
 viewer = napari.view_image(blobs.astype(float))
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

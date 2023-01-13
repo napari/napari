@@ -18,16 +18,17 @@ jobs:
       fail-fast: false
       matrix:
         platform: [windows-latest, macos-latest, ubuntu-latest]
-        python: [3.8]
-        backend: [pyqt, pyside]
+        python: [3.9]
+        backend: [pyqt5, pyside2]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -37,6 +38,12 @@ jobs:
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+
+      # run a minimal wm for linux tests that depend on UI events (e.g. setFocus)
+      # see https://github.com/pytest-dev/pytest-qt/issues/206
+      - name: Install WM on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y herbstluftwm
 
       - name: Install dependencies
         run: |

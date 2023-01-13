@@ -1,6 +1,11 @@
 """
+Mouse drag callback
+===================
+
 Example updating the status bar with line profile info while dragging
 lines around in a shapes layer.
+
+.. tags:: gui
 """
 
 from skimage import data
@@ -45,4 +50,5 @@ def profile_lines_drag(layer, event):
         yield
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

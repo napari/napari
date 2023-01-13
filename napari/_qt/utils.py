@@ -12,13 +12,13 @@ import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
-    QObject,
+    QCoreApplication,
     QPoint,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
-    Signal,
+    QThread,
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import (
@@ -30,10 +30,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.events.custom_types import Array
-from ..utils.misc import is_sequence
-from ..utils.translations import trans
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import is_sequence
+from napari.utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
@@ -84,7 +84,7 @@ def str_to_qbytearray(string: str) -> QByteArray:
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
-def QImg2array(img):
+def QImg2array(img) -> np.ndarray:
     """Convert QImage to an array.
 
     Parameters
@@ -107,7 +107,7 @@ def QImg2array(img):
     # As vispy doesn't use qtpy we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if qtpy.API_NAME == 'PySide2':
+    if qtpy.API_NAME.startswith('PySide'):
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)
@@ -158,11 +158,11 @@ def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
     size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
-    painter.setPen(Qt.white)
+    painter.setPen(Qt.GlobalColor.white)
     painter.drawRect(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.black)
+    painter.setPen(Qt.GlobalColor.black)
     painter.drawRect(1, 1, size - 3, size - 3)
     painter.end()
     return pixmap
@@ -176,7 +176,7 @@ def crosshair_pixmap():
     size = 25
 
     pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
 
     # Base measures
@@ -185,7 +185,7 @@ def crosshair_pixmap():
     rect_size = center + 2 * width
     square = rect_size + width * 4
 
-    pen = QPen(Qt.white, 1)
+    pen = QPen(Qt.GlobalColor.white, 1)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
 
@@ -200,7 +200,7 @@ def crosshair_pixmap():
         (size - square) // 2, (size - square) // 2, square - 1, square - 1
     )
 
-    pen = QPen(Qt.black, 2)
+    pen = QPen(Qt.GlobalColor.black, 2)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
 
@@ -212,7 +212,7 @@ def crosshair_pixmap():
         square - 4,
     )
 
-    pen = QPen(Qt.black, 3)
+    pen = QPen(Qt.GlobalColor.black, 3)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
 
@@ -243,13 +243,13 @@ def crosshair_pixmap():
 @lru_cache(maxsize=64)
 def circle_pixmap(size: int):
     """Create a white/black hollow circle pixmap. For use as labels cursor."""
-    size = max(int(size), 1)
+    size = max(size, 1)
     pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
-    painter.setPen(Qt.white)
+    painter.setPen(Qt.GlobalColor.white)
     painter.drawEllipse(0, 0, size - 1, size - 1)
-    painter.setPen(Qt.black)
+    painter.setPen(Qt.GlobalColor.black)
     painter.drawEllipse(1, 1, size - 3, size - 3)
     painter.end()
     return pixmap
@@ -286,7 +286,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     drag.setMimeData(list_widget.mimeData(list_widget.selectedItems()))
     size = list_widget.viewport().visibleRegion().boundingRect().size()
     pixmap = QPixmap(size)
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     for index in list_widget.selectedIndexes():
         rect = list_widget.visualRect(index)
@@ -428,44 +428,34 @@ def _maybe_allow_interrupt(qapp):
     """
     old_sigint_handler = signal.getsignal(signal.SIGINT)
     handler_args = None
-    skip = False
     if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
-        skip = True
-    else:
-        wsock, rsock = socket.socketpair()
-        wsock.setblocking(False)
-        old_wakeup_fd = signal.set_wakeup_fd(wsock.fileno())
-        sn = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
+        yield
+        return
 
-        # Clear the socket to re-arm the notifier.
-        sn.activated.connect(lambda *args: rsock.recv(1))
+    wsock, rsock = socket.socketpair()
+    wsock.setblocking(False)
+    old_wakeup_fd = signal.set_wakeup_fd(wsock.fileno())
+    sn = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
 
-        def handle(*args):
-            nonlocal handler_args
-            handler_args = args
-            qapp.exit()
+    # Clear the socket to re-arm the notifier.
+    sn.activated.connect(lambda *args: rsock.recv(1))
 
-        signal.signal(signal.SIGINT, handle)
+    def handle(*args):
+        nonlocal handler_args
+        handler_args = args
+        qapp.exit()
+
+    signal.signal(signal.SIGINT, handle)
     try:
         yield
     finally:
-        if not skip:
-            wsock.close()
-            rsock.close()
-            sn.setEnabled(False)
-            signal.set_wakeup_fd(old_wakeup_fd)
-            signal.signal(signal.SIGINT, old_sigint_handler)
-            if handler_args is not None:
-                old_sigint_handler(*handler_args)
-
-
-class Sentry(QObject):
-    """Small object to trigger events across threads."""
-
-    alerted = Signal()
-
-    def alert(self, *_):
-        self.alerted.emit()
+        wsock.close()
+        rsock.close()
+        sn.setEnabled(False)
+        signal.set_wakeup_fd(old_wakeup_fd)
+        signal.signal(signal.SIGINT, old_sigint_handler)
+        if handler_args is not None:
+            old_sigint_handler(*handler_args)
 
 
 def qt_might_be_rich_text(text) -> bool:
@@ -481,3 +471,15 @@ def qt_might_be_rich_text(text) -> bool:
         return _Qt.mightBeRichText(text)
     except Exception:
         return bool(RICH_TEXT_PATTERN.search(text))
+
+
+def in_qt_main_thread():
+    """
+    Check if we are in the thread in which QApplication object was created.
+
+    Returns
+    -------
+    thread_flag : bool
+        True if we are in the main thread, False otherwise.
+    """
+    return QCoreApplication.instance().thread() == QThread.currentThread()

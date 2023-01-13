@@ -1,7 +1,10 @@
 import pytest
 
 from napari.components import Dims
-from napari.components.dims import assert_axis_in_bounds
+from napari.components.dims import (
+    assert_axis_in_bounds,
+    reorder_after_dim_reduction,
+)
 
 
 def test_ndim():
@@ -31,9 +34,15 @@ def test_display():
     dims = Dims(ndim=4)
     assert dims.order == (0, 1, 2, 3)
     assert dims.ndisplay == 2
+    assert dims.displayed == (2, 3)
+    assert dims.displayed_order == (0, 1)
+    assert dims.not_displayed == (0, 1)
 
     dims.order = (2, 3, 1, 0)
     assert dims.order == (2, 3, 1, 0)
+    assert dims.displayed == (1, 0)
+    assert dims.displayed_order == (1, 0)
+    assert dims.not_displayed == (2, 3)
 
 
 def test_order_with_init():
@@ -294,3 +303,30 @@ def test_changing_focus():
     assert dims.last_used == 0
     dims._focus_down()
     assert dims.last_used == 2
+
+
+def test_floating_point_edge_case():
+    # see #4889
+    dims = Dims(ndim=2)
+    dims.set_range(0, (0.0, 17.665, 3.533))
+    assert dims.nsteps[0] == 5
+
+
+@pytest.mark.parametrize(
+    ('order', 'expected'),
+    (
+        ((0, 1), (0, 1)),  # 2D, increasing, default range
+        ((3, 7), (0, 1)),  # 2D, increasing, non-default range
+        ((1, 0), (1, 0)),  # 2D, decreasing, default range
+        ((5, 2), (1, 0)),  # 2D, decreasing, non-default range
+        ((0, 1, 2), (0, 1, 2)),  # 3D, increasing, default range
+        ((3, 4, 6), (0, 1, 2)),  # 3D, increasing, non-default range
+        ((2, 1, 0), (2, 1, 0)),  # 3D, decreasing, default range
+        ((4, 2, 0), (2, 1, 0)),  # 3D, decreasing, non-default range
+        ((2, 0, 1), (2, 0, 1)),  # 3D, non-monotonic, default range
+        ((4, 0, 1), (2, 0, 1)),  # 3D, non-monotonic, non-default range
+    ),
+)
+def test_reorder_after_dim_reduction(order, expected):
+    actual = reorder_after_dim_reduction(order)
+    assert actual == expected

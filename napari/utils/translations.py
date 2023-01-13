@@ -10,7 +10,7 @@ from typing import Optional, Union
 
 from yaml import safe_load
 
-from ._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
+from napari.utils._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
@@ -51,7 +51,7 @@ def _get_display_name(
         )
         loc = babel.Locale.parse(locale)
         dislay_name = loc.get_display_name(display_locale).capitalize()
-    except ImportError:
+    except ModuleNotFoundError:
         dislay_name = display_locale.capitalize()
 
     return dislay_name
@@ -88,7 +88,7 @@ def _is_valid_locale(locale: str) -> bool:
 
         babel.Locale.parse(locale)
         valid = True
-    except ImportError:
+    except ModuleNotFoundError:
         valid = True
     except ValueError:
         pass
@@ -167,6 +167,10 @@ class TranslationString(str):
     def __deepcopy__(self, memo):
         from copy import deepcopy
 
+        kwargs = deepcopy(self._kwargs)
+        # Remove `n` from `kwargs` added in the initializer
+        # See https://github.com/napari/napari/issues/4736
+        kwargs.pop("n")
         return TranslationString(
             domain=self._domain,
             msgctxt=self._msgctxt,
@@ -174,7 +178,7 @@ class TranslationString(str):
             msgid_plural=self._msgid_plural,
             n=self._n,
             deferred=self._deferred,
-            kwargs=deepcopy(self._kwargs),
+            **kwargs,
         )
 
     def __new__(
@@ -621,7 +625,7 @@ class _Translator:
             if locale.split("_")[0] != _DEFAULT_LOCALE:
                 _Translator._update_env(locale)
 
-            for __, bundle in cls._TRANSLATORS.items():
+            for bundle in cls._TRANSLATORS.values():
                 bundle._update_locale(locale)
 
     @classmethod

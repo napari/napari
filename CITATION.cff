@@ -1,0 +1,107 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.0.3
+message: If you use this software, please cite it using these metadata.
+title: 'napari: a multi-dimensional image viewer for Python'
+doi: 10.5281/zenodo.3555620
+authors:
+- given-names: Nicholas
+  family-names: Sofroniew
+  affiliation: Chan Zuckerberg Initiative
+  orcid: "https://orcid.org/0000-0002-3426-0914"
+- given-names: Talley
+  family-names: Lambert
+  affiliation: Harvard Medical School
+  orcid: "https://orcid.org/0000-0002-2409-0181"
+- given-names: Kira
+  family-names: Evans
+  affiliation: Chan Zuckerberg Initiative
+- given-names: Juan
+  family-names: Nunez-Iglesias
+  affiliation: Biomedicine Discovery Institute, Monash University
+- given-names: Grzegorz
+  family-names: Bokota
+  affiliation: University of Warsaw, Faculty of Mathematics, Informatics, and Mechanics
+  orcid: https://orcid.org/0000-0002-5470-1676
+- given-names: Philip
+  family-names: Winston
+  affiliation: Tobeva Software
+- given-names: Gonzalo
+  family-names: Peña-Castellanos
+  affiliation: Quansight, Inc. / SIHSA Ltda
+- given-names: Kevin
+  family-names: Yamauchi
+  affiliation: Iber Lab - ETH Zürich
+- given-names: Matthias
+  family-names: Bussonnier
+  orcid: "http://orcid.org/0000-0002-7636-8632"
+  affiliation: Quansight Labs
+- given-names: Draga
+  family-names: Doncila Pop
+- given-names: Ahmet
+  family-names: Can Solak
+  affiliation: Chan Zuckerberg Biohub
+- given-names: Ziyang
+  family-names: Liu
+  affiliation: Chan Zuckerberg Initiative Foundation
+- given-names: Pam
+  family-names: Wadhwa
+  affiliation: Quansight Labs
+- given-names: Alister
+  family-names: Burt
+  affiliation: MRC-LMB
+- given-names: Genevieve
+  family-names: Buckley
+  affiliation: Monash University
+  orcid:  https://orcid.org/0000-0003-2763-492X
+- given-names: Andrew
+  family-names: Sweet
+  affiliation: Chan Zuckerberg Initiative
+- given-names: Lukasz
+  family-names: Migas
+  affiliation: Delft University of Technology
+- given-names: Volker
+  family-names: Hilsenstein
+  affiliation: EMBL Heidelberg, Germany
+  orcid: https://orcid.org/0000-0002-2255-2960
+- given-names: Lorenzo
+  family-names: Gaifas
+  affiliation: Gutsche Lab - University of Grenoble
+  orcid: https://orcid.org/0000-0003-4875-9422
+- given-names: Jordão
+  family-names: Bragantini
+  affiliation: Chan Zuckerberg Biohub
+- given-names: Jaime
+  family-names: Rodríguez-Guerra
+  affiliation: Quansight Labs
+- given-names: Hector
+  family-names: Muñoz
+  affiliation: University of California, Los Angeles
+  orcid: https://orcid.org/0000-0001-7851-2549
+- given-names: Jeremy
+  family-names: Freeman
+  affiliation: Chan Zuckerberg Initiative
+- given-names: Peter
+  family-names: Boone
+- given-names: Alan
+  family-names: Lowe
+  name-particle: R
+  affiliation: UCL & The Alan Turing Institute
+- given-names: Christoph
+  family-names: Gohlke
+  affiliation: University of California, Irvine
+- given-names: Loic
+  family-names: Royer
+  affiliation: Chan Zuckerberg Biohub
+- given-names: Andrea
+  family-names: Pierré
+  affiliation: Brown University
+  orcid: "https://orcid.org/0000-0003-4501-5428"
+- given-names: Hagai
+  family-names: Har-Gil
+  affiliation: Tel Aviv University, Israel
+- given-names: Abigail
+  family-names: McGovern
+  affiliation: Monash University
+repository-code: https://github.com/napari/napari
+license: BSD-3-Clause

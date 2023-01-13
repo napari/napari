@@ -11,6 +11,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -21,33 +22,46 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from .. import layers
-from ..layers import Image, Layer
-from ..layers._source import layer_source
-from ..layers.image._image_utils import guess_labels
-from ..layers.utils.stack_utils import split_channels
-from ..settings import get_settings
-from ..utils._register import create_func as create_add_method
-from ..utils.colormaps import ensure_colormap
-from ..utils.context import Context, create_context
-from ..utils.events import Event, EventedModel, disconnect_events
-from ..utils.key_bindings import KeymapProvider
-from ..utils.misc import is_sequence
-from ..utils.mouse_bindings import MousemapProvider
-from ..utils.progress import progress
-from ..utils.theme import available_themes
-from ..utils.translations import trans
-from ._viewer_mouse_bindings import dims_scroll
-from .axes import Axes
-from .camera import Camera
-from .cursor import Cursor
-from .dims import Dims
-from .grid import GridCanvas
-from .layerlist import LayerList
-from .overlays import Overlays
-from .scale_bar import ScaleBar
-from .text_overlay import TextOverlay
-from .tooltip import Tooltip
+from napari import layers
+from napari.components._viewer_mouse_bindings import dims_scroll
+from napari.components.camera import Camera
+from napari.components.cursor import Cursor
+from napari.components.dims import Dims
+from napari.components.grid import GridCanvas
+from napari.components.layerlist import LayerList
+from napari.components.overlays import (
+    AxesOverlay,
+    Overlays,
+    ScaleBarOverlay,
+    TextOverlay,
+)
+from napari.components.tooltip import Tooltip
+from napari.errors import (
+    MultipleReaderError,
+    NoAvailableReaderError,
+    ReaderPluginError,
+)
+from napari.layers import Image, Labels, Layer, Points, Shapes
+from napari.layers._source import layer_source
+from napari.layers.image._image_utils import guess_labels
+from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
+from napari.layers.points._points_key_bindings import points_fun_to_mode
+from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
+from napari.layers.utils.stack_utils import split_channels
+from napari.plugins.utils import get_potential_readers, get_preferred_reader
+from napari.settings import get_settings
+from napari.utils._register import create_func as create_add_method
+from napari.utils.action_manager import action_manager
+from napari.utils.colormaps import ensure_colormap
+from napari.utils.events import Event, EventedModel, disconnect_events
+from napari.utils.events.event import WarningEmitter
+from napari.utils.key_bindings import KeymapProvider
+from napari.utils.migrations import rename_argument
+from napari.utils.misc import is_sequence
+from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.progress import progress
+from napari.utils.theme import available_themes, is_theme_available
+from napari.utils.translations import trans
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -62,7 +76,7 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData
+    from napari.types import FullLayerData, LayerData
 
 PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
@@ -104,7 +118,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
+    axes: AxesOverlay = Field(
+        default_factory=AxesOverlay, allow_mutation=False
+    )
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
@@ -112,24 +128,33 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
+    scale_bar: ScaleBarOverlay = Field(
+        default_factory=ScaleBarOverlay, allow_mutation=False
+    )
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
-    status: str = 'Ready'
+    status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
-    _ctx: Context
+    _ctx: Mapping
+    # To check if mouse is over canvas to avoid race conditions between
+    # different events systems
+    mouse_over_canvas: bool = False
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # max_depth=0 means don't look for parent contexts.
+        from napari._app_model.context import create_context
+
+        # FIXME: just like the LayerList, this object should ideally be created
+        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
         self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
@@ -161,7 +186,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
 
         # Add extra events - ideally these will be removed too!
-        self.events.add(layers_change=Event, reset_view=Event)
+        self.events.add(
+            layers_change=WarningEmitter(
+                trans._(
+                    "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
+                    deferred=True,
+                ),
+                type="layers_change",
+            ),
+            reset_view=Event,
+        )
 
         # Connect events
         self.grid.events.connect(self.reset_view)
@@ -171,7 +205,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
-        self.cursor.events.position.connect(self._on_cursor_position_change)
+        self.cursor.events.position.connect(
+            self._update_status_bar_from_cursor
+        )
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
@@ -197,14 +233,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @validator('theme')
     def _valid_theme(cls, v):
-        themes = available_themes()
-        if v not in available_themes():
+        if not is_theme_available(v):
             raise ValueError(
                 trans._(
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=themes,
+                    themes=", ".join(available_themes()),
                 )
             )
 
@@ -318,6 +353,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer._slice_dims(
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
+        position = list(self.cursor.position)
+        for ind in self.dims.order[: -self.dims.ndisplay]:
+            position[ind] = self.dims.point[ind]
+        self.cursor.position = position
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
@@ -368,20 +407,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
-    def _on_cursor_position_change(self):
-        """Set the layer cursor position."""
-        with warnings.catch_warnings():
-            # Catch the deprecation warning on layer.position
-            warnings.filterwarnings(
-                'ignore',
-                message=str(
-                    trans._('layer.position is deprecated', deferred=True)
-                ),
-            )
-            for layer in self.layers:
-                layer.position = self.cursor.position
+    def _update_status_bar_from_cursor(self, event=None):
+        """Update the status bar based on the current cursor position.
 
+        This is generally used as a callback when cursor.position is updated.
+        """
         # Update status and help bar based on active layer
+        if not self.mouse_over_canvas:
+            return
         active = self.layers.selection.active
         if active is not None:
             self.status = active.get_status(
@@ -390,6 +423,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
@@ -398,6 +432,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
+        else:
+            self.status = 'Ready'
 
     def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
@@ -431,7 +467,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         For example run "viewer.experimental.cmds.loader.help".
         """
-        from .experimental.commands import ExperimentalNamespace
+        from napari.components.experimental.commands import (
+            ExperimentalNamespace,
+        )
 
         return ExperimentalNamespace(self.layers)
 
@@ -458,6 +496,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+        if hasattr(layer.events, "mode"):
+            layer.events.mode.connect(self._on_layer_mode_change)
+        self._layer_help_from_mode(layer)
 
         # Update dims and grid model
         self._on_layers_change()
@@ -470,6 +511,42 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
+
+    @staticmethod
+    def _layer_help_from_mode(layer: Layer):
+        """
+        Update layer help text base on layer mode.
+        """
+        layer_to_func_and_mode = {
+            Points: points_fun_to_mode,
+            Labels: labels_fun_to_mode,
+            Shapes: shapes_fun_to_mode,
+        }
+
+        help_li = []
+        shortcuts = get_settings().shortcuts.shortcuts
+
+        for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
+            if mode_ == layer.mode:
+                continue
+            action_name = f"napari:{fun.__name__}"
+            desc = action_manager._actions[action_name].description.lower()
+            if not shortcuts[action_name]:
+                continue
+            help_li.append(
+                trans._(
+                    "use <{shortcut}> for {desc}",
+                    shortcut=shortcuts[action_name][0],
+                    desc=desc,
+                )
+            )
+
+        layer.help = ", ".join(help_li)
+
+    def _on_layer_mode_change(self, event):
+        self._layer_help_from_mode(event.source)
+        if (active := self.layers.selection.active) is not None:
+            self.help = active.help
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -513,6 +590,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.append(layer)
         return layer
 
+    @rename_argument("interpolation", "interpolation2d", "0.6.0")
     def add_image(
         self,
         data=None,
@@ -522,10 +600,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         colormap=None,
         contrast_limits=None,
         gamma=1,
-        interpolation='nearest',
+        interpolation2d='nearest',
+        interpolation3d='linear',
         rendering='mip',
         depiction='volume',
-        iso_threshold=0.5,
+        iso_threshold=None,
         attenuation=0.05,
         name=None,
         metadata=None,
@@ -585,7 +664,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             If a list then must be same length as the axis that is being
             expanded as channels.
         interpolation : str or list
-            Interpolation mode used by vispy. Must be one of our supported
+            Deprecated, to be removed in 0.6.0
+        interpolation2d : str or list
+            Interpolation mode used by vispy in 2D. Must be one of our supported
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        interpolation3d : str or list
+            Interpolation mode used by vispy in 3D. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
         rendering : str or list
@@ -594,8 +679,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             expanded as channels.
         depiction : str
             Selects a preset volume depiction mode in vispy
-              * volume: images are rendered as 3D volumes.
-              * plane: images are rendered as 2D planes embedded in 3D.
+
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
         iso_threshold : float or list
             Threshold for isosurface. If a list then must be same length as the
             axis that is being expanded as channels.
@@ -688,7 +774,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
-            'interpolation': interpolation,
+            'interpolation2d': interpolation2d,
+            'interpolation3d': interpolation3d,
             'rendering': rendering,
             'depiction': depiction,
             'iso_threshold': iso_threshold,
@@ -723,8 +810,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
-            kwargs['blending'] = kwargs['blending'] or 'translucent'
-            # Helpful message if someone tries to add mulit-channel kwargs,
+            kwargs['blending'] = kwargs['blending'] or 'translucent_no_depth'
+            # Helpful message if someone tries to add multi-channel kwargs,
             # but forget the channel_axis arg
             for k, v in kwargs.items():
                 if k not in iterable_kwargs and is_sequence(v):
@@ -771,7 +858,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        ``**kwargs``
+        **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
@@ -786,7 +873,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import _npe2, plugin_manager
+        from napari.plugins import _npe2, plugin_manager
 
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
@@ -797,6 +884,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 data = plugin_manager._sample_data[plugin][sample]['data']
             except KeyError:
                 available += list(plugin_manager.available_samples())
+        # npe2 uri sample data, extract the path so we can use viewer.open
+        elif hasattr(data.__self__, 'uri'):
+            data = data.__self__.uri
 
         if data is None:
             msg = trans._(
@@ -846,8 +936,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self,
         path: PathOrPaths,
         *,
-        stack: bool = False,
-        plugin: Optional[str] = None,
+        stack: Union[bool, List[List[str]]] = False,
+        plugin: Optional[str] = 'napari',
         layer_type: Optional[str] = None,
         **kwargs,
     ) -> List[Layer]:
@@ -861,23 +951,27 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ----------
         path : str or list of str
             A filepath, directory, or URL (or a list of any) to open.
-        stack : bool, optional
-            If a list of strings is passed and ``stack`` is ``True``, then the
+        stack : bool or list[list[str]], optional
+            If a list of strings is passed as ``path`` and ``stack`` is ``True``, then the
             entire list will be passed to plugins.  It is then up to individual
             plugins to know how to handle a list of paths.  If ``stack`` is
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
+            If the stack option is a list of lists containing individual paths,
+            the inner lists are passedto the reader and will be stacked.
         plugin : str, optional
-            Name of a plugin to use.  If provided, will force ``path`` to be
-            read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an exception will be raised.
+            Name of a plugin to use, by default builtins.  If provided, will
+            force ``path`` to be read with the specified ``plugin``.
+            If None, ``plugin`` will be read from preferences or inferred if just
+            one reader is compatible.
+            If the requested plugin cannot read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        ``**kwargs``
+        **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 
@@ -886,24 +980,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers : list
             A list of any layers that were added to the viewer.
         """
-        paths = [path] if isinstance(path, (Path, str)) else path
-        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-        if not isinstance(paths, (tuple, list)):
-            raise ValueError(
+        if plugin == 'builtins':
+            warnings.warn(
                 trans._(
-                    "'path' argument must be a string, list, or tuple",
+                    'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
                     deferred=True,
-                )
+                ),
             )
+            plugin = 'napari'
 
-        if stack:
-            return self._add_layers_with_plugins(
-                paths,
-                kwargs=kwargs,
-                plugin=plugin,
-                layer_type=layer_type,
-                stack=stack,
-            )
+        paths: List[str | Path | List[str | Path]] = (
+            [os.fspath(path)]
+            if isinstance(path, (Path, str))
+            else [os.fspath(p) for p in path]
+        )
+
+        # If stack is a bool and True, add an additional layer of nesting.
+        if isinstance(stack, bool) and stack:
+            paths = [paths]
+
+        # If stack is a list and True, extend the paths with the inner lists.
+        elif isinstance(stack, list) and stack:
+            paths.extend(stack)
 
         added: List[Layer] = []  # for layers that get added
         with progress(
@@ -914,15 +1012,155 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
-                added.extend(
-                    self._add_layers_with_plugins(
-                        [_path],
-                        kwargs=kwargs,
+                # If _path is a list, set stack to True
+                _stack = True if isinstance(_path, list) else False
+                # If _path is not a list already, make it a list.
+                _path = [_path] if not isinstance(_path, list) else _path
+                if plugin:
+                    added.extend(
+                        self._add_layers_with_plugins(
+                            _path,
+                            kwargs=kwargs,
+                            plugin=plugin,
+                            layer_type=layer_type,
+                            stack=_stack,
+                        )
+                    )
+                # no plugin choice was made
+                else:
+                    layers = self._open_or_raise_error(
+                        _path, kwargs, layer_type, _stack
+                    )
+                    added.extend(layers)
+
+        return added
+
+    def _open_or_raise_error(
+        self,
+        paths: List[Union[Path, str]],
+        kwargs: Dict[str, Any] = {},
+        layer_type: Optional[str] = None,
+        stack: Union[bool, List[List[str]]] = False,
+    ):
+        """Open paths if plugin choice is unambiguous, raising any errors.
+
+        This function will open paths if there is no plugin choice to be made
+        i.e. there is a preferred reader associated with this file extension,
+        or there is only one plugin available. Any errors that occur during
+        the opening process are raised. If multiple plugins
+        are available to read these paths, an error is raised specifying
+        this.
+
+        Errors are also raised by this function when the given paths are not
+        a list or tuple, or if no plugins are available to read the files.
+        This assumes all files have the same extension, as other cases
+        are not yet supported.
+
+        This function is called from ViewerModel.open, which raises any
+        errors returned. The QtViewer also calls this method but catches
+        exceptions and opens a dialog for users to make a plugin choice.
+
+        Parameters
+        ----------
+        paths : List[Path | str]
+            list of file paths to open
+        kwargs : Dict[str, Any], optional
+            keyword arguments to pass to layer adding method, by default {}
+        layer_type : Optional[str], optional
+            layer type for paths, by default None
+        stack : bool or list[list[str]], optional
+            True if files should be opened as a stack, by default False.
+            Can also be a list containing lists of files to stack.
+
+        Returns
+        -------
+        added
+            list of layers added
+        plugin
+            plugin used to try opening paths, if any
+
+        Raises
+        ------
+        TypeError
+            when paths is *not* a list or tuple
+        NoAvailableReaderError
+            when no plugins are available to read path
+        ReaderPluginError
+            when reading with only available or prefered plugin fails
+        MultipleReaderError
+            when multiple readers are available to read the path
+        """
+        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
+        added = []
+        plugin = None
+        _path = paths[0]
+        # we want to display the paths nicely so make a help string here
+        path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
+        readers = get_potential_readers(_path)
+        if not readers:
+            raise NoAvailableReaderError(
+                trans._(
+                    'No plugin found capable of reading {path_message}.',
+                    path_message=path_message,
+                    deferred=True,
+                ),
+                paths,
+            )
+
+        plugin = get_preferred_reader(_path)
+        if plugin and plugin not in readers:
+            warnings.warn(
+                RuntimeWarning(
+                    trans._(
+                        "Can't find {plugin} plugin associated with {path_message} files. ",
                         plugin=plugin,
-                        layer_type=layer_type,
-                        stack=stack,
+                        path_message=path_message,
+                    )
+                    + trans._(
+                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    )
+                    + trans._(
+                        "You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`."
                     )
                 )
+            )
+            plugin = None
+
+        # preferred plugin exists, or we just have one plugin available
+        if plugin or len(readers) == 1:
+            plugin = plugin or next(iter(readers.keys()))
+            try:
+                added = self._add_layers_with_plugins(
+                    paths,
+                    kwargs=kwargs,
+                    stack=stack,
+                    plugin=plugin,
+                    layer_type=layer_type,
+                )
+            # plugin failed
+            except Exception as e:
+                raise ReaderPluginError(
+                    trans._(
+                        'Tried opening with {plugin}, but failed.',
+                        deferred=True,
+                        plugin=plugin,
+                    ),
+                    plugin,
+                    paths,
+                ) from e
+        # multiple plugins
+        else:
+            raise MultipleReaderError(
+                trans._(
+                    "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
+                    path_message=path_message,
+                    plugins=readers,
+                    deferred=True,
+                ),
+                list(readers.keys()),
+                paths,
+            )
+
         return added
 
     def _add_layers_with_plugins(
@@ -968,11 +1206,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         List[Layer]
             A list of any layers that were added to the viewer.
         """
-        from ..plugins.io import read_data_with_plugins
+        from napari.plugins.io import read_data_with_plugins
 
         assert stack is not None
         assert isinstance(paths, list)
         assert not isinstance(paths, str)
+        for p in paths:
+            assert isinstance(p, str)
 
         if stack:
             layer_data, hookimpl = read_data_with_plugins(

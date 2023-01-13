@@ -4,11 +4,12 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
-from ...utils.translations import trans
-from ..utils.gl import fix_data_dtype, get_gl_extensions
-from ..visuals.image import Image as ImageNode
-from ..visuals.volume import Volume as VolumeNode
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.utils.gl import fix_data_dtype, get_gl_extensions
+from napari._vispy.visuals.image import Image as ImageNode
+from napari._vispy.visuals.volume import Volume as VolumeNode
+from napari.layers.base._base_constants import Blending
+from napari.utils.translations import trans
 
 
 class ImageLayerNode:
@@ -59,7 +60,12 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(
             self._on_contrast_limits_change
@@ -85,11 +91,11 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_display_change(self, data=None):
         parent = self.node.parent
         self.node.parent = None
-
-        self.node = self._layer_node.get_node(self.layer._ndisplay)
+        ndisplay = self.layer._slice_input.ndisplay
+        self.node = self._layer_node.get_node(ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.float32)
+            data = np.zeros((1,) * ndisplay, dtype=np.float32)
 
         if self.layer._empty:
             self.node.visible = False
@@ -115,22 +121,21 @@ class VispyImageLayer(VispyBaseLayer):
         """Our self.layer._data_view has been updated, update our node."""
 
         data = fix_data_dtype(data)
+        ndisplay = self.layer._slice_input.ndisplay
 
-        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
+        if ndisplay == 3 and self.layer.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
-        if self.MAX_TEXTURE_SIZE_2D is not None and self.layer._ndisplay == 2:
+        if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_2D)
-        elif (
-            self.MAX_TEXTURE_SIZE_3D is not None and self.layer._ndisplay == 3
-        ):
+        elif self.MAX_TEXTURE_SIZE_3D is not None and ndisplay == 3:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
         # Check if ndisplay has changed current node type needs updating
-        if (
-            self.layer._ndisplay == 3 and not isinstance(node, VolumeNode)
-        ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
+        if (ndisplay == 3 and not isinstance(node, VolumeNode)) or (
+            ndisplay == 2 and not isinstance(node, ImageNode)
+        ):
             self._on_display_change(data)
         else:
             node.set_data(data)
@@ -145,7 +150,11 @@ class VispyImageLayer(VispyBaseLayer):
         node.update()
 
     def _on_interpolation_change(self):
-        self.node.interpolation = self.layer.interpolation
+        self.node.interpolation = (
+            self.layer.interpolation2d
+            if self.layer._slice_input.ndisplay == 2
+            else self.layer.interpolation3d
+        )
 
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):
@@ -160,8 +169,31 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_colormap_change(self):
         self.node.cmap = VispyColormap(*self.layer.colormap)
 
+    def _update_mip_minip_cutoff(self):
+        # discard fragments beyond contrast limits, but only with translucent blending
+        if isinstance(self.node, VolumeNode):
+            if self.layer.blending in {
+                Blending.TRANSLUCENT,
+                Blending.TRANSLUCENT_NO_DEPTH,
+            }:
+                self.node.mip_cutoff = self.node._texture.clim_normalized[0]
+                self.node.minip_cutoff = self.node._texture.clim_normalized[1]
+            else:
+                self.node.mip_cutoff = None
+                self.node.minip_cutoff = None
+
     def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
+        # cutoffs must be updated after clims, so we can set them to the new values
+        self._update_mip_minip_cutoff()
+        # iso also may depend on contrast limit values
+        self._on_iso_threshold_change()
+
+    def _on_blending_change(self):
+        super()._on_blending_change()
+        # cutoffs must be updated after blending, so we can know if
+        # the new blending is a translucent one
+        self._update_mip_minip_cutoff()
 
     def _on_gamma_change(self):
         if len(self.node.shared_program.frag._set_items) > 0:
@@ -169,7 +201,13 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_iso_threshold_change(self):
         if isinstance(self.node, VolumeNode):
-            self.node.threshold = self.layer.iso_threshold
+            if self.node._texture.is_normalized:
+                cmin, cmax = self.layer.contrast_limits_range
+                self.node.threshold = (self.layer.iso_threshold - cmin) / (
+                    cmax - cmin
+                )
+            else:
+                self.node.threshold = self.layer.iso_threshold
 
     def _on_attenuation_change(self):
         if isinstance(self.node, VolumeNode):
@@ -222,7 +260,7 @@ class VispyImageLayer(VispyBaseLayer):
                         deferred=True,
                         shape=data.shape,
                         texture_size=MAX_TEXTURE_SIZE,
-                        ndisplay=self.layer._ndisplay,
+                        ndisplay=self.layer._slice_input.ndisplay,
                     )
                 )
             warnings.warn(
@@ -231,14 +269,14 @@ class VispyImageLayer(VispyBaseLayer):
                     deferred=True,
                     shape=data.shape,
                     texture_size=MAX_TEXTURE_SIZE,
-                    ndisplay=self.layer._ndisplay,
+                    ndisplay=self.layer._slice_input.ndisplay,
                 )
             )
             downsample = np.ceil(
                 np.divide(data.shape, MAX_TEXTURE_SIZE)
             ).astype(int)
             scale = np.ones(self.layer.ndim)
-            for i, d in enumerate(self.layer._dims_displayed):
+            for i, d in enumerate(self.layer._slice_input.displayed):
                 scale[d] = downsample[i]
             self.layer._transforms['tile2data'].scale = scale
             self._on_matrix_change()

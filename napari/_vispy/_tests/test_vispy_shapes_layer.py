@@ -6,6 +6,7 @@ from napari.layers import Shapes
 
 def test_remove_selected_with_derived_text():
     """See https://github.com/napari/napari/issues/3504"""
+    np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Shapes(shapes, properties=properties, text='class')
@@ -20,6 +21,7 @@ def test_remove_selected_with_derived_text():
 
 
 def test_change_text_updates_node_string():
+    np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
     properties = {
         'class': np.array(['A', 'B', 'C']),
@@ -36,9 +38,10 @@ def test_change_text_updates_node_string():
 
 
 def test_change_text_color_updates_node_color():
+    np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    text = {'text': 'class', 'color': [1, 0, 0]}
+    text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Shapes(shapes, properties=properties, text=text)
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
@@ -50,6 +53,7 @@ def test_change_text_color_updates_node_color():
 
 
 def test_change_properties_updates_node_strings():
+    np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Shapes(shapes, properties=properties, text='class')
@@ -63,6 +67,7 @@ def test_change_properties_updates_node_strings():
 
 
 def test_update_property_value_then_refresh_text_updates_node_strings():
+    np.random.seed(0)
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Shapes(shapes, properties=properties, text='class')
@@ -74,3 +79,24 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     layer.refresh_text()
 
     np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
+
+
+def test_text_with_non_empty_constant_string():
+    np.random.seed(0)
+    shapes = np.random.rand(3, 4, 2)
+    layer = Shapes(shapes, text={'string': {'constant': 'a'}})
+
+    vispy_layer = VispyShapesLayer(layer)
+
+    text_node = vispy_layer._get_text_node()
+    # Vispy cannot broadcast a constant string and assert_array_equal
+    # automatically broadcasts, so explicitly check length.
+    assert len(text_node.text) == 3
+    np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
+
+    # Ensure we do position calculation for constants.
+    # See https://github.com/napari/napari/issues/5378
+    expected_position = np.mean(shapes, axis=1)
+    # We want row, column coordinates so drop 3rd dimension and flip.
+    actual_position = text_node.pos[:, 1::-1]
+    np.testing.assert_allclose(actual_position, expected_position)

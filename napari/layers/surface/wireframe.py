@@ -1,7 +1,5 @@
-from typing import Union
-
-from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
+from napari.utils.color import ColorValue
+from napari.utils.events import EventedModel
 
 
 class SurfaceWireframe(EventedModel):
@@ -12,14 +10,13 @@ class SurfaceWireframe(EventedModel):
     ----------
     visible : bool
         Whether the wireframe is displayed.
-    color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
+    color : ColorValue
+        The color of the wireframe lines.
+        See ``ColorValue.validate`` for supported values.
     width : float
         The width of the wireframe lines.
     """
 
     visible: bool = False
-    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
+    color: ColorValue = 'black'
     width: float = 1

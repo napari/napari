@@ -1,4 +1,12 @@
-"""Shift a rectangle along its normal vector in 3D"""
+"""
+Interactive move rectangle
+==========================
+
+Shift a rectangle along its normal vector in 3D
+
+.. tags:: experimental
+"""
+
 import napari
 import numpy as np
 
@@ -60,4 +68,5 @@ def move_rectangle_along_normal(layer, event):
     layer.interactive = True
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

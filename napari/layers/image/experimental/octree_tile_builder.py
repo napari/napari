@@ -9,8 +9,8 @@ import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
 
-from ....utils.perf import block_timer
-from .octree_util import NormalNoise
+from napari.layers.image.experimental.octree_util import NormalNoise
+from napari.utils.perf import block_timer
 
 LOGGER = logging.getLogger("napari.octree")
 
@@ -22,7 +22,7 @@ def add_delay(array, delay_ms: NormalNoise):
 
     Parameters
     ----------
-    noise : NormalNoise
+    delay_ms : NormalNoise
         The amount of the random delay in milliseconds.
     """
 

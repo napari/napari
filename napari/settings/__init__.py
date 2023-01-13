@@ -1,9 +1,12 @@
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional
 
-from ..utils.translations import trans
-from ._base import _NOT_SET
-from ._napari_settings import CURRENT_SCHEMA_VERSION, NapariSettings
+from napari.settings._base import _NOT_SET
+from napari.settings._napari_settings import (
+    CURRENT_SCHEMA_VERSION,
+    NapariSettings,
+)
+from napari.utils.translations import trans
 
 __all__ = ['NapariSettings', 'get_settings', 'CURRENT_SCHEMA_VERSION']
 
@@ -52,7 +55,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
-        raise Exception(
+        raise RuntimeError(
             trans._(
                 "The path can only be set once per session. Settings called from {calframe}",
                 deferred=True,

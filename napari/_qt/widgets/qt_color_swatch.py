@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 import numpy as np
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
-from qtpy.QtGui import QColor, QKeyEvent
+from qtpy.QtGui import QColor, QKeyEvent, QMouseEvent
 from qtpy.QtWidgets import (
     QColorDialog,
     QCompleter,
@@ -15,14 +15,14 @@ from qtpy.QtWidgets import (
 )
 from vispy.color import get_color_dict
 
-from ...utils.colormaps.colormap_utils import ColorType
-from ...utils.colormaps.standardize_color import (
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari.utils.colormaps.colormap_utils import ColorType
+from napari.utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,
     transform_color,
 )
-from ...utils.translations import trans
-from ..dialogs.qt_modal import QtPopup
+from napari.utils.translations import trans
 
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.
@@ -153,8 +153,8 @@ class QColorSwatch(QFrame):
     ):
         super().__init__(parent)
         self.setObjectName('colorSwatch')
-        self.setToolTip(tooltip or trans.__('click to set color'))
-        self.setCursor(Qt.PointingHandCursor)
+        self.setToolTip(tooltip or trans._('click to set color'))
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.color_changed.connect(self._update_swatch_style)
         self._color: np.ndarray = TRANSPARENT
@@ -172,9 +172,9 @@ class QColorSwatch(QFrame):
         rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
-    def mouseReleaseEvent(self, event: QEvent):
+    def mouseReleaseEvent(self, event: QMouseEvent):
         """Show QColorPopup picker when the user clicks on the swatch."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             initial = QColor(*(255 * self._color).astype('int'))
             popup = QColorPopup(self, initial)
             popup.colorSelected.connect(self.setColor)
@@ -306,8 +306,8 @@ class QColorPopup(QtPopup):
         event : QKeyEvent
             The keypress event that triggered this method.
         """
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             return self.color_dialog.accept()
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             return self.color_dialog.reject()
         self.color_dialog.keyPressEvent(event)

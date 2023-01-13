@@ -1,7 +1,11 @@
 """
+Scale bar
+=========
+
 Display a 3D volume and the scale bar
+
+.. tags:: experimental
 """
-import numpy as np
 import napari
 from skimage import data
 
@@ -18,4 +22,5 @@ viewer.add_image(
 viewer.scale_bar.visible = True
 viewer.scale_bar.unit = "um"
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

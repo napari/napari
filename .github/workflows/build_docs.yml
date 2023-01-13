@@ -1,4 +1,4 @@
-name: Build Docs
+name: Build PR Docs
 
 on:
   pull_request:
@@ -7,29 +7,46 @@ on:
   push:
     branches:
       - docs
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
-  build-and-upload-artifact:
+  build-and-upload:
     name: Build & Upload Artifact
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code + LFS with cache
-        uses: nschloe/action-cached-lfs-checkout@v1
-        # See discussion at https://github.com/actions/checkout/issues/165
-        # This is a bundling of the pattern in this comment:
-        # https://github.com/actions/checkout/issues/165#issuecomment-657673315
+      - name: Clone docs repo
+        uses: actions/checkout@v3
+        with:
+          path: docs  # place in a named directory
+          repository: napari/docs
 
-      - uses: actions/setup-python@v2
+      - name: Clone main repo
+        uses: actions/checkout@v3
+        with:
+          path: napari-repo
+
+      - name: Copy examples to docs folder
+        run: |
+          cp -R napari-repo/examples docs
+
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[docs]"
+          python -m pip install "napari-repo/[all]"
+
+      - name: Testing
+        run: |
+          python -c 'import napari; print(napari.__version__)'
+          python -c 'import napari.layers; print(napari.layers.__doc__)'
 
       - name: Build Docs
         uses: GabrielBB/xvfb-action@v1
@@ -37,10 +54,12 @@ jobs:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
           GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
         with:
-          run: make docs
+          # the napari-docs repo is cloned into a docs/ folder, hence the
+          # invocation below. Locally, you should simply run make docs
+          run: make -C docs docs GALLERY_PATH=../examples/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: docs
-          path: docs/_build
+          path: docs/docs/_build

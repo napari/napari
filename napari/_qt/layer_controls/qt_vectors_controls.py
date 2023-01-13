@@ -1,12 +1,17 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
 
-from ...layers.utils._color_manager_constants import ColorMode
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtVectorsControls(QtLayerControls):
@@ -21,18 +26,14 @@ class QtVectorsControls(QtLayerControls):
     ----------
     edge_color_label : qtpy.QtWidgets.QLabel
         Label for edgeColorSwatch
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
-        Color swatch showing display color of vectors.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
-        Dropdown widget to select display color for vectors.
+    edgeColorEdit : QColorSwatchEdit
+        Widget to select display color for vectors.
     color_mode_comboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
     color_prop_box : qtpy.QtWidgets.QComboBox
         Dropdown widget to select _edge_color_property for the vectors.
     edge_prop_label : qtpy.QtWidgets.QLabel
         Label for color_prop_box
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
     outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
@@ -44,25 +45,19 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
+    layer: 'napari.layers.Tracks'
+
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.edge_width.connect(self._on_edge_width_change)
-        self.layer.events.length.connect(self._on_length_change)
-        self.layer.events.out_of_slice_display.connect(
-            self._on_out_of_slice_display_change
-        )
-        self.layer.events.edge_color_mode.connect(
-            self._on_edge_color_mode_change
-        )
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
-
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
-        color_prop_box = QComboBox(self)
-        color_prop_box.activated[str].connect(self.change_edge_color_property)
-        color_prop_box.addItems(color_properties)
-        self.color_prop_box = color_prop_box
+        self.color_prop_box = QComboBox(self)
+        self.color_prop_box.currentTextChanged.connect(
+            self.change_edge_color_property
+        )
+        self.color_prop_box.addItems(color_properties)
+
         self.edge_prop_label = QLabel(trans._('edge property:'))
 
         # vector direct color mode adjustment and widget
@@ -77,11 +72,12 @@ class QtVectorsControls(QtLayerControls):
         self._on_edge_color_change()
 
         # dropdown to select the edge color mode
-        colorModeComboBox = QComboBox(self)
+        self.color_mode_comboBox = QComboBox(self)
         color_modes = [e.value for e in ColorMode]
-        colorModeComboBox.addItems(color_modes)
-        colorModeComboBox.activated[str].connect(self.change_edge_color_mode)
-        self.color_mode_comboBox = colorModeComboBox
+        self.color_mode_comboBox.addItems(color_modes)
+        self.color_mode_comboBox.currentTextChanged.connect(
+            self.change_edge_color_mode
+        )
         self._on_edge_color_mode_change()
 
         # line width in pixels
@@ -108,27 +104,26 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('width:')), 1, 0)
-        self.grid_layout.addWidget(self.widthSpinBox, 1, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('length:')), 2, 0)
-        self.grid_layout.addWidget(self.lengthSpinBox, 2, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('edge color mode:')), 4, 0)
-        self.grid_layout.addWidget(self.color_mode_comboBox, 4, 1, 1, 2)
-        self.grid_layout.addWidget(self.edge_color_label, 5, 0)
-        self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)
-        self.grid_layout.addWidget(self.edge_prop_label, 6, 0)
-        self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 7, 0)
-        self.grid_layout.addWidget(self.outOfSliceCheckBox, 7, 1)
-        self.grid_layout.setRowStretch(8, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(trans._('width:'), self.widthSpinBox)
+        self.layout().addRow(trans._('length:'), self.lengthSpinBox)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(
+            trans._('edge color mode:'), self.color_mode_comboBox
+        )
+        self.layout().addRow(self.edge_color_label, self.edgeColorEdit)
+        self.layout().addRow(self.edge_prop_label, self.color_prop_box)
+        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
+
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.length.connect(self._on_length_change)
+        self.layer.events.out_of_slice_display.connect(
+            self._on_out_of_slice_display_change
+        )
+        self.layer.events.edge_color_mode.connect(
+            self._on_edge_color_mode_change
+        )
+        self.layer.events.edge_color.connect(self._on_edge_color_change)
 
     def change_edge_color_property(self, property: str):
         """Change edge_color_property of vectors on the layer model.
@@ -212,10 +207,7 @@ class QtVectorsControls(QtLayerControls):
         state : QCheckBox
             Checkbox to indicate whether to render out of slice.
         """
-        if state == Qt.Checked:
-            self.layer.out_of_slice_display = True
-        else:
-            self.layer.out_of_slice_display = False
+        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
@@ -227,7 +219,7 @@ class QtVectorsControls(QtLayerControls):
             The new edge_color mode the GUI needs to be updated for.
             Should be: 'direct', 'cycle', 'colormap'
         """
-        if mode in ('cycle', 'colormap'):
+        if mode in {'cycle', 'colormap'}:
             self.edgeColorEdit.setHidden(True)
             self.edge_color_label.setHidden(True)
             self.color_prop_box.setHidden(False)

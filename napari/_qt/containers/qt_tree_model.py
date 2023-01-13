@@ -4,9 +4,9 @@ from typing import List, Optional, Tuple, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ...utils.translations import trans
-from ...utils.tree import Group, Node
-from ._base_item_model import _BaseEventedItemModel
+from napari._qt.containers._base_item_model import _BaseEventedItemModel
+from napari.utils.translations import trans
+from napari.utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)
@@ -34,9 +34,9 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         its own "ItemDataRole".
         """
         item = self.getItem(index)
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item._node_name()
-        if role == Qt.UserRole:
+        if role == Qt.ItemDataRole.UserRole:
             return self.getItem(index)
         return None
 
@@ -151,7 +151,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         bool ``True`` if the `data` and `action` were handled by the model;
             otherwise returns ``False``.
         """
-        if not data or action != Qt.MoveAction:
+        if not data or action != Qt.DropAction.MoveAction:
             return False
         if not data.hasFormat(self.mimeTypes()[0]):
             return False

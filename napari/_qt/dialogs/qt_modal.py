@@ -2,7 +2,7 @@ from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtPopup(QDialog):
@@ -30,8 +30,6 @@ class QtPopup(QDialog):
     ----------
     frame : qtpy.QtWidgets.QFrame
         Frame of the popup dialog box.
-    layout : qtpy.QtWidgets.QVBoxLayout
-        Layout of the popup dialog box.
     """
 
     def __init__(self, parent):
@@ -159,7 +157,7 @@ class QtPopup(QDialog):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.close()
             return
         super().keyPressEvent(event)

@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from .group import Group
+    from napari.utils.tree.group import Group
 
 
 class Node:
@@ -30,7 +30,15 @@ class Node:
 
     def __init__(self, name: str = "Node"):
         self.parent: Optional[Group] = None
-        self.name = name
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
 
     def is_group(self) -> bool:
         """Return True if this Node is a composite.
@@ -41,9 +49,7 @@ class Node:
 
     def index_in_parent(self) -> Optional[int]:
         """Return index of this Node in its parent, or None if no parent."""
-        if self.parent is not None:
-            return self.parent.index(self)
-        return None
+        return self.parent.index(self) if self.parent is not None else None
 
     def index_from_root(self) -> Tuple[int, ...]:
         """Return index of this Node relative to root.
@@ -57,7 +63,21 @@ class Node:
             item = item.parent
         return tuple(indices)
 
-    def traverse(self, leaves_only=False) -> Generator['Node', None, None]:
+    def iter_parents(self):
+        """Iterate the parent chain, starting with nearest relatives"""
+        obj = self.parent
+        while obj:
+            yield obj
+            obj = obj.parent
+
+    def root(self) -> 'Node':
+        """Get the root parent."""
+        parents = list(self.iter_parents())
+        return parents[-1] if parents else self
+
+    def traverse(
+        self, leaves_only=False, with_ancestors=False
+    ) -> Generator['Node', None, None]:
         """Recursive all nodes and leaves of the Node.
 
         This is mostly used by :class:`~napari.utils.tree.Group`, which can

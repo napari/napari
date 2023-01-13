@@ -1,3 +1,9 @@
+"""
+Show points based on feature
+============================
+
+.. tags:: visualization-advanced
+"""
 #!/usr/bin/env python3
 
 import napari
@@ -28,4 +34,5 @@ def confidence_slider(layer: napari.layers.Points, threshold=0.5):
 
 viewer.window.add_dock_widget(confidence_slider)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

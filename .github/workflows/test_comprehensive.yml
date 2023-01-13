@@ -1,25 +1,28 @@
-# The full test suite, which will be run anytime anything is merged into main.
+# The Comprehensive test suite, which will be run anytime anything is merged into main.
 # See test_pull_request.yml for the tests that will be run
-name: Full Test
+name: Comprehensive Test
 
 on:
   push:
     branches:
       - main
+      - "v*x"
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-jobs:
+concurrency:
+  group: comprehensive-test
 
+jobs:
   manifest:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install dependencies
@@ -37,34 +40,40 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
         python: ["3.8", "3.9", "3.10"]
+        backend: [pyqt5, pyside2]
         include:
-          # test big sur on 3.9.0
           - python: 3.9
-            platform: macos-11
-            toxenv: py39-macos-pyqt
+            platform: macos-latest
+            backend: pyqt5
           # test with minimum specified requirements
           - python: 3.8
             platform: ubuntu-18.04
+            backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
             platform: ubuntu-18.04
-            toxenv: async-py38-linux-pyqt
+            toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
-          - python: '3.10'
-            platform: ubuntu-latest
-            toxenv: py310-linux-pyside
+
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -75,6 +84,12 @@ jobs:
           git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
+
+      # run a minimal wm for linux tests that depend on UI events (e.g. setFocus)
+      # see https://github.com/pytest-dev/pytest-qt/issues/206
+      - name: Install WM on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y herbstluftwm
 
       - name: Install dependencies
         run: |
@@ -96,14 +111,14 @@ jobs:
           run: python -m tox
         env:
           PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
           TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
-        if: runner.os == 'Linux' && matrix.python == '3.9'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
       - name: Report Failures
         if: ${{ failure() }}
@@ -114,7 +129,7 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: '[test-bot] Comprehensive tests failing'
+          TITLE: "[test-bot] Comprehensive tests failing"
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
@@ -123,16 +138,22 @@ jobs:
     name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: napari-from-github
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
+          cache: "pip"
+          cache-dependency-path: napari-from-github/setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
+
+      - name: Install WM
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y herbstluftwm
 
       - name: Install this commit
         run: |
@@ -143,3 +164,22 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
+
+  test_examples:
+    name: test examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
+      - name: Install this commit
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox -e py39-linux-pyside2-examples

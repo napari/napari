@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -9,16 +11,21 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLabeledDoubleSlider
 
-from ...layers.image._image_constants import (
+from napari._qt.layer_controls.qt_image_controls_base import (
+    QtBaseImageControls,
+)
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
-    Interpolation3D,
     VolumeDepiction,
 )
-from ...utils.action_manager import action_manager
-from ...utils.translations import trans
-from .qt_image_controls_base import QtBaseImageControls
-from .qt_layer_controls_base import LayerListGridLayout
+from napari.utils.action_manager import action_manager
+from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import napari.layers
 
 
 class QtImageControls(QtBaseImageControls):
@@ -35,8 +42,6 @@ class QtImageControls(QtBaseImageControls):
         Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
         Label for the attenuation slider widget.
-    grid_layout : qtpy.QtWidgets.QGridLayout
-        Layout of Qt widget controls for the layer.
     interpComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select the interpolation mode for image display.
     interpLabel : qtpy.QtWidgets.QLabel
@@ -53,10 +58,17 @@ class QtImageControls(QtBaseImageControls):
         Label for the rendering mode dropdown menu.
     """
 
+    layer: 'napari.layers.Image'
+
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.interpolation2d.connect(
+            self._on_interpolation_change
+        )
+        self.layer.events.interpolation3d.connect(
+            self._on_interpolation_change
+        )
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
@@ -67,17 +79,19 @@ class QtImageControls(QtBaseImageControls):
         )
 
         self.interpComboBox = QComboBox(self)
-        self.interpComboBox.activated[str].connect(self.changeInterpolation)
+        self.interpComboBox.currentTextChanged.connect(
+            self.changeInterpolation
+        )
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
         rendering_options = [i.value for i in ImageRendering]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFixedString
+            self.layer.rendering, Qt.MatchFlag.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(self.changeRendering)
+        renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 
@@ -85,48 +99,56 @@ class QtImageControls(QtBaseImageControls):
         depiction_options = [d.value for d in VolumeDepiction]
         self.depictionComboBox.addItems(depiction_options)
         index = self.depictionComboBox.findText(
-            self.layer.depiction, Qt.MatchFixedString
+            self.layer.depiction, Qt.MatchFlag.MatchFixedString
         )
         self.depictionComboBox.setCurrentIndex(index)
-        self.depictionComboBox.activated[str].connect(self.changeDepiction)
+        self.depictionComboBox.currentTextChanged.connect(self.changeDepiction)
         self.depictionLabel = QLabel(trans._('depiction:'))
 
-        self.planeControls = QtPlaneControls()
-        self.planeControls.planeThicknessSlider.setValue(
-            self.layer.plane.thickness
-        )
-        self.planeControls.planeThicknessSlider.valueChanged.connect(
-            self.changePlaneThickness
-        )
+        # plane controls
+        self.planeNormalButtons = PlaneNormalButtons(self)
+        self.planeNormalLabel = QLabel(trans._('plane normal:'))
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
-            self.planeControls.planeNormalButtons.zButton,
+            self.planeNormalButtons.zButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_y',
-            self.planeControls.planeNormalButtons.yButton,
+            self.planeNormalButtons.yButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_x',
-            self.planeControls.planeNormalButtons.xButton,
+            self.planeNormalButtons.xButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_view_direction',
-            self.planeControls.planeNormalButtons.obliqueButton,
+            self.planeNormalButtons.obliqueButton,
         )
 
-        sld = QSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(int(self.layer.iso_threshold * 100))
+        self.planeThicknessSlider = QLabeledDoubleSlider(
+            Qt.Orientation.Horizontal, self
+        )
+        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
+        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
+        self.planeThicknessSlider.setMinimum(1)
+        self.planeThicknessSlider.setMaximum(50)
+        self.planeThicknessSlider.setValue(self.layer.plane.thickness)
+        self.planeThicknessSlider.valueChanged.connect(
+            self.changePlaneThickness
+        )
+
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        cmin, cmax = self.layer.contrast_limits_range
+        sld.setMinimum(cmin)
+        sld.setMaximum(cmax)
+        sld.setValue(self.layer.iso_threshold)
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
 
-        sld = QSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -146,34 +168,23 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 1, 0)
-        self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('auto-contrast:')), 2, 0)
-        self.grid_layout.addWidget(self.autoScaleBar, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('gamma:')), 3, 0)
-        self.grid_layout.addWidget(self.gammaSlider, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 4, 0)
-        self.grid_layout.addLayout(colormap_layout, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 5, 1)
-        self.grid_layout.addWidget(self.interpLabel, 6, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
-        self.grid_layout.addWidget(self.renderLabel, 7, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 7, 1)
-        self.grid_layout.addWidget(self.depictionLabel, 8, 0)
-        self.grid_layout.addWidget(self.depictionComboBox, 8, 1)
-        self.grid_layout.addWidget(self.planeControls, 9, 0, 2, 2)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 11, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 11, 1)
-        self.grid_layout.addWidget(self.attenuationLabel, 12, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 12, 1)
-        self.grid_layout.setRowStretch(13, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(
+            trans._('contrast limits:'), self.contrastLimitsSlider
+        )
+        self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
+        self.layout().addRow(trans._('gamma:'), self.gammaSlider)
+        self.layout().addRow(trans._('colormap:'), colormap_layout)
+        self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.layout().addRow(self.interpLabel, self.interpComboBox)
+        self.layout().addRow(self.depictionLabel, self.depictionComboBox)
+        self.layout().addRow(self.renderLabel, self.renderComboBox)
+        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
+        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
+        self.layout().addRow(self.planeNormalLabel, self.planeNormalButtons)
+        self.layout().addRow(
+            self.planeThicknessLabel, self.planeThicknessSlider
+        )
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
@@ -183,11 +194,14 @@ class QtImageControls(QtBaseImageControls):
         text : str
             Interpolation mode used by vispy. Must be one of our supported
             modes:
-            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+            'bessel', 'bicubic', 'linear', 'blackman', 'catrom', 'gaussian',
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
         """
-        self.layer.interpolation = text
+        if self.layer._slice_input.ndisplay == 2:
+            self.layer.interpolation2d = text
+        else:
+            self.layer.interpolation3d = text
 
     def changeRendering(self, text):
         """Change rendering mode for image display.
@@ -231,14 +245,19 @@ class QtImageControls(QtBaseImageControls):
             Threshold for isosurface.
         """
         with self.layer.events.blocker(self._on_iso_threshold_change):
-            self.layer.iso_threshold = value / 100
+            self.layer.iso_threshold = value
+
+    def _on_contrast_limits_change(self):
+        with self.layer.events.blocker(self._on_iso_threshold_change):
+            cmin, cmax = self.layer.contrast_limits_range
+            self.isoThresholdSlider.setMinimum(cmin)
+            self.isoThresholdSlider.setMaximum(cmax)
+        return super()._on_contrast_limits_change()
 
     def _on_iso_threshold_change(self):
         """Receive layer model isosurface change event and update the slider."""
         with self.layer.events.iso_threshold.blocker():
-            self.isoThresholdSlider.setValue(
-                int(self.layer.iso_threshold * 100)
-            )
+            self.isoThresholdSlider.setValue(self.layer.iso_threshold)
 
     def changeAttenuation(self, value):
         """Change attenuation rate for attenuated maximum intensity projection.
@@ -266,7 +285,7 @@ class QtImageControls(QtBaseImageControls):
         """
         interp_string = event.value.value
 
-        with self.layer.events.interpolation.blocker():
+        with self.layer.events.interpolation.blocker(), self.layer.events.interpolation2d.blocker(), self.layer.events.interpolation3d.blocker():
             if self.interpComboBox.findText(interp_string) == -1:
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)
@@ -275,7 +294,7 @@ class QtImageControls(QtBaseImageControls):
         """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
-                self.layer.rendering, Qt.MatchFixedString
+                self.layer.rendering, Qt.MatchFlag.MatchFixedString
             )
             self.renderComboBox.setCurrentIndex(index)
             self._toggle_rendering_parameter_visbility()
@@ -284,16 +303,14 @@ class QtImageControls(QtBaseImageControls):
         """Receive layer model depiction change event and update combobox."""
         with self.layer.events.depiction.blocker():
             index = self.depictionComboBox.findText(
-                self.layer.depiction, Qt.MatchFixedString
+                self.layer.depiction, Qt.MatchFlag.MatchFixedString
             )
             self.depictionComboBox.setCurrentIndex(index)
             self._toggle_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self):
         with self.layer.plane.events.blocker():
-            self.planeControls.planeThicknessSlider.setValue(
-                self.layer.plane.thickness
-            )
+            self.planeThicknessSlider.setValue(self.layer.plane.thickness)
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
@@ -314,29 +331,35 @@ class QtImageControls(QtBaseImageControls):
     def _toggle_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        if depiction == VolumeDepiction.VOLUME or self.layer._ndisplay == 2:
-            self.planeControls.hide()
-        if depiction == VolumeDepiction.PLANE and self.layer._ndisplay == 3:
-            self.planeControls.show()
+        ndisplay = self.layer._slice_input.ndisplay
+        if depiction == VolumeDepiction.VOLUME or ndisplay == 2:
+            self.planeNormalButtons.hide()
+            self.planeNormalLabel.hide()
+            self.planeThicknessSlider.hide()
+            self.planeThicknessLabel.hide()
+        if depiction == VolumeDepiction.PLANE and ndisplay == 3:
+            self.planeNormalButtons.show()
+            self.planeNormalLabel.show()
+            self.planeThicknessSlider.show()
+            self.planeThicknessLabel.show()
 
     def _update_interpolation_combo(self):
-        self.interpComboBox.clear()
-        interp_names = (
-            Interpolation3D.keys()
-            if self.layer._ndisplay == 3
-            else [i.value for i in Interpolation.view_subset()]
+        interp_names = [i.value for i in Interpolation.view_subset()]
+        interp = (
+            self.layer.interpolation2d
+            if self.layer._slice_input.ndisplay == 2
+            else self.layer.interpolation3d
         )
-        self.interpComboBox.addItems(interp_names)
-        index = self.interpComboBox.findText(
-            self.layer.interpolation, Qt.MatchFixedString
-        )
-        self.interpComboBox.setCurrentIndex(index)
+        with qt_signals_blocked(self.interpComboBox):
+            self.interpComboBox.clear()
+            self.interpComboBox.addItems(interp_names)
+            self.interpComboBox.setCurrentText(interp)
 
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
         self._toggle_plane_parameter_visibility()
-        if self.layer._ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()
@@ -383,26 +406,3 @@ class PlaneNormalButtons(QWidget):
         self.layout().addWidget(self.yButton)
         self.layout().addWidget(self.zButton)
         self.layout().addWidget(self.obliqueButton)
-
-
-class QtPlaneControls(QWidget):
-    """Qt widget encapsulating plane controls for an image layer."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.grid_layout = LayerListGridLayout(self)
-        self.setLayout(self.grid_layout)
-
-        self.planeNormalLabel = QLabel(trans._('plane normal:'))
-        self.planeNormalButtons = PlaneNormalButtons(parent=self)
-
-        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
-        self.planeThicknessSlider.setMinimum(1)
-        self.planeThicknessSlider.setMaximum(50)
-        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
-
-        self.grid_layout.addWidget(self.planeNormalLabel, 1, 0)
-        self.grid_layout.addWidget(self.planeNormalButtons, 1, 1)
-        self.grid_layout.addWidget(self.planeThicknessLabel, 2, 0)
-        self.grid_layout.addWidget(self.planeThicknessSlider, 2, 1)

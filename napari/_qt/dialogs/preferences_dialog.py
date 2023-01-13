@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -34,7 +34,7 @@ class PreferencesDialog(QDialog):
     resized = Signal(QSize)
 
     def __init__(self, parent=None):
-        from ...settings import get_settings
+        from napari.settings import get_settings
 
         super().__init__(parent)
         self.setWindowTitle(trans._("Preferences"))
@@ -70,7 +70,7 @@ class PreferencesDialog(QDialog):
         self._rebuild_dialog()
 
     def keyPressEvent(self, e: 'QKeyEvent'):
-        if e.key() == Qt.Key_Escape:
+        if e.key() == Qt.Key.Key_Escape:
             # escape key should just close the window
             # which implies "accept"
             e.accept()
@@ -86,7 +86,7 @@ class PreferencesDialog(QDialog):
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
         # FIXME: this dialog should not need to know about the plugin manager
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         self._starting_pm_order = plugin_manager.call_order()
         self._starting_values = self._settings.dict(exclude={'schema_version'})
@@ -111,7 +111,9 @@ class PreferencesDialog(QDialog):
         field : ModelField
             subfield for which to create a page.
         """
-        from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
+        from napari._vendor.qt_json_builder.qt_jsonschema_form import (
+            WidgetBuilder,
+        )
 
         schema, values = self._get_page_dict(field)
         name = field.field_info.title or field.name
@@ -146,11 +148,30 @@ class PreferencesDialog(QDialog):
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(form)
 
-    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict, dict]:
+    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)
-        schema = json.loads(ftype.schema_json())
+
+        # TODO make custom shortcuts dialog to properly capture new
+        #      functionality once we switch to app-model's keybinding system
+        #      then we can remove the below code used for autogeneration
+        if field.name == 'shortcuts':
+            # hardcode workaround because pydantic's schema generation
+            # does not allow you to specify custom JSON serialization
+            schema = {
+                "title": "ShortcutsSettings",
+                "type": "object",
+                "properties": {
+                    "shortcuts": {
+                        "title": "shortcuts",
+                        "description": "Set keyboard shortcuts for actions.",
+                        "type": "object",
+                    }
+                },
+            }
+        else:
+            schema = json.loads(ftype.schema_json())
 
         # find enums:
         for name, subfield in ftype.__fields__.items():
@@ -204,7 +225,7 @@ class PreferencesDialog(QDialog):
 
         # FIXME: this dialog should not need to know about the plugin manager
         if self._starting_pm_order:
-            from ...plugins import plugin_manager
+            from napari.plugins import plugin_manager
 
             plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()

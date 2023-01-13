@@ -1,0 +1,17 @@
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "ci(dependabot):"
+
+  - package-ecosystem: "pip"
+    directory: "/resources"
+    schedule:
+      interval: "weekly"
+
+    target-branch: "develop"
