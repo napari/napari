@@ -220,16 +220,16 @@ class QtViewer(QSplitter):
         self._create_canvas()
 
         # Stacked widget to provide a welcome page
-        self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
-        self._canvas_overlay.set_welcome_visible(show_welcome_screen)
-        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
-        self._canvas_overlay.leave.connect(self._leave_canvas)
-        self._canvas_overlay.enter.connect(self._enter_canvas)
+        self._welcome_widget = QtWidgetOverlay(self, self.canvas.native)
+        self._welcome_widget.set_welcome_visible(show_welcome_screen)
+        self._welcome_widget.sig_dropped.connect(self.dropEvent)
+        self._welcome_widget.leave.connect(self._leave_canvas)
+        self._welcome_widget.enter.connect(self._enter_canvas)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
-        main_layout.addWidget(self._canvas_overlay)
+        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -291,7 +291,7 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
-        for overlay in self.viewer.overlays.values():
+        for overlay in self.viewer._overlays.values():
             self._add_overlay(overlay)
 
     @property
@@ -645,7 +645,7 @@ class QtViewer(QSplitter):
     def _update_welcome_screen(self):
         """Update welcome screen display based on layer count."""
         if self._show_welcome_screen:
-            self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
+            self._welcome_widget.set_welcome_visible(not self.viewer.layers)
 
     def _screenshot(self, flash=True):
         """Capture a screenshot of the Vispy canvas.
@@ -661,11 +661,11 @@ class QtViewer(QSplitter):
         if flash:
             from napari._qt.utils import add_flash_animation
 
-            # Here we are actually applying the effect to the `_canvas_overlay`
+            # Here we are actually applying the effect to the `_welcome_widget`
             # and not # the `native` widget because it does not work on the
             # `native` widget. It's probably because the widget is in a stack
             # with the `QtWelcomeWidget`.
-            add_flash_animation(self._canvas_overlay)
+            add_flash_animation(self._welcome_widget)
         return img
 
     def screenshot(self, path=None, flash=True):
@@ -1103,7 +1103,7 @@ class QtViewer(QSplitter):
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
         self._show_welcome_screen = visible
-        self._canvas_overlay.set_welcome_visible(visible)
+        self._welcome_widget.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.

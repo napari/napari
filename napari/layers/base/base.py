@@ -405,7 +405,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # TODO: we try to avoid inner event connection, but this might be the only way
         #       until we figure out nested evented objects
-        # self._overlays.events.connect(self.events._overlays)
+        self._overlays.events.connect(self.events._overlays)
 
     def __str__(self):
         """Return self.name."""

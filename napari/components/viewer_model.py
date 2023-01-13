@@ -150,15 +150,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    overlays: EventedDict[str, Overlay] = Field(
-        default_factory=lambda: {k: v() for k, v in DEFAULT_OVERLAYS.items()},
-        allow_mutation=False,
-    )
     help: str = ''
     status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
+    # private track of overlays, only expose the old ones for backward compatibility
+    _overlays: EventedDict[str, Overlay] = Field(
+        default_factory=lambda: {k: v() for k, v in DEFAULT_OVERLAYS.items()},
+        allow_mutation=False,
+    )
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
@@ -235,18 +236,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
 
-    # simple properties for backward compatibility
+    # simple properties exposing overlays for backward compatibility
     @property
     def axes(self):
-        return self.overlays['axes']
+        return self._overlays['axes']
 
     @property
     def scale_bar(self):
-        return self.overlays['scale_bar']
+        return self._overlays['scale_bar']
 
     @property
     def text_overlay(self):
-        return self.overlays['text']
+        return self._overlays['text']
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
