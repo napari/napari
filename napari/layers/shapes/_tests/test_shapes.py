@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -2166,3 +2167,32 @@ def test_set_data_3d():
     shapes = Shapes(lines, shape_type='line')
     shapes._slice_dims(ndisplay=3)
     shapes.data = lines
+
+
+def test_editing_4d():
+    viewer = ViewerModel()
+    viewer.add_shapes(
+        ndim=4,
+        name='rois',
+        edge_color='red',
+        face_color=np.array([0, 0, 0, 0]),
+        edge_width=1,
+    )
+
+    viewer.layers['rois'].add(
+        [
+            np.array(
+                [
+                    [1, 4, 1.7, 4.9],
+                    [1, 4, 1.7, 13.1],
+                    [1, 4, 13.5, 13.1],
+                    [1, 4, 13.5, 4.9],
+                ]
+            )
+        ]
+    )
+    # check if set data doe not end with an exception
+    # https://github.com/napari/napari/issues/5379
+    viewer.layers['rois'].data = [
+        np.around(x) for x in viewer.layers['rois'].data
+    ]
