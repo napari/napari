@@ -19,6 +19,10 @@ if TYPE_CHECKING:
 _SAVE_GRAPH_OPNAME = "--save-leaked-object-graph"
 
 
+def _empty(*_, **__):
+    """Empty function for mocking"""
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--show-napari-viewer",
@@ -46,7 +50,7 @@ def fail_obj_graph(Klass):
 
     try:
         import objgraph
-    except ImportError:
+    except ModuleNotFoundError:
         return
 
     if not len(Klass._instances) == 0:
@@ -130,7 +134,11 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot, request: 'FixtureRequest', napari_plugin_manager, clean_themes
+    qtbot,
+    request: 'FixtureRequest',
+    napari_plugin_manager,
+    monkeypatch,
+    clean_themes,
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
@@ -209,6 +217,12 @@ def make_napari_viewer(
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
     is_internal_test = request.module.__name__.startswith("napari.")
+
+    # disable throttling cursor event in tests
+    monkeypatch.setattr(
+        "napari._qt.qt_main_window._QtMainWindow._throttle_cursor_to_status_connection",
+        _empty,
+    )
 
     def actual_factory(
         *model_args,
@@ -289,7 +303,7 @@ def make_napari_viewer(
             # in particular with VisPyCanvas, it looks like if a traceback keeps
             # contains the type, then instances are still attached to the type.
             # I'm not too sure why this is the case though.
-            if _strict == 'raise':
+            if _strict:
                 raise AssertionError(msg)
             else:
                 warnings.warn(msg)
