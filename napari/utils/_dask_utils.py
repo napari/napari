@@ -15,6 +15,8 @@ from dask.cache import Cache
 _DASK_CACHE = Cache(1)
 _DEFAULT_MEM_FRACTION = 0.25
 
+DaskIndexer = Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]
+
 
 DaskIndexer = Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]
 

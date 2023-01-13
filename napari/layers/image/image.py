@@ -767,7 +767,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
         request = self._make_slice_request_internal(
-            self._slice_input, indices, lazy=True
+            slice_input=self._slice_input,
+            indices=indices,
+            lazy=True,
+            dask_indexer=nullcontext,
         )
         response = request()
         self._update_slice_response(response)
@@ -777,25 +780,27 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: for the existing sync slicing, slice_indices is passed through
+        # TODO: for the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
+        indices = slice_input.data_indices(self._data_to_world.inverse)
         return self._make_slice_request_internal(
-            slice_input,
-            slice_indices,
+            slice_input=slice_input,
+            indices=indices,
+            lazy=False,
             dask_indexer=self.dask_optimized_slicing,
         )
 
     def _make_slice_request_internal(
         self,
+        *,
         slice_input: _SliceInput,
-        slice_indices,
-        lazy: bool = False,
-        dask_indexer: DaskIndexer = nullcontext,
+        indices: Tuple[Union[int, slice], ...],
+        lazy: bool,
+        dask_indexer: DaskIndexer,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
@@ -807,7 +812,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             dims=slice_input,
             data=self.data,
             dask_indexer=dask_indexer,
-            slice_indices=slice_indices,
+            indices=indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -826,7 +831,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._empty = False
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=response.slice_indices,
+            indices=response.indices,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )

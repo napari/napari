@@ -69,6 +69,23 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     assert view.dockConsole.widget() is view.console
 
 
+@skip_local_popups
+def test_qt_viewer_console_focus(qtbot, make_napari_viewer, linux_wm):
+    """Test console has focus when instantiating from viewer."""
+    viewer = make_napari_viewer(show=True)
+    view = viewer.window._qt_viewer
+    assert not view.console.hasFocus(), "console has focus before being shown"
+
+    view.toggle_console_visibility(None)
+
+    def console_has_focus():
+        assert (
+            view.console.hasFocus()
+        ), "console does not have focus when shown"
+
+    qtbot.waitUntil(console_has_focus)
+
+
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
 

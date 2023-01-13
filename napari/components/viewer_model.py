@@ -346,7 +346,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _on_layer_reslice(self, event: Event) -> None:
-        self._layer_slicer.submit([event.layer], self.dims, _refresh_sync=True)
+        self._layer_slicer.submit(
+            layers=[event.layer], dims=self.dims, _refresh_sync=True
+        )
 
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
@@ -357,7 +359,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-        self._layer_slicer.submit(layers, self.dims)
+        self._layer_slicer.submit(layers=layers, dims=self.dims)
         # If the currently selected layer is sliced asynchronously, then the value
         # shown with this position may be incorrect. See the discussion for more details:
         # https://github.com/napari/napari/pull/5377#discussion_r1036280855

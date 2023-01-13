@@ -14,31 +14,11 @@ from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.types import DTypeLike
 
-"""
-Cases to consider
-- single + multiple layers that supports async (all of layers do support async)
-- single + multiple layers that don't support async (all of layers do not support async)
-- mix of layers that do and don't support async
-
-Behaviors we want to test:
-scheduling logic of the slicer (and not correctness of the slice response value)
-
-- for layers that support async, the slice task should not be run on the main
-  thread (we don't want to block the calling)
-- for layers that do not support async, slicing should always be done once
-  the method returns
-- slice requests should be run on the main thread
-- pending tasks are cancelled (at least when the new task will slice all
-  layers for the pending task)
-
-The fake request, response, and layers exist to give structure against which to
-test (class instances and attributes) and to remain isolated from the existing
-codebase. They represent what will become real classes in the codebase which
-have additional methods and properties that don't currently exist.
-
-Run all tests with:
-pytest napari/components/_tests/test_layer_slicer.py -svv
-"""
+# The following fakes are used to control execution of slicing across
+# multiple threads, while also allowing us to mimic real classes
+# (like layers) in the code base. This allows us to assert state and
+# conditions that may only be temporarily true at different stages of
+# an asynchronous task.
 
 
 @dataclass(frozen=True)
@@ -115,9 +95,6 @@ class LockableData:
 @pytest.fixture()
 def layer_slicer():
     layer_slicer = _LayerSlicer()
-    # Initially, force_sync will be True to maintain the existing sync
-    # behavior, but these tests should exercise the case when async is
-    # allowed, so ensure it's False.
     layer_slicer._force_sync = False
     yield layer_slicer
     layer_slicer.shutdown()
@@ -189,10 +166,9 @@ def test_submit_with_mixed_layers(layer_slicer):
 
     future = layer_slicer.submit(layers=[layer1, layer2], dims=Dims())
 
-    result = _wait_for_result(future)
-    assert result[layer1].id == 1
-    assert layer2 not in result
     assert layer2.slice_count == 1
+    assert _wait_for_result(future)[layer1].id == 1
+    assert layer2 not in _wait_for_result(future)
 
 
 def test_submit_lock_blocking(layer_slicer):
@@ -222,7 +198,7 @@ def test_submit_multiple_calls_cancels_pending(layer_slicer):
     assert pending.cancelled()
 
 
-def test_slice_layers_mixed_allows_sync_to_run(layer_slicer):
+def test_submit_mixed_allows_sync_to_run(layer_slicer):
     """ensure that a blocked async slice doesn't block sync slicing"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
@@ -236,7 +212,7 @@ def test_slice_layers_mixed_allows_sync_to_run(layer_slicer):
     assert _wait_for_result(blocked)[layer1].id == 1
 
 
-def test_slice_layers_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
+def test_submit_mixed_allows_sync_to_run_one_slicer_call(layer_slicer):
     """ensure that a blocked async slice doesn't block sync slicing"""
     dims = Dims()
     layer1 = FakeAsyncLayer()
@@ -285,7 +261,7 @@ def test_submit_exception_main_thread(layer_slicer):
     thread immediately when the task is created."""
 
     class FakeAsyncLayerError(FakeAsyncLayer):
-        def _make_slice_request(self, dims: Dims) -> FakeSliceRequest:
+        def _make_slice_request(self, dims) -> FakeSliceRequest:
             raise RuntimeError('_make_slice_request')
 
     layer = FakeAsyncLayerError()
@@ -305,7 +281,10 @@ def test_submit_exception_subthread_on_result(layer_slicer):
 
     class FakeAsyncLayerError(FakeAsyncLayer):
         def _make_slice_request(self, dims: Dims) -> FakeSliceRequestError:
-            return FakeSliceRequestError(id=0, lock=self.lock)
+            self._slice_request_count += 1
+            return FakeSliceRequestError(
+                id=self._slice_request_count, lock=self.lock
+            )
 
     layer = FakeAsyncLayerError()
     future = layer_slicer.submit(layers=[layer], dims=Dims())

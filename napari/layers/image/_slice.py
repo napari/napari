@@ -30,7 +30,7 @@ class _ImageSliceResponse:
         For single-scale images, this will be the identity matrix.
     dims : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    slice_indices : tuple of ints or slices
+    indices : tuple of ints or slices
         The slice indices in the layer's data space.
     """
 
@@ -38,7 +38,7 @@ class _ImageSliceResponse:
     thumbnail: Optional[Any] = field(repr=False)
     tile_to_data: Affine = field(repr=False)
     dims: _SliceInput
-    slice_indices: Tuple[Union[int, slice], ...]
+    indices: Tuple[Union[int, slice], ...]
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ class _ImageSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    slice_indices : tuple of ints or slices
+    indices : tuple of ints or slices
         The slice indices in the layer's data space.
     lazy : bool
         If True, do not materialize the data with `np.asarray` during execution.
@@ -72,7 +72,7 @@ class _ImageSliceRequest:
     dims: _SliceInput
     data: Any = field(repr=False)
     dask_indexer: DaskIndexer
-    slice_indices: Tuple[Union[int, slice], ...]
+    indices: Tuple[Union[int, slice], ...]
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
@@ -91,7 +91,7 @@ class _ImageSliceRequest:
             )
 
     def _call_single_scale(self) -> _ImageSliceResponse:
-        image = self.data[self.slice_indices]
+        image = self.data[self.indices]
         if not self.lazy:
             image = np.asarray(image)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -105,7 +105,7 @@ class _ImageSliceRequest:
             thumbnail=None,
             tile_to_data=tile_to_data,
             dims=self.dims,
-            slice_indices=self.slice_indices,
+            indices=self.indices,
         )
 
     def _call_multi_scale(self) -> _ImageSliceResponse:
@@ -161,13 +161,13 @@ class _ImageSliceRequest:
             thumbnail=thumbnail,
             tile_to_data=tile_to_data,
             dims=self.dims,
-            slice_indices=self.slice_indices,
+            indices=self.indices,
         )
 
     def _slice_indices_at_level(
         self, level: int
     ) -> Tuple[Union[int, float, slice], ...]:
-        indices = np.array(self.slice_indices)
+        indices = np.array(self.indices)
         axes = self.dims.not_displayed
         ds_indices = indices[axes] / self.downsample_factors[level][axes]
         ds_indices = np.round(ds_indices.astype(float)).astype(int)
