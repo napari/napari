@@ -43,7 +43,9 @@ class ViewerStatusBar(QStatusBar):
 
         self._help = QElidingLabel('')
         self._help.setObjectName('help status')
-        self._help.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self._help.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
 
         main_widget = StatusBarWidget(
             self._status,
@@ -145,7 +147,7 @@ class StatusBarWidget(QWidget):
     @staticmethod
     def _calc_width(fm: QFontMetrics, label: QLabel) -> int:
         # magical nuber +2 is from superqt code
-        # magical number +8 is from experiments
+        # magical number +12 is from experiments
         # Adding this values is required to avoid the text to be elided
         # if there is enough space to show it.
         return (
@@ -153,7 +155,7 @@ class StatusBarWidget(QWidget):
                 fm.boundingRect(label.text()).width()
                 + label.margin() * 2
                 + 2
-                + 8
+                + 12
             )
             if label.isVisible()
             else 0
