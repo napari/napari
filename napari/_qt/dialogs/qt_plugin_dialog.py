@@ -54,6 +54,9 @@ from napari.utils.translations import trans
 
 # TODO: add error icon and handle pip install errors
 
+# Scaling factor for each list widget item when expanding.
+SCALE = 1.6
+
 
 def is_conda_package(pkg: str):
     """Determines if plugin was installed through conda.
@@ -540,9 +543,9 @@ class QPluginList(QListWidget):
         """Resize the plugin list item, especially after toggling QCollapsible."""
         height = item.widget.height()
         if item.widget.install_info_button.isExpanded():
-            item.widget.setFixedHeight(int(height * 1.6))
+            item.widget.setFixedHeight(int(height * SCALE))
         else:
-            item.widget.setFixedHeight(int(height / 1.6))
+            item.widget.setFixedHeight(int(height / SCALE))
         item.setSizeHint(item.widget.size())
 
     def handle_action(

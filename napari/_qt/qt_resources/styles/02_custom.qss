@@ -576,24 +576,20 @@ QCollapsible#install_info_button {
   background-color: {{ darken(foreground, 20) }};
   color: {{ darken(text, 15) }};
 }
-
-QElidingLabel#summary_text {
-  color: {{ darken(text, 35) }};
-}
-
-QLabel#version_choice_text {
-  color: {{ darken(text, 35) }};
+QWidget#info_widget {
+  background-color: {{ darken(foreground, 20) }};
+  margin: 0px;
+  padding: 0px;
+  font: 11px;
 }
 
 QLabel#author_text {
   color: {{ darken(text, 35) }};
 }
 
-QWidget#info_widget {
-  background-color: {{ darken(foreground, 20) }};
-  margin: 0px;
-  padding: 0px;
-  font: 11px;
+QPushButton#install_choice {
+  background-color: {{ current }};
+  color: {{ darken(text, 35) }};
 }
 
 QWidget#install_choice_widget {
@@ -604,44 +600,20 @@ QWidget#install_choice_widget {
   font: 11px;
 }
 
-QLabel#latest_version_text {
-  background-color: {{ darken(foreground, 20) }};
-  background: {{ darken(foreground, 20) }};
-  color: {{ darken(text, 35) }};
-}
-
-QWidget#install_button {
-  background-color: {{ current }};
-}
-
-QPushButton#plugin_name {
-  background-color: {{ darken(foreground, 20) }};
-}
-
-QPushButton#plugin_name_web {
-  background-color: {{ darken(foreground, 20) }};
-}
-
-QPushButton#plugin_name_web:hover {
-  background-color: {{ lighten(foreground, 10) }};
-}
-
-QPushButton#install_choice {
-  background-color: {{ current }};
-  color: {{ darken(text, 35) }};
+QPushButton#install_button {
+  background-color: {{ current }}
 }
 
 QPushButton#install_button:hover {
-  background-color: {{ lighten(current, 10) }};
+  background-color: {{ lighten(current, 10) }}
 }
 
 QPushButton#install_button:pressed {
-  background-color: {{ darken(current, 10) }};
+  background-color: {{ darken(current, 10) }}
 }
 
 QPushButton#install_button:disabled {
-  background-color: {{ lighten(current, 20) }};
-  color: {{ darken(text, 15) }};
+  background-color: {{ lighten(current, 20) }}
 }
 
 QPushButton#remove_button {
@@ -654,23 +626,26 @@ QPushButton#remove_button:hover {
 
 QPushButton#remove_button:pressed {
   background-color: {{ darken(error, 10) }}
-  background-color: {{ warning }};
-}
-
-QPushButton#busy_button {
-  background-color: {{ secondary }};
-}
-
-QPushButton#busy_button:hover {
-  background-color: {{ lighten(secondary, 10) }};
 }
 
 QPushButton#busy_button:pressed {
-  background-color: {{ darken(secondary, 10) }};
+  background-color: {{ darken(secondary, 10) }}
+}
+
+QPushButton#busy_button {
+  background-color: {{ secondary }}
+}
+
+QPushButton#busy_button:hover {
+  background-color: {{ lighten(secondary, 10) }}
+}
+
+QPushButton#busy_button:pressed {
+  background-color: {{ darken(secondary, 10) }}
 }
 
 QPushButton#close_button:disabled {
-  background-color: {{ lighten(secondary, 10) }};
+  background-color: {{ lighten(secondary, 10) }}
 }
 
 
