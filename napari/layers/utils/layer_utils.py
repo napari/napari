@@ -965,7 +965,7 @@ def _warn_about_deprecated_properties():
     warnings.warn(
         trans._(
             'Use features instead of properties. '
-            'This warning will become an error in version 0.5'
+            'This warning will become an error in version 0.6'
         ),
         DeprecationWarning,
         stacklevel=2,
@@ -976,7 +976,7 @@ def _warn_about_deprecated_property_choices():
     warnings.warn(
         trans._(
             'Use features with categorical dtypes instead of property_choices. '
-            'This warning will become an error in version 0.5'
+            'This warning will become an error in version 0.6'
         ),
         DeprecationWarning,
         stacklevel=2,
@@ -987,7 +987,7 @@ def _warn_about_deprecated_current_properties():
     warnings.warn(
         trans._(
             'Use feature_defaults instead of current_properties. '
-            'This warning will become an error in version 0.5'
+            'This warning will become an error in version 0.6'
         ),
         DeprecationWarning,
         stacklevel=2,
