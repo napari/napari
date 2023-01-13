@@ -18,9 +18,6 @@ _DEFAULT_MEM_FRACTION = 0.25
 DaskIndexer = Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]
 
 
-DaskIndexer = Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]
-
-
 def resize_dask_cache(
     nbytes: Optional[int] = None, mem_fraction: Optional[float] = None
 ) -> Cache:
