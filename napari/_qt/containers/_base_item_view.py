@@ -118,7 +118,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         for i in self._root.selection:
             idx = index_of(self.model(), i)
             selection.select(idx, idx)
-        sel_model.select(selection, sel_model.ClearAndSelect)
+        sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
 
 
 def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
