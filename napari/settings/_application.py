@@ -173,14 +173,15 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
+    # convert cache (and max cache) from bytes to mb for widget
     dask: dict = Field(
         default={
             'enabled': True,
-            'cache': virtual_memory().total * _DEFAULT_MEM_FRACTION,
+            'cache': virtual_memory().total * _DEFAULT_MEM_FRACTION / 1000000,
         },
         title=trans._("Enable Dask"),
         description=trans._("Enable/disable Dask caching."),
-        max_cache=virtual_memory().total * 0.5,  # get value in mb
+        max_cache=virtual_memory().total * 0.5 / 1000000,
         inc=100,
     )
 

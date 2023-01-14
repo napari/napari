@@ -1,7 +1,7 @@
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtDaskSettingsWidget(QWidget):
@@ -16,15 +16,15 @@ class QtDaskSettingsWidget(QWidget):
         Bool value indicating if dask is enabled.
     value : dict
         value = {'enabled': dask enabled (True/False),
-        'cache': cache size in bytes}
+        'cache': cache size in mb}
     cache : int
-        Dask cache size in bytes.
+        Dask cache size in mb.
     min_value : int
         Minimum value of allowable cache range.
     max_value : int
         Maximum value of allowable cache range.
     inc : int
-        Increment of cache step for cache value widget (in bytes).
+        Increment of cache step for cache value widget (in mb).
     """
 
     valueChanged = Signal(dict)
@@ -39,6 +39,7 @@ class QtDaskSettingsWidget(QWidget):
         min_value: int = 1,
         max_value: int = 10,
         inc: int = 1,
+        unit: str = 'mb',
     ):
         super().__init__()
 
@@ -49,11 +50,12 @@ class QtDaskSettingsWidget(QWidget):
         self._description = description
         self._value = value
         self._increment = inc
+        self._unit = unit
 
         # Widget
         self._enabled_checkbox = QCheckBox(self)
         self._label = QLabel(self)
-        self._units = QLabel(self)
+        self._unit_label = QLabel(self)
         self._cache = QSpinBox(self)
 
         self._cache.setMinimum(min_value)
@@ -62,7 +64,7 @@ class QtDaskSettingsWidget(QWidget):
         self._cache.setSingleStep(inc)
         self._enabled_checkbox.setChecked(enabled)
         self._label.setText('Cache size: ')
-        self._units.setText(f'/{self._max_value}')
+        self._unit_label.setText(f'/{self._max_value} {self._unit}')
         self._cache.setDisabled(not enabled)
 
         # Signals
@@ -75,9 +77,21 @@ class QtDaskSettingsWidget(QWidget):
         layout.addWidget(self._enabled_checkbox)
         layout.addWidget(self._label)
         layout.addWidget(self._cache)
-        layout.addWidget(self._units)
+        layout.addWidget(self._unit_label)
 
         self.setLayout(layout)
+
+    def set_unit(self, value):
+        """Update unit string displayed on widget
+
+        Parameter
+        ---------
+        value: str
+            New unit string.
+        """
+
+        self._unit = value
+        self._update_unit_label()
 
     def _update_cache(self, value):
         '''Update dask cache value and emits signal that value was changed.
@@ -85,10 +99,16 @@ class QtDaskSettingsWidget(QWidget):
         Parameters
         ----------
         value: int
-            New dask cache value in bytes.
+            New dask cache value in mb.
 
         '''
-        self._cache_value = value
+
+        if value > self._max_value:
+            self._cache_value = self._max_value
+        elif value < self._min_value:
+            self._cache_value = self._min_value
+        else:
+            self._cache_value = value
         self.valueChanged.emit(self.value())
 
     def _on_enabled_checkbox(self, event):
@@ -112,17 +132,10 @@ class QtDaskSettingsWidget(QWidget):
 
         self.valueChanged.emit(self.value())
 
-    def _update_units(self, value):
-        '''Update string displayed next to cache value.
-
-        Parameters
-        ----------
-        value: str
-            String after cach value that consists of max allowable cache in mb.
-                f'/{self._max_value} mb'
-
-        '''
-        self._units.setText(value)
+    def _update_unit_label(self):
+        '''Update string displayed next to cache value.'''
+        new_string = f'/{self._max_value} {self._unit}'
+        self._unit_label.setText(new_string)
 
     def setDescription(self, value):
         '''Set description of dask settings widget.
@@ -134,6 +147,11 @@ class QtDaskSettingsWidget(QWidget):
         '''
         self._description = value
 
+    def cacheValue(self):
+        """Return cache value."""
+
+        return self._cache_value
+
     def value(self):
         """Return current dask cache value.
 
@@ -141,13 +159,13 @@ class QtDaskSettingsWidget(QWidget):
         -------
         value: dict
             Current value of dask widget.
-            {'enabled': self._enabled, 'cache': self._cache_value*1000000}
+            {'enabled': self._enabled, 'cache': self._cache_value}
             enabled: bool
-            cache: int (bytes)
+            cache: int (mb)
         """
         value = {
             'enabled': self._enabled,
-            'cache': self._cache_value * 1000000,
+            'cache': self._cache_value,
         }
         return value
 
@@ -158,9 +176,9 @@ class QtDaskSettingsWidget(QWidget):
         ----------
         value : dict
             Dask cache value.
-            value = {'enabled': self._enabled, 'cache': self._cache_value*1000000}
+            value = {'enabled': self._enabled, 'cache': self._cache_value}
             enabled: bool
-            cache: int (bytes)
+            cache: int (mb)
         """
 
         if value == "":
@@ -169,7 +187,7 @@ class QtDaskSettingsWidget(QWidget):
         if value == {}:
             return
 
-        cache = int(value['cache'] / 1000000)
+        cache = int(value['cache'])
         cache = max(min(cache, self._max_value), self._min_value)
         if value == self._value:
             return
@@ -188,12 +206,11 @@ class QtDaskSettingsWidget(QWidget):
         Parameters
         ----------
         value : int
-            Minimum dask cache value in bytes.
+            Minimum dask cache value in mb.
         """
-        value = int(value / 1000000)
+        value = int(value)
         if value < self._max_value:
             self._min_value = value
-            self._triangle.setMinimum(value)
             self._cache_value = (
                 self._min_value
                 if self._cache_value < self._min_value
@@ -215,9 +232,9 @@ class QtDaskSettingsWidget(QWidget):
         Returns
         -------
         int
-            Minimum value of cache widget in bytes.
+            Minimum value of cache widget in mb.
         """
-        return self._min_value * 1000000
+        return self._min_value
 
     def setIncrement(self, value):
         """Set increment to adjust dask cache value on widget.
@@ -245,9 +262,9 @@ class QtDaskSettingsWidget(QWidget):
         Parameters
         ----------
         value : int
-            Maximum dask cache value in bytes.
+            Maximum dask cache value in mb.
         """
-        value = int(value / 1000000)
+        value = int(value)
         if value > self._min_value:
             self._max_value = value
             self._cache_value = (
@@ -256,7 +273,7 @@ class QtDaskSettingsWidget(QWidget):
                 else self._cache_value
             )
             self._cache.setMaximum(value)
-            self._update_units(f'/{self._max_value} mb')
+            self._update_unit_label()
         else:
             raise ValueError(
                 trans._(
@@ -272,6 +289,6 @@ class QtDaskSettingsWidget(QWidget):
         Returns
         -------
         int
-            Maximum value of dask cache in bytes.
+            Maximum value of dask cache in mb.
         """
-        return self._max_value * 1000000
+        return self._max_value
