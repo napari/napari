@@ -729,15 +729,9 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
             widget._name = name
             widget.on_changed.connect(partial(self.widget_on_changed, name))
             label = sub_schema.get("title", name)
-
-            
-            if isinstance(widget, QtWidgets.QWidget):
-                layout.addRow(label, widget)
-            else: 
-                #this is probably a magic gui widget.
-                layout.addRow(label, widget._widget.native)
-
-            
+ 
+            layout.addRow(label, widget)
+           
             widgets[name] = widget
 
         return widgets
