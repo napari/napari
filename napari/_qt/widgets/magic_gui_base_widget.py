@@ -24,9 +24,12 @@ class BaseMagicSetting(QWidget):
 
         self._description = description
 
-        @self._widget.changed.connect
-        def _call_magic_gui(value: dict = {}):
-            self.valueChanged.emit(value())
+        self._widget.changed.connect(self._call_magic_gui)
+
+    def _call_magic_gui(self, value: dict = None):
+        if value is None:
+            value = {}
+        self.valueChanged.emit(value())
 
     def __getattr__(self, attribute: str = None):
         """Method that will retrieve needed information
