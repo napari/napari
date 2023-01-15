@@ -171,6 +171,12 @@ class _QtMainWindow(QMainWindow):
         self.status_throttler.setTimeout(50)
         self._throttle_cursor_to_status_connection(viewer)
 
+        # install command palette
+        from napari.components.command_palette import get_palette
+
+        palette = get_palette("napari")
+        self._command_palette = palette.install(self)
+
     def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so
         # replace the direct connection with a throttled one.
@@ -755,6 +761,14 @@ class Window:
         """
         self.main_menu.setVisible(not self.main_menu.isVisible())
         self._main_menu_shortcut.setEnabled(not self.main_menu.isVisible())
+
+    def _toggle_command_palette(self):
+        """Toggle the visibility of the command palette."""
+        palette = self._qt_window._command_palette
+        if palette.isVisible():
+            palette.hide()
+        else:
+            palette.show()
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode."""

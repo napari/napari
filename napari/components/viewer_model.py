@@ -25,6 +25,7 @@ from pydantic import Extra, Field, validator
 from napari import layers
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
+from napari.components.command_palette import CommandPalette, get_palette
 from napari.components.cursor import Cursor
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
@@ -135,6 +136,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=TextOverlay, allow_mutation=False
     )
     overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
+    command_palette: CommandPalette = Field(
+        default_factory=get_palette, allow_mutation=False
+    )
 
     help: str = ''
     status: Union[str, Dict] = 'Ready'
