@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import inspect
 import weakref
-from functools import wraps
 from typing import TYPE_CHECKING, Callable, TypeVar, overload
 
-from napari.components.command_palette._components import Command, Storage
+from napari.components.command_palette._components import Command
 
 if TYPE_CHECKING:
     from qtpy import QtWidgets as QtW
@@ -28,7 +27,7 @@ def register_with_func(
     title: str | None = None,
     desc: str | None = None,
     tooltip: str | None = None,
-    when: Callable[..., bool] = _always_true,
+    when: Callable[..., bool] | None = None,
 ):
     """Template function to provide signature to register() with 'func' argument."""
 
@@ -38,7 +37,7 @@ def register_without_func(
     title: str | None = None,
     desc: str | None = None,
     tooltip: str | None = None,
-    when: Callable[..., bool] = _always_true,
+    when: Callable[..., bool] | None = None,
 ):
     """Template function to provide signature to register() without 'func' argument."""
 
@@ -64,7 +63,7 @@ class CommandPalette:
         title: str | None,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] = _always_true,
+        when: Callable[..., bool] = None,
     ) -> _F:
         ...
 
@@ -74,7 +73,7 @@ class CommandPalette:
         title: str | None,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] = _always_true,
+        when: Callable[..., bool] = None,
     ) -> Callable[[_F], _F]:
         ...
 
@@ -93,7 +92,7 @@ class CommandPalette:
         title = bound_args["title"]
         desc = bound_args["desc"]
         tooltip = bound_args["tooltip"]
-        when = bound_args["when"]
+        when = bound_args["when"] or _always_true
 
         if title is None:
             title = ""
@@ -105,14 +104,7 @@ class CommandPalette:
             if tooltip is None:
                 tooltip = getattr(func, "__doc__", "") or ""
 
-            storage = Storage.instance(self._name)
-
-            @wraps(func)
-            def _func(qpalette):
-                parent = self._palette_to_parent_map[id(qpalette)]
-                return storage.call(func, parent._qt_viewer.viewer)
-
-            cmd = Command(_func, title, desc, tooltip, when)
+            cmd = Command(func, title, desc, tooltip, when)
             self._commands.append(cmd)
             return func
 
@@ -132,6 +124,7 @@ class CommandPalette:
             widget.extend_command(self._commands)
             self._parent_to_palette_map[_id] = widget
             self._palette_to_parent_map[id(widget)] = parent
+        widget.hide()
         return widget
 
     def show_widget(self, parent: _QtMainWindow) -> None:
@@ -193,7 +186,7 @@ class CommandGroup:
         func: _F,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] = _always_true,
+        when: Callable[..., bool] | None = None,
     ) -> _F:
         ...
 
@@ -202,7 +195,7 @@ class CommandGroup:
         self,
         desc: str | None = None,
         tooltip: str | None = None,
-        when: Callable[..., bool] = _always_true,
+        when: Callable[..., bool] | None = None,
     ) -> Callable[[_F], _F]:
         ...
 

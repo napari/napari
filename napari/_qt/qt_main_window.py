@@ -172,10 +172,12 @@ class _QtMainWindow(QMainWindow):
         self._throttle_cursor_to_status_connection(viewer)
 
         # install command palette
-        from napari.components.command_palette import get_palette
+        from napari.components.command_palette import (
+            get_napari_command_palette,
+        )
 
-        palette = get_palette("napari")
-        self._command_palette = palette.install(self)
+        palette = get_napari_command_palette()
+        self._command_palette = palette.get_widget(self)
 
     def _throttle_cursor_to_status_connection(self, viewer: 'Viewer'):
         # In the GUI we expect lots of changes to the cursor position, so
@@ -748,9 +750,39 @@ class Window:
         )
         self.main_menu.addMenu(self.help_menu)
 
+        self._update_command_palette()
+
         if perf.USE_PERFMON:
             self._debug_menu = menus.DebugMenu(self)
             self.main_menu.addMenu(self._debug_menu)
+
+    def _update_command_palette(self):
+        from napari.components.command_palette import (
+            get_napari_command_palette,
+        )
+
+        palette = get_napari_command_palette()
+
+        def _register_menu_actions(menu: QMenu, title: str):
+            for ax in menu.actions():
+                if data := ax.data():
+                    if slot := data.get("slot", None):
+                        text = data["text"]
+                        when = data.get("enabled", None)
+                        palette.register(
+                            slot,
+                            title=title,
+                            desc=text,
+                            when=when,
+                        )
+                elif isinstance(ax, QMenu):
+                    _register_menu_actions(ax, f"{title} > {ax.title()}")
+
+        _register_menu_actions(self.file_menu, "File")
+        _register_menu_actions(self.plugins_menu, "Plugins")
+        _register_menu_actions(self.window_menu, "Window")
+
+        palette.update(self._qt_window)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.

@@ -31,6 +31,12 @@ class QCommandPalette(QtW.QWidget):
         self._line.textChanged.connect(self._on_text_changed)
         self._list.commandClicked.connect(self._on_command_clicked)
         self._line.editingFinished.connect(self.hide)
+        font = self.font()
+        font.setPointSize(int(font.pointSize() * 1.2))
+        self.setFont(font)
+
+    def sizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(600, 400)
 
     def match_color(self) -> str:
         """The color used for the matched characters."""
@@ -242,6 +248,8 @@ class QCommandList(QtW.QListView):
             self.setIndexWidget(self.model().index(i), lw)
         self.pressed.connect(self._on_clicked)
 
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
         self._match_color = "#468cc6"
 
     def match_color(self) -> str:
@@ -308,7 +316,7 @@ class QCommandList(QtW.QListView):
         cmd = self.command_at(index)
         if cmd is None:
             return None
-        cmd(self.parent())
+        cmd()
         # move to the top
         self.all_commands.remove(cmd)
         self.all_commands.insert(0, cmd)
@@ -318,27 +326,26 @@ class QCommandList(QtW.QListView):
         """Return true if the command can be executed."""
         index = self._selected_index
         cmd = self.command_at(index)
-        return cmd.enabled(self._viewer)
+        return cmd.enabled()
 
     def update_for_text(self, input_text: str) -> None:
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
         row = 0
-        for cmd in self.all_commands:
-            if cmd.matches(input_text):
-                self.setRowHidden(row, False)
-                lw = self.indexWidget(self.model().index(row))
-                lw.set_command(cmd)
-                if cmd.enabled(self._viewer):
-                    lw.set_text_colors(input_text, color=self._match_color)
-                else:
-                    lw.set_disabled()
-                row += 1
+        for cmd in self.iter_top_hits(input_text):
+            self.setRowHidden(row, False)
+            lw = self.indexWidget(self.model().index(row))
+            lw.set_command(cmd)
+            if cmd.enabled():
+                lw.set_text_colors(input_text, color=self._match_color)
+            else:
+                lw.set_disabled()
+            row += 1
 
-                if row >= max_matches:
-                    self._current_max_index = max_matches
-                    break
+            if row >= max_matches:
+                self._current_max_index = max_matches
+                break
         else:
             self._current_max_index = row
             for row in range(row, max_matches):
@@ -346,6 +353,12 @@ class QCommandList(QtW.QListView):
         self.update_selection()
         self.update()
         return None
+
+    def iter_top_hits(self, input_text: str) -> Iterator[Command]:
+        """Iterate over the top hits for the input text"""
+        for cmd in self.all_commands:
+            if cmd.matches(input_text):
+                yield cmd
 
     if TYPE_CHECKING:
 
