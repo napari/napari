@@ -159,12 +159,13 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
     def __init__(self, parent: QtW.QWidget = None):
         super().__init__(parent)
         self._commands: list[Command] = []
-        self._max_matches = 24
+        self._max_matches = 80
 
     def rowCount(self, parent: QtCore.QModelIndex = None) -> int:
         return self._max_matches
 
     def data(self, index: QtCore.QModelIndex, role: int = ...) -> Any:
+        """Don't show any data. Texts are rendered by the item widget."""
         return QtCore.QVariant()
 
     def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlag:
@@ -240,6 +241,9 @@ class QCommandList(QtW.QListView):
         self.setModel(QCommandMatchModel(self))
         self.setSelectionMode(QtW.QAbstractItemView.SelectionMode.NoSelection)
         self._selected_index = 0
+        self._index_offset = (
+            0  # NOTE: maybe useful for scrolling in the future
+        )
         self._label_widgets: list[QCommandLabel] = []
         self._current_max_index = 0
         for i in range(self.model()._max_matches):
@@ -274,7 +278,7 @@ class QCommandList(QtW.QListView):
         return None
 
     def update_selection(self):
-        index = self.model().index(self._selected_index)
+        index = self.model().index(self._selected_index - self._index_offset)
         self.selectionModel().setCurrentIndex(
             index, QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
         )
@@ -298,11 +302,8 @@ class QCommandList(QtW.QListView):
         return self.all_commands.clear()
 
     def command_at(self, index: int) -> Command:
-        return self.indexWidget(self.model().index(index)).command()
-
-    def set_command_at(self, index: int, cmd: Command) -> None:
-        self.indexWidget(self.model().index(index)).set_command(cmd)
-        return None
+        i = index - self._index_offset
+        return self.indexWidget(self.model().index(i)).command()
 
     def iter_command(self) -> Iterator[Command]:
         for i in range(self.model().rowCount()):

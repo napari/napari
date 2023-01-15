@@ -218,7 +218,7 @@ class CommandGroup:
 _GLOBAL_PALETTES: dict[str, CommandPalette] = {}
 
 
-def get_palette(name: str = "napari") -> CommandPalette:
+def get_palette(name) -> CommandPalette:
     """
     Get the global command palette object.
 
