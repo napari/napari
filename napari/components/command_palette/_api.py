@@ -124,7 +124,6 @@ class CommandPalette:
             widget.extend_command(self._commands)
             self._parent_to_palette_map[_id] = widget
             self._palette_to_parent_map[id(widget)] = parent
-        widget.hide()
         return widget
 
     def show_widget(self, parent: _QtMainWindow) -> None:

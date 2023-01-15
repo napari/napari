@@ -34,6 +34,7 @@ class QCommandPalette(QtW.QWidget):
         font = self.font()
         font.setPointSize(int(font.pointSize() * 1.2))
         self.setFont(font)
+        self.hide()
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(600, 400)
