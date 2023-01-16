@@ -16,3 +16,19 @@ class MagicDaskSettingsWidget(BaseMagicSetting):
 
     def get_mgui(self):
         return dask_settings()
+
+    def setValue(self, value):
+        """Set values for MagicDaskSettingsWidget.
+
+        Parameters
+        ----------
+        value: dict
+            value['enabled']: Dask cache enabled (True/False)
+            value['cache']: Dask cache value.
+        """
+        self._widget.dask_enabled.value = value['enabled']
+        self._widget.cache.value = value['cache']
+
+    def setMaxCache(self, value):
+        """Set max cache value in MagicDaskSettingsWidget."""
+        self._widget.cache.max = value

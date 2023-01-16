@@ -608,12 +608,11 @@ class DaskSettingsWidget(SchemaWidgetMixin, MagicDaskSettingsWidget):
 
     @state.setter
     def state(self, state: dict):
-        self._widget.dask_enabled.value = state['enabled']
-        self._widget.cache.value = state['cache']
+        self.setValue(state)
         
     def configure(self):
         self._widget.changed.connect(lambda: self.on_changed.emit(self.state))
-        self._widget.cache.max = self.schema['allOf'][0]['properties']['cache']['maximum']
+        self.setMaxCache(self.schema['allOf'][0]['properties']['cache']['maximum'])
 
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
