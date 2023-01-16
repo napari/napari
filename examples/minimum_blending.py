@@ -10,6 +10,8 @@ An inverted colormap is one where white [1, 1, 1] is used to represent the lowes
 values, as opposed to the more conventional black [0, 0, 0]. For example, try the
 colormaps prefixed with *I*, such as *I Forest* or *I Bordeaux*, from 
 ChrisLUTs: https://github.com/cleterrier/ChrisLUTs .
+
+.. tags:: visualization-advanced
 """
 
 from skimage import data
