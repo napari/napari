@@ -53,7 +53,7 @@ class QtDaskSettingsWidget(QWidget):
     description : str
         Text to explain and display on widget.
     enabled: bool
-        Bool value indicating if dask is enabled.
+        Bool value indicating if the dask cache is enabled.
     value : dict
         value = {'enabled': dask enabled (True/False),
         'cache': cache size in mb}
