@@ -16,16 +16,19 @@ viewer = napari.Viewer(ndisplay=3)
 def rotation_matrix_from_camera(camera: napari.components.Camera) -> np.ndarray:
     return R.from_euler(seq='yzx', angles=camera.angles, degrees=True)
 
+
 def distance_from_camera_centre_line(points, camera):
     view_direction = camera.view_direction
-    dot_products = points @ view_direction
+    points_relative_to_camera = points - camera.center
+    dot_products = points_relative_to_camera @ view_direction
     projected = view_direction * np.reshape(dot_products, (-1, 1))
-    distances = np.linalg.norm(projected - points, axis=-1)
+    distances = np.linalg.norm(projected - points_relative_to_camera, axis=-1)
     return distances
 
 
 initial_dist = distance_from_camera_centre_line(grid, viewer.camera)
 
 viewer.add_points(grid, features={'distance': initial_dist}, face_color='distance')
+
 
 napari.run()
