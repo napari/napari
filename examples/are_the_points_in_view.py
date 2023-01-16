@@ -31,4 +31,23 @@ initial_dist = distance_from_camera_centre_line(grid, viewer.camera)
 viewer.add_points(grid, features={'distance': initial_dist}, face_color='distance')
 
 
+def update_point_colors(event):
+    """Update the points based on their distance to current camera.
+
+    Parameters:
+    -----------
+    viewer : naperi.Viewer
+        Current viewer
+    event : camera.events.angles event
+        The event triggered by changing the camera angles
+    """
+    points = viewer.layers['grid']
+    new_distances = distance_from_camera_centre_line(points.data, viewer.camera)
+    points.features = pd.DataFrame({'distance': new_distances})
+    points.face_color = 'distance'
+    points.refresh()
+    print('doing a thing')
+
+
+viewer.camera.events.connect(update_point_colors)
 napari.run()
