@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, validator
+from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
 from napari.components._viewer_mouse_bindings import dims_scroll
@@ -156,9 +156,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
-    _overlays: EventedDict[str, Overlay] = Field(
+    _overlays: EventedDict[str, Overlay] = PrivateAttr(
         default_factory=lambda: {k: v() for k, v in DEFAULT_OVERLAYS.items()},
-        allow_mutation=False,
     )
 
     # 2-tuple indicating height and width
