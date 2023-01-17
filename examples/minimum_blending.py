@@ -11,7 +11,7 @@ values, as opposed to the more conventional black [0, 0, 0]. For example, try th
 colormaps prefixed with *I*, such as *I Forest* or *I Bordeaux*, from 
 ChrisLUTs: https://github.com/cleterrier/ChrisLUTs .
 
-.. tags:: visualization-advanced
+.. tags:: visualization-basic
 """
 
 from skimage import data
