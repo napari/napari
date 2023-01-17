@@ -77,25 +77,6 @@ def is_conda_package(pkg: str):
     )
 
 
-def is_conda_package(pkg: str):
-    """Determines if plugin was installed through conda.
-
-    Returns
-    -------
-    bool: True if a conda package, False if not
-    """
-
-    # Installed conda packages within a conda installation and environment can be identified as files
-    # with the template `<package-name>-<version>-<build-string>.json` saved within a `conda-meta` folder within
-    # the given environment of interest.
-
-    conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    return any(
-        re.match(rf"{pkg}-[^-]+-[^-]+.json", p.name)
-        for p in conda_meta_dir.glob(f"{pkg}-*-*.json")
-    )
-
-
 class PluginListItem(QFrame):
     """An entry in the plugin dialog.  This will include the package name, summary,
     author, source, version, and buttons to update, install/uninstall, etc."""
@@ -582,10 +563,6 @@ class QPluginList(QListWidget):
     ):
         """Determine which action is called (install, uninstall, update, cancel).
         Update buttons appropriately and run the action."""
-<<<<<<< HEAD
-=======
-
->>>>>>> 5afb792e (make updates to tool so that proper source is used to install)
         tool = (
             InstallerTools.CONDA
             if item.widget.source_choice_dropdown.currentText() == 'Conda'
@@ -852,6 +829,7 @@ class QtPluginDialog(QDialog):
             or running_as_constructor_app()
             or settings.plugins.plugin_api.name == "napari_hub"
         )
+        use_hub = True
         if use_hub:
             conda_forge = running_as_constructor_app()
             self.worker = create_worker(
