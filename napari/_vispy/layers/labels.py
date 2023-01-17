@@ -233,7 +233,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 selection=colormap.selection,
             )
         elif mode == 'direct':
-            color_dict = self.layer.colors
+            color_dict = self.layer.color
             key_texture, val_texture = build_textures_from_dict(color_dict)
             self.node.shared_program['texture2D_keys'] = key_texture
             self.node.shared_program['texture2D_colors'] = val_texture
