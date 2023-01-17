@@ -224,7 +224,7 @@ class VispyLabelsLayer(VispyImageLayer):
         colormap = self.layer.colormap
         mode = self.layer.color_mode
 
-        if isinstance(colormap, LabelColormap) and mode == 'auto':
+        if isinstance(colormap, LabelColormap):  # and mode == 'auto':
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 controls=colormap.controls,
