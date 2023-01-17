@@ -127,8 +127,8 @@ class VispyBaseLayer(ABC):
             # basically same as translucent, but allow depth if set
             blending_kwargs['blend_equation'] = 'func_add'
             blending_kwargs['blend_func'] = (
-                'src_alpha',
-                'one_minus_src_alpha',
+                'one' if blending == 'minimum' else 'src_alpha',
+                'zero',
                 'zero',
                 'one',
             )
