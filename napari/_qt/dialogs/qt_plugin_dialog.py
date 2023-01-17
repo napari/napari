@@ -829,7 +829,6 @@ class QtPluginDialog(QDialog):
             or running_as_constructor_app()
             or settings.plugins.plugin_api.name == "napari_hub"
         )
-        use_hub = True
         if use_hub:
             conda_forge = running_as_constructor_app()
             self.worker = create_worker(
