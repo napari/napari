@@ -188,6 +188,8 @@ def hash2d_get(key, keys, values, empty_val=0.0):
 
 
 def hash2d_set(key, value, keys, values, empty_val=0.0):
+    if key is None:
+        return
     pos = (key % keys.shape[0], key % keys.shape[1])
     while keys[pos] != empty_val:
         pos = (pos[0], (pos[1] + 1) % keys.shape[1])
