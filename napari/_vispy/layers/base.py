@@ -103,6 +103,7 @@ class VispyBaseLayer(ABC):
     @order.setter
     def order(self, order):
         self.node.order = order
+        self._on_blending_change()
 
     @abstractmethod
     def _on_data_change(self):
@@ -118,7 +119,18 @@ class VispyBaseLayer(ABC):
         self.node.opacity = self.layer.opacity
 
     def _on_blending_change(self):
-        blending_kwargs = BLENDING_MODES[self.layer.blending]
+        blending = self.layer.blending
+        blending_kwargs = BLENDING_MODES[blending].copy()
+
+        # if the first layer, then we should blend differently (ignore the canvas color)
+        if self.node.order == 0:
+            blend_func = list(blending_kwargs['blend_func'])
+            if blending == 'minimum':
+                blend_func[1] = 'one'
+            else:
+                blend_func[1] = 'zero'
+            blending_kwargs['blend_func'] = tuple(blend_func)
+
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
