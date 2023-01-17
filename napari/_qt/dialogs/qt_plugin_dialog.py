@@ -125,7 +125,11 @@ class PluginListItem(QFrame):
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
 
-        self._populate_version_dropdown('PyPI')
+        if len(versions_pypi) > 0:
+            self._populate_version_dropdown('PyPI')
+        else:
+            self._populate_version_dropdown('Conda')
+
         self.package_name.setText(version)
         if summary:
             self.summary.setText(summary)

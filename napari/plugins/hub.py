@@ -10,6 +10,7 @@ from urllib import error, request
 
 from npe2 import PackageMetadata
 
+from napari.plugins.npe2api import plugin_summaries
 from napari.plugins.utils import normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
@@ -101,9 +102,11 @@ def iter_hub_plugin_info(
     skip={}, conda_forge=True
 ) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins."""
+
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
 
+    plugin_sums = plugin_summaries()
     already_yielded = []
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
@@ -115,5 +118,26 @@ def iter_hub_plugin_info(
         for future in as_completed(futures):
             info, is_available_in_conda_forge = future.result()
             if info and info not in already_yielded:
+                summary = list(
+                    filter(
+                        lambda summary: summary['name'] == info.name,
+                        plugin_sums,
+                    )
+                )
+                if len(summary):
+                    summary = summary[0]
+                    extra_info = {
+                        "home_page": summary.get("home_page", ""),
+                        "pypi_versions": summary.get("pypi_versions", ""),
+                        "conda_versions": summary.get("conda_versions", ""),
+                    }
+                else:
+                    extra_info = {
+                        "home_page": info.home_page if info.home_page else "",
+                        "conda_versions": [
+                            info.version if is_available_in_conda_forge else ""
+                        ],
+                        "pypi_versions": [],
+                    }
                 already_yielded.append(info)
-                yield info, is_available_in_conda_forge
+                yield info, is_available_in_conda_forge, extra_info
