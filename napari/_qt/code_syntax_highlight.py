@@ -15,7 +15,7 @@ def get_text_char_format(style):
     """
 
     text_char_format = QtGui.QTextCharFormat()
-    text_char_format.setFontFamily("monospace")
+    text_char_format.setFontFamilies(["monospace"])
     if style.get('color'):
         text_char_format.setForeground(QtGui.QColor(f"#{style['color']}"))
 
