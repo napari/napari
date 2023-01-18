@@ -184,7 +184,7 @@ class ApplicationSettings(EventedModel):
     )
     # convert cache (and max cache) from bytes to mb for widget
     dask: DaskSettings = Field(
-        default=DaskSettings(),
+        default=DaskSettings().dict(),
         title=trans._("Enable Dask"),
         description=trans._("Enable/disable Dask caching."),
     )
