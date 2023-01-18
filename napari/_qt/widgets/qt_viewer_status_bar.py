@@ -183,6 +183,9 @@ class StatusBarWidget(QWidget):
 
         help_width = max(0, width - base_width)
 
+        if coordinates_width:
+            help_width = 0
+
         if base_width > width:
             self._help_label.setVisible(False)
             layer_width = max(
