@@ -62,7 +62,6 @@ def update_point_colors(event):
     points.features = pd.DataFrame({'distance': new_distances})
     points.face_color = 'distance'
     points.refresh()
-    print('doing a thing')
 
 
 viewer.camera.events.connect(update_point_colors)
