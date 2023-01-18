@@ -109,7 +109,9 @@ class LayerDelegate(QStyledItemDelegate):
         bg = option.palette.color(option.palette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
-        option.decorationPosition = option.Right  # put icon on the right
+        option.decorationPosition = (
+            option.Position.Right
+        )  # put icon on the right
         option.features |= option.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
