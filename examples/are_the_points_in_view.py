@@ -94,7 +94,9 @@ if __name__ == '__main__':
         face_color='priority',
     )
     viewer.camera.events.connect(
-        debounced(update_point_colors(viewer=viewer, alpha=1.0),
-        timeout=100)
+        debounced(
+            update_point_colors(viewer=viewer, alpha=1.0),
+            timeout=100,
+        )
     )
     napari.run()
