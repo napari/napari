@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import napari
 import toolz as tz
+from psygnal import debounced
 
 from scipy.spatial.transform import Rotation as R
 
@@ -38,7 +39,7 @@ def prioritised_chunk_loading(depth, distance, zoom, alpha=1.):
 
 
 @tz.curry
-def update_point_colors(event, viewer):
+def update_point_colors(event, viewer, alpha=1.):
     """Update the points based on their distance to current camera.
 
     Parameters:
@@ -52,7 +53,9 @@ def update_point_colors(event, viewer):
     points = points_layer.data
     distances = distance_from_camera_centre_line(points, viewer.camera)
     depth = visual_depth(points, viewer.camera)
-    priorities = prioritised_chunk_loading(depth, distances, viewer.camera.zoom)
+    priorities = prioritised_chunk_loading(
+        depth, distances, viewer.camera.zoom, alpha=alpha
+    )
     points_layer.features = pd.DataFrame({
         'distance': distances, 'depth': depth, 'priority': priorities
     })
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     initial_dist = distance_from_camera_centre_line(grid, viewer.camera)
     initial_depth = visual_depth(grid, viewer.camera)
     initial_priority = prioritised_chunk_loading(
-        initial_depth, initial_dist, viewer.camera.zoom
+        initial_depth, initial_dist, viewer.camera.zoom, alpha=1.0
     )
     features = pd.DataFrame({
         'distance': initial_dist,
@@ -90,5 +93,8 @@ if __name__ == '__main__':
         },
         face_color='priority',
     )
-    viewer.camera.events.connect(update_point_colors(viewer=viewer))
+    viewer.camera.events.connect(
+        debounced(update_point_colors(viewer=viewer, alpha=1.0),
+        timeout=100)
+    )
     napari.run()
