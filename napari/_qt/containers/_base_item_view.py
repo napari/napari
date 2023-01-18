@@ -98,7 +98,7 @@ class _BaseEventedItemView(Generic[ItemType]):
             sm.clearCurrentIndex()
         else:
             idx = index_of(self.model(), event.value)
-            sm.setCurrentIndex(idx, sm.Current)
+            sm.setCurrentIndex(idx, sm.SelectionFlag.Current)
 
     def _on_py_selection_change(self, event: Event):
         """The python model selection has changed. Update the Qt view."""

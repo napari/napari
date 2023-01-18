@@ -112,7 +112,7 @@ class LayerDelegate(QStyledItemDelegate):
         option.decorationPosition = (
             option.Position.Right
         )  # put icon on the right
-        option.features |= option.HasDecoration
+        option.features |= option.ViewItemFeature.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
