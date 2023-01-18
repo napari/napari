@@ -128,9 +128,7 @@ class VispyBaseLayer(ABC):
             blending_kwargs['blend_equation'] = 'func_add'
             blending_kwargs['blend_func'] = (
                 'one' if blending == 'minimum' else 'src_alpha',
-                'zero',  # canvas color
-                'one',  # layer transparency
-                'zero',  # canvas transparency (=only keep )
+                'zero',  # do not blend canvas color
             )
 
         self.node.set_gl_state(**blending_kwargs)
