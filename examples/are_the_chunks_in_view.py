@@ -20,9 +20,13 @@ def chunk_centers(array : da.Array):
     all_start_pos = list(itertools.product(*start_pos))
     all_middle_pos = list(itertools.product(*middle_pos))
     all_end_pos = list(itertools.product(*end_pos))
-    chunk_slices = [
-        slice(start, end) for start, end in zip(all_start_pos, all_end_pos)
-    ]
+    chunk_slices = []
+    for start, end in zip(all_start_pos, all_end_pos):
+        chunk_slice = [
+            slice(start_i, end_i) for start_i, end_i in zip(start, end)
+        ]
+        chunk_slices.append(tuple(chunk_slice))
+
     mapping = dict(zip(all_middle_pos, chunk_slices))
     return mapping
 
