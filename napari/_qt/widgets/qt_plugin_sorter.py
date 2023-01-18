@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QFrame,
@@ -169,7 +170,7 @@ class QtHookImplementationListWidget(QListWidget):
         self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragEnabled(True)
         self.setDragDropMode(QListView.InternalMove)
-        self.setSelectionMode(self.SingleSelection)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setAcceptDrops(True)
         self.setSpacing(1)
         self.setMinimumHeight(1)
