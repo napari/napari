@@ -48,6 +48,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self.first_visible = False
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -118,13 +119,12 @@ class VispyBaseLayer(ABC):
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self):
+    def _on_blending_change(self, event=None):
         blending = self.layer.blending
         blending_kwargs = BLENDING_MODES[blending].copy()
 
-        if self.node.order == 0:
+        if self.first_visible:
             # if the first layer, then we should blend differently (ignore the canvas color)
-            # basically same as translucent, but allow depth if set
             blending_kwargs['blend_equation'] = 'func_add'
             blending_kwargs['blend_func'] = (
                 'one' if blending == 'minimum' else 'src_alpha',
