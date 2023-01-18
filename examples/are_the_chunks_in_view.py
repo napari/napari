@@ -118,7 +118,11 @@ if __name__ == '__main__':
     grid = np.array(list(centers.keys()))
 
     viewer = napari.Viewer(ndisplay=3)
-    viewer.add_image(multiscale_nuclei)
+    viewer.add_image(nuclei_down, name='low-res', colormap='magenta', scale=(2, 2, 2))
+    viewer.add_image(
+        nuclei_dask[:20, :64, :64], name='high-res', colormap='green', blending='additive'
+    )
+    viewer.add_image(nuclei_dask, name='high-res-full', colormap='gray', blending='additive')
 
     initial_dist = distance_from_camera_centre_line(grid, viewer.camera)
     initial_depth = visual_depth(grid, viewer.camera)
@@ -144,6 +148,12 @@ if __name__ == '__main__':
         debounced(
             update_point_colors(viewer=viewer, alpha=1.0),
             timeout=100,
+        )
+    )
+    viewer.camera.events.connect(
+        debounced(
+            update_shown_chunk(viewer=viewer, chunk_map=centers, array=nuclei_dask),
+            timeout=1000,
         )
     )
     napari.run()
