@@ -556,8 +556,8 @@ class QtPlayButton(QPushButton):
     def _on_click(self):
         """Toggle play/stop animation control."""
         qt_dims = self.qt_dims_ref()
-        if not qt_dims:
-            return None
+        if not qt_dims:  # pragma: no cover
+            return
         if self.property('playing') == "True":
             return qt_dims.stop()
         self.play_requested.emit(self.axis)
