@@ -87,6 +87,24 @@ def update_point_colors(event, viewer, alpha=1.):
     points_layer.refresh()
 
 
+@tz.curry
+def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.):
+    points = np.array(list(centers.keys()))
+    distances = distance_from_camera_centre_line(points, viewer.camera)
+    depth = visual_depth(points, viewer.camera)
+    priorities = prioritised_chunk_loading(
+        depth, distances, viewer.camera.zoom, alpha=alpha
+    )
+    first_priority_idx = np.argmin(priorities)
+    first_priority_coord = tuple(points[first_priority_idx])
+    chunk_slice = chunk_map[first_priority_coord]
+    offset = [sl.start for sl in chunk_slice]
+    hi_res_layer = viewer.layers['high-res']
+    hi_res_layer.data = array[chunk_slice]
+    hi_res_layer.translate = offset
+    hi_res_layer.refresh()
+
+
 if __name__ == '__main__':
 
     # Chunked, multiscale data
