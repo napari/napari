@@ -61,7 +61,7 @@ vec4 sample_label_color(float t) {
         ).r;
     }
 
-    // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly
+    return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly
 
     vec4 color = texture2D(
         texture2D_values,
@@ -135,8 +135,7 @@ def hash2d_set(key, value, keys, values, empty_val=0):
     values[pos] = value
 
 
-def build_textures_from_dict(color_dict, empty_val=0):
-    shape = (4, 5)
+def build_textures_from_dict(color_dict, empty_val=0, shape=(4, 5)):
     keys = np.full(shape, empty_val, dtype=np.float32)
     values = np.zeros(shape + (4,), dtype=np.float32)
     for key, value in color_dict.items():
