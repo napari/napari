@@ -15,7 +15,7 @@ def get_text_char_format(style):
     """
 
     text_char_format = QtGui.QTextCharFormat()
-	try:
+    try:
         text_char_format.setFontFamilies(["monospace"])
     except AttributeError:
         text_char_format.setFontFamily("monospace") # backward compatibility for pyqt5 5.12.3 
