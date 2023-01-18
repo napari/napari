@@ -4,7 +4,7 @@ import pandas as pd
 import napari
 
 # Set the number of steps
-nb_steps = 1000
+nb_steps = 15#100 * 70
 
 # Create a dummy label image
 base = np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')
@@ -42,6 +42,7 @@ viewer = napari.Viewer()
 viewer.add_image(label_img, colormap='viridis')
 labels_layer_shuffled = viewer.add_labels(label_img_shuffled, opacity=100)
 labels_layer_ordered = viewer.add_labels(label_img, opacity=100)
+viewer.grid.enabled = True
 
 # Set the label image colormaps
 labels_layer_shuffled.color = colormap_shuffled

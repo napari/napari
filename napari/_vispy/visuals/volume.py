@@ -35,7 +35,6 @@ int detectAdjacentBackground(float val_neg, float val_pos)
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating ambient and diffuse lighting
-    vec4 color0 = $get_data(loc);
     vec4 color1;
     vec4 color2;
     float val0 = colorToVal(color0);
@@ -115,7 +114,6 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
-        vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
         bool discard_fragment = true;
@@ -126,9 +124,10 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
-                color = $get_data(iloc);
-                color = low_disc_plus_cmap(color.r);
+                label_id = $get_data(iloc);
+                color = $map_to_label_color(lable_id.r);
                 if (floatNotEqual(color.a, 0) ) {
+                    // fully transparent color is considered as background, see napari/napari#5227
                     // when the value mapped to non-transparent color is reached
                     // calculate the color (apply lighting effects)
                     color = calculateCategoricalColor(color, iloc, dstep);
