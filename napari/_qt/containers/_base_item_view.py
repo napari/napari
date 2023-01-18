@@ -104,8 +104,8 @@ class _BaseEventedItemView(Generic[ItemType]):
         """The python model selection has changed. Update the Qt view."""
         sm = self.selectionModel()
         for is_selected, idx in chain(
-            zip(repeat(sm.Select), event.added),
-            zip(repeat(sm.Deselect), event.removed),
+            zip(repeat(sm.SelectionFlag.Select), event.added),
+            zip(repeat(sm.SelectionFlag.Deselect), event.removed),
         ):
             model_idx = index_of(self.model(), idx)
             if model_idx.isValid():
