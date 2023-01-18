@@ -29,7 +29,7 @@ from napari.layers.labels._labels_constants import (
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
-from napari.utils.events import Event, disconnect_events
+from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -83,11 +83,10 @@ class QtLabelsControls(QtLayerControls):
 
     layer: 'napari.layers.Labels'
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, *, ndisplay: int = 2):
+        super().__init__(layer, ndisplay=ndisplay)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
@@ -240,6 +239,7 @@ class QtLabelsControls(QtLayerControls):
         renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
+
         self._on_ndisplay_change()
 
         color_mode_comboBox = QComboBox(self)
@@ -478,15 +478,10 @@ class QtLabelsControls(QtLayerControls):
             )
             self.renderComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self, event: Event):
-        ndisplay = event.value
-        if ndisplay == 2:
-            self.renderComboBox.hide()
-            self.renderLabel.hide()
-        else:
-            self.renderComboBox.show()
-            self.renderLabel.show()
-
+    def _on_ndisplay_change(self):
+        render_visible = self.ndisplay == 3
+        self.renderComboBox.setVisible(render_visible)
+        self.renderLabel.setVisible(render_visible)
         self._on_editable_change()
 
     def deleteLater(self):

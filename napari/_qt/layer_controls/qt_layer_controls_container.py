@@ -17,6 +17,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils import config
+from napari.utils.events.event import Event
 from napari.utils.translations import trans
 
 layer_to_controls = {
@@ -37,7 +38,7 @@ if config.async_loading:
     layer_to_controls[_OctreeImageBase] = QtImageControls
 
 
-def create_qt_layer_controls(layer):
+def create_qt_layer_controls(layer, **kwargs):
     """
     Create a qt controls widget for a layer based on its layer type.
 
@@ -46,8 +47,10 @@ def create_qt_layer_controls(layer):
 
     Parameters
     ----------
-    layer : napari.layers._base_layer.Layer
+    layer : napari.layers.Layer
         Layer that needs its controls widget created.
+    **kwargs
+        The optional keyword arguments to pass through to QtLayerControls.
 
     Returns
     -------
@@ -72,7 +75,7 @@ def create_qt_layer_controls(layer):
     # Sort the list of candidates by 'lineage'
     candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
     controls = layer_to_controls[candidates[0]]
-    return controls(layer)
+    return controls(layer, **kwargs)
 
 
 class QtLayerControlsContainer(QStackedWidget):
@@ -110,10 +113,14 @@ class QtLayerControlsContainer(QStackedWidget):
         viewer.layers.selection.events.active.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
+        # TODO: I think this is needed if viewer is initialized with ndisplay=3,
+        # but maybe we should do this differently.
+        self._on_ndisplay_change(Event('ndisplay', value=viewer.dims.ndisplay))
+
     def _on_ndisplay_change(self, event):
-        widget = self.currentWidget()
-        if widget is not self.empty_widget:
-            widget._on_ndisplay_change(event)
+        for widget in self.widgets.values():
+            if widget is not self.empty_widget:
+                widget.ndisplay = event.value
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -139,7 +146,11 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = create_qt_layer_controls(layer)
+        # TODO: ideally would not depend on self.viewer, but that probably
+        # requires storing the extra state of ndisplay here.
+        controls = create_qt_layer_controls(
+            layer, ndisplay=self.viewer.dims.ndisplay
+        )
         self.addWidget(controls)
         self.widgets[layer] = controls
 

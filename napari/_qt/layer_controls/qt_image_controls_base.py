@@ -68,8 +68,8 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    def __init__(self, layer: Image):
-        super().__init__(layer)
+    def __init__(self, layer: Image, **kwargs):
+        super().__init__(layer, **kwargs)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.gamma.connect(self._on_gamma_change)

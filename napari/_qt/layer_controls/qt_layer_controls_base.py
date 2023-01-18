@@ -3,7 +3,8 @@ from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
-from napari.utils.events import Event, disconnect_events
+from napari.layers.base.base import Layer
+from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
@@ -29,6 +30,8 @@ class QtLayerControls(QFrame):
     ----------
     layer : napari.layers.Layer
         An instance of a napari layer.
+    ndisplay : int
+        The number of dimensions displayed in the canvas.
 
     Attributes
     ----------
@@ -36,18 +39,22 @@ class QtLayerControls(QFrame):
         Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
+    ndisplay : int
+        The number of dimensions displayed in the canvas.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
     opacityLabel : qtpy.QtWidgets.QLabel
         Label for the opacity slider widget.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer: Layer, *, ndisplay: int = 2):
         super().__init__()
 
         self.layer = layer
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
+
+        self._ndisplay = ndisplay
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -131,12 +138,22 @@ class QtLayerControls(QFrame):
                 self.blendComboBox.findData(self.layer.blending)
             )
 
-    def _on_ndisplay_change(self, event: Event):
+    @property
+    def ndisplay(self) -> int:
+        return self._ndisplay
+
+    @ndisplay.setter
+    def ndisplay(self, ndisplay: int) -> None:
+        self._ndisplay = ndisplay
+        self._on_ndisplay_change()
+
+    def _on_ndisplay_change(self) -> None:
         """Receive a change to the number of dimensions displayed in the viewer.
 
         This is needed because some layer controls may have options that are specific
-        to 2D or 3D visualization only
+        to 2D or 3D visualization only.
         """
+        pass
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)

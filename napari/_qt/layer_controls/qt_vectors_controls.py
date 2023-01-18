@@ -45,10 +45,10 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
-    layer: 'napari.layers.Tracks'
+    layer: 'napari.layers.Vectors'
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, **kwargs):
+        super().__init__(layer, **kwargs)
 
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()

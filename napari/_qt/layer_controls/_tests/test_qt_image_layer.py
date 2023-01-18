@@ -61,8 +61,7 @@ def test_depiction_combobox_changes(qtbot):
 def test_plane_controls_show_hide_on_depiction_change(qtbot):
     """Changing depiction mode should show/hide plane controls in 3D."""
     layer = Image(np.random.rand(10, 15, 20))
-    layer._slice_dims(ndisplay=3)
-    qtctrl = QtImageControls(layer)
+    qtctrl = QtImageControls(layer, ndisplay=3)
     qtbot.addWidget(qtctrl)
 
     layer.depiction = 'volume'
@@ -81,17 +80,16 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
 def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     """Changing ndisplay should show/hide plane controls if depicting a plane."""
     layer = Image(np.random.rand(10, 15, 20))
-    qtctrl = QtImageControls(layer)
+    qtctrl = QtImageControls(layer, ndisplay=3)
     qtbot.addWidget(qtctrl)
 
-    layer._slice_dims(ndisplay=3)
     layer.depiction = 'plane'
     assert not qtctrl.planeThicknessSlider.isHidden()
     assert not qtctrl.planeThicknessLabel.isHidden()
     assert not qtctrl.planeNormalButtons.isHidden()
     assert not qtctrl.planeNormalLabel.isHidden()
 
-    layer._slice_dims(ndisplay=2)
+    qtctrl.ndisplay = 2
     assert qtctrl.planeThicknessSlider.isHidden()
     assert qtctrl.planeThicknessLabel.isHidden()
     assert qtctrl.planeNormalButtons.isHidden()
