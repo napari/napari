@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
+    QListView,
     QListWidget,
     QListWidgetItem,
     QSizePolicy,
@@ -167,7 +168,7 @@ class QtHookImplementationListWidget(QListWidget):
         super().__init__(parent)
         self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragEnabled(True)
-        self.setDragDropMode(self.InternalMove)
+        self.setDragDropMode(QListView.InternalMove)
         self.setSelectionMode(self.SingleSelection)
         self.setAcceptDrops(True)
         self.setSpacing(1)
