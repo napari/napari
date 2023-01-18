@@ -741,16 +741,20 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        filenames, _ = dlg.getOpenFileNames(
-            parent=self,
-            caption=trans._('Select file(s)...'),
-            directory=hist[0],
-            options=(
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
-        )
+        open_kwargs = {
+            "parent": self,
+            "caption": trans._('Select file(s)...'),
+        }
+        if "PySide6" in QFileDialog.__module__:
+            # PySide6
+            open_kwargs["dir"] = hist[0]
+        else:
+            open_kwargs["directory"] = hist[0]
+
+        if in_ipython():
+            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
+
+        filenames, _ = dlg.getOpenFileNames(**open_kwargs)
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
@@ -765,16 +769,20 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        filenames, _ = dlg.getOpenFileNames(
-            parent=self,
-            caption=trans._('Select files...'),
-            directory=hist[0],  # home dir by default
-            options=(
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
-        )
+        open_kwargs = {
+            "parent": self,
+            "caption": trans._('Select files...'),
+        }
+        if "PySide6" in QFileDialog.__module__:
+            # PySide6
+            open_kwargs["dir"] = hist[0]
+        else:
+            open_kwargs["directory"] = hist[0]
+
+        if in_ipython():
+            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
+
+        filenames, _ = dlg.getOpenFileNames(**open_kwargs)
 
         if (filenames != []) and (filenames is not None):
             self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
