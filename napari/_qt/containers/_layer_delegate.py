@@ -38,7 +38,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, QSize, Qt
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QMouseEvent, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from napari._app_model.constants import MenuId
@@ -154,7 +154,7 @@ class LayerDelegate(QStyledItemDelegate):
         This can be used to customize how the delegate handles mouse/key events
         """
         if (
-            event.type() == event.MouseButtonRelease
+            event.type() == QMouseEvent.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
             pnt = (
@@ -168,11 +168,13 @@ class LayerDelegate(QStyledItemDelegate):
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty
         # to simply be toggled.
-        if event.type() == event.MouseButtonDblClick:
+        if event.type() == QMouseEvent.MouseButtonDblClick:
             self.initStyleOption(option, index)
             style = option.widget.style()
             check_rect = style.subElementRect(
-                style.SE_ItemViewItemCheckIndicator, option, option.widget
+                style.SubElement.SE_ItemViewItemCheckIndicator,
+                option,
+                option.widget,
             )
             if check_rect.contains(event.pos()):
                 cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
