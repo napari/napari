@@ -4,8 +4,8 @@ import pandas as pd
 import napari
 
 # Set the number of steps
-nb_steps = 15#100 * 70
-tex_shape = (4, 5)
+nb_steps = 100 * 70
+tex_shape = (200, 70)
 
 # Create a dummy label image
 base = np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')
@@ -48,18 +48,23 @@ texel_pos_img[..., -1] = 1  # alpha
 for k in range(nb_steps):
     grid_position = hash2d_get(k + 1, keys, values)[0]
     # divide by shape and set to RG values like in shader (tex coords)
-    texel_pos_img[:, k, :2] = np.array(grid_position) / tex_shape
+    texel_pos_img[:, k, :2] = (np.array(grid_position) + 0.5) / tex_shape
 
 # Add to napari
 viewer = napari.Viewer()
 viewer.add_image(label_img, colormap='viridis')
-viewer.add_image(texel_pos_img, rgb=True)
 labels_layer_shuffled = viewer.add_labels(label_img_shuffled, opacity=100)
+#viewer.add_image(texel_pos_img, rgb=True)
 labels_layer_ordered = viewer.add_labels(label_img, opacity=100)
 viewer.grid.enabled = True
+viewer.grid.shape = -1, 1
 
 # Set the label image colormaps
 labels_layer_shuffled.color = colormap_shuffled
 labels_layer_ordered.color = colormap_ordered
+
+# TMP debugging stuff
+vlab = viewer.window._qt_viewer.layer_to_visual[viewer.layers[-1]]
+
 
 napari.run()
