@@ -313,7 +313,6 @@ class QtViewer(QSplitter):
         dask_setting: Union[DaskSettings, Event] = None
     ):
         """Update dask cache to match settings."""
-        print("dask", dask_setting)
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
