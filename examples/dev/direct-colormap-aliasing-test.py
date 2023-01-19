@@ -4,8 +4,7 @@ import pandas as pd
 import napari
 
 # Set the number of steps
-nb_steps = 100 * 70
-tex_shape = (200, 70)
+nb_steps = 10000
 
 # Create a dummy label image
 base = np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')
@@ -42,7 +41,8 @@ colormap_ordered = dict(zip(df['label'].astype(int), colors_ordered))
 # uncomment the relevant line in the shader to compare
 from napari._vispy.layers.labels import build_textures_from_dict, hash2d_get  # noqa
 
-keys, values = build_textures_from_dict(colormap_ordered, shape=tex_shape)
+tex_shape = (1000, 1000)  # NOTE: this has to be equal to the actual texture shape in build_textures_from_dict!
+keys, values = build_textures_from_dict(colormap_ordered)
 texel_pos_img = np.zeros((1, nb_steps, 4))
 texel_pos_img[..., -1] = 1  # alpha
 for k in range(nb_steps):
