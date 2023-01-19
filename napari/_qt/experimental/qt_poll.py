@@ -11,7 +11,7 @@ from qtpy.QtCore import QEvent, QObject, QTimer
 from napari.utils.events import EmitterGroup
 
 # When running a timer we use this interval.
-POLL_INTERVAL_MS = 16.666  # About 60HZ
+POLL_INTERVAL_MS = 16  # About 60HZ, needs to be an int for QTimer setInterval
 
 # If called more often than this we ignore it. Our _on_camera() method can
 # be called multiple times in on frame. It can get called because the
