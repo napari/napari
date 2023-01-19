@@ -14,6 +14,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from napari._app_model import get_app
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
@@ -420,12 +421,14 @@ class QtViewer(QSplitter):
 
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
+        app = get_app()
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
-            if action.count(':') != 1:  # not an original action manager action
-                continue
-            action_manager.unbind_shortcut(action)
-            for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
+            # filter out non action manager actions
+            if action not in app.commands:
+                # TODO: remove action manager binding once backend refactored
+                action_manager.unbind_shortcut(action)
+                for shortcut in shortcuts:
+                    action_manager.bind_shortcut(action, shortcut)
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""

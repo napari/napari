@@ -101,7 +101,13 @@ class NapariApplication(Application):
         self.keybindings.registered.connect(populate_plugin_keymap)
 
     def _register_action_manager_shim(self, action: Action, keymapprovider):
-        """Shim from app-model Action to action_manager for keybinding"""
+        """Shim from app-model Action to action_manager for keybinding.
+
+        The old action manager is needed as the GUI implementation is reliant on it.
+        Once the backend handling of keypress events is ported to use a system compatible
+        with app-model and the GUI implementation is refactored accordingly,
+        this workaround and the action manager can be removed.
+        """
         # TODO: remove this once keybind handling is ported to app-model
         # this is a hack because action_manager actions can only be
         # "prefix:suffix", while app-model supports extra levels of nesting
@@ -167,8 +173,8 @@ class NapariApplication(Application):
 
         if repeatable:
             self._repeatable_actions.add(action_id)
-        elif self.action_is_repeatable(action_id):
-            self._repeatable_actions.remove(action_id)
+        else:
+            self._repeatable_actions.discard(action_id)
 
     def action_is_repeatable(self, action_id: str) -> bool:
         """Determines if an action is repeatable.

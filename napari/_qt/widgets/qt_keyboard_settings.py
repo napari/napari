@@ -174,6 +174,14 @@ class ShortcutEditor(QWidget):
 
         self._set_table(layer_str=self.layer_combo_box.currentText())
 
+    def _find_shortcuts(self, action_name):
+        """Find all matching shortcuts for an action."""
+        return [
+            str(rule.keybinding)
+            for rule in self._app.keybindings
+            if rule.command_id == action_name
+        ]
+
     def _set_table(self, layer_str: str = ''):
         """Builds and populates keybindings table.
 
@@ -253,11 +261,7 @@ class ShortcutEditor(QWidget):
                     command = self._app.commands[action_name]
                     description = command.title
                     tooltip = command.id
-                    shortcuts = [
-                        str(rule.keybinding)
-                        for rule in self._app.keybindings
-                        if rule.command_id == action_name
-                    ]
+                    shortcuts = self._find_shortcuts(action_name)
 
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(description)
@@ -322,11 +326,7 @@ class ShortcutEditor(QWidget):
         action_name = self._table.item(row, self._action_col).text()
 
         if action_name in self._app.commands:
-            shortcuts = [
-                str(keybinding.keybinding)
-                for keybinding in self._app.keybindings
-                if keybinding.command_id == action_name
-            ]
+            shortcuts = self._find_shortcuts(action_name)
         else:
             shortcuts = action_manager._shortcuts.get(action_name, [])
         with lock_keybind_update(self):
@@ -429,11 +429,7 @@ class ShortcutEditor(QWidget):
 
             # get the original shortcuts
             if current_action in self._app.commands:
-                current_shortcuts = [
-                    shortcut
-                    for shortcut in self._app.keybindings
-                    if shortcut.command_id == current_action
-                ]
+                current_shortcuts = self._find_shortcuts(current_action)
             else:
                 current_shortcuts = list(
                     action_manager._shortcuts.get(current_action, [])

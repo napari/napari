@@ -107,6 +107,11 @@ class _QtMainWindow(QMainWindow):
         self, viewer: 'Viewer', window: 'Window', parent=None
     ) -> None:
         super().__init__(parent)
+
+        # this is the line that initializes any Qt-based app-model Actions that
+        # were defined somewhere in the `_qt` module and imported in init_qactions
+        init_qactions()
+
         self._ev = None
         self._window = window
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
@@ -162,10 +167,6 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
-
-        # this is the line that initializes any Qt-based app-model Actions that
-        # were defined somewhere in the `_qt` module and imported in init_qactions
-        init_qactions()
 
         self.status_throttler = QSignalThrottler(parent=self)
         self.status_throttler.setTimeout(50)
