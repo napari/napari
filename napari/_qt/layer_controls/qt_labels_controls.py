@@ -240,7 +240,7 @@ class QtLabelsControls(QtLayerControls):
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 
-        self._on_ndisplay_change()
+        self._on_ndisplay_changed()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
@@ -478,7 +478,7 @@ class QtLabelsControls(QtLayerControls):
             )
             self.renderComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self):
+    def _on_ndisplay_changed(self):
         render_visible = self.ndisplay == 3
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)

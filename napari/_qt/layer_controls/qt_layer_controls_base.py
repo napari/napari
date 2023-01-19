@@ -39,8 +39,6 @@ class QtLayerControls(QFrame):
         Dropdown widget to select blending mode of layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
-    ndisplay : int
-        The number of dimensions displayed in the canvas.
     opacitySlider : qtpy.QtWidgets.QSlider
         Slider controlling opacity of the layer.
     opacityLabel : qtpy.QtWidgets.QLabel
@@ -140,14 +138,15 @@ class QtLayerControls(QFrame):
 
     @property
     def ndisplay(self) -> int:
+        """The number of dimensions displayed in the canvas."""
         return self._ndisplay
 
     @ndisplay.setter
     def ndisplay(self, ndisplay: int) -> None:
         self._ndisplay = ndisplay
-        self._on_ndisplay_change()
+        self._on_ndisplay_changed()
 
-    def _on_ndisplay_change(self) -> None:
+    def _on_ndisplay_changed(self) -> None:
         """Receive a change to the number of dimensions displayed in the viewer.
 
         This is needed because some layer controls may have options that are specific

@@ -17,7 +17,6 @@ from napari.layers import (
     Vectors,
 )
 from napari.utils import config
-from napari.utils.events.event import Event
 from napari.utils.translations import trans
 
 layer_to_controls = {
@@ -111,13 +110,9 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
-        viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+        viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
 
-        # TODO: I think this is needed if viewer is initialized with ndisplay=3,
-        # but maybe we should do this differently.
-        self._on_ndisplay_change(Event('ndisplay', value=viewer.dims.ndisplay))
-
-    def _on_ndisplay_change(self, event):
+    def _on_ndisplay_changed(self, event):
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
                 widget.ndisplay = event.value
@@ -128,7 +123,7 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
         layer = event.value
         if layer is None:
@@ -146,8 +141,6 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        # TODO: ideally would not depend on self.viewer, but that probably
-        # requires storing the extra state of ndisplay here.
         controls = create_qt_layer_controls(
             layer, ndisplay=self.viewer.dims.ndisplay
         )
@@ -165,7 +158,6 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        # controls.close()
         controls.hide()
         controls.deleteLater()
         controls = None
