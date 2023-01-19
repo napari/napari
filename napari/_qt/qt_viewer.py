@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import traceback
+import typing
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
@@ -735,15 +736,17 @@ class QtViewer(QSplitter):
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
-    def _open_files_dialog(self, choose_plugin=False):
-        """Add files from the menubar."""
+    def _open_file_dialog_uni(self, caption: str) -> typing.List[str]:
+        """
+        Open dialog to get list of files from user
+        """
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
 
         open_kwargs = {
             "parent": self,
-            "caption": trans._('Select file(s)...'),
+            "caption": caption,
         }
         if "PySide6" in QFileDialog.__module__:
             # PySide6
@@ -754,7 +757,11 @@ class QtViewer(QSplitter):
         if in_ipython():
             open_kwargs["options"] = QFileDialog.DontUseNativeDialog
 
-        filenames, _ = dlg.getOpenFileNames(**open_kwargs)
+        return dlg.getOpenFileNames(**open_kwargs)[0]
+
+    def _open_files_dialog(self, choose_plugin=False):
+        """Add files from the menubar."""
+        filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
@@ -765,24 +772,8 @@ class QtViewer(QSplitter):
 
     def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
         """Add files as a stack, from the menubar."""
-        dlg = QFileDialog()
-        hist = get_open_history()
-        dlg.setHistory(hist)
 
-        open_kwargs = {
-            "parent": self,
-            "caption": trans._('Select files...'),
-        }
-        if "PySide6" in QFileDialog.__module__:
-            # PySide6
-            open_kwargs["dir"] = hist[0]
-        else:
-            open_kwargs["directory"] = hist[0]
-
-        if in_ipython():
-            open_kwargs["options"] = QFileDialog.DontUseNativeDialog
-
-        filenames, _ = dlg.getOpenFileNames(**open_kwargs)
+        filenames = self._open_file_dialog_uni(trans._('Select files...'))
 
         if (filenames != []) and (filenames is not None):
             self._qt_open(filenames, stack=True, choose_plugin=choose_plugin)
