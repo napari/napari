@@ -31,6 +31,13 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.dask.events.connect(self._dask_changed)
+
+    def _dask_changed(self):
+        self.events.dask(value=self.dask)
+
     first_time: bool = Field(
         True,
         title=trans._('First time'),

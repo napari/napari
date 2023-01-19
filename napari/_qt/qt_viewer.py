@@ -79,6 +79,7 @@ if TYPE_CHECKING:
 
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari.components import ViewerModel
+    from napari.utils.events import Event
 
 
 def _npe2_decode_selected_filter(
@@ -298,23 +299,29 @@ class QtViewer(QSplitter):
         self._bind_shortcuts()
 
         settings = get_settings()
-        self._update_dask_settings(settings.application.dask)
+        self._update_dask_cache_settings(settings.application.dask)
 
-        settings.application.events.dask.connect(self._update_dask_settings)
+        settings.application.events.dask.connect(
+            self._update_dask_cache_settings
+        )
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
     @staticmethod
-    def _update_dask_settings(dask_setting: DaskSettings = None):
+    def _update_dask_cache_settings(
+        dask_setting: Union[DaskSettings, Event] = None
+    ):
         """Update dask cache to match settings."""
-        if dask_setting:
-            if not isinstance(dask_setting, DaskSettings):
-                dask_setting = dask_setting.value
+        print("dask", dask_setting)
+        if not dask_setting:
+            return
+        if not isinstance(dask_setting, DaskSettings):
+            dask_setting = dask_setting.value
 
-            enabled = dask_setting.enabled
-            size = dask_setting.cache
-            resize_dask_cache(int(int(enabled) * size * 1e6))
+        enabled = dask_setting.enabled
+        size = dask_setting.cache
+        resize_dask_cache(int(int(enabled) * size * 1e6))
 
     @property
     def controls(self) -> QtLayerControlsContainer:
