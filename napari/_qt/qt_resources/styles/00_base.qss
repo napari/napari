@@ -117,6 +117,13 @@ QComboBox {
   padding: 3px 10px 3px 8px; /* top right bottom left */
 }
 
+QComboBox:disabled {
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
+
 QWidget[emphasized="true"]  QComboBox {
   background-color: {{ primary }};
 }
