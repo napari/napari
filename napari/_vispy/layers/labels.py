@@ -46,9 +46,14 @@ uniform vec2 LUT_shape;
 
 vec4 sample_label_color(float t) {
     // get position in the texture grid (same as hash2d_get)
-    vec2 pos = vec2(mod(t, LUT_shape.x), mod(t, LUT_shape.y));
+    vec2 pos = vec2(
+        mod(int(t / LUT_shape.y), LUT_shape.x),
+        mod(t, LUT_shape.y)
+    );
+
     // add .5 to move to the center of each texel and convert to texture coords
     vec2 pos_tex = (pos + vec2(.5)) / LUT_shape;
+
     // sample key texture
     float found = texture2D(
         texture2D_keys,
@@ -58,12 +63,16 @@ vec4 sample_label_color(float t) {
     // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly (correct)
     // return vec4(found / 15, 0, 0, 1); // debug if key is calculated correctly (correct, should be a black-to-red gradient)
 
-    float initial_key = t;
     // we get a different value, it's a hash collision: continue searching
     while (abs(found - t) > 1e-8) {
         t = t + 1;
-        pos = vec2(mod(t, LUT_shape.x), mod(initial_key, LUT_shape.y));
+        // same as above
+        vec2 pos = vec2(
+            mod(int(t / LUT_shape.y), LUT_shape.x),
+            mod(t, LUT_shape.y)
+        );
         pos_tex = (pos + vec2(.5)) / LUT_shape;
+
         found = texture2D(
             texture2D_keys,
             pos_tex
@@ -112,30 +121,45 @@ class DirectLabelVispyColormap(VispyColormap):
         ).replace('$selection', str(selection))
 
 
+def idx_to_2D(idx, shape):
+    """
+    From a 1D index generate a 2D index that fits the given shape.
+
+    The 2D index will wrap around line by line and back to the beginning.
+    """
+    return (idx // shape[1]) % shape[0], (idx % shape[1])
+
+
 def hash2d_get(key, keys, values, empty_val=0):
-    pos = key % keys.shape[0], key % keys.shape[1]
+    """
+    Given a key, retrieve its location in the keys table.
+    """
+    pos = idx_to_2D(key, keys.shape)
     initial_key = key
     while keys[pos] != key and keys[pos] != empty_val:
         if key - initial_key > keys.size:
             raise KeyError('label does not exist')
         key += 1
-        pos = key % keys.shape[0], initial_key % keys.shape[1]
+        pos = idx_to_2D(key, keys.shape)
     if keys[pos] == key:
-        return pos, values[pos]
+        return pos
     else:
-        return None, None
+        return None
 
 
 def hash2d_set(key, value, keys, values, empty_val=0):
+    """
+    Set a value in the 2d hashmap, wrapping around to avoid collision.
+    """
     if key is None:
         return
-    pos = key % keys.shape[0], key % keys.shape[1]
+    pos = idx_to_2D(key, keys.shape)
     initial_key = key
     while keys[pos] != empty_val:
         if key - initial_key > keys.size:
             raise OverflowError('too many labels')
         key += 1
-        pos = key % keys.shape[0], initial_key % keys.shape[1]
+        pos = idx_to_2D(key, keys.shape)
     keys[pos] = key
     values[pos] = value
 
@@ -183,6 +207,7 @@ class VispyLabelsLayer(VispyImageLayer):
                 use_selection=colormap.use_selection,
                 selection=colormap.selection,
             )
+            # note that textures have to be transposed here!
             self.node.shared_program['texture2D_keys'] = Texture2D(
                 key_texture.T, internalformat='r32f', interpolation='nearest'
             )
