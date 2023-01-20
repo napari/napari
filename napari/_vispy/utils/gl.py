@@ -123,8 +123,6 @@ BLENDING_MODES = {
         depth_test=True,
         cull_face=False,
         blend=False,
-        blend_func=('one', 'zero', 'one', 'one'),
-        blend_equation='func_add',
     ),
     'translucent': dict(
         depth_test=True,

@@ -124,11 +124,19 @@ class VispyBaseLayer(ABC):
         blending_kwargs = BLENDING_MODES[blending].copy()
 
         if self.first_visible:
-            # if the first layer, then we should blend differently (ignore the canvas color)
-            blending_kwargs['blend_equation'] = 'func_add'
-            blending_kwargs['blend_func'] = (
-                'one' if blending == 'minimum' else 'src_alpha',
-                'zero',  # do not blend canvas color
+            # if the first layer, then we should blend differently
+            # (ignore the canvas color but allow alpha blending)
+            src_color_blending = (
+                'src_alpha'
+                if blending not in ('minimum', 'additive')
+                else 'one'
+            )
+            blending_kwargs = dict(
+                depth_test=True,
+                cull_face=False,
+                blend=True,
+                blend_func=(src_color_blending, 'zero', 'one', 'one'),
+                blend_equation='func_add',
             )
 
         self.node.set_gl_state(**blending_kwargs)
