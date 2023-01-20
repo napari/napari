@@ -4,7 +4,7 @@ import pandas as pd
 import napari
 
 # Set the number of steps
-nb_steps = 1000
+nb_steps = 10000
 
 # Create a dummy label image
 base = np.linspace(start=1, stop=nb_steps, num=nb_steps).astype('uint16')
@@ -37,14 +37,34 @@ df['feature_scaled_not_shuffled'] = (
 colors_ordered = plt.cm.get_cmap('viridis')(df['feature_scaled_not_shuffled'])
 colormap_ordered = dict(zip(df['label'].astype(int), colors_ordered))
 
+# calculate texel positions as colors for debugging
+# uncomment the relevant line in the shader to compare
+from napari._vispy.layers.labels import build_textures_from_dict, hash2d_get  # noqa
+
+tex_shape = (1000, 1000)  # NOTE: this has to be equal to the actual texture shape in build_textures_from_dict!
+keys, values = build_textures_from_dict(colormap_ordered)
+texel_pos_img = np.zeros((1, nb_steps, 4))
+texel_pos_img[..., -1] = 1  # alpha
+for k in range(nb_steps):
+    grid_position = hash2d_get(k + 1, keys, values)[0]
+    # divide by shape and set to RG values like in shader (tex coords)
+    texel_pos_img[:, k, :2] = (np.array(grid_position) + 0.5) / tex_shape
+
 # Add to napari
 viewer = napari.Viewer()
 viewer.add_image(label_img, colormap='viridis')
 labels_layer_shuffled = viewer.add_labels(label_img_shuffled, opacity=100)
+#viewer.add_image(texel_pos_img, rgb=True)
 labels_layer_ordered = viewer.add_labels(label_img, opacity=100)
+viewer.grid.enabled = True
+viewer.grid.shape = -1, 1
 
 # Set the label image colormaps
 labels_layer_shuffled.color = colormap_shuffled
 labels_layer_ordered.color = colormap_ordered
+
+# TMP debugging stuff
+vlab = viewer.window._qt_viewer.layer_to_visual[viewer.layers[-1]]
+
 
 napari.run()

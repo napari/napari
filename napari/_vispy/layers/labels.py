@@ -1,6 +1,6 @@
 import numpy as np
-from vispy.color import ColorArray
 from vispy.color import Colormap as VispyColormap
+from vispy.gloo import Texture2D
 from vispy.scene.node import Node
 from vispy.scene.visuals import create_visual_node
 from vispy.visuals.image import ImageVisual
@@ -8,95 +8,75 @@ from vispy.visuals.shaders import Function, FunctionChain
 
 from napari._vispy.layers.image import ImageLayerNode, VispyImageLayer
 from napari._vispy.visuals.volume import Volume as VolumeNode
-from napari.utils.colormaps import low_discrepancy_image
-from napari.utils.colormaps.colormap import LabelColormap
 
 # from napari._vispy.layers.base import VispyBaseLayer
 
 
-def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
-    # TODO: Clean up useless shit
-    ncolors = len(controls) - 1
+low_disc_lookup_shader = """
+uniform sampler2D texture2D_LUT;
 
-    LUT = texture_map_data
-    texture_len = texture_map_data.shape[0]
-    LUT_tex_idx = np.linspace(0.0, 1.0, texture_len)
+vec4 sample_label_color(float t) {
+    float phi_mod = 0.6180339887498948482;  // phi - 1
+    float value = 0.0;
+    float margin = 1.0 / 256;
 
-    # Replicate indices to colormap texture.
-    # The resulting matrix has size of (texture_len,len(controls)).
-    # It is used to perform piecewise constant interpolation
-    # for each RGBA color component.
-    t2 = np.repeat(LUT_tex_idx[:, np.newaxis], len(controls), 1)
-
-    # Perform element-wise comparison to find
-    # control points for all LUT colors.
-    bn = np.sum(controls.transpose() <= t2, axis=1)
-
-    j = np.clip(bn - 1, 0, ncolors - 1)
-
-    # Copying color data from ColorArray to array-like
-    # makes data assignment to LUT faster.
-    colors_rgba = ColorArray(colors[:])._rgba
-    LUT[:, 0, :] = colors_rgba[j]
-
-    low_disc_plus_cmap = """
-    uniform sampler2D texture2D_LUT;
-
-    vec4 low_disc_plus_cmap(float t) {
-        float phi_mod = 0.6180339887498948482;  // phi - 1
-        float value = 0.0;
-        float margin = 1.0 / 256;
-
-        bool use_selection = $use_selection;
-        float selection = $selection;
-
-        if (t == 0) {
-            return vec4(0.0,0.0,0.0,0.0);
-        }
-
-        if ((use_selection) && (selection != t)) {
-            return vec4(0.0,0.0,0.0,0.0);
-        }
-
-        value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
-
-        return texture2D(
-            texture2D_LUT,
-            vec2(0.0, clamp(value, 0.0, 1.0))
-        );
+    if (t == 0) {
+        return vec4(0.0,0.0,0.0,0.0);
     }
-    """
-    return low_disc_plus_cmap
 
-
-direct_colors_in_vispy = """
-uniform sampler2D texture2D_keys;
-uniform sampler2D texture2D_values;
-uniform vec2 shape;
-
-vec4 hash_2d_get(float t) {
-    bg_key = 0.;
-    vec2 inc = vec2(0., 1.);
-    vec2 pos = vec2(mod(t, shape.x), mod(t, shape.y));
-    float found = texture2D(
-        texture2D_keys,
-        pos / shape
-    );
-    while(found != t || found != bg_key) {
-        pos = mod(pos + inc, shape);
-        found = texture2D(
-            texture2D_keys,
-            pos / shape
-        );
+    if (($use_selection) && ($selection != t)) {
+        return vec4(0.0,0.0,0.0,0.0);
     }
+
+    value = mod((t * phi_mod + $seed), 1.0) * (1 - 2*margin) + margin;
+
     return texture2D(
-        texture2D_values,
-        pos / shape
+        texture2D_LUT,
+        vec2(0.0, clamp(value, 0.0, 1.0))
     );
 }
+"""
 
-vec4 low_disc_plus_cmap(float t) {
-    return hash_2d_get(t);
+
+direct_lookup_shader = """
+uniform sampler2D texture2D_keys;
+uniform sampler2D texture2D_values;
+uniform vec2 LUT_shape;
+
+
+vec4 sample_label_color(float t) {
+    // get position in the texture grid (same as hash2d_get)
+    vec2 pos = vec2(mod(t, LUT_shape.x), mod(t, LUT_shape.y));
+    // add .5 to move to the center of each texel and convert to texture coords
+    vec2 pos_tex = (pos + vec2(.5)) / LUT_shape;
+    // sample key texture
+    float found = texture2D(
+        texture2D_keys,
+        pos_tex
+    ).r;
+
+    // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly (correct)
+    // return vec4(found / 15, 0, 0, 1); // debug if key is calculated correctly (correct, should be a black-to-red gradient)
+
+    float initial_key = t;
+    // we get a different value, it's a hash collision: continue searching
+    while (abs(found - t) > 1e-8) {
+        t = t + 1;
+        pos = vec2(mod(t, LUT_shape.x), mod(initial_key, LUT_shape.y));
+        pos_tex = (pos + vec2(.5)) / LUT_shape;
+        found = texture2D(
+            texture2D_keys,
+            pos_tex
+        ).r;
+    }
+
+    // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
+
+    vec4 color = texture2D(
+        texture2D_values,
+        pos_tex
+    );
+    return color;
 }
 
 """
@@ -112,94 +92,56 @@ class LabelVispyColormap(VispyColormap):
         selection=0.0,
     ):
         super().__init__(colors, controls, interpolation='zero')
-        self.seed = seed
-        self.use_selection = use_selection
-        self.selection = selection
-        self.update_shader()
-
-    def update_shader(self):
         self.glsl_map = (
-            _glsl_label_step(
-                self._controls, self.colors, self.texture_map_data
-            )
-            .replace('$seed', str(self.seed))
-            .replace('$use_selection', str(self.use_selection).lower())
-            .replace('$selection', str(self.selection))
+            low_disc_lookup_shader.replace('$seed', str(seed))
+            .replace('$use_selection', str(use_selection).lower())
+            .replace('$selection', str(selection))
         )
-        # Lorenzo says: the VisPy Way(TM)
-        # map_func = Function(_glsl_label_step(
-        #        self._controls, self.colors, self.texture_map_data
-        # ))
-        # map_func['seed'] = str(self.seed)
-        # self.glsl_map = map_func
-
-    def map(self, x):
-        tp = np.where(x == 0, 0, low_discrepancy_image(x, self.seed))
-        return super().map(tp)
 
 
-class LabelVispyDirectColormap(VispyColormap):
+class DirectLabelVispyColormap(VispyColormap):
     def __init__(
         self,
-        color_dict,
         use_selection=False,
         selection=0.0,
     ):
-        super().__init__(
-            np.zeros((1, 4)), np.array([0.0, 1.0]), interpolation='zero'
-        )
-        self.use_selection = use_selection
-        self.selection = selection
-        self.update_shader()
-
-    def update_shader(self):
-        self.glsl_map = (
-            _glsl_label_step(
-                self._controls, self.colors, self.texture_map_data
-            )
-            .replace('$seed', str(self.seed))
-            .replace('$use_selection', str(self.use_selection).lower())
-            .replace('$selection', str(self.selection))
-        )
-        # Lorenzo says: the VisPy Way(TM)
-        # map_func = Function(_glsl_label_step(
-        #        self._controls, self.colors, self.texture_map_data
-        # ))
-        # map_func['seed'] = str(self.seed)
-        # self.glsl_map = map_func
-
-    def map(self, x):
-        tp = np.where(x == 0, 0, low_discrepancy_image(x, self.seed))
-        return super().map(tp)
+        colors = ['w', 'w']  # dummy values, since we use our own machinery
+        super().__init__(colors, controls=None, interpolation='zero')
+        self.glsl_map = direct_lookup_shader.replace(
+            '$use_selection', str(use_selection).lower()
+        ).replace('$selection', str(selection))
 
 
-def idx_to_2D(idx, shape):
-    return (idx % shape[0], idx % shape[1])
-
-
-def hash2d_get(key, keys, values, empty_val=0.0):
-    pos = idx_to_2D(key, keys.shape)
+def hash2d_get(key, keys, values, empty_val=0):
+    pos = key % keys.shape[0], key % keys.shape[1]
+    initial_key = key
     while keys[pos] != key and keys[pos] != empty_val:
-        pos = (pos[0], (pos[1] + 1) % keys.shape[1])
+        if key - initial_key > keys.size:
+            raise KeyError('label does not exist')
+        key += 1
+        pos = key % keys.shape[0], initial_key % keys.shape[1]
     if keys[pos] == key:
         return pos, values[pos]
     else:
         return None, None
 
 
-def hash2d_set(key, value, keys, values, empty_val=0.0):
+def hash2d_set(key, value, keys, values, empty_val=0):
     if key is None:
         return
-    pos = (key % keys.shape[0], key % keys.shape[1])
+    pos = key % keys.shape[0], key % keys.shape[1]
+    initial_key = key
     while keys[pos] != empty_val:
-        pos = (pos[0], (pos[1] + 1) % keys.shape[1])
+        if key - initial_key > keys.size:
+            raise OverflowError('too many labels')
+        key += 1
+        pos = key % keys.shape[0], initial_key % keys.shape[1]
     keys[pos] = key
     values[pos] = value
 
 
-def build_textures_from_dict(color_dict):
-    shape = (1019, 1021)
-    keys = np.zeros(shape, dtype=np.float32)
+def build_textures_from_dict(color_dict, empty_val=0, shape=(1000, 1000)):
+    keys = np.full(shape, empty_val, dtype=np.float32)
     values = np.zeros(shape + (4,), dtype=np.float32)
     for key, value in color_dict.items():
         hash2d_set(key, value, keys, values)
@@ -224,7 +166,7 @@ class VispyLabelsLayer(VispyImageLayer):
         colormap = self.layer.colormap
         mode = self.layer.color_mode
 
-        if isinstance(colormap, LabelColormap):  # and mode == 'auto':
+        if mode == 'auto':
             self.node.cmap = LabelVispyColormap(
                 colors=colormap.colors,
                 controls=colormap.controls,
@@ -233,11 +175,23 @@ class VispyLabelsLayer(VispyImageLayer):
                 selection=colormap.selection,
             )
         elif mode == 'direct':
-            color_dict = self.layer.color
+            color_dict = (
+                self.layer.color
+            )  # TODO: should probably account for non-given labels
             key_texture, val_texture = build_textures_from_dict(color_dict)
-            self.node.shared_program['texture2D_keys'] = key_texture
-            self.node.shared_program['texture2D_colors'] = val_texture
-            self.node.cmap = LabelVispyColormap()
+            self.node.cmap = DirectLabelVispyColormap(
+                use_selection=colormap.use_selection,
+                selection=colormap.selection,
+            )
+            self.node.shared_program['texture2D_keys'] = Texture2D(
+                key_texture.T, internalformat='r32f', interpolation='nearest'
+            )
+            self.node.shared_program['texture2D_values'] = Texture2D(
+                val_texture.swapaxes(0, 1),
+                internalformat='rgba32f',
+                interpolation='nearest',
+            )
+            self.node.shared_program['LUT_shape'] = key_texture.shape
         else:
             self.node.cmap = VispyColormap(*colormap)
 
