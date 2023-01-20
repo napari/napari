@@ -1,7 +1,10 @@
 import collections
 import gc
 import os
+import platform
+import subprocess
 import sys
+import time
 import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING
@@ -47,7 +50,7 @@ def fail_obj_graph(Klass):
 
     try:
         import objgraph
-    except ImportError:
+    except ModuleNotFoundError:
         return
 
     if not len(Klass._instances) == 0:
@@ -359,3 +362,41 @@ def MouseEvent():
             'dims_point',
         ],
     )
+
+
+@pytest.fixture
+def linux_wm():
+    """Start a WM in the background for tests that need a WM.
+
+    This is required for tests that depend on UI events (e.g. setFocus).
+    See https://github.com/pytest-dev/pytest-qt/issues/206.
+
+    This will only run on Linux and in CI (determined by CI env var) - this is
+    unnecessary/irrelevant on macOS and Windows.
+
+    The window manager start command can be set via env var `WM_START_CMD`
+    (default is `herbstluftwm` - make sure it's installed).
+    """
+    wm_start_cmd = os.environ.get("WM_START_CMD", "herbstluftwm")
+    proc = None
+    if platform.system() == "Linux" and os.environ.get("CI"):
+        proc = subprocess.Popen([wm_start_cmd])
+        # give the WM 1s to start up and check it's still running
+        time.sleep(1)
+        if proc.poll() is not None:
+            raise RuntimeError(
+                f"window manager '{wm_start_cmd}' process [{proc.pid}] exited, "
+                f"return code: {proc.returncode}"
+            )
+
+    yield proc
+
+    if proc:
+        proc.terminate()
+        try:
+            proc.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            raise RuntimeError(
+                f"failed to terminate window manager '{wm_start_cmd}'"
+            )

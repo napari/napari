@@ -166,7 +166,11 @@ def build_theme_svgs(theme_name: str, source) -> str:
         svg_paths=ICONS.values(),
         colors=[(theme_name, 'icon')],
         opacities=(0.5, 1),
-        theme_override={'warning': 'warning', 'logo_silhouette': 'background'},
+        theme_override={
+            'warning': 'warning',
+            'error': 'error',
+            'logo_silhouette': 'background',
+        },
     )
     with (out / PLUGIN_FILE_NAME).open('w') as f:
         f.write(source)
