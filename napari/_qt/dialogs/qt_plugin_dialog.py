@@ -188,6 +188,8 @@ class PluginListItem(QFrame):
             self.action_button.setVisible(True)
             self.action_button.setDisabled(False)
             self.cancel_btn.setVisible(False)
+        else:
+            raise ValueError(f"Not supported {action=} and {update=}")
 
     def setup_ui(self, enabled=True):
         """Define the layout of the PluginListItem"""
@@ -408,9 +410,8 @@ class PluginListItem(QFrame):
         else:
             versions = self._versions_conda
         self.version_choice_dropdown.clear()
-        if len(versions) > 0:
-            for version in versions:
-                self.version_choice_dropdown.addItem(version)
+        for version in versions:
+            self.version_choice_dropdown.addItem(version)
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
@@ -461,9 +462,7 @@ class QPluginList(QListWidget):
         enabled=True,
         npe_version=None,
     ):
-        project_info = project_info_versions[0]
-        versions_pypi = project_info_versions[1]
-        versions_conda = project_info_versions[2]
+        project_info, versions_pypi, versions_conda = project_info_versions
 
         pkg_name = project_info.name
         # don't add duplicates
@@ -609,7 +608,7 @@ class QPluginList(QListWidget):
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.UNINSTALL:
-            widget.set_busy(trans._("uninstalling..."), action_name, False)
+            widget.set_busy(trans._("uninstalling..."), action_name, update=False)
             widget.update_btn.setDisabled(True)
             job_id = self.installer.uninstall(
                 tool=tool,
@@ -622,7 +621,7 @@ class QPluginList(QListWidget):
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.CANCEL:
-            widget.set_busy(trans._("cancelling..."), action_name, False)
+            widget.set_busy(trans._("cancelling..."), action_name, update=False)
             try:
                 job_id = widget.property("current_job_id")
                 self.installer.cancel(job_id)
