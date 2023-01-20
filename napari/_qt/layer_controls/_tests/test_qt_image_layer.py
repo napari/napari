@@ -42,9 +42,8 @@ def test_rendering_combobox(qtbot):
 def test_depiction_combobox_changes(qtbot):
     """Changing the model attribute should update the view."""
     layer = Image(np.random.rand(10, 15, 20))
-    # TODO: set on qtctrl instead.
-    layer._slice_dims(ndisplay=3)
     qtctrl = QtImageControls(layer)
+    qtctrl.ndisplay = 3
     qtbot.addWidget(qtctrl)
     combo_box = qtctrl.depictionComboBox
     opts = {combo_box.itemText(i) for i in range(combo_box.count())}
