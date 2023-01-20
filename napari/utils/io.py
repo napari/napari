@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 
+from napari._version import __version__
 from napari.utils.translations import trans
 
 
@@ -16,8 +17,24 @@ def imsave(filename: str, data: np.ndarray):
     data : np.ndarray
         The image data.
     """
-    ext = os.path.splitext(filename)[1]
-    if ext in [".tif", ".tiff"]:
+    ext = os.path.splitext(filename)[1].lower()
+    if ext in ["", ".png"]:
+        # If no file extension was specified, choose .png by default
+        import PIL
+        from imageio.v3 import imwrite
+
+        pnginfo = PIL.PngImagePlugin.PngInfo()
+        pnginfo.add_text(
+            "Software", f"napari version {__version__} https://napari.org/"
+        )
+        imwrite(
+            filename,
+            data,
+            extension='.png',
+            plugin='pillow',
+            pnginfo=pnginfo,
+        )
+    elif ext in [".tif", ".tiff"]:
         import tifffile
 
         compression_instead_of_compress = False
@@ -45,9 +62,9 @@ def imsave(filename: str, data: np.ndarray):
         else:  # older version of tifffile since 2021.6.6  this is deprecated
             tifffile.imwrite(filename, data, compress=1)
     else:
-        import imageio
-
-        imageio.imsave(filename, data)
+        imsave(
+            filename, data
+        )  # scikit-image imsave method used to write all other file types
 
 
 def __getattr__(name: str):
