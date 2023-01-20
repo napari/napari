@@ -30,8 +30,6 @@ class QtLayerControls(QFrame):
     ----------
     layer : napari.layers.Layer
         An instance of a napari layer.
-    ndisplay : int
-        The number of dimensions displayed in the canvas.
 
     Attributes
     ----------
@@ -45,14 +43,14 @@ class QtLayerControls(QFrame):
         Label for the opacity slider widget.
     """
 
-    def __init__(self, layer: Layer, *, ndisplay: int = 2):
+    def __init__(self, layer: Layer):
         super().__init__()
+
+        self._ndisplay: int = 2
 
         self.layer = layer
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
-
-        self._ndisplay = ndisplay
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -147,7 +145,7 @@ class QtLayerControls(QFrame):
         self._on_ndisplay_changed()
 
     def _on_ndisplay_changed(self) -> None:
-        """Receive a change to the number of dimensions displayed in the viewer.
+        """Respond to a change to the number of dimensions displayed in the viewer.
 
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only.

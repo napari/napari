@@ -47,8 +47,8 @@ class QtVectorsControls(QtLayerControls):
 
     layer: 'napari.layers.Vectors'
 
-    def __init__(self, layer, **kwargs):
-        super().__init__(layer, **kwargs)
+    def __init__(self, layer):
+        super().__init__(layer)
 
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()

@@ -67,8 +67,8 @@ class QtPointsControls(QtLayerControls):
 
     layer: 'napari.layers.Points'
 
-    def __init__(self, layer, **kwargs):
-        super().__init__(layer, **kwargs)
+    def __init__(self, layer):
+        super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.out_of_slice_display.connect(

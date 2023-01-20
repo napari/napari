@@ -83,8 +83,8 @@ class QtLabelsControls(QtLayerControls):
 
     layer: 'napari.layers.Labels'
 
-    def __init__(self, layer, *, ndisplay: int = 2):
-        super().__init__(layer, ndisplay=ndisplay)
+    def __init__(self, layer):
+        super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.rendering.connect(self._on_rendering_change)

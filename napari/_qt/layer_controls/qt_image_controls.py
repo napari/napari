@@ -60,8 +60,8 @@ class QtImageControls(QtBaseImageControls):
 
     layer: 'napari.layers.Image'
 
-    def __init__(self, layer, *, ndisplay: int = 2):
-        super().__init__(layer, ndisplay=ndisplay)
+    def __init__(self, layer):
+        super().__init__(layer)
 
         self.layer.events.interpolation2d.connect(
             self._on_interpolation_change

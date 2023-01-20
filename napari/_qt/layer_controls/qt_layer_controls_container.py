@@ -37,7 +37,7 @@ if config.async_loading:
     layer_to_controls[_OctreeImageBase] = QtImageControls
 
 
-def create_qt_layer_controls(layer, **kwargs):
+def create_qt_layer_controls(layer):
     """
     Create a qt controls widget for a layer based on its layer type.
 
@@ -48,8 +48,6 @@ def create_qt_layer_controls(layer, **kwargs):
     ----------
     layer : napari.layers.Layer
         Layer that needs its controls widget created.
-    **kwargs
-        The optional keyword arguments to pass through to QtLayerControls.
 
     Returns
     -------
@@ -74,7 +72,7 @@ def create_qt_layer_controls(layer, **kwargs):
     # Sort the list of candidates by 'lineage'
     candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
     controls = layer_to_controls[candidates[0]]
-    return controls(layer, **kwargs)
+    return controls(layer)
 
 
 class QtLayerControlsContainer(QStackedWidget):
@@ -148,9 +146,8 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = create_qt_layer_controls(
-            layer, ndisplay=self.viewer.dims.ndisplay
-        )
+        controls = create_qt_layer_controls(layer)
+        controls.ndisplay = 3
         self.addWidget(controls)
         self.widgets[layer] = controls
 
