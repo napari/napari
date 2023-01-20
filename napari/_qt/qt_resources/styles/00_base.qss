@@ -43,7 +43,6 @@ QWidget[emphasized="true"] > QFrame {
     background-color: {{ foreground }};
 }
 
-
 /* ------------ QAbstractScrollArea ------------- */
 
 /* QAbstractScrollArea is the superclass */ 
@@ -116,6 +115,13 @@ QComboBox {
   border-radius: 2px;
   background-color: {{ foreground }};
   padding: 3px 10px 3px 8px; /* top right bottom left */
+}
+
+QComboBox:disabled {
+  background-color: {{ opacity(foreground, 75) }};
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
 }
 
 QWidget[emphasized="true"]  QComboBox {

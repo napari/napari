@@ -31,6 +31,7 @@ class ConfirmCloseDialog(QDialog):
                     QKeySequence.NativeText
                 ),
             )
+            close_btn.setObjectName("error_icon_btn")
             close_btn.setShortcut(QKeySequence('Ctrl+Q'))
             icon_label.setObjectName("error_icon_element")
         else:
@@ -41,6 +42,7 @@ class ConfirmCloseDialog(QDialog):
                     QKeySequence.NativeText
                 ),
             )
+            close_btn.setObjectName("warning_icon_btn")
             close_btn.setShortcut(QKeySequence('Ctrl+W'))
             icon_label.setObjectName("warning_icon_element")
 
