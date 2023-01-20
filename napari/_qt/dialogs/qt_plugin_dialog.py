@@ -608,7 +608,9 @@ class QPluginList(QListWidget):
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.UNINSTALL:
-            widget.set_busy(trans._("uninstalling..."), action_name, update=False)
+            widget.set_busy(
+                trans._("uninstalling..."), action_name, update=False
+            )
             widget.update_btn.setDisabled(True)
             job_id = self.installer.uninstall(
                 tool=tool,
@@ -621,7 +623,9 @@ class QPluginList(QListWidget):
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.CANCEL:
-            widget.set_busy(trans._("cancelling..."), action_name, update=False)
+            widget.set_busy(
+                trans._("cancelling..."), action_name, update=False
+            )
             try:
                 job_id = widget.property("current_job_id")
                 self.installer.cancel(job_id)
