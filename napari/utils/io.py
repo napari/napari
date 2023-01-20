@@ -18,8 +18,11 @@ def imsave(filename: str, data: np.ndarray):
         The image data.
     """
     ext = os.path.splitext(filename)[1].lower()
-    if ext in ["", ".png"]:
-        # If no file extension was specified, choose .png by default
+    # If no file extension was specified, choose .png by default
+    if ext == "":
+        ext = ".png"
+    # Save screenshot image data to output file
+    if ext in [".png"]:
         import PIL
         from imageio.v3 import imwrite
 
