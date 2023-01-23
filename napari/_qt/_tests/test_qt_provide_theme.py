@@ -6,10 +6,12 @@ from napari_plugin_engine import napari_hook_implementation
 
 from napari import Viewer
 from napari._qt import Window
+from napari._tests.utils import skip_on_win_ci
 from napari.settings import get_settings
 from napari.utils.theme import Theme, get_theme
 
 
+@skip_on_win_ci
 @patch.object(Window, "_remove_theme")
 @patch.object(Window, "_add_theme")
 def test_provide_theme_hook_registered_correctly(

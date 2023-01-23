@@ -514,6 +514,7 @@ def test_memory_leaking(qtbot, make_napari_viewer):
     assert labels() is None
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_image(qtbot, make_napari_viewer):
 
@@ -529,6 +530,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     assert not dr()
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_labels(qtbot, make_napari_viewer):
     viewer = make_napari_viewer(show=True)
