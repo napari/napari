@@ -17,6 +17,7 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
+from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
 from napari.utils.translations import trans
 
@@ -240,8 +241,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Shading mode
         self._shading = shading
 
+        # initialize normals and wireframe
         self._wireframe = SurfaceWireframe()
         self._normals = SurfaceNormals()
+        connect_no_arg(self.wireframe.events, self.events, 'wireframe')
+        connect_no_arg(self.normals.events, self.events, 'normals')
 
         self.wireframe = wireframe
         self.normals = normals
@@ -368,10 +372,8 @@ class Surface(IntensityVisualizationMixin, Layer):
     def wireframe(self, wireframe: Union[dict, SurfaceWireframe, None]):
         if wireframe is None:
             self._wireframe.reset()
-        elif isinstance(wireframe, SurfaceWireframe):
-            self._wireframe = wireframe
-        elif isinstance(wireframe, dict):
-            self._wireframe = SurfaceWireframe(**wireframe)
+        elif isinstance(wireframe, (SurfaceWireframe, dict)):
+            self._wireframe.update(wireframe)
         else:
             raise ValueError(
                 f'wireframe should be None, a dict, or SurfaceWireframe; got {type(wireframe)}'
@@ -386,14 +388,17 @@ class Surface(IntensityVisualizationMixin, Layer):
     def normals(self, normals: Union[dict, SurfaceNormals, None]):
         if normals is None:
             self._normals.reset()
-        elif isinstance(normals, SurfaceNormals):
-            self._normals = normals
-        elif isinstance(normals, dict):
-            self._normals = SurfaceNormals(**normals)
-        else:
+        elif not isinstance(normals, (SurfaceNormals, dict)):
             raise ValueError(
                 f'normals should be None, a dict, or SurfaceNormals; got {type(normals)}'
             )
+        else:
+            if isinstance(normals, SurfaceNormals):
+                normals = {k: dict(v) for k, v in normals.dict().items()}
+            # ignore modes, they are unmutable cause errors
+            for norm_type in ('face', 'vertex'):
+                normals.get(norm_type, {}).pop('mode', None)
+            self._normals.update(normals)
         self.events.normals(value=self._normals)
 
     def _get_state(self):
