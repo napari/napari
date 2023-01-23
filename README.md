@@ -47,7 +47,8 @@ import napari
 viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![napari viewer showing an image of an astronaut.](https://github.com/napari/docs/blob/main/docs/images/screenshot-add-image.png)
+![napari viewer with a multichannel image of cells displayed as two image layers: nuclei and membrane.](https://github.com/napari/docs/blob/main/docs/images/multichannel_cells.png)
+
 
 To use napari from inside a script, use `napari.run()`:
 

@@ -285,6 +285,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def setWidget(self, widget):
         widget._parent = self
+        self.setFocusProxy(widget)
         super().setWidget(widget)
 
 

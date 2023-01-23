@@ -87,7 +87,6 @@ class QtLabelsControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
@@ -247,7 +246,8 @@ class QtLabelsControls(QtLayerControls):
         renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
-        self._on_ndisplay_change()
+
+        self._on_ndisplay_changed()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
@@ -468,15 +468,11 @@ class QtLabelsControls(QtLayerControls):
             )
             self.renderComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self):
-        """Toggle between 2D and 3D visualization modes."""
-        if self.layer._slice_input.ndisplay == 2:
-            self.renderComboBox.hide()
-            self.renderLabel.hide()
-        else:
-            self.renderComboBox.show()
-            self.renderLabel.show()
-
+    def _on_ndisplay_changed(self):
+        render_visible = self.ndisplay == 3
+        self.renderComboBox.setVisible(render_visible)
+        self.renderLabel.setVisible(render_visible)
+        self._on_editable_change()
         self._on_editable_or_visible_change()
 
     def deleteLater(self):

@@ -4,6 +4,8 @@ Method to get napari style in magicgui based windows
 
 Example how to embed magicgui widget in dialog to inherit style
 from main napari window.
+
+.. tags::  gui, interactivity
 """
 
 from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
