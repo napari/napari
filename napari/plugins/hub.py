@@ -5,7 +5,7 @@ retriving plugin information and related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Generator, Optional, Tuple
+from typing import Any, Dict, Generator, Optional, Tuple
 from urllib import error, request
 
 from npe2 import PackageMetadata
@@ -100,7 +100,9 @@ def hub_plugin_info(
 
 def iter_hub_plugin_info(
     skip={}, conda_forge=True
-) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
+) -> Generator[
+    Tuple[Optional[PackageMetadata], bool, Dict[str, Any]], None, None
+]:
     """Return a generator that yields ProjectInfo of available napari plugins."""
 
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
