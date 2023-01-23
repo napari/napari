@@ -33,7 +33,7 @@ def imsave(filename: str, data: np.ndarray):
 
 
 def imsave_png(filename, data):
-    import PIL
+    import PIL.PngImagePlugin
     from imageio.v3 import imwrite
 
     pnginfo = PIL.PngImagePlugin.PngInfo()
