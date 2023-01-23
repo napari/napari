@@ -92,9 +92,9 @@ class Surface(IntensityVisualizationMixin, Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    wireframe : dict or SurfaceWireframe
+    wireframe : None, dict or SurfaceWireframe
         Whether and how to display the edges of the surface mesh with a wireframe.
-    normals : dict or SurfaceNormals
+    normals : None, dict or SurfaceNormals
         Whether and how to display the face and vertex normals of the surface mesh.
 
     Attributes
@@ -374,7 +374,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._wireframe = SurfaceWireframe(**wireframe)
         else:
             raise ValueError(
-                f'wireframe should be a dict or SurfaceWireframe, got {type(wireframe)}'
+                f'wireframe should be None, a dict, or SurfaceWireframe; got {type(wireframe)}'
             )
         self.events.wireframe(value=self._wireframe)
 
@@ -392,7 +392,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._normals = SurfaceNormals(**normals)
         else:
             raise ValueError(
-                f'normals should be a dict or SurfaceNormals, got {type(normals)}'
+                f'normals should be None, a dict, or SurfaceNormals; got {type(normals)}'
             )
         self.events.normals(value=self._normals)
 

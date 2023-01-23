@@ -291,6 +291,10 @@ def test_get_value_3d_nd(
 
 
 def test_surface_normals():
+    """Ensure that normals can be set both with dict and SurfaceNormals.
+
+    The model should internally always use SurfaceNormals.
+    """
     vertices = np.array(
         [
             [3, 0, 0],
@@ -322,6 +326,10 @@ def test_surface_normals():
 
 
 def test_surface_wireframe():
+    """Ensure that wireframe can be set both with dict and SurfaceWireframe.
+
+    The model should internally always use SurfaceWireframe.
+    """
     vertices = np.array(
         [
             [3, 0, 0],
