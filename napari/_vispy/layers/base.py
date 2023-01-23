@@ -126,16 +126,22 @@ class VispyBaseLayer(ABC):
         if self.first_visible:
             # if the first layer, then we should blend differently
             # (ignore the canvas color but allow alpha blending)
-            src_color_blending = (
-                'src_alpha'
-                if blending not in ('minimum', 'additive')
-                else 'one'
-            )
+            if blending in ('minimum', 'additive'):
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'one_minus_src_alpha'
+            else:
+                src_color_blending = 'one'
+                dst_color_blending = 'zero'
             blending_kwargs = dict(
                 depth_test=True,
                 cull_face=False,
                 blend=True,
-                blend_func=(src_color_blending, 'zero', 'one', 'one'),
+                blend_func=(
+                    src_color_blending,
+                    dst_color_blending,
+                    'one',
+                    'one',
+                ),
                 blend_equation='func_add',
             )
 
