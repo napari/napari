@@ -3,6 +3,8 @@ import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Surface
+from napari.layers.surface.normals import SurfaceNormals
+from napari.layers.surface.wireframe import SurfaceWireframe
 
 
 def test_random_surface():
@@ -286,3 +288,65 @@ def test_get_value_3d_nd(
     )
     assert index == expected_index
     np.testing.assert_allclose(value, expected_value)
+
+
+def test_surface_normals():
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    normals = dict(face=dict(visible=True, color='red'))
+    surface_layer = Surface((vertices, faces, values), normals=normals)
+    assert isinstance(surface_layer.normals, SurfaceNormals)
+    assert surface_layer.normals.face.visible is True
+    assert np.all(surface_layer.normals.face.color == (1, 0, 0, 1))
+
+    surface_layer = Surface(
+        (vertices, faces, values), normals=SurfaceNormals(**normals)
+    )
+    assert isinstance(surface_layer.normals, SurfaceNormals)
+    assert surface_layer.normals.face.visible is True
+    assert np.all(surface_layer.normals.face.color == (1, 0, 0, 1))
+
+
+def test_surface_wireframe():
+    vertices = np.array(
+        [
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 3, 0],
+            [5, 0, 0],
+            [5, 0, 3],
+            [5, 3, 0],
+            [2, 50, 50],
+            [2, 50, 100],
+            [2, 100, 50],
+        ]
+    )
+    faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    wireframe = dict(visible=True, color='red')
+    surface_layer = Surface((vertices, faces, values), wireframe=wireframe)
+    assert isinstance(surface_layer.wireframe, SurfaceWireframe)
+    assert surface_layer.wireframe.visible is True
+    assert np.all(surface_layer.wireframe.color == (1, 0, 0, 1))
+
+    surface_layer = Surface(
+        (vertices, faces, values), wireframe=SurfaceWireframe(**wireframe)
+    )
+    assert isinstance(surface_layer.wireframe, SurfaceWireframe)
+    assert surface_layer.wireframe.visible is True
+    assert np.all(surface_layer.wireframe.color == (1, 0, 0, 1))

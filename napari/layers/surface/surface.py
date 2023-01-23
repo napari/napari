@@ -197,6 +197,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             interpolation=Event,
             rendering=Event,
             shading=Event,
+            wireframe=Event,
+            normals=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -238,8 +240,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Shading mode
         self._shading = shading
 
-        self.wireframe = wireframe or SurfaceWireframe()
-        self.normals = normals or SurfaceNormals()
+        self._wireframe = SurfaceWireframe()
+        self._normals = SurfaceNormals()
+
+        self.wireframe = wireframe
+        self.normals = normals
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -354,6 +359,42 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._shading = Shading(shading)
         self.events.shading(value=self._shading)
+
+    @property
+    def wireframe(self):
+        return self._wireframe
+
+    @wireframe.setter
+    def wireframe(self, wireframe):
+        if wireframe is None:
+            self._wireframe.reset()
+        elif isinstance(wireframe, SurfaceWireframe):
+            self._wireframe = wireframe
+        elif isinstance(wireframe, dict):
+            self._wireframe = SurfaceWireframe(**wireframe)
+        else:
+            raise ValueError(
+                f'wireframe should be a dict or SurfaceWireframe, got {type(wireframe)}'
+            )
+        self.events.wireframe(value=self._wireframe)
+
+    @property
+    def normals(self):
+        return self._normals
+
+    @normals.setter
+    def normals(self, normals):
+        if normals is None:
+            self._normals.reset()
+        elif isinstance(normals, SurfaceNormals):
+            self._normals = normals
+        elif isinstance(normals, dict):
+            self._normals = SurfaceNormals(**normals)
+        else:
+            raise ValueError(
+                f'normals should be a dict or SurfaceNormals, got {type(normals)}'
+            )
+        self.events.normals(value=self._normals)
 
     def _get_state(self):
         """Get dictionary of layer state.
