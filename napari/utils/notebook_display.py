@@ -12,7 +12,7 @@ try:
 except ModuleNotFoundError:
     lxml_unavailable = True
 
-from napari._version import __version__
+from napari.utils.io import imsave_png
 
 __all__ = ['nbscreenshot']
 
@@ -109,27 +109,14 @@ class NotebookScreenshot:
         -------
         In memory binary stream containing PNG screenshot image.
         """
-        import PIL
-        from imageio.v3 import imwrite
-
         from napari._qt.qt_event_loop import get_app
 
         get_app().processEvents()
         self.image = self.viewer.screenshot(
             canvas_only=self.canvas_only, flash=False
         )
-        pnginfo = PIL.PngImagePlugin.PngInfo()
-        pnginfo.add_text(
-            "Software", f"napari version {__version__} https://napari.org/"
-        )
         with BytesIO() as file_obj:
-            imwrite(
-                file_obj,
-                self.image,
-                extension='.png',
-                plugin='pillow',
-                pnginfo=pnginfo,
-            )
+            imsave_png(file_obj, self.image)
             file_obj.seek(0)
             png = file_obj.read()
         return png
