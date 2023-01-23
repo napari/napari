@@ -27,20 +27,33 @@ def imsave(filename: str, data: np.ndarray):
     elif ext in [".tif", ".tiff"]:
         imsave_tiff(filename, data)
     else:
-        imsave(
-            filename, data
-        )  # scikit-image imsave method used to write all other file types
+        import imageio.v3 as iio
+
+        iio.imwrite(filename, data)  # for all other file extensions
 
 
 def imsave_png(filename, data):
-    import PIL.PngImagePlugin
-    from imageio.v3 import imwrite
+    """Save .png image to file
 
+    PNG images created in napari have a digital watermark.
+    The napari version info is embedded into the bytes of the PNG.
+
+    Parameters
+    ----------
+    filename : string
+        The path to write the file to.
+    data : np.ndarray
+        The image data.
+    """
+    import imageio.v3 as iio
+    import PIL.PngImagePlugin
+
+    # Digital watermark, adds info about the napari version to the bytes of the PNG file
     pnginfo = PIL.PngImagePlugin.PngInfo()
     pnginfo.add_text(
         "Software", f"napari version {__version__} https://napari.org/"
     )
-    imwrite(
+    iio.imwrite(
         filename,
         data,
         extension='.png',
@@ -50,6 +63,15 @@ def imsave_png(filename, data):
 
 
 def imsave_tiff(filename, data):
+    """Save .tiff image to file
+
+    Parameters
+    ----------
+    filename : string
+        The path to write the file to.
+    data : np.ndarray
+        The image data.
+    """
     import tifffile
 
     compression_instead_of_compress = False
