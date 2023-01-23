@@ -344,7 +344,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             extent=Event,
-            _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
@@ -941,14 +940,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self._slice_input == slice_input:
             return
 
-        old_ndisplay = self._slice_input.ndisplay
         self._slice_input = slice_input
 
-        if old_ndisplay != ndisplay:
-            self.events._ndisplay()
-
         # Update the point values
-        self._update_dims()
+        self.refresh()
         self._set_editable()
 
     @abstractmethod

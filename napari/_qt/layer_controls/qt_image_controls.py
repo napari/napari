@@ -72,7 +72,6 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
         self.layer.plane.events.thickness.connect(
             self._on_plane_thickness_change
@@ -156,7 +155,8 @@ class QtImageControls(QtBaseImageControls):
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel(trans._('attenuation:'))
-        self._on_ndisplay_change()
+
+        self._on_ndisplay_changed()
 
         colormap_layout = QHBoxLayout()
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
@@ -198,7 +198,7 @@ class QtImageControls(QtBaseImageControls):
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
         """
-        if self.layer._slice_input.ndisplay == 2:
+        if self.ndisplay == 2:
             self.layer.interpolation2d = text
         else:
             self.layer.interpolation3d = text
@@ -227,11 +227,11 @@ class QtImageControls(QtBaseImageControls):
               This will make nearer objects appear more prominent.
         """
         self.layer.rendering = text
-        self._toggle_rendering_parameter_visbility()
+        self._update_rendering_parameter_visibility()
 
     def changeDepiction(self, text):
         self.layer.depiction = text
-        self._toggle_plane_parameter_visibility()
+        self._update_plane_parameter_visibility()
 
     def changePlaneThickness(self, value: float):
         self.layer.plane.thickness = value
@@ -297,7 +297,7 @@ class QtImageControls(QtBaseImageControls):
                 self.layer.rendering, Qt.MatchFlag.MatchFixedString
             )
             self.renderComboBox.setCurrentIndex(index)
-            self._toggle_rendering_parameter_visbility()
+            self._update_rendering_parameter_visibility()
 
     def _on_depiction_change(self):
         """Receive layer model depiction change event and update combobox."""
@@ -306,48 +306,36 @@ class QtImageControls(QtBaseImageControls):
                 self.layer.depiction, Qt.MatchFlag.MatchFixedString
             )
             self.depictionComboBox.setCurrentIndex(index)
-            self._toggle_plane_parameter_visibility()
+            self._update_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self):
         with self.layer.plane.events.blocker():
             self.planeThicknessSlider.setValue(self.layer.plane.thickness)
 
-    def _toggle_rendering_parameter_visbility(self):
+    def _update_rendering_parameter_visibility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
         rendering = ImageRendering(self.layer.rendering)
-        if rendering == ImageRendering.ISO:
-            self.isoThresholdSlider.show()
-            self.isoThresholdLabel.show()
-        else:
-            self.isoThresholdSlider.hide()
-            self.isoThresholdLabel.hide()
-        if rendering == ImageRendering.ATTENUATED_MIP:
-            self.attenuationSlider.show()
-            self.attenuationLabel.show()
-        else:
-            self.attenuationSlider.hide()
-            self.attenuationLabel.hide()
+        iso_threshold_visible = rendering == ImageRendering.ISO
+        self.isoThresholdLabel.setVisible(iso_threshold_visible)
+        self.isoThresholdSlider.setVisible(iso_threshold_visible)
+        attenuation_visible = rendering == ImageRendering.ATTENUATED_MIP
+        self.attenuationSlider.setVisible(attenuation_visible)
+        self.attenuationLabel.setVisible(attenuation_visible)
 
-    def _toggle_plane_parameter_visibility(self):
+    def _update_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        ndisplay = self.layer._slice_input.ndisplay
-        if depiction == VolumeDepiction.VOLUME or ndisplay == 2:
-            self.planeNormalButtons.hide()
-            self.planeNormalLabel.hide()
-            self.planeThicknessSlider.hide()
-            self.planeThicknessLabel.hide()
-        if depiction == VolumeDepiction.PLANE and ndisplay == 3:
-            self.planeNormalButtons.show()
-            self.planeNormalLabel.show()
-            self.planeThicknessSlider.show()
-            self.planeThicknessLabel.show()
+        visible = depiction == VolumeDepiction.PLANE and self.ndisplay == 3
+        self.planeNormalButtons.setVisible(visible)
+        self.planeNormalLabel.setVisible(visible)
+        self.planeThicknessSlider.setVisible(visible)
+        self.planeThicknessLabel.setVisible(visible)
 
     def _update_interpolation_combo(self):
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
             self.layer.interpolation2d
-            if self.layer._slice_input.ndisplay == 2
+            if self.ndisplay == 2
             else self.layer.interpolation3d
         )
         with qt_signals_blocked(self.interpComboBox):
@@ -355,11 +343,11 @@ class QtImageControls(QtBaseImageControls):
             self.interpComboBox.addItems(interp_names)
             self.interpComboBox.setCurrentText(interp)
 
-    def _on_ndisplay_change(self):
-        """Toggle between 2D and 3D visualization modes."""
+    def _on_ndisplay_changed(self):
+        """Update widget visibility based on 2D and 3D visualization modes."""
         self._update_interpolation_combo()
-        self._toggle_plane_parameter_visibility()
-        if self.layer._slice_input.ndisplay == 2:
+        self._update_plane_parameter_visibility()
+        if self.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()
@@ -371,7 +359,7 @@ class QtImageControls(QtBaseImageControls):
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
-            self._toggle_rendering_parameter_visbility()
+            self._update_rendering_parameter_visibility()
             self.depictionComboBox.show()
             self.depictionLabel.show()
 
