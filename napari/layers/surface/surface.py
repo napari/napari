@@ -361,11 +361,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.shading(value=self._shading)
 
     @property
-    def wireframe(self):
+    def wireframe(self) -> SurfaceWireframe:
         return self._wireframe
 
     @wireframe.setter
-    def wireframe(self, wireframe):
+    def wireframe(self, wireframe: Union[dict, SurfaceWireframe, None]):
         if wireframe is None:
             self._wireframe.reset()
         elif isinstance(wireframe, SurfaceWireframe):
@@ -379,11 +379,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.wireframe(value=self._wireframe)
 
     @property
-    def normals(self):
+    def normals(self) -> SurfaceNormals:
         return self._normals
 
     @normals.setter
-    def normals(self, normals):
+    def normals(self, normals: Union[dict, SurfaceNormals, None]):
         if normals is None:
             self._normals.reset()
         elif isinstance(normals, SurfaceNormals):
