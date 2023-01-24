@@ -207,7 +207,6 @@ class QtViewer(QSplitter):
         self._dockPerformance = None
 
         # This dictionary holds the corresponding vispy visual for each layer
-        self.layer_to_visual = {}
         self.canvas = VispyCanvas(
             keys=None,
             vsync=True,
@@ -526,7 +525,7 @@ class QtViewer(QSplitter):
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
         vispy_layer.node.parent = self.canvas.view.scene
-        self.layer_to_visual[layer] = vispy_layer
+        self.canvas.layer_to_visual[layer] = vispy_layer
         self._reorder_layers()
 
     def _remove_layer(self, event):
@@ -538,16 +537,16 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         layer = event.value
-        vispy_layer = self.layer_to_visual[layer]
+        vispy_layer = self.canvas.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
-        del self.layer_to_visual[layer]
+        del self.canvas.layer_to_visual[layer]
         self._reorder_layers()
 
     def _reorder_layers(self):
         """When the list is reordered, propagate changes to draw order."""
         for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer = self.canvas.layer_to_visual[layer]
             vispy_layer.order = i
         self.canvas.scene_canvas._draw_order.clear()
         self.canvas.scene_canvas.update()

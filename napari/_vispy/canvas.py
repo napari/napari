@@ -47,6 +47,7 @@ class VispyCanvas:
         self.vispy_camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
+        self.layer_to_visual = {}
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
