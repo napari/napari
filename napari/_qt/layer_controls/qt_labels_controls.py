@@ -472,7 +472,6 @@ class QtLabelsControls(QtLayerControls):
         render_visible = self.ndisplay == 3
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)
-        self._on_editable_change()
         self._on_editable_or_visible_change()
 
     def deleteLater(self):
