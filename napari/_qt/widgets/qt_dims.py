@@ -320,7 +320,7 @@ class QtDims(QWidget):
             return (
                 self._animation_thread and self._animation_thread.isRunning()
             )
-        except RuntimeError as e:
+        except RuntimeError as e:  # pragma: no cover
             if (
                 "wrapped C/C++ object of type" not in e.args[0]
                 and "Internal C++ object" not in e.args[0]
