@@ -325,6 +325,9 @@ class QtDims(QWidget):
                 "wrapped C/C++ object of type" not in e.args[0]
                 and "Internal C++ object" not in e.args[0]
             ):
+                # checking if threat is partially deleted. Otherwise
+                # reraise exception. For more details see:
+                # https://github.com/napari/napari/pull/5499
                 raise
             return False
 
