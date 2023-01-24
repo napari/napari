@@ -7,8 +7,8 @@ from vispy.scene import SceneCanvas, Widget
 
 from napari._vispy import VispyCamera
 from napari._vispy.utils.gl import get_max_texture_sizes
-from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
