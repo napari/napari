@@ -1,24 +1,12 @@
-import contextlib
 import os
-import sys
 from enum import Enum, auto
+from functools import partial
 from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
-from tempfile import gettempdir
-from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
-from qtpy.QtCore import (
-    QEvent,
-    QObject,
-    QPoint,
-    QProcess,
-    QProcessEnvironment,
-    QSize,
-    Qt,
-    Signal,
-    Slot,
-)
+from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -39,305 +27,26 @@ from qtpy.QtWidgets import (
 from superqt import QElidingLabel
 
 import napari.resources
+from napari._qt.dialogs.qt_package_installer import (
+    InstallerActions,
+    InstallerQueue,
+    InstallerTools,
+)
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.plugins import plugin_manager
 from napari.plugins.hub import iter_hub_plugin_info
-from napari.plugins.pypi import _user_agent, iter_napari_plugin_info
+from napari.plugins.pypi import iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
 from napari.settings import get_settings
-from napari.utils._appdirs import user_plugin_dir, user_site_packages
 from napari.utils.misc import (
     parse_version,
     running_as_bundled_app,
     running_as_constructor_app,
 )
 from napari.utils.translations import trans
-
-InstallerTypes = Literal['pip', 'mamba']
-
-
-# TODO: add error icon and handle pip install errors
-class Installer(QObject):
-    started = Signal()
-    finished = Signal(int)
-
-    def __init__(
-        self,
-        output_widget: QTextEdit = None,
-        installer: InstallerTypes = "pip",
-    ):
-        super().__init__()
-        self._queue: List[Tuple[Tuple[str, ...], Callable[[], QProcess]]] = []
-        self._processes: Dict[Tuple[str, ...], QProcess] = {}
-        self._exit_code = 0
-        self._conda_env_path = None
-        self._installer_type = installer
-
-        if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
-            self._conda_env_path = sys.prefix
-
-        # create install process
-        self._output_widget = output_widget
-        self.process = None
-
-    def _create_process(
-        self,
-        installer: InstallerTypes = "pip",
-    ):
-        process = QProcess()
-        process.setProcessChannelMode(QProcess.MergedChannels)
-        process.readyReadStandardOutput.connect(
-            lambda process=process: self._on_stdout_ready(process)
-        )
-        env = QProcessEnvironment.systemEnvironment()
-
-        if installer == "pip":
-            process.setProgram(self._sys_executable_or_bundled_python())
-            # patch process path
-            combined_paths = os.pathsep.join(
-                [
-                    user_site_packages(),
-                    env.systemEnvironment().value("PYTHONPATH"),
-                ]
-            )
-            env.insert("PYTHONPATH", combined_paths)
-            env.insert("PIP_USER_AGENT_USER_DATA", _user_agent())
-        else:
-            process.setProgram(installer)
-
-        if installer == "mamba":
-            from napari._version import version_tuple
-
-            # To avoid napari version changing when installing a plugin, we
-            # add a pin to the current napari version, that way we can
-            # restrict any changes to the actual napari application.
-            # Conda/mamba also pin python by default, so we effectively
-            # constrain python and napari versions from changing, when
-            # installing plugins inside the constructor bundled application.
-            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
-            napari_version = ".".join(str(v) for v in version_tuple[:3])
-            if env.contains("CONDA_PINNED_PACKAGES"):
-                # str delimiter is '&'
-                system_pins = f"&{env.value('CONDA_PINNED_PACKAGES')}"
-            else:
-                system_pins = ""
-            env.insert(
-                "CONDA_PINNED_PACKAGES",
-                f"napari={napari_version}{system_pins}",
-            )
-            if os.name == "nt":
-                # workaround https://github.com/napari/napari/issues/4247, 4484
-                if not env.contains("TEMP"):
-                    temp = gettempdir()
-                    env.insert("TMP", temp)
-                    env.insert("TEMP", temp)
-                if not env.contains("USERPROFILE"):
-                    env.insert("HOME", os.path.expanduser("~"))
-                    env.insert("USERPROFILE", os.path.expanduser("~"))
-
-        process.setProcessEnvironment(env)
-        self.set_output_widget(self._output_widget)
-        process.finished.connect(
-            lambda ec, es: self._on_process_finished(process, ec, es)
-        )  # FIXME connecting lambda to finished signal is bug creating and may end with segfault when garbage
-        # collection will consume Installer object before process end.
-        return process
-
-    def _sys_executable_or_bundled_python(self):
-        # Note: is_bundled_app() returns False even if using a Briefcase bundle...
-        # Workaround: see if sys.executable is set to something something napari on Mac
-        if sys.executable.endswith("napari") and sys.platform == 'darwin':
-            # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
-            python = os.path.join(sys.prefix, "bin", "python3")
-            if os.path.isfile(python):
-                return python
-        return sys.executable
-
-    def set_output_widget(self, output_widget: QTextEdit):
-        if output_widget:
-            self._output_widget = output_widget
-
-    def _on_process_finished(self, process, exit_code, exit_status):
-        if exit_code != 0:
-            self._exit_code = 0
-
-        process_to_terminate = [
-            pkg_list
-            for pkg_list, proc in self._processes.items()
-            if proc == process
-        ]
-
-        for pkg_list in process_to_terminate:
-            process = self._processes.pop(pkg_list)
-            process.terminate()
-
-        self._handle_action()
-
-    def _on_stdout_ready(self, process):
-        if self._output_widget:
-            text = process.readAllStandardOutput().data().decode()
-            self._output_widget.append(text)
-
-    def _handle_action(self):
-        if self._queue:
-            pkg_list, func = self._queue.pop()
-            self.started.emit()
-            process = func()
-            self._processes[pkg_list] = process
-
-        if not self._processes:
-            from napari.plugins import plugin_manager
-
-            plugin_manager.discover()
-            plugin_manager.prune()
-            self.finished.emit(self._exit_code)
-
-    def install(
-        self,
-        pkg_list: Sequence[str],
-        installer: Optional[InstallerTypes] = None,
-        channels: Sequence[str] = ("conda-forge",),
-    ):
-        installer = installer or self._installer_type
-        self._queue.insert(
-            0,
-            (
-                tuple(pkg_list),
-                lambda: self._install(pkg_list, installer, channels),
-            ),
-        )
-        self._handle_action()
-
-    def _install(
-        self,
-        pkg_list: Sequence[str],
-        installer: Optional[InstallerTypes] = None,
-        channels: Sequence[str] = ("conda-forge",),
-    ):
-        installer = installer or self._installer_type
-        process = self._create_process(installer)
-        if installer != "pip":
-            cmd = [
-                'install',
-                '-y',
-                '--prefix',
-                self._conda_env_path,
-            ]
-            for channel in channels:
-                cmd.extend(["-c", channel])
-        else:
-            cmd = ['-m', 'pip', 'install', '--upgrade']
-
-        if (
-            running_as_bundled_app()
-            and sys.platform.startswith('linux')
-            and not self._conda_env_path
-        ):
-            cmd += [
-                '--no-warn-script-location',
-                '--prefix',
-                user_plugin_dir(),
-            ]
-
-        process.setArguments(cmd + list(pkg_list))
-        if self._output_widget and self._queue:
-            self._output_widget.clear()
-
-        process.start()
-        return process
-
-    def uninstall(
-        self,
-        pkg_list: Sequence[str],
-        installer: Optional[InstallerTypes] = None,
-        channels: Sequence[str] = ("conda-forge",),
-    ):
-        installer = installer or self._installer_type
-        self._queue.insert(
-            0,
-            (
-                tuple(pkg_list),
-                lambda: self._uninstall(pkg_list, installer, channels),
-            ),
-        )
-        self._handle_action()
-
-    def _uninstall(
-        self,
-        pkg_list: Sequence[str],
-        installer: Optional[InstallerTypes] = None,
-        channels: Sequence[str] = ("conda-forge",),
-    ):
-        installer = installer or self._installer_type
-        if installer != "pip":
-            args = [
-                'remove',
-                '-y',
-                '--prefix',
-                self._conda_env_path,
-            ]
-
-            for channel in channels:
-                args.extend(["-c", channel])
-        else:
-            args = ['-m', 'pip', 'uninstall', '-y']
-
-        process = self._create_process(installer)
-        process.setArguments(args + list(pkg_list))
-        if self._output_widget and self._queue:
-            self._output_widget.clear()
-
-        process.start()
-
-        pm2 = PluginManager.instance()
-
-        for pkg in pkg_list:
-            if pkg in pm2:
-                pm2.unregister(pkg)
-            else:
-                plugin_manager.unregister(pkg)
-
-        return process
-
-    def cancel(
-        self,
-        pkg_list: Sequence[str] = None,
-    ):
-        if pkg_list is None:
-            for _, process in self._processes.items():
-                process.terminate()
-
-            self._processes = {}
-        else:
-            with contextlib.suppress(KeyError):
-                process = self._processes.pop(tuple(pkg_list))
-                process.terminate()
-
-    @staticmethod
-    def _is_installed_with_conda():
-        """
-        Check if conda was used to install qt and napari.
-        """
-        from qtpy import QT_VERSION
-
-        from napari._version import version_tuple
-
-        parts = [str(part) for part in version_tuple[:3]]
-        napari_version_string = f"napari-{'.'.join(parts)}-"
-        qt_version_string = f"qt-{QT_VERSION}-"
-        conda_meta_path = Path(sys.prefix) / "conda-meta"
-        if conda_meta_path.is_dir():
-            for file in conda_meta_path.iterdir():
-                fname = file.parts[-1]
-                if (
-                    fname.startswith(napari_version_string)
-                    or fname.startswith(qt_version_string)
-                ) and fname.endswith(".json"):
-                    return True
-        return False
 
 
 class PluginListItem(QFrame):
@@ -378,7 +87,7 @@ class PluginListItem(QFrame):
             self.action_button.setObjectName("install_button")
 
     def _handle_npe2_plugin(self, npe_version):
-        if npe_version == 1:
+        if npe_version in (None, 1):
             return
         opacity = 0.4 if npe_version == 'shim' else 1
         lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
@@ -538,7 +247,7 @@ class PluginListItem(QFrame):
 
 
 class QPluginList(QListWidget):
-    def __init__(self, parent: QWidget, installer: Installer):
+    def __init__(self, parent: QWidget, installer: InstallerQueue):
         super().__init__(parent)
         self.installer = installer
         self.setSortingEnabled(True)
@@ -565,7 +274,7 @@ class QPluginList(QListWidget):
         installed=False,
         plugin_name=None,
         enabled=True,
-        npe_version=1,
+        npe_version=None,
     ):
         pkg_name = project_info.name
         # don't add duplicates
@@ -603,36 +312,55 @@ class QPluginList(QListWidget):
             import webbrowser
 
             widg.help_button.clicked.connect(
-                lambda: webbrowser.open(project_info.home_page)
+                partial(webbrowser.open, project_info.home_page)
             )
         else:
             widg.help_button.setVisible(False)
         widg.action_button.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, action_name)
+            partial(self.handle_action, item, pkg_name, action_name)
         )
         widg.update_btn.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, "install", update=True)
+            partial(
+                self.handle_action,
+                item,
+                pkg_name,
+                InstallerActions.INSTALL,
+                update=True,
+            )
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.handle_action(item, pkg_name, "cancel")
+            partial(
+                self.handle_action, item, pkg_name, InstallerActions.CANCEL
+            )
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
 
-    def handle_action(self, item, pkg_name, action_name, update=False):
+    def handle_action(
+        self,
+        item: QListWidgetItem,
+        pkg_name: str,
+        action_name: InstallerActions,
+        update: bool = False,
+    ):
+        # TODO: 'tool' should be configurable per item, depending on dropdown
+        tool = (
+            InstallerTools.CONDA
+            if running_as_constructor_app()
+            else InstallerTools.PIP
+        )
         widget = item.widget
         item.setText(f"0-{item.text()}")
-        method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
         self._warn_dialog = None
-        if item.npe_version != 1:
+        # TODO: NPE version unknown before installing
+        if item.npe_version != 1 and action_name == InstallerActions.UNINSTALL:
             # show warning pop up dialog
             message = trans._(
-                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+                'When installing/uninstalling npe2 plugins, you must '
+                'restart napari for UI changes to take effect.'
             )
-            self._warn_dialog = WarnPopup(
-                text=message,
-            )
+            self._warn_dialog = WarnPopup(text=message)
 
             delta_x = 75
             global_point = widget.action_button.mapToGlobal(
@@ -641,7 +369,7 @@ class QPluginList(QListWidget):
             global_point = QPoint(global_point.x() - delta_x, global_point.y())
             self._warn_dialog.move(global_point)
 
-        if action_name == "install":
+        if action_name == InstallerActions.INSTALL:
             if update:
                 if hasattr(item, 'latest_version'):
                     pkg_name += f"=={item.latest_version}"
@@ -651,20 +379,34 @@ class QPluginList(QListWidget):
             else:
                 widget.set_busy(trans._("installing..."), update)
 
-            method([pkg_name])
+            job_id = self.installer.install(
+                tool=tool,
+                pkgs=[pkg_name],
+                # origins="TODO",
+            )
+            widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == "uninstall":
+        elif action_name == InstallerActions.UNINSTALL:
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
-            method([pkg_name])
+            job_id = self.installer.uninstall(
+                tool=tool,
+                pkgs=[pkg_name],
+                # origins="TODO",
+            )
+            widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == "cancel":
+        elif action_name == InstallerActions.CANCEL:
             widget.set_busy(trans._("cancelling..."), update)
-            method((pkg_name,))
+            try:
+                job_id = widget.property("current_job_id")
+                self.installer.cancel(job_id)
+            finally:
+                widget.setProperty("current_job_id", None)
 
     @Slot(PackageMetadata, bool)
     def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
@@ -742,9 +484,8 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
-        installer_type = "mamba" if running_as_constructor_app() else "pip"
-
-        self.installer = Installer(installer=installer_type)
+        self.installer = InstallerQueue()
+        self.setWindowTitle(trans._('Plugin Manager'))
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
@@ -754,6 +495,7 @@ class QtPluginDialog(QDialog):
     def _on_installer_start(self):
         self.cancel_all_btn.setVisible(True)
         self.working_indicator.show()
+        self.process_success_indicator.hide()
         self.process_error_indicator.hide()
         self.close_btn.setDisabled(True)
 
@@ -761,7 +503,8 @@ class QtPluginDialog(QDialog):
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
-
+        else:
+            self.process_success_indicator.show()
         self.cancel_all_btn.setVisible(False)
         self.close_btn.setDisabled(False)
         self.refresh()
@@ -829,11 +572,7 @@ class QtPluginDialog(QDialog):
             _add_to_installed(distname, enabled, npe_version=npev)
 
         plugin_manager.discover()  # since they might not be loaded yet
-        for (
-            plugin_name,
-            _mod_name,
-            distname,
-        ) in plugin_manager.iter_available():
+        for plugin_name, _, distname in plugin_manager.iter_available():
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
@@ -872,11 +611,15 @@ class QtPluginDialog(QDialog):
         self.worker.start()
         if discovered:
             message = trans._(
-                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+                'When installing/uninstalling npe2 plugins, '
+                'you must restart napari for UI changes to take effect.'
             )
-            self._warn_dialog = WarnPopup(
-                text=message,
+            self._warn_dialog = WarnPopup(text=message)
+            global_point = self.process_error_indicator.mapToGlobal(
+                self.process_error_indicator.rect().topLeft()
             )
+            global_point = QPoint(global_point.x(), global_point.y() - 75)
+            self._warn_dialog.move(global_point)
             self._warn_dialog.exec_()
 
     def setup_ui(self):
@@ -920,7 +663,7 @@ class QtPluginDialog(QDialog):
 
         self.stdout_text = QTextEdit(self.v_splitter)
         self.stdout_text.setReadOnly(True)
-        self.stdout_text.setObjectName("pip_install_status")
+        self.stdout_text.setObjectName("plugin_manager_process_status")
         self.stdout_text.hide()
 
         buttonBox = QHBoxLayout()
@@ -931,6 +674,9 @@ class QtPluginDialog(QDialog):
         self.process_error_indicator = QLabel(self)
         self.process_error_indicator.setObjectName("error_label")
         self.process_error_indicator.hide()
+        self.process_success_indicator = QLabel(self)
+        self.process_success_indicator.setObjectName("success_label")
+        self.process_success_indicator.hide()
         load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
@@ -954,7 +700,7 @@ class QtPluginDialog(QDialog):
         self.cancel_all_btn = QPushButton(trans._("cancel all actions"), self)
         self.cancel_all_btn.setObjectName("remove_button")
         self.cancel_all_btn.setVisible(False)
-        self.cancel_all_btn.clicked.connect(lambda: self.installer.cancel())
+        self.cancel_all_btn.clicked.connect(self.installer.cancel)
 
         self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.accept)
@@ -965,6 +711,7 @@ class QtPluginDialog(QDialog):
         buttonBox.addWidget(self.direct_entry_btn)
         if not visibility_direct_entry:
             buttonBox.addStretch()
+        buttonBox.addWidget(self.process_success_indicator)
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addSpacing(20)
         buttonBox.addWidget(self.cancel_all_btn)
@@ -1018,12 +765,10 @@ class QtPluginDialog(QDialog):
     def _install_packages(self, packages: Sequence[str] = ()):
         if not packages:
             _packages = self.direct_entry_edit.text()
-            if os.path.exists(_packages):
-                packages = [_packages]
-            else:
-                packages = _packages.split()
+            packages = (
+                [_packages] if os.path.exists(_packages) else _packages.split()
+            )
             self.direct_entry_edit.clear()
-
         if packages:
             self.installer.install(packages)
 
