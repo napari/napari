@@ -748,7 +748,7 @@ class QtViewer(QSplitter):
             "parent": self,
             "caption": caption,
         }
-        if "PySide6" in QFileDialog.__module__:
+        if "pyside" in QFileDialog.__module__.lower():
             # PySide6
             open_kwargs["dir"] = hist[0]
         else:
