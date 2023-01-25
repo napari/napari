@@ -235,10 +235,16 @@ class QtViewerDockWidget(QDockWidget):
             Qt.DockWidgetArea.RightDockWidgetArea,
         ):
             features = self._features
-            if features & self.DockWidgetVerticalTitleBar:
-                features = features ^ self.DockWidgetVerticalTitleBar
+            if features & self.DockWidgetFeature.DockWidgetVerticalTitleBar:
+                features = (
+                    features
+                    ^ self.DockWidgetFeature.DockWidgetVerticalTitleBar
+                )
         else:
-            features = self._features | self.DockWidgetVerticalTitleBar
+            features = (
+                self._features
+                | self.DockWidgetFeature.DockWidgetVerticalTitleBar
+            )
         self.setFeatures(features)
 
     @property
