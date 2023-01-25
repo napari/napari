@@ -113,7 +113,7 @@ class PluginListItem(QFrame):
 
         self.package_name.setText(version)
         if summary:
-            self.summary.setText(summary)
+            self.summary.setText(summary + '\br')
         if author:
             self.package_author.setText(author)
         self.package_author.setWordWrap(True)
@@ -128,7 +128,6 @@ class PluginListItem(QFrame):
             self.action_button.setText(trans._("Uninstall"))
             self.action_button.setObjectName("remove_button")
             self.info_choice_wdg.hide()
-            self.source_choice_dropdown.hide()
             self.install_info_button.addWidget(self.info_widget)
             self.info_widget.show()
         else:
@@ -137,8 +136,9 @@ class PluginListItem(QFrame):
             self.action_button.setObjectName("install_button")
             self.info_widget.hide()
             self.install_info_button.addWidget(self.info_choice_wdg)
+            self.install_info_button.setFixedWidth(170)
+
             self.info_choice_wdg.show()
-            self.source_choice_dropdown.show()
 
     def _handle_npe2_plugin(self, npe_version):
         if npe_version in (None, 1):
@@ -189,7 +189,7 @@ class PluginListItem(QFrame):
             self.action_button.setDisabled(False)
             self.cancel_btn.setVisible(False)
         else:
-            raise ValueError(f"Not supported {action=} and {update=}")
+            raise ValueError(f"Not supported {action_name} and {update}")
 
     def setup_ui(self, enabled=True):
         """Define the layout of the PluginListItem"""
@@ -253,52 +253,54 @@ class PluginListItem(QFrame):
         self.row1.addStretch()
         self.v_lay.addLayout(self.row1)
 
-        self.row2 = QHBoxLayout()
+        self.row2 = QGridLayout()
         self.error_indicator = QPushButton()
         self.error_indicator.setObjectName("warning_icon")
         self.error_indicator.setCursor(Qt.CursorShape.PointingHandCursor)
         self.error_indicator.hide()
         self.row2.addWidget(
-            self.error_indicator, alignment=Qt.AlignmentFlag.AlignTop
+            self.error_indicator,
+            0,
+            0,
+            1,
+            1,
+            alignment=Qt.AlignmentFlag.AlignTop,
         )
-        self.row2.setContentsMargins(-1, -1, 10, 0)
-        self.row2.setSpacing(5)
+        self.row2.setSpacing(4)
         self.summary = QElidingLabel(parent=self)
         self.summary.setObjectName('summary_text')
         self.summary.setWordWrap(True)
-        dlg_width = self.parent().parent().sizeHint().width()
-        self.summary.setFixedWidth(int(dlg_width * 1.5))
 
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
-        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         self.summary.setSizePolicy(sizePolicy)
-        self.row2.addWidget(self.summary, alignment=Qt.AlignmentFlag.AlignTop)
+        self.row2.addWidget(
+            self.summary, 0, 1, 1, 3, alignment=Qt.AlignmentFlag.AlignTop
+        )
 
         self.package_author = QElidingLabel(self)
         self.package_author.setObjectName('author_text')
         self.package_author.setWordWrap(True)
-        sizePolicy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
-        )
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.package_author.sizePolicy().hasHeightForWidth()
-        )
         self.package_author.setSizePolicy(sizePolicy)
         self.row2.addWidget(
-            self.package_author, alignment=Qt.AlignmentFlag.AlignTop
+            self.package_author,
+            0,
+            4,
+            1,
+            2,
+            alignment=Qt.AlignmentFlag.AlignTop,
         )
 
         self.update_btn = QPushButton('Update', self)
-        self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy.setRetainSizeWhenHidden(True)
+        self.update_btn.setSizePolicy(sizePolicy)
         self.update_btn.setObjectName("install_button")
         self.update_btn.setVisible(False)
 
         self.row2.addWidget(
-            self.update_btn, alignment=Qt.AlignmentFlag.AlignTop
+            self.update_btn, 0, 6, 1, 1, alignment=Qt.AlignmentFlag.AlignTop
         )
 
         self.info_choice_wdg = QWidget(self)
@@ -325,6 +327,7 @@ class PluginListItem(QFrame):
         self.install_info_button.content().layout().setSpacing(0)
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.install_info_button.layout().setSpacing(2)
+        self.install_info_button.setSizePolicy(sizePolicy)
 
         self.source_choice_text = QLabel('Source:')
         self.version_choice_text = QLabel('Version:')
@@ -339,47 +342,41 @@ class PluginListItem(QFrame):
         self.source_choice_dropdown.currentTextChanged.connect(
             self._populate_version_dropdown
         )
-        self.source_choice_dropdown.hide()
         self.version_choice_dropdown = QComboBox()
-        self.version_choice_dropdown.setFixedWidth(80)
         self.row2.addWidget(
-            self.install_info_button, alignment=Qt.AlignmentFlag.AlignTop
+            self.install_info_button,
+            0,
+            7,
+            1,
+            1,
+            alignment=Qt.AlignmentFlag.AlignTop,
         )
 
         info_layout = QGridLayout()
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setVerticalSpacing(2)
-        info_layout.setHorizontalSpacing(4)
-        info_layout.addWidget(self.source_choice_text, 0, 0)
-        info_layout.addWidget(self.source_choice_dropdown, 1, 0)
-        info_layout.addWidget(self.version_choice_text, 0, 1)
-        info_layout.addWidget(self.version_choice_dropdown, 1, 1)
+        info_layout.setVerticalSpacing(0)
+        info_layout.addWidget(self.source_choice_text, 0, 0, 1, 1)
+        info_layout.addWidget(self.source_choice_dropdown, 1, 0, 1, 1)
+        info_layout.addWidget(self.version_choice_text, 0, 1, 1, 1)
+        info_layout.addWidget(self.version_choice_dropdown, 1, 1, 1, 1)
         self.info_choice_wdg.setLayout(info_layout)
         self.info_choice_wdg.setLayoutDirection(Qt.LeftToRight)
         self.info_choice_wdg.setObjectName("install_choice_widget")
-        self.row2.addWidget(
-            self.info_choice_wdg, alignment=Qt.AlignmentFlag.AlignTop
-        )
         self.info_choice_wdg.hide()
 
         self.cancel_btn = QPushButton("Cancel", self)
-        self.cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.cancel_btn.setSizePolicy(sizePolicy)
         self.cancel_btn.setObjectName("remove_button")
         self.row2.addWidget(
-            self.cancel_btn, alignment=Qt.AlignmentFlag.AlignTop
+            self.cancel_btn, 0, 8, 1, 1, alignment=Qt.AlignmentFlag.AlignTop
         )
 
         self.action_button = QPushButton(self)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.action_button.sizePolicy().hasHeightForWidth()
-        )
-
-        self.action_button.setSizePolicy(sizePolicy)
+        self.action_button.setFixedWidth(70)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.action_button.setSizePolicy(sizePolicy1)
         self.row2.addWidget(
-            self.action_button, alignment=Qt.AlignmentFlag.AlignTop
+            self.action_button, 0, 8, 1, 1, alignment=Qt.AlignmentFlag.AlignTop
         )
 
         self.v_lay.addLayout(self.row2)
@@ -400,6 +397,7 @@ class PluginListItem(QFrame):
         info_layout.addWidget(self.version_text, 0, 1)
         info_layout.addWidget(self.package_name, 1, 1)
 
+        self.install_info_button.setFixedWidth(150)
         self.install_info_button.layout().setContentsMargins(0, 0, 0, 0)
         self.info_widget.setLayout(info_layout)
 
@@ -534,7 +532,7 @@ class QPluginList(QListWidget):
             )
         )
 
-        item.setSizeHint(widg.sizeHint())
+        item.setSizeHint(item.widget.size())
         widg.install_info_button.setDuration(0)
         widg.install_info_button.toggled.connect(
             lambda: self._resize_pluginlistitem(item)
