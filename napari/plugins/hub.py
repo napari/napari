@@ -5,12 +5,12 @@ retriving plugin information and related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Any, Dict, Generator, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple
 from urllib import error, request
 
 from npe2 import PackageMetadata
 
-from napari.plugins.npe2api import plugin_summaries
+from napari.plugins.npe2api import SummaryDict, plugin_summaries
 from napari.plugins.utils import normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
@@ -98,7 +98,7 @@ def hub_plugin_info(
     return data, is_available_in_conda_forge
 
 
-def _filter_summaries(summaries, plugin_name):
+def _filter_summaries(summaries: List[SummaryDict], plugin_name: str):
     """Returns the plugin summary specified by plugin_name from a list of summaries."""
 
     found = False
