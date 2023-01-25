@@ -711,8 +711,8 @@ class QtPluginDialog(QDialog):
         self._plugin_data = []  # Store plugin data while populating lists
         self.all_plugin_data = []  # Store all plugin data
         self._add_items_timer = QTimer(self)
-        # Add items in batches every 80ms to avoid blocking the UI
-        self._add_items_timer.setInterval(80)
+        # Add items in batches to avoid blocking the UI
+        self._add_items_timer.setInterval(100)
         self._add_items_timer.timeout.connect(self._add_items)
         self._add_items_timer.timeout.connect(self._update_count_in_label)
 
