@@ -55,7 +55,7 @@ default_shortcuts = {
     'napari:activate_vertex_insert_mode': [KeyCode.Digit2],
     'napari:activate_vertex_remove_mode': [KeyCode.Digit1],
     'napari:copy_selected_shapes': [KeyMod.CtrlCmd | KeyCode.KeyC],
-    'napari:paste_shape': [KeyMod.CtrlCmd | KeyCode.KeyV],
+    'napari:paste_shapes': [KeyMod.CtrlCmd | KeyCode.KeyV],
     'napari:move_shapes_selection_to_front': [KeyCode.KeyF],
     'napari:move_shapes_selection_to_back': [KeyCode.KeyB],
     'napari:select_all_shapes': [KeyCode.KeyA],
@@ -73,6 +73,23 @@ default_shortcuts = {
     ],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit2],
     'napari:activate_image_transform_mode': [KeyCode.Digit1],
+    'napari:image_hold_to_pan_zoom': [KeyCode.Space],
+    'napari:labels_hold_to_pan_zoom': [KeyCode.Space],
+    'napari:points_hold_to_pan_zoom': [KeyCode.Space],
+    'napari:shapes_hold_to_pan_zoom': [KeyCode.Space],
+    # from shapes
+    'napari:hold_to_lock_aspect_ratio': [KeyCode.Shift],
+    # from image
+    'napari:orient_plane_normal_along_x': [KeyCode.KeyX],
+    'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
+    'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
+    'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
+    # from points
+    'napari:copy_selected_points': [KeyMod.CtrlCmd | KeyCode.KeyC],
+    'napari:paste_points': [KeyMod.CtrlCmd | KeyCode.KeyV],
+    # from labels
+    'napari:labels_undo': [KeyMod.CtrlCmd | KeyCode.KeyZ],
+    'napari:labels_redo': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ],
 }
 
 default_shortcuts = {

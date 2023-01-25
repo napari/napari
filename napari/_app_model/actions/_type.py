@@ -27,7 +27,8 @@ class GeneratorCallback:
         if not inspect.isgeneratorfunction(func):
             raise TypeError(f"'{func.__name__}' is not a generator function")
         self.func = func
-        self.__signature__ = inspect.signature(self.func)
+        # make this callable object look more like func (copy the signature, docstring, etc.)
+        functools.update_wrapper(self, func)
         self._gen = None
 
     def __call__(self, *args, **kwargs):

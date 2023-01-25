@@ -116,7 +116,7 @@ class NapariApplication(Application):
         #     action_manager wants "napari:toggle_theme"
         # so this hack works if we keep the prefix and suffix the same when
         # porting to app-model
-        prefix, *group, command = action.id.split(":")
+        prefix, *_group, command = action.id.split(":")
 
         if isinstance(action.callback, GeneratorCallback):
 

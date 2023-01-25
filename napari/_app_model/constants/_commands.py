@@ -47,6 +47,8 @@ class CommandId(str, Enum):
     NAPARI_GITHUB_ISSUE = 'napari:window:help:github_issue'
     TOGGLE_BUG_REPORT_OPT_IN = 'napari:window:help:bug_report_opt_in'
 
+    NAPARI_SHOW_SHORTCUTS = "napari:window:show_shortcuts"
+
     # Layer menubar
     LAYER_DUPLICATE = 'napari:layer:duplicate'
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
@@ -98,11 +100,11 @@ class CommandId(str, Enum):
     IMAGE_ORIENT_PLANE_NORMAL_ALONG_Y = "napari:image:orient_plane_normal_along_y"
     IMAGE_ORIENT_PLANE_NORMAL_ALONG_X = "napari:image:orient_plane_normal_along_x"
     IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION = "napari:image:orient_plane_normal_along_view_direction"
-    IMAGE_HOLD_TO_PAN_ZOOM = "napari:image:hold_to_pan_zoom"
+    IMAGE_HOLD_TO_PAN_ZOOM = "napari:image:image_hold_to_pan_zoom"
     IMAGE_ACTIVATE_TRANSFORM_MODE = "napari:image:activate_image_transform_mode"
     IMAGE_ACTIVATE_PAN_ZOOM_MODE = "napari:image:activate_image_pan_zoom_mode"
 
-    LABELS_HOLD_TO_PAN_ZOOM = "napari:labels:hold_to_pan_zoom"
+    LABELS_HOLD_TO_PAN_ZOOM = "napari:labels:labels_hold_to_pan_zoom"
     LABELS_ACTIVATE_PAINT_MODE = "napari:labels:activate_paint_mode"
     LABELS_ACTIVATE_FILL_MODE = "napari:labels:activate_fill_mode"
     LABELS_ACTIVATE_PAN_ZOOM_MODE = "napari:labels:activate_label_pan_zoom_mode"
@@ -114,20 +116,20 @@ class CommandId(str, Enum):
     LABELS_DECREASE_BRUSH_SIZE = "napari:labels:decrease_brush_size"
     LABELS_INCREASE_BRUSH_SIZE = "napari:labels:increase_brush_size"
     LABELS_TOGGLE_PRESERVE_LABELS = "napari:labels:toggle_preserve_labels"
-    LABELS_UNDO = "napari:labels:undo"
-    LABELS_REDO = "napari:labels:redo"
+    LABELS_UNDO = "napari:labels:labels_undo"
+    LABELS_REDO = "napari:labels:labels_redo"
 
-    POINTS_HOLD_TO_PAN_ZOOM = "napari:points:hold_to_pan_zoom"
+    POINTS_HOLD_TO_PAN_ZOOM = "napari:points:points_hold_to_pan_zoom"
     POINTS_ACTIVATE_ADD_MODE = "napari:points:activate_points_add_mode"
     POINTS_ACTIVATE_SELECT_MODE = "napari:points:activate_points_select_mode"
     POINTS_ACTIVATE_PAN_ZOOM_MODE = "napari:points:activate_points_pan_zoom_mode"
-    POINTS_COPY = "napari:points:copy"
-    POINTS_PASTE = "napari:points:paste"
+    POINTS_COPY = "napari:points:copy_selected_points"
+    POINTS_PASTE = "napari:points:paste_points"
     POINTS_SELECT_ALL_IN_SLICE = "napari:points:select_all_in_slice"
     POINTS_SELECT_ALL_DATA = "napari:points:select_all_data"
     POINTS_DELETE_SELECTED = "napari:points:delete_selected_points"
 
-    SHAPES_HOLD_TO_PAN_ZOOM = "napari:shapes:hold_to_pan_zoom"
+    SHAPES_HOLD_TO_PAN_ZOOM = "napari:shapes:shapes_hold_to_pan_zoom"
     SHAPES_HOLD_TO_LOCK_ASPECT_RATIO = "napari:shapes:hold_to_lock_aspect_ratio"
     SHAPES_ACTIVATE_ADD_RECTANGLE_MODE = "napari:shapes:activate_add_rectangle_mode"
     SHAPES_ACTIVATE_ADD_ELLIPSE_MODE = "napari:shapes:activate_add_ellipse_mode"
@@ -140,7 +142,7 @@ class CommandId(str, Enum):
     SHAPES_ACTIVATE_VERTEX_INSERT_MODE = "napari:shapes:activate_vertex_insert_mode"
     SHAPES_ACTIVATE_VERTEX_REMOVE_MODE = "napari:shapes:activate_vertex_remove_mode"
     SHAPES_COPY = "napari:shapes:copy_selected_shapes"
-    SHAPES_PASTE = "napari:shapes:paste_shape"
+    SHAPES_PASTE = "napari:shapes:paste_shapes"
     SHAPES_SELECT_ALL = "napari:shapes:select_all_shapes"
     SHAPES_DELETE = "napari:shapes:delete_selected_shapes"
     SHAPES_MOVE_TO_FRONT = "napari:shapes:move_shapes_selection_to_front"
@@ -191,6 +193,8 @@ _COMMAND_INFO = {
     CommandId.NAPARI_INFO: _i(trans._('napari Info'), ),
     CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub'), ),
     CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...'), ),
+
+    CommandId.NAPARI_SHOW_SHORTCUTS: _i(trans._('Show all key bindings'),),
 
     # Layer menubar
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer'),),

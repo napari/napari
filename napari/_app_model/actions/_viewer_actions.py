@@ -118,3 +118,15 @@ VIEWER_ACTIONS.extend(
         ),
     ],
 )
+
+# TODO: importing down here because I'm not sure this is the correct place for
+# this action
+from napari._qt.menus.file_menu import show_shortcuts  # noqa
+
+VIEWER_ACTIONS.append(
+    Action(
+        id=CommandId.NAPARI_SHOW_SHORTCUTS,
+        title=CommandId.NAPARI_SHOW_SHORTCUTS.title,
+        callback=show_shortcuts,
+    )
+)
