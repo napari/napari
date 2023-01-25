@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
 from npe2 import PackageMetadata, PluginManager
-from qtpy.QtCore import QEvent, QPoint, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QPoint, QSize, Qt, QTimer, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -708,6 +708,14 @@ class QtPluginDialog(QDialog):
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
+        self._plugin_data = []  # Store plugin data while populating lists
+        self.all_plugin_data = []  # Store all plugin data
+        self._add_items_timer = QTimer(self)
+        # Add items in batches every 80ms to avoid blocking the UI
+        self._add_items_timer.setInterval(80)
+        self._add_items_timer.timeout.connect(self._add_items)
+        self._add_items_timer.timeout.connect(self._update_count_in_label)
+
         self.installer = InstallerQueue()
         self.setWindowTitle(trans._('Plugin Manager'))
         self.setup_ui()
@@ -838,9 +846,10 @@ class QtPluginDialog(QDialog):
 
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
-        self.worker.finished.connect(self._update_count_in_label)
         self.worker.finished.connect(self._end_refresh)
         self.worker.start()
+        self._add_items_timer.start()
+
         if discovered:
             message = trans._(
                 'When installing/uninstalling npe2 plugins, '
@@ -1015,10 +1024,18 @@ class QtPluginDialog(QDialog):
                 versions=versions,
             )
 
-    def _handle_yield(self, data: Tuple[PackageMetadata, bool, Dict]):
-        """Output from a worker process.  Includes information about the plugin,
-        including available versions on conda and pypi."""
+    def _add_items(self):
+        """Add items to the lists one by one using a timer to prevent freezing the UI."""
+        if len(self._plugin_data) == 0:
+            if (
+                self.installed_list.count() + self.available_list.count()
+                == len(self.all_plugin_data)
+            ):
+                self._add_items_timer.stop()
 
+            return
+
+        data = self._plugin_data.pop(0)
         project_info, is_available, extra_info = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info, is_available)
@@ -1034,6 +1051,17 @@ class QtPluginDialog(QDialog):
                 self.available_list.tag_unavailable(project_info)
 
         self.filter()
+
+    def _handle_yield(self, data: Tuple[PackageMetadata, bool, Dict]):
+        """Output from a worker process.
+
+        Includes information about the plugin, including available versions on conda and pypi.
+
+        The data is stored but the actual items are added via a timer in the `_add_items`
+        method to prevent the UI from freezing by adding all items at once.
+        """
+        self._plugin_data.append(data)
+        self.all_plugin_data.append(data)
 
     def filter(self, text: Optional[str] = None) -> None:
         """Filter by text or set current text as filter."""

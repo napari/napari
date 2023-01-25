@@ -3,7 +3,6 @@ These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
 import json
-import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Dict, Iterator, List, Optional, Tuple, TypedDict, cast
@@ -81,11 +80,7 @@ def iter_napari_plugin_info() -> Iterator[
         _conda = executor.submit(conda_map)
 
     conda = _conda.result()
-    for i, info in enumerate(data.result()):
-        # Sleep every 2 items for 150 ms to avoid hanging the UI
-        if i % 2 == 0:
-            time.sleep(0.150)
-
+    for info in data.result():
         _info = cast(Dict[str, str], dict(info))
 
         # TODO: use this better.
