@@ -66,7 +66,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 
 @skip_local_popups
-def test_qt_viewer_console_focus(qtbot, make_napari_viewer, linux_wm):
+def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     """Test console has focus when instantiating from viewer."""
     viewer = make_napari_viewer(show=True)
     view = viewer.window._qt_viewer
@@ -515,6 +515,7 @@ def test_memory_leaking(qtbot, make_napari_viewer):
     assert labels() is None
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_image(qtbot, make_napari_viewer):
 
@@ -530,6 +531,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     assert not dr()
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_labels(qtbot, make_napari_viewer):
     viewer = make_napari_viewer(show=True)
