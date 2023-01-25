@@ -5,7 +5,7 @@ retriving plugin information and related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 from urllib import error, request
 
 from npe2 import PackageMetadata
@@ -98,7 +98,9 @@ def hub_plugin_info(
     return data, is_available_in_conda_forge
 
 
-def _filter_summaries(summaries: List[SummaryDict], plugin_name: str):
+def _filter_summaries(
+    summaries: List[SummaryDict], plugin_name: str
+) -> Union[SummaryDict, None]:
     """Returns the plugin summary specified by plugin_name from a list of summaries."""
 
     found = False
