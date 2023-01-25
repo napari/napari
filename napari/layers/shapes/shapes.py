@@ -655,6 +655,9 @@ class Shapes(Layer):
             )
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view.slice_key = np.array(self._slice_indices)[
+            self._slice_input.not_displayed
+        ]
         self.add(
             data,
             shape_type=shape_type,
@@ -1547,12 +1550,6 @@ class Shapes(Layer):
         """
         ndisplay = self._slice_input.ndisplay
         order = self._slice_input.order
-
-        # short circuit if no text present
-        if self.text.values.shape == ():
-            return self.text.compute_text_coords(
-                np.zeros((0, ndisplay)), ndisplay, order
-            )
 
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [

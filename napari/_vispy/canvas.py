@@ -71,8 +71,6 @@ class VispyCanvas:
         self.scene_canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
         self.scene_canvas.events.resize.connect(self.on_resize)
         self.scene_canvas.events.draw.connect(self.on_draw)
-        # self.napari_canvas.events.bg_color.connect(self._on_background_change)
-        # self.destroyed.connect(self._disconnect_background_change)
         self.viewer.events.theme.connect(self._on_theme_change)
         self.destroyed.connect(self._disconnect_theme)
 
