@@ -112,7 +112,8 @@ if __name__ == '__main__':
     nuclei = cells[:, 1]
     nuclei_dask = da.from_array(nuclei, chunks=(20, 64, 64))
     nuclei_down = nuclei_dask[::2, ::2, ::2]
-    multiscale_nuclei = [nuclei_dask, nuclei_down]
+    nuclei_downsampled_further = nuclei_down[::2, ::2, ::2]
+    multiscale_nuclei = [nuclei_dask, nuclei_down, nuclei_downsampled_further]
 
     centers = chunk_centers(nuclei_dask)
     grid = np.array(list(centers.keys()))
