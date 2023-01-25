@@ -98,6 +98,21 @@ def hub_plugin_info(
     return data, is_available_in_conda_forge
 
 
+def _filter_summaries(summaries, plugin_name):
+    """Returns the plugin summary specified by plugin_name from a list of summaries."""
+
+    found = False
+    cnt = 0
+    while found is False and cnt < len(summaries):
+        if summaries[cnt]['name'].lower().replace('-', '').replace(
+            '_', ''
+        ) == plugin_name.lower().replace('-', '').replace('_', ''):
+            found = True
+        else:
+            cnt += 1
+    return summaries[cnt] if found else None
+
+
 def iter_hub_plugin_info(
     skip={}, conda_forge=True
 ) -> Generator[
@@ -108,7 +123,7 @@ def iter_hub_plugin_info(
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
 
-    plugin_sums = plugin_summaries()
+    all_plugin_info = plugin_summaries()
     already_yielded = []
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
@@ -120,14 +135,8 @@ def iter_hub_plugin_info(
         for future in as_completed(futures):
             info, is_available_in_conda_forge = future.result()
             if info and info not in already_yielded:
-                summary = list(
-                    filter(
-                        lambda summary: summary['name'] == info.name,
-                        plugin_sums,
-                    )
-                )
-                if len(summary):
-                    summary = summary[0]
+                summary = _filter_summaries(all_plugin_info, info.name)
+                if summary:
                     extra_info = {
                         "home_page": summary.get("home_page", ""),
                         "pypi_versions": summary.get("pypi_versions", ""),
