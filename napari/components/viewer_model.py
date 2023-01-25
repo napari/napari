@@ -25,7 +25,6 @@ from pydantic import Extra, Field, validator
 from napari import layers
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
-from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor
 from napari.components.dims import Dims
 from napari.components.grid import GridCanvas
@@ -122,7 +121,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     axes: AxesOverlay = Field(
         default_factory=AxesOverlay, allow_mutation=False
     )
-    canvas: Canvas = Field(default_factory=Canvas, allow_mutation=False)
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)

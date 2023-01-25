@@ -39,7 +39,6 @@ from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.utils import config, perf
 from napari.utils.action_manager import action_manager
-from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.history import (
     get_open_history,
     get_save_history,
@@ -49,7 +48,6 @@ from napari.utils.history import (
 from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
-from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
@@ -211,7 +209,7 @@ class QtViewer(QSplitter):
             keys=None,
             vsync=True,
             parent=self,
-            size=self.viewer.canvas.size[::-1],
+            size=self.viewer._canvas_size[::-1],
         )
         # TODO: temporary but needs to be moved to VispyCanvas
 

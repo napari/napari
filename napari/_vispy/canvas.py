@@ -7,8 +7,8 @@ from vispy.scene import SceneCanvas, Widget
 
 from napari._vispy import VispyCamera
 from napari._vispy.utils.gl import get_max_texture_sizes
-from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -41,7 +41,6 @@ class VispyCanvas:
         self._last_theme_color = None
         self._background_color_override = None
         self.viewer = kwargs["parent"].viewer
-        self.napari_canvas = kwargs["parent"].viewer.canvas
         self.scene_canvas = SceneCanvas(*args, **kwargs)
         self.view = self.central_widget.add_view(border_width=0)
         self.vispy_camera = VispyCamera(
@@ -72,8 +71,8 @@ class VispyCanvas:
         self.scene_canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
         self.scene_canvas.events.resize.connect(self.on_resize)
         self.scene_canvas.events.draw.connect(self.on_draw)
-        self.napari_canvas.events.bg_color.connect(self._on_background_change)
-        self.destroyed.connect(self._disconnect_background_change)
+        # self.napari_canvas.events.bg_color.connect(self._on_background_change)
+        # self.destroyed.connect(self._disconnect_background_change)
         self.viewer.events.theme.connect(self._on_theme_change)
         self.destroyed.connect(self._disconnect_theme)
 
@@ -297,7 +296,7 @@ class VispyCanvas:
         """
         # Find corners of canvas in world coordinates
         top_left = self._map_canvas2world([0, 0])
-        bottom_right = self._map_canvas2world(self.viewer.canvas.size[::-1])
+        bottom_right = self._map_canvas2world(self.viewer._canvas_size[::-1])
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event):
@@ -324,7 +323,7 @@ class VispyCanvas:
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self.viewer.canvas.size,
+                shape_threshold=self.viewer._canvas_size,
             )
 
     def on_resize(self, event):
@@ -333,4 +332,4 @@ class VispyCanvas:
         event : vispy.util.event.Event
             The vispy event that triggered this method.
         """
-        self.viewer.canvas.size = tuple(self.scene_canvas.size[::-1])
+        self.viewer._canvas_size = tuple(self.scene_canvas.size[::-1])
