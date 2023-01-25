@@ -1,5 +1,4 @@
 import numpy as np
-from app_model.types import KeyCode, KeyMod
 
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels.labels import Labels
@@ -8,7 +7,6 @@ MIN_BRUSH_SIZE = 1
 MAX_BRUSH_SIZE = 40
 
 
-@Labels.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer: Labels):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
@@ -92,13 +90,11 @@ def _get_preserve_labels_toggled(layer: Labels):
     return layer.preserve_labels
 
 
-@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""
     layer.undo()
 
 
-@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ)
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()

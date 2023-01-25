@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from app_model.types import KeyCode, KeyMod
-
 from napari.layers.points._points_constants import Mode
 from napari.layers.points.points import Points
 from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 
-@Points.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer: Points):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
@@ -44,13 +41,11 @@ points_fun_to_mode = [
 ]
 
 
-@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyC)
 def copy(layer: Points):
     """Copy any selected points."""
     layer._copy_data()
 
 
-@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyV)
 def paste(layer: Points):
     """Paste any copied points."""
     layer._paste_data()

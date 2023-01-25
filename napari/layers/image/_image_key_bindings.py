@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from app_model.types import KeyCode
-
 import napari
 from napari.layers.image._image_constants import Mode
 from napari.layers.image.image import Image
@@ -10,22 +8,18 @@ from napari.layers.utils.interactivity_utils import (
 )
 
 
-@Image.bind_key(KeyCode.KeyZ)
 def orient_plane_normal_along_z(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
-@Image.bind_key(KeyCode.KeyY)
 def orient_plane_normal_along_y(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
-@Image.bind_key(KeyCode.KeyX)
 def orient_plane_normal_along_x(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
-@Image.bind_key(KeyCode.KeyO)
 def orient_plane_normal_along_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
     if viewer.dims.ndisplay != 3:
@@ -47,7 +41,6 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
-@Image.bind_key(KeyCode.Space)
 def hold_to_pan_zoom(layer: Image):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
