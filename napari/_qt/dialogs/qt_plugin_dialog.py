@@ -113,7 +113,7 @@ class PluginListItem(QFrame):
 
         self.package_name.setText(version)
         if summary:
-            self.summary.setText(summary + '\br')
+            self.summary.setText(summary + '<br />')
         if author:
             self.package_author.setText(author)
         self.package_author.setWordWrap(True)
