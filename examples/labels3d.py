@@ -8,10 +8,11 @@ View 3D labels.
 """
 
 
-import napari
 import numpy as np
-from skimage import data, filters, morphology
 from scipy import ndimage as ndi
+from skimage import data, filters, morphology
+
+import napari
 
 cells3d = data.cells3d()
 

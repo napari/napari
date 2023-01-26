@@ -8,13 +8,21 @@ from main napari window.
 .. tags::  gui, interactivity
 """
 
-from qtpy.QtWidgets import QDialog, QWidget, QVBoxLayout, QPushButton, QGridLayout, QLabel, QSpinBox
-
 from magicgui import magicgui
+from qtpy.QtWidgets import (
+    QDialog,
+    QGridLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 import napari
 from napari.qt import get_stylesheet
 from napari.settings import get_settings
+
 
 # The magicgui widget shown by selecting the 'Show widget' button of MyWidget
 @magicgui

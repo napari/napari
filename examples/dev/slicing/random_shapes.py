@@ -1,7 +1,8 @@
 import os
-import numpy as np
-import napari
 
+import numpy as np
+
+import napari
 
 """
 This example generates many random shapes.

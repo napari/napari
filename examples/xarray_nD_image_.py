@@ -16,6 +16,7 @@ except ModuleNotFoundError:
     )
 
 import numpy as np
+
 import napari
 
 data = np.random.random((20, 40, 50))

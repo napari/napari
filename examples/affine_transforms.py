@@ -7,8 +7,9 @@ Display an image and its corners before and after an affine transform
 .. tags:: visualization-advanced
 """
 import numpy as np
-import napari
 import scipy.ndimage as ndi
+
+import napari
 
 # Create a random image
 image = np.random.random((5, 5))

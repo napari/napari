@@ -11,10 +11,9 @@ up to date, and can modify the python object... while maintining the python
 object as the single "source of truth".
 """
 import napari
-from napari.qt import get_app
 from napari._qt.containers import QtListView
+from napari.qt import get_app
 from napari.utils.events import SelectableEventedList
-
 
 get_app()
 

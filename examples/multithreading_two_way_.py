@@ -6,6 +6,7 @@ Multithreading two-way
 """
 import time
 
+import numpy as np
 from qtpy.QtWidgets import (
     QGridLayout,
     QLabel,
@@ -15,7 +16,6 @@ from qtpy.QtWidgets import (
 )
 
 import napari
-import numpy as np
 from napari.qt.threading import thread_worker
 
 

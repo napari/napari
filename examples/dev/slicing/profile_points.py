@@ -1,6 +1,6 @@
 import cProfile
-import pstats
 import io
+import pstats
 from pstats import SortKey
 
 import numpy as np

@@ -5,11 +5,12 @@ Interactive scripting
 .. tags:: interactivity
 """
 
-import numpy as np
-import napari
-from napari.qt import thread_worker
 import time
 
+import numpy as np
+
+import napari
+from napari.qt import thread_worker
 
 # create the viewer with an image
 data = np.random.random((512, 512))

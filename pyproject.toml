@@ -77,10 +77,15 @@ line_length = 79
 skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 
 [tool.ruff]
-line-length = 120
-ignore = ["E501"]
+line-length = 79
+ignore = ["E501", "UP006", "UP007"]
+select = ["E", "F", "UP", "I"]
 per-file-ignores = {"napari/_vispy/__init__.py" = ["E402"]}
 target-version = "py38"
+fix = true
+
+[tool.ruff.isort]
+known-first-party=['napari']
 
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:

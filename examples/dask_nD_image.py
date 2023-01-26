@@ -17,8 +17,8 @@ except ModuleNotFoundError:
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = da.stack(
     [

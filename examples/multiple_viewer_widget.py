@@ -15,6 +15,7 @@ current dims point (`viewer.dims.point`).
 from copy import deepcopy
 
 import numpy as np
+from packaging.version import parse as parse_version
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -26,7 +27,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt.utils import qthrottled
-from packaging.version import parse as parse_version
 
 import napari
 from napari.components.layerlist import Extent
@@ -444,7 +444,7 @@ class MultipleViewerWidget(QSplitter):
 
 
 if __name__ == "__main__":
-    from qtpy import QtWidgets, QtCore
+    from qtpy import QtCore, QtWidgets
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     # above two lines are needed to allow to undock the widget with
     # additional viewers
