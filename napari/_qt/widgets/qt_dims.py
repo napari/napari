@@ -315,7 +315,20 @@ class QtDims(QWidget):
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
-        return self._animation_thread and self._animation_thread.isRunning()
+        try:
+            return (
+                self._animation_thread and self._animation_thread.isRunning()
+            )
+        except RuntimeError as e:  # pragma: no cover
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                # checking if threat is partially deleted. Otherwise
+                # reraise exception. For more details see:
+                # https://github.com/napari/napari/pull/5499
+                raise
+            return False
 
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`.
