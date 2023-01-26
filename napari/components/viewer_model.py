@@ -157,7 +157,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
-        default_factory=lambda: {k: v() for k, v in DEFAULT_OVERLAYS.items()},
+        default_factory=lambda: EventedDict(
+            {k: v() for k, v in DEFAULT_OVERLAYS.items()}
+        ),
     )
 
     # 2-tuple indicating height and width

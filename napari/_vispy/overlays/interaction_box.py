@@ -4,21 +4,20 @@ from napari.layers.base._base_constants import InteractionBoxHandle
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, viewer, overlay, node, parent=None):
+    def __init__(self, *, layer, overlay, parent=None):
         super().__init__(
             node=InteractionBox(),
             layer=layer,
-            viewer=viewer,
             overlay=overlay,
             parent=parent,
         )
-        self.viewer.dims.events.ndisplay.connect(self._on_visible_change)
+        self.layer.events.set_data.connect(self._on_visible_change)
 
     def _on_bounds_change(self):
         pass
 
     def _on_visible_change(self):
-        if self.viewer.dims.ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             super()._on_visible_change()
             self._on_bounds_change()
         else:
@@ -30,14 +29,18 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
 
 
 class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, layer, overlay, parent=None):
+        super().__init__(
+            layer=layer,
+            overlay=overlay,
+            parent=parent,
+        )
         self.overlay.events.bounds.connect(self._on_bounds_change)
         self.overlay.events.handles.connect(self._on_bounds_change)
         self.overlay.events.selected_vertex.connect(self._on_bounds_change)
 
     def _on_bounds_change(self):
-        if self.viewer.dims.ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             top_left, bot_right = self.overlay.bounds
             self.node.set_data(
                 # invert axes for vispy
@@ -49,8 +52,12 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
 
 
 class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, layer, overlay, parent=None):
+        super().__init__(
+            layer=layer,
+            overlay=overlay,
+            parent=parent,
+        )
         self.layer.events.scale.connect(self._on_bounds_change)
         self.layer.events.translate.connect(self._on_bounds_change)
         self.layer.events.rotate.connect(self._on_bounds_change)
@@ -59,7 +66,7 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
         self.overlay.events.selected_vertex.connect(self._on_bounds_change)
 
     def _on_bounds_change(self):
-        if self.viewer.dims.ndisplay == 2:
+        if self.layer._slice_input.ndisplay == 2:
             bounds = self.layer._display_bounding_box(
                 self.layer._slice_input.displayed
             )

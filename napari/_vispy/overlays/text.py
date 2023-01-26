@@ -7,7 +7,7 @@ from napari.components._viewer_constants import CanvasPosition
 class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Text overlay."""
 
-    def __init__(self, *, viewer, overlay, node, parent=None):
+    def __init__(self, *, viewer, overlay, parent=None):
         super().__init__(
             node=Text(pos=(0, 0)),
             viewer=viewer,

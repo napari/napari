@@ -135,8 +135,12 @@ class VispySceneOverlay(VispyBaseOverlay):
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer, viewer, overlay, node, parent=None):
-        self.viewer = viewer
+    def __init__(self, *, layer, overlay, node, parent=None):
+        super().__init__(
+            node=node,
+            overlay=overlay,
+            parent=parent,
+        )
         self.layer = layer
         self.layer._overlays.events.removing.connect(self._close_if_removed)
 
@@ -151,6 +155,11 @@ class LayerOverlayMixin:
 
 class ViewerOverlayMixin:
     def __init__(self, *, viewer, overlay, node, parent=None):
+        super().__init__(
+            node=node,
+            overlay=overlay,
+            parent=parent,
+        )
         self.viewer = viewer
         self.viewer._overlays.events.removing.connect(self._close_if_removed)
 
