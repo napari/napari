@@ -1,13 +1,17 @@
+import importlib.metadata
 import os
 import re
 import sys
 from enum import Enum, auto
 from functools import partial
-from importlib.metadata import PackageNotFoundError, metadata
+
+# from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
-from npe2 import PackageMetadata, PluginManager
+import npe2
+
+# from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, QTimer, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
@@ -30,6 +34,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QCollapsible, QElidingLabel
 
+import napari.plugins
 import napari.resources
 from napari._qt.dialogs.qt_package_installer import (
     InstallerActions,
@@ -40,7 +45,8 @@ from napari._qt.qt_resources import QColoredSVGIcon
 from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
-from napari.plugins import plugin_manager
+
+# from napari.plugins import plugin_manager
 from napari.plugins.hub import iter_hub_plugin_info
 from napari.plugins.npe2api import iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
@@ -415,14 +421,20 @@ class PluginListItem(QFrame):
         """Called with `state` when checkbox is clicked."""
         enabled = bool(state)
         plugin_name = self.plugin_name.text()
-        pm2 = PluginManager.instance()
+        pm2 = npe2.PluginManager.instance()
         if plugin_name in pm2:
             pm2.enable(plugin_name) if state else pm2.disable(plugin_name)
             return
 
-        for npe1_name, _, distname in plugin_manager.iter_available():
+        for (
+            npe1_name,
+            _,
+            distname,
+        ) in napari.plugins.plugin_manager.iter_available():
             if distname and (normalized_name(distname) == plugin_name):
-                plugin_manager.set_blocked(npe1_name, not enabled)
+                napari.plugins.plugin_manager.set_blocked(
+                    npe1_name, not enabled
+                )
 
     def show_warning(self, message: str = ""):
         """Show warning icon and tooltip."""
@@ -451,10 +463,12 @@ class QPluginList(QListWidget):
 
         return count - hidden
 
-    @Slot(PackageMetadata)
+    @Slot(npe2.PackageMetadata)
     def addItem(
         self,
-        project_info_versions: Tuple[PackageMetadata, List[str], List[str]],
+        project_info_versions: Tuple[
+            npe2.PackageMetadata, List[str], List[str]
+        ],
         installed=False,
         plugin_name=None,
         enabled=True,
@@ -630,8 +644,10 @@ class QPluginList(QListWidget):
             finally:
                 widget.setProperty("current_job_id", None)
 
-    @Slot(PackageMetadata, bool)
-    def tag_outdated(self, project_info: PackageMetadata, is_available: bool):
+    @Slot(npe2.PackageMetadata, bool)
+    def tag_outdated(
+        self, project_info: npe2.PackageMetadata, is_available: bool
+    ):
         """Determines if an installed plugin is up to date with the latest version.
         If it is not, the latest version will be displayed on the update button."""
         if not is_available:
@@ -656,7 +672,7 @@ class QPluginList(QListWidget):
                 trans._("update (v{latest})", latest=latest)
             )
 
-    def tag_unavailable(self, project_info: PackageMetadata):
+    def tag_unavailable(self, project_info: npe2.PackageMetadata):
         """
         Tag list items as unavailable for install with conda-forge.
 
@@ -759,9 +775,11 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         # fetch installed
-        from npe2 import PluginManager
+        # TODO: Why is this imported here?
+        # from npe2 import PluginManager
 
-        from napari.plugins import plugin_manager
+        # TODO: Why is this imported here?
+        # from napari.plugins import plugin_manager
 
         self.already_installed = set()
 
@@ -769,9 +787,9 @@ class QtPluginDialog(QDialog):
             norm_name = normalized_name(distname or '')
             if distname:
                 try:
-                    meta = metadata(distname)
+                    meta = importlib.metadata.metadata(distname)
 
-                except PackageNotFoundError:
+                except importlib.metadata.PackageNotFoundError:
                     self.refresh_state = RefreshState.OUTDATED
                     return  # a race condition has occurred and the package is uninstalled by another thread
                 if len(meta) == 0:
@@ -783,7 +801,7 @@ class QtPluginDialog(QDialog):
 
             self.installed_list.addItem(
                 (
-                    PackageMetadata(
+                    npe2.PackageMetadata(
                         metadata_version="1.0",
                         name=norm_name,
                         version=meta.get('version', ''),
@@ -800,7 +818,7 @@ class QtPluginDialog(QDialog):
                 npe_version=npe_version,
             )
 
-        pm2 = PluginManager.instance()
+        pm2 = npe2.PluginManager.instance()
         discovered = pm2.discover()
         for manifest in pm2.iter_manifests():
             distname = normalized_name(manifest.name or '')
@@ -811,15 +829,20 @@ class QtPluginDialog(QDialog):
             npev = 'shim' if manifest.npe1_shim else 2
             _add_to_installed(distname, enabled, npe_version=npev)
 
-        plugin_manager.discover()  # since they might not be loaded yet
-        for plugin_name, _, distname in plugin_manager.iter_available():
+        napari.plugins.plugin_manager.discover()  # since they might not be loaded yet
+        for (
+            plugin_name,
+            _,
+            distname,
+        ) in napari.plugins.plugin_manager.iter_available():
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
             if normalized_name(distname or '') in self.already_installed:
                 continue
             _add_to_installed(
-                distname, not plugin_manager.is_blocked(plugin_name)
+                distname,
+                not napari.plugins.plugin_manager.is_blocked(plugin_name),
             )
 
         self.installed_label.setText(
@@ -836,6 +859,7 @@ class QtPluginDialog(QDialog):
             or running_as_constructor_app()
             or settings.plugins.plugin_api.name == "napari_hub"
         )
+        use_hub = True
         if use_hub:
             conda_forge = running_as_constructor_app()
             self.worker = create_worker(
@@ -1052,7 +1076,7 @@ class QtPluginDialog(QDialog):
 
         self.filter()
 
-    def _handle_yield(self, data: Tuple[PackageMetadata, bool, Dict]):
+    def _handle_yield(self, data: Tuple[npe2.PackageMetadata, bool, Dict]):
         """Output from a worker process.
 
         Includes information about the plugin, including available versions on conda and pypi.

@@ -1,14 +1,17 @@
+import importlib.metadata
 from typing import Generator, Optional, Tuple
 
+import npe2
 import pytest
-from npe2 import PackageMetadata
 
+import napari.plugins
 from napari._qt.dialogs import qt_plugin_dialog
+from napari.plugins._tests.test_npe2 import mock_pm  # noqa
 
 
 def _iter_napari_hub_or_pypi_plugin_info(
     conda_forge: bool = True,
-) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
+) -> Generator[Tuple[Optional[npe2.PackageMetadata], bool], None, None]:
     """Mock the hub and pypi methods to collect available plugins.
 
     This will mock `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
@@ -29,7 +32,9 @@ def _iter_napari_hub_or_pypi_plugin_info(
         "license": "UNKNOWN",
     }
     for i in range(2):
-        yield PackageMetadata(name=f"test-name-{i}", **base_data), bool(i), {
+        yield npe2.PackageMetadata(name=f"test-name-{i}", **base_data), bool(
+            i
+        ), {
             "home_page": 'www.mywebsite.com',
             "pypi_versions": ['3'],
             "conda_versions": ['4.5'],
@@ -37,8 +42,43 @@ def _iter_napari_hub_or_pypi_plugin_info(
 
 
 @pytest.fixture
-def plugin_dialog(qtbot, monkeypatch):
+def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
     """Fixture that provides a plugin dialog for a normal napari install."""
+
+    class PluginManagerMock:
+        def instance(self):
+            return PluginManagerInstanceMock()
+
+    class PluginManagerInstanceMock:
+        def iter_manifests(self):
+            return [mock_pm.get_manifest('my-plugin')]
+
+        def is_disabled(self, name):
+            return False
+
+        def discover(self):
+            return None
+
+    def mock_metadata(name):
+        meta = {
+            'version': '',
+            'summary': '',
+            'Home-page': '',
+            'author': '',
+            'license': '',
+        }
+        return meta
+
+    class OldPluginManagerMock:
+        def iter_available(self):
+            return []
+
+        def discover(self):
+            return None
+
+        def is_blocked(self):
+            return False
+
     for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
         monkeypatch.setattr(
             qt_plugin_dialog,
@@ -53,6 +93,14 @@ def plugin_dialog(qtbot, monkeypatch):
         "running_as_constructor_app",
         lambda: False,
     )
+
+    monkeypatch.setattr(
+        napari.plugins, 'plugin_manager', OldPluginManagerMock()
+    )
+
+    monkeypatch.setattr(importlib.metadata, 'metadata', mock_metadata)
+
+    monkeypatch.setattr(npe2, 'PluginManager', PluginManagerMock())
 
     widget = qt_plugin_dialog.QtPluginDialog()
     widget.show()
@@ -172,3 +220,8 @@ def test_version_dropdown(plugin_dialog):
         ).widget.version_choice_dropdown.currentText()
         == '4.5'
     )
+
+
+def test_pluginListItem(plugin_dialog):
+
+    assert plugin_dialog.installed_list._count_visible() == 1
