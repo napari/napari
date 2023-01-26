@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pytest
 from qtpy.QtWidgets import QAbstractButton
@@ -122,10 +120,3 @@ def test_set_visible_or_editable_enables_edit_buttons(qtbot):
 
     layer.editable = True
     assert all(map(QAbstractButton.isEnabled, qtctrl._EDIT_BUTTONS))
-
-
-def _get_edit_buttons(qtctrl: QtPointsControls) -> Tuple[QAbstractButton, ...]:
-    return tuple(
-        getattr(qtctrl, name)
-        for name in ('select_button', 'addition_button', 'delete_button')
-    )
