@@ -222,6 +222,22 @@ def test_version_dropdown(plugin_dialog):
     )
 
 
-def test_pluginListItem(plugin_dialog):
+def test_plugin_list_item(plugin_dialog):
 
     assert plugin_dialog.installed_list._count_visible() == 1
+
+
+@pytest.mark.parametrize(
+    "text,action_name,update",
+    [
+        ("name", "install", True),
+        ("name", "install", False),
+        ("name", "uninstall", False),
+        ("name", "cancel", False),
+    ],
+)
+def test_plugin_list_item_set_busy(text, action_name, update, plugin_dialog):
+    print(text, action_name, update)
+    item = plugin_dialog.installed_list.item(0)
+    widget = plugin_dialog.installed_list.itemWidget(item)
+    widget.set_busy(text, action_name, update)
