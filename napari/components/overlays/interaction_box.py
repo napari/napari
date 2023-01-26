@@ -13,7 +13,7 @@ class SelectionBoxOverlay(SceneOverlay):
     Attributes
     ----------
     visible : bool
-        If the box is are visible or not.
+        If the box is visible or not.
     bounds : 2-tuple of 2-tuples
         Corners at top left and bottom right in layer coordinates.
     handles : bool

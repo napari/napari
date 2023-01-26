@@ -6,6 +6,13 @@ from napari.utils.translations import trans
 
 
 class VispyBaseOverlay:
+    """
+    Base overlay backend for vispy.
+
+    Creates event connections between napari Overlay models and the
+    vispy backend, translating them into rendering.
+    """
+
     def __init__(self, *, overlay, node, parent=None):
         super().__init__()
         self.overlay = overlay
@@ -35,9 +42,15 @@ class VispyBaseOverlay:
 
 
 class VispyCanvasOverlay(VispyBaseOverlay):
+    """
+    Vispy overlay backend for overlays that live in canvas space.
+    """
+
     def __init__(self, *, overlay, node, parent=None):
         super().__init__(overlay=overlay, node=node, parent=None)
 
+        # offsets and size are used to control fine positioning, and will depend
+        # on the subclass and visual that needs to be rendered
         self.x_offset = 10
         self.y_offset = 10
         self.x_size = 0
@@ -50,9 +63,12 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         if event.old is not None:
             disconnect_events(self, event.old.canvas)
         if event.new is not None and self.node.canvas is not None:
+            # connect the canvas resize to recalculating the position
             event.new.canvas.events.resize.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
+        # subclasses should set sizes correctly and adjust offsets to get
+        # the optimal positioning
         if self.node.canvas is None:
             return
         x_max, y_max = list(self.node.canvas.size)
@@ -109,6 +125,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
 
 class VispySceneOverlay(VispyBaseOverlay):
+    """
+    Vispy overlay backend for overlays that live in scene (2D or 3D) space.
+    """
+
     def __init__(self, *, overlay, node, parent=None):
         super().__init__(overlay=overlay, node=node, parent=None)
         self.node.transform = MatrixTransform()
