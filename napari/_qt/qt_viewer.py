@@ -522,8 +522,7 @@ class QtViewer(QSplitter):
             if vispy_layer.events is not None:
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
-        vispy_layer.node.parent = self.canvas.view.scene
-        self.canvas.layer_to_visual[layer] = vispy_layer
+        self.canvas.add_layer_to_visual(layer, vispy_layer)
         self._reorder_layers()
 
     def _remove_layer(self, event):

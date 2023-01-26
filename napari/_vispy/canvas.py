@@ -331,3 +331,8 @@ class VispyCanvas:
             The vispy event that triggered this method.
         """
         self.viewer._canvas_size = tuple(self.scene_canvas.size[::-1])
+
+    def add_layer_to_visual(self, napari_layer, vispy_layer):
+        if not self.viewer.grid.enabled:
+            vispy_layer.node.parent = self.view.scene
+            self.layer_to_visual[napari_layer] = vispy_layer
