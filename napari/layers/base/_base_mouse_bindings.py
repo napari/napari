@@ -127,11 +127,11 @@ def transform_with_box(layer, event):
             else:
                 locked_aspect_ratio = False
 
-            locked_center = 'Control' in event.modifiers
-
             # work in data space
 
-            if locked_center:
+            # if Control is held, instead of locking into place the opposite handle,
+            # lock into place the center of the layer and resize around it.
+            if 'Control' in event.modifiers:
                 scaling_center = world_to_data(center)
             else:
                 # opposite handle
@@ -147,11 +147,13 @@ def transform_with_box(layer, event):
 
             # get per-dimension scale values
             with warnings.catch_warnings():
+                # a "divide by zero" warning is raised here when resizing along only one axis
+                # (i.e: dragging the central handle of the TransformBox).
+                # That's intended, because we get inf or nan, which we can then replace with 1s
+                # and thus maintain the size along that axis.
                 warnings.simplefilter("ignore", RuntimeWarning)
                 scale = center_to_mouse / center_to_handle
-            # infinite values (due to numerical imprecision) mean we are rescaling only
-            # one dimension (mid-side handles), so we set to 1.
-            scale = np.nan_to_num(scale, posinf=1, neginf=1)
+                scale = np.nan_to_num(scale, posinf=1, neginf=1)
 
             if locked_aspect_ratio:
                 scale_factor = np.linalg.norm(scale)
