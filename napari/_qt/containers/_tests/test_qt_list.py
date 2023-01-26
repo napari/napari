@@ -75,7 +75,7 @@ def test_list_view(qtbot):
     assert qmodel.getItem(qsel.currentIndex()) == root[3]
 
     # clear current in Qt
-    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
+    qsel.setCurrentIndex(QModelIndex(), qsel.SelectionFlag.Current)
     # check current in python
     assert root.selection._current is None
 
