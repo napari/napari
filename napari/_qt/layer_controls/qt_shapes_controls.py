@@ -92,6 +92,7 @@ class QtShapesControls(QtLayerControls):
             self._on_current_face_color_change
         )
         self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Orientation.Horizontal)

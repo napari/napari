@@ -98,6 +98,7 @@ class QtLabelsControls(QtLayerControls):
         )
         self.layer.events.contour.connect(self._on_contour_change)
         self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
