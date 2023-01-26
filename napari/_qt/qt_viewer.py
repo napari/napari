@@ -925,6 +925,7 @@ class QtViewer(QSplitter):
 
         if viz:
             self.dockConsole.raise_()
+            self.dockConsole.setFocus()
 
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()

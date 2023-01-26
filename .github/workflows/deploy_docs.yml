@@ -6,6 +6,11 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+
 jobs:
   build-napari-docs:
     name: Build docs on napari/docs

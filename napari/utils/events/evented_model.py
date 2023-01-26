@@ -330,6 +330,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """
+        if self is other:
+            return True
         if not isinstance(other, EventedModel):
             return self.dict() == other
 
