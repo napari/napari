@@ -268,6 +268,7 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.polygon_button)
         self.button_group.addButton(self.vertex_insert_button)
         self.button_group.addButton(self.vertex_remove_button)
+        self._on_editable_or_visible_change()
 
         button_grid = QGridLayout()
         button_grid.addWidget(self.vertex_remove_button, 0, 2)

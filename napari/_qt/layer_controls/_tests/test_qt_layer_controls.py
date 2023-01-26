@@ -82,29 +82,76 @@ def test_set_text_then_set_visible_updates_checkbox(
     assert ctrl.textDispCheckBox.isChecked()
 
 
-@pytest.mark.parametrize(
-    'layer',
-    (
-        Labels(np.zeros((3, 4), dtype=int)),
-        Points(np.empty((0, 2))),
-        Shapes(np.empty((0, 2, 4))),
-    ),
+# The following tests handle changes to the layer's visible and
+# editable state for layer control types that have controls to edit
+# the layer. For more context see:
+# https://github.com/napari/napari/issues/1346
+EDITABLE_TEST_LAYERS = (
+    Labels(np.zeros((3, 4), dtype=int)),
+    Points(np.empty((0, 2))),
+    Shapes(np.empty((0, 2, 4))),
 )
-def test_set_visible_or_editable_enables_edit_buttons(qtbot, layer):
+
+
+@pytest.mark.parametrize('layer', EDITABLE_TEST_LAYERS)
+def test_make_visible_when_editable_enables_edit_buttons(qtbot, layer):
     """See https://github.com/napari/napari/issues/1346"""
+    layer.editable = True
+    layer.visible = False
+    controls = make_layer_controls(qtbot, layer)
+    assert_no_edit_buttons_enabled(controls)
+
+    layer.visible = True
+
+    assert_all_edit_buttons_enabled(controls)
+
+
+@pytest.mark.parametrize('layer', EDITABLE_TEST_LAYERS)
+def test_make_not_visible_when_editable_disables_edit_buttons(qtbot, layer):
+    layer.editable = True
+    layer.visible = True
+    controls = make_layer_controls(qtbot, layer)
+    assert_all_edit_buttons_enabled(controls)
+
+    layer.visible = False
+
+    assert_no_edit_buttons_enabled(controls)
+
+
+@pytest.mark.parametrize('layer', EDITABLE_TEST_LAYERS)
+def test_make_editable_when_visible_enables_edit_buttons(qtbot, layer):
+    layer.editable = False
+    layer.visible = True
+    controls = make_layer_controls(qtbot, layer)
+    assert_no_edit_buttons_enabled(controls)
+
+    layer.editable = True
+
+    assert_all_edit_buttons_enabled(controls)
+
+
+@pytest.mark.parametrize('layer', EDITABLE_TEST_LAYERS)
+def test_make_not_editable_when_visible_disables_edit_buttons(qtbot, layer):
+    layer.editable = True
+    layer.visible = True
+    controls = make_layer_controls(qtbot, layer)
+    assert_all_edit_buttons_enabled(controls)
+
+    layer.editable = False
+
+    assert_no_edit_buttons_enabled(controls)
+
+
+def make_layer_controls(qtbot, layer):
     QtLayerControlsType = layer_to_controls[type(layer)]
     controls = QtLayerControlsType(layer)
     qtbot.addWidget(controls)
+    return controls
+
+
+def assert_all_edit_buttons_enabled(controls) -> None:
     assert all(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
 
-    layer.editable = False
-    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
 
-    layer.visible = False
+def assert_no_edit_buttons_enabled(controls) -> None:
     assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
-
-    layer.visible = True
-    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
-
-    layer.editable = True
-    assert all(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))

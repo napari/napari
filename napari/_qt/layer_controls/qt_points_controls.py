@@ -191,6 +191,7 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
+        self._on_editable_or_visible_change()
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
