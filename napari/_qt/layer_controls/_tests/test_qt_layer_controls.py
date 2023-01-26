@@ -2,13 +2,14 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QAbstractButton
 
 from napari._qt.layer_controls.qt_layer_controls_container import (
     create_qt_layer_controls,
     layer_to_controls,
 )
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
-from napari.layers import Points, Shapes
+from napari.layers import Labels, Points, Shapes
 
 LayerTypeWithData = namedtuple('LayerTypeWithData', ['type', 'data'])
 _POINTS = LayerTypeWithData(type=Points, data=np.random.random((5, 2)))
@@ -79,3 +80,31 @@ def test_set_text_then_set_visible_updates_checkbox(
     layer.text.visible = True
 
     assert ctrl.textDispCheckBox.isChecked()
+
+
+@pytest.mark.parametrize(
+    'layer',
+    (
+        Labels(np.zeros((3, 4), dtype=int)),
+        Points(np.empty((0, 2))),
+        Shapes(np.empty((0, 2, 4))),
+    ),
+)
+def test_set_visible_or_editable_enables_edit_buttons(qtbot, layer):
+    """See https://github.com/napari/napari/issues/1346"""
+    QtLayerControlsType = layer_to_controls[type(layer)]
+    controls = QtLayerControlsType(layer)
+    qtbot.addWidget(controls)
+    assert all(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+
+    layer.editable = False
+    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+
+    layer.visible = False
+    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+
+    layer.visible = True
+    assert not any(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
+
+    layer.editable = True
+    assert all(map(QAbstractButton.isEnabled, controls._EDIT_BUTTONS))
