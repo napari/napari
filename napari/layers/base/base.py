@@ -375,7 +375,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             extent=Event,
-            _ndisplay=Event,
             _overlays=Event,
             select=WarningEmitter(
                 trans._(
@@ -992,16 +991,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             rendered in canvas.
         """
         slice_input = self._make_slice_input(point, ndisplay, order)
-
         if self._slice_input == slice_input:
             return
-
-        old_ndisplay = self._slice_input.ndisplay
         self._slice_input = slice_input
-
-        if old_ndisplay != ndisplay:
-            self.events._ndisplay()
-
         self.refresh()
         self._set_editable()
 
