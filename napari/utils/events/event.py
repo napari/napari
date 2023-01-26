@@ -763,7 +763,9 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             self._emitting = False
-            if event._pop_source() != self.source:
+            ps = event._pop_source()
+            if ps is not self.source:
+
                 raise RuntimeError(
                     trans._(
                         "Event source-stack mismatch.",
@@ -1087,8 +1089,8 @@ class EmitterGroup(EventEmitter):
     def unblock_all(self):
         """
         Unblock all emitters in this group, by decrease counter of semaphores for each event emitter.
-        if block is called twice and unblock is called once, then events will be still blocked
-        https://en.wikipedia.org/wiki/Semaphore_(programming)
+        if block is called twice and unblock is called once, then events will be still blocked.
+        See `Semaphore (programming) <https://en.wikipedia.org/wiki/Semaphore_(programming)>`__.
         """
         self.unblock()
         for em in self._emitters.values():
