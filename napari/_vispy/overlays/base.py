@@ -35,8 +35,8 @@ class VispyBaseOverlay:
 
 
 class VispyCanvasOverlay(VispyBaseOverlay):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *, overlay, node, parent=None):
+        super().__init__(overlay=overlay, node=node, parent=None)
 
         self.x_offset = 10
         self.y_offset = 10
@@ -109,14 +109,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
 
 class VispySceneOverlay(VispyBaseOverlay):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *, overlay, node, parent=None):
+        super().__init__(overlay=overlay, node=node, parent=None)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *, layer, viewer, overlay, node, parent=None):
+        self.viewer = viewer
         self.layer = layer
         self.layer._overlays.events.removing.connect(self._close_if_removed)
 
@@ -130,9 +130,13 @@ class LayerOverlayMixin:
 
 
 class ViewerOverlayMixin:
-    def __init__(self, *, viewer, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *, viewer, overlay, node, parent=None):
         self.viewer = viewer
+        self.viewer._overlays.events.removing.connect(self._close_if_removed)
+
+    def _close_if_removed(self, event):
+        if self.viewer._overlays[event.key] is self:
+            self.close()
 
     def close(self):
         disconnect_events(self.viewer.events, self)

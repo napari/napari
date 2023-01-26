@@ -12,12 +12,14 @@ from napari.utils.theme import get_theme
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, viewer, overlay, node, parent=None):
         self._target_length = 150
         self._scale = 1
         self._unit = None
 
-        super().__init__(node=ScaleBar(), **kwargs)
+        super().__init__(
+            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+        )
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
