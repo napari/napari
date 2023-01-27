@@ -29,7 +29,7 @@ class ScreenshotDialog(QFileDialog):
         parent=None,
         directory=str(Path.home()),
         history=None,
-    ):
+    ) -> None:
         super().__init__(parent, trans._("Save screenshot"))
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)

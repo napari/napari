@@ -23,7 +23,7 @@ def update_layer(data):
 @thread_worker(connect={'yielded': update_layer})
 def create_data(*, update_period, num_updates):
     # number of times to update
-    for k in range(num_updates):
+    for _k in range(num_updates):
         yield np.random.random((512, 512))
         time.sleep(update_period)
 

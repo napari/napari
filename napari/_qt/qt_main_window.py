@@ -551,7 +551,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True):
+    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         get_app()
 

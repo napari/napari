@@ -43,7 +43,7 @@ def two_way_communication_with_args(start, end):
 
 
 class Controller(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         layout = QGridLayout()

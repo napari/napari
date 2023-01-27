@@ -78,8 +78,9 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 
 [tool.ruff]
 line-length = 79
-ignore = ["E501", "UP006", "UP007"]
-select = ["E", "F", "UP", "I"]
+select = ["E", "F", "UP", "I", "W", "YTT", "TCH"] # "BLE", "B"]
+ignore = ["E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003"]
+
 per-file-ignores = {"napari/_vispy/__init__.py" = ["E402"]}
 target-version = "py38"
 fix = true

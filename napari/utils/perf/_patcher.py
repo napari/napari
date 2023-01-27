@@ -21,7 +21,7 @@ PatchFunction = Callable[[CallableParent, str, str], None]
 class PatchError(Exception):
     """Failed to patch target, config file error?"""
 
-    def __init__(self, message):
+    def __init__(self, message) -> None:
         self.message = message
 
 

@@ -794,7 +794,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            assert False, 'Unreachable code'  # pragma: no cover
+            raise AssertionError("Unreachable code")  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -833,7 +833,7 @@ def test_drag_start_selection(
                 layer.data[0], [offset_position[0], offset_position[1]]
             )
         else:
-            assert False, 'Unreachable code'  # pragma: no cover
+            raise AssertionError("Unreachable code")  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -866,6 +866,6 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        assert False, 'Unreachable code'  # pragma: no cover
+        raise AssertionError("Unreachable code")  # pragma: no cover
     assert layer._drag_box is None
     assert layer._drag_start is None

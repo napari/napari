@@ -376,7 +376,7 @@ def test_nested_move_multiple(sources, dest, expectation):
 
 
 class E:
-    def __init__(self):
+    def __init__(self) -> None:
         self.events = EmitterGroup(test=None)
 
 

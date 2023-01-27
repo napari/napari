@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class FileMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
         self.open_sample_menu = NapariMenu(trans._('Open Sample'), self)

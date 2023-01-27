@@ -16,7 +16,7 @@ import napari
 viewer = napari.view_image(data.moon())
 
 class Grabber(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.copy_canvas_btn = QPushButton("Copy Canvas to Clipboard", self)

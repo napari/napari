@@ -209,7 +209,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 class NodeMimeData(QMimeData):
     """An object to store Node data during a drag operation."""
 
-    def __init__(self, nodes: Optional[List[NodeType]] = None):
+    def __init__(self, nodes: Optional[List[NodeType]] = None) -> None:
         super().__init__()
         self.nodes: List[NodeType] = nodes or []
         if nodes:

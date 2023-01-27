@@ -95,7 +95,7 @@ class Shape(ABC):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
+    ) -> None:
 
         self._dims_order = dims_order or list(range(2))
         self._ndisplay = ndisplay

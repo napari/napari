@@ -13,13 +13,15 @@ of the layer types, like "image", "points", etc...):
         return viewer
 """
 import inspect
-from typing import Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
 from napari.components.dims import Dims
-from napari.layers import Image
 from napari.viewer import Viewer
+
+if TYPE_CHECKING:
+    from napari.layers import Image
 
 __all__ = [
     'view_image',
@@ -248,7 +250,7 @@ def imshow(
     order=(),
     axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List[Image]]:
+) -> Tuple[Viewer, List["Image"]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters

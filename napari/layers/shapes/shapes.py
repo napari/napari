@@ -409,7 +409,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if data is None:
             if ndim is None:
                 ndim = 2

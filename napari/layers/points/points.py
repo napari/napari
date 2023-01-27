@@ -331,7 +331,7 @@ class Points(Layer):
         canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
-    ):
+    ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
 

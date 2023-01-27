@@ -26,7 +26,7 @@ def generate_shapes(filename):
     all_shapes = None
 
     np.random.seed(0)
-    for k in range(shapes_per_slice):
+    for _k in range(shapes_per_slice):
 
         planes = np.tile(np.arange(128).reshape((128, 1, 1)), (1, 5, 1))
         corners = np.random.uniform(0, 128, size=(128, 5, 2))

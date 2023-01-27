@@ -10,7 +10,7 @@ from napari.utils.events.containers import SelectableEventedList
 
 
 class T:
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         self.name = name
 
     def __str__(self):

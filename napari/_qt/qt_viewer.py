@@ -191,7 +191,9 @@ class QtViewer(QSplitter):
 
     _instances = WeakSet()
 
-    def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
+    def __init__(
+        self, viewer: ViewerModel, show_welcome_screen: bool = False
+    ) -> None:
 
         super().__init__()
         self._instances.add(self)

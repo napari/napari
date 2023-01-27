@@ -232,7 +232,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:

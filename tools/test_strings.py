@@ -51,7 +51,7 @@ TranslationErrorsDict = Dict[str, List[Tuple[str, str]]]
 class FindTransStrings(ast.NodeVisitor):
     """This node visitor finds translated strings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self._found = set()

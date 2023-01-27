@@ -21,7 +21,7 @@ get_app()
 class MyObject:
     """generic object."""
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         self.name = name
 
     def __str__(self):

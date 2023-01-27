@@ -40,7 +40,7 @@ def get_text_char_format(style):
 
 
 class QFormatter(Formatter):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.data = []
         self._style = {
@@ -65,7 +65,7 @@ class QFormatter(Formatter):
 
 
 class Pylighter(QtGui.QSyntaxHighlighter):
-    def __init__(self, parent, lang, theme):
+    def __init__(self, parent, lang, theme) -> None:
         super().__init__(parent)
         self.formatter = QFormatter(style=theme)
         self.lexer = get_lexer_by_name(lang)

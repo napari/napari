@@ -59,7 +59,7 @@ class Octree:
         The base shape and other information.
     """
 
-    def __init__(self, slice_id: int, data, meta: OctreeMetadata):
+    def __init__(self, slice_id: int, data, meta: OctreeMetadata) -> None:
         self.slice_id = slice_id
         self.data = data
         self.meta = meta

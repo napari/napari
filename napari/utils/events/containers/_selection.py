@@ -54,7 +54,7 @@ class Selection(EventedSet[_T]):
         emitted when the current item has changed. (Private event)
     """
 
-    def __init__(self, data: Iterable[_T] = ()):
+    def __init__(self, data: Iterable[_T] = ()) -> None:
         self._active: Optional[_T] = None
         self._current_ = None
         self.events = EmitterGroup(source=self, _current=None, active=None)

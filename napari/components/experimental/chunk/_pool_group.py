@@ -30,7 +30,9 @@ class LoaderPoolGroup:
         The mapping from priority to loader pool.
     """
 
-    def __init__(self, octree_config: dict, on_done: DoneCallback = None):
+    def __init__(
+        self, octree_config: dict, on_done: DoneCallback = None
+    ) -> None:
         self._pools = self._create_pools(octree_config, on_done)
 
     def _create_pools(

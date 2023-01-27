@@ -63,7 +63,7 @@ class NapariPluginManager(PluginManager):
 
     ENTRY_POINT = 'napari.plugin'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(

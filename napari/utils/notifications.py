@@ -108,7 +108,7 @@ class Notification(Event):
         ] = NotificationSeverity.WARNING,
         actions: ActionSequence = (),
         **kwargs,
-    ):
+    ) -> None:
         self.severity = NotificationSeverity(severity)
         super().__init__(type=str(self.severity).lower(), **kwargs)
         self._message = message
@@ -144,7 +144,7 @@ class ErrorNotification(Notification):
 
     exception: BaseException
 
-    def __init__(self, exception: BaseException, *args, **kwargs):
+    def __init__(self, exception: BaseException, *args, **kwargs) -> None:
         msg = getattr(exception, 'message', str(exception))
         actions = getattr(exception, 'actions', ())
         super().__init__(msg, NotificationSeverity.ERROR, actions)
@@ -193,7 +193,7 @@ class WarningNotification(Notification):
 
     def __init__(
         self, warning: Warning, filename=None, lineno=None, *args, **kwargs
-    ):
+    ) -> None:
         msg = getattr(warning, 'message', str(warning))
         actions = getattr(warning, 'actions', ())
         super().__init__(msg, NotificationSeverity.WARNING, actions)

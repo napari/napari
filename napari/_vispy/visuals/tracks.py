@@ -15,7 +15,7 @@ class TracksVisual(ClippingPlanesMixin, Compound):
         - Graph edges (vispy.LineVisual)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tracks_filter = TracksFilter()
         self.graph_filter = TracksFilter()
 

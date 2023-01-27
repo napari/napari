@@ -217,7 +217,7 @@ class TranslationString(str):
         n: Optional[str] = None,
         deferred: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         if msgid is None:
             raise ValueError(
                 trans._("Must provide at least a `msgid` parameter!")
@@ -320,7 +320,7 @@ class TranslationBundle:
         The locale for this bundle. Examples include "en_US", "en_CO".
     """
 
-    def __init__(self, domain: str, locale: str):
+    def __init__(self, domain: str, locale: str) -> None:
         self._domain = domain
         self._locale = locale
 

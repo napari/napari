@@ -392,7 +392,7 @@ def test_grid():
 
     np.random.seed(0)
     # Add image
-    for i in range(6):
+    for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class _FakeHookimpl:
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         self.plugin_name = name
 
 

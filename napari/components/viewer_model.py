@@ -149,7 +149,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     mouse_over_canvas: bool = False
 
-    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+    def __init__(
+        self, title='napari', ndisplay=2, order=(), axis_labels=()
+    ) -> None:
         # max_depth=0 means don't look for parent contexts.
         from napari._app_model.context import create_context
 

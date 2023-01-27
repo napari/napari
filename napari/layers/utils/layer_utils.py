@@ -710,7 +710,7 @@ class _FeatureTable:
         values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
-    ):
+    ) -> None:
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
 

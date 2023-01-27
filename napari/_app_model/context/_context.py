@@ -21,7 +21,7 @@ class SettingsAwareContext(Context):
 
     _PREFIX: Final[str] = 'settings.'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         from napari.settings import get_settings
 

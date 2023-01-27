@@ -121,7 +121,7 @@ class own_partial:
     (Qt widgets are not serializable)
     """
 
-    def __init__(self, func, *args, **kwargs):
+    def __init__(self, func, *args, **kwargs) -> None:
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -138,7 +138,7 @@ class own_partial:
 
 
 class QtViewerWrap(QtViewer):
-    def __init__(self, main_viewer, *args, **kwargs):
+    def __init__(self, main_viewer, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.main_viewer = main_viewer
 
@@ -162,7 +162,7 @@ class CrossWidget(QCheckBox):
     the cross update is throttled
     """
 
-    def __init__(self, viewer: napari.Viewer):
+    def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__("Add cross layer")
         self.viewer = viewer
         self.setChecked(False)
@@ -244,7 +244,7 @@ class ExampleWidget(QWidget):
     of the additional viewers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.btn = QPushButton("Perform action")
         self.spin = QDoubleSpinBox()
@@ -258,7 +258,7 @@ class ExampleWidget(QWidget):
 class MultipleViewerWidget(QSplitter):
     """The main widget of the example."""
 
-    def __init__(self, viewer: napari.Viewer):
+    def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__()
         self.viewer = viewer
         self.viewer_model1 = ViewerModel(title="model1")

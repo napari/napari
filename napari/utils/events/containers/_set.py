@@ -28,7 +28,7 @@ class EventedSet(MutableSet[_T]):
 
     events: EmitterGroup
 
-    def __init__(self, data: Iterable[_T] = ()):
+    def __init__(self, data: Iterable[_T] = ()) -> None:
 
         _events = {'changed': None}
         # For inheritance: If the mro already provides an EmitterGroup, add...

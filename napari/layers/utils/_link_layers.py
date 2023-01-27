@@ -264,6 +264,6 @@ def _unlink_keys(keys: Iterable[LinkKey]):
 
 def _rebuild_link_index():
     links = DefaultDict(set)
-    for l1, l2, attr in _UNLINKERS:
+    for l1, l2, _attr in _UNLINKERS:
         links[l1].add(l2)
     return links

@@ -67,7 +67,7 @@ class ShapeList:
         be rendered.
     """
 
-    def __init__(self, data=[], ndisplay=2):
+    def __init__(self, data=[], ndisplay=2) -> None:
 
         self._ndisplay = ndisplay
         self.shapes = []

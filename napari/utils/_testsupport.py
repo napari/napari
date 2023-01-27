@@ -65,7 +65,7 @@ def fail_obj_graph(Klass):
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
-        assert False, len(Klass._instances)
+        raise AssertionError(len(Klass._instances))
 
 
 @pytest.fixture

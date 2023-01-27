@@ -28,7 +28,7 @@ class QtReaderDialog(QDialog):
         readers: Dict[str, str] = {},
         error_message: str = '',
         persist_checked: bool = True,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle(trans._('Choose reader'))

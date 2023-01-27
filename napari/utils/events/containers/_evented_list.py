@@ -86,7 +86,7 @@ class EventedList(TypedMutableSequence[_T]):
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
         lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = dict(),
-    ):
+    ) -> None:
         _events = {
             'inserting': None,  # int
             'inserted': None,  # Tuple[int, Any] - (idx, value)
@@ -197,7 +197,7 @@ class EventedList(TypedMutableSequence[_T]):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                setattr(event, 'index', self.index(event.source))
+                event.index = self.index(event.source)
         # reemit with this object's EventEmitter of the same type if present
         # otherwise just emit with the EmitterGroup itself
         getattr(self.events, event.type, self.events)(event)
