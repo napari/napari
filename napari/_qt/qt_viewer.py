@@ -167,8 +167,6 @@ class QtViewer(QSplitter):
         Button controls for napari layers.
     layers : QtLayerList
         Qt view for LayerList controls.
-    layer_to_visual : dict
-        Dictionary mapping napari layers with their corresponding vispy_layers.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     viewerButtons : QtViewerButtons
