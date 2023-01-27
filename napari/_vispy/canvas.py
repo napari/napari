@@ -72,6 +72,8 @@ class VispyCanvas:
         self.scene_canvas.events.resize.connect(self.on_resize)
         self.scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.events.theme.connect(self._on_theme_change)
+        self.viewer.layers.events.reordered.connect(self._reorder_layers)
+        self.viewer.layers.events.removed.connect(self._remove_layer)
         self.destroyed.connect(self._disconnect_theme)
 
     @property
@@ -332,7 +334,23 @@ class VispyCanvas:
         """
         self.viewer._canvas_size = tuple(self.scene_canvas.size[::-1])
 
-    def add_layer_to_visual(self, napari_layer, vispy_layer):
+    def _add_layer_to_visual(self, napari_layer, vispy_layer):
         if not self.viewer.grid.enabled:
             vispy_layer.node.parent = self.view.scene
             self.layer_to_visual[napari_layer] = vispy_layer
+
+    def _remove_layer(self, event):
+        layer = event.value
+        vispy_layer = self.layer_to_visual[layer]
+        vispy_layer.close()
+        del vispy_layer
+        del self.layer_to_visual[layer]
+        self._reorder_layers()
+
+    def _reorder_layers(self):
+        """When the list is reordered, propagate changes to draw order."""
+        for i, layer in enumerate(self.viewer.layers):
+            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer.order = i
+        self.scene_canvas._draw_order.clear()
+        self.scene_canvas.update()

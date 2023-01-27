@@ -256,9 +256,7 @@ class QtViewer(QSplitter):
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
-        self.viewer.layers.events.removed.connect(self._remove_layer)
 
         self.setAcceptDrops(True)
 
@@ -522,31 +520,8 @@ class QtViewer(QSplitter):
             if vispy_layer.events is not None:
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
-        self.canvas.add_layer_to_visual(layer, vispy_layer)
-        self._reorder_layers()
-
-    def _remove_layer(self, event):
-        """When a layer is removed, remove its parent.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        layer = event.value
-        vispy_layer = self.canvas.layer_to_visual[layer]
-        vispy_layer.close()
-        del vispy_layer
-        del self.canvas.layer_to_visual[layer]
-        self._reorder_layers()
-
-    def _reorder_layers(self):
-        """When the list is reordered, propagate changes to draw order."""
-        for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self.canvas.layer_to_visual[layer]
-            vispy_layer.order = i
-        self.canvas.scene_canvas._draw_order.clear()
-        self.canvas.scene_canvas.update()
+        self.canvas._add_layer_to_visual(layer, vispy_layer)
+        self.canvas._reorder_layers()
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
