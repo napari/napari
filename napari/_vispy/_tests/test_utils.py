@@ -42,7 +42,7 @@ def test_get_view_direction_in_scene_coordinates(make_napari_viewer):
     viewer.dims.ndisplay = 3
 
     # get the viewbox
-    view_box = viewer.window._qt_viewer.view
+    view_box = viewer.window._qt_viewer.canvas.view
 
     # get the view direction
     view_dir = get_view_direction_in_scene_coordinates(
@@ -60,7 +60,7 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
     viewer.dims.ndisplay = 2
 
     # get the viewbox
-    view_box = viewer.window._qt_viewer.view
+    view_box = viewer.window._qt_viewer.canvas.view
 
     # get the view direction
     view_dir = get_view_direction_in_scene_coordinates(
