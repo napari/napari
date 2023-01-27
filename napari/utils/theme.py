@@ -79,6 +79,8 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    font_size: str = "12px"
+    header_size: str = "16px"
 
     @validator("syntax_style", pre=True)
     def _ensure_syntax_style(value: str) -> str:
@@ -91,11 +93,29 @@ class Theme(EventedModel):
         )
         return value
 
+    @validator("font_size", "header_size", pre=True)
+    def _ensure_font_size(value: str) -> str:
+        assert "px" in value, "Font size must be in pixels."
+        assert int(value[:-2]) > 0, "Font size must be greater than 0."
+        return value
 
+
+add_pattern = re.compile(r"{{\s?add\((\w+),?\s?([-\d]+)?\)\s?}}")
+subtract_pattern = re.compile(r"{{\s?subtract\((\w+),?\s?([-\d]+)?\)\s?}}")
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
+
+
+def subtract(px_size: str, px: int):
+    """Subtract pixels from a string"""
+    return f"{int(px_size[:-2]) - int(px)}px"
+
+
+def add(px_size: str, px: int):
+    """Add pixels to a string"""
+    return f"{int(px_size[:-2]) + int(px)}px"
 
 
 def darken(color: Union[str, Color], percentage=10):
@@ -149,6 +169,14 @@ def gradient(stops, horizontal=True):
 
 
 def template(css: str, **theme):
+    def _add_match(matchobj):
+        px_size, px = matchobj.groups()
+        return add(theme[px_size], px)
+
+    def _subtract_match(matchobj):
+        px_size, px = matchobj.groups()
+        return subtract(theme[px_size], px)
+
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
         return darken(theme[color], percentage)
@@ -167,6 +195,8 @@ def template(css: str, **theme):
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
+        css = add_pattern.sub(_add_match, css)
+        css = subtract_pattern.sub(_subtract_match, css)
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
@@ -344,6 +374,8 @@ DARK = Theme(
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
+    font_size='12px',
+    header_size="16px",
 )
 LIGHT = Theme(
     id='light',
@@ -361,6 +393,8 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
+    font_size='12px',
+    header_size="16px",
 )
 
 register_theme('dark', DARK, "builtin")

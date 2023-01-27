@@ -53,6 +53,7 @@ QTextEdit {
   color: {{ text }};
   selection-background-color: {{ foreground }};
   padding: 4px 2px 4px 4px;
+  font-size: {{ font_size }};
 }
 
 /* the area behind the scrollbar */
@@ -67,6 +68,7 @@ QPushButton {
   border-radius: 2px;
   padding: 4px;
   border: 0px;
+  font-size: {{ font_size }};
 }
 
 QPushButton:hover {
@@ -115,6 +117,7 @@ QComboBox {
   border-radius: 2px;
   background-color: {{ foreground }};
   padding: 3px 10px 3px 8px; /* top right bottom left */
+  font-size: {{ font_size }};
 }
 
 QComboBox:disabled {
@@ -172,6 +175,7 @@ QLineEdit {
   min-height: 20px;
   padding: 2px;
   border-radius: 2px;
+  font-size: {{ font_size }};
 }
 
 QWidget[emphasized="true"] QLineEdit {
@@ -187,6 +191,7 @@ QAbstractSpinBox {
   min-width: 70px;
   min-height: 18px;
   border-radius: 2px;
+  font-size: {{ font_size }};
 }
 
 QLabeledSlider > QAbstractSpinBox {
@@ -264,6 +269,7 @@ QCheckBox {
   spacing: 5px;
   color: {{ text }};
   background-color: none;
+  font-size: {{ font_size }};
 }
 
 QCheckBox::indicator {
@@ -313,6 +319,7 @@ QWidget[emphasized="true"] QCheckBox::indicator:unchecked:hover {
 
 QRadioButton {
   background: none;
+  font-size: {{ font_size }};
 }
 
 QRadioButton::indicator{
@@ -561,6 +568,7 @@ QProgressBar {
     border-radius: 2px;
     text-align: center;
     padding: 0px;
+    font-size: {{ font_size }};
 }
 
 QProgressBar::horizontal {
@@ -593,6 +601,7 @@ QGroupBox {
     border: 1px solid {{ foreground }};
     border-radius: 5px;
     margin-top: 1ex; /* leave space at the top for the title */
+    font-size: {{ font_size }};
 }
 
 QGroupBox::title {
@@ -601,6 +610,7 @@ QGroupBox::title {
     left: 10px;
     padding: 0 3px;
     background-color: {{ background }};
+    font-size: {{ font_size }};
 }
 
 
@@ -616,7 +626,7 @@ QWidget[emphasized="true"] QTabWidget::pane {
   border: 1px solid {{ darken(primary, 10) }};
 }
 
-QTabBar::tab {
+QTabBar, QTabBar::tab {
   background-color: {{ foreground }};
   border: 1px solid {{ background }};
   border-bottom: 0px;
@@ -624,6 +634,7 @@ QTabBar::tab {
   border-top-right-radius: 4px;
   padding: 3px 6px;
   background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
+  font-size: {{ font_size }};
 }
 
 
@@ -645,6 +656,7 @@ QWidget[emphasized="true"] QTabBar::tab:selected {
 
 QLabel {
   background-color: none;
+  font-size: {{ font_size }};
 }
 
 /* ----------------- QMenuBar ------------------ */
@@ -656,6 +668,19 @@ QMenuBar::item:selected {
 QLCDNumber {
   background: none;
 }
+
+/* ----------------- QMenu ------------------
+
+QMenu::item {
+    font-size: 12pt;
+    padding: 3px;
+}
+
+QMenu::item:selected {
+    font-size: 12pt;
+    background-color: {{ secondary }};
+}
+*/
 
 /* ----------------- QStatusBar ------------------ */
 
