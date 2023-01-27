@@ -672,12 +672,12 @@ QLCDNumber {
 /* ----------------- QMenu ------------------
 
 QMenu::item {
-    font-size: 12pt;
+    font-size: {{ font_size }};
     padding: 3px;
 }
 
 QMenu::item:selected {
-    font-size: 12pt;
+    font-size: {{ font_size }};
     background-color: {{ secondary }};
 }
 */

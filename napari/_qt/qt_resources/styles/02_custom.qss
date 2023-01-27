@@ -78,7 +78,7 @@ QMainWindow::separator:vertical {
 
 #QtCustomTitleBar > QLabel {
   color: {{ primary }};
-  font-size: {{ subtract(font_size, 1) }};
+  font-size: {{ decrease(font_size, 1) }};
 }
 
 #QTitleBarCloseButton{
@@ -182,7 +182,7 @@ QtLayerWidget > QLineEdit {
   border: none;
   border-radius: 2px;
   padding: 2px;
-  font-size: {{ add(font_size, 2) }};
+  font-size: {{ increase(font_size, 2) }};
   qproperty-alignment: right;
 }
 
@@ -328,12 +328,12 @@ QWidget[emphasized="true"] QLabel:disabled {
 }
 
 AutoScaleButtons QPushButton {
-  font-size: {{ subtract(font_size, 3) }};
+  font-size: {{ decrease(font_size, 3) }};
   padding: 4;
 }
 
 PlaneNormalButtons QPushButton {
-    font-size: {{ subtract(font_size, 3) }};
+    font-size: {{ decrease(font_size, 3) }};
     padding: 4;
 }
 /* ------------- DimsSliders --------- */
@@ -427,7 +427,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #slice_label {
-  font-size: {{ subtract(font_size, 1) }};
+  font-size: {{ decrease(font_size, 1) }};
   color: {{ secondary }};
   background: transparent;
 }
@@ -524,7 +524,7 @@ NapariQtNotification #close_button {
 
 NapariQtNotification #source_label {
   color: {{ primary }};
-  font-size: {{ subtract(font_size, 1) }};
+  font-size: {{ decrease(font_size, 1) }};
 }
 
 NapariQtNotification #severity_icon {
@@ -532,7 +532,7 @@ NapariQtNotification #severity_icon {
   margin: 0 0 -3px 0;
   min-width: 20px;
   min-height: 18px;
-  font-size: {{ add(font_size, 3) }};
+  font-size: {{ increase(font_size, 3) }};
   color: {{ icon }};
 }
 
@@ -540,7 +540,7 @@ NapariQtNotification #severity_icon {
 
 #QtCustomTitleLabel {
   color: {{ primary }};
-  font-size: {{ subtract(font_size, 1) }};
+  font-size: {{ decrease(font_size, 1) }};
 }
 
 #QtActivityButton:hover {
@@ -623,7 +623,7 @@ QPushButton#close_button:disabled {
 
 #small_text {
   color: {{ opacity(text, 150) }};
-  font-size: {{ subtract(font_size, 2) }};
+  font-size: {{ decrease(font_size, 2) }};
 }
 
 #small_italic_text {
@@ -728,12 +728,12 @@ QtWelcomeWidget[drag=true] {
 
 QtWelcomeLabel {
  color: {{ foreground }};
- font-size: {{ add(font_size, 8) }};
+ font-size: {{ increase(font_size, 8) }};
 }
 
 QtShortcutLabel {
  color: {{ foreground }};
- font-size: {{ add(font_size, 4) }};
+ font-size: {{ increase(font_size, 4) }};
 }
 
 

@@ -62,6 +62,8 @@ class Theme(EventedModel):
         Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
+    font_size : str
+        Font size (in points, pt) used in the application.
     """
 
     id: str
@@ -79,8 +81,7 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
-    font_size: str = "12px"
-    header_size: str = "16px"
+    font_size: str = "12pt"
 
     @validator("syntax_style", pre=True)
     def _ensure_syntax_style(value: str) -> str:
@@ -93,10 +94,14 @@ class Theme(EventedModel):
         )
         return value
 
-    @validator("font_size", "header_size", pre=True)
+    @validator("font_size", pre=True)
     def _ensure_font_size(value: str) -> str:
-        assert "px" in value, "Font size must be in pixels."
-        assert int(value[:-2]) > 0, "Font size must be greater than 0."
+        assert "pt" in value, trans._(
+            "Font size must be in pixels.", deferred=True
+        )
+        assert int(value[:-2]) > 0, trans._(
+            "Font size must be greater than 0.", deferred=True
+        )
         return value
 
 
@@ -108,14 +113,14 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def subtract(px_size: str, px: int):
-    """Subtract pixels from a string"""
-    return f"{int(px_size[:-2]) - int(px)}px"
+def decrease(px_size: str, px: int):
+    """Decrease fontsize."""
+    return f"{int(px_size[:-2]) - int(px)}pt"
 
 
-def add(px_size: str, px: int):
-    """Add pixels to a string"""
-    return f"{int(px_size[:-2]) + int(px)}px"
+def increase(px_size: str, px: int):
+    """Increase fontsize."""
+    return f"{int(px_size[:-2]) + int(px)}pt"
 
 
 def darken(color: Union[str, Color], percentage=10):
@@ -169,13 +174,13 @@ def gradient(stops, horizontal=True):
 
 
 def template(css: str, **theme):
-    def _add_match(matchobj):
+    def _increase_match(matchobj):
         px_size, px = matchobj.groups()
-        return add(theme[px_size], px)
+        return increase(theme[px_size], px)
 
-    def _subtract_match(matchobj):
+    def _decrease_match(matchobj):
         px_size, px = matchobj.groups()
-        return subtract(theme[px_size], px)
+        return decrease(theme[px_size], px)
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
@@ -195,8 +200,8 @@ def template(css: str, **theme):
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
-        css = add_pattern.sub(_add_match, css)
-        css = subtract_pattern.sub(_subtract_match, css)
+        css = add_pattern.sub(_increase_match, css)
+        css = subtract_pattern.sub(_decrease_match, css)
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
