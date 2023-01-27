@@ -193,7 +193,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     data = np.ones((10, 10))
 
     viewer = make_napari_viewer()
-    vis = viewer.window._qt_viewer.layer_to_visual
+    vis = viewer.window._qt_viewer.canvas.layer_to_visual
     viewer.add_image(data, colormap='red', name='red')
     viewer.add_image(data, colormap='green', name='green')
     viewer.add_image(data, colormap='blue', name='blue')
@@ -492,11 +492,11 @@ def test_process_mouse_event(make_napari_viewer):
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
-        expected_position = view._map_canvas2world(new_pos)
+        expected_position = view.canvas._map_canvas2world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer.dims.ndisplay = 3
-    view._process_mouse_event(mouse_press_callbacks, mouse_event)
+    view.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
 @skip_local_popups
@@ -600,11 +600,11 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
 
     viewer.dims.order = (0, 1, 2)
     viewer.window._qt_viewer.canvas.size = canvas_size
-    viewer.window._qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (2, 0, 1)
-    viewer.window._qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (1, 2, 0)
@@ -677,8 +677,8 @@ def test_insert_layer_ordering(make_napari_viewer):
     viewer.layers.append(pl1)
     viewer.layers.insert(0, pl2)
 
-    pl1_vispy = viewer.window._qt_viewer.layer_to_visual[pl1].node
-    pl2_vispy = viewer.window._qt_viewer.layer_to_visual[pl2].node
+    pl1_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl1].node
+    pl2_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
 
