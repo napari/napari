@@ -296,7 +296,7 @@ class VispyCanvas:
         """
         # Find corners of canvas in world coordinates
         top_left = self._map_canvas2world([0, 0])
-        bottom_right = self._map_canvas2world(self.viewer._canvas_size[::-1])
+        bottom_right = self._map_canvas2world(self.scene_canvas.size)
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event):
@@ -323,7 +323,7 @@ class VispyCanvas:
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self.viewer._canvas_size,
+                shape_threshold=self.scene_canvas.size,
             )
 
     def on_resize(self, event):
