@@ -344,7 +344,7 @@ def _write_multiple_layers_with_plugins(
 
     hook_caller = plugin_manager.hook.napari_get_writer
     path = abspath_or_url(path)
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
     if plugin_name:
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
@@ -454,7 +454,7 @@ def _write_single_layer_with_plugins(
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    logger.debug("Writing to %s.  Hook caller: %s", path, hook_caller)
     if plugin_name and (plugin_name not in plugin_manager.plugins):
         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
         raise ValueError(

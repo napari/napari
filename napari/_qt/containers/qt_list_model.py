@@ -67,7 +67,11 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         if isinstance(data, ItemMimeData):
             moving_indices = data.indices
 
-            logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
+            logger.debug(
+                "dropMimeData: indices %s ➡ %s",
+                moving_indices,
+                destRow,
+            )
 
             if len(moving_indices) == 1:
                 return self._root.move(moving_indices[0], destRow)

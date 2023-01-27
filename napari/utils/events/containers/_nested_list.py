@@ -390,7 +390,11 @@ class NestableEventedList(EventedList[_T]):
             If the terminal source is a slice, or if the source is this root
             object
         """
-        logger.debug(f"move(src_index={src_index}, dest_index={dest_index})")
+        logger.debug(
+            "move(src_index=%s, dest_index=%s)",
+            src_index,
+            dest_index,
+        )
         src_par_i, src_i = split_nested_index(src_index)
         dest_par_i, dest_i = split_nested_index(dest_index)
         dest_i = self._non_negative_index(dest_par_i, dest_i)
