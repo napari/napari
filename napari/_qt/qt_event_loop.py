@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy import PYQT5
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
@@ -139,13 +138,10 @@ def get_app(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        if PYQT5:
-            QApplication.setAttribute(
-                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
-            )
-            QApplication.setAttribute(
-                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
-            )
+        QApplication.setAttribute(
+            Qt.ApplicationAttribute.AA_EnableHighDpiScaling
+        )
+        QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
 
         argv = sys.argv.copy()
         if sys.platform == "darwin" and not argv[0].endswith("napari"):
