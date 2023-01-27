@@ -599,7 +599,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     viewer.add_image(vol)
 
     viewer.dims.order = (0, 1, 2)
-    viewer.window._qt_viewer.canvas.size = canvas_size
+    viewer.window._qt_viewer.canvas.scene_canvas.size = canvas_size
     viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
@@ -608,7 +608,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
     viewer.dims.order = (1, 2, 0)
-    viewer.window._qt_viewer.on_draw(None)
+    viewer.window._qt_viewer.canvas.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
 
 
