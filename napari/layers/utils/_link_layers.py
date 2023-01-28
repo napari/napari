@@ -189,7 +189,7 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 def _get_common_evented_attributes(
     layers: Iterable[Layer],
     exclude: set[str] = frozenset(
-        'thumbnail', 'status', 'name', 'data', 'extent'
+        ('thumbnail', 'status', 'name', 'data', 'extent')
     ),
     with_private=False,
 ) -> set[str]:
