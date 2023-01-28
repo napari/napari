@@ -1,6 +1,6 @@
 from numbers import Integral
 from typing import (
-    Literal,  # Added to typing in 3.8
+    Literal,
     Sequence,
     Tuple,
     Union,
