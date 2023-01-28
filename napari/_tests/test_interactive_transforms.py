@@ -114,12 +114,12 @@ def test_vertex_highlight(make_napari_viewer):
 
 def test_panzoom_on_space(make_napari_viewer):
     viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    view = viewer.window._qt_viewer.canvas
     data = np.random.random((2, 6, 30, 40))
     layer = viewer.add_image(data)
 
     layer.mode = 'transform'
-    view.canvas.events.key_press(key=keys.Key('Space'))
+    view.scene_canvas.events.key_press(key=keys.Key('Space'))
     assert layer.mode == 'pan_zoom'
     assert viewer.overlays.interaction_box.show is False
 

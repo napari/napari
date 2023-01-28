@@ -11,7 +11,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    view = viewer.window._qt_viewer.canvas
 
     if os.getenv("CI"):
         viewer.show()
@@ -45,7 +45,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
         mock_move.method()
 
     # Simulate press only
-    view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_called_once()
     mock_press.reset_mock()
     mock_drag.method.assert_not_called()
@@ -53,7 +53,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
     # Simulate release only
-    view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_called_once()
@@ -61,7 +61,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
     # Simulate move with no press
-    view.canvas.events.mouse_move(pos=(0, 0), modifiers=())
+    view.scene_canvas.events.mouse_move(pos=(0, 0), modifiers=())
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
@@ -69,11 +69,11 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     mock_move.reset_mock()
 
     # Simulate press, drag, release
-    view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
-    view.canvas.events.mouse_move(
+    view.scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
-    view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
     mock_release.method.assert_called_once()
@@ -85,7 +85,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    view = viewer.window._qt_viewer.canvas
 
     if os.getenv("CI"):
         viewer.show()
@@ -121,7 +121,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
         mock_move.method()
 
     # Simulate press only
-    view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_called_once()
     mock_press.reset_mock()
     mock_drag.method.assert_not_called()
@@ -129,7 +129,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
     # Simulate release only
-    view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_called_once()
@@ -137,7 +137,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
     mock_move.method.assert_not_called()
 
     # Simulate move with no press
-    view.canvas.events.mouse_move(pos=(0, 0), modifiers=())
+    view.scene_canvas.events.mouse_move(pos=(0, 0), modifiers=())
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
@@ -145,11 +145,11 @@ def test_layer_mouse_bindings(make_napari_viewer):
     mock_move.reset_mock()
 
     # Simulate press, drag, release
-    view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
-    view.canvas.events.mouse_move(
+    view.scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
-    view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
     mock_release.method.assert_called_once()
@@ -161,7 +161,7 @@ def test_unselected_layer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
+    view = viewer.window._qt_viewer.canvas
 
     if os.getenv("CI"):
         viewer.show()
@@ -197,32 +197,32 @@ def test_unselected_layer_mouse_bindings(make_napari_viewer):
         mock_move.method()
 
     # Simulate press only
-    view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
     mock_move.method.assert_not_called()
 
     # Simulate release only
-    view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
     mock_move.method.assert_not_called()
 
     # Simulate move with no press
-    view.canvas.events.mouse_move(pos=(0, 0), modifiers=())
+    view.scene_canvas.events.mouse_move(pos=(0, 0), modifiers=())
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
     mock_move.method.assert_not_called()
 
     # Simulate press, drag, release
-    view.canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
-    view.canvas.events.mouse_move(
+    view.scene_canvas.events.mouse_press(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_move(
         pos=(0, 0), modifiers=(), button=0, press_event=True
     )
-    view.canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
+    view.scene_canvas.events.mouse_release(pos=(0, 0), modifiers=(), button=0)
     mock_press.method.assert_not_called()
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()

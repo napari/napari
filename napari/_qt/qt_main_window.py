@@ -1349,8 +1349,8 @@ class Window:
         from napari._qt.utils import add_flash_animation
 
         if canvas_only:
-            canvas = self._qt_viewer.canvas
-            prev_size = canvas.scene_canvas.size
+            canvas = self._qt_viewer.canvas.scene_canvas
+            prev_size = canvas.size
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
