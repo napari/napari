@@ -11,7 +11,7 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-In this release we've added two new analysis and GUI focused [hook specifications](https://napari.org/docs/dev/plugins/hook_specifications.html) for our plugin developers (#2080).
+In this release we've added two new analysis and GUI focused [hook specifications](https://github.com/napari/napari/blob/87961d0554b2bb1574553e23bf2231a9a5117568/docs/source/plugins/hook_specifications.rst) for our plugin developers (#2080).
 
 The first one `napari_experimental_provide_function_widget` allows you to provide a function or list of functions that we
 will turn into a GUI element using using [magicgui](https://napari.org/magicgui/). This hook spec leverages the newly added and the `viewer.window.add_function_widget` method (#1856) and the newly recently released `0.2` series of magicgui which seperates out an abstract function and widget API from its Qt backend. These functions can take in and return napari layer, allowing you to
@@ -23,7 +23,7 @@ Both of these hook specs are marked as `experimental` as we're likely to evolve 
 
 In this release we also seperate out more of the Qt functionality from napari making it easier to run headless (#2039, #2055). We also added a `napari.run` method as an alternative to using the `napari.gui_qt` context manager (#2056).
 
-We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/guides/stable/rendering.html) for more details on how to use the octree and its current limitations.
+We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/guides/rendering.html) for more details on how to use the octree and its current limitations.
 
 Finally we've added our [0.4 series roadmap](https://napari.org/roadmaps/0_4.html) and a [retrospective on our 0.3 roadmap](https://napari.org/roadmaps/0_3_retrospective.html)!
 

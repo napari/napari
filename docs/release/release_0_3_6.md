@@ -13,7 +13,7 @@ https://github.com/napari/napari
 ## Highlights
 This release contains the long awaited addition of text to both the points and
 shapes layers (#1374). Checkout our `examples/*_with_text.py` for simple usage
-and this [segmentation annotation tutorial](https://napari.org/tutorials/applications/annotate_segmentation)
+and this [segmentation annotation tutorial](https://napari.org/tutorials/segmentation/annotate_segmentation)
 for a more real-world use case.
 
 We've added support for a circular paintbrush for easier labels painting,

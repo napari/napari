@@ -22,7 +22,7 @@ This is the first release supporting npe2, the second iteration of napari
 plugin engine, which will soon enable more powerful actions from plugins.
 New plugin authors should start using npe2, while existing authors can migrate
 their plugins using our
-[migration guide](https://napari.org/plugins/stable/npe2_migration_guide.html).
+[migration guide](https://napari.org/plugins/npe2_migration_guide.html).
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari

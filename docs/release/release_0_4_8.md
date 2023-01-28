@@ -34,9 +34,9 @@ Use it with `viewer.open_sample(plugin_name, sample_name)`, for example,
 `viewer.open_sample('scikit-image', 'camera')`. Or you can use the File
 menu at File -> Open Sample. For more on how to provide your own sample
 datasets to napari, see [how to write a
-plugin](https://napari.org/plugins/stable/for_plugin_developers.html) and the
+plugin](https://github.com/napari/napari/blob/v0.4.8/docs/plugins/for_plugin_developers.rst) and the
 [sample data
-specification](https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_provide_sample_data).
+specification](https://github.com/napari/napari/blob/v0.4.8/napari/plugins/hook_specifications.py#L57).
 
 The scale bar now has rudimentary support for physical units 📏 (#2617). To use
 it, set your scale numerically as before, then use `viewer.scale_bar.unit =
