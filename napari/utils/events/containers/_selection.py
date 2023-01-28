@@ -61,7 +61,11 @@ class Selection(EventedSet[_T]):
         super().__init__(data=data)
         self._update_active()
 
-    def _emit_change(self, added=set(), removed=set()):
+    def _emit_change(self, added=None, removed=None):
+        if added is None:
+            added = set()
+        if removed is None:
+            removed = set()
         self._update_active()
         return super()._emit_change(added=added, removed=removed)
 

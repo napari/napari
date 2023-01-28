@@ -41,7 +41,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         return None
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
+        self, row: int, column: int = 0, parent: QModelIndex = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
@@ -60,7 +60,8 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         #   2. never store the object (and incur the penalty of
         #      self.getItem(idx) each time you want to get the value of an idx)
         #   3. Have special treatment when we encounter integers in the model
-
+        if parent is None:
+            parent = QModelIndex()
         return (
             self.createIndex(row, column, self.getItem(parent)[row])
             if self.hasIndex(row, column, parent)

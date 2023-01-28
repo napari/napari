@@ -56,8 +56,12 @@ class EventedSet(MutableSet[_T]):
         # for subclasses to potentially check value before adding
         return value
 
-    def _emit_change(self, added=set(), removed=set()):
+    def _emit_change(self, added=None, removed=None):
         # provides a hook for subclasses to update internal state before emit
+        if added is None:
+            added = set()
+        if removed is None:
+            removed = set()
         self.events.changed(added=added, removed=removed)
 
     def add(self, value: _T) -> None:

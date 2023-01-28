@@ -322,13 +322,13 @@ class NapariQtNotification(QDialog):
         for text, callback in actions:
             btn = QPushButton(text)
 
-            def call_back_with_self(callback, self):
+            def call_back_with_self(callback_, self):
                 """
                 We need a higher order function this to capture the reference to self.
                 """
 
                 def _inner():
-                    return callback(self)
+                    return callback_(self)
 
                 return _inner
 

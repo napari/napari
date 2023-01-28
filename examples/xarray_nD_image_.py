@@ -13,7 +13,7 @@ except ModuleNotFoundError:
     raise ModuleNotFoundError(
         """This example uses a xarray but xarray is not
     installed. To install try 'pip install xarray'."""
-    )
+    ) from None
 
 import numpy as np
 

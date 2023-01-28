@@ -71,7 +71,7 @@ class LoaderPoolGroup:
         use_priority = self._get_loader_priority(priority)
         return self._pools[use_priority]
 
-    @lru_cache(maxsize=64)
+    @lru_cache(maxsize=64)  # noqa: B019
     def _get_loader_priority(self, priority: int) -> int:
         """Return the loader priority to use.
 

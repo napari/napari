@@ -129,7 +129,9 @@ class own_partial:
     def __call__(self, *args, **kwargs):
         return self.func(*(self.args + args), **{**self.kwargs, **kwargs})
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
         return own_partial(
             self.func,
             *deepcopy(self.args, memodict),

@@ -352,7 +352,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(-center)
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_mask(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Convert the shape vertices to a boolean mask.
 
         Set points to `True` if they are lying inside the shape if the shape is

@@ -114,7 +114,7 @@ def test_move_multiple(sources, dest, expectation):
         dest_mi.column(),
         dest_mi.parent(),
     )
-    root == qt_tree._root == expectation
+    assert root == qt_tree._root == expectation
 
     root.events.moving.assert_called()
     root.events.moved.assert_called()

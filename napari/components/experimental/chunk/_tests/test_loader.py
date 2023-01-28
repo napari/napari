@@ -25,8 +25,8 @@ def test_get_loader_config_defaults():
     }
     configs = _get_loader_configs(config)
     assert len(configs) == 1
-    configs[0]['num_workers'] == 10
-    configs[0]['delay_queue_ms'] == 10
+    assert configs[0]['num_workers'] == 10
+    assert configs[0]['delay_queue_ms'] == 10
 
 
 TEST_CONFIG = {

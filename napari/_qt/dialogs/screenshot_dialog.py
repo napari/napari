@@ -27,9 +27,11 @@ class ScreenshotDialog(QFileDialog):
         self,
         save_function: Callable[[str], Any],
         parent=None,
-        directory=str(Path.home()),
+        directory=None,
         history=None,
     ) -> None:
+        if directory is None:
+            directory = str(Path.home())
         super().__init__(parent, trans._("Save screenshot"))
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)

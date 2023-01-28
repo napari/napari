@@ -678,7 +678,7 @@ def _load_language(
         with open(default_config_path) as fh:
             try:
                 data = safe_load(fh) or {}
-            except Exception as err:
+            except Exception as err:  # noqa BLE001
                 import warnings
 
                 warnings.warn(

@@ -105,7 +105,7 @@ class PerfmonConfig:
         """
         try:
             return self.data["callable_lists"][list_name]
-        except KeyError:
+        except KeyError as e:
             raise PerfmonConfigError(
                 trans._(
                     "{path} has no callable list '{list_name}'",
@@ -113,7 +113,7 @@ class PerfmonConfig:
                     path=self.config_path,
                     list_name=list_name,
                 )
-            )
+            ) from e
 
     def _patch_callables(self):
         """Add a perf_timer to every callable.

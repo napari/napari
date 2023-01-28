@@ -1777,7 +1777,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         try:
             return Cls(data, **(meta or {}))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             if 'unexpected keyword argument' not in str(exc):
                 raise exc
 

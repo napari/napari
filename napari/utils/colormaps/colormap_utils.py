@@ -456,7 +456,7 @@ def vispy_or_mpl_colormap(name):
                 display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
             else:
                 display_name = name
-        except AttributeError:
+        except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
             ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
@@ -468,7 +468,7 @@ def vispy_or_mpl_colormap(name):
                         name=name,
                         suggestion=suggestion,
                     )
-                )
+                ) from e
             else:
                 colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
                     set(_MATPLOTLIB_COLORMAP_NAMES)

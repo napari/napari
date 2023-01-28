@@ -13,7 +13,7 @@ except ModuleNotFoundError:
     raise ModuleNotFoundError(
         """This example uses a zarr array but zarr is not
     installed. To install try 'pip install zarr'."""
-    )
+    ) from None
 
 import napari
 

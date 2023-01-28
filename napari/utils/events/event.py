@@ -783,7 +783,7 @@ class EventEmitter:
                 cb(event)
             else:
                 cb()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
             if (

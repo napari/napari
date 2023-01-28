@@ -49,8 +49,10 @@ class TypedMutableSequence(MutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = dict(),
+        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
     ) -> None:
+        if lookup is None:
+            lookup = {}
         self._list: List[_T] = []
         self._basetypes = (
             basetype if isinstance(basetype, Sequence) else (basetype,)

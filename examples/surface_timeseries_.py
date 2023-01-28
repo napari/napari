@@ -12,7 +12,7 @@ try:
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "You must have nilearn installed to run this example."
-    )
+    ) from None
 
 import napari
 

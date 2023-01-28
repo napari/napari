@@ -108,13 +108,13 @@ def register_layer_attr_action(
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
-        except StopIteration:
+        except StopIteration as e:
             raise RuntimeError(
                 trans._(
                     "If actions has no arguments there is no way to know what to set the attribute to.",
                     deferred=True,
                 ),
-            )
+            ) from e
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):

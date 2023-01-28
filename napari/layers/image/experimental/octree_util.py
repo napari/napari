@@ -178,9 +178,7 @@ def spiral_index(row_range, col_range):
     x, y = 0, 0
     dx, dy = 0, -1
     # Loop through the desired number of indices
-    for ________________________________________________________________________________________________________________________________________________________________________________________________________i_ in (
-        range(max(total_row, total_col) ** 2)
-    ):
+    for _ in range(max(total_row, total_col) ** 2):
         # Check if values are in range
         if (-total_row // 2 < x <= total_row // 2) and (
             -total_col // 2 < y <= total_col // 2
