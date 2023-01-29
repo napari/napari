@@ -581,7 +581,7 @@ class QtViewer(QSplitter):
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
-                logging.debug(f'Saved {saved}')
+                logging.debug('Saved %s', saved)
                 error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
