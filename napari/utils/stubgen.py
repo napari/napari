@@ -24,6 +24,7 @@ callable methods will be stubbed.
 """
 import importlib
 import inspect
+import subprocess
 import textwrap
 import typing
 import warnings
@@ -188,12 +189,16 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
     body = '\n'.join(stubs)
     pyi = PYI_TEMPLATE.format(imports=importstr, body=body)
     # format with black and isort
-    pyi = _format_module_str(pyi)
+    # pyi = _format_module_str(pyi)
+    pyi = pyi.replace("NoneType", "None")
 
     if save:
         print("Writing stub:", module.__file__.replace(".py", ".pyi"))
-        with open(module.__file__.replace(".py", ".pyi"), 'w') as f:
+        file_path = module.__file__.replace(".py", ".pyi")
+        with open(file_path, 'w') as f:
             f.write(pyi)
+        subprocess.run(["ruff", file_path])
+        subprocess.run(["black", file_path])
 
     return pyi
 
