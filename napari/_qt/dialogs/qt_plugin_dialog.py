@@ -159,12 +159,6 @@ class PluginListItem(QFrame):
         self.row1.insertWidget(2, QLabel(lbl))
         self.row1.insertWidget(2, npe2_icon)
 
-    def _get_dialog(self) -> QDialog:
-        p = self.parent()
-        while not isinstance(p, QDialog) and p.parent():
-            p = p.parent()
-        return p
-
     def set_busy(
         self,
         text: str,
@@ -761,9 +755,9 @@ class QtPluginDialog(QDialog):
         self.refresh()
 
     def closeEvent(self, event):
+        self._add_items_timer.stop()
         if self.close_btn.isEnabled():
             super().closeEvent(event)
-
         event.ignore()
 
     def refresh(self):
@@ -859,7 +853,6 @@ class QtPluginDialog(QDialog):
             or running_as_constructor_app()
             or settings.plugins.plugin_api.name == "napari_hub"
         )
-        use_hub = True
         if use_hub:
             conda_forge = running_as_constructor_app()
             self.worker = create_worker(
@@ -1051,11 +1044,7 @@ class QtPluginDialog(QDialog):
     def _add_items(self):
         """Add items to the lists one by one using a timer to prevent freezing the UI."""
         if len(self._plugin_data) == 0:
-            if (
-                self.installed_list.count() + self.available_list.count()
-                == len(self.all_plugin_data)
-            ):
-                self._add_items_timer.stop()
+            self._add_items_timer.stop()
 
             return
 

@@ -1,11 +1,13 @@
 import importlib.metadata
 from typing import Generator, Optional, Tuple
+from unittest.mock import patch
 
 import npe2
 import pytest
 
 import napari.plugins
 from napari._qt.dialogs import qt_plugin_dialog
+from napari._qt.dialogs.qt_package_installer import InstallerActions
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa
 
 
@@ -227,6 +229,34 @@ def test_plugin_list_item(plugin_dialog):
     assert plugin_dialog.installed_list._count_visible() == 1
 
 
+def test_plugin_list_handle_action(plugin_dialog):
+    item = plugin_dialog.installed_list.item(0)
+
+    plugin_dialog.installed_list.handle_action(
+        item, 'test-name-1', InstallerActions.INSTALL, update=True
+    )
+    plugin_dialog.installed_list.handle_action(
+        item, 'test-name-1', InstallerActions.INSTALL, update=False
+    )
+    with patch.object(qt_plugin_dialog.WarnPopup, "exec_") as mock:
+        plugin_dialog.installed_list.handle_action(
+            item, 'test-name-1', InstallerActions.UNINSTALL, update=False
+        )
+        assert mock.called
+
+    item = plugin_dialog.available_list.item(0)
+    plugin_dialog.available_list.handle_action(
+        item,
+        'test-name-1',
+        InstallerActions.INSTALL,
+        update=False,
+        version='3',
+    )
+    plugin_dialog.available_list.handle_action(
+        item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
+    )
+
+
 @pytest.mark.parametrize(
     "text,action_name,update",
     [
@@ -237,7 +267,6 @@ def test_plugin_list_item(plugin_dialog):
     ],
 )
 def test_plugin_list_item_set_busy(text, action_name, update, plugin_dialog):
-    print(text, action_name, update)
     item = plugin_dialog.installed_list.item(0)
     widget = plugin_dialog.installed_list.itemWidget(item)
     widget.set_busy(text, action_name, update)
