@@ -30,11 +30,31 @@ class VispyCanvas:
     Add two features to SceneCanvas. Ignore mousewheel events with
     modifiers, and get the max texture size in __init__().
 
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+
     Attributes
     ----------
     max_texture_sizes : Tuple[int, int]
         The max textures sizes as a (2d, 3d) tuple.
-
+    last_theme_color : Optional[npt.NDArray[np.float]]
+        Theme color represented as numpy ndarray of shape (4,) before theme change
+        was applied.
+    background_color_override : Optional[npt.NDArray[np.float]]
+        ...
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    scene_canvas : vispy.scene.SceneCanvas
+        The vispy SceneCanvas which automatically draws the contents of a scene.
+    view : vispy.scene.widgets.viewbox.ViewBox
+        Rectangular widget in which a subscene is rendered.
+    vispy_camera : napari._vispy.VispyCamera
+        The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
+        scene is viewed and interacted with.
+    layer_to_visual : dict(napari.layers, napari._vispy.layers)
+        A mapping of the napari layers that have been added to the viewer and their corresponding vispy counterparts.
     """
 
     _instances = WeakSet()
