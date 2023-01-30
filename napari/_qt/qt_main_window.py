@@ -160,7 +160,7 @@ class _QtMainWindow(QMainWindow):
         handle = self.windowHandle()
         if handle is not None:
             handle.screenChanged.connect(
-                self._qt_viewer.canvas._backend.screen_changed
+                self._qt_viewer.canvas.scene_canvas._backend.screen_changed
             )
 
         # this is the line that initializes any Qt-based app-model Actions that

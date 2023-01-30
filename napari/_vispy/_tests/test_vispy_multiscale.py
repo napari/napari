@@ -69,7 +69,7 @@ def test_multiscale_screenshot(make_napari_viewer):
     _ = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
-    viewer.window._qt_viewer.view.canvas.size = (800, 600)
+    viewer.window._qt_viewer.canvas.view.canvas.size = (800, 600)
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
@@ -98,11 +98,11 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
     _ = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
-    view.view.canvas.size = (800, 600)
+    view.canvas.view.canvas.size = (800, 600)
 
     # Set zoom of camera to show highest resolution tile
-    view.view.camera.rect = [1000, 1000, 200, 150]
-    viewer.window._qt_viewer.on_draw(None)
+    view.canvas.view.camera.rect = [1000, 1000, 200, 150]
+    viewer.window._qt_viewer.canvas.on_draw(None)
 
     # Check that current level is bottom level of multiscale
     assert viewer.layers[0].data_level == 0
@@ -136,11 +136,11 @@ def test_image_screenshot_zoomed(make_napari_viewer):
     _ = viewer.add_image(data, multiscale=False, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
-    view.view.canvas.size = (800, 600)
+    view.canvas.view.canvas.size = (800, 600)
 
     # Set zoom of camera to show highest resolution tile
-    view.view.camera.rect = [1000, 1000, 200, 150]
-    viewer.window._qt_viewer.on_draw(None)
+    view.canvas.view.camera.rect = [1000, 1000, 200, 150]
+    viewer.window._qt_viewer.canvas.on_draw(None)
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
@@ -177,14 +177,14 @@ def test_multiscale_zoomed_out(make_napari_viewer):
     camera_rect_size = 34000
     camera_rect_center = 1599.5
     camera_rect_start = camera_rect_center - (camera_rect_size / 2)
-    qt_viewer.view.camera.rect = (
+    qt_viewer.canvas.view.camera.rect = (
         camera_rect_start,
         camera_rect_start,
         camera_rect_size,
         camera_rect_size,
     )
 
-    qt_viewer.on_draw(None)
+    qt_viewer.canvas.on_draw(None)
 
     assert layer.data_level == 2
 
