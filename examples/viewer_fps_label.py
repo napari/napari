@@ -18,7 +18,7 @@ def update_fps(fps):
 viewer = napari.Viewer()
 viewer.add_image(np.random.random((5, 5, 5)), colormap='red', opacity=0.8)
 viewer.text_overlay.visible = True
-viewer.window.qt_viewer.canvas.measure_fps(callback=update_fps)
+viewer.window.qt_viewer.canvas.scene_canvas.measure_fps(callback=update_fps)
 
 if __name__ == '__main__':
     napari.run()
