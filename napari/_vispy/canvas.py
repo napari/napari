@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
-from vispy.scene import SceneCanvas, Widget
+from vispy.scene import SceneCanvas as SceneCanvas_
+from vispy.scene import Widget
 
 from napari._vispy import VispyCamera
 from napari._vispy.utils.gl import get_max_texture_sizes
@@ -22,6 +23,16 @@ from napari.utils.interactions import (
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
+
+
+class SceneCanvas(SceneCanvas_):
+    """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
+
+    def _process_mouse_event(self, event):
+        """Ignore mouse wheel events which have modifiers."""
+        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
+            return
+        super()._process_mouse_event(event)
 
 
 class VispyCanvas:
@@ -154,15 +165,6 @@ class VispyCanvas:
                 border_width=0,
             )
         return self.scene_canvas._central_widget
-
-    # TODO: ask regarding functionality of this as it does not seem to be
-    #  called anywhere
-    # def _process_mouse_event(self, event):
-    #
-    #     """Ignore mouse wheel events which have modifiers."""
-    #     if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
-    #         return
-    #     super().scene_canvas._process_mouse_event(event)
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
