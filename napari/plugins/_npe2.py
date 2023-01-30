@@ -147,7 +147,7 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *args: cmd.exec(args=args))  # type: ignore
+            action.triggered.connect(lambda *args: cmd.exec(args=args))
 
 
 def file_extensions_string_for_layers(
