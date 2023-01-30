@@ -157,11 +157,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
     _overlays: EventedDict[str, Overlay] = PrivateAttr(
-        default_factory=lambda: EventedDict(
-            {k: v() for k, v in DEFAULT_OVERLAYS.items()}
-        ),
+        default_factory=EventedDict
     )
-
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
     _ctx: Mapping
@@ -236,6 +233,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+
+        self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
 
     # simple properties exposing overlays for backward compatibility
     @property
