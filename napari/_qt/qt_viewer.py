@@ -520,7 +520,6 @@ class QtViewer(QSplitter):
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
         self.canvas._add_layer_to_visual(layer, vispy_layer)
-        self.canvas._reorder_layers()
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.

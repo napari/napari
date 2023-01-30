@@ -344,6 +344,7 @@ class VispyCanvas:
         if not self.viewer.grid.enabled:
             vispy_layer.node.parent = self.view.scene
             self.layer_to_visual[napari_layer] = vispy_layer
+        self._reorder_layers()
 
     def _remove_layer(self, event):
         layer = event.value
