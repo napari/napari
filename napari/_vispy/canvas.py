@@ -116,7 +116,7 @@ class VispyCanvas:
 
     @property
     def bgcolor(self):
-        return self.scene_canvas.bgcolor.hex
+        return self.scene_canvas.bgcolor.rgba
 
     @bgcolor.setter
     def bgcolor(self, value):
