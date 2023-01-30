@@ -1,4 +1,3 @@
-# , old_generate_2D_edge_meshes
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
