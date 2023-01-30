@@ -158,7 +158,7 @@ def test_coerce_current_properties_valid_values():
     }
     coerced_current_properties = coerce_current_properties(current_properties)
 
-    for k, _v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])

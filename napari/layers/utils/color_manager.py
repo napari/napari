@@ -463,7 +463,7 @@ class ColorManager(EventedModel):
         ] = None,
         color_mode: Optional[Union[ColorMode, str]] = None,
         current_color: Optional[np.ndarray] = None,
-        default_color_cycle: np.ndarray = None,
+        default_color_cycle: ColorType = ColorArray('white'),
     ):
         """Initialize a ColorManager object from layer kwargs. This is a convenience
         function to coerce possible inputs into ColorManager kwargs
