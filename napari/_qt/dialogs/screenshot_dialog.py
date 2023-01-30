@@ -7,6 +7,8 @@ from qtpy.QtWidgets import QFileDialog, QMessageBox
 from napari.utils.misc import in_ipython
 from napari.utils.translations import trans
 
+HOME_DIRECTORY = str(Path.home())
+
 
 class ScreenshotDialog(QFileDialog):
     """
@@ -27,11 +29,9 @@ class ScreenshotDialog(QFileDialog):
         self,
         save_function: Callable[[str], Any],
         parent=None,
-        directory=None,
+        directory=HOME_DIRECTORY,
         history=None,
     ) -> None:
-        if directory is None:
-            directory = str(Path.home())
         super().__init__(parent, trans._("Save screenshot"))
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)
