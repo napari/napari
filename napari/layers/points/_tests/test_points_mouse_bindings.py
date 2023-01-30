@@ -866,6 +866,6 @@ def test_drag_start_selection(
         assert 0 in layer.selected_data
         assert layer.selected_data == set(range(n_points))
     else:
-        raise AssertionError("Unreachable code")  # pragma: no cover
+        assert False, 'Unreachable code'  # pragma: no cover
     assert layer._drag_box is None
     assert layer._drag_start is None
