@@ -1,5 +1,8 @@
 """VispyCanvas class.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 import numpy as np
@@ -17,6 +20,9 @@ from napari.utils.interactions import (
     mouse_wheel_callbacks,
 )
 
+if TYPE_CHECKING:
+    from napari.components import ViewerModel
+
 
 class VispyCanvas:
     """SceneCanvas for our QtViewer class.
@@ -33,14 +39,14 @@ class VispyCanvas:
 
     _instances = WeakSet()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, viewer: ViewerModel, *args, **kwargs):
 
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None
-        self.viewer = kwargs["parent"].viewer
+        self.viewer = viewer
         self.scene_canvas = SceneCanvas(*args, **kwargs)
         self.view = self.central_widget.add_view(border_width=0)
         self.vispy_camera = VispyCamera(

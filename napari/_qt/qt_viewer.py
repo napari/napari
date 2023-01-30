@@ -204,6 +204,7 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = VispyCanvas(
+            viewer=viewer,
             keys=None,
             vsync=True,
             parent=self,
