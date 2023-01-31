@@ -16,7 +16,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
         - Text labels (vispy.TextVisual)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__([Markers(), Markers(), Line(), Text()])
         self.scaling = True
 

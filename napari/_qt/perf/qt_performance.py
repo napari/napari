@@ -91,7 +91,7 @@ class QtPerformance(QWidget):
     # display will look, but the more we will slow things down.
     UPDATE_MS = 250
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()

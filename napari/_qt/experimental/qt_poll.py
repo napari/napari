@@ -46,7 +46,7 @@ class QtPoll(QObject):
         The viewer's main camera.
     """
 
-    def __init__(self, parent: QObject):
+    def __init__(self, parent: QObject) -> None:
         super().__init__(parent)
 
         self.events = EmitterGroup(source=self, poll=None)
@@ -118,7 +118,7 @@ class QtPoll(QObject):
 class IntervalTimer:
     """Time the interval between subsequent calls to our elapsed property."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._last: Optional[float] = None
 
     @property

@@ -762,7 +762,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])

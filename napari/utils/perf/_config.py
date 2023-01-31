@@ -17,7 +17,7 @@ PERFMON_ENV_VAR = "NAPARI_PERFMON"
 class PerfmonConfigError(Exception):
     """Error parsing or interpreting config file."""
 
-    def __init__(self, message):
+    def __init__(self, message) -> None:
         self.message = message
 
 
@@ -70,7 +70,7 @@ class PerfmonConfig:
     }
     """
 
-    def __init__(self, config_path: Optional[str]):
+    def __init__(self, config_path: Optional[str]) -> None:
         # Should only patch once, but it can't be on module load, user
         # should patch once main() as started running during startup.
         self.patched = False
@@ -105,7 +105,7 @@ class PerfmonConfig:
         """
         try:
             return self.data["callable_lists"][list_name]
-        except KeyError:
+        except KeyError as e:
             raise PerfmonConfigError(
                 trans._(
                     "{path} has no callable list '{list_name}'",
@@ -113,7 +113,7 @@ class PerfmonConfig:
                     path=self.config_path,
                     list_name=list_name,
                 )
-            )
+            ) from e
 
     def _patch_callables(self):
         """Add a perf_timer to every callable.

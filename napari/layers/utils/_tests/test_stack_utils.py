@@ -185,7 +185,7 @@ def test_split_channels(kwargs):
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
-    for d, meta, _ in result_list:
+    for d, _meta, _ in result_list:
         assert d.shape == (128, 128)
 
 

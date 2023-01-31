@@ -258,7 +258,7 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: str):
+    def __init__(self, shortcut: str) -> None:
         """
         Parameters
         ----------

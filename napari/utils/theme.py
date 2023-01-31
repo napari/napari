@@ -23,9 +23,10 @@ from napari.utils.translations import trans
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *rest = QT_VERSION.split('.')
+    major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-except Exception:
+    del major, minor, QT_VERSION
+except ImportError:
     use_gradients = False
 
 
@@ -180,11 +181,11 @@ def template(css: str, **theme):
 def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
-        id = darkdetect.theme().lower()
-    except Exception:
-        id = "dark"
+        id_ = darkdetect.theme().lower()
+    except AttributeError:
+        id_ = "dark"
 
-    return id
+    return id_
 
 
 def get_theme(id, as_dict=None):

@@ -35,7 +35,7 @@ class ChunkLoader:
         We only signal one event: chunk_loaded.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         _setup_logging(octree_config)
 
         loader_config = octree_config['loader_defaults']

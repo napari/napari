@@ -10,8 +10,8 @@ Add named or unnamed vispy colormaps to existing layers.
 import numpy as np
 import vispy.color
 from skimage import data
-import napari
 
+import napari
 
 histo = data.astronaut() / 255
 rch, gch, bch = np.transpose(histo, (2, 0, 1))

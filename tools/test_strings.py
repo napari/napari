@@ -27,6 +27,7 @@ import sys
 import termios
 import tokenize
 import tty
+from contextlib import suppress
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Set, Tuple
@@ -51,7 +52,7 @@ TranslationErrorsDict = Dict[str, List[Tuple[str, str]]]
 class FindTransStrings(ast.NodeVisitor):
     """This node visitor finds translated strings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self._found = set()
@@ -113,24 +114,17 @@ class FindTransStrings(ast.NodeVisitor):
 
     def visit_Call(self, node):
         method_name, args, kwargs = "", [], []
-        try:
+        with suppress(AttributeError):
             if node.func.value.id == "trans":
                 method_name = node.func.attr
-
                 # Args
-                args = []
                 for item in [arg.value for arg in node.args]:
                     args.append(item)
                     self._found.add(item)
-
                 # Kwargs
-                kwargs = []
-                for item in [kw.arg for kw in node.keywords]:
-                    if item != "deferred":
-                        kwargs.append(item)
-
-        except Exception:
-            pass
+                kwargs = [
+                    kw.arg for kw in node.keywords if kw.arg != "deferred"
+                ]
 
         if method_name:
             self._check_vars(method_name, args, kwargs)
@@ -147,7 +141,7 @@ show_trans_strings = FindTransStrings()
 
 
 def _find_func_definitions(
-    node: ast.AST, defs: List[ast.FunctionDef] = []
+    node: ast.AST, defs: List[ast.FunctionDef] = None
 ) -> List[ast.FunctionDef]:
     """Find all functions definition recrusively.
 
@@ -167,8 +161,11 @@ def _find_func_definitions(
     """
     try:
         body = node.body
-    except Exception:
+    except AttributeError:
         body = []
+
+    if defs is None:
+        defs = []
 
     for node in body:
         _find_func_definitions(node, defs=defs)
@@ -347,7 +344,7 @@ def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
             if toktype == tokenize.STRING:
                 try:
                     string = eval(tokstr)
-                except Exception:
+                except Exception:  # noqa BLE001
                     string = eval(tokstr[1:])
 
                 if isinstance(string, str):
@@ -410,7 +407,7 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
         spec = importlib.util.spec_from_file_location(module_name, fpath)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-    except Exception:
+    except ImportError:
         module = None
 
     return module
@@ -455,7 +452,7 @@ def find_issues(
         module = import_module_by_path(fpath)
         try:
             __all__strings = module.__all__
-        except Exception:
+        except AttributeError:
             __all__strings = []
 
         for key in strings:

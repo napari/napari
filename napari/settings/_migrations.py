@@ -31,7 +31,7 @@ def do_migrations(model: NapariSettings):
                 try:
                     migration.run(model)
                     model.schema_version = migration.to_
-                except Exception as e:
+                except Exception as e:  # noqa BLE001
                     msg = (
                         f"Failed to migrate settings from v{migration.from_} "
                         f"to v{migration.to_}. Error: {e}. "
@@ -39,7 +39,7 @@ def do_migrations(model: NapariSettings):
                     try:
                         model.update(backup)
                         msg += 'You may need to reset your settings with `napari --reset`. '
-                    except Exception:
+                    except Exception:  # noqa BLE001
                         msg += 'Settings rollback also failed. Please run `napari --reset`.'
                     warnings.warn(msg)
                     return

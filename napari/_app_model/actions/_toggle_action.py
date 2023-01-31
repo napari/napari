@@ -42,7 +42,7 @@ class ViewerToggleAction(Action):
         viewer_attribute: str,
         sub_attribute: str,
         **kwargs,
-    ):
+    ) -> None:
         def get_current(viewer: Viewer):
             """return the current value of the viewer attribute"""
             attr = getattr(viewer, viewer_attribute)

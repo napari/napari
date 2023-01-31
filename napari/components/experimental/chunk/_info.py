@@ -18,7 +18,7 @@ LOGGER = logging.getLogger("napari.loader")
 class LoadCounts:
     """Count statistics about loaded chunks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.loads: int = 0
         self.chunks: int = 0
         self.bytes: int = 0
@@ -54,7 +54,7 @@ class LoadInfo:
         True if the load was synchronous.
     """
 
-    def __init__(self, num_bytes: int, duration_ms: float, sync: bool):
+    def __init__(self, num_bytes: int, duration_ms: float, sync: bool) -> None:
         self.num_bytes = num_bytes
         self.duration_ms = duration_ms
         self.sync = sync
@@ -78,7 +78,7 @@ class LoadStats:
 
     NUM_RECENT_LOADS = 10  # Save details on this many recent loads.
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.window_ms: StatWindow = StatWindow(self.WINDOW_SIZE)
         self.window_bytes: StatWindow = StatWindow(self.WINDOW_SIZE)
         self.recent_loads: list = []
@@ -185,7 +185,7 @@ class LayerInfo:
     not deleted during the load process.
     """
 
-    def __init__(self, layer_ref: LayerRef, auto_sync_ms):
+    def __init__(self, layer_ref: LayerRef, auto_sync_ms) -> None:
         self.layer_ref = layer_ref
         self.load_type: LoadType = LoadType.AUTO
         self.auto_sync_ms = auto_sync_ms

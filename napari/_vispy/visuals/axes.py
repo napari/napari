@@ -126,7 +126,7 @@ def color_arrowheads(colors, num_segments):
 
 
 class Axes(Compound):
-    def __init__(self):
+    def __init__(self) -> None:
         self._num_segments_arrowhead = 100
         # CMYRGB for 6 axes data in x, y, z, ... ordering
         self._default_color = [

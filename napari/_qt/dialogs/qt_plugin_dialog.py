@@ -355,7 +355,7 @@ class PluginListItem(QFrame):
         enabled: bool = True,
         installed: bool = False,
         npe_version=1,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
@@ -378,7 +378,7 @@ class PluginListItem(QFrame):
             self.action_button.setObjectName("install_button")
 
     def _handle_npe2_plugin(self, npe_version):
-        if npe_version == 1:
+        if npe_version in (None, 1):
             return
         opacity = 0.4 if npe_version == 'shim' else 1
         lbl = trans._('npe1 (adapted)') if npe_version == 'shim' else 'npe2'
@@ -538,7 +538,7 @@ class PluginListItem(QFrame):
 
 
 class QPluginList(QListWidget):
-    def __init__(self, parent: QWidget, installer: Installer):
+    def __init__(self, parent: QWidget, installer: Installer) -> None:
         super().__init__(parent)
         self.installer = installer
         self.setSortingEnabled(True)
@@ -737,7 +737,7 @@ class RefreshState(Enum):
 
 
 class QtPluginDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
@@ -872,11 +872,15 @@ class QtPluginDialog(QDialog):
         self.worker.start()
         if discovered:
             message = trans._(
-                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+                'When installing/uninstalling npe2 plugins, '
+                'you must restart napari for UI changes to take effect.'
             )
-            self._warn_dialog = WarnPopup(
-                text=message,
+            self._warn_dialog = WarnPopup(text=message)
+            global_point = self.process_error_indicator.mapToGlobal(
+                self.process_error_indicator.rect().topLeft()
             )
+            global_point = QPoint(global_point.x(), global_point.y() - 75)
+            self._warn_dialog.move(global_point)
             self._warn_dialog.exec_()
 
     def setup_ui(self):

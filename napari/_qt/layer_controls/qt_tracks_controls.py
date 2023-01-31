@@ -29,7 +29,7 @@ class QtTracksControls(QtLayerControls):
 
     layer: 'napari.layers.Tracks'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         # NOTE(arl): there are no events fired for changing checkboxes

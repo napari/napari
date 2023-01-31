@@ -15,9 +15,9 @@ is capable of providing a basic GUI for any tree structure based on
 `napari.utils.tree.Group`.
 """
 import napari
-from napari.qt import get_app
 from napari._qt.containers import QtNodeTreeView
-from napari.utils.tree import Node, Group
+from napari.qt import get_app
+from napari.utils.tree import Group, Node
 
 get_app()
 

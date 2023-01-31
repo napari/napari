@@ -30,7 +30,7 @@ class QtModeRadioButton(QRadioButton):
 
     def __init__(
         self, layer, button_name, mode, *, tooltip=None, checked=False
-    ):
+    ) -> None:
         super().__init__()
 
         self.layer_ref = weakref.ref(layer)
@@ -80,7 +80,7 @@ class QtModePushButton(QPushButton):
         The layer instance that this button controls.
     """
 
-    def __init__(self, layer, button_name, *, slot=None, tooltip=None):
+    def __init__(self, layer, button_name, *, slot=None, tooltip=None) -> None:
         super().__init__()
 
         self.layer = layer

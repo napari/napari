@@ -92,7 +92,7 @@ class TextManager(EventedModel):
 
     def __init__(
         self, text=None, properties=None, n_text=None, features=None, **kwargs
-    ):
+    ) -> None:
         if n_text is not None:
             _warn_about_deprecated_n_text_parameter()
         if properties is not None:

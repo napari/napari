@@ -78,13 +78,13 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
             )
         try:
             color_array = ColorArray.validate(value)
-        except (ValueError, AttributeError, KeyError):
+        except (ValueError, AttributeError, KeyError) as e:
             raise TypeError(
                 trans._(
                     'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
                     deferred=True,
                 )
-            )
+            ) from e
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
         return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)

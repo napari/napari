@@ -1,3 +1,4 @@
+import contextlib
 import os
 import platform
 import subprocess
@@ -50,21 +51,17 @@ def _sys_name():
     """
     Discover MacOS or Linux Human readable information. For Linux provide information about distribution.
     """
-    try:
+    with contextlib.suppress(Exception):
         if sys.platform == "linux":
             return _linux_sys_name()
         if sys.platform == "darwin":
-            try:
+            with contextlib.suppress(subprocess.CalledProcessError):
                 res = subprocess.run(
                     ["sw_vers", "-productVersion"],
                     check=True,
                     capture_output=True,
                 )
                 return f"MacOS {res.stdout.decode().strip()}"
-            except subprocess.CalledProcessError:
-                pass
-    except Exception:
-        pass
     return ""
 
 
@@ -103,7 +100,7 @@ def sys_info(as_html=False):
             f"<b>{API_NAME}</b>: {API_VERSION}<br>"
         )
 
-    except Exception as e:
+    except Exception as e:  # noqa BLE001
         text += f"<b>Qt</b>: Import failed ({e})<br>"
 
     modules = (
@@ -123,7 +120,7 @@ def sys_info(as_html=False):
         try:
             loaded[module] = __import__(module)
             text += f"<b>{name}</b>: {loaded[module].__version__}<br>"
-        except Exception as e:
+        except Exception as e:  # noqa BLE001
             text += f"<b>{name}</b>: Import failed ({e})<br>"
 
     text += "<br><b>OpenGL:</b><br>"
@@ -151,7 +148,7 @@ def sys_info(as_html=False):
         screen_list = QGuiApplication.screens()
         for i, screen in enumerate(screen_list, start=1):
             text += f"  - screen {i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>"
-    except Exception as e:
+    except Exception as e:  # noqa BLE001
         text += f"  - failed to load screen information {e}"
 
     text += "<br><b>Settings path:</b><br>"

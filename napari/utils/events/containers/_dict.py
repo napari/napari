@@ -22,7 +22,7 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
         self,
         data: Mapping[_K, _T] = None,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-    ):
+    ) -> None:
         if data is None:
             data = {}
         self._dict: Dict[_K, _T] = dict()

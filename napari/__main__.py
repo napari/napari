@@ -2,6 +2,7 @@
 napari command line viewer.
 """
 import argparse
+import contextlib
 import logging
 import os
 import runpy
@@ -96,10 +97,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
                     raise IndexError()
             except IndexError:
                 sys.exit(f"error: argument {arg} expected one argument")
-        try:
+        with contextlib.suppress(Exception):
             value = literal_eval(value)
-        except Exception:
-            value = value
 
         out[key] = value
     return out

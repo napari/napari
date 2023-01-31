@@ -33,7 +33,7 @@ class OctreeLevelInfo:
         The index of this level within the whole tree.
     """
 
-    def __init__(self, meta: OctreeMetadata, level_index: int):
+    def __init__(self, meta: OctreeMetadata, level_index: int) -> None:
         self.meta = meta
 
         self.level_index = level_index
@@ -92,7 +92,7 @@ class OctreeLevel:
         data: ArrayLike,
         meta: OctreeMetadata,
         level_index: int,
-    ):
+    ) -> None:
         self.slice_id = slice_id
         self.data = data
 

@@ -44,7 +44,7 @@ class ImageLocation(ChunkLocation):
         The indices of the slice.
     """
 
-    def __init__(self, layer: Layer, indices):
+    def __init__(self, layer: Layer, indices) -> None:
         super().__init__(LayerRef.from_layer(layer))
         self.data_id: int = get_data_id(layer.data)
         self.data_level: int = layer._data_level

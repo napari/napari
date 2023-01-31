@@ -21,7 +21,7 @@ ANACONDA_REPLY_EMPTY = b'{"versions": []}'
 # Mocks
 # ----------------------------------------------------------------------------
 class FakeResponse:
-    def __init__(self, *, data: bytes, _error=None):
+    def __init__(self, *, data: bytes, _error=None) -> None:
         self.data = data
         self._error = _error
 

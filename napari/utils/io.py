@@ -1,12 +1,14 @@
 import os
 import warnings
-
-import numpy as np
+from typing import TYPE_CHECKING
 
 from napari.utils.translations import trans
 
+if TYPE_CHECKING:
+    import numpy as np
 
-def imsave(filename: str, data: np.ndarray):
+
+def imsave(filename: str, data: "np.ndarray"):
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -26,7 +28,7 @@ def imsave(filename: str, data: np.ndarray):
                 int(x) for x in tifffile.__version__.split('.')[:3]
             )
             compression_instead_of_compress = current_version >= (2021, 6, 6)
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Just in case anything goes wrong in parsing version number
             # like repackaging on linux or anything else we fallback to
             # using compress

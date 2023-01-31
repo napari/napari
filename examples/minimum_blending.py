@@ -15,6 +15,7 @@ ChrisLUTs: https://github.com/cleterrier/ChrisLUTs .
 """
 
 from skimage import data
+
 import napari
 
 # create a viewer

@@ -46,7 +46,7 @@ class ShortcutEditor(QWidget):
         parent: QWidget = None,
         description: str = "",
         value: dict = None,
-    ):
+    ) -> None:
 
         super().__init__(parent=parent)
 
@@ -544,7 +544,7 @@ class ShortcutDelegate(QItemDelegate):
 class EditorWidget(QLineEdit):
     """Editor widget set in the delegate column in shortcut table."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
     def event(self, event):
@@ -617,7 +617,7 @@ class ShortcutTranslator(QKeySequenceEdit):
     Convert QKeyEvent into QKeySequence.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.hide()
 

@@ -3,7 +3,7 @@ from qtpy.QtCore import QMutex, QThread, QTimer
 
 
 class _TestThread(QThread):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.mutex = QMutex()
 

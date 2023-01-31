@@ -8,7 +8,9 @@ This file provides a minimal working example using a progress bar alongside
 .. tags:: interactivity
 """
 from time import sleep
+
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
 import napari
 from napari.qt import thread_worker
 

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class AxisModel:
     """View of an axis within a dims model keeping track of axis names."""
 
-    def __init__(self, dims: Dims, axis: int):
+    def __init__(self, dims: Dims, axis: int) -> None:
         self.dims = dims
         self.axis = axis
 
@@ -69,7 +69,7 @@ class QtDimsSorter(QWidget):
     https://github.com/jni/zarpaint/blob/main/zarpaint/_dims_chooser.py
     """
 
-    def __init__(self, viewer: 'Viewer', parent=None):
+    def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent=parent)
         dims = viewer.dims
         root = SelectableEventedList(

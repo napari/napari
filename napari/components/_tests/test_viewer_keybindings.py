@@ -18,7 +18,7 @@ def test_theme_toggle_keybinding():
     number_of_actual_themes = len(available_themes())
     if 'system' in available_themes():
         number_of_actual_themes = len(available_themes()) - 1
-    for i in range(number_of_actual_themes):
+    for _i in range(number_of_actual_themes):
         current_theme = viewer.theme
         toggle_theme(viewer)
         # theme should have changed
@@ -41,7 +41,7 @@ def test_theme_toggle_from_system_theme():
     number_of_actual_themes = len(available_themes())
     if 'system' in available_themes():
         number_of_actual_themes = len(available_themes()) - 1
-    for i in range(number_of_actual_themes - 1):  # we've already toggled once
+    for _i in range(number_of_actual_themes - 1):  # we've already toggled once
         current_theme = viewer.theme
         toggle_theme(viewer)
         # theme should have changed

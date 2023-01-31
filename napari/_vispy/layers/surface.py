@@ -14,7 +14,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = SurfaceVisual()
         self._meshdata = None
         super().__init__(layer, node)

@@ -98,7 +98,7 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type: str, native: Any = None, **kwargs: Any):
+    def __init__(self, type: str, native: Any = None, **kwargs: Any) -> None:
         # stack of all sources this event has been emitted through
         self._sources: List[Any] = []
         self._handled: bool = False
@@ -218,7 +218,7 @@ class _WeakCounter:
     It will only implement the methods we use here.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._counter = weakref.WeakKeyDictionary()
         self._nonecount = 0
 
@@ -278,7 +278,7 @@ class EventEmitter:
         source: Any = None,
         type: Optional[str] = None,
         event_class: Type[Event] = Event,
-    ):
+    ) -> None:
         # connected callbacks
         self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
@@ -783,7 +783,7 @@ class EventEmitter:
                 cb(event)
             else:
                 cb()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
             if (
@@ -885,7 +885,7 @@ class WarningEmitter(EventEmitter):
         stacklevel=3,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         self._message = message
         self._warned = False
         self._category = category
@@ -959,7 +959,7 @@ class EmitterGroup(EventEmitter):
         source: Any = None,
         auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
-    ):
+    ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
@@ -1172,7 +1172,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None):
+    def __init__(self, target, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1196,7 +1196,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target):
+    def __init__(self, target) -> None:
         self.target = target
 
     def __enter__(self):

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class PluginsMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
 

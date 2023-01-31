@@ -8,12 +8,15 @@ the napari viewer.
 .. tags:: gui
 """
 
-import napari
-from time import sleep
-from napari.utils import progress
-from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
-import numpy as np
 from random import choice
+from time import sleep
+
+import numpy as np
+from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
+import napari
+from napari.utils import progress
+
 
 def process(im_slice):
     # do something with your image slice

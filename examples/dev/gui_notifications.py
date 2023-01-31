@@ -1,6 +1,7 @@
 import warnings
-from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
+
 import napari
+from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 
 
 def raise_():

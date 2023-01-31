@@ -134,7 +134,7 @@ class Monitor:
     process has fully started.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Both are set when start() is called, and only if we have
         # a parseable config file, have Python 3.9, etc.
         self._service = None

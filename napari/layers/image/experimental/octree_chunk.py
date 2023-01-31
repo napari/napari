@@ -57,7 +57,7 @@ class OctreeChunk:
 
     def __init__(
         self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
-    ):
+    ) -> None:
         self._data = data
         self.location = location
         self.geom = geom

@@ -8,9 +8,9 @@ Displays an image and sets the theme to new custom theme.
 """
 
 from skimage import data
+
 import napari
 from napari.utils.theme import available_themes, get_theme, register_theme
-
 
 # create the viewer with an image
 viewer = napari.view_image(data.astronaut(), rgb=True, name='astronaut')

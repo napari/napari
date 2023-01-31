@@ -117,7 +117,7 @@ class NapariMenu(QMenu):
 
     _INSTANCES: List['NapariMenu'] = []
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._INSTANCES.append(self)
 

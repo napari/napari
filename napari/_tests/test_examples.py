@@ -1,12 +1,10 @@
-import sys
 import os
-
-import pytest
-
 import runpy
+import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 import skimage.data
 from qtpy import API_NAME
 

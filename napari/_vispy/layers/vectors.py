@@ -8,7 +8,7 @@ from napari.layers.utils.layer_utils import segment_normal
 
 
 class VispyVectorsLayer(VispyBaseLayer):
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = VectorsVisual()
         super().__init__(layer, node)
 

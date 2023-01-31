@@ -8,12 +8,7 @@ in the viewer.
 .. tags:: gui
 """
 import numpy as np
-import napari
-
-from time import sleep
-from napari.utils import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
-
 from skimage.filters import (
     threshold_isodata,
     threshold_li,
@@ -22,6 +17,9 @@ from skimage.filters import (
     threshold_yen,
 )
 from skimage.measure import label
+
+import napari
+from napari.utils import progress
 
 # we will try each of these thresholds on our image
 all_thresholds = [
@@ -141,6 +139,7 @@ def process_ims():
         pbar.update(1)
 
         # uncomment this line to see the 100% progress bar
+        # from time import sleep
         # sleep(0.5)
 
 button_layout = QVBoxLayout()

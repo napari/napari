@@ -144,7 +144,7 @@ class MonitorService:
     those.
     """
 
-    def __init__(self, config: dict, manager: SharedMemoryManager):
+    def __init__(self, config: dict, manager: SharedMemoryManager) -> None:
         super().__init__()
         self._config = config
         self._manager = manager

@@ -12,13 +12,14 @@ This script should be run together with live_tiffs_generator.py
 import os
 import sys
 import time
-from skimage.io.collection import alphanumeric_key
-from dask import delayed
+
 import dask.array as da
+from dask import delayed
+from skimage.io.collection import alphanumeric_key
 from tifffile import imread
+
 import napari
 from napari.qt import thread_worker
-
 
 viewer = napari.Viewer(ndisplay=3)
 # pass a directory to monitor or it will monitor current directory.

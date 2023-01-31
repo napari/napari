@@ -47,7 +47,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-    ):
+    ) -> None:
         super().__init__(
             title=title,
             ndisplay=ndisplay,

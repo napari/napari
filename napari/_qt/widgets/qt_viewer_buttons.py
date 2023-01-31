@@ -48,7 +48,7 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -112,7 +112,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -353,7 +353,7 @@ class QtDeleteButton(QPushButton):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -455,7 +455,7 @@ class QtViewerPushButton(QPushButton):
     @_omit_viewer_args
     def __init__(
         self, button_name: str, tooltip: str = '', slot=None, action: str = ''
-    ):
+    ) -> None:
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
