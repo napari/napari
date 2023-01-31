@@ -58,7 +58,7 @@ class _LayerSlicer:
         with `@ensure_main_thread`).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Attributes
         ----------

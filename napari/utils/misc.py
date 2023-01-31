@@ -92,36 +92,30 @@ def bundle_bin_dir() -> Optional[str]:
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    except Exception:
-        pass
     return False
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    except Exception:
-        pass
     return False
 
 
 def in_python_repl() -> bool:
     """Return true if we're running in a Python REPL."""
-    try:
+    with contextlib.suppress(ImportError):
         from IPython import get_ipython
 
         return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
             sys, 'ps1'
         )
-    except Exception:
-        pass
     return False
 
 

@@ -8,11 +8,7 @@ in the viewer.
 .. tags:: gui
 """
 import numpy as np
-import napari
-
-from napari.utils import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
-
 from skimage.filters import (
     threshold_isodata,
     threshold_li,
@@ -21,6 +17,9 @@ from skimage.filters import (
     threshold_yen,
 )
 from skimage.measure import label
+
+import napari
+from napari.utils import progress
 
 # we will try each of these thresholds on our image
 all_thresholds = [

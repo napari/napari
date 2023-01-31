@@ -26,7 +26,7 @@ class Polygon(PolygonBase):
         dims_order=None,
         ndisplay=2,
         interpolation_order=1,
-    ):
+    ) -> None:
 
         super().__init__(
             data=data,

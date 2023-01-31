@@ -172,7 +172,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         experimental_clipping_planes=None,
         wireframe=None,
         normals=None,
-    ):
+    ) -> None:
 
         ndim = data[0].shape[1]
 

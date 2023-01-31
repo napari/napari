@@ -229,7 +229,7 @@ class _DerivedStyleEncoding(
     fallback: StyleValue
     _cached: StyleArray
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
 
