@@ -654,15 +654,13 @@ class EventEmitter:
             )
 
         return any(
-            map(
-                lambda x: x.kind
-                in [
-                    inspect.Parameter.POSITIONAL_ONLY,
-                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                    inspect.Parameter.VAR_POSITIONAL,
-                ],
-                signature.parameters.values(),
-            )
+            x.kind
+            in [
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.VAR_POSITIONAL,
+            ]
+            for x in signature.parameters.values()
         )
 
     def _normalize_cb(
@@ -969,7 +967,7 @@ class EmitterGroup(EventEmitter):
 
         self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
-        self._emitters: Dict[str, EventEmitter] = dict()
+        self._emitters: Dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore

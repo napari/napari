@@ -1312,7 +1312,7 @@ class Labels(_ImageBase):
 
         # Transfer valid coordinates to slice_coord,
         # or expand coordinate if 3rd dim in 2D image
-        slice_coord_temp = [m for m in mask_indices.T]
+        slice_coord_temp = list(mask_indices.T)
         if self.n_edit_dimensions < self.ndim:
             for j, i in enumerate(dims_to_paint):
                 slice_coord[i] = slice_coord_temp[j]
