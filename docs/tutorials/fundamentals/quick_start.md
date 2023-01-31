@@ -58,7 +58,7 @@ You will also see some examples of plugins. The core napari viewer focuses on do
 
 - For those familiar with Python:
 
-    napari can be installed on most macOS, Linux, and Windows systems with Python {{ python_version_range }} using pip.
+    napari can be installed on most macOS (Intel x86), Linux, and Windows systems with Python {{ python_version_range }} using pip.
 
     First, create a clean virtual environment:
 

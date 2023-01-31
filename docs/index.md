@@ -94,8 +94,8 @@ you can install via pip, conda-forge, or from source.
 
 ### From pip, with "batteries included"
 
-napari can be installed on most macOS, Linux, and Windows systems with Python
-{{ python_version_range }} using pip:
+napari can be installed on macOS (with older Intel x86 chips), Linux, and Windows systems
+with Python {{ python_version_range }} using pip:
 
 ```sh
 pip install "napari[all]"
@@ -115,6 +115,9 @@ up a Python {{ python_version }} environment with `conda`:
 ````
 
 ### From conda
+
+Installation from conda-forge using conda or mamba is required for newer, arm64 macOS machines
+(Apple Silicon):
 
 ```sh
 conda install -c conda-forge napari
@@ -146,7 +149,7 @@ scientific packages such as Spyder or matplotlib. If neither is available,
 running napari will result in an error message asking you to install one of
 them.
 
-Running `pip install "napari[all]"` will install the default framework – currently
+Running `pip install "napari[all]"` will install the default framework--currently
 PyQt5, but this could change in the future.
 
 To install napari with a specific framework, you can use:
