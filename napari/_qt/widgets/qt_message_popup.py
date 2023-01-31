@@ -12,7 +12,7 @@ class WarnPopup(QDialog):
         self,
         parent=None,
         text: str = "",
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)

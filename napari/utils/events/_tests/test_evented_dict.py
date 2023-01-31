@@ -61,7 +61,7 @@ def test_copy(test_dict, regular_dict):
 
 
 class E:
-    def __init__(self):
+    def __init__(self) -> None:
         self.events = EmitterGroup(test=None)
 
 

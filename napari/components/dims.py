@@ -1,7 +1,11 @@
 import warnings
 from numbers import Integral
-from typing import Literal  # Added to typing in 3.8
-from typing import Sequence, Tuple, Union
+from typing import (
+    Literal,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import root_validator, validator

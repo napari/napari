@@ -42,7 +42,7 @@ class QtDimSliderWidget(QWidget):
     play_started = Signal()
     play_stopped = Signal()
 
-    def __init__(self, parent: QWidget, axis: int):
+    def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims = parent
@@ -433,7 +433,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     editingFinished and when the user clicks on the spin buttons.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, *kwargs)
         self.valueChanged.connect(self.custom_change_event)
 
@@ -490,7 +490,7 @@ class QtPlayButton(QPushButton):
 
     def __init__(
         self, qt_dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP
-    ):
+    ) -> None:
         super().__init__()
         self.qt_dims_ref = ref(qt_dims)
         self.axis = axis
@@ -586,7 +586,7 @@ class AnimationWorker(QObject):
     finished = Signal()
     started = Signal()
 
-    def __init__(self, slider):
+    def __init__(self, slider) -> None:
         # FIXME there are attributes defined outsid of __init__.
         super().__init__()
         self._interval = 1

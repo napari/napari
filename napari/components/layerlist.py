@@ -56,7 +56,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     """
 
-    def __init__(self, data=()):
+    def __init__(self, data=()) -> None:
         super().__init__(
             data=data,
             basetype=Layer,

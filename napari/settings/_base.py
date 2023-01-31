@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 from collections.abc import Mapping
@@ -363,7 +364,7 @@ def config_file_settings_source(
     default_cfg = getattr(default_cfg, 'default', None)
 
     # if the config has a `sources` list, read those too and merge.
-    sources = list(getattr(settings.__config__, 'sources', []))
+    sources: List[str] = list(getattr(settings.__config__, 'sources', []))
     if config_path:
         sources.append(config_path)
     if not sources:
@@ -373,17 +374,17 @@ def config_file_settings_source(
     for path in sources:
         if not path:
             continue  # pragma: no cover
-        _path = Path(path).expanduser().resolve()
+        path_ = Path(path).expanduser().resolve()
 
         # if the requested config path does not exist, move on to the next
-        if not _path.is_file():
+        if not path_.is_file():
             # if it wasn't the `_config_path` stated in the BaseModel itself,
             # we warn, since this would have been user provided.
-            if _path != default_cfg:
+            if path_ != default_cfg:
                 _logger.warning(
                     trans._(
                         "Requested config path is not a file: {path}",
-                        path=_path,
+                        path=path_,
                     )
                 )
             continue
@@ -404,8 +405,8 @@ def config_file_settings_source(
 
         try:
             # try to parse the config file into a dict
-            new_data = load(_path.read_text()) or {}
-        except Exception as err:
+            new_data = load(path_.read_text()) or {}
+        except Exception as err:  # noqa: BLE001
             _logger.warning(
                 trans._(
                     "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
@@ -414,7 +415,7 @@ def config_file_settings_source(
                 )
             )
             continue
-        assert isinstance(new_data, dict), _path.read_text()
+        assert isinstance(new_data, dict), path_.read_text()
         deep_update(data, new_data, copy=False)
 
     try:
@@ -432,12 +433,10 @@ def config_file_settings_source(
             deferred=True,
             errors=display_errors(errors),
         )
-        try:
+        with contextlib.suppress(Exception):
             # we're about to nuke some settings, so just in case... try backup
-            backup_path = _path.parent / f'{_path.stem}.BAK{_path.suffix}'
-            backup_path.write_text(_path.read_text())
-        except Exception:
-            pass
+            backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'
+            backup_path.write_text(path_.read_text())
 
         _logger.warning(msg)
         try:

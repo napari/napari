@@ -11,8 +11,8 @@ Display a points layer on top of an image layer using the ``add_points`` and
 import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-import napari
 
+import napari
 
 # add the image
 viewer = napari.view_image(rgb2gray(data.astronaut()))
