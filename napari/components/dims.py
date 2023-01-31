@@ -113,31 +113,17 @@ class Dims(EventedModel):
 
         values['span'] = ensure_ndim(values['span'], ndim, default=(0.0, 0.0))
         # ensure span is limited to range
-        for (low, high), (min_val, max_val) in zip(
-            values['span'], values['range']
-        ):
-            if low < min_val or high > max_val:
-                raise ValueError(
-                    trans._(
-                        "Invalid span {span} for dimension with range {range}",
-                        deferred=True,
-                        span=(low, high),
-                        range=(min_val, max_val),
-                    )
-                )
+        values['span'] = tuple(
+            tuple(np.clip(sp, min_val, max_val))
+            for sp, (min_val, max_val) in zip(values['span'], values['range'])
+        )
 
         values['step'] = ensure_ndim(values['step'], ndim, default=1.0)
         # ensure step is not bigger than range
-        for step, (min_val, max_val) in zip(values['step'], values['range']):
-            if step > max_val - min_val:
-                raise ValueError(
-                    trans._(
-                        "Invalid step {step} for dimension with range {range}",
-                        deferred=True,
-                        step=step,
-                        range=(min_val, max_val),
-                    )
-                )
+        values['step'] = tuple(
+            np.clip(st, 0, max_val - min_val)
+            for st, (min_val, max_val) in zip(values['step'], values['range'])
+        )
 
         # order and label default computation is too different to include in ensure_ndim()
         # Check the order tuple has same number of elements as ndim
@@ -515,10 +501,14 @@ class Dims(EventedModel):
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
-        self.range = ((0, 2),) * self.ndim
-        self.step = (1,) * self.ndim
-        self.span = ((0, 0),) * self.ndim
-        self.order = tuple(range(self.ndim))
+        self.update(
+            dict(
+                range=((0, 2),) * self.ndim,
+                step=(1,) * self.ndim,
+                span=((0, 0),) * self.ndim,
+                order=tuple(range(self.ndim)),
+            )
+        )
 
     def transpose(self):
         """Transpose displayed dimensions.
