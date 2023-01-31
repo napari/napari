@@ -119,7 +119,7 @@ class StatusBarWidget(QWidget):
         coordinates_label: QLabel,
         help_label: QLabel,
         parent: QWidget = None,
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         self._status_label = status_label
         self._layer_label = layer_label

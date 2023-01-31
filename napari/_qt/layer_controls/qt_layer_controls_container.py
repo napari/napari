@@ -94,7 +94,7 @@ class QtLayerControlsContainer(QStackedWidget):
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer) -> None:
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer

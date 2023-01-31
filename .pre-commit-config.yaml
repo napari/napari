@@ -8,11 +8,6 @@ repos:
     rev: v2.1.3
     hooks:
     - id: pycln
--   repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-    - id: isort
-      exclude: _vendor|vendored|examples
 -   repo: https://github.com/psf/black
     rev: 22.12.0
     hooks:
@@ -24,20 +19,6 @@ repos:
     hooks:
       - id: ruff
         exclude: _vendor|vendored
--   repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
-    hooks:
-    - id: flake8
-      additional_dependencies: [flake8-typing-imports]
-      pass_filenames: true
-      # this seems to need to be here in addition to setup.cfg
-      exclude: _vendor|vendored|__init__.py|examples
--   repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-    - id: pyupgrade
-      args: ["--py38-plus", "--keep-runtime-typing"]
-      exclude: _vendor|vendored|examples
 -   repo: https://github.com/seddonym/import-linter
     rev: v1.7.0
     hooks:
