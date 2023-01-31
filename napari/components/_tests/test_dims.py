@@ -143,26 +143,26 @@ def test_range_set_multiple():
     Tests bulk range setting.
     """
     dims = Dims(ndim=4)
-    assert dims.range == ((0, 2, 1),) * 4
+    assert dims.range == ((0, 2),) * 4
 
-    dims.set_range((0, 3), [(0, 6, 3), (0, 9, 3)])
-    assert dims.range == ((0, 6, 3),) + ((0, 2, 1),) * 2 + ((0, 9, 3),)
+    dims.set_range((0, 3), [(0, 6), (0, 9)])
+    assert dims.range == ((0, 6),) + ((0, 2),) * 2 + ((0, 9),)
 
     # last_used will be set to the smallest axis in range
-    dims.set_range(range(1, 4), ((0, 5, 1),) * 3)
-    assert dims.range == ((0, 6, 3),) + ((0, 5, 1),) * 3
+    dims.set_range(range(1, 4), ((0, 5),) * 3)
+    assert dims.range == ((0, 6),) + ((0, 5),) * 3
 
     # test with descending axis order
-    dims.set_range(axis=(3, 0), _range=[(0, 4, 1), (0, 6, 1)])
-    assert dims.range == ((0, 6, 1),) + ((0, 5, 1),) * 2 + ((0, 4, 1),)
+    dims.set_range(axis=(3, 0), _range=[(0, 4), (0, 6)])
+    assert dims.range == ((0, 6),) + ((0, 5),) * 2 + ((0, 4),)
 
     # out of range axis raises a ValueError
     with pytest.raises(ValueError):
-        dims.set_range((dims.ndim, 0), [(0.0, 4.0, 1.0)] * 2)
+        dims.set_range((dims.ndim, 0), [(0.0, 4.0)] * 2)
 
     # sequence lengths for axis and _range do not match
     with pytest.raises(ValueError):
-        dims.set_range((0, 1), [(0.0, 4.0, 1.0)] * 3)
+        dims.set_range((0, 1), [(0.0, 4.0)] * 3)
 
 
 def test_axis_labels():
@@ -185,7 +185,7 @@ def test_order_when_changing_ndim():
     Test order of the dims when changing the number of dimensions.
     """
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 4, 1))
+    dims.set_range(0, (0, 4))
     dims.set_point(0, 2)
 
     dims.ndim = 5
@@ -194,7 +194,7 @@ def test_order_when_changing_ndim():
     assert dims.order == (0, 1, 2, 3, 4)
     assert dims.axis_labels == ('0', '1', '2', '3', '4')
 
-    dims.set_range(2, (0, 4, 1))
+    dims.set_range(2, (0, 4))
     dims.set_point(2, 3)
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
@@ -232,10 +232,10 @@ def test_axis_labels_str_to_list():
 def test_roll():
     """Test basic roll behavior."""
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 10, 1))
-    dims.set_range(1, (0, 10, 1))
-    dims.set_range(2, (0, 10, 1))
-    dims.set_range(3, (0, 10, 1))
+    dims.set_range(0, (0, 10))
+    dims.set_range(1, (0, 10))
+    dims.set_range(2, (0, 10))
+    dims.set_range(3, (0, 10))
     assert dims.order == (0, 1, 2, 3)
     dims._roll()
     assert dims.order == (3, 0, 1, 2)
@@ -246,10 +246,10 @@ def test_roll():
 def test_roll_skip_dummy_axis_1():
     """Test basic roll skips axis with length 1."""
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 0, 1))
-    dims.set_range(1, (0, 10, 1))
-    dims.set_range(2, (0, 10, 1))
-    dims.set_range(3, (0, 10, 1))
+    dims.set_range(0, (0, 0))
+    dims.set_range(1, (0, 10))
+    dims.set_range(2, (0, 10))
+    dims.set_range(3, (0, 10))
     assert dims.order == (0, 1, 2, 3)
     dims._roll()
     assert dims.order == (0, 3, 1, 2)
@@ -260,10 +260,10 @@ def test_roll_skip_dummy_axis_1():
 def test_roll_skip_dummy_axis_2():
     """Test basic roll skips axis with length 1 when not first."""
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 10, 1))
-    dims.set_range(1, (0, 0, 1))
-    dims.set_range(2, (0, 10, 1))
-    dims.set_range(3, (0, 10, 1))
+    dims.set_range(0, (0, 10))
+    dims.set_range(1, (0, 0))
+    dims.set_range(2, (0, 10))
+    dims.set_range(3, (0, 10))
     assert dims.order == (0, 1, 2, 3)
     dims._roll()
     assert dims.order == (3, 1, 0, 2)
@@ -274,10 +274,10 @@ def test_roll_skip_dummy_axis_2():
 def test_roll_skip_dummy_axis_3():
     """Test basic roll skips all axes with length 1."""
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 10, 1))
-    dims.set_range(1, (0, 0, 1))
-    dims.set_range(2, (0, 10, 1))
-    dims.set_range(3, (0, 0, 1))
+    dims.set_range(0, (0, 10))
+    dims.set_range(1, (0, 0))
+    dims.set_range(2, (0, 10))
+    dims.set_range(3, (0, 0))
     assert dims.order == (0, 1, 2, 3)
     dims._roll()
     assert dims.order == (2, 1, 0, 3)
@@ -313,7 +313,8 @@ def test_changing_focus():
 def test_floating_point_edge_case():
     # see #4889
     dims = Dims(ndim=2)
-    dims.set_range(0, (0.0, 17.665, 3.533))
+    dims.set_range(0, (0.0, 17.665))
+    dims._set_step(0, 3.533)
     assert dims.nsteps[0] == 5
 
 

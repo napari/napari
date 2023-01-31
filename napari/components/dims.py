@@ -127,16 +127,16 @@ class Dims(EventedModel):
 
         # order and label default computation is too different to include in ensure_ndim()
         # Check the order tuple has same number of elements as ndim
-        order_ndim = len(values['order'])
-        if order_ndim < ndim:
-            prepended_dims = tuple(
-                dim for dim in range(ndim) if dim not in values['order']
-            )
-            values['order'] = prepended_dims + values['order']
-        elif len(values['order']) > ndim:
-            values['order'] = reorder_after_dim_reduction(
-                values['order'][-ndim:]
-            )
+        order = values['order']
+        order_ndim = len(order)
+        if len(order) < ndim:
+            # new dims are always prepended
+            prepended_dims = tuple(range(ndim - order_ndim))
+            # maintain existing order, but shift accordingly
+            existing_order = tuple(o + ndim - order_ndim for o in order)
+            values['order'] = prepended_dims + existing_order
+        elif len(order) > ndim:
+            values['order'] = reorder_after_dim_reduction(order[-ndim:])
 
         # Check the order is a permutation of 0, ..., ndim - 1
         if not set(values['order']) == set(range(ndim)):
@@ -174,8 +174,9 @@ class Dims(EventedModel):
     def _span_step(self) -> Tuple[float, ...]:
         return tuple(
             (
-                int(round((low - min_val) / step)),
-                int(round((high - min_val) / step)),
+                # "or 1" ensures degenerate dimension works
+                int(round((low - min_val) / (step or 1))),
+                int(round((high - min_val) / (step or 1))),
             )
             for (low, high), (min_val, _), step in zip(
                 self.span, self.range, self.step
@@ -197,7 +198,8 @@ class Dims(EventedModel):
     @property
     def nsteps(self) -> Tuple[float]:
         return tuple(
-            int((max_val - min_val) // step)
+            # "or 1" ensures degenerate dimension works
+            int((max_val - min_val) / (step or 1))
             for (min_val, max_val), step in zip(self.range, self.step)
         )
 
@@ -233,7 +235,8 @@ class Dims(EventedModel):
     @property
     def _thickness_step(self) -> Tuple[float]:
         return tuple(
-            thickness / step
+            # "or 1" ensures degenerate dimension works
+            thickness / (step or 1)
             for thickness, step in zip(self.thickness, self.step)
         )
 
@@ -265,7 +268,7 @@ class Dims(EventedModel):
     @property
     def point_step(self):
         return tuple(
-            int(round((point - min_val) / step))
+            int(round((point - min_val) / (step or 1)))
             for point, (min_val, _), step in zip(
                 self.point, self.range, self.step
             )
@@ -359,6 +362,19 @@ class Dims(EventedModel):
             span = max(min_val, low), min(max_val, high)
             full_span[ax] = span
         self.span = full_span
+
+    def _set_step(
+        self,
+        axis: Union[int, Sequence[int]],
+        value: Union[float, Sequence[float]],
+    ):
+        axis, value = self._sanitize_input(
+            axis, value, value_is_sequence=False
+        )
+        full_step = list(self.step)
+        for ax, val in zip(axis, value):
+            full_step[ax] = val
+        self.step = full_step
 
     def _set_span_step(
         self,
