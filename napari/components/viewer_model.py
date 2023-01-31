@@ -381,9 +381,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            ndim = len(ranges)
-            self.dims.ndim = ndim
-            self.dims.set_range(range(ndim), ranges)
+            steps = self.layers._steps
+            self.dims.update(
+                dict(
+                    ndim=len(ranges),
+                    range=ranges,
+                    step=steps,
+                )
+            )
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -509,8 +514,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
-            midpoint = [self.rounded_division(*_range) for _range in ranges]
-            self.dims.set_point(range(len(ranges)), midpoint)
+            steps = self.layers._steps
+            midpoint = [
+                self.rounded_division(low, high, step)
+                for (low, high), step in zip(ranges, steps)
+            ]
+            self.dims.set_point_step(range(len(ranges)), midpoint)
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):

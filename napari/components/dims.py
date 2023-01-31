@@ -84,11 +84,9 @@ class Dims(EventedModel):
     _scroll_progress: int = 0
 
     # validators
-    @validator('axis_labels', pre=True)
-    def _string_to_tuple(v):
-        if isinstance(v, str):
-            return tuple(v)
-        return v
+    @validator('order', 'axis_labels', 'step', pre=True)
+    def _as_tuple(v):
+        return tuple(v)
 
     @validator('range', 'span', pre=True)
     def _sorted_ranges(v):

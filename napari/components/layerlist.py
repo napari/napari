@@ -308,7 +308,7 @@ class LayerList(SelectableEventedList[Layer]):
         range is aligned to pixel centers at the finest scale.
         """
         if len(self) == 0:
-            return [(0, 1, 1)] * self.ndim
+            return [(0, 1)] * self.ndim
         else:
             # Determine minimum step size across all layers
             layer_extent_list = [layer.extent for layer in self]
@@ -346,10 +346,17 @@ class LayerList(SelectableEventedList[Layer]):
             min_v, max_v = self._get_min_and_max(mins, maxs)
 
             # form range tuples, switching back to original dimension order
-            return [
-                (start, stop, step)
-                for start, stop, step in zip(min_v, max_v, min_steps)
-            ]
+            return [(start, stop) for start, stop in zip(min_v, max_v)]
+
+    @cached_property
+    def _steps(self) -> List[float]:
+        """Get steps for Dims.step."""
+        if len(self) == 0:
+            return [1] * self.ndim
+        else:
+            layer_extent_list = [layer.extent for layer in self]
+            scales = [extent.step for extent in layer_extent_list]
+            return self._step_size_from_scales(scales)
 
     @property
     def ndim(self) -> int:
