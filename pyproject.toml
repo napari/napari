@@ -73,7 +73,15 @@ ignore = [
 
 [tool.ruff]
 line-length = 79
-select = ["E", "F", "UP", "I", "W", "YTT", "TCH", "BLE", "B"]
+select = [
+    "E", "F", "W", #flake8
+    "UP", # pyupgrade
+    "I", # isort
+    "YTT", #flake8-2020
+    "TCH", # flake8-type-checing
+    "BLE", # flake8-blind-exception
+    "B", # flake8-bugbear
+]
 ignore = ["E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003"]
 
 exclude = [
