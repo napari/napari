@@ -219,7 +219,8 @@ def test_move_multiple_mimics_slice_reorder():
 
     # move_multiple also works omitting the insertion index
     el[:] = list(range(8))
-    el.move_multiple(new_order) == [el[i] for i in new_order]
+    el.move_multiple(new_order)
+    assert el == new_order
 
 
 def test_slice(test_list, regular_list):
@@ -376,7 +377,7 @@ def test_nested_move_multiple(sources, dest, expectation):
 
 
 class E:
-    def __init__(self):
+    def __init__(self) -> None:
         self.events = EmitterGroup(test=None)
 
 

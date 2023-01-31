@@ -88,7 +88,7 @@ class TiledImageVisual(Image):
         image_converter: Callable[[ArrayLike], ArrayLike],
         *args,
         **kwargs,
-    ):
+    ) -> None:
         self.tile_shape = tile_shape
         self.image_converter = image_converter
 

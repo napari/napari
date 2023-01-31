@@ -463,13 +463,13 @@ def qt_might_be_rich_text(text) -> bool:
     Check if a text might be rich text in a cross-binding compatible way.
     """
     if qtpy.PYSIDE2:
-        from qtpy.QtGui import Qt as _Qt
+        from qtpy.QtGui import Qt as Qt_
     else:
-        from qtpy.QtCore import Qt as _Qt
+        from qtpy.QtCore import Qt as Qt_
 
     try:
-        return _Qt.mightBeRichText(text)
-    except Exception:
+        return Qt_.mightBeRichText(text)
+    except AttributeError:
         return bool(RICH_TEXT_PATTERN.search(text))
 
 

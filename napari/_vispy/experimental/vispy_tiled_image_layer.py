@@ -70,7 +70,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         Optional grid outlining the tiles.
     """
 
-    def __init__(self, layer: Image):
+    def __init__(self, layer: Image) -> None:
 
         # All tiles are stored in a single TileImageVisual.
         visual = TiledImageVisual(

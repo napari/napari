@@ -27,7 +27,7 @@ class RemoteManager:
         The viewer's layers.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self._commands = RemoteCommands(layers)
         self._messages = RemoteMessages(layers)
 

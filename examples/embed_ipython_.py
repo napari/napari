@@ -13,8 +13,9 @@ ipython console which can outlive the viewer.
 .. tags:: gui
 """
 
-import napari
 from IPython.terminal.embed import InteractiveShellEmbed
+
+import napari
 
 # any code
 text = 'some text'

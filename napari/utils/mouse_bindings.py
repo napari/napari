@@ -21,7 +21,7 @@ class MousemapProvider:
     mouse_drag_callbacks: List[callable]
     mouse_double_click_callbacks: List[callable]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
