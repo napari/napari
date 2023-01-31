@@ -1,7 +1,9 @@
-import napari
-import pooch
 import csv
+
 import numpy as np
+import pooch
+
+import napari
 
 """
 This data comes from the Neurocyto Lab's description of the ThunderSTORM format.

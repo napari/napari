@@ -71,7 +71,7 @@ class VispyCanvas:
 
     _instances = WeakSet()
 
-    def __init__(self, viewer: ViewerModel, *args, **kwargs):
+    def __init__(self, viewer: ViewerModel, *args, **kwargs) -> None:
 
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().

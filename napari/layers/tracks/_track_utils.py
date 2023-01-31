@@ -66,7 +66,7 @@ class TrackManager:
         Track ID for each vertex in track_vertices.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         # store the raw data here
         self._data = None
