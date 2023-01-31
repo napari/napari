@@ -110,7 +110,7 @@ class Notification(Event):
         **kwargs,
     ) -> None:
         self.severity = NotificationSeverity(severity)
-        super().__init__(type=str(self.severity).lower(), **kwargs)
+        super().__init__(type_name=str(self.severity).lower(), **kwargs)
         self._message = message
         self.actions = actions
 

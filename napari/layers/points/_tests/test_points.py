@@ -835,10 +835,10 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
-    for property, value in text_kwargs.items():
-        if property == 'string':
+    for property_, value in text_kwargs.items():
+        if property_ == 'string':
             continue
-        layer_value = getattr(layer._text, property)
+        layer_value = getattr(layer._text, property_)
         np.testing.assert_equal(layer_value, value)
 
 

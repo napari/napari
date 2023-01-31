@@ -657,8 +657,8 @@ class Labels(_ImageBase):
         return self._show_selected_label
 
     @show_selected_label.setter
-    def show_selected_label(self, filter):
-        self._show_selected_label = filter
+    def show_selected_label(self, filter_val):
+        self._show_selected_label = filter_val
         self.refresh()
 
     @property

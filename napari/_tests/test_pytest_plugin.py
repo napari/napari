@@ -11,11 +11,11 @@ pytest_plugins = "pytester"
 
 @pytest.mark.filterwarnings("ignore:`type` argument to addoption()::")
 @pytest.mark.filterwarnings("ignore:The TerminalReporter.writer::")
-def test_make_napari_viewer(testdir):
+def test_make_napari_viewer(pytester):
     """Make sure that our make_napari_viewer plugin works."""
 
     # create a temporary pytest test file
-    testdir.makepyfile(
+    pytester.makepyfile(
         """
         def test_make_viewer(make_napari_viewer):
             viewer = make_napari_viewer()
@@ -26,7 +26,7 @@ def test_make_napari_viewer(testdir):
     """
     )
     # run all tests with pytest
-    result = testdir.runpytest()
+    result = pytester.runpytest()
 
     # check that all 1 test passed
     result.assert_outcomes(passed=1)

@@ -194,7 +194,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
                     deferred=True,
                 ),
-                type="layers_change",
+                type_name="layers_change",
             ),
             reset_view=Event,
         )

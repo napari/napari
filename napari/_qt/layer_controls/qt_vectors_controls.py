@@ -125,18 +125,18 @@ class QtVectorsControls(QtLayerControls):
         )
         self.layer.events.edge_color.connect(self._on_edge_color_change)
 
-    def change_edge_color_property(self, property: str):
+    def change_edge_color_property(self, color: str):
         """Change edge_color_property of vectors on the layer model.
         This property is the property the edge color is mapped to.
 
         Parameters
         ----------
-        property : str
+        color : str
             property to map the edge color to
         """
         mode = self.layer.edge_color_mode
         try:
-            self.layer.edge_color = property
+            self.layer.edge_color = color
             self.layer.edge_color_mode = mode
         except TypeError:
             # if the selected property is the wrong type for the current color mode
