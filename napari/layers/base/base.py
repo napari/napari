@@ -1128,7 +1128,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         force : bool
             Bool that forces a redraw to occur when `True`.
         """
-        pass
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""

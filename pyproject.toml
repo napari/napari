@@ -85,6 +85,7 @@ select = [
     "C4", # flake8-comprehensions
     "ISC", # flake8-implicit-str-concat
     "G", # flake8-logging-format
+    "PIE", # flake8-pie
 ]
 ignore = [
     "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
