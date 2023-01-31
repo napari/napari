@@ -651,7 +651,7 @@ class QtViewer(QSplitter):
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
-                logging.debug(f'Saved {saved}')
+                logging.debug('Saved %s', saved)
                 error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
@@ -916,6 +916,7 @@ class QtViewer(QSplitter):
 
         if viz:
             self.dockConsole.raise_()
+            self.dockConsole.setFocus()
 
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()
