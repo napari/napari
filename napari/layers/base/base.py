@@ -489,7 +489,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         self._mode = mode
 
-        self.events.mode(mode=mode)
+        self.events.mode(mode=str(mode))
 
     @classmethod
     def _basename(cls):

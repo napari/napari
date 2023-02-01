@@ -8,6 +8,7 @@ from napari.layers.utils.interaction_box import (
     get_nearby_handle,
 )
 from napari.utils.transforms import Affine
+from napari.utils.translations import trans
 
 
 def highlight_box_handles(layer, event):
@@ -121,7 +122,10 @@ def transform_with_box(layer, event):
             if 'Shift' in event.modifiers:
                 if nearby_handle not in InteractionBoxHandle.corners():
                     raise ValueError(
-                        'aspect ratio can only be blocked when resizing from a corner'
+                        trans._(
+                            'Aspect ratio can only be blocked when resizing from a corner',
+                            deferred=True,
+                        )
                     )
                 locked_aspect_ratio = True
             else:
