@@ -142,9 +142,9 @@ class LayerOverlayMixin:
             parent=parent,
         )
         self.layer = layer
-        self.layer._overlays.events.removing.connect(self._close_if_removed)
+        self.layer._overlays.events.removing.connect(self._close_if_removing)
 
-    def _close_if_removed(self, event):
+    def _close_if_removing(self, event):
         if self.layer._overlays[event.key] is self:
             self.close()
 
@@ -161,9 +161,9 @@ class ViewerOverlayMixin:
             parent=parent,
         )
         self.viewer = viewer
-        self.viewer._overlays.events.removing.connect(self._close_if_removed)
+        self.viewer._overlays.events.removing.connect(self._close_if_removing)
 
-    def _close_if_removed(self, event):
+    def _close_if_removing(self, event):
         if self.viewer._overlays[event.key] is self:
             self.close()
 

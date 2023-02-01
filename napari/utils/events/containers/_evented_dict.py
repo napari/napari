@@ -87,16 +87,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         if not hasattr(event, "key"):
             event.key = self.key(event.source)
 
-        if not isinstance(event.type, str):
-            # may happen if EventedModel.update() was colled on item, firing an event
-            # with type == EventedModel. In this case we simply emit from our emitter
-            # see https://github.com/napari/napari/pull/4894#issuecomment-1408466295
-            emitter = self.events
-        else:
-            emitter = getattr(self.events, event.type, self.events)
-        # re-emit with this object's EventEmitter of the same type if present
-        # otherwise just emit with the EmitterGroup itself
-        emitter(event)
+        # re-emit with this object's EventEmitter
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the re-emitter."""
