@@ -23,7 +23,8 @@ class VispyBaseOverlay:
         self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.opacity.connect(self._on_opacity_change)
 
-        self.node.parent = parent
+        if parent is not None:
+            self.node.parent = parent
 
     def _on_visible_change(self):
         self.node.visible = self.overlay.visible
