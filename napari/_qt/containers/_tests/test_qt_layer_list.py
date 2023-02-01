@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import numpy as np
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QModelIndex, Qt
 
 from napari._qt.containers import QtLayerList
 from napari.components import LayerList
@@ -24,7 +24,7 @@ def test_set_item_unchecked_makes_layer_invisible(qtbot):
     assert image.visible
 
     view.model().setData(
-        view.model().index(0, 0, view.rootIndex()),
+        layer_to_model_index(view, 0),
         Qt.CheckState.Unchecked,
         Qt.ItemDataRole.CheckStateRole,
     )
@@ -40,9 +40,12 @@ def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
     return view, image
 
 
+def layer_to_model_index(view: QtLayerList, layer_index: int) -> QModelIndex:
+    return view.model().index(layer_index, 0, view.rootIndex())
+
+
 def check_state_at_layer_index(
     view: QtLayerList, layer_index: int
 ) -> Qt.CheckState:
-    model = view.model()
-    model_index = model.index(layer_index, 0, view.rootIndex())
-    return model.data(model_index, Qt.ItemDataRole.CheckStateRole)
+    model_index = layer_to_model_index(view, layer_index)
+    return view.model().data(model_index, Qt.ItemDataRole.CheckStateRole)
