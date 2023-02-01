@@ -7,6 +7,10 @@ on:
       - main
       - "v*x"
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   manifest:
     # make sure all necessary files will be bundled in the release
@@ -80,10 +84,9 @@ jobs:
           - python: 3.9
             platform: ubuntu-latest
             backend: pyside6
-# uncoment when new qtpy is released
-#          - python: '3.10'
-#            platform: ubuntu-latest
-#            backend: pyside6
+          - python: '3.10'
+            platform: ubuntu-latest
+            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs
@@ -130,7 +133,7 @@ jobs:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox
         env:
@@ -172,7 +175,7 @@ jobs:
           pip install ./napari-from-github[all,testing]
 
       - name: Test
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: |
             python -m pytest --pyargs napari --color=yes
@@ -194,6 +197,6 @@ jobs:
           pip install setuptools tox tox-gh-actions
 
       - name: Test
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: tox -e py39-linux-pyside2-examples

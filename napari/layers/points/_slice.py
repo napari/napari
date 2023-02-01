@@ -15,10 +15,15 @@ class _PointSliceResponse:
     indices : array like
         Indices of the sliced Points data.
     scale: array like or none
+        Used to scale the sliced points for visualization.
+        Should be broadcastable to indices.
+    dims : _SliceInput
+        Describes the slicing plane or bounding box in the layer's dimensions.
     """
 
     indices: np.ndarray = field(repr=False)
     scale: Any = field(repr=False)
+    dims: _SliceInput
 
 
 @dataclass(frozen=True)
@@ -38,7 +43,7 @@ class _PointSliceRequest:
         Describes the slicing plane or bounding box in the layer's dimensions.
     data : Any
         The layer's data field, which is the main input to slicing.
-    dims_indices : Tuple[Union[int, slice], ...]
+    dims_indices : tuple of ints or slices
         The slice indices in the layer's data space.
     size : array like
         Size of each point. This is used in calculating visibility.
@@ -55,14 +60,18 @@ class _PointSliceRequest:
     def __call__(self) -> _PointSliceResponse:
         # Return early if no data
         if len(self.data) == 0:
-            return _PointSliceResponse(indices=[], scale=np.empty(0))
+            return _PointSliceResponse(
+                indices=[], scale=np.empty(0), dims=self.dims
+            )
 
         not_disp = list(self.dims.not_displayed)
         if not not_disp:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
             return _PointSliceResponse(
-                indices=np.arange(len(self.data), dtype=int), scale=1
+                indices=np.arange(len(self.data), dtype=int),
+                scale=1,
+                dims=self.dims,
             )
 
         # We want a numpy array so we can use fancy indexing with the non-displayed
@@ -81,7 +90,9 @@ class _PointSliceRequest:
                 not_disp, not_disp_indices
             )
 
-        return _PointSliceResponse(indices=slice_indices, scale=scale)
+        return _PointSliceResponse(
+            indices=slice_indices, scale=scale, dims=self.dims
+        )
 
     def _get_out_of_display_slice_data(self, not_disp, not_disp_indices):
         """This method slices in the out-of-display case."""

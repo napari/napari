@@ -551,7 +551,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True):
+    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -1200,32 +1200,32 @@ class Window:
         settings = get_settings()
         try:
             self._qt_window.show(block=block)
-        except (AttributeError, RuntimeError):
+        except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
                 trans._(
                     "This viewer has already been closed and deleted. Please create a new one.",
                     deferred=True,
                 )
-            )
+            ) from e
 
         if settings.application.first_time:
             settings.application.first_time = False
             try:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
                     trans._(
                         "This viewer has already been closed and deleted. Please create a new one.",
                         deferred=True,
                     )
-                )
+                ) from e
         else:
             try:
                 if settings.application.save_window_geometry:
                     self._qt_window._set_window_settings(
                         *self._qt_window._load_window_settings()
                     )
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 import warnings
 
                 warnings.warn(
@@ -1267,18 +1267,16 @@ class Window:
         """Update widget color theme."""
         settings = get_settings()
         with contextlib.suppress(AttributeError, RuntimeError):
-            if event:
-                value = event.value
-                self._qt_viewer.viewer.theme = value
-                settings.appearance.theme = value
-            else:
-                value = (
-                    get_system_theme()
-                    if settings.appearance.theme == "system"
-                    else self._qt_viewer.viewer.theme
+            value = event.value if event else settings.appearance.theme
+            self._qt_viewer.viewer.theme = value
+            if value == "system":
+                # system isn't a theme, so get the name and set style sheet
+                actual_theme_name = get_system_theme()
+                self._qt_window.setStyleSheet(
+                    get_stylesheet(actual_theme_name)
                 )
-
-            self._qt_window.setStyleSheet(get_stylesheet(value))
+            else:
+                self._qt_window.setStyleSheet(get_stylesheet(value))
 
     def _status_changed(self, event):
         """Update status bar.

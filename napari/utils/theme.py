@@ -23,9 +23,10 @@ from napari.utils.translations import trans
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *rest = QT_VERSION.split('.')
+    major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-except Exception:
+    del major, minor, QT_VERSION
+except ImportError:
     use_gradients = False
 
 
@@ -57,7 +58,9 @@ class Theme(EventedModel):
     text : Color
         Color used to display text.
     warning : Color
-        Color used to indicate something is wrong.
+        Color used to indicate something needs attention.
+    error : Color
+        Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
     """
@@ -75,6 +78,7 @@ class Theme(EventedModel):
     text: Color
     icon: Color
     warning: Color
+    error: Color
     current: Color
 
     @validator("syntax_style", pre=True)
@@ -177,11 +181,11 @@ def template(css: str, **theme):
 def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
-        id = darkdetect.theme().lower()
-    except Exception:
-        id = "dark"
+        id_ = darkdetect.theme().lower()
+    except AttributeError:
+        id_ = "dark"
 
-    return id
+    return id_
 
 
 def get_theme(id, as_dict=None):
@@ -335,7 +339,8 @@ DARK = Theme(
     highlight='rgb(106, 115, 128)',
     text='rgb(240, 241, 242)',
     icon='rgb(209, 210, 212)',
-    warning='rgb(153, 18, 31)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(153, 18, 31)',
     current='rgb(0, 122, 204)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
@@ -351,7 +356,8 @@ LIGHT = Theme(
     highlight='rgb(163, 158, 156)',
     text='rgb(59, 58, 57)',
     icon='rgb(107, 105, 103)',
-    warning='rgb(255, 18, 31)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(255, 18, 31)',
     current='rgb(253, 240, 148)',
     syntax_style='default',
     console='rgb(255, 255, 255)',
