@@ -122,8 +122,13 @@ def sys_info(as_html=False):
     loaded = {}
     for module, name in modules:
         try:
-            text += f"<b>{name}</b>: {version(module)}<br>"
-        except PackageNotFoundError as e:
+            try:
+                loaded[module] = __import__(module)
+                text += f"<b>{name}</b>: {loaded[module].__version__}<br>"
+            except AttributeError:
+                text += f"<b>{name}</b>: {version(module)}<br>"
+
+        except (PackageNotFoundError, ImportError) as e:
             text += f"<b>{name}</b>: version detect failed failed ({e})<br>"
 
     text += "<br><b>OpenGL:</b><br>"
