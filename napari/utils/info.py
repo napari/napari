@@ -126,7 +126,7 @@ def sys_info(as_html=False):
                 text += f"<b>{name}</b>: {version(module)}<br>"
 
         except (PackageNotFoundError, ImportError) as e:
-            text += f"<b>{name}</b>: version detect failed failed ({e})<br>"
+            text += f"<b>{name}</b>: version detect failed ({e})<br>"
 
     text += "<br><b>OpenGL:</b><br>"
 
