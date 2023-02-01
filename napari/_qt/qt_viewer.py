@@ -186,7 +186,9 @@ class QtViewer(QSplitter):
 
     _instances = WeakSet()
 
-    def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
+    def __init__(
+        self, viewer: ViewerModel, show_welcome_screen: bool = False
+    ) -> None:
 
         super().__init__()
         self._instances.add(self)
@@ -438,7 +440,7 @@ class QtViewer(QSplitter):
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
-    def _add_overlay(self, overlay: Overlay):
+    def _add_overlay(self, overlay: Overlay) -> None:
         vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
 
         if isinstance(overlay, CanvasOverlay):

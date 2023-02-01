@@ -263,7 +263,7 @@ class Labels(_ImageBase):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 

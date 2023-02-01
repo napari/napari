@@ -253,7 +253,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
         mode='pan_zoom',
-    ):
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -1853,7 +1853,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         try:
             return Cls(data, **(meta or {}))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             if 'unexpected keyword argument' not in str(exc):
                 raise exc
 

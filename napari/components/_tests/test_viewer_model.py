@@ -392,7 +392,7 @@ def test_grid():
 
     np.random.seed(0)
     # Add image
-    for i in range(6):
+    for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled
@@ -712,7 +712,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
@@ -749,7 +749,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     layer.events.connect(my_custom_callback)
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
             assert len(em.callbacks) == 1

@@ -321,7 +321,7 @@ def _handle_str_list_like(colors: Sequence) -> np.ndarray:
     for idx, c in enumerate(colors):
         try:
             color_array[idx, :] = _color_switch[type(c)](c)
-        except (ValueError, TypeError, KeyError):
+        except (ValueError, TypeError, KeyError) as e:
             raise ValueError(
                 trans._(
                     "Invalid color found: {color} at index {idx}.",
@@ -329,7 +329,7 @@ def _handle_str_list_like(colors: Sequence) -> np.ndarray:
                     color=c,
                     idx=idx,
                 )
-            )
+            ) from e
     return color_array
 
 

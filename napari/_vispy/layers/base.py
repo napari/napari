@@ -42,7 +42,7 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node):
+    def __init__(self, layer, node) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
@@ -200,7 +200,7 @@ class VispyBaseLayer(ABC):
         self._on_experimental_clipping_planes_change()
         self._on_overlays_change()
 
-    def _on_poll(self, event=None):
+    def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the

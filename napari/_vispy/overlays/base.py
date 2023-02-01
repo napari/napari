@@ -13,7 +13,7 @@ class VispyBaseOverlay:
     vispy backend, translating them into rendering.
     """
 
-    def __init__(self, *, overlay, node, parent=None):
+    def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__()
         self.overlay = overlay
 
@@ -46,7 +46,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     Vispy overlay backend for overlays that live in canvas space.
     """
 
-    def __init__(self, *, overlay, node, parent=None):
+    def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=None)
 
         # offsets and size are used to control fine positioning, and will depend
@@ -129,13 +129,13 @@ class VispySceneOverlay(VispyBaseOverlay):
     Vispy overlay backend for overlays that live in scene (2D or 3D) space.
     """
 
-    def __init__(self, *, overlay, node, parent=None):
+    def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__(overlay=overlay, node=node, parent=None)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer, overlay, node, parent=None):
+    def __init__(self, *, layer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,
@@ -154,7 +154,7 @@ class LayerOverlayMixin:
 
 
 class ViewerOverlayMixin:
-    def __init__(self, *, viewer, overlay, node, parent=None):
+    def __init__(self, *, viewer, overlay, node, parent=None) -> None:
         super().__init__(
             node=node,
             overlay=overlay,

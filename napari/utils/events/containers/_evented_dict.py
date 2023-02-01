@@ -45,7 +45,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         self,
         data: Mapping[_K, _T] = None,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-    ):
+    ) -> None:
         _events = {
             "changing": None,
             "changed": None,

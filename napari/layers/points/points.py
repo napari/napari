@@ -357,7 +357,7 @@ class Points(Layer):
         canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
-    ):
+    ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
 
@@ -800,18 +800,18 @@ class Points(Layer):
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
             self._size = np.broadcast_to(size, self.data.shape).copy()
-        except Exception:
+        except ValueError as e:
             try:
                 self._size = np.broadcast_to(
                     size, self.data.shape[::-1]
                 ).T.copy()
-            except Exception:
+            except ValueError:
                 raise ValueError(
                     trans._(
                         "Size is not compatible for broadcasting",
                         deferred=True,
                     )
-                )
+                ) from e
         self.refresh()
 
     @property

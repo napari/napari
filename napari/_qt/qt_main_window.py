@@ -551,7 +551,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True):
+    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -1200,32 +1200,32 @@ class Window:
         settings = get_settings()
         try:
             self._qt_window.show(block=block)
-        except (AttributeError, RuntimeError):
+        except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
                 trans._(
                     "This viewer has already been closed and deleted. Please create a new one.",
                     deferred=True,
                 )
-            )
+            ) from e
 
         if settings.application.first_time:
             settings.application.first_time = False
             try:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
                     trans._(
                         "This viewer has already been closed and deleted. Please create a new one.",
                         deferred=True,
                     )
-                )
+                ) from e
         else:
             try:
                 if settings.application.save_window_geometry:
                     self._qt_window._set_window_settings(
                         *self._qt_window._load_window_settings()
                     )
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 import warnings
 
                 warnings.warn(

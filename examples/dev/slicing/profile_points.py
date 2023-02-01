@@ -1,6 +1,6 @@
 import cProfile
-import pstats
 import io
+import pstats
 from pstats import SortKey
 
 import numpy as np
@@ -23,7 +23,7 @@ reps = 100
 
 # Profiling
 with cProfile.Profile() as pr:
-    for k in range(reps):
+    for _ in range(reps):
         layer = Points(data)
         layer._set_view_slice()
 

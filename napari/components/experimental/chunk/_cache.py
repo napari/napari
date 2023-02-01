@@ -88,7 +88,7 @@ class ChunkCache:
         True if the cache is enabled.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         nbytes = _get_cache_size_bytes(CACHE_MEM_FRACTION)
         self.chunks = LRUCache(maxsize=nbytes, getsizeof=_getsizeof_chunks)
         self.enabled = True

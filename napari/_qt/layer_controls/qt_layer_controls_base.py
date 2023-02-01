@@ -14,7 +14,7 @@ NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
-    def __init__(self, QWidget=None):
+    def __init__(self, QWidget=None) -> None:
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
@@ -43,7 +43,7 @@ class QtLayerControls(QFrame):
         Label for the opacity slider widget.
     """
 
-    def __init__(self, layer: Layer):
+    def __init__(self, layer: Layer) -> None:
         super().__init__()
 
         self._ndisplay: int = 2

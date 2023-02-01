@@ -4,7 +4,7 @@ from napari.layers.base._base_constants import InteractionBoxHandle
 
 
 class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, overlay, parent=None):
+    def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             node=InteractionBox(),
             layer=layer,
@@ -29,7 +29,7 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
 
 
 class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
-    def __init__(self, *, layer, overlay, parent=None):
+    def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             layer=layer,
             overlay=overlay,
@@ -52,7 +52,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
 
 
 class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
-    def __init__(self, *, layer, overlay, parent=None):
+    def __init__(self, *, layer, overlay, parent=None) -> None:
         super().__init__(
             layer=layer,
             overlay=overlay,

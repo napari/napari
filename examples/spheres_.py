@@ -7,8 +7,9 @@ Display two spheres with Surface layers
 .. tags:: visualization-advanced
 """
 
-import napari
 from vispy.geometry import create_sphere
+
+import napari
 
 mesh = create_sphere(method='ico')
 
