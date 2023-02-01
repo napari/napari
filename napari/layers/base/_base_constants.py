@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from enum import Enum, auto
+from enum import IntEnum, auto
 
 from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
@@ -67,7 +67,7 @@ class Mode(StringEnum):
     TRANSFORM = auto()
 
 
-class InteractionBoxHandle(int, Enum):
+class InteractionBoxHandle(IntEnum):
     """
     Handle indices for the InteractionBox overlay.
 
@@ -104,8 +104,7 @@ class InteractionBoxHandle(int, Enum):
         }
 
         opposites.update({v: k for k, v in opposites.items()})
-        opposite = opposites.get(handle, None)
-        if opposite is None:
+        if opposite := opposites.get(handle, None) is None:
             raise ValueError(f'{handle} has no opposite handle.')
         return opposite
 

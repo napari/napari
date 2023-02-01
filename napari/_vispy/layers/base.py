@@ -132,22 +132,20 @@ class VispyBaseLayer(ABC):
         overlay_models = self.layer._overlays.values()
 
         for overlay in overlay_models:
-            if overlay not in self.overlays:
-                overlay_visual = create_vispy_overlay(
-                    overlay, layer=self.layer
-                )
-                self.overlays[overlay] = overlay_visual
-                if isinstance(overlay, CanvasOverlay):
-                    overlay_visual.node.parent = (
-                        self.node.parent.parent
-                    )  # viewbox
-                elif isinstance(overlay, SceneOverlay):
-                    overlay_visual.node.parent = self.node
+            if overlay in self.overlays:
+                continue
 
+            overlay_visual = create_vispy_overlay(overlay, layer=self.layer)
+            self.overlays[overlay] = overlay_visual
+            if isinstance(overlay, CanvasOverlay):
+                overlay_visual.node.parent = self.node.parent.parent  # viewbox
+            elif isinstance(overlay, SceneOverlay):
                 overlay_visual.node.parent = self.node
-                overlay_visual.reset()
 
-        for overlay in self.overlays.keys():
+            overlay_visual.node.parent = self.node
+            overlay_visual.reset()
+
+        for overlay in self.overlays:
             if overlay not in overlay_models:
                 overlay_visual = self.overlays.pop(overlay)
                 overlay_visual.close()
