@@ -83,17 +83,19 @@ def _scale_with_box(
     mouse_pos,
     event,
 ):
+    locked_aspect_ratio = False
     if 'Shift' in event.modifiers:
-        if nearby_handle not in InteractionBoxHandle.corners():
-            raise ValueError(
+        if nearby_handle in InteractionBoxHandle.corners():
+            locked_aspect_ratio = True
+        else:
+            warnings.warn(
                 trans._(
                     'Aspect ratio can only be blocked when resizing from a corner',
                     deferred=True,
-                )
+                ),
+                RuntimeWarning,
+                stacklevel=2,
             )
-        locked_aspect_ratio = True
-    else:
-        locked_aspect_ratio = False
 
     # note: we work in data space from here on!
 
