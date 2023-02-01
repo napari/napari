@@ -11,8 +11,8 @@ Display a labels layer above of an image layer using the ``add_labels`` and
 from skimage import data
 from skimage.color import rgb2gray
 from skimage.segmentation import slic
-import napari
 
+import napari
 
 astro = data.astronaut()
 

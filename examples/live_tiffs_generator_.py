@@ -9,15 +9,14 @@ an output directory (must be supplied by the user).
 """
 
 
+import argparse
 import os
 import sys
 import time
-import argparse
 
 import numpy as np
-from skimage import data
 import tifffile
-
+from skimage import data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('outdir', help='output directory for tiffs')

@@ -80,7 +80,7 @@ class OctreeLoader:
         A weak reference to the layer the octree lives in.
     """
 
-    def __init__(self, octree: Octree, layer_ref: LayerRef):
+    def __init__(self, octree: Octree, layer_ref: LayerRef) -> None:
         self._octree = octree
         self._layer_ref = layer_ref
 

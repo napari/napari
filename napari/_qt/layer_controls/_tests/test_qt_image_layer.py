@@ -42,8 +42,8 @@ def test_rendering_combobox(qtbot):
 def test_depiction_combobox_changes(qtbot):
     """Changing the model attribute should update the view."""
     layer = Image(np.random.rand(10, 15, 20))
-    layer._slice_dims(ndisplay=3)
     qtctrl = QtImageControls(layer)
+    qtctrl.ndisplay = 3
     qtbot.addWidget(qtctrl)
     combo_box = qtctrl.depictionComboBox
     opts = {combo_box.itemText(i) for i in range(combo_box.count())}
@@ -61,9 +61,9 @@ def test_depiction_combobox_changes(qtbot):
 def test_plane_controls_show_hide_on_depiction_change(qtbot):
     """Changing depiction mode should show/hide plane controls in 3D."""
     layer = Image(np.random.rand(10, 15, 20))
-    layer._slice_dims(ndisplay=3)
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
+    qtctrl.ndisplay = 3
 
     layer.depiction = 'volume'
     assert qtctrl.planeThicknessSlider.isHidden()
@@ -81,21 +81,21 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
 def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     """Changing ndisplay should show/hide plane controls if depicting a plane."""
     layer = Image(np.random.rand(10, 15, 20))
+    layer.depiction = 'plane'
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
 
-    layer._slice_dims(ndisplay=3)
-    layer.depiction = 'plane'
-    assert not qtctrl.planeThicknessSlider.isHidden()
-    assert not qtctrl.planeThicknessLabel.isHidden()
-    assert not qtctrl.planeNormalButtons.isHidden()
-    assert not qtctrl.planeNormalLabel.isHidden()
-
-    layer._slice_dims(ndisplay=2)
+    assert qtctrl.ndisplay == 2
     assert qtctrl.planeThicknessSlider.isHidden()
     assert qtctrl.planeThicknessLabel.isHidden()
     assert qtctrl.planeNormalButtons.isHidden()
     assert qtctrl.planeNormalLabel.isHidden()
+
+    qtctrl.ndisplay = 3
+    assert not qtctrl.planeThicknessSlider.isHidden()
+    assert not qtctrl.planeThicknessLabel.isHidden()
+    assert not qtctrl.planeNormalButtons.isHidden()
+    assert not qtctrl.planeNormalLabel.isHidden()
 
 
 def test_plane_slider_value_change(qtbot):

@@ -191,7 +191,9 @@ class QtViewer(QSplitter):
 
     _instances = WeakSet()
 
-    def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
+    def __init__(
+        self, viewer: ViewerModel, show_welcome_screen: bool = False
+    ) -> None:
 
         super().__init__()
         self._instances.add(self)
@@ -651,7 +653,7 @@ class QtViewer(QSplitter):
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
-                logging.debug(f'Saved {saved}')
+                logging.debug('Saved %s', saved)
                 error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
