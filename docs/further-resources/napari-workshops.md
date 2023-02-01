@@ -7,6 +7,17 @@ This page contains a list, to make them easier to find online.
 You can find more videos of talks, tutorials and demos on the
 [napari youtube channel](https://www.youtube.com/channel/UCbTgw84ew4pxTJ9qu3W2hqg/playlists).
 
+```{admonition} Got a workshop?
+If you are looking to create your own workshop, you can use the
+[napari workshop template](https://github.com/napari/napari-workshop-template)
+as a starting point.
+
+If you have organized a napari workshop and would like to see it featured here
+in this page, you can
+[send a Pull Request to the napari/docs repository](../developers/documentation/index.md)
+or contact the core developers on [zulip chat](https://napari.zulipchat.com/login/).
+```
+
 ## Workshops
 
 *Workshops are listed from newest to oldest.*
@@ -52,16 +63,3 @@ You can find more videos of talks, tutorials and demos on the
 * June 2020, [NEUBIAS Academy@Home workshop](http://eubias.org/NEUBIAS/training-schools/neubias-academy-home/neubias-academy-archive-spring2020/)
   * [Watch it here](https://www.youtube.com/watch?v=VgvDSq5aCDQ) (1 hour and 30 minute video)
   * [Workshop materials available here](https://github.com/sofroniewn/napari-training-course)
-
-### Add your own workshop to this list
-
-If you have organized a napari workshop and would like to see it featured here
-in this page, you can
-[send a Pull Request to the napari/docs repository](../developers/documentation/index.md)
-or contact the core developers on [zulip chat](https://napari.zulipchat.com/login/).
-
-### napari workshop template
-
-If you are looking to create your own workshop, you can use the
-[napari workshop template](https://github.com/napari/napari-workshop-template)
-as a starting point.
