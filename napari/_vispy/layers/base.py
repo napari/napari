@@ -145,7 +145,7 @@ class VispyBaseLayer(ABC):
             overlay_visual.node.parent = self.node
             overlay_visual.reset()
 
-        for overlay in self.overlays:
+        for overlay in list(self.overlays):
             if overlay not in overlay_models:
                 overlay_visual = self.overlays.pop(overlay)
                 overlay_visual.close()
