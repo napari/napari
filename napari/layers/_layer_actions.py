@@ -56,7 +56,11 @@ def _convert(ll: LayerList, type_: str):
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
         else:
-            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+            data = (
+                lay.data.astype(int, copy=False)
+                if type_ == 'labels'
+                else lay.data
+            )
         new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
 
