@@ -34,7 +34,7 @@ class PreferencesDialog(QDialog):
 
     resized = Signal(QSize)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         from napari.settings import get_settings
 
         super().__init__(parent)
@@ -141,7 +141,7 @@ class PreferencesDialog(QDialog):
             form_layout = form.widget.layout()
             for i in range(form_layout.count()):
                 wdg = form_layout.itemAt(i, form_layout.FieldRole).widget()
-                if getattr(wdg, '_name') == 'async_':
+                if wdg._name == 'async_':
                     wdg.opacity.setOpacity(0.3)
                     wdg.setDisabled(True)
                     break

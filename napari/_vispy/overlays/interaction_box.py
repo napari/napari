@@ -6,7 +6,7 @@ from napari.components.overlays._interaction_box_constants import Box
 
 
 class VispyInteractionBox:
-    def __init__(self, viewer, parent=None, order=0):
+    def __init__(self, viewer, parent=None, order=0) -> None:
 
         self._viewer = viewer
         self._interaction_box = viewer.overlays.interaction_box
