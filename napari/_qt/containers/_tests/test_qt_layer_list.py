@@ -48,4 +48,7 @@ def check_state_at_layer_index(
     view: QtLayerList, layer_index: int
 ) -> Qt.CheckState:
     model_index = layer_to_model_index(view, layer_index)
-    return view.model().data(model_index, Qt.ItemDataRole.CheckStateRole)
+    value = view.model().data(model_index, Qt.ItemDataRole.CheckStateRole)
+    # The data method returns integer value of the enum in some cases, so
+    # ensure it has the enum type for more explicit assertions.
+    return Qt.CheckState(value)
