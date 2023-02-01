@@ -99,7 +99,7 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    @rename_argument("interpolation", "type_name", "0.6.0")
+    @rename_argument("type", "type_name", "0.6.0")
     def __init__(
         self, type_name: str, native: Any = None, **kwargs: Any
     ) -> None:
