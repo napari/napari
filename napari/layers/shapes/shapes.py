@@ -409,7 +409,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if data is None:
             if ndim is None:
                 ndim = 2
@@ -2568,7 +2568,7 @@ class Shapes(Layer):
         self._finish_drawing()
         self.events.data(value=self.data)
 
-    def _rotate_box(self, angle, center=[0, 0]):
+    def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2585,7 +2585,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         self._selected_box = box @ transform.T + center
 
-    def _scale_box(self, scale, center=[0, 0]):
+    def _scale_box(self, scale, center=(0, 0)):
         """Perform a scaling on the selected box.
 
         Parameters
@@ -2606,7 +2606,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _transform_box(self, transform, center=[0, 0]):
+    def _transform_box(self, transform, center=(0, 0)):
         """Perform a linear transformation on the selected box.
 
         Parameters

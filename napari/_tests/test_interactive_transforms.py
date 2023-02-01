@@ -7,7 +7,7 @@ from napari.utils.transforms import Affine
 
 
 def check_corners_of_axis_aligned_interaction_box(
-    box, *, top_left_corner=[0, 0], bottom_right_corner=None
+    box, *, top_left_corner=(0, 0), bottom_right_corner=None
 ):
     if not np.allclose(box[Box.TOP_LEFT], np.array(top_left_corner) - 0.5):
         pytest.fail(

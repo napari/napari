@@ -103,7 +103,7 @@ def test_error_on_connect():
         return decorator
 
     class Test:
-        def __init__(self):
+        def __init__(self) -> None:
             self.m1, self.m2, self.m4 = 0, 0, 0
 
         @rename("nonexist")
@@ -233,7 +233,7 @@ def test_event_order_methods():
 
 def test_no_event_arg():
     class TestOb:
-        def __init__(self):
+        def __init__(self) -> None:
             self.count = 0
 
         def fun(self):

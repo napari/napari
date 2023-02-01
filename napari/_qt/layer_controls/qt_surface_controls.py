@@ -29,7 +29,7 @@ class QtSurfaceControls(QtBaseImageControls):
 
     layer: 'napari.layers.Surface'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         colormap_layout = QHBoxLayout()

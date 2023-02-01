@@ -246,7 +246,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -1130,7 +1130,7 @@ Image.__doc__ = _ImageBase.__doc__
 
 
 class _weakref_hide:
-    def __init__(self, obj):
+    def __init__(self, obj) -> None:
         import weakref
 
         self.obj = weakref.ref(obj)

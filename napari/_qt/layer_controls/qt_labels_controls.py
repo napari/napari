@@ -83,7 +83,7 @@ class QtLabelsControls(QtLayerControls):
 
     layer: 'napari.layers.Labels'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
@@ -489,7 +489,7 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__()
 
         self.layer = layer

@@ -52,7 +52,9 @@ class Colormap(EventedModel):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[np.float32, (-1,)] = None
 
-    def __init__(self, colors, display_name: Optional[str] = None, **data):
+    def __init__(
+        self, colors, display_name: Optional[str] = None, **data
+    ) -> None:
         if display_name is None:
             display_name = data.get('name', 'custom')
 
