@@ -12,19 +12,23 @@ class SelectionBoxOverlay(SceneOverlay):
 
     Attributes
     ----------
-    visible : bool
-        If the box is visible or not.
     bounds : 2-tuple of 2-tuples
         Corners at top left and bottom right in layer coordinates.
     handles : bool
         Whether to show the handles for transfomation or just the box.
     selected_handle : Optional[InteractionBoxHandle]
         The currently selected handle.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
     """
 
     bounds: Tuple[Tuple[float, float], Tuple[float, float]] = ((0, 0), (0, 0))
     handles: bool = False
-    selected_vertex: Optional[InteractionBoxHandle] = None
+    selected_handle: Optional[InteractionBoxHandle] = None
 
     def update_from_points(self, points):
         """Create as a bounding box of the given points"""
@@ -36,8 +40,14 @@ class TransformBoxOverlay(SceneOverlay):
 
     Attributes
     ----------
+    selected_handle : Optional[InteractionBoxHandle]
+        The currently selected handle.
     visible : bool
-        If the box is are visible or not.
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
     """
 
-    selected_vertex: Optional[InteractionBoxHandle] = None
+    selected_handle: Optional[InteractionBoxHandle] = None

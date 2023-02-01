@@ -8,8 +8,6 @@ class BoundingBoxOverlay(SceneOverlay):
 
     Attributes
     ----------
-    visible : bool
-        If the bounding box is visible or not.
     lines : bool
         Whether to show the lines of the bounding box.
     line_thickness : float
@@ -22,6 +20,12 @@ class BoundingBoxOverlay(SceneOverlay):
         Size of the points in canvas pixels.
     point_color : ColorValue
         Color of the points.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
     """
 
     lines: bool = True

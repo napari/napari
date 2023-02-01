@@ -37,7 +37,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
         )
         self.overlay.events.bounds.connect(self._on_bounds_change)
         self.overlay.events.handles.connect(self._on_bounds_change)
-        self.overlay.events.selected_vertex.connect(self._on_bounds_change)
+        self.overlay.events.selected_handle.connect(self._on_bounds_change)
 
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
@@ -47,7 +47,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
                 top_left[::-1],
                 bot_right[::-1],
                 handles=self.overlay.handles,
-                selected=self.overlay.selected_vertex,
+                selected=self.overlay.selected_handle,
             )
 
 
@@ -63,7 +63,7 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
         self.layer.events.rotate.connect(self._on_bounds_change)
         self.layer.events.shear.connect(self._on_bounds_change)
         self.layer.events.affine.connect(self._on_bounds_change)
-        self.overlay.events.selected_vertex.connect(self._on_bounds_change)
+        self.overlay.events.selected_handle.connect(self._on_bounds_change)
 
     def _on_bounds_change(self):
         if self.layer._slice_input.ndisplay == 2:
@@ -73,10 +73,10 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
             # invert axes for vispy
             top_left, bot_right = (tuple(point) for point in bounds.T[:, ::-1])
 
-            if self.overlay.selected_vertex == InteractionBoxHandle.INSIDE:
+            if self.overlay.selected_handle == InteractionBoxHandle.INSIDE:
                 selected = slice(None)
             else:
-                selected = self.overlay.selected_vertex
+                selected = self.overlay.selected_handle
 
             self.node.set_data(
                 top_left,
