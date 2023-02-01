@@ -153,7 +153,7 @@ class QtDimSliderWidget(QWidget):
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)
         slider.setSingleStep(1)
         slider.setPageStep(1)
-        slider.setValue(self.dims.current_step[self.axis])
+        slider.setValue(self.dims.point_step[self.axis])
 
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._value_changed)
@@ -227,19 +227,19 @@ class QtDimSliderWidget(QWidget):
             self.slider.setMaximum(nsteps)
             self.slider.setSingleStep(1)
             self.slider.setPageStep(1)
-            self.slider.setValue(self.dims.current_step[self.axis])
+            self.slider.setValue(self.dims.point_step[self.axis])
             self.totslice_label.setText(str(nsteps))
             self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self._update_slice_labels()
 
     def _update_slider(self):
         """Update dimension slider."""
-        self.slider.setValue(self.dims.current_step[self.axis])
+        self.slider.setValue(self.dims.point_step[self.axis])
         self._update_slice_labels()
 
     def _update_slice_labels(self):
         """Update slice labels to match current dimension slider position."""
-        self.curslice_label.setText(str(self.dims.current_step[self.axis]))
+        self.curslice_label.setText(str(self.dims.point_step[self.axis]))
         self.curslice_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
     @property
@@ -603,11 +603,11 @@ class AnimationWorker(QObject):
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
 
-        # after dims.set_point_step is called, it will emit a dims.events.current_step()
+        # after dims.set_point_step is called, it will emit a dims.events.point_step()
         # we use this to update this threads current frame (in case it
         # was some other event that updated the axis)
-        self.dims.events.current_step.connect(self._on_axis_changed)
-        self.current = max(self.dims.current_step[self.axis], self.min_point)
+        self.dims.events.point_step.connect(self._on_axis_changed)
+        self.current = max(self.dims.point_step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
 
         self.timer.setSingleShot(True)
@@ -742,7 +742,7 @@ class AnimationWorker(QObject):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.current_step.blocker(self._on_axis_changed):
+        with self.dims.events.point_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         self.timer.start()
 
@@ -753,7 +753,7 @@ class AnimationWorker(QObject):
     def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
-        self.current = self.dims.current_step[self.axis]
+        self.current = self.dims.point_step[self.axis]
 
     def moveToThread(self, thread: QThread):
         """Move the animation to a given thread.

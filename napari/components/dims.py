@@ -546,7 +546,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_step(axis, self.current_step[axis] + 1)
+        self.set_point_step(axis, self.point_step[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -558,7 +558,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_step(axis, self.current_step[axis] - 1)
+        self.set_point_step(axis, self.point_step[axis] - 1)
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""

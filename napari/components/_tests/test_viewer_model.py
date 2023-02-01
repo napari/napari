@@ -147,7 +147,8 @@ def test_single_point_dims():
     shape = (1, 3)
     data = np.zeros(shape)
     viewer.add_points(data)
-    assert all(r == (0.0, 1.0, 1.0) for r in viewer.dims.range)
+    assert all(r == (0.0, 1.0) for r in viewer.dims.range)
+    assert all(s == (1.0,) for s in viewer.dims.step)
 
 
 def test_add_empty_points_to_empty_viewer():
@@ -694,12 +695,14 @@ def test_update_scale():
     shape = (10, 15, 20)
     data = np.random.random(shape)
     viewer.add_image(data)
-    assert viewer.dims.range == tuple((0.0, x, 1.0) for x in shape)
+    assert viewer.dims.range == tuple((0.0, x) for x in shape)
+    assert viewer.dims.step == tuple(1.0 for _ in shape)
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
-        (0.0, x * s, s) for x, s in zip(shape, scale)
+        (0.0, x * s) for x, s in zip(shape, scale)
     )
+    assert viewer.dims.step == tuple(s for s in scale)
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
