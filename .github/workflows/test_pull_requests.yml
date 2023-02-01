@@ -11,6 +11,9 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  COLUMNS: 120
+
 jobs:
   manifest:
     # make sure all necessary files will be bundled in the release
