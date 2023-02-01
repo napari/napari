@@ -143,7 +143,7 @@ def event_hook_removed():
             QtCore.pyqtRestoreInputHook()
 
 
-def disable_with_opacity(
+def set_widgets_enabled_with_opacity(
     parent: QWidget, widgets: Iterable[QWidget], enabled: bool
 ):
     """Set enabled state on some widgets. If not enabled, decrease opacity."""

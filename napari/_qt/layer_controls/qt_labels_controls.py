@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 from superqt import QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.utils import disable_with_opacity
+from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_mode_buttons import (
     QtModePushButton,
@@ -455,7 +455,7 @@ class QtLabelsControls(QtLayerControls):
 
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
-        disable_with_opacity(
+        set_widgets_enabled_with_opacity(
             self,
             self._EDIT_BUTTONS,
             self.layer.editable and self.layer.visible,
