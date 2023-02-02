@@ -5,8 +5,8 @@ the IPython console window.
 """
 from typing import Any, List, Tuple, Union
 
-from .....utils.translations import trans
-from ._utils import highlight
+from napari.components.experimental.chunk._commands._utils import highlight
+from napari.utils.translations import trans
 
 
 def print_property_table(table: List[Tuple[str, Any]]) -> None:
@@ -38,7 +38,7 @@ class ColumnSpec:
         String column name, or a dict specification.
     """
 
-    def __init__(self, spec: Union[str, dict]):
+    def __init__(self, spec: Union[str, dict]) -> None:
 
         if isinstance(spec, str):
             spec = {'name': spec}  # Spec is the name, then we use defaults.
@@ -79,7 +79,7 @@ class RowTable:
     # Leave room between columns.
     PADDING = 2
 
-    def __init__(self, columns: List[Union[str, dict]]):
+    def __init__(self, columns: List[Union[str, dict]]) -> None:
         self.columns = [ColumnSpec(x) for x in columns]
         self.rows: List[list] = []
         self.padding = " " * self.PADDING

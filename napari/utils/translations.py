@@ -10,7 +10,7 @@ from typing import Optional, Union
 
 from yaml import safe_load
 
-from ._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
+from napari.utils._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
@@ -51,7 +51,7 @@ def _get_display_name(
         )
         loc = babel.Locale.parse(locale)
         dislay_name = loc.get_display_name(display_locale).capitalize()
-    except ImportError:
+    except ModuleNotFoundError:
         dislay_name = display_locale.capitalize()
 
     return dislay_name
@@ -88,7 +88,7 @@ def _is_valid_locale(locale: str) -> bool:
 
         babel.Locale.parse(locale)
         valid = True
-    except ImportError:
+    except ModuleNotFoundError:
         valid = True
     except ValueError:
         pass
@@ -217,7 +217,7 @@ class TranslationString(str):
         n: Optional[str] = None,
         deferred: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         if msgid is None:
             raise ValueError(
                 trans._("Must provide at least a `msgid` parameter!")
@@ -320,7 +320,7 @@ class TranslationBundle:
         The locale for this bundle. Examples include "en_US", "en_CO".
     """
 
-    def __init__(self, domain: str, locale: str):
+    def __init__(self, domain: str, locale: str) -> None:
         self._domain = domain
         self._locale = locale
 
@@ -678,7 +678,7 @@ def _load_language(
         with open(default_config_path) as fh:
             try:
                 data = safe_load(fh) or {}
-            except Exception as err:
+            except Exception as err:  # noqa BLE001
                 import warnings
 
                 warnings.warn(

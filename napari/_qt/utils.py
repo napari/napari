@@ -12,11 +12,13 @@ import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
+    QCoreApplication,
     QPoint,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
+    QThread,
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import (
@@ -28,10 +30,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.events.custom_types import Array
-from ..utils.misc import is_sequence
-from ..utils.translations import trans
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import is_sequence
+from napari.utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
@@ -461,11 +463,23 @@ def qt_might_be_rich_text(text) -> bool:
     Check if a text might be rich text in a cross-binding compatible way.
     """
     if qtpy.PYSIDE2:
-        from qtpy.QtGui import Qt as _Qt
+        from qtpy.QtGui import Qt as Qt_
     else:
-        from qtpy.QtCore import Qt as _Qt
+        from qtpy.QtCore import Qt as Qt_
 
     try:
-        return _Qt.mightBeRichText(text)
-    except Exception:
+        return Qt_.mightBeRichText(text)
+    except AttributeError:
         return bool(RICH_TEXT_PATTERN.search(text))
+
+
+def in_qt_main_thread():
+    """
+    Check if we are in the thread in which QApplication object was created.
+
+    Returns
+    -------
+    thread_flag : bool
+        True if we are in the main thread, False otherwise.
+    """
+    return QCoreApplication.instance().thread() == QThread.currentThread()

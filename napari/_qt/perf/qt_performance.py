@@ -16,8 +16,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils import perf
-from ...utils.translations import trans
+from napari.utils import perf
+from napari.utils.translations import trans
 
 
 class TextLog(QTextEdit):
@@ -91,7 +91,7 @@ class QtPerformance(QWidget):
     # display will look, but the more we will slow things down.
     UPDATE_MS = 250
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()

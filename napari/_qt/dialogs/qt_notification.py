@@ -25,12 +25,12 @@ from qtpy.QtWidgets import (
 )
 from superqt import QElidingLabel, ensure_main_thread
 
-from ...settings import get_settings
-from ...utils.notifications import Notification, NotificationSeverity
-from ...utils.theme import get_theme
-from ...utils.translations import trans
-from ..code_syntax_highlight import Pylighter
-from ..qt_resources import QColoredSVGIcon
+from napari._qt.code_syntax_highlight import Pylighter
+from napari._qt.qt_resources import QColoredSVGIcon
+from napari.settings import get_settings
+from napari.utils.notifications import Notification, NotificationSeverity
+from napari.utils.theme import get_theme
+from napari.utils.translations import trans
 
 ActionSequence = Sequence[Tuple[str, Callable[['NapariQtNotification'], None]]]
 
@@ -80,7 +80,7 @@ class NapariQtNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
         parent=None,
-    ):
+    ) -> None:
         super().__init__(parent=parent)
 
         if parent and hasattr(parent, 'resized'):
@@ -110,12 +110,12 @@ class NapariQtNotification(QDialog):
 
     def _update_icon(self, severity: str):
         """Update the icon to match the severity level."""
-        from ...settings import get_settings
-        from ...utils.theme import get_theme
+        from napari.settings import get_settings
+        from napari.utils.theme import get_theme
 
         settings = get_settings()
         theme = settings.appearance.theme
-        default_color = getattr(get_theme(theme, False), 'icon')
+        default_color = get_theme(theme, False).icon
 
         # FIXME: Should these be defined at the theme level?
         # Currently there is a warning one
@@ -322,13 +322,13 @@ class NapariQtNotification(QDialog):
         for text, callback in actions:
             btn = QPushButton(text)
 
-            def call_back_with_self(callback, self):
+            def call_back_with_self(callback_, self):
                 """
                 We need a higher order function this to capture the reference to self.
                 """
 
                 def _inner():
-                    return callback(self)
+                    return callback_(self)
 
                 return _inner
 
@@ -353,7 +353,7 @@ class NapariQtNotification(QDialog):
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
 
-        from ...utils.notifications import ErrorNotification
+        from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
 
@@ -380,8 +380,8 @@ class NapariQtNotification(QDialog):
     @classmethod
     @ensure_main_thread
     def show_notification(cls, notification: Notification):
-        from ..._qt.qt_main_window import _QtMainWindow
-        from ...settings import get_settings
+        from napari._qt.qt_main_window import _QtMainWindow
+        from napari.settings import get_settings
 
         settings = get_settings()
 
@@ -399,7 +399,7 @@ class NapariQtNotification(QDialog):
 def _debug_tb(tb):
     import pdb
 
-    from ..utils import event_hook_removed
+    from napari._qt.utils import event_hook_removed
 
     QApplication.processEvents()
     QApplication.processEvents()
@@ -410,7 +410,7 @@ def _debug_tb(tb):
 
 
 class TracebackDialog(QDialog):
-    def __init__(self, exception, parent=None):
+    def __init__(self, exception, parent=None) -> None:
         super().__init__(parent=parent)
         self.exception = exception
         self.setModal(True)

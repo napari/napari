@@ -3,8 +3,7 @@ from enum import Enum, auto
 from pydantic import Field
 
 from napari.utils.color import ColorValue
-
-from ...utils.events import EventedModel
+from napari.utils.events import EventedModel
 
 
 class NormalMode(Enum):

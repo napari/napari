@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, List
 
 import numpy as np
 
-from ...layers import Image
-from ...layers.image._image_utils import guess_multiscale
-from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
-from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
-from ...utils.translations import trans
+from napari.layers import Image
+from napari.layers.image._image_utils import guess_multiscale
+from napari.utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ...types import FullLayerData
+    from napari.types import FullLayerData
 
 
 def slice_from_axis(array, *, axis, element):
@@ -137,7 +137,7 @@ def split_channels(
         for key, val in kwargs.items():
             try:
                 i_kwargs[key] = next(val)
-            except StopIteration:
+            except StopIteration as e:
                 raise IndexError(
                     trans._(
                         "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
@@ -148,7 +148,7 @@ def split_channels(
                         key=key,
                         i=i,
                     )
-                )
+                ) from e
 
         layerdata = (image, i_kwargs, 'image')
         layerdata_list.append(layerdata)

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, ClassVar, Set
 
 from pydantic import BaseSettings, Field, PrivateAttr
 
-from ...utils.misc import ROOT_DIR
-from ...utils.translations import trans
+from napari.utils.misc import ROOT_DIR
+from napari.utils.translations import trans
 
 try:
     from rich import print
@@ -23,7 +23,7 @@ except ModuleNotFoundError:
     dotenv = None  # type: ignore
 
 if TYPE_CHECKING:
-    from .event import Event
+    from napari.utils.events.event import Event
 
 
 class EventDebugSettings(BaseSettings):
@@ -104,7 +104,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
     for f in reversed(call_stack):
         if 'self' in f.frame.f_locals:
             obj_type = type(f.frame.f_locals['self'])
-            module = getattr(obj_type, '__module__') or ''
+            module = obj_type.__module__ or ''
             if module.startswith("napari"):
                 trigger = f'{obj_type.__name__}.{f.function}()'
                 lines.insert(1, f'  was triggered by {trigger}, via:')

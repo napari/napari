@@ -70,7 +70,7 @@ from typing import (
 
 from vispy.util.logs import _handle_exception
 
-from ..translations import trans
+from napari.utils.translations import trans
 
 
 class Event:
@@ -98,7 +98,7 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type: str, native: Any = None, **kwargs: Any):
+    def __init__(self, type: str, native: Any = None, **kwargs: Any) -> None:
         # stack of all sources this event has been emitted through
         self._sources: List[Any] = []
         self._handled: bool = False
@@ -218,7 +218,7 @@ class _WeakCounter:
     It will only implement the methods we use here.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._counter = weakref.WeakKeyDictionary()
         self._nonecount = 0
 
@@ -278,7 +278,7 @@ class EventEmitter:
         source: Any = None,
         type: Optional[str] = None,
         event_class: Type[Event] = Event,
-    ):
+    ) -> None:
         # connected callbacks
         self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
@@ -763,7 +763,9 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             self._emitting = False
-            if event._pop_source() != self.source:
+            ps = event._pop_source()
+            if ps is not self.source:
+
                 raise RuntimeError(
                     trans._(
                         "Event source-stack mismatch.",
@@ -781,7 +783,7 @@ class EventEmitter:
                 cb(event)
             else:
                 cb()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
             if (
@@ -883,7 +885,7 @@ class WarningEmitter(EventEmitter):
         stacklevel=3,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         self._message = message
         self._warned = False
         self._category = category
@@ -957,7 +959,7 @@ class EmitterGroup(EventEmitter):
         source: Any = None,
         auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
-    ):
+    ) -> None:
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
@@ -1087,8 +1089,8 @@ class EmitterGroup(EventEmitter):
     def unblock_all(self):
         """
         Unblock all emitters in this group, by decrease counter of semaphores for each event emitter.
-        if block is called twice and unblock is called once, then events will be still blocked
-        https://en.wikipedia.org/wiki/Semaphore_(programming)
+        if block is called twice and unblock is called once, then events will be still blocked.
+        See `Semaphore (programming) <https://en.wikipedia.org/wiki/Semaphore_(programming)>`__.
         """
         self.unblock()
         for em in self._emitters.values():
@@ -1170,7 +1172,7 @@ class EventBlocker:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target, callback=None):
+    def __init__(self, target, callback=None) -> None:
         self.target = target
         self.callback = callback
         self._base_count = target._block_counter.get(callback, 0)
@@ -1194,7 +1196,7 @@ class EventBlockerAll:
     manager (i.e. 'with' statement).
     """
 
-    def __init__(self, target):
+    def __init__(self, target) -> None:
         self.target = target
 
     def __enter__(self):
@@ -1235,7 +1237,7 @@ _log_event_stack = _noop
 def set_event_tracing_enabled(enabled=True, cfg=None):
     global _log_event_stack
     if enabled:
-        from .debugging import log_event_stack
+        from napari.utils.events.debugging import log_event_stack
 
         if cfg is not None:
             _log_event_stack = partial(log_event_stack, cfg=cfg)

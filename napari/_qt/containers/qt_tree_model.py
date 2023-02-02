@@ -4,9 +4,9 @@ from typing import List, Optional, Tuple, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ...utils.translations import trans
-from ...utils.tree import Group, Node
-from ._base_item_model import _BaseEventedItemModel
+from napari._qt.containers._base_item_model import _BaseEventedItemModel
+from napari.utils.translations import trans
+from napari.utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)
@@ -41,7 +41,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         return None
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
+        self, row: int, column: int = 0, parent: QModelIndex = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
@@ -60,7 +60,8 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         #   2. never store the object (and incur the penalty of
         #      self.getItem(idx) each time you want to get the value of an idx)
         #   3. Have special treatment when we encounter integers in the model
-
+        if parent is None:
+            parent = QModelIndex()
         return (
             self.createIndex(row, column, self.getItem(parent)[row])
             if self.hasIndex(row, column, parent)
@@ -209,7 +210,7 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 class NodeMimeData(QMimeData):
     """An object to store Node data during a drag operation."""
 
-    def __init__(self, nodes: Optional[List[NodeType]] = None):
+    def __init__(self, nodes: Optional[List[NodeType]] = None) -> None:
         super().__init__()
         self.nodes: List[NodeType] = nodes or []
         if nodes:

@@ -11,7 +11,7 @@ from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 
 if TYPE_CHECKING:
-    from ...layers.image.experimental import OctreeChunk
+    from napari.layers.image.experimental import OctreeChunk
 
 # Grid lines drawn with this width and color.
 GRID_WIDTH = 3
@@ -66,7 +66,7 @@ class TileGrid:
         The parent of the grid.
     """
 
-    def __init__(self, parent: Node):
+    def __init__(self, parent: Node) -> None:
         self.parent = parent
         self.line = self._create_line()
 

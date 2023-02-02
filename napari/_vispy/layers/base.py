@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
-from ...utils.events import disconnect_events
-from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari.utils.events import disconnect_events
 
 
 class VispyBaseLayer(ABC):
@@ -41,7 +41,7 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node):
+    def __init__(self, layer, node) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
@@ -124,7 +124,7 @@ class VispyBaseLayer(ABC):
 
     def _on_matrix_change(self):
         transform = self.layer._transforms.simplified.set_slice(
-            self.layer._dims_displayed
+            self.layer._slice_input.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -137,13 +137,13 @@ class VispyBaseLayer(ABC):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        if self._array_like and self.layer._ndisplay == 2:
+        if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = self.layer._data_to_world.set_slice(
-                self.layer._dims_displayed
+                self.layer._slice_input.displayed
             ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
             # Convert NumPy axis ordering to VisPy axis ordering
@@ -154,15 +154,13 @@ class VispyBaseLayer(ABC):
         self._master_transform.matrix = affine_matrix
 
     def _on_experimental_clipping_planes_change(self):
-        # TODO: this check is only necessary until vispy #2383 comes to napari
         if hasattr(self.node, 'clipping_planes') and hasattr(
             self.layer, 'experimental_clipping_planes'
         ):
-            prev = self.node.clipping_planes
             # invert axes because vispy uses xyz but napari zyx
-            new = self.layer.experimental_clipping_planes.as_array()[..., ::-1]
-            if not np.array_equal(prev, new):
-                self.node.clipping_planes = new
+            self.node.clipping_planes = (
+                self.layer.experimental_clipping_planes.as_array()[..., ::-1]
+            )
 
     def reset(self):
         self._on_visible_change()
@@ -171,7 +169,7 @@ class VispyBaseLayer(ABC):
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
 
-    def _on_poll(self, event=None):
+    def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the

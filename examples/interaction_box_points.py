@@ -7,9 +7,9 @@ Demonstrate interaction box on points layer
 .. tags:: experimental
 """
 
-from skimage import data
-import napari
 import numpy as np
+
+import napari
 from napari.layers.points._points_utils import points_in_box
 
 
@@ -36,7 +36,7 @@ def on_transform_changed_drag(event):
 
     for i, index in enumerate(sel_i):
         viewer.layers.selection.active._data[index] = viewer.layers.selection.active.world_to_data(event.value(points[i]))
-    viewer.layers.selection.active._update_dims()
+    viewer.layers.selection.active._clear_extent()
     viewer.layers.selection.active.events.data(value=viewer.layers.selection.active.data)
 
 X, Y = np.mgrid[-500:500:50, -500:500:50]

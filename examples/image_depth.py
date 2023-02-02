@@ -5,8 +5,9 @@ Image depth
 .. tags:: visualization-basic
 """
 
-import napari
 import numpy as np
+
+import napari
 
 im_data = np.zeros((50, 50, 50))
 im_data[30:40, 25:35, 25:35] = 1

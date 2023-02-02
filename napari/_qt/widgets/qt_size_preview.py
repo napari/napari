@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtFontSizePreview(QFrame):
@@ -28,7 +28,7 @@ class QtFontSizePreview(QFrame):
         Preview text to display. Default is None.
     """
 
-    def __init__(self, parent: QWidget = None, text: str = None):
+    def __init__(self, parent: QWidget = None, text: str = None) -> None:
         super().__init__(parent)
 
         self._text = text or ""
@@ -106,7 +106,7 @@ class QtSizeSliderPreviewWidget(QWidget):
         min_value: int = 1,
         max_value: int = 50,
         unit: str = "px",
-    ):
+    ) -> None:
         super().__init__(parent)
 
         description = description or ""

@@ -1,12 +1,14 @@
 import warnings
-from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
+
 import napari
+from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 
 
 def raise_():
     x = 1
     y = 'a string'
     import something_that_does_not_exist
+    return something_that_does_not_exist.fun(x, y)
 
 
 def warn_():

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
-from ._base_item_model import ItemRole
-from ._factory import create_model
+from napari._qt.containers._base_item_model import ItemRole
+from napari._qt.containers._factory import create_model
 
 ItemType = TypeVar("ItemType")
 
@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
 
-    from ...utils.events import Event
-    from ...utils.events.containers import SelectableEventedList
-    from ._base_item_model import _BaseEventedItemModel
+    from napari._qt.containers._base_item_model import _BaseEventedItemModel
+    from napari.utils.events import Event
+    from napari.utils.events.containers import SelectableEventedList
 
 
 class _BaseEventedItemView(Generic[ItemType]):
@@ -98,14 +98,14 @@ class _BaseEventedItemView(Generic[ItemType]):
             sm.clearCurrentIndex()
         else:
             idx = index_of(self.model(), event.value)
-            sm.setCurrentIndex(idx, sm.Current)
+            sm.setCurrentIndex(idx, sm.SelectionFlag.Current)
 
     def _on_py_selection_change(self, event: Event):
         """The python model selection has changed. Update the Qt view."""
         sm = self.selectionModel()
         for is_selected, idx in chain(
-            zip(repeat(sm.Select), event.added),
-            zip(repeat(sm.Deselect), event.removed),
+            zip(repeat(sm.SelectionFlag.Select), event.added),
+            zip(repeat(sm.SelectionFlag.Deselect), event.removed),
         ):
             model_idx = index_of(self.model(), idx)
             if model_idx.isValid():
@@ -118,7 +118,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         for i in self._root.selection:
             idx = index_of(self.model(), i)
             selection.select(idx, idx)
-        sel_model.select(selection, sel_model.ClearAndSelect)
+        sel_model.select(selection, sel_model.SelectionFlag.ClearAndSelect)
 
 
 def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:

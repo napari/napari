@@ -1,5 +1,5 @@
-from ..visuals.tracks import TracksVisual
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.visuals.tracks import TracksVisual
 
 
 class VispyTracksLayer(VispyBaseLayer):
@@ -9,7 +9,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = TracksVisual()
         super().__init__(layer, node)
 

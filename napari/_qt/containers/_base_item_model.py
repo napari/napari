@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
-from ...utils.events import disconnect_events
-from ...utils.events.containers import SelectableEventedList
-from ...utils.translations import trans
+from napari.utils.events import disconnect_events
+from napari.utils.events.containers import SelectableEventedList
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
@@ -76,7 +76,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
     def __init__(
         self, root: SelectableEventedList[ItemType], parent: QWidget = None
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         self.setRoot(root)
 

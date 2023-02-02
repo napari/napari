@@ -8,16 +8,13 @@ Display a surface timeseries using data from nilearn
 """
 
 try:
-    from nilearn import datasets
-    from nilearn import surface
+    from nilearn import datasets, surface
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "You must have nilearn installed to run this example."
-    )
+    ) from None
 
-import numpy as np
 import napari
-
 
 # Fetch datasets - this will download dataset if datasets are not found
 nki_dataset = datasets.fetch_surf_nki_enhanced(n_subjects=1)

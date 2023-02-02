@@ -22,12 +22,13 @@ jobs:
         backend: [pyqt5, pyside2]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache-dependency-path: setup.cfg
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -45,7 +46,7 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox -v --pre
         env:

@@ -21,12 +21,12 @@ from qtpy.QtWidgets import (
 )
 from vispy.util import keys
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
-from ...settings import get_settings
-from ...utils.action_manager import action_manager
-from ...utils.interactions import Shortcut
-from ...utils.translations import trans
-from ..widgets.qt_message_popup import WarnPopup
+from napari._qt.widgets.qt_message_popup import WarnPopup
+from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.settings import get_settings
+from napari.utils.action_manager import action_manager
+from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 # Dict used to format strings returned from converted key press events.
 # For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
@@ -46,7 +46,7 @@ class ShortcutEditor(QWidget):
         parent: QWidget = None,
         description: str = "",
         value: dict = None,
-    ):
+    ) -> None:
 
         super().__init__(parent=parent)
 
@@ -83,7 +83,7 @@ class ShortcutEditor(QWidget):
             if len(layer.class_keymap) == 0:
                 actions = {}
             else:
-                actions = action_manager._get_layer_actions(layer)
+                actions = action_manager._get_provider_actions(layer)
                 for name in actions.keys():
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
@@ -544,7 +544,7 @@ class ShortcutDelegate(QItemDelegate):
 class EditorWidget(QLineEdit):
     """Editor widget set in the delegate column in shortcut table."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
     def event(self, event):
@@ -617,7 +617,7 @@ class ShortcutTranslator(QKeySequenceEdit):
     Convert QKeyEvent into QKeySequence.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.hide()
 

@@ -1,7 +1,7 @@
 import numpy as np
 from vispy.scene import ArcballCamera, PanZoomCamera
 
-from .utils.quaternion import quaternion2euler
+from napari._vispy.utils.quaternion import quaternion2euler
 
 
 class VispyCamera:
@@ -17,7 +17,7 @@ class VispyCamera:
         napari dims model.
     """
 
-    def __init__(self, view, camera, dims):
+    def __init__(self, view, camera, dims) -> None:
         self._view = view
         self._camera = camera
         self._dims = dims

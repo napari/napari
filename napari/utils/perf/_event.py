@@ -72,7 +72,7 @@ class PerfEvent:
         thread_id: int = None,
         phase: str = "X",  # "X" is a "complete event" in their spec.
         **kwargs: dict,
-    ):
+    ) -> None:
         if process_id is None:
             process_id = os.getpid()
         if thread_id is None:

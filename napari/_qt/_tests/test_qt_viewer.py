@@ -65,6 +65,23 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     assert view.dockConsole.widget() is view.console
 
 
+@skip_local_popups
+def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
+    """Test console has focus when instantiating from viewer."""
+    viewer = make_napari_viewer(show=True)
+    view = viewer.window._qt_viewer
+    assert not view.console.hasFocus(), "console has focus before being shown"
+
+    view.toggle_console_visibility(None)
+
+    def console_has_focus():
+        assert (
+            view.console.hasFocus()
+        ), "console does not have focus when shown"
+
+    qtbot.waitUntil(console_has_focus)
+
+
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
 
@@ -326,11 +343,13 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     pts = viewer.add_points(name='test', size=1, ndim=3)
     pts.add((8.7, 0, 0))
     viewer.dims.set_point(0, 30 * 0.29)  # middle plane
-    layer = viewer.layers[1]
-    indices, scale = layer._slice_data(layer._slice_indices)
-    np.testing.assert_equal(indices, [0])
+
+    request = pts._make_slice_request(viewer.dims)
+    response = request()
+    np.testing.assert_equal(response.indices, [0])
 
 
+@skip_on_win_ci
 def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     # make sure clipboard is empty
@@ -378,6 +397,7 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     assert not hasattr(viewer.window._qt_window, "_flash_animation")
 
 
+@skip_on_win_ci
 def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     viewer = make_napari_viewer()
     # make sure clipboard is empty
@@ -495,6 +515,7 @@ def test_memory_leaking(qtbot, make_napari_viewer):
     assert labels() is None
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_image(qtbot, make_napari_viewer):
 
@@ -510,6 +531,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     assert not dr()
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_labels(qtbot, make_napari_viewer):
     viewer = make_napari_viewer(show=True)

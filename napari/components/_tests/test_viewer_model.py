@@ -104,6 +104,21 @@ def test_add_multiscale():
     assert viewer.dims.ndim == 2
 
 
+def test_add_multiscale_image_with_negative_floats():
+    """See https://github.com/napari/napari/issues/5257"""
+    viewer = ViewerModel()
+    shapes = [(20, 10), (10, 5)]
+    data = [np.zeros(s, dtype=np.float64) for s in shapes]
+    data[0][-4:, -2:] = -1
+    data[1][-2:, -1:] = -1
+
+    viewer.add_image(data, multiscale=True)
+
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
 def test_add_labels():
     """Test adding labels image."""
     viewer = ViewerModel()
@@ -377,7 +392,7 @@ def test_grid():
 
     np.random.seed(0)
     # Add image
-    for i in range(6):
+    for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled
@@ -697,7 +712,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
@@ -734,7 +749,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     layer.events.connect(my_custom_callback)
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
             assert len(em.callbacks) == 1
@@ -905,3 +920,24 @@ def test_open_or_get_error_preferred_fails(builtins, tmp_path):
         ReaderPluginError, match='Tried opening with napari, but failed.'
     ):
         viewer._open_or_raise_error([str(pth)])
+
+
+def test_slice_order_with_mixed_dims():
+    viewer = ViewerModel(ndisplay=2)
+    image_2d = viewer.add_image(np.zeros((4, 5)))
+    image_3d = viewer.add_image(np.zeros((3, 4, 5)))
+    image_4d = viewer.add_image(np.zeros((2, 3, 4, 5)))
+
+    # With standard ordering, the shapes of the slices match,
+    # so are trivially numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (4, 5)
+    assert image_4d._slice.image.view.shape == (4, 5)
+
+    viewer.dims.order = (2, 1, 0, 3)
+
+    # With non-standard ordering, the shapes of the slices do not match,
+    # and are not numpy-broadcastable.
+    assert image_2d._slice.image.view.shape == (4, 5)
+    assert image_3d._slice.image.view.shape == (3, 5)
+    assert image_4d._slice.image.view.shape == (2, 5)

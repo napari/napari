@@ -1,15 +1,23 @@
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
-from ...utils import config
-from ...utils.translations import trans
-from .qt_image_controls import QtImageControls
-from .qt_labels_controls import QtLabelsControls
-from .qt_points_controls import QtPointsControls
-from .qt_shapes_controls import QtShapesControls
-from .qt_surface_controls import QtSurfaceControls
-from .qt_tracks_controls import QtTracksControls
-from .qt_vectors_controls import QtVectorsControls
+from napari._qt.layer_controls.qt_image_controls import QtImageControls
+from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_points_controls import QtPointsControls
+from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
+from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
+from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
+from napari.utils import config
+from napari.utils.translations import trans
 
 layer_to_controls = {
     Labels: QtLabelsControls,
@@ -22,7 +30,7 @@ layer_to_controls = {
 }
 
 if config.async_loading:
-    from ...layers.image.experimental.octree_image import _OctreeImageBase
+    from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
     # The user visible layer controls for OctreeImage layers are identical
     # to the regular image layer controls, for now.
@@ -38,7 +46,7 @@ def create_qt_layer_controls(layer):
 
     Parameters
     ----------
-    layer : napari.layers._base_layer.Layer
+    layer : napari.layers.Layer
         Layer that needs its controls widget created.
 
     Returns
@@ -86,13 +94,14 @@ class QtLayerControlsContainer(QStackedWidget):
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer) -> None:
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
+        self.empty_widget.setObjectName("empty_controls_widget")
         self.widgets = {}
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)
@@ -100,6 +109,19 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
+        viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
+
+    def _on_ndisplay_changed(self, event):
+        """Responds to a change in the dimensionality displayed in the canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Event with the new dimensionality value at `event.value`.
+        """
+        for widget in self.widgets.values():
+            if widget is not self.empty_widget:
+                widget.ndisplay = event.value
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -107,7 +129,7 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
         layer = event.value
         if layer is None:
@@ -126,6 +148,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         layer = event.value
         controls = create_qt_layer_controls(layer)
+        controls.ndisplay = 3
         self.addWidget(controls)
         self.widgets[layer] = controls
 
@@ -140,7 +163,6 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        # controls.close()
         controls.hide()
         controls.deleteLater()
         controls = None

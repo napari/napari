@@ -24,9 +24,9 @@ import os
 # important: if this is not set, the entire ~4GB array will be created!
 os.environ.setdefault('NAPARI_OCTREE', '1')
 
-import dask.array as da
-import napari
+import dask.array as da  # noqa: E402
 
+import napari  # noqa: E402
 
 ndim = 2
 data = da.random.randint(

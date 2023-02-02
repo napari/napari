@@ -1,12 +1,14 @@
 import os
 import warnings
+from typing import TYPE_CHECKING
 
-import numpy as np
+from napari.utils.translations import trans
 
-from ..utils.translations import trans
+if TYPE_CHECKING:
+    import numpy as np
 
 
-def imsave(filename: str, data: np.ndarray):
+def imsave(filename: str, data: "np.ndarray"):
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -26,7 +28,7 @@ def imsave(filename: str, data: np.ndarray):
                 int(x) for x in tifffile.__version__.split('.')[:3]
             )
             compression_instead_of_compress = current_version >= (2021, 6, 6)
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Just in case anything goes wrong in parsing version number
             # like repackaging on linux or anything else we fallback to
             # using compress
@@ -48,3 +50,27 @@ def imsave(filename: str, data: np.ndarray):
         import imageio
 
         imageio.imsave(filename, data)
+
+
+def __getattr__(name: str):
+    if name in {
+        'imsave_extensions',
+        'write_csv',
+        'read_csv',
+        'csv_to_layer_data',
+        'read_zarr_dataset',
+    }:
+        warnings.warn(
+            trans._(
+                '{name} was moved from napari.utils.io in v0.4.17. Import it from napari_builtins.io instead.',
+                deferred=True,
+                name=name,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        import napari_builtins.io
+
+        return getattr(napari_builtins.io, name)
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")

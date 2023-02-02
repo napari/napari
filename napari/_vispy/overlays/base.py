@@ -1,12 +1,12 @@
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
-from ...components._viewer_constants import CanvasPosition
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
+from napari.components._viewer_constants import CanvasPosition
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 
 class VispyBaseOverlay:
-    def __init__(self, *, overlay, node, parent):
+    def __init__(self, *, overlay, node, parent) -> None:
         super().__init__()
         self.overlay = overlay
 
@@ -34,7 +34,7 @@ class VispyBaseOverlay:
 
 
 class VispyCanvasOverlay(VispyBaseOverlay):
-    def __init__(self, *, viewer, **kwargs):
+    def __init__(self, *, viewer, **kwargs) -> None:
         super().__init__(**kwargs)
         self.viewer = viewer
 
@@ -102,7 +102,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
 
 class VispySceneOverlay(VispyBaseOverlay):
-    def __init__(self, *, viewer, **kwargs):
+    def __init__(self, *, viewer, **kwargs) -> None:
         super().__init__(**kwargs)
         self.viewer = viewer
         self.node.transform = MatrixTransform()

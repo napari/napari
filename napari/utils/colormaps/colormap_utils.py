@@ -4,16 +4,17 @@ from threading import Lock
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import skimage.color as colorconv
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 from vispy.color.colormap import LUT_len
 
-from ..translations import trans
-from .bop_colors import bopd
-from .colormap import Colormap, ColormapInterpolationMode
-from .inverse_colormaps import inverse_cmaps
-from .standardize_color import transform_color
-from .vendored import cm, colorconv
+from napari.utils.colormaps.bop_colors import bopd
+from napari.utils.colormaps.colormap import Colormap, ColormapInterpolationMode
+from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
+from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.colormaps.vendored import cm
+from napari.utils.translations import trans
 
 # All parsable input color types that a user can provide
 ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]
@@ -117,12 +118,22 @@ def _all_rgb():
     return np.stack((r, g, b), axis=-1).reshape((-1, 3))
 
 
-# obtained with colorconv.rgb2luv(_all_rgb().reshape((-1, 256, 3)))
+# The following values were precomputed and stored as constants
+# here to avoid heavy computation when importing this module.
+# The following code can be used to reproduce these values.
+#
+# rgb_colors = _all_rgb()
+# luv_colors = colorconv.rgb2luv(rgb_colors)
+# LUVMIN = np.amin(luv_colors, axis=(0,))
+# LUVMAX = np.amax(luv_colors, axis=(0,))
+# lab_colors = colorconv.rgb2lab(rgb_colors)
+# LABMIN = np.amin(lab_colors, axis=(0,))
+# LABMAX = np.amax(lab_colors, axis=(0,))
+
 LUVMIN = np.array([0.0, -83.07790815, -134.09790293])
 LUVMAX = np.array([100.0, 175.01447356, 107.39905336])
 LUVRNG = LUVMAX - LUVMIN
 
-# obtained with colorconv.rgb2lab(_all_rgb().reshape((-1, 256, 3)))
 LABMIN = np.array([0.0, -86.18302974, -107.85730021])
 LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
@@ -357,7 +368,17 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
         elif colorspace == 'rgb':
             raw_rgb = random
         else:  # 'lab' by default
-            raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
+            # The values in random are in [0, 1], but since the LAB colorspace
+            # is not exactly contained in the unit-box, some 3-tuples might not
+            # be valid LAB color coordinates. scikit-image handles this by projecting
+            # such coordinates into the colorspace, but will also warn when doing this.
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Color data out of range',
+                    category=UserWarning,
+                )
+                raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
         rgb = _validate_rgb(raw_rgb, tolerance=tolerance)
         factor *= expand_factor
     return rgb[:n]
@@ -370,13 +391,14 @@ def label_colormap(num_colors=256, seed=0.5):
     ----------
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
+        Colors are in addition to a transparent color 0.
     seed : float or array of float, length 3
         The seed for the random color generator.
 
     Returns
     -------
     colormap : napari.utils.Colormap
-        A colormap for use with labels are remapped to [0, 1].
+        A colormap for use with labels remapped to [0, 1].
 
     Notes
     -----
@@ -384,14 +406,19 @@ def label_colormap(num_colors=256, seed=0.5):
     """
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
-    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors - 1)
+    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors)
     control_points = np.concatenate(([0], midpoints, [1.0]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate(
-        (_color_random(num_colors, seed=seed), np.full((num_colors, 1), 1)),
+        (
+            _color_random(num_colors + 1, seed=seed),
+            np.full((num_colors + 1, 1), 1),
+        ),
         axis=1,
     )
+    # Insert alpha at layer 0
     colors[0, :] = 0  # ensure alpha is 0 for label 0
+
     return Colormap(
         name='label_colormap',
         display_name=trans._p('colormap', 'low discrepancy colors'),
@@ -429,7 +456,7 @@ def vispy_or_mpl_colormap(name):
                 display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
             else:
                 display_name = name
-        except AttributeError:
+        except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
             ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
@@ -441,7 +468,7 @@ def vispy_or_mpl_colormap(name):
                         name=name,
                         suggestion=suggestion,
                     )
-                )
+                ) from e
             else:
                 colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
                     set(_MATPLOTLIB_COLORMAP_NAMES)

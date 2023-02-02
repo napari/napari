@@ -3,11 +3,11 @@ from weakref import ref
 
 import numpy as np
 
-from ...layers.utils.layer_utils import dims_displayed_world_to_layer
-from ...utils.action_manager import action_manager
-from ...utils.transforms import Affine
-from ...utils.translations import trans
-from ._interaction_box_constants import Box
+from napari.components.overlays._interaction_box_constants import Box
+from napari.layers.utils.layer_utils import dims_displayed_world_to_layer
+from napari.utils.action_manager import action_manager
+from napari.utils.transforms import Affine
+from napari.utils.translations import trans
 
 
 def inside_boxes(boxes):
@@ -45,7 +45,7 @@ def inside_boxes(boxes):
 
 
 class InteractionBoxMouseBindings:
-    def __init__(self, viewer, interaction_box_visual):
+    def __init__(self, viewer, interaction_box_visual) -> None:
         self._selected_vertex: int = None
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None

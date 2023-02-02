@@ -14,20 +14,23 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLargeIntSpinBox
 
-from ...layers.labels._labels_constants import (
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import disable_with_opacity
+from napari._qt.widgets._slider_compat import QSlider
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
     LabelsRendering,
     Mode,
 )
-from ...layers.labels._labels_utils import get_dtype
-from ...utils._dtype import get_dtype_limits
-from ...utils.action_manager import action_manager
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
-from ..utils import disable_with_opacity
-from ..widgets._slider_compat import QSlider
-from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from .qt_layer_controls_base import QtLayerControls
+from napari.layers.labels._labels_utils import get_dtype
+from napari.utils._dtype import get_dtype_limits
+from napari.utils.action_manager import action_manager
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -80,11 +83,10 @@ class QtLabelsControls(QtLayerControls):
 
     layer: 'napari.layers.Labels'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
@@ -237,7 +239,8 @@ class QtLabelsControls(QtLayerControls):
         renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
-        self._on_ndisplay_change()
+
+        self._on_ndisplay_changed()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
@@ -461,7 +464,9 @@ class QtLabelsControls(QtLayerControls):
 
         disable_with_opacity(
             self,
-            widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
+            widgets_to_toggle[
+                (self.layer._slice_input.ndisplay, self.layer.editable)
+            ],
             self.layer.editable,
         )
 
@@ -473,15 +478,10 @@ class QtLabelsControls(QtLayerControls):
             )
             self.renderComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self):
-        """Toggle between 2D and 3D visualization modes."""
-        if self.layer._ndisplay == 2:
-            self.renderComboBox.hide()
-            self.renderLabel.hide()
-        else:
-            self.renderComboBox.show()
-            self.renderLabel.show()
-
+    def _on_ndisplay_changed(self):
+        render_visible = self.ndisplay == 3
+        self.renderComboBox.setVisible(render_visible)
+        self.renderLabel.setVisible(render_visible)
         self._on_editable_change()
 
     def deleteLater(self):
@@ -498,7 +498,7 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__()
 
         self.layer = layer

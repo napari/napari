@@ -13,14 +13,13 @@ of the layer types, like "image", "points", etc...):
         return viewer
 """
 import inspect
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
 from napari.components.dims import Dims
 from napari.layers import Image
-
-from .viewer import Viewer
+from napari.viewer import Viewer
 
 __all__ = [
     'view_image',
@@ -81,7 +80,7 @@ def _merge_layer_viewer_sigs_docs(func):
     func : callable
         The same function, with merged metadata.
     """
-    from .utils.misc import _combine_signatures
+    from napari.utils.misc import _combine_signatures
 
     # get the `Viewer.add_*` method
     layer_string = func.__name__.replace("view_", "")
@@ -117,8 +116,10 @@ _dims_params = Dims.__fields__
 
 def _make_viewer_then(
     add_method: str,
-    args,
-    kwargs,
+    /,
+    *args,
+    viewer: Optional[Viewer] = None,
+    **kwargs,
 ) -> Tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
 
@@ -129,14 +130,14 @@ def _make_viewer_then(
     add_method : str
         Which ``add_`` method to call on the viewer, e.g. `add_image`,
         or `add_labels`.
-    args : list
+    *args : list
         Positional arguments for the ``add_`` method.
-    kwargs : dict
-        Keyword arguments for either the `Viewer` constructor or for the
-        ``add_`` method.
     viewer : Viewer, optional
         A pre-existing viewer, which will be used provided, rather than
         creating a new one.
+    **kwargs : dict
+        Keyword arguments for either the `Viewer` constructor or for the
+        ``add_`` method.
 
     Returns
     -------
@@ -152,7 +153,6 @@ def _make_viewer_then(
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in _dims_params
     }
-    viewer = kwargs.pop("viewer", None)
     if viewer is None:
         viewer = Viewer(**vkwargs)
     kwargs.update(kwargs.pop("kwargs", {}))
@@ -176,42 +176,42 @@ def _make_viewer_then(
 
 @_merge_layer_viewer_sigs_docs
 def view_image(*args, **kwargs):
-    return _make_viewer_then('add_image', args, kwargs)[0]
+    return _make_viewer_then('add_image', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_labels(*args, **kwargs):
-    return _make_viewer_then('add_labels', args, kwargs)[0]
+    return _make_viewer_then('add_labels', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_points(*args, **kwargs):
-    return _make_viewer_then('add_points', args, kwargs)[0]
+    return _make_viewer_then('add_points', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_shapes(*args, **kwargs):
-    return _make_viewer_then('add_shapes', args, kwargs)[0]
+    return _make_viewer_then('add_shapes', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_surface(*args, **kwargs):
-    return _make_viewer_then('add_surface', args, kwargs)[0]
+    return _make_viewer_then('add_surface', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_tracks(*args, **kwargs):
-    return _make_viewer_then('add_tracks', args, kwargs)[0]
+    return _make_viewer_then('add_tracks', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_vectors(*args, **kwargs):
-    return _make_viewer_then('add_vectors', args, kwargs)[0]
+    return _make_viewer_then('add_vectors', *args, **kwargs)[0]
 
 
 @_merge_layer_viewer_sigs_docs
 def view_path(*args, **kwargs):
-    return _make_viewer_then('open', args, kwargs)[0]
+    return _make_viewer_then('open', *args, **kwargs)[0]
 
 
 def imshow(
@@ -226,7 +226,7 @@ def imshow(
     interpolation3d='linear',
     rendering='mip',
     depiction='volume',
-    iso_threshold=0.5,
+    iso_threshold=None,
     attenuation=0.05,
     name=None,
     metadata=None,
@@ -248,7 +248,7 @@ def imshow(
     order=(),
     axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List[Image]]:
+) -> Tuple[Viewer, List["Image"]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -379,7 +379,7 @@ def imshow(
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
-    viewer: Viewer object, optional, by default None.
+    viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
@@ -402,7 +402,9 @@ def imshow(
         argument is given.
     """
 
-    kwargs = dict(
+    return _make_viewer_then(
+        'add_image',
+        data,
         viewer=viewer,
         channel_axis=channel_axis,
         rgb=rgb,
@@ -435,13 +437,3 @@ def imshow(
         axis_labels=axis_labels,
         show=show,
     )
-
-    args = tuple([data])
-
-    viewer, layers = _make_viewer_then(
-        'add_image',
-        args,
-        kwargs,
-    )
-
-    return viewer, layers

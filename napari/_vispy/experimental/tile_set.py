@@ -4,8 +4,8 @@ TiledImageVisual uses this class to track the tiles it's drawing.
 """
 from typing import Dict, List, NamedTuple, Set
 
-from ...layers.image.experimental import OctreeChunk
-from .texture_atlas import AtlasTile
+from napari._vispy.experimental.texture_atlas import AtlasTile
+from napari.layers.image.experimental import OctreeChunk
 
 
 class TileData(NamedTuple):
@@ -37,7 +37,7 @@ class TileSet:
         The chunks we have in the set, for fast membership tests.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._tiles: Dict[int, TileData] = {}
         self._chunks: Set[OctreeChunk] = set()
 

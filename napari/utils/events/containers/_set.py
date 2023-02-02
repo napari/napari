@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
-from ....utils.events import EmitterGroup
-from ....utils.translations import trans
+from napari.utils.events import EmitterGroup
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 
@@ -28,7 +28,7 @@ class EventedSet(MutableSet[_T]):
 
     events: EmitterGroup
 
-    def __init__(self, data: Iterable[_T] = ()):
+    def __init__(self, data: Iterable[_T] = ()) -> None:
 
         _events = {'changed': None}
         # For inheritance: If the mro already provides an EmitterGroup, add...
@@ -56,8 +56,12 @@ class EventedSet(MutableSet[_T]):
         # for subclasses to potentially check value before adding
         return value
 
-    def _emit_change(self, added=set(), removed=set()):
+    def _emit_change(self, added=None, removed=None):
         # provides a hook for subclasses to update internal state before emit
+        if added is None:
+            added = set()
+        if removed is None:
+            removed = set()
         self.events.changed(added=added, removed=removed)
 
     def add(self, value: _T) -> None:

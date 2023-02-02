@@ -18,13 +18,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import trans
-from ..utils import combine_widgets, qt_signals_blocked
+from napari._qt.utils import combine_widgets, qt_signals_blocked
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
 
-    from ..qt_viewer import QtViewer
+    from napari._qt.qt_viewer import QtViewer
 
 counter = count()
 _sentinel = object()
@@ -78,7 +78,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
         close_btn=True,
-    ):
+    ) -> None:
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
@@ -235,10 +235,16 @@ class QtViewerDockWidget(QDockWidget):
             Qt.DockWidgetArea.RightDockWidgetArea,
         ):
             features = self._features
-            if features & self.DockWidgetVerticalTitleBar:
-                features = features ^ self.DockWidgetVerticalTitleBar
+            if features & self.DockWidgetFeature.DockWidgetVerticalTitleBar:
+                features = (
+                    features
+                    ^ self.DockWidgetFeature.DockWidgetVerticalTitleBar
+                )
         else:
-            features = self._features | self.DockWidgetVerticalTitleBar
+            features = (
+                self._features
+                | self.DockWidgetFeature.DockWidgetVerticalTitleBar
+            )
         self.setFeatures(features)
 
     @property
@@ -285,6 +291,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def setWidget(self, widget):
         widget._parent = self
+        self.setFocusProxy(widget)
         super().setWidget(widget)
 
 
@@ -306,7 +313,7 @@ class QtCustomTitleBar(QLabel):
 
     def __init__(
         self, parent, title: str = '', vertical=False, close_btn=True
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))

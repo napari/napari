@@ -1,7 +1,8 @@
 from typing import Optional, Tuple
+from weakref import ref
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt, QTimer, Signal, Slot
+from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
     QApplication,
@@ -16,14 +17,15 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
+from superqt import ensure_object_thread
 
-from ...settings import get_settings
-from ...settings._constants import LoopMode
-from ...utils.events.event_utils import connect_setattr_value
-from ...utils.translations import trans
-from ..dialogs.qt_modal import QtPopup
-from ..qthreading import _new_worker_qthread
-from .qt_scrollbar import ModifiedScrollBar
+from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.qthreading import _new_worker_qthread
+from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
+from napari.settings import get_settings
+from napari.settings._constants import LoopMode
+from napari.utils.events.event_utils import connect_setattr_value
+from napari.utils.translations import trans
 
 
 class QtDimSliderWidget(QWidget):
@@ -40,7 +42,7 @@ class QtDimSliderWidget(QWidget):
     play_started = Signal()
     play_stopped = Signal()
 
-    def __init__(self, parent: QWidget, axis: int):
+    def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims = parent
@@ -412,10 +414,9 @@ class QtDimSliderWidget(QWidget):
             _start_thread=True,
             _connect={'frame_requested': self.qt_dims._set_frame},
         )
-        worker.finished.connect(self.qt_dims.stop)
+        thread.finished.connect(self.qt_dims.cleaned_worker)
         thread.finished.connect(self.play_stopped)
         self.play_started.emit()
-        self.thread = thread
         return worker, thread
 
 
@@ -432,7 +433,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     editingFinished and when the user clicks on the spin buttons.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, *kwargs)
         self.valueChanged.connect(self.custom_change_event)
 
@@ -487,9 +488,11 @@ class QtPlayButton(QPushButton):
 
     play_requested = Signal(int)  # axis, fps
 
-    def __init__(self, dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP):
+    def __init__(
+        self, qt_dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP
+    ) -> None:
         super().__init__()
-        self.dims = dims
+        self.qt_dims_ref = ref(qt_dims)
         self.axis = axis
         self.reverse = reverse
         self.fps = fps
@@ -552,8 +555,11 @@ class QtPlayButton(QPushButton):
 
     def _on_click(self):
         """Toggle play/stop animation control."""
+        qt_dims = self.qt_dims_ref()
+        if not qt_dims:  # pragma: no cover
+            return
         if self.property('playing') == "True":
-            return self.dims.stop()
+            return qt_dims.stop()
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
@@ -580,12 +586,17 @@ class AnimationWorker(QObject):
     finished = Signal()
     started = Signal()
 
-    def __init__(self, slider):
+    def __init__(self, slider) -> None:
+        # FIXME there are attributes defined outsid of __init__.
         super().__init__()
+        self._interval = 1
         self.slider = slider
         self.dims = slider.dims
         self.axis = slider.axis
         self.loop_mode = slider.loop_mode
+
+        self.timer = QTimer()
+
         slider.fps_changed.connect(self.set_fps)
         slider.mode_changed.connect(self.set_loop_mode)
         slider.range_changed.connect(self.set_frame_range)
@@ -598,7 +609,18 @@ class AnimationWorker(QObject):
         self.dims.events.current_step.connect(self._on_axis_changed)
         self.current = max(self.dims.current_step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
-        self.timer = QTimer()
+
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.advance)
+
+    @property
+    def interval(self):
+        return self._interval
+
+    @interval.setter
+    def interval(self, value):
+        self._interval = value
+        self.timer.setInterval(int(self._interval))
 
     @Slot()
     def work(self):
@@ -610,11 +632,18 @@ class AnimationWorker(QObject):
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
                 self.frame_requested.emit(self.axis, self.max_point)
-            self.timer.singleShot(int(self.interval), self.advance)
+            self.timer.start()
         else:
             # immediately advance one frame
             self.advance()
         self.started.emit()
+
+    @ensure_object_thread
+    def _stop(self):
+        """Stop the animation."""
+        if self.timer.isActive():
+            self.timer.stop()
+            self.finish()
 
     @Slot(float)
     def set_fps(self, fps):
@@ -683,6 +712,7 @@ class AnimationWorker(QObject):
         """
         self.loop_mode = LoopMode(mode)
 
+    @Slot()
     def advance(self):
         """Advance the current frame in the animation.
 
@@ -714,9 +744,7 @@ class AnimationWorker(QObject):
                 return self.finish()
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
-        # using a singleShot timer here instead of timer.start() because
-        # it makes it easier to update the interval using signals/slots
-        self.timer.singleShot(int(self.interval), self.advance)
+        self.timer.start()
 
     def finish(self):
         """Emit the finished event signal."""
@@ -726,3 +754,14 @@ class AnimationWorker(QObject):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         self.current = self.dims.current_step[self.axis]
+
+    def moveToThread(self, thread: QThread):
+        """Move the animation to a given thread.
+
+        Parameters
+        ----------
+        thread : QThread
+            The thread to move the animation to.
+        """
+        super().moveToThread(thread)
+        self.timer.moveToThread(thread)

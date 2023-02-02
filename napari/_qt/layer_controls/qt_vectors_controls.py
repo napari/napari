@@ -4,11 +4,11 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
 
-from ...layers.utils._color_manager_constants import ColorMode
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -45,9 +45,9 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
-    layer: 'napari.layers.Tracks'
+    layer: 'napari.layers.Vectors'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         # dropdown to select the property for mapping edge_color

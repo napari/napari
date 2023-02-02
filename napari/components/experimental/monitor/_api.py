@@ -6,7 +6,7 @@ from queue import Empty, Queue
 from threading import Event
 from typing import NamedTuple
 
-from ....utils.events import EmitterGroup
+from napari.utils.events import EmitterGroup
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -108,7 +108,7 @@ class MonitorApi:
     def _client_messages() -> Queue:
         return MonitorApi._client_messages_queue
 
-    def __init__(self):
+    def __init__(self) -> None:
         # RemoteCommands listens to our run_command event. It executes
         # commands from the clients.
         self.events = EmitterGroup(source=self, run_command=None)

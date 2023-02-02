@@ -7,18 +7,16 @@ recursive-include napari_builtins _tests/*.py
 recursive-include napari *.pyi
 recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
 recursive-include napari *.yaml
-exclude napari/resources/_qt_resources*.py
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
 recursive-exclude tools *
-recursive-exclude docs *
-recursive-exclude examples *
 recursive-exclude napari *.pyc
 exclude napari/benchmarks/*
 recursive-exclude resources *
 recursive-exclude binder *
-exclude bundle.py bundle_conda.py
+recursive-exclude examples *
+exclude bundle.py
 exclude dockerfile
 exclude EULA.md
 exclude Singularity

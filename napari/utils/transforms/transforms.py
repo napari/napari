@@ -4,9 +4,8 @@ from typing import Sequence
 import numpy as np
 import toolz as tz
 
-from ...utils.translations import trans
-from ..events import EventedList
-from .transform_utils import (
+from napari.utils.events import EventedList
+from napari.utils.transforms.transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
@@ -19,6 +18,7 @@ from .transform_utils import (
     shear_to_matrix,
     translate_to_vector,
 )
+from napari.utils.translations import trans
 
 
 class Transform:
@@ -34,7 +34,7 @@ class Transform:
         A string name for the transform.
     """
 
-    def __init__(self, func=tz.identity, inverse=None, name=None):
+    def __init__(self, func=tz.identity, inverse=None, name=None) -> None:
         self.func = func
         self._inverse_func = inverse
         self.name = name
@@ -110,7 +110,7 @@ class Transform:
 
 
 class TransformChain(EventedList, Transform):
-    def __init__(self, transforms=None):
+    def __init__(self, transforms=None) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
@@ -205,7 +205,7 @@ class ScaleTranslate(Transform):
         A string name for the transform.
     """
 
-    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
+    def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None) -> None:
         super().__init__(name=name)
 
         if len(scale) > len(translate):
@@ -369,7 +369,7 @@ class Affine(Transform):
         affine_matrix=None,
         ndim=None,
         name=None,
-    ):
+    ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
         if ndim is None:
@@ -698,7 +698,7 @@ class CompositeAffine(Affine):
         shear=None,
         ndim=None,
         name=None,
-    ):
+    ) -> None:
         super().__init__(
             scale, translate, rotate=rotate, shear=shear, ndim=ndim, name=name
         )
