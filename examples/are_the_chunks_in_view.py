@@ -11,7 +11,18 @@ from scipy.spatial.transform import Rotation as R
 
 
 def chunk_centers(array: da.Array):
-    """Return a dictionary mapping chunk centers to chunk slices."""
+    """Make a dictionary mapping chunk centers to chunk slices.
+
+    Parameters
+    ----------
+    array: dask Array
+        The input array.
+
+    Returns
+    -------
+    chunk_map : dict {tuple of float: tuple of slices}
+        A dictionary mapping chunk centers to chunk slices.
+    """
     start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
     middle_pos = [
         np.cumsum(sizes) - (np.array(sizes) / 2)
@@ -39,7 +50,22 @@ def rotation_matrix_from_camera(
 
 
 def visual_depth(points, camera):
-    """Compute visual depth from camera position to a point or array of points."""
+    """Compute visual depth from camera position to a(n array of) point(s).
+
+    Parameters
+    ----------
+    points: (N, D) array of float
+        An array of N points. This can be one point or many thanks to NumPy
+        broadcasting.
+    camera: napari.components.Camera
+        A camera model specifying a view direction and a center or focus point.
+
+    Returns
+    -------
+    projected_length : (N,) array of float
+        Position of the points along the view vector of the camera. These can
+        be negative (in front of the center) or positive (behind the center).
+    """
     view_direction = camera.view_direction
     points_relative_to_camera = points - camera.center
     projected_length = points_relative_to_camera @ view_direction
@@ -51,6 +77,19 @@ def distance_from_camera_centre_line(points, camera):
 
     This is the line aligned to the camera view direction and passing through
     the camera's center point, aka camera.position.
+
+    Parameters
+    ----------
+    points: (N, D) array of float
+        An array of N points. This can be one point or many thanks to NumPy
+        broadcasting.
+    camera: napari.components.Camera
+        A camera model specifying a view direction and a center or focus point.
+
+    Returns
+    -------
+    distances : (N,) array of float
+        Distances from points to the center line of the camera.
     """
     view_direction = camera.view_direction
     projected_length = visual_depth(points, camera)
@@ -63,6 +102,26 @@ def distance_from_camera_centre_line(points, camera):
 
 
 def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0):
+    """Compute a chunk priority based on chunk location relative to camera.
+
+    Parameters
+    ----------
+    depth : (N,) array of float
+        The visual depth of the points.
+    distance : (N,) array of float
+        The distance from the camera centerline of each point.
+    zoom : float
+        The camera zoom level. The higher the zoom (magnification), the
+        higher the relative importance of the distance from the centerline.
+    alpha : float
+        Parameter weighing distance from centerline and depth. Higher alpha
+        means centerline distance is weighted more heavily.
+
+    Returns
+    -------
+    priority : (N,) array of float
+        The loading priority of each chunk.
+    """
     chunk_load_priority = depth + alpha * zoom * distance
     return chunk_load_priority
 
