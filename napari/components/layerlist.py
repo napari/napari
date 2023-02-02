@@ -103,6 +103,7 @@ class LayerList(SelectableEventedList[Layer]):
             '_extent_world',
             '_step_size',
             '_ranges',
+            '_steps',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 

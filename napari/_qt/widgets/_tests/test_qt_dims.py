@@ -162,7 +162,7 @@ def test_slider_range(qtbot):
     # Check the maximum allowed value of the slider stays one less
     # than the allowed nsteps of the dims after updates
     view.dims.set_range(0, (1, 5))
-    view.dims.set_step(0, 2)
+    view.dims._set_step(0, 2)
     assert first_slider.minimum() == 0
     assert first_slider.maximum() == view.dims.nsteps[0] - 1
     assert first_slider.singleStep() == 1
