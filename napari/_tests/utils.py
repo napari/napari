@@ -208,7 +208,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         return None
 
     # Get an handle on visual layer:
-    vis_lyr = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    vis_lyr = viewer.window._qt_viewer.canvas._layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
         disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D

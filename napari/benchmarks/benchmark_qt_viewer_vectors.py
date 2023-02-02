@@ -19,7 +19,9 @@ class QtViewerViewVectorSuite:
         self.data = np.random.random((n, 2, 3))
         self.viewer = napari.Viewer()
         self.layer = self.viewer.add_vectors(self.data)
-        self.visual = self.viewer.window._qt_viewer.layer_to_visual[self.layer]
+        self.visual = self.viewer.window._qt_viewer._layer_to_visual[
+            self.layer
+        ]
 
     def teardown(self, n):
         self.viewer.window.close()

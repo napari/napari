@@ -521,7 +521,7 @@ class QtViewer(QSplitter):
             if vispy_layer.events is not None:
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
-        self.canvas._add_layer_to_visual(layer, vispy_layer)
+        self.canvas.add_layer_to_visual(layer, vispy_layer)
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.

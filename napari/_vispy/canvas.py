@@ -82,7 +82,7 @@ class VispyCanvas:
         self.vispy_camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self.layer_to_visual = {}
+        self._layer_to_visual = {}
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
@@ -361,24 +361,24 @@ class VispyCanvas:
         """
         self.viewer._canvas_size = tuple(self.scene_canvas.size[::-1])
 
-    def _add_layer_to_visual(self, napari_layer, vispy_layer):
+    def add_layer_to_visual(self, napari_layer, vispy_layer):
         if not self.viewer.grid.enabled:
             vispy_layer.node.parent = self.view.scene
-            self.layer_to_visual[napari_layer] = vispy_layer
+            self._layer_to_visual[napari_layer] = vispy_layer
         self._reorder_layers()
 
     def _remove_layer(self, event):
         layer = event.value
-        vispy_layer = self.layer_to_visual[layer]
+        vispy_layer = self._layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
-        del self.layer_to_visual[layer]
+        del self._layer_to_visual[layer]
         self._reorder_layers()
 
     def _reorder_layers(self):
         """When the list is reordered, propagate changes to draw order."""
         for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer = self._layer_to_visual[layer]
             vispy_layer.order = i
         self.scene_canvas._draw_order.clear()
         self.scene_canvas.update()
