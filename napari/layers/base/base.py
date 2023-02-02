@@ -232,7 +232,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -344,7 +344,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             extent=Event,
-            _ndisplay=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
@@ -916,16 +915,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             rendered in canvas.
         """
         slice_input = self._make_slice_input(point, ndisplay, order)
-
         if self._slice_input == slice_input:
             return
-
-        old_ndisplay = self._slice_input.ndisplay
         self._slice_input = slice_input
-
-        if old_ndisplay != ndisplay:
-            self.events._ndisplay()
-
         self.refresh()
         self._set_editable()
 
@@ -1545,12 +1537,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
-            displayed_extent = self.extent.data[:, displayed_axes]
-            data_bbox_clipped = np.clip(
-                data_bbox_int, displayed_extent[0], displayed_extent[1]
-            )
             corners = np.zeros((2, self.ndim), dtype=int)
-            corners[:, displayed_axes] = data_bbox_clipped
+            # Some empty layers (e.g. Points) may have a data extent that only
+            # contains nans, in which case the integer valued corner pixels
+            # cannot be meaningfully set.
+            displayed_extent = self.extent.data[:, displayed_axes]
+            if not np.all(np.isnan(displayed_extent)):
+                data_bbox_clipped = np.clip(
+                    data_bbox_int, displayed_extent[0], displayed_extent[1]
+                )
+                corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
     def _get_source_info(self):
@@ -1781,7 +1777,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         try:
             return Cls(data, **(meta or {}))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             if 'unexpected keyword argument' not in str(exc):
                 raise exc
 

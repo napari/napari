@@ -436,6 +436,7 @@ def test_remove_selected_removes_corresponding_attributes():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     size = np.random.rand(shape[0])
+    symbol = np.random.choice(['o', 's'], shape[0])
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
     shown = np.random.randint(2, size=shape[0]).astype(bool)
@@ -445,6 +446,7 @@ def test_remove_selected_removes_corresponding_attributes():
         data,
         size=size,
         edge_width=size,
+        symbol=symbol,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -455,6 +457,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
+        symbol=symbol[1:],
         edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
@@ -588,13 +591,18 @@ def test_symbol():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.symbol == 'disc'
+    assert np.all(layer.symbol == 'disc')
 
     layer.symbol = 'cross'
-    assert layer.symbol == 'cross'
+    assert np.all(layer.symbol == 'cross')
+
+    symbol = ['o', 's'] * 5
+    expected = ['disc', 'square'] * 5
+    layer.symbol = symbol
+    assert np.all(layer.symbol == expected)
 
     layer = Points(data, symbol='star')
-    assert layer.symbol == 'star'
+    assert np.all(layer.symbol == 'star')
 
 
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -754,7 +762,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])

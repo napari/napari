@@ -60,7 +60,7 @@ from napari.utils.migrations import rename_argument
 from napari.utils.misc import is_sequence
 from napari.utils.mouse_bindings import MousemapProvider
 from napari.utils.progress import progress
-from napari.utils.theme import available_themes
+from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
 
 DEFAULT_THEME = 'dark'
@@ -149,7 +149,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     mouse_over_canvas: bool = False
 
-    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+    def __init__(
+        self, title='napari', ndisplay=2, order=(), axis_labels=()
+    ) -> None:
         # max_depth=0 means don't look for parent contexts.
         from napari._app_model.context import create_context
 
@@ -233,14 +235,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @validator('theme')
     def _valid_theme(cls, v):
-        themes = available_themes()
-        if v not in available_themes():
+        if not is_theme_available(v):
             raise ValueError(
                 trans._(
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=themes,
+                    themes=", ".join(available_themes()),
                 )
             )
 
@@ -1039,7 +1040,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: List[Union[Path, str]],
-        kwargs: Dict[str, Any] = {},
+        kwargs: Dict[str, Any] = None,
         layer_type: Optional[str] = None,
         stack: Union[bool, List[List[str]]] = False,
     ):
@@ -1092,8 +1093,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-        added = []
-        plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
@@ -1139,7 +1138,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             # plugin failed
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 raise ReaderPluginError(
                     trans._(
                         'Tried opening with {plugin}, but failed.',

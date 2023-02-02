@@ -41,7 +41,7 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node):
+    def __init__(self, layer, node) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
@@ -154,15 +154,13 @@ class VispyBaseLayer(ABC):
         self._master_transform.matrix = affine_matrix
 
     def _on_experimental_clipping_planes_change(self):
-        # TODO: this check is only necessary until vispy #2383 comes to napari
         if hasattr(self.node, 'clipping_planes') and hasattr(
             self.layer, 'experimental_clipping_planes'
         ):
-            prev = self.node.clipping_planes
             # invert axes because vispy uses xyz but napari zyx
-            new = self.layer.experimental_clipping_planes.as_array()[..., ::-1]
-            if not np.array_equal(prev, new):
-                self.node.clipping_planes = new
+            self.node.clipping_planes = (
+                self.layer.experimental_clipping_planes.as_array()[..., ::-1]
+            )
 
     def reset(self):
         self._on_visible_change()
@@ -171,7 +169,7 @@ class VispyBaseLayer(ABC):
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
 
-    def _on_poll(self, event=None):
+    def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the

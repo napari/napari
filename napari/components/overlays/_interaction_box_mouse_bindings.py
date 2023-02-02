@@ -45,7 +45,7 @@ def inside_boxes(boxes):
 
 
 class InteractionBoxMouseBindings:
-    def __init__(self, viewer, interaction_box_visual):
+    def __init__(self, viewer, interaction_box_visual) -> None:
         self._selected_vertex: int = None
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
