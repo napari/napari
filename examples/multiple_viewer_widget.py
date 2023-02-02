@@ -93,7 +93,7 @@ def center_cross_on_mouse(
         )
         return
 
-    viewer_model.dims.current_step = tuple(
+    viewer_model.dims.point_step = tuple(
         np.round(
             [
                 max(min_, min(p, max_)) / step
@@ -172,7 +172,7 @@ class CrossWidget(QCheckBox):
         self.layer = None
         self.viewer.dims.events.order.connect(self.update_cross)
         self.viewer.dims.events.ndim.connect(self._update_ndim)
-        self.viewer.dims.events.current_step.connect(self.update_cross)
+        self.viewer.dims.events.point_step.connect(self.update_cross)
         self._extent = None
 
         self._update_extent()
@@ -223,7 +223,7 @@ class CrossWidget(QCheckBox):
         if self.layer not in self.viewer.layers:
             return
 
-        point = self.viewer.dims.current_step
+        point = self.viewer.dims.point_step
         vec = []
         for i, (lower, upper) in enumerate(self._extent.world.T):
             if (upper - lower) / self._extent.step[i] == 1:
@@ -288,9 +288,9 @@ class MultipleViewerWidget(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._layer_selection_changed
         )
-        self.viewer.dims.events.current_step.connect(self._point_update)
-        self.viewer_model1.dims.events.current_step.connect(self._point_update)
-        self.viewer_model2.dims.events.current_step.connect(self._point_update)
+        self.viewer.dims.events.point_step.connect(self._point_update)
+        self.viewer_model1.dims.events.point_step.connect(self._point_update)
+        self.viewer_model2.dims.events.point_step.connect(self._point_update)
         self.viewer.dims.events.order.connect(self._order_update)
         self.viewer.events.reset_view.connect(self._reset_view)
         self.viewer_model1.events.status.connect(self._status_update)
@@ -326,7 +326,7 @@ class MultipleViewerWidget(QSplitter):
         for model in [self.viewer, self.viewer_model1, self.viewer_model2]:
             if model.dims is event.source:
                 continue
-            model.dims.current_step = event.value
+            model.dims.point_step = event.value
 
     def _order_update(self):
         order = list(self.viewer.dims.order)
