@@ -36,10 +36,8 @@ class SceneCanvas(SceneCanvas_):
 
 
 class VispyCanvas:
-    """SceneCanvas for our QtViewer class.
-
-    Add two features to SceneCanvas. Ignore mousewheel events with
-    modifiers, and get the max texture size in __init__().
+    """Class for our QtViewer class to interact with Vispy SceneCanvas. Also
+    connects Vispy SceneCanvas events to the napari ViewerModel and vice versa.
 
     Parameters
     ----------
