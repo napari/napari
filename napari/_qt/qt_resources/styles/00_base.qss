@@ -35,10 +35,6 @@ QWidget {
   selection-color: {{ text }};
 }
 
-QWidget[emphasized="true"] {
-    background-color: {{ foreground }};
-}
-
 QWidget[emphasized="true"] > QFrame {
     background-color: {{ foreground }};
 }

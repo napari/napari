@@ -111,7 +111,7 @@ QtConsole {
 
 QtConsole > QTextEdit {
   background-color: {{ console }};
-  background-clip: padding;
+  background-clip: border-box;
   color: {{ text }};
   selection-background-color: {{ highlight }};
   margin: 10px;
@@ -272,18 +272,12 @@ QFrame#empty_controls_widget {
     min-width: 240px;
 }
 
-QtLayerControlsContainer {
-    border-radius: 2px;
-    padding: 0px;
-    margin: 10px;
-    margin-left: 10px;
-    margin-right: 8px;
-    margin-bottom: 4px;
-}
-
 QtLayerControlsContainer > QFrame {
-  padding: 5px;
-  padding-right: 8px;
+  padding: 5;
+  margin: 10px;
+  margin-left: 10px;
+  margin-right: 8px;
+  margin-bottom: 4px;
   border-radius: 2px;
 }
 
