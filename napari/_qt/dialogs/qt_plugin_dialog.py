@@ -1044,8 +1044,11 @@ class QtPluginDialog(QDialog):
     def _add_items(self):
         """Add items to the lists one by one using a timer to prevent freezing the UI."""
         if len(self._plugin_data) == 0:
-            self._add_items_timer.stop()
-
+            if (
+                self.installed_list.count() + self.available_list.count()
+                == len(self.all_plugin_data)
+            ):
+                self._add_items_timer.stop()
             return
 
         data = self._plugin_data.pop(0)
