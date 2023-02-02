@@ -99,12 +99,12 @@ class VispyCanvas:
         self.scene_canvas.events.draw.connect(self.vispy_camera.on_draw)
 
         self.scene_canvas.events.mouse_double_click.connect(
-            self.on_mouse_double_click
+            self._on_mouse_double_click
         )
-        self.scene_canvas.events.mouse_move.connect(self.on_mouse_move)
-        self.scene_canvas.events.mouse_press.connect(self.on_mouse_press)
-        self.scene_canvas.events.mouse_release.connect(self.on_mouse_release)
-        self.scene_canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
+        self.scene_canvas.events.mouse_move.connect(self._on_mouse_move)
+        self.scene_canvas.events.mouse_press.connect(self._on_mouse_press)
+        self.scene_canvas.events.mouse_release.connect(self._on_mouse_release)
+        self.scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
         self.scene_canvas.events.resize.connect(self.on_resize)
         self.scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.events.theme.connect(self._on_theme_change)
@@ -251,7 +251,7 @@ class VispyCanvas:
         if layer is not None:
             mouse_callbacks(layer, event)
 
-    def on_mouse_double_click(self, event):
+    def _on_mouse_double_click(self, event):
         """Called whenever a mouse double-click happen on the canvas
 
         Parameters
@@ -272,7 +272,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_double_click_callbacks, event)
 
-    def on_mouse_move(self, event):
+    def _on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
 
         Parameters
@@ -282,7 +282,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_move_callbacks, event)
 
-    def on_mouse_press(self, event):
+    def _on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 
         Parameters
@@ -292,7 +292,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_press_callbacks, event)
 
-    def on_mouse_release(self, event):
+    def _on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
 
         Parameters
@@ -302,7 +302,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_release_callbacks, event)
 
-    def on_mouse_wheel(self, event):
+    def _on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
 
         Parameters
