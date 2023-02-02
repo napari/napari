@@ -159,7 +159,7 @@ def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
     array is the array containing the chunks
     """
     # TODO hack here to insert the recursive drawing
-    points = np.array(list(centers.keys()))
+    points = np.array(list(chunk_map.keys()))
     distances = distance_from_camera_centre_line(points, viewer.camera)
     depth = visual_depth(points, viewer.camera)
     priorities = prioritised_chunk_loading(
