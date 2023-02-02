@@ -21,7 +21,7 @@ Welcome to the **napari** installation guide!
 
 This guide will teach you how to do a clean install of **napari** and launch the viewer.
 
-```{note} 
+```{note}
 If you want to contribute code back into napari, you should follow the [development installation instructions in the contributing guide](https://napari.org/developers/contributing.html) instead.
 ```
 
@@ -29,8 +29,8 @@ If you want to contribute code back into napari, you should follow the [developm
 
 Prerequisites differ depending on how you want to install napari.
 
-### Prerequisites for installing napari as a Python package 
-This installation method allows you to use napari from Python to programmatically 
+### Prerequisites for installing napari as a Python package
+This installation method allows you to use napari from Python to programmatically
 interact with the app. It is the best way to install napari and make full use of
 all its features.
 
@@ -44,11 +44,11 @@ You may also want:
 
 ### Prerequisites for installing napari as a bundled app
 This is the easiest way to install napari if you only wish to use it as a standalone GUI app.
-This installation method does not have any prerequisites. 
+This installation method does not have any prerequisites.
 
 ```{important}
 Note that the bundled app is still
-in active development, and may not be very stable. We strongly recommend 
+in active development, and may not be very stable. We strongly recommend
 [installing as a Python package instead](#install-as-python-package-recommended).
 ```
 
@@ -105,7 +105,7 @@ conda-forge channel. We also recommend this path for users of arm64 macOS machin
 conda install -c conda-forge napari
 ```
 
-You can then upgrade to a new version of napari using 
+You can then upgrade to a new version of napari using
 
 ```sh
 conda update napari
@@ -115,16 +115,16 @@ If you want to install napari with PySide2 as the backend you need to install it
 
 ```sh
 conda install -c conda-forge "napari=*=*pyside2"
-``` 
+```
 ````
 
 ````{note}
 In some cases, `conda`'s default solver can struggle to find out which packages need to be
-installed for napari. If it takes too long or you get the wrong version of napari 
+installed for napari. If it takes too long or you get the wrong version of napari
 (see below), consider:
 1. Overriding your default channels to use only `conda-forge` by adding `--override-channels`
 and specifying the napari and Python versions explicitly. For example, use {{ python_version_code }}
-to get Python {{ python_version }} and {{ napari_conda_version }} to specify the napari version as 
+to get Python {{ python_version }} and {{ napari_conda_version }} to specify the napari version as
 {{ napari_version }}, the current release.
 
 2. You can try installing [`mamba`](https://github.com/mamba-org/mamba) in your base
@@ -167,23 +167,23 @@ napari needs a library called [Qt](https://www.qt.io/) to run its user interface
 (UI). In Python, there are two alternative libraries to run this, called
 [PyQt5](https://www.riverbankcomputing.com/software/pyqt/download5) and
 [PySide2](https://doc.qt.io/qtforpython/). By default, we don't choose for you,
-and simply running `pip install napari` will not install either. You *might*
+and simply running `python -m pip install napari` will not install either. You *might*
 already have one of them installed in your environment, thanks to other
 scientific packages such as Spyder or matplotlib. If neither is available,
 running napari will result in an error message asking you to install one of
 them.
 
-Running `pip install "napari[all]"` will install the default Qt framework, which is currently 
+Running `python -m pip install "napari[all]"` will install the default framework, which is currently 
 PyQt5--but this could change in the future. However, if you have a Mac with the newer arm64
 architecture (Apple Silicon), this will not work--see {ref}`note-m1`.
 
 To install napari with a specific framework, you can use:
 
 ```sh
-pip install "napari[pyqt5]"    # for PyQt5
+python -m pip install "napari[pyqt5]"    # for PyQt5
 
 # OR
-pip install "napari[pyside2]"  # for PySide2
+python -m pip install "napari[pyside2]"  # for PySide2
 ```
 
 ```{note}
@@ -216,7 +216,7 @@ To access the cross platform bundles you can visit our [release
 page](https://github.com/napari/napari/releases) and scroll to the release you
 are interested in. For example, the bundles for napari {{ napari_version }} can be
 accessed {{ '[here](https://github.com/napari/napari/releases/tag/vNAPARI_VER)'.replace('NAPARI_VER', napari_version) }}.
-To get to the download link, just scroll all the way to bottom of the page and 
+To get to the download link, just scroll all the way to bottom of the page and
 expand the `Assets` section to get a view that looks like this:
 
 ![Cropped screenshot from GitHub with the Assets section (or "tab") expanded, containing links to download the app in the form of zip files for Linux, macOS, Windows, in addition to other links.](../assets/tutorials/installation/bundle_assets.png)
@@ -285,7 +285,7 @@ When you launch the bundled napari app on Windows, first you'll see an empty
 command terminal appear (do not close this window - you can ignore it). The
 command terminal will be followed by a napari splash screen, and then the main
 napari user interface window will appear a few seconds later. Note that errors
-which might occur during your napari session will appear on the command terminal - 
+which might occur during your napari session will appear on the command terminal -
 so if something is not working, it might pay to take a look at the terminal!
 
 ![Windows command terminal on napari launch.](../assets/tutorials/installation/windows_bundle_command_terminal.png)
@@ -312,7 +312,7 @@ contributing to napari please check our [contributing
 guidelines](../../developers/contributing.md)
 - if you are running into issues or bugs, please open a new issue on our [issue
 tracker](https://github.com/napari/napari/issues)
-    - include the output of `napari -info` 
+    - include the output of `napari -info`
     (or go to `Help>Info` in the viewer and copy paste the information)
 - if you want help using napari, we are a community partner on the [imagesc
 forum](https://forum.image.sc/tags/napari) and all usage support requests should

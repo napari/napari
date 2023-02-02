@@ -98,7 +98,7 @@ napari can be installed on macOS (with older Intel x86 chips), Linux, and Window
 with Python {{ python_version_range }} using pip:
 
 ```sh
-pip install "napari[all]"
+python -m pip install "napari[all]"
 ```
 
 _(See `Specifying a GUI Backend` below for an explanation of the `[all]` notation.)_
@@ -107,7 +107,7 @@ _(See `Specifying a GUI Backend` below for an explanation of the `[all]` notatio
 While not strictly required, it is *highly* recommended to install
 napari into a clean virtual environment using an environment manager like
 [conda](https://docs.conda.io/en/latest/miniconda.html) or
-[venv](https://docs.python.org/3/library/venv.html). 
+[venv](https://docs.python.org/3/library/venv.html).
 This should be set up before you install napari. For example, setting with
 up a Python {{ python_version }} environment with `conda`:
 
@@ -130,7 +130,7 @@ To install the current `main` branch on github (which will usually be ahead
 of the latest release on pypi)
 
 ```sh
-pip install "git+https://github.com/napari/napari.git#egg=napari[all]"
+python -m pip install "git+https://github.com/napari/napari.git#egg=napari[all]"
 ```
 
 For more information or troubleshooting see our [installation
@@ -143,22 +143,22 @@ napari needs a library called [Qt](https://www.qt.io/) to run its user interface
 (UI). In Python, there are two alternative libraries to run this, called
 [PyQt5](https://www.riverbankcomputing.com/software/pyqt/download5) and
 [PySide2](https://doc.qt.io/qtforpython/). By default, we don't choose for you,
-and simply running `pip install napari` will not install either. You *might*
+and simply running `python -m pip install napari` will not install either. You *might*
 already have one of them installed in your environment, thanks to other
 scientific packages such as Spyder or matplotlib. If neither is available,
 running napari will result in an error message asking you to install one of
 them.
 
-Running `pip install "napari[all]"` will install the default framework--currently
+Running `python -m pip install "napari[all]"` will install the default framework – currently
 PyQt5, but this could change in the future.
 
 To install napari with a specific framework, you can use:
 
 ```sh
-pip install "napari[pyqt5]"    # for PyQt5
+python -m pip install "napari[pyqt5]"    # for PyQt5
 
 # OR
-pip install "napari[pyside2]"  # for PySide2
+python -m pip install "napari[pyside2]"  # for PySide2
 ```
 ````
 

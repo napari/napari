@@ -96,7 +96,7 @@ single top-level module, called `napari_hello`.
 
 You would *install* this package with
 ```sh
-pip install napari-hello
+python -m pip install napari-hello
 ```
 
 ... and *import* it with ...
@@ -259,13 +259,13 @@ napari.manifest =
 ## 4. Install your plugin and try it out!
 
 With that, we're ready to go.  Let's install our package in the environment
-and then run napari.  Note: we're using `pip install -e .` here to install our
+and then run napari.  Note: we're using `python -m pip install -e .` here to install our
 package (in the current working directory) in ["editable" mode][editable_mode].
 This means that changes we make to our package during development will be
-detected when we re-run napari, without having to run `pip install` again.
+detected when we re-run napari, without having to run `python -m pip install` again.
 
 ```sh
-pip install -e .
+python -m pip install -e .
 napari
 ```
 
@@ -285,7 +285,7 @@ includes conveniences like testing, continuous integration, version
 management, and deployment hooks.
 
 ```sh
-pip install cookiecutter
+python -m pip install cookiecutter
 cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 

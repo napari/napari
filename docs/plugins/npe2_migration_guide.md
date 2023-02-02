@@ -3,7 +3,7 @@
 # `npe2` migration guide
 
 This document details how to convert a plugin using the first generation
-`napari-plugin-engine`, to the new `npe2` format.  
+`napari-plugin-engine`, to the new `npe2` format.
 
 The primary difference between the first generation and second generation plugin
 system relates to how napari *discovers* plugin functionality. In the first
@@ -20,7 +20,7 @@ file](./manifest).
 ### 1. Install `npe2`
 
 ```sh
-pip install npe2
+python -m pip install npe2
 ```
 
 The `npe2` command line tool provides a few commands to help you develop your
@@ -58,7 +58,7 @@ Typically this will look something like:
 ```
 conda activate your-env
 cd path/to/your/plugin/repository
-pip install -e .
+python -m pip install -e .
 ```
 
 If `npe2 convert` cannot import your plugin, you will likely get an error
@@ -78,7 +78,7 @@ The `npe2 convert` command will:
 
 1. Inspect your plugin for hook implementations, and generate an npe2-compatible
    [manifest file](./manifest), called `napari.yaml`.
-2. **Modify** your `setup.cfg` to use the new `napari.manifest` entry point, and 
+2. **Modify** your `setup.cfg` to use the new `napari.manifest` entry point, and
    include the manifest file in your package data.
 
 Use the `npe2 convert` command, passing a path to a plugin
@@ -104,14 +104,14 @@ plugin.  Notable cases include:
 - *locally* scoped functions returned from `napari_experimental_provide_function`.
   All [command contributions](contributions-commands)
   must have global `python_paths`.
-  
+
 Feel free to contact us on zulip or github if you need help converting!.
 ```
 
 Now, update the local package metadata by repeating:
 
 ```
-> pip install -e .
+> python -m pip install -e .
 ```
 
 The next time napari is run, your plugin should be discovered as an

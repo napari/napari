@@ -43,7 +43,7 @@ of tests.
 ## Running tests
 
 To run our test suite locally, run `pytest` on the command line.  If, for some reason
-you don't already have the test requirements in your environment, run `pip install -e .[testing]`.
+you don't already have the test requirements in your environment, run `python -m pip install -e .[testing]`.
 
 There are a very small number of tests (<5) that require showing GUI elements, (such
 as testing screenshots). By default, these are only run during continuous integration.

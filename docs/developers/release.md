@@ -7,26 +7,26 @@ it will include generating release notes, documentation, etc.
 # Timeline
 New versions of `napari` will be released every two months. The first release candidate will be available one week prior to release for testing purposes. Multiple release candidates may become available during the week prior to release. Upcoming releases can be found in our public calendar.
 
-The latest release candidate can be installed with 
+The latest release candidate can be installed with
 
-`pip install --pre napari`
+`python -m pip install --pre napari`
 
 # Release management
 The release will be coordinated by a release manager whose responsibilities include...
 
 ## Two weeks before release (one week before release candidate)
-- Look through currently open PRs and get a sense of what would be good to merge before the first release candidate 
+- Look through currently open PRs and get a sense of what would be good to merge before the first release candidate
 - Create a zulip thread in the release channel letting people know the release candidate is coming and pointing out PRs that would be nice to merge before release
 
 At this stage, bug fixes and features that are close to landing should be prioritized. The release manager will follow up with PR authors, reviewing and merging as needed.
-  
+
 ## Nine days before release (two days before release candidate)
 - Generate release notes with the script in the release folder
 - Fill in the release highlights and make a PR with the release notes
 
 At this point the release manager should ideally be the only person merging PRs on the repo for the next week.
 
-## One week before release 
+## One week before release
 - Add any recently merged PRs to release notes
 - Merge release notes
 - Make the release candidate
@@ -44,7 +44,7 @@ At this stage PRs merged should focus mainly on regressions and bug fixes. New f
 
 # Release process
 
-Additional `release` dependencies (`pip install -e .[release]`) are required to complete the release process.
+Additional `release` dependencies (`python -m pip install -e .[release]`) are required to complete the release process.
 
 > [`MANIFEST.in`](https://github.com/napari/napari/blob/main/MANIFEST.in) determines which non-Python files are included.
 > Make sure to check that all necessary ones are listed before beginning the release process.
@@ -147,7 +147,7 @@ git push upstream --tags
 The release candidate can then be tested with
 
 ```bash
-pip install --pre napari
+python -m pip install --pre napari
 ```
 
 It is recommended that the release candidate is tested in a virtual environment in order to isolate dependencies.

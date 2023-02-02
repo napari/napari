@@ -126,12 +126,12 @@ guide][hub-guide-custom-viz].
 
 Finally, once you have curated your package metadata and description, you can
 preview your metadata, and check any missing fields using the
-napari hub preview page service. Check out [this guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md) for instructions on how to set it up. 
+napari hub preview page service. Check out [this guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md) for instructions on how to set it up.
 
 ## Deployment
 
 When you are ready to share your plugin, [upload the Python package to
-PyPI][pypi-upload] after which it will be installable using `pip install
+PyPI][pypi-upload] after which it will be installable using `python -m pip install
 <yourpackage>`, or (assuming you added the `Framework :: napari` classifier)
 in the builtin plugin installer dialog.
 
@@ -159,4 +159,3 @@ forum](https://forum.image.sc/tag/napari).
 [hub-guide-custom-viz]: https://github.com/chanzuckerberg/napari-hub/wiki/Customizing-your-plugin's-listing#visibility
 [hub-guide-preview]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md
 [autodeploy]: https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments
-

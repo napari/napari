@@ -7,7 +7,7 @@ Builds are available in the [GitHub Container Registry](https://github.com/orgs/
 A dockerfile is added to napari root to allow build of a docker image using official napari release.
 It contains two targets built on top of Ubuntu 20.04:
 
-* `napari`: The result of `pip install napari[all] scikit-image` for Python 3.8, including all the system libraries required by PyQt.
+* `napari`: The result of `python -m pip install napari[all] scikit-image` for Python 3.8, including all the system libraries required by PyQt.
 * `napari-xpra`: Same as above, plus a preconfigured Xpra server.
 
 Note that napari in Docker is still in alpha stage and not working universally. Feedback and contributions are welcomed!
