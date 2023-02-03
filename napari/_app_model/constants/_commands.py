@@ -19,6 +19,7 @@ class CommandId(str, Enum):
     """Id representing a napari command."""
 
     # View menubar
+    TOGGLE_COMMAND_PALETTE = 'napari:window:view:toggle_command_palette'
     TOGGLE_FULLSCREEN = 'napari:window:view:toggle_fullscreen'
     TOGGLE_MENUBAR = 'napari:window:view:toggle_menubar'
     TOGGLE_PLAY = 'napari:window:view:toggle_play'
@@ -94,6 +95,7 @@ class _i(NamedTuple):
 
 _COMMAND_INFO = {
     # View menubar
+    CommandId.TOGGLE_COMMAND_PALETTE: _i(trans._('Toggle Command Palette'),),
     CommandId.TOGGLE_FULLSCREEN: _i(trans._('Toggle Full Screen'),),
     CommandId.TOGGLE_MENUBAR: _i(trans._('Toggle Menubar Visibility'),),
     CommandId.TOGGLE_PLAY: _i(trans._('Toggle Play'),),

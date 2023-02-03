@@ -32,6 +32,19 @@ def _get_current_activity_dock(window: Window):
 
 Q_VIEW_ACTIONS: List[Action] = [
     Action(
+        id=CommandId.TOGGLE_COMMAND_PALETTE,
+        title=CommandId.TOGGLE_COMMAND_PALETTE.title,
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.NAVIGATION,
+                'order': 1,
+            }
+        ],
+        callback=Window._toggle_command_palette,
+        keybindings=[{'primary': KeyCode.F1}],
+    ),
+    Action(
         id=CommandId.TOGGLE_FULLSCREEN,
         title=CommandId.TOGGLE_FULLSCREEN.title,
         menus=[
