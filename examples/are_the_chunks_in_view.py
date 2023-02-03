@@ -349,16 +349,16 @@ def add_subnodes(
     # Points for each chunk, for example, centers
     points = np.array(list(chunk_map.keys()))
 
+    # Mask of whether points are within our interval, this is in array coordinates
+    point_mask = [
+        np.all(point >= min_coord) and np.all(point <= max_coord)
+        for point in points
+    ]
+
     # Rescale points to world for priority calculations
     points_world = points * 2**scale
 
-    # Mask of whether points are within our interval
-    point_mask = [
-        np.all(point >= min_coord) and np.all(point <= max_coord)
-        for point in points_world
-    ]
-
-    # Prioritize chunks
+    # Prioritize chunks using world coordinates
     distances = distance_from_camera_centre_line(points_world, viewer.camera)
     depth = visual_depth(points_world, viewer.camera)
     priorities = prioritised_chunk_loading(
