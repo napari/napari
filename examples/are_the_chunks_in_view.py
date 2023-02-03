@@ -45,29 +45,22 @@ class ChunkCacheManager:
         )
 
 
-def chunk_centers(array: da.Array, scale=1.0):
+def chunk_centers(array: da.Array):
     """Make a dictionary mapping chunk centers to chunk slices.
 
     Parameters
     ----------
     array: dask Array
         The input array.
-    scale_factor: float
-        The scale multiplier for center coordinates.
-        TODO: This should become an array/tuple scale is dimension specific.
 
     Returns
     -------
     chunk_map : dict {tuple of float: tuple of slices}
         A dictionary mapping chunk centers to chunk slices.
     """
-
-    # Rescale the chunks
-    chunks = [[val * scale for val in chunks] for chunks in array.chunks]
-
-    start_pos = [np.cumsum(sizes) - sizes for sizes in chunks]
-    middle_pos = [np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in chunks]
-    end_pos = [np.cumsum(sizes) for sizes in chunks]
+    start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
+    middle_pos = [np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in array.chunks]
+    end_pos = [np.cumsum(sizes) for sizes in array.chunks]
     all_start_pos = list(itertools.product(*start_pos))
     all_middle_pos = list(itertools.product(*middle_pos))
     all_end_pos = list(itertools.product(*end_pos))
@@ -433,8 +426,7 @@ def add_subnodes(
         )
 
 
-# if __name__ == '__main__':
-if True:
+if __name__ == '__main__':
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
     large_image = {
@@ -518,4 +510,4 @@ if True:
     #     )
     # )
 
-    # napari.run()
+    napari.run()
