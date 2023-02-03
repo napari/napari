@@ -1,3 +1,4 @@
+import os
 import itertools
 import dask.array as da
 import numpy as np
@@ -6,12 +7,16 @@ import napari
 import toolz as tz
 from psygnal import debounced
 from cachey import Cache
+import logging
 
 from scipy.spatial.transform import Rotation as R
 
 # from https://github.com/janelia-cosem/fibsem-tools
 #   pip install fibsem-tools
 from fibsem_tools.io import read_xarray
+
+LOGGER = logging.getLogger("poor-mans-octree")
+
 
 colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
 
@@ -59,7 +64,9 @@ def chunk_centers(array: da.Array):
         A dictionary mapping chunk centers to chunk slices.
     """
     start_pos = [np.cumsum(sizes) - sizes for sizes in array.chunks]
-    middle_pos = [np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in array.chunks]
+    middle_pos = [
+        np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in array.chunks
+    ]
     end_pos = [np.cumsum(sizes) for sizes in array.chunks]
     all_start_pos = list(itertools.product(*start_pos))
     all_middle_pos = list(itertools.product(*middle_pos))
@@ -320,7 +327,9 @@ def add_subnodes(
     # Delete old nodes because we will replace them
     # TODO consider doing this closer to node adding time to minimize blank screen time
     layers_to_delete = [
-        layer for layer in viewer.layers if f"chunk_scale{scale}_" in layer.name
+        layer
+        for layer in viewer.layers
+        if f"chunk_scale{scale}_" in layer.name
     ]
     # Remove layers
     for layer in layers_to_delete:
@@ -331,8 +340,10 @@ def add_subnodes(
     array = arrays[scale]
     chunk_map = chunk_maps[scale]
 
-    print(
-        f"add_subnodes {scale} {view_slice} \nhighres interval: {[el.start * 2 ** scale for el in view_slice]},  {[el.stop * 2 ** scale for el in view_slice]} chunksize: {array.chunksize} arraysize: {array.shape}"
+    LOGGER.debug(
+        f"add_subnodes {scale} {view_slice}",
+        f"highres interval: {[el.start * 2 ** scale for el in view_slice]},  {[el.stop * 2 ** scale for el in view_slice]}",
+        f"chunksize: {array.chunksize} arraysize: {array.shape}",
     )
 
     # Points for each chunk, for example, centers
@@ -372,7 +383,7 @@ def add_subnodes(
                 min_interval[1] * 2**scale,
                 min_interval[2] * 2**scale,
             )
-            print(
+            LOGGER.debug(
                 f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
             )
             scale_dataset = f"{dataset}/s{scale}"
@@ -410,9 +421,10 @@ def add_subnodes(
             slice(st.start * 2, st.stop * 2) for st in chunk_slice
         ]
 
-        print(f"\nSource interval\t{min_coord}, {max_coord}")
-        print(
-            f"Recursive add on\t{next_chunk_slice} idx {first_priority_idx} visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n"
+        LOGGER.debug(f"\nSource interval\t{min_coord}, {max_coord}")
+        LOGGER.debug(
+            f"Recursive add on\t{next_chunk_slice} idx {first_priority_idx}",
+            f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
         )
         add_subnodes(
             next_chunk_slice,
@@ -492,8 +504,8 @@ if __name__ == '__main__':
             chunk_maps=multiscale_chunk_maps,
             container=large_image["container"],
             dataset=large_image["dataset"],
-        )        
-    
+        )
+
     # viewer.camera.events.connect(
     #     debounced(
     #         add_subnodes_caller(
