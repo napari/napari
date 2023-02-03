@@ -82,7 +82,7 @@ napari can be installed on most macOS (Intel x86), Linux, and Windows systems wi
 ```sh
 python -m pip install "napari[all]"
 ```
-You can then upgrade napari to a new version using
+You can then upgrade napari to a new version using:
 
 ```sh
 python -m pip install "napari[all]" --upgrade
@@ -105,7 +105,7 @@ conda-forge channel. We also recommend this path for users of arm64 macOS machin
 conda install -c conda-forge napari
 ```
 
-You can then upgrade to a new version of napari using
+You can then upgrade to a new version of napari using:
 
 ```sh
 conda update napari
