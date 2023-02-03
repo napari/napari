@@ -1,4 +1,4 @@
-import os
+import sys
 import itertools
 import dask.array as da
 import numpy as np
@@ -16,9 +16,14 @@ from scipy.spatial.transform import Rotation as R
 from fibsem_tools.io import read_xarray
 
 LOGGER = logging.getLogger("poor-mans-octree")
+LOGGER.setLevel(logging.DEBUG)
 
-
-colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
+streamHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+streamHandler.setFormatter(formatter)
+LOGGER.addHandler(streamHandler)
 
 
 # A ChunkCacheManager manages multiple chunk caches
@@ -257,6 +262,7 @@ def get_chunk(
 
 @tz.curry
 def add_subnodes_caller(
+    event,
     view_slice,
     scale=0,
     viewer=None,
@@ -324,21 +330,23 @@ def add_subnodes(
         see prioritised_chunk_loading for more info
     """
 
-    # Delete old nodes because we will replace them
-    # TODO consider doing this closer to node adding time to minimize blank screen time
-    layers_to_delete = [
+    layer_name = f"{container}/{dataset}/s{scale}"
+    layer = viewer.layers[layer_name]
+    volume = viewer.window.qt_viewer.layer_to_visual[
         layer
-        for layer in viewer.layers
-        if f"chunk_scale{scale}_" in layer.name
-    ]
-    # Remove layers
-    for layer in layers_to_delete:
-        viewer.layers.remove(layer)
+    ]._layer_node.get_node(3)
+
+    texture = volume._texture
+
+    print(f"view slice {view_slice}")
 
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
     chunk_map = chunk_maps[scale]
+
+    # Translate the layer we're rendering to the right place
+    layer.translate = np.array(min_coord) * 2 ** scale
 
     LOGGER.debug(
         f"add_subnodes {scale} {view_slice}",
@@ -368,6 +376,8 @@ def add_subnodes(
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
 
+    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
+
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
@@ -394,28 +404,32 @@ def add_subnodes(
                 dataset=scale_dataset,
                 cache_manager=cache_manager,
             )
-            node_scale = (
-                2**scale,
-                2**scale,
-                2**scale,
+
+            # TODO this will probably break with non-3D data
+
+            # Texture coordinates are not necessarily world space
+            texture_offset = [
+                chunk - layer for chunk, layer in zip(min_interval, min_coord)
+            ]
+
+            texture.set_data(
+                np.asarray(data, dtype=np.uint16), offset=texture_offset
             )
-            viewer.add_image(
-                data,
-                scale=node_scale,
-                translate=node_offset,
-                name=f"chunk_scale{scale}_{min_interval[2]}_{min_interval[1]}_{min_interval[0]}",
-                blending="additive",
-                colormap=colormaps[scale],
-                opacity=0.8,
-                rendering="mip",
-            )
-            # set data
 
     # recurse on top priority
     if scale > 0:
         # Get the coordinates of the first priority chunk for next scale
         first_priority_coord = tuple(points[first_priority_idx])
         chunk_slice = chunk_map[first_priority_coord]
+
+        # Needs to be in texture space not array space
+        next_scale_texture_offset = [sl.start - layer_offset for sl, layer_offset in zip(chunk_slice, min_coord)]
+        # Blank out the region that will be filled in by other scales
+        zdata = np.zeros(np.array(array.chunksize), dtype=np.uint16)
+        texture.set_data(zdata, offset=next_scale_texture_offset)
+
+        volume.update()
+
         # now convert the chunk slice to the next scale
         next_chunk_slice = [
             slice(st.start * 2, st.stop * 2) for st in chunk_slice
@@ -436,9 +450,12 @@ def add_subnodes(
             container=container,
             dataset=dataset,
         )
+    else:
+        # This is for the high res case
+        volume.update()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__' or True:
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
     large_image = {
@@ -457,7 +474,7 @@ if __name__ == '__main__':
     # view_interval = ((0, 0, 0), [3 * el for el in chunk_strides[3]])
     # view_interval = ((0, 0, 0), (6144, 2048, 4096))
 
-    cache_manager = ChunkCacheManager()
+    cache_manager = ChunkCacheManager(cache_size=6e9)
 
     # Make our xarray data look more like typical napari multiscale data
     multiscale_arrays = [array.data for array in large_image["arrays"]]
@@ -482,6 +499,38 @@ if __name__ == '__main__':
 
     viewer = napari.Viewer(ndisplay=3)
 
+    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
+
+    # Initialize layers
+    container = large_image["container"]
+    dataset = large_image["dataset"]
+
+    # TODO make images that are multiples of chunksize for now, currently tries to write out of bounds sometimes
+    scale = 3
+    viewer.add_image(
+        da.ones_like(multiscale_arrays[scale], dtype=np.uint16),
+        blending="additive",
+        scale=(2**scale, 2**scale, 2**scale),
+        colormap=colormaps[scale],
+        opacity=0.8,
+        rendering="mip",
+        name=f"{container}/{dataset}/s{scale}",
+    )
+    for scale in range(3):
+        viewer.add_image(
+            da.ones(
+                np.array(multiscale_arrays[scale + 1].chunksize) * 2,
+                dtype=np.uint16
+            ),
+            blending="additive",
+            scale=(2**scale, 2**scale, 2**scale),
+            colormap=colormaps[scale],
+            opacity=0.8,
+            rendering="mip",
+            name=f"{container}/{dataset}/s{scale}",
+        )
+
+    # Start loading
     add_subnodes_caller(
         view_slice,
         scale=3,
@@ -496,6 +545,7 @@ if __name__ == '__main__':
     @viewer.bind_key("k")
     def refresher(event):
         add_subnodes_caller(
+            event,
             view_slice,
             scale=3,
             viewer=viewer,
@@ -509,7 +559,7 @@ if __name__ == '__main__':
     # viewer.camera.events.connect(
     #     debounced(
     #         add_subnodes_caller(
-    #             view_slice,
+    #             view_slice=view_slice,
     #             scale=3,
     #             viewer=viewer,
     #             cache_manager=cache_manager,
@@ -518,8 +568,8 @@ if __name__ == '__main__':
     #             container=large_image["container"],
     #             dataset=large_image["dataset"],
     #         ),
-    #         timeout=1000,
+    #         timeout=100,
     #     )
     # )
 
-    napari.run()
+    # napari.run()
