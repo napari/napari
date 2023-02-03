@@ -68,7 +68,7 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    def __init__(self, layer: Image):
+    def __init__(self, layer: Image) -> None:
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -236,7 +236,7 @@ class AutoScaleButtons(QWidget):
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
-    def __init__(self, layer: Image, parent=None):
+    def __init__(self, layer: Image, parent=None) -> None:
         super().__init__(parent)
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)

@@ -44,7 +44,7 @@ class PerfTimers:
     chrome://tracing GUI to see the full story.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create PerfTimers."""
         # Maps a timer name to one Stat object.
         self.timers: Dict[str, Stat] = {}

@@ -101,12 +101,11 @@ class PluginListItem(QFrame):
         enabled: bool = True,
         installed: bool = False,
         npe_version=1,
-        versions_conda: list = [],
-        versions_pypi: list = [],
-    ):
+        versions_conda: List[str] = None,
+        versions_pypi: List[str] = None,
+    ) -> None:
         super().__init__(parent)
         self.url = url
-        self._versions = {}
         self._versions_conda = versions_conda
         self._versions_pypi = versions_pypi
         self.setup_ui(enabled)
@@ -333,10 +332,10 @@ class PluginListItem(QFrame):
         self.version_choice_text = QLabel('Version:')
         self.source_choice_dropdown = QComboBox()
 
-        if len(self._versions_pypi) > 0:
+        if len(self._versions_pypi) is not None:
             self.source_choice_dropdown.addItem('PyPI')
 
-        if len(self._versions_conda) > 0:
+        if len(self._versions_conda) is not None:
             self.source_choice_dropdown.addItem('Conda')
 
         self.source_choice_dropdown.currentTextChanged.connect(
@@ -437,7 +436,7 @@ class PluginListItem(QFrame):
 
 
 class QPluginList(QListWidget):
-    def __init__(self, parent: QWidget, installer: InstallerQueue):
+    def __init__(self, parent: QWidget, installer: InstallerQueue) -> None:
         super().__init__(parent)
         self.installer = installer
         self.setSortingEnabled(True)
@@ -713,7 +712,7 @@ class RefreshState(Enum):
 
 
 class QtPluginDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()

@@ -19,7 +19,7 @@ def test_simple():
 def test_constructor():
     class Sample:
         @rename_argument("a", "b", "1")
-        def __init__(self, b):
+        def __init__(self, b) -> None:
             self.b = b
 
     assert Sample(1).b == 1

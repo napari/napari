@@ -12,7 +12,7 @@ from napari.utils.theme import get_theme
 class VispyScaleBarOverlay(VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self._target_length = 150
         self._scale = 1
         self._unit = None

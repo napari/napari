@@ -116,12 +116,14 @@ def _filter_summaries(
 
 
 def iter_hub_plugin_info(
-    skip={}, conda_forge=True
+    skip=None, conda_forge=True
 ) -> Generator[
     Tuple[Optional[PackageMetadata], bool, Dict[str, Any]], None, None
 ]:
     """Return a generator that yields ProjectInfo of available napari plugins."""
 
+    if skip is None:
+        skip = {}
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
 
