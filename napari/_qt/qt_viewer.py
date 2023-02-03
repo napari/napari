@@ -613,7 +613,7 @@ class QtViewer(QSplitter):
             the screenshot was captured.
         """
         # CAN REMOVE THIS AFTER DEPRECATION IS DONE, see self.screenshot.
-        img = self.canvas.scene_canvas.native.grabFramebuffer()
+        img = self.canvas.screenshot()
         if flash:
             from napari._qt.utils import add_flash_animation
 

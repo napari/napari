@@ -22,6 +22,8 @@ from napari.utils.interactions import (
 )
 
 if TYPE_CHECKING:
+    from qtpy.QtGui import QImage
+
     from napari.components import ViewerModel
 
 
@@ -382,3 +384,7 @@ class VispyCanvas:
             vispy_layer.order = i
         self.scene_canvas._draw_order.clear()
         self.scene_canvas.update()
+
+    def screenshot(self) -> QImage:
+        """Return a QImage based on what is shown in the viewer."""
+        return self.scene_canvas.native.grabFramebuffer()
