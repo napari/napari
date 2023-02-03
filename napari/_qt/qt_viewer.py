@@ -252,7 +252,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
-        self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
@@ -795,10 +794,6 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
-
-    def _on_interactive(self):
-        """Link interactive attributes of view and viewer."""
-        self.canvas.view.interactive = self.viewer.camera.interactive
 
     def _on_cursor(self):
         """Set the appearance of the mouse cursor."""

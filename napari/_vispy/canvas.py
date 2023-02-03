@@ -110,6 +110,7 @@ class VispyCanvas:
         self.scene_canvas.events.resize.connect(self.on_resize)
         self.scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.events.theme.connect(self._on_theme_change)
+        self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.destroyed.connect(self._disconnect_theme)
@@ -175,6 +176,10 @@ class VispyCanvas:
     def cursor(self, q_cursor):
         """Setting the cursor of the native widget"""
         self.scene_canvas.native.setCursor(q_cursor)
+
+    def _on_interactive(self):
+        """Link interactive attributes of view and viewer."""
+        self.view.interactive = self.viewer.camera.interactive
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
