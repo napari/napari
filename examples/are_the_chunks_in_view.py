@@ -35,11 +35,15 @@ class ChunkCacheManager:
         self.c.put(k, value, cost=cost)
 
     def get_container_key(self, container, dataset, chunk_slice):
-        slice_key = ",".join([f"{st.start}:{st.stop}:{st.step}" for st in chunk_slice])
+        slice_key = ",".join(
+            [f"{st.start}:{st.stop}:{st.step}" for st in chunk_slice]
+        )
         return f"{container}/{dataset}@({slice_key})"
 
     def get(self, container, dataset, chunk_slice):
-        return self.c.get(self.get_container_key(container, dataset, chunk_slice))
+        return self.c.get(
+            self.get_container_key(container, dataset, chunk_slice)
+        )
 
 
 def chunk_centers(array: da.Array, scale=1.0):
@@ -247,12 +251,12 @@ def get_chunk(
     """
     real_array = cache_manager.get(container, dataset, chunk_slice)
     if real_array is None:
-        real_array = np.asarray(
-            array[chunk_slice].compute()
-        )
+        real_array = np.asarray(array[chunk_slice].compute())
         cache_manager.put(container, dataset, chunk_slice, real_array)
     return real_array
 
+
+# TODO i know this shouldn't be here, but keybindings are annoying
 
 @tz.curry
 def add_subnodes_caller(
@@ -326,7 +330,7 @@ def add_subnodes(
     # Delete old nodes because we will replace them
     # TODO consider doing this closer to node adding time to minimize blank screen time
     layers_to_delete = [
-        layer for layer in viewer.layers if f"chunk_{scale}_" in layer.name
+        layer for layer in viewer.layers if f"chunk_scale{scale}_" in layer.name
     ]
     # Remove layers
     for layer in layers_to_delete:
@@ -364,10 +368,10 @@ def add_subnodes(
     priorities = prioritised_chunk_loading(
         depth, distances, viewer.camera.zoom, alpha=alpha, visible=point_mask
     )
-    
+
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
-    
+
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
@@ -418,7 +422,9 @@ def add_subnodes(
         first_priority_coord = tuple(points[first_priority_idx])
         chunk_slice = chunk_map[first_priority_coord]
         # now convert the chunk slice to the next scale
-        next_chunk_slice = [slice(st.start * 2, st.stop * 2) for st in chunk_slice]
+        next_chunk_slice = [
+            slice(st.start * 2, st.stop * 2) for st in chunk_slice
+        ]
 
         # TODO check what is happening with the intervals. currently intervals are not recursively contained
 
@@ -467,9 +473,10 @@ if True:
     multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
     multiscale_chunk_maps = [
-        chunk_centers(array) for scale_level, array in enumerate(multiscale_arrays)
+        chunk_centers(array)
+        for scale_level, array in enumerate(multiscale_arrays)
     ]
-    
+
     multiscale_grids = [
         np.array(list(chunk_map)) for chunk_map in multiscale_chunk_maps
     ]
@@ -493,10 +500,23 @@ if True:
         dataset=large_image["dataset"],
     )
 
+    @viewer.bind_key("k")
+    def refresher(event):
+        add_subnodes_caller(
+            view_slice,
+            scale=3,
+            viewer=viewer,
+            cache_manager=cache_manager,
+            arrays=multiscale_arrays,
+            chunk_maps=multiscale_chunk_maps,
+            container=large_image["container"],
+            dataset=large_image["dataset"],
+        )        
+    
     # viewer.camera.events.connect(
     #     debounced(
     #         add_subnodes_caller(
-    #             view_interval,
+    #             view_slice,
     #             scale=3,
     #             viewer=viewer,
     #             cache_manager=cache_manager,
