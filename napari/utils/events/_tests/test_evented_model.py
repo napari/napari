@@ -445,13 +445,30 @@ class T(EventedModel):
     def c(self, val: Sequence[int]):
         self.a, self.b = val
 
+    @property
+    def d(self) -> int:
+        return sum(self.c)
+
+    @d.setter
+    def d(self, val: int):
+        # note that d only uses c, which in turns affects in a and b
+        self.c = [val // 2, val // 2]
+
+    @property
+    def e(self) -> int:
+        return self.a * 10
+
+    @e.setter
+    def e(self, val: int):
+        self.a = val // 10
+
 
 def test_evented_model_with_property_setters():
     t = T()
 
-    assert list(T.__property_setters__) == ['c']
+    assert list(T.__property_setters__) == ['c', 'd', 'e']
     # the metaclass should have figured out that both a and b affect c
-    assert T.__field_dependents__ == {'a': {'c'}, 'b': {'c'}}
+    assert T.__field_dependents__ == {'a': {'c', 'd', 'e'}, 'b': {'c', 'd'}}
 
     # all the fields and properties behave as expected
     assert t.c == [1, 1]
@@ -461,6 +478,11 @@ def test_evented_model_with_property_setters():
     assert t.c == [2, 3]
     assert t.a == 2
     assert t.b == 3
+    t.d = 4
+    assert t.a == 2
+    assert t.b == 2
+    t.e = 100
+    assert t.a == 10
 
 
 def test_evented_model_with_property_setters_events():
@@ -469,23 +491,73 @@ def test_evented_model_with_property_setters_events():
     t.events.a = Mock(t.events.a)
     t.events.b = Mock(t.events.b)
     t.events.c = Mock(t.events.c)
+    t.events.d = Mock(t.events.d)
+    t.events.e = Mock(t.events.e)
 
-    # setting t.c emits events for all three a, b, and c
+    # setting t.c emits events for everything
     t.c = [10, 20]
     t.events.a.assert_called_with(value=10)
     t.events.b.assert_called_with(value=20)
     t.events.c.assert_called_with(value=[10, 20])
+    t.events.d.assert_called_with(value=30)
+    t.events.e.assert_called_with(value=100)
     assert t.a == 10
     assert t.b == 20
 
     t.events.a.reset_mock()
     t.events.b.reset_mock()
     t.events.c.reset_mock()
+    t.events.d.reset_mock()
+    t.events.e.reset_mock()
 
-    # setting t.a emits events for a and c, but not b
-    # this is because we declared c to be dependent on ['a', 'b']
+    # same goes for t.d
+    t.d = 8
+    t.events.a.assert_called_with(value=4)
+    t.events.b.assert_called_with(value=4)
+    t.events.c.assert_called_with(value=[4, 4])
+    t.events.d.assert_called_with(value=8)
+    t.events.e.assert_called_with(value=40)
+    assert t.a == 4
+    assert t.b == 4
+
+    t.events.a.reset_mock()
+    t.events.b.reset_mock()
+    t.events.c.reset_mock()
+    t.events.d.reset_mock()
+    t.events.e.reset_mock()
+
+    # setting t.a emits events for a, c, d, e but not b
     t.a = 5
     t.events.a.assert_called_with(value=5)
-    t.events.c.assert_called_with(value=[5, 20])
     t.events.b.assert_not_called()
-    assert t.c == [5, 20]
+    t.events.c.assert_called_with(value=[5, 4])
+    t.events.d.assert_called_with(value=9)
+    t.events.e.assert_called_with(value=50)
+
+    t.events.a.reset_mock()
+    t.events.b.reset_mock()
+    t.events.c.reset_mock()
+    t.events.d.reset_mock()
+    t.events.e.reset_mock()
+
+    # same goes for t.e
+    t.e = 70
+    t.events.a.assert_called_with(value=7)
+    t.events.b.assert_not_called()
+    t.events.c.assert_called_with(value=[7, 4])
+    t.events.d.assert_called_with(value=11)
+    t.events.e.assert_called_with(value=70)
+
+    t.events.a.reset_mock()
+    t.events.b.reset_mock()
+    t.events.c.reset_mock()
+    t.events.d.reset_mock()
+    t.events.e.reset_mock()
+
+    # t.b emits events for b, c, d but not a, e
+    t.b = 5
+    t.events.a.assert_not_called()
+    t.events.b.assert_called_with(value=5)
+    t.events.c.assert_called_with(value=[7, 5])
+    t.events.d.assert_called_with(value=12)
+    t.events.e.assert_not_called()
