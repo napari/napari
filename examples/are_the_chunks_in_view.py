@@ -386,7 +386,7 @@ def add_subnodes(
             node_offset = (
                 min_interval[2] * 2**scale,
                 min_interval[1] * 2**scale,
-                min_interval[0] * scale**2,
+                min_interval[0] * 2**scale,
             )
             print(
                 f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
