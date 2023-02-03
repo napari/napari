@@ -7,7 +7,7 @@ from napari.components._viewer_constants import CanvasPosition
 class VispyTextOverlay(VispyCanvasOverlay):
     """Text overlay."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(node=Text(pos=(0, 0)), **kwargs)
 
         self.node.font_size = self.overlay.font_size

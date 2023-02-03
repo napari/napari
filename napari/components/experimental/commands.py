@@ -19,7 +19,7 @@ class CommandProcessor:
         The viewer's layers.
     """
 
-    def __init__(self, layers):
+    def __init__(self, layers) -> None:
         self.layers = layers
 
     @property
@@ -46,7 +46,7 @@ class ExperimentalNamespace:
         The viewer's layers.
     """
 
-    def __init__(self, layers):
+    def __init__(self, layers) -> None:
         self.layers = layers
 
     @property

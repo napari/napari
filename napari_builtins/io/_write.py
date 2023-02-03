@@ -2,13 +2,15 @@ import csv
 import os
 import shutil
 from tempfile import TemporaryDirectory
-from typing import Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import numpy as np
 
-from napari.types import FullLayerData
 from napari.utils.io import imsave
 from napari.utils.misc import abspath_or_url
+
+if TYPE_CHECKING:
+    from napari.types import FullLayerData
 
 
 def write_csv(
@@ -266,7 +268,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 def write_layer_data_with_plugins(
-    path: str, layer_data: List[FullLayerData]
+    path: str, layer_data: List["FullLayerData"]
 ) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 

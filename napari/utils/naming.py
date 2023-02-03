@@ -84,7 +84,9 @@ class CallerFrame:
 
     """
 
-    def __init__(self, skip_predicate: Callable[[int, FrameType], bool]):
+    def __init__(
+        self, skip_predicate: Callable[[int, FrameType], bool]
+    ) -> None:
         self.predicate = skip_predicate
         self.namespace = {}
         self.names = ()
