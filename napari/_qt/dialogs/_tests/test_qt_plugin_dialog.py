@@ -1,6 +1,6 @@
 import importlib.metadata
 from typing import Generator, Optional, Tuple
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import npe2
 import pytest
@@ -51,19 +51,49 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
         def instance(self):
             return PluginManagerInstanceMock()
 
+        # def __repr__(self):
+        #     return []
+
     class PluginManagerInstanceMock:
+        def __init__(self):
+            self.plugins = ['test-name-0', 'test-name-1', 'my-plugin']
+
+        def __iter__(self):
+
+            yield from self.plugins
+
         def iter_manifests(self):
-            return [mock_pm.get_manifest('my-plugin')]
+            yield from [mock_pm.get_manifest('my-plugin')]
 
         def is_disabled(self, name):
             return False
 
         def discover(self):
+            return ['plugin']
+
+        def enable(self, plugin):
+            return True
+
+        def disable(self, plugin):
+            return True
+
+    class WarnPopupMock:
+        def __init__(self, text):
             return None
+
+        def exec_(self):
+            return None
+
+        def move(self, pos):
+            return False
+
+    def mock_warn_popup(text):
+        print('here!')
+        return MagicMock()
 
     def mock_metadata(name):
         meta = {
-            'version': '',
+            'version': '0.1.0',
             'summary': '',
             'Home-page': '',
             'author': '',
@@ -73,12 +103,15 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
 
     class OldPluginManagerMock:
         def iter_available(self):
-            return []
+            return [('test-1', False, 'test-1')]
 
         def discover(self):
             return None
 
-        def is_blocked(self):
+        def is_blocked(self, plugin):
+            return False
+
+        def set_blocked(self, plugin, blocked):
             return False
 
     for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
@@ -87,6 +120,8 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
             method_name,
             _iter_napari_hub_or_pypi_plugin_info,
         )
+
+    monkeypatch.setattr(qt_plugin_dialog, 'WarnPopup', WarnPopupMock)
 
     # This is patching `napari.utils.misc.running_as_constructor_app` function
     # to mock a normal napari install.
@@ -226,7 +261,7 @@ def test_version_dropdown(plugin_dialog):
 
 def test_plugin_list_item(plugin_dialog):
 
-    assert plugin_dialog.installed_list._count_visible() == 1
+    assert plugin_dialog.installed_list._count_visible() == 2
 
 
 def test_plugin_list_handle_action(plugin_dialog):
@@ -270,3 +305,48 @@ def test_plugin_list_item_set_busy(text, action_name, update, plugin_dialog):
     item = plugin_dialog.installed_list.item(0)
     widget = plugin_dialog.installed_list.itemWidget(item)
     widget.set_busy(text, action_name, update)
+
+
+def test_on_enabled_checkbox(plugin_dialog):
+    # checks npe2 lines
+    item = plugin_dialog.installed_list.item(0)
+    widget = plugin_dialog.installed_list.itemWidget(item)
+
+    widget.enabled_checkbox.setChecked(False)
+
+    # checks npe1 lines
+    item = plugin_dialog.installed_list.item(1)
+    widget = plugin_dialog.installed_list.itemWidget(item)
+
+    widget.enabled_checkbox.setChecked(False)
+
+    # print(plugin_dialog.PluginManagerMock.called)
+
+    # assert False
+
+
+def test_add_items_outdate(plugin_dialog):
+    new_plugin = (
+        npe2.PackageMetadata(name="my-plugin", version="0.3.0"),
+        True,
+        {
+            "home_page": 'www.mywebsite.com',
+            "pypi_versions": ['0.3.0'],
+            "conda_versions": ['0.3.0'],
+        },
+    )
+    plugin_dialog._plugin_data = [new_plugin]
+    # plugin_dialog._plugin_data = [({'name': 'my-plugin'}, True, {
+    #         "home_page": 'www.mywebsite.com',
+    #         "pypi_versions": ['0.0.0'],
+    #         "conda_versions": ['0.0.0'],
+    #     })]
+    # pm = plugin_dialog.PluginManagerInstanceMock()
+    # plugins = [plugin for plugin in pm.iter_manifests()]
+    # plugin_dialog._plugin_data = plugins
+    # # for plugin in pm.iter_manifests():
+    # #     plugins.append(plugins)
+    # print(plugin_dialog._plugin_data)
+    plugin_dialog._add_items()
+
+    # assert False
