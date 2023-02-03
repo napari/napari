@@ -260,19 +260,33 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         # grab current value
         before = getattr(self, name, object())
+        before_deps = {}
+        with warnings.catch_warnings():
+            # we still need to check for deprecated properties
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for dep in self.__field_dependents__.get(name, {}):
+                before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
 
         # if different we emit the event with new value
         after = getattr(self, name)
+        after_deps = {}
+        with warnings.catch_warnings():
+            # we still need to check for deprecated properties
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for dep in self.__field_dependents__.get(name, {}):
+                after_deps[dep] = getattr(self, dep, object())
+
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if not are_equal(after, before):
             getattr(self.events, name)(value=after)  # emit event
 
             # emit events for any dependent computed property setters as well
-            for dep in self.__field_dependents__.get(name, {}):
-                getattr(self.events, dep)(value=getattr(self, dep))
+            for dep in before_deps:
+                if not are_equal(after_deps[dep], before_deps[dep]):
+                    getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property
