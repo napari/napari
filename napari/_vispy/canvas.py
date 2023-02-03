@@ -22,7 +22,7 @@ from napari.utils.interactions import (
 )
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QImage
+    from qtpy.QtGui import QCursor, QImage
 
     from napari.components import ViewerModel
 
@@ -165,6 +165,16 @@ class VispyCanvas:
                 border_width=0,
             )
         return self.scene_canvas._central_widget
+
+    @property
+    def cursor(self) -> QCursor:
+        """Cursor associated with native widget"""
+        return self.scene_canvas.native.cursor()
+
+    @cursor.setter
+    def cursor(self, q_cursor):
+        """Setting the cursor of the native widget"""
+        self.scene_canvas.native.setCursor(q_cursor)
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.

@@ -824,8 +824,7 @@ class QtViewer(QSplitter):
             q_cursor = QCursor(crosshair_pixmap())
         else:
             q_cursor = self._cursors[cursor]
-
-        self.canvas.scene_canvas.native.setCursor(q_cursor)
+        self.canvas.cursor = q_cursor
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
