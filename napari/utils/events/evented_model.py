@@ -108,6 +108,23 @@ class EventedMetaclass(main.ModelMetaclass):
         return cls
 
 
+def _update_dependents_from_setter_code(cls, prop, setter, deps, visited=()):
+    """Recursively find all the dependents of a setter by inspecting the code object.
+    Update the given deps dictionary with the new findings.
+    """
+    for name in setter.fget.__code__.co_names:
+        if name in cls.__fields__:
+            deps.setdefault(name, set()).add(prop)
+        elif name in cls.__property_setters__ and name not in visited:
+            # to avoid infinite recursion, we shouldn't re-check setters we've already seen
+            visited = visited + (name,)
+            # setter is the new property, but we leave prop
+            setter = cls.__property_setters__[name]
+            _update_dependents_from_setter_code(
+                cls, prop, setter, deps, visited
+            )
+
+
 def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
@@ -129,8 +146,19 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
             def c(self, val: Sequence[int]):
                 self.a, self.b = val
 
+            @property
+            def d(self) -> int:
+                return sum(self.c)
+
+            @d.setter
+            def d(self, val: int):
+                self.c = [val // 2, val // 2]
+
             class Config:
-                dependencies={'c': ['a', 'b']}
+                dependencies={
+                    'c': ['a', 'b'],
+                    'd': ['a', 'b']
+                }
     """
     if not cls.__property_setters__:
         return {}
@@ -153,9 +181,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
         for prop, setter in cls.__property_setters__.items():
-            for name in setter.fget.__code__.co_names:
-                if name in cls.__fields__:
-                    deps.setdefault(name, set()).add(prop)
+            _update_dependents_from_setter_code(cls, prop, setter, deps)
     return deps
 
 
