@@ -14,18 +14,24 @@ from scipy.spatial.transform import Rotation as R
 #   pip install fibsem-tools
 from fibsem_tools.io import read_xarray
 
+colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
+
 
 # A ChunkCacheManager manages multiple chunk caches
 class ChunkCacheManager:
-    def __init__(self):
-        self.c = Cache(4e9, 0)
+    def __init__(self, cache_size=1e9, cost_cutoff=0):
+        """
+        cache_size, size of cache in bytes
+        cost_cutoff, cutoff anything with cost_cutoff or less
+        """
+        self.c = Cache(cache_size, cost_cutoff)
 
-    def put(self, container, dataset, key, value):
+    def put(self, container, dataset, key, value, cost=1):
         """Associate value with key in the given container.
         Container might be a zarr/dataset, key is the index of a chunk, and
         value is the chunk itself."""
         k = self.get_container_key(container, dataset, key)
-        self.c.put(k, value, cost=1)
+        self.c.put(k, value, cost=cost)
 
     def get_container_key(self, container, dataset, key):
         return f"{container}/{dataset}@{key}"
@@ -53,12 +59,9 @@ def chunk_centers(array: da.Array, scale=1.0):
 
     # Rescale the chunks
     chunks = [[val * scale for val in chunks] for chunks in array.chunks]
-    
+
     start_pos = [np.cumsum(sizes) - sizes for sizes in chunks]
-    middle_pos = [
-        np.cumsum(sizes) - (np.array(sizes) / 2)
-        for sizes in chunks
-    ]
+    middle_pos = [np.cumsum(sizes) - (np.array(sizes) / 2) for sizes in chunks]
     end_pos = [np.cumsum(sizes) for sizes in chunks]
     all_start_pos = list(itertools.product(*start_pos))
     all_middle_pos = list(itertools.product(*middle_pos))
@@ -195,7 +198,7 @@ def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
     chunk map is a dictionary mapping chunk centers to chunk slices
     array is the array containing the chunks
     """
-    # TODO hack here to insert the recursive drawing    
+    # TODO hack here to insert the recursive drawing
     points = np.array(list(chunk_map.keys()))
     distances = distance_from_camera_centre_line(points, viewer.camera)
     depth = visual_depth(points, viewer.camera)
@@ -212,9 +215,14 @@ def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
     hi_res_layer.translate = offset
     hi_res_layer.refresh()
 
-    
+
 def get_chunk(
-        coord, array=None, container=None, dataset=None, chunk_size=(1, 1, 1), cache_manager=None
+    coord,
+    array=None,
+    container=None,
+    dataset=None,
+    chunk_size=(1, 1, 1),
+    cache_manager=None,
 ):
     """Get a specified slice from an array (uses a cache).
 
@@ -252,25 +260,53 @@ def get_chunk(
         cache_manager.put(container, dataset, coord, real_array)
     return real_array
 
+
 @tz.curry
-def add_subnodes_caller(interval, scale=0, viewer=None, cache_manager=None, arrays=None, chunk_maps=None, grids=None, container="", dataset=""):
+def add_subnodes_caller(
+    view_slice,
+    scale=0,
+    viewer=None,
+    cache_manager=None,
+    arrays=None,
+    chunk_maps=None,
+    container="",
+    dataset="",
+):
     """
     This function is a stub to to launch an initial recursive call of add_subnodes.
     """
-    add_subnodes(interval, scale=scale, viewer=viewer, cache_manager=cache_manager, arrays=arrays, chunk_maps=chunk_maps, grids=grids, container=container, dataset=dataset)
+    add_subnodes(
+        view_slice,
+        scale=scale,
+        viewer=viewer,
+        cache_manager=cache_manager,
+        arrays=arrays,
+        chunk_maps=chunk_maps,
+        container=container,
+        dataset=dataset,
+    )
 
-def add_subnodes(interval, scale=0, viewer=None, cache_manager=None, arrays=None, chunk_maps=None, container="", dataset=""):
+
+def add_subnodes(
+    view_slice,
+    scale=0,
+    viewer=None,
+    cache_manager=None,
+    arrays=None,
+    chunk_maps=None,
+    container="",
+    dataset="",
+):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
     Note: scale levels are assumed to be 2x factors of each other
 
     TODO maybe we should smoosh chunks together within the same resolution level
-    
+
     Parameters
     ----------
-    interval : tuple
-        A tuple of 2 3D tuples defining the min and max of the region
-        to display
+    view_slice : tuple or list of slices
+        A tuple/list of slices defining the region to display
     scale : float
         The scale level to display. 0 is highest resolution
     viewer : viewer
@@ -293,7 +329,9 @@ def add_subnodes(interval, scale=0, viewer=None, cache_manager=None, arrays=None
 
     # Delete old nodes because we will replace them
     # TODO consider doing this closer to node adding time to minimize blank screen time
-    layers_to_delete = [layer for layer in viewer.layers if f"chunk_{scale}_" in layer.name]
+    layers_to_delete = [
+        layer for layer in viewer.layers if f"chunk_{scale}_" in layer.name
+    ]
     # Remove layers
     for layer in layers_to_delete:
         viewer.layers.remove(layer)
@@ -305,17 +343,26 @@ def add_subnodes(interval, scale=0, viewer=None, cache_manager=None, arrays=None
 
     # TODO hardcoded number
     alpha = 0.8
-    
-    min_coord, max_coord = interval
+
+    min_coord = [st.start for st in view_slice]
+    max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
     chunk_map = chunk_maps[scale]
-    
+
     print(
-        f"add_subnodes {scale} {interval} highres interval: {[el * 2 ** scale for el in interval[0]]},  {[el * 2 ** scale for el in interval[1]]} array shape: {large_image['arrays'][scale].shape} chunksize: {array.chunksize} arraysize: {array.shape}"
+        f"add_subnodes {scale} {view_slice} \nhighres interval: {[el.start * 2 ** scale for el in view_slice]},  {[el.stop * 2 ** scale for el in view_slice]} chunksize: {array.chunksize} arraysize: {array.shape}"
     )
 
-    # Prioritize chunks
+    # Points for each chunk, for example, centers
     points = np.array(list(chunk_map.keys()))
+
+    # Mask of whether points are within our interval
+    point_mask = [
+        np.all(point >= min_coord) and np.all(point <= max_coord)
+        for point in points
+    ]
+
+    # Prioritize chunks
     distances = distance_from_camera_centre_line(points, viewer.camera)
     depth = visual_depth(points, viewer.camera)
     priorities = prioritised_chunk_loading(
@@ -325,11 +372,6 @@ def add_subnodes(interval, scale=0, viewer=None, cache_manager=None, arrays=None
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
 
-    # Mask of whether points are within our interval
-    point_mask = [np.all(point >= min_coord) and np.all(point <= max_coord) for point in points]
-    
-    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
-
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
@@ -337,16 +379,22 @@ def add_subnodes(interval, scale=0, viewer=None, cache_manager=None, arrays=None
             coord = tuple(point)
             chunk_slice = chunk_map[coord]
             offset = [sl.start for sl in chunk_slice]
-            min_interval = [mn + o for o, mn in zip(offset, min_coord)]
-            max_interval = [o + cs + mn for o, cs, mn in zip(offset, array.chunksize, min_coord)]
+            endpoint = [sl.stop for sl in chunk_slice]
+            min_interval = offset
+            # [mn + o for o, mn in zip(offset, min_coord)]
+            max_interval = endpoint
+            # [e + mn for e, mn in zip(endpoint, min_coord) ]
 
             # Skip if this chunk is on the boarder and ragged shape
-            if not np.all(np.array(max_interval) < array.shape):
-                continue
-            
+            # if not np.all(np.array(max_interval) < array.shape):
+            #     continue
+
             # find position and scale
-            interval = (min_interval, max_interval)
-            node_offset = (min_interval[2] * 2**scale, min_interval[1] * 2**scale, min_interval[0] * scale**2)
+            node_offset = (
+                min_interval[2] * 2**scale,
+                min_interval[1] * 2**scale,
+                min_interval[0] * scale**2,
+            )
             print(
                 f"Fetching: {(scale, min_interval[0], min_interval[1], min_interval[2])} World offset: {node_offset}"
             )
@@ -381,24 +429,29 @@ def add_subnodes(interval, scale=0, viewer=None, cache_manager=None, arrays=None
         # Get the coordinates of the first priority chunk for next scale
         first_priority_coord = tuple(points[first_priority_idx])
         chunk_slice = chunk_map[first_priority_coord]
-        offset = [sl.start for sl in chunk_slice]
-        # We are assuming 2x scale factor here
-        next_interval = ([el * 2 for el in offset], [(o + cs) * 2 for o, cs in zip(offset, array.chunksize)])
 
         # TODO check what is happening with the intervals. currently intervals are not recursively contained
-        
-        import pdb; pdb.set_trace()
-        
+
+        print(f"\nSource interval\t{min_coord}, {max_coord}")
         print(
-            f"Recursive add nodes on {first_priority_idx} {next_interval} for scale {scale} to {scale-1}"
+            f"Recursive add on\t{chunk_slice} idx {first_priority_idx} for scale {scale} to {scale-1}\n"
         )
-        add_subnodes(next_interval, scale=scale - 1, viewer=viewer, cache_manager=cache_manager, arrays=arrays, chunk_maps=chunk_maps, container=container, dataset=dataset)
+        add_subnodes(
+            chunk_slice,
+            scale=scale - 1,
+            viewer=viewer,
+            cache_manager=cache_manager,
+            arrays=arrays,
+            chunk_maps=chunk_maps,
+            container=container,
+            dataset=dataset,
+        )
 
 
-#if __name__ == '__main__':
+# if __name__ == '__main__':
 if True:
+    # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
-
     large_image = {
         "container": "s3://janelia-cosem-datasets/jrc_mus-kidney/jrc_mus-kidney.n5",
         "dataset": "labels/empanada-mito_seg",
@@ -412,34 +465,57 @@ if True:
         for scale in range(large_image["scale_levels"])
     ]
 
-    
-
     # view_interval = ((0, 0, 0), [3 * el for el in chunk_strides[3]])
-    # view_interval = ((0, 0, 0), (6144, 2048, 4096))    
+    # view_interval = ((0, 0, 0), (6144, 2048, 4096))
 
     cache_manager = ChunkCacheManager()
 
     # Make our xarray data look more like typical napari multiscale data
     multiscale_arrays = [array.data for array in large_image["arrays"]]
-    multiscale_chunk_maps = [chunk_centers(array) for array in multiscale_arrays]
-    multiscale_grids = [np.array(list(chunk_map)) for chunk_map in multiscale_chunk_maps]
+
+    # Testing with ones is pretty useful for debugging chunk placement for different scales
+    multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
+
+    multiscale_chunk_maps = [
+        chunk_centers(array) for array in multiscale_arrays
+    ]
+    multiscale_grids = [
+        np.array(list(chunk_map)) for chunk_map in multiscale_chunk_maps
+    ]
 
     # view_interval = ((0, 0, 0), multiscale_arrays[0].shape)
-    view_interval = ((0, 0, 0), multiscale_arrays[3].shape)
-    
+    view_slice = [
+        slice(0, multiscale_arrays[3].shape[idx])
+        for idx in range(len(multiscale_arrays[3].shape))
+    ]
+
     viewer = napari.Viewer(ndisplay=3)
 
     add_subnodes_caller(
-        view_interval, scale=3, viewer=viewer, cache_manager=cache_manager, arrays=multiscale_arrays, chunk_maps=multiscale_chunk_maps, container=large_image["container"], dataset=large_image["dataset"]
+        view_slice,
+        scale=3,
+        viewer=viewer,
+        cache_manager=cache_manager,
+        arrays=multiscale_arrays,
+        chunk_maps=multiscale_chunk_maps,
+        container=large_image["container"],
+        dataset=large_image["dataset"],
     )
 
-    viewer.camera.events.connect(
-        debounced(
-            add_subnodes_caller(
-                view_interval, scale=3, viewer=viewer, cache_manager=cache_manager, arrays=multiscale_arrays, chunk_maps=multiscale_chunk_maps, container=large_image["container"], dataset=large_image["dataset"]
-            ),
-            timeout=1000,
-        )
-    )
+    # viewer.camera.events.connect(
+    #     debounced(
+    #         add_subnodes_caller(
+    #             view_interval,
+    #             scale=3,
+    #             viewer=viewer,
+    #             cache_manager=cache_manager,
+    #             arrays=multiscale_arrays,
+    #             chunk_maps=multiscale_chunk_maps,
+    #             container=large_image["container"],
+    #             dataset=large_image["dataset"],
+    #         ),
+    #         timeout=1000,
+    #     )
+    # )
 
     # napari.run()
