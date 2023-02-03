@@ -1,6 +1,5 @@
 import itertools
 import dask.array as da
-from skimage import data
 import numpy as np
 import pandas as pd
 import napari
@@ -256,8 +255,6 @@ def get_chunk(
     return real_array
 
 
-# TODO i know this shouldn't be here, but keybindings are annoying
-
 @tz.curry
 def add_subnodes_caller(
     view_slice,
@@ -336,11 +333,6 @@ def add_subnodes(
     for layer in layers_to_delete:
         viewer.layers.remove(layer)
 
-    chunk_strides = [
-        [2**scale * el for el in arrays[scale].chunksize]
-        for scale in range(len(arrays))
-    ]
-
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
@@ -379,14 +371,13 @@ def add_subnodes(
             coord = tuple(point)
             chunk_slice = chunk_map[coord]
             offset = [sl.start for sl in chunk_slice]
-            endpoint = [sl.stop for sl in chunk_slice]
             min_interval = offset
 
             # find position and scale
             node_offset = (
-                min_interval[2] * 2**scale,
-                min_interval[1] * 2**scale,
                 min_interval[0] * 2**scale,
+                min_interval[1] * 2**scale,
+                min_interval[2] * 2**scale,
             )
             print(
                 f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
@@ -398,7 +389,7 @@ def add_subnodes(
                 container=container,
                 dataset=scale_dataset,
                 cache_manager=cache_manager,
-            ).transpose()
+            )
             node_scale = (
                 2**scale,
                 2**scale,
@@ -408,7 +399,7 @@ def add_subnodes(
                 data,
                 scale=node_scale,
                 translate=node_offset,
-                name=f"chunk_scale{scale}_{min_interval[0]}_{min_interval[1]}_{min_interval[2]}",
+                name=f"chunk_scale{scale}_{min_interval[2]}_{min_interval[1]}_{min_interval[0]}",
                 blending="additive",
                 colormap=colormaps[scale],
                 opacity=0.8,
@@ -425,8 +416,6 @@ def add_subnodes(
         next_chunk_slice = [
             slice(st.start * 2, st.stop * 2) for st in chunk_slice
         ]
-
-        # TODO check what is happening with the intervals. currently intervals are not recursively contained
 
         print(f"\nSource interval\t{min_coord}, {max_coord}")
         print(
@@ -470,7 +459,7 @@ if True:
     multiscale_arrays = [array.data for array in large_image["arrays"]]
 
     # Testing with ones is pretty useful for debugging chunk placement for different scales
-    multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
+    # multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
     multiscale_chunk_maps = [
         chunk_centers(array)
