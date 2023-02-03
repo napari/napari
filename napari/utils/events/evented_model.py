@@ -108,6 +108,24 @@ class EventedMetaclass(main.ModelMetaclass):
         return cls
 
 
+def _update_dependents_from_setter_code(cls, prop, setter, deps, visited=()):
+    """Recursively find all the dependents of a setter by inspecting the code object.
+
+    Update the given deps dictionary with the new findings.
+    """
+    for name in setter.fget.__code__.co_names:
+        if name in cls.__fields__:
+            deps.setdefault(name, set()).add(prop)
+        elif name in cls.__property_setters__ and name not in visited:
+            # to avoid infinite recursion, we shouldn't re-check setters we've already seen
+            visited = visited + (name,)
+            # setter is the new property, but we leave prop
+            setter = cls.__property_setters__[name]
+            _update_dependents_from_setter_code(
+                cls, prop, setter, deps, visited
+            )
+
+
 def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
@@ -129,8 +147,19 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
             def c(self, val: Sequence[int]):
                 self.a, self.b = val
 
+            @property
+            def d(self) -> int:
+                return sum(self.c)
+
+            @d.setter
+            def d(self, val: int):
+                self.c = [val // 2, val // 2]
+
             class Config:
-                dependencies={'c': ['a', 'b']}
+                dependencies={
+                    'c': ['a', 'b'],
+                    'd': ['a', 'b']
+                }
     """
     if not cls.__property_setters__:
         return {}
@@ -153,9 +182,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
         for prop, setter in cls.__property_setters__.items():
-            for name in setter.fget.__code__.co_names:
-                if name in cls.__fields__:
-                    deps.setdefault(name, set()).add(prop)
+            _update_dependents_from_setter_code(cls, prop, setter, deps)
     return deps
 
 
@@ -232,21 +259,35 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._super_setattr_(name, value)
             return
 
-        # grab current value
+        # grab current value, also for dependent properties
         before = getattr(self, name, object())
+        before_deps = {}
+        with warnings.catch_warnings():
+            # we still need to check for deprecated properties
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for dep in self.__field_dependents__.get(name, {}):
+                before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
 
         # if different we emit the event with new value
         after = getattr(self, name)
+        after_deps = {}
+        with warnings.catch_warnings():
+            # we still need to check for deprecated properties
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for dep in self.__field_dependents__.get(name, {}):
+                after_deps[dep] = getattr(self, dep, object())
+
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if not are_equal(after, before):
             getattr(self.events, name)(value=after)  # emit event
 
             # emit events for any dependent computed property setters as well
-            for dep in self.__field_dependents__.get(name, {}):
-                getattr(self.events, dep)(value=getattr(self, dep))
+            for dep in before_deps:
+                if not are_equal(after_deps[dep], before_deps[dep]):
+                    getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property

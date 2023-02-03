@@ -135,7 +135,7 @@ class QtDimSliderWidget(QWidget):
         label.editingFinished.connect(self._clear_label_focus)
         self.axis_label = label
 
-    def _value_changed(self, value):
+    def _on_value_changed(self, value):
         """Slider changed to this new value.
 
         We split this out as a separate function for perfmon.
@@ -156,7 +156,7 @@ class QtDimSliderWidget(QWidget):
         slider.setValue(self.dims.point_step[self.axis])
 
         # Listener to be used for sending events back to model:
-        slider.valueChanged.connect(self._value_changed)
+        slider.valueChanged.connect(self._on_value_changed)
 
         def slider_focused_listener():
             self.dims.last_used = self.axis
