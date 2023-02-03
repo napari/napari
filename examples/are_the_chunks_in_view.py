@@ -26,18 +26,20 @@ class ChunkCacheManager:
         """
         self.c = Cache(cache_size, cost_cutoff)
 
-    def put(self, container, dataset, key, value, cost=1):
+    def put(self, container, dataset, chunk_slice, value, cost=1):
         """Associate value with key in the given container.
-        Container might be a zarr/dataset, key is the index of a chunk, and
-        value is the chunk itself."""
-        k = self.get_container_key(container, dataset, key)
+        Container might be a zarr/dataset, key is a chunk_slice, and
+        value is the chunk itself.
+        """
+        k = self.get_container_key(container, dataset, chunk_slice)
         self.c.put(k, value, cost=cost)
 
-    def get_container_key(self, container, dataset, key):
-        return f"{container}/{dataset}@{key}"
+    def get_container_key(self, container, dataset, chunk_slice):
+        slice_key = ",".join([f"{st.start}:{st.stop}:{st.step}" for st in chunk_slice])
+        return f"{container}/{dataset}@({slice_key})"
 
-    def get(self, container, dataset, key):
-        return self.c.get(self.get_container_key(container, dataset, key))
+    def get(self, container, dataset, chunk_slice):
+        return self.c.get(self.get_container_key(container, dataset, chunk_slice))
 
 
 def chunk_centers(array: da.Array, scale=1.0):
@@ -161,7 +163,7 @@ def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
     """
     chunk_load_priority = depth + alpha * zoom * distance
     if visible is not None:
-        chunk_load_priority[visible] = np.inf
+        chunk_load_priority[not visible] = np.inf
     return chunk_load_priority
 
 
@@ -217,22 +219,18 @@ def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
 
 
 def get_chunk(
-    coord,
+    chunk_slice,
     array=None,
     container=None,
     dataset=None,
-    chunk_size=(1, 1, 1),
     cache_manager=None,
 ):
     """Get a specified slice from an array (uses a cache).
 
-    [note there is an issue with mismatched chunk sizes clashing]
-    [TODO consider changing coord to a slice tuple]
-
     Parameters
     ----------
-    coord : tuple
-        3D coordinate for the top left corner (in array space)
+    chunk_slice : tuple
+        a slice in array space
     array : ndarray
         one of the scales from the multiscale image
     container: str
@@ -245,19 +243,14 @@ def get_chunk(
     Returns
     -------
     real_array : ndarray
-        an ndarray of data taken from array at coord
+        an ndarray of data sliced with chunk_slice
     """
-    real_array = cache_manager.get(container, dataset, coord)
+    real_array = cache_manager.get(container, dataset, chunk_slice)
     if real_array is None:
-        x, y, z = coord
         real_array = np.asarray(
-            array[
-                x : (x + chunk_size[0]),
-                y : (y + chunk_size[1]),
-                z : (z + chunk_size[2]),
-            ].compute()
+            array[chunk_slice].compute()
         )
-        cache_manager.put(container, dataset, coord, real_array)
+        cache_manager.put(container, dataset, chunk_slice, real_array)
     return real_array
 
 
@@ -296,6 +289,7 @@ def add_subnodes(
     chunk_maps=None,
     container="",
     dataset="",
+    alpha=0.8,
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
@@ -324,7 +318,9 @@ def add_subnodes(
     dataset : str
         the name of a zarr dataset, used for making unique keys in
         cache
-
+    alpha : float
+        a parameter that tunes the behavior of chunk prioritization
+        see prioritised_chunk_loading for more info
     """
 
     # Delete old nodes because we will replace them
@@ -341,9 +337,6 @@ def add_subnodes(
         for scale in range(len(arrays))
     ]
 
-    # TODO hardcoded number
-    alpha = 0.8
-
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
@@ -356,22 +349,25 @@ def add_subnodes(
     # Points for each chunk, for example, centers
     points = np.array(list(chunk_map.keys()))
 
+    # Rescale points to world for priority calculations
+    points_world = points * 2**scale
+
     # Mask of whether points are within our interval
     point_mask = [
         np.all(point >= min_coord) and np.all(point <= max_coord)
-        for point in points
+        for point in points_world
     ]
 
     # Prioritize chunks
-    distances = distance_from_camera_centre_line(points, viewer.camera)
-    depth = visual_depth(points, viewer.camera)
+    distances = distance_from_camera_centre_line(points_world, viewer.camera)
+    depth = visual_depth(points_world, viewer.camera)
     priorities = prioritised_chunk_loading(
         depth, distances, viewer.camera.zoom, alpha=alpha, visible=point_mask
     )
-
+    
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
-
+    
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
@@ -381,13 +377,6 @@ def add_subnodes(
             offset = [sl.start for sl in chunk_slice]
             endpoint = [sl.stop for sl in chunk_slice]
             min_interval = offset
-            # [mn + o for o, mn in zip(offset, min_coord)]
-            max_interval = endpoint
-            # [e + mn for e, mn in zip(endpoint, min_coord) ]
-
-            # Skip if this chunk is on the boarder and ragged shape
-            # if not np.all(np.array(max_interval) < array.shape):
-            #     continue
 
             # find position and scale
             node_offset = (
@@ -396,15 +385,14 @@ def add_subnodes(
                 min_interval[0] * scale**2,
             )
             print(
-                f"Fetching: {(scale, min_interval[0], min_interval[1], min_interval[2])} World offset: {node_offset}"
+                f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
             )
             scale_dataset = f"{dataset}/s{scale}"
             data = get_chunk(
-                min_interval,
+                chunk_slice,
                 array=array,
                 container=container,
                 dataset=scale_dataset,
-                chunk_size=array.chunksize,
                 cache_manager=cache_manager,
             ).transpose()
             node_scale = (
@@ -416,7 +404,7 @@ def add_subnodes(
                 data,
                 scale=node_scale,
                 translate=node_offset,
-                name=f"chunk_{scale}_{min_interval[0]}_{min_interval[1]}_{min_interval[2]}",
+                name=f"chunk_scale{scale}_{min_interval[0]}_{min_interval[1]}_{min_interval[2]}",
                 blending="additive",
                 colormap=colormaps[scale],
                 opacity=0.8,
@@ -429,15 +417,17 @@ def add_subnodes(
         # Get the coordinates of the first priority chunk for next scale
         first_priority_coord = tuple(points[first_priority_idx])
         chunk_slice = chunk_map[first_priority_coord]
+        # now convert the chunk slice to the next scale
+        next_chunk_slice = [slice(st.start * 2, st.stop * 2) for st in chunk_slice]
 
         # TODO check what is happening with the intervals. currently intervals are not recursively contained
 
         print(f"\nSource interval\t{min_coord}, {max_coord}")
         print(
-            f"Recursive add on\t{chunk_slice} idx {first_priority_idx} for scale {scale} to {scale-1}\n"
+            f"Recursive add on\t{next_chunk_slice} idx {first_priority_idx} visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n"
         )
         add_subnodes(
-            chunk_slice,
+            next_chunk_slice,
             scale=scale - 1,
             viewer=viewer,
             cache_manager=cache_manager,
@@ -477,8 +467,9 @@ if True:
     multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
     multiscale_chunk_maps = [
-        chunk_centers(array) for array in multiscale_arrays
+        chunk_centers(array) for scale_level, array in enumerate(multiscale_arrays)
     ]
+    
     multiscale_grids = [
         np.array(list(chunk_map)) for chunk_map in multiscale_chunk_maps
     ]
