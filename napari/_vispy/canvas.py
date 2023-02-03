@@ -177,6 +177,10 @@ class VispyCanvas:
         """Setting the cursor of the native widget"""
         self.scene_canvas.native.setCursor(q_cursor)
 
+    def delete(self):
+        """Schedules the native widget for deletion"""
+        self.scene_canvas.native.deleteLater()
+
     def _on_interactive(self):
         """Link interactive attributes of view and viewer."""
         self.view.interactive = self.viewer.camera.interactive
