@@ -79,7 +79,7 @@ class VispyCanvas:
         self._last_theme_color = None
         self._background_color_override = None
         self.viewer = viewer
-        self.scene_canvas = SceneCanvas(*args, **kwargs)
+        self.scene_canvas = SceneCanvas(*args, keys=None, vsync=True, **kwargs)
         self.view = self.central_widget.add_view(border_width=0)
         self.vispy_camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
