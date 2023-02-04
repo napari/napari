@@ -280,7 +280,7 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):

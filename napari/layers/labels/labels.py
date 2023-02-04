@@ -308,7 +308,7 @@ class Labels(_ImageBase):
 
         # Trigger generation of view slice and thumbnail
         self.refresh()
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def rendering(self):
@@ -430,7 +430,7 @@ class Labels(_ImageBase):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):
@@ -756,11 +756,10 @@ class Labels(_ImageBase):
             )
         self._contrast_limits = (0, 1)
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            self.editable = not self.multiscale
+    def _reset_editable(self) -> None:
+        self.editable = not self.multiscale
 
+    def _on_editable_changed(self) -> None:
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
