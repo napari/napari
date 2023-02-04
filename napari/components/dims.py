@@ -409,10 +409,6 @@ class Dims(EventedModel):
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
         self.order = order.tolist()
 
-    def enable_play(self, *args):
-        """Enable playing of animation. False if awaiting a draw event"""
-        self._play_ready = True
-
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:
     """Assert a given value is inside the existing axes of the image.

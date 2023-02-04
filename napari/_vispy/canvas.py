@@ -97,7 +97,7 @@ class VispyCanvas:
         self.scene_canvas.context.set_depth_func('lequal')
 
         # Connecting events from SceneCanvas
-        self.scene_canvas.events.draw.connect(self.viewer.dims.enable_play)
+        self.scene_canvas.events.draw.connect(self.enable_dims_play)
         self.scene_canvas.events.draw.connect(self.vispy_camera.on_draw)
 
         self.scene_canvas.events.mouse_double_click.connect(
@@ -417,3 +417,7 @@ class VispyCanvas:
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
         return self.scene_canvas.native.grabFramebuffer()
+
+    def enable_dims_play(self, *args):
+        """Enable playing of animation. False if awaiting a draw event"""
+        self.viewer.dims._play_ready = True

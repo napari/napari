@@ -310,7 +310,7 @@ class QtDims(QWidget):
     def cleaned_worker(self):
         self._animation_thread = None
         self._animation_worker = None
-        self.dims.enable_play()
+        self.dims._play_ready = True
 
     @property
     def is_playing(self):
