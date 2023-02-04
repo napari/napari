@@ -809,7 +809,7 @@ class QtViewer(QSplitter):
             size = int(size)
             # TODO fix canvas size reference
             # make sure the square fits within the current canvas
-            if size < 8 or size > (min(*self.canvas.scene_canvas.size) - 4):
+            if size < 8 or size > (min(*self.canvas.size) - 4):
                 q_cursor = self._cursors['cross']
             elif cursor == 'circle':
                 q_cursor = QCursor(circle_pixmap(size))

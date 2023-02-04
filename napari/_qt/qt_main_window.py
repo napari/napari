@@ -1364,7 +1364,7 @@ class Window:
                     int(dim / self._qt_window.devicePixelRatio())
                     for dim in size
                 )
-                canvas.size = size[::-1]  # invert x ad y for vispy
+                canvas.size = size
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(int(dim * scale) for dim in canvas.size)

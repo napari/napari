@@ -161,11 +161,21 @@ class VispyCanvas:
         """Overrides SceneCanvas.central_widget to make border_width=0"""
         if self.scene_canvas._central_widget is None:
             self.scene_canvas._central_widget = Widget(
-                size=self.scene_canvas.size,
+                size=self.size,
                 parent=self.scene_canvas.scene,
                 border_width=0,
             )
         return self.scene_canvas._central_widget
+
+    @property
+    def size(self):
+        """Return canvas size as tuple indicating height by width"""
+        return self.scene_canvas.size[::-1]
+
+    @size.setter
+    def size(self, size):
+        """Takes size as tuple of height by width and sets it as width by height"""
+        self.scene_canvas.size = size[::-1]
 
     @property
     def cursor(self) -> QCursor:
@@ -380,7 +390,7 @@ class VispyCanvas:
         event : vispy.util.event.Event
             The vispy event that triggered this method.
         """
-        self.viewer._canvas_size = tuple(self.scene_canvas.size[::-1])
+        self.viewer._canvas_size = tuple(self.size)
 
     def add_layer_to_visual(self, napari_layer, vispy_layer):
         if not self.viewer.grid.enabled:
