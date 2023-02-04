@@ -669,7 +669,7 @@ class Shapes(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _on_selection(self, selected: bool):
         # this method is slated for removal.  don't add anything new.
@@ -1625,14 +1625,10 @@ class Shapes(Layer):
             else:
                 self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self._slice_input.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
+    def _reset_editable(self) -> None:
+        self.editable = self._slice_input.ndisplay == 2
 
+    def _on_editable_changed(self) -> None:
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
