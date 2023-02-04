@@ -1369,9 +1369,7 @@ class Window:
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
-                img = (
-                    self._qt_viewer.canvas.scene_canvas.native.grabFramebuffer()
-                )
+                img = self._qt_viewer.canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._canvas_overlay)
             finally:
