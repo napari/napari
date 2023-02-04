@@ -114,8 +114,9 @@ QtConsole > QTextEdit {
   background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ highlight }};
-  padding: 5px;
+  margin: 10px;
 }
+
 .inverted {
   background-color: {{ background }};
   color: {{ foreground }};

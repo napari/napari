@@ -81,6 +81,8 @@ class QtViewerDockWidget(QDockWidget):
     ) -> None:
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+
         self._parent = qt_viewer
         self.name = name
         self._close_btn = close_btn
