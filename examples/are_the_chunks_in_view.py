@@ -1,19 +1,21 @@
-import sys
 import itertools
+import logging
+import sys
+
 import dask.array as da
 import numpy as np
 import pandas as pd
-import napari
 import toolz as tz
-from psygnal import debounced
 from cachey import Cache
-import logging
-
-from scipy.spatial.transform import Rotation as R
 
 # from https://github.com/janelia-cosem/fibsem-tools
 #   pip install fibsem-tools
 from fibsem_tools.io import read_xarray
+
+from psygnal import debounced
+from scipy.spatial.transform import Rotation as R
+
+import napari
 
 LOGGER = logging.getLogger("poor-mans-octree")
 LOGGER.setLevel(logging.DEBUG)
@@ -44,12 +46,36 @@ class ChunkCacheManager:
         self.c.put(k, value, cost=cost)
 
     def get_container_key(self, container, dataset, chunk_slice):
+        """Create a key from container, dataset, and chunk_slice
+
+        Parameters
+        ----------
+        container : str
+            A string representing a zarr container
+        dataset : str
+            A string representing a dataset inside a zarr
+        chunk_slice : slice
+            A ND slice for the chunk to grab
+
+        """
         slice_key = ",".join(
             [f"{st.start}:{st.stop}:{st.step}" for st in chunk_slice]
         )
         return f"{container}/{dataset}@({slice_key})"
 
     def get(self, container, dataset, chunk_slice):
+        """Get a chunk associated with the container, dataset, and chunk_size
+
+        Parameters
+        ----------
+        container : str
+            A string represening a zarr container
+        dataset : str
+            A string representing a dataset inside the container
+        chunk_slice : slice
+            A ND slice for the chunk to grab
+
+        """
         return self.c.get(
             self.get_container_key(container, dataset, chunk_slice)
         )
@@ -346,7 +372,7 @@ def add_subnodes(
     chunk_map = chunk_maps[scale]
 
     # Translate the layer we're rendering to the right place
-    layer.translate = np.array(min_coord) * 2 ** scale
+    layer.translate = np.array(min_coord) * 2**scale
 
     LOGGER.debug(
         f"add_subnodes {scale} {view_slice}",
@@ -375,8 +401,6 @@ def add_subnodes(
 
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
-
-    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
 
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
@@ -423,7 +447,10 @@ def add_subnodes(
         chunk_slice = chunk_map[first_priority_coord]
 
         # Needs to be in texture space not array space
-        next_scale_texture_offset = [sl.start - layer_offset for sl, layer_offset in zip(chunk_slice, min_coord)]
+        next_scale_texture_offset = [
+            sl.start - layer_offset
+            for sl, layer_offset in zip(chunk_slice, min_coord)
+        ]
         # Blank out the region that will be filled in by other scales
         zdata = np.zeros(np.array(array.chunksize), dtype=np.uint16)
         texture.set_data(zdata, offset=next_scale_texture_offset)
@@ -440,7 +467,7 @@ def add_subnodes(
             f"Recursive add on\t{next_chunk_slice} idx {first_priority_idx}",
             f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
         )
-        add_subnodes(
+        add_subnode(
             next_chunk_slice,
             scale=scale - 1,
             viewer=viewer,
@@ -520,7 +547,7 @@ if __name__ == '__main__' or True:
         viewer.add_image(
             da.ones(
                 np.array(multiscale_arrays[scale + 1].chunksize) * 2,
-                dtype=np.uint16
+                dtype=np.uint16,
             ),
             blending="additive",
             scale=(2**scale, 2**scale, 2**scale),
