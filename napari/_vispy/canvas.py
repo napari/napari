@@ -169,12 +169,12 @@ class VispyCanvas:
 
     @property
     def size(self):
-        """Return canvas size as tuple indicating height by width"""
+        """Return canvas size as tuple (height, width) or accepts size as tuple (height, width)
+        and sets Vispy SceneCanvas size as (width, height)."""
         return self.scene_canvas.size[::-1]
 
     @size.setter
     def size(self, size):
-        """Takes size as tuple of height by width and sets it as width by height"""
         self.scene_canvas.size = size[::-1]
 
     @property
