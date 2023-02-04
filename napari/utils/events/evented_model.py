@@ -196,7 +196,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self._events.source = self

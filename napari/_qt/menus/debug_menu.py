@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class DebugMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&Debug'), window._qt_window)
         self._perf_menu = NapariMenu(trans._("Performance Trace"), self)

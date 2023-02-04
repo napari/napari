@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, List, Sequence, Tuple, Union
 
 import numpy as np
@@ -33,6 +34,7 @@ from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.layers.utils.plane import SlicingPlane
 from napari.utils import config
+from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
@@ -244,7 +246,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -464,7 +466,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self._set_editable()
+        self._reset_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -764,28 +766,41 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # The new slicing code makes a request from the existing state and
         # executes the request on the calling thread directly.
         # For async slicing, the calling thread will not be the main thread.
-        request = self._make_slice_request_internal(self._slice_input, indices)
+        request = self._make_slice_request_internal(
+            slice_input=self._slice_input,
+            indices=indices,
+            lazy=True,
+            dask_indexer=nullcontext,
+        )
         response = request()
-        self._update_slice_response(response, indices)
+        self._update_slice_response(response)
 
     def _make_slice_request(self, dims: Dims) -> _ImageSliceRequest:
         """Make an image slice request based on the given dims and this image."""
         slice_input = self._make_slice_input(
             dims.point, dims.ndisplay, dims.order
         )
-        # TODO: for the existing sync slicing, slice_indices is passed through
+        # TODO: for the existing sync slicing, indices is passed through
         # to avoid some performance issues related to the evaluation of the
         # data-to-world transform and its inverse. Async slicing currently
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_indices(self._data_to_world.inverse)
-        return self._make_slice_request_internal(slice_input, slice_indices)
+        indices = slice_input.data_indices(self._data_to_world.inverse)
+        return self._make_slice_request_internal(
+            slice_input=slice_input,
+            indices=indices,
+            lazy=False,
+            dask_indexer=self.dask_optimized_slicing,
+        )
 
     def _make_slice_request_internal(
         self,
+        *,
         slice_input: _SliceInput,
-        slice_indices,
+        indices: Tuple[Union[int, slice], ...],
+        lazy: bool,
+        dask_indexer: DaskIndexer,
     ) -> _ImageSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
         _set_view_slice.
@@ -796,7 +811,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return _ImageSliceRequest(
             dims=slice_input,
             data=self.data,
-            slice_indices=slice_indices,
+            dask_indexer=dask_indexer,
+            indices=indices,
             multiscale=self.multiscale,
             corner_pixels=self.corner_pixels,
             rgb=self.rgb,
@@ -804,17 +820,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_level=self._thumbnail_level,
             level_shapes=self.level_shapes,
             downsample_factors=self.downsample_factors,
-            lazy=True,
+            lazy=lazy,
         )
 
-    def _update_slice_response(
-        self, response: _ImageSliceResponse, indices
-    ) -> None:
+    def _update_slice_response(self, response: _ImageSliceResponse) -> None:
         """Update the slice output state currently on the layer."""
+        self._slice_input = response.dims
+
         # For the old experimental async code.
+        self._empty = False
         slice_data = self._SliceDataClass(
             layer=self,
-            indices=indices,
+            indices=response.indices,
             image=response.data,
             thumbnail_source=response.thumbnail,
         )
@@ -1113,7 +1130,7 @@ Image.__doc__ = _ImageBase.__doc__
 
 
 class _weakref_hide:
-    def __init__(self, obj):
+    def __init__(self, obj) -> None:
         import weakref
 
         self.obj = weakref.ref(obj)

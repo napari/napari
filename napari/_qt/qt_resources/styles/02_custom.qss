@@ -267,12 +267,15 @@ QLabel#logo_silhouette {
 
 /* ------------------------------------------------------ */
 
+QFrame#empty_controls_widget {
+    min-height: 225px;
+    min-width: 240px;
+}
+
 QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 295px;
-    min-width: 240px;
     margin-left: 10px;
     margin-right: 8px;
     margin-bottom: 4px;
@@ -586,15 +589,15 @@ QPushButton#install_button:disabled {
 }
 
 QPushButton#remove_button {
-  background-color: {{ warning }}
+  background-color: {{ error }}
 }
 
 QPushButton#remove_button:hover {
-  background-color: {{ lighten(warning, 10) }}
+  background-color: {{ lighten(error, 10) }}
 }
 
 QPushButton#remove_button:pressed {
-  background-color: {{ darken(warning, 10) }}
+  background-color: {{ darken(error, 10) }}
 }
 
 QPushButton#busy_button:pressed {
@@ -629,7 +632,7 @@ QPushButton#close_button:disabled {
   font-style: italic;
 }
 
-#pip_install_status{
+#plugin_manager_process_status{
   background: {{ background }};
   color: {{ opacity(text, 200) }};
 }
@@ -663,6 +666,17 @@ QPushButton#close_button:disabled {
 
 #error_label {
   image: url("theme_{{ id }}:/warning.svg");
+  max-width: 18px;
+  max-height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0px;
+  margin-left: 1px;
+  padding: 2px;
+}
+
+#success_label {
+  image: url("theme_{{ id }}:/check.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -804,6 +818,10 @@ QtLayerList::indicator:checked {
 }
 
 
+#error_icon_btn {
+  qproperty-icon: url("theme_{{ id }}:/error.svg");
+}
+
 #warning_icon_btn {
   qproperty-icon: url("theme_{{ id }}:/warning.svg");
 }
@@ -818,4 +836,27 @@ QtLayerList::indicator:checked {
   image: url("theme_{{ id }}:/error.svg");
   min-height: 36px;
   min-width: 36px;
+}
+
+/* --------------- Menus (application and context menus) ---------------- */
+
+QMenu::separator, QModelMenu::separator {
+	height: 1 px;
+	background: {{ opacity(text, 90) }};
+	margin-left: 17 px;
+	margin-right: 6 px;
+	margin-top: 5 px;
+	margin-bottom: 3 px;
+}
+
+QMenu:disabled, QModelMenu:disabled {
+  background-color: {{ background }};
+  selection-background-color: transparent;
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
+
+QMenu, QModelMenu {
+	padding: 6 px;
 }

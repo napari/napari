@@ -110,7 +110,7 @@ class Notification(Event):
         ] = NotificationSeverity.WARNING,
         actions: ActionSequence = (),
         **kwargs,
-    ):
+    ) -> None:
         self.severity = NotificationSeverity(severity)
         super().__init__(type=str(self.severity).lower(), **kwargs)
         self._message = message
@@ -146,7 +146,7 @@ class ErrorNotification(Notification):
 
     exception: BaseException
 
-    def __init__(self, exception: BaseException, *args, **kwargs):
+    def __init__(self, exception: BaseException, *args, **kwargs) -> None:
         msg = getattr(exception, 'message', str(exception))
         actions = getattr(exception, 'actions', ())
         super().__init__(msg, NotificationSeverity.ERROR, actions)
@@ -195,7 +195,7 @@ class WarningNotification(Notification):
 
     def __init__(
         self, warning: Warning, filename=None, lineno=None, *args, **kwargs
-    ):
+    ) -> None:
         msg = getattr(warning, 'message', str(warning))
         actions = getattr(warning, 'actions', ())
         super().__init__(msg, NotificationSeverity.WARNING, actions)
@@ -310,11 +310,7 @@ class NotificationManager:
         if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
-
-        try:
-            self.dispatch(Notification.from_exception(value))
-        except Exception:
-            pass
+        self.dispatch(Notification.from_exception(value))
 
     def receive_warning(
         self,
@@ -412,7 +408,7 @@ def _setup_thread_excepthook():
         def run_with_except_hook(*args2, **kwargs2):
             try:
                 _run(*args2, **kwargs2)
-            except Exception:
+            except Exception:  # noqa BLE001
                 sys.excepthook(*sys.exc_info())
 
         self.run = run_with_except_hook

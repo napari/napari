@@ -47,7 +47,7 @@ def fail_obj_graph(Klass):
 
     try:
         import objgraph
-    except ImportError:
+    except ModuleNotFoundError:
         return
 
     if not len(Klass._instances) == 0:
@@ -224,10 +224,12 @@ def make_napari_viewer(
     def actual_factory(
         *model_args,
         ViewerClass=Viewer,
-        strict_qt=is_internal_test or os.getenv("NAPARI_STRICT_QT"),
+        strict_qt=None,
         block_plugin_discovery=True,
         **model_kwargs,
     ):
+        if strict_qt is None:
+            strict_qt = is_internal_test or os.getenv("NAPARI_STRICT_QT")
         nonlocal _strict
         _strict = strict_qt
 

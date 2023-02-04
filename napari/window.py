@@ -18,7 +18,7 @@ except ImportError as e:
     err = e
 
     class Window:  # type: ignore
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             pass
 
         def close(self):

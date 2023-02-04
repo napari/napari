@@ -29,7 +29,7 @@ class QtStar(QFrame):
         self,
         parent: QWidget = None,
         value: int = None,
-    ):
+    ) -> None:
         super().__init__(parent)
         self._value = value
 
@@ -143,7 +143,7 @@ class QtTriangle(QFrame):
         value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
-    ):
+    ) -> None:
         super().__init__(parent)
         self._max_value = max_value
         self._min_value = min_value
@@ -312,7 +312,7 @@ class QtHighlightSizePreviewWidget(QWidget):
         min_value: int = 1,
         max_value: int = 10,
         unit: str = "px",
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.setGeometry(300, 300, 125, 110)

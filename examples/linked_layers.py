@@ -10,10 +10,10 @@ linked layers, all of the other layers follow.
 
 .. tags:: experimental
 """
-import napari
-from napari.experimental import link_layers
 import numpy as np
 
+import napari
+from napari.experimental import link_layers
 
 viewer = napari.view_image(np.random.rand(3, 64, 64), channel_axis=0)
 

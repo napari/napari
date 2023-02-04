@@ -62,7 +62,7 @@ def test_custom_lookup(list_type):
     """Test that we can get objects by non-integer index using custom lookups."""
 
     class Custom:
-        def __init__(self, name='', data=()):
+        def __init__(self, name='', data=()) -> None:
             self.name = name
             self.data = data
 
@@ -137,7 +137,7 @@ def test_nested_type_enforcement():
 
 def test_nested_custom_lookup():
     class Custom:
-        def __init__(self, name=''):
+        def __init__(self, name='') -> None:
             self.name = name
 
     c = Custom()

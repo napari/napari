@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import warnings
 from functools import partial
@@ -63,7 +64,7 @@ class NapariPluginManager(PluginManager):
 
     ENTRY_POINT = 'napari.plugin'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
@@ -737,11 +738,10 @@ class NapariPluginManager(PluginManager):
                 ext = f".{ext}"
             ext_map[ext] = plugin
 
+            func = None
             # give warning that plugin *may* not be able to read that extension
-            try:
+            with contextlib.suppress(Exception):
                 func = caller._call_plugin(plugin, path=f'_testing_{ext}')
-            except Exception:
-                pass
             if func is None:
                 msg = trans._(
                     'plugin {plugin!r} did not return a {type_} function when provided a path ending in {ext!r}. This *may* indicate a typo?',

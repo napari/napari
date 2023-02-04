@@ -46,7 +46,7 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox -v --pre
         env:
