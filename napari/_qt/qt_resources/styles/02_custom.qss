@@ -111,10 +111,10 @@ QtConsole {
 
 QtConsole > QTextEdit {
   background-color: {{ console }};
-  background-clip: border-box;
+  background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ highlight }};
-  margin: 10px;
+  padding: 5px;
 }
 .inverted {
   background-color: {{ background }};
