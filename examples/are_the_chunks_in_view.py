@@ -452,7 +452,8 @@ def add_subnodes(
             for sl, layer_offset in zip(chunk_slice, min_coord)
         ]
         # Blank out the region that will be filled in by other scales
-        zdata = np.zeros(np.array(array.chunksize), dtype=np.uint16)
+        zeros_size = [sl.stop - sl.start for sl in chunk_slice]
+        zdata = np.zeros(np.array(zeros_size), dtype=np.uint16)
         texture.set_data(zdata, offset=next_scale_texture_offset)
 
         volume.update()
@@ -467,7 +468,7 @@ def add_subnodes(
             f"Recursive add on\t{next_chunk_slice} idx {first_priority_idx}",
             f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
         )
-        add_subnode(
+        add_subnodes(
             next_chunk_slice,
             scale=scale - 1,
             viewer=viewer,
@@ -507,7 +508,7 @@ if __name__ == '__main__' or True:
     multiscale_arrays = [array.data for array in large_image["arrays"]]
 
     # Testing with ones is pretty useful for debugging chunk placement for different scales
-    # multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
+    multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
     multiscale_chunk_maps = [
         chunk_centers(array)
