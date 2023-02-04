@@ -273,7 +273,7 @@ QFrame#empty_controls_widget {
 }
 
 QtLayerControlsContainer > QFrame {
-  padding: 5;
+  padding: 5px;
   margin: 10px;
   margin-left: 10px;
   margin-right: 8px;
