@@ -1349,7 +1349,7 @@ class Window:
         from napari._qt.utils import add_flash_animation
 
         if canvas_only:
-            canvas = self._qt_viewer.canvas.scene_canvas
+            canvas = self._qt_viewer.canvas
             prev_size = canvas.size
             if size is not None:
                 if len(size) != 2:
@@ -1369,7 +1369,7 @@ class Window:
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(int(dim * scale) for dim in canvas.size)
             try:
-                img = self._qt_viewer.canvas.screenshot()
+                img = canvas.screenshot()
                 if flash:
                     add_flash_animation(self._qt_viewer._canvas_overlay)
             finally:
