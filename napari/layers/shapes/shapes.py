@@ -409,7 +409,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if data is None:
             if ndim is None:
                 ndim = 2
@@ -669,7 +669,7 @@ class Shapes(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _on_selection(self, selected: bool):
         # this method is slated for removal.  don't add anything new.
@@ -1625,14 +1625,10 @@ class Shapes(Layer):
             else:
                 self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self._slice_input.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
+    def _reset_editable(self) -> None:
+        self.editable = self._slice_input.ndisplay == 2
 
+    def _on_editable_changed(self) -> None:
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -2572,7 +2568,7 @@ class Shapes(Layer):
         self._finish_drawing()
         self.events.data(value=self.data)
 
-    def _rotate_box(self, angle, center=[0, 0]):
+    def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2589,7 +2585,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         self._selected_box = box @ transform.T + center
 
-    def _scale_box(self, scale, center=[0, 0]):
+    def _scale_box(self, scale, center=(0, 0)):
         """Perform a scaling on the selected box.
 
         Parameters
@@ -2610,7 +2606,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _transform_box(self, transform, center=[0, 0]):
+    def _transform_box(self, transform, center=(0, 0)):
         """Perform a linear transformation on the selected box.
 
         Parameters

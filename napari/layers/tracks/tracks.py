@@ -119,7 +119,7 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
 
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
@@ -388,7 +388,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):

@@ -331,7 +331,7 @@ class Points(Layer):
         canvas_size_limits=(2, 10000),
         antialiasing=1,
         shown=True,
-    ):
+    ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
 
@@ -558,7 +558,7 @@ class Points(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _on_selection(self, selected):
         if selected:
@@ -765,18 +765,18 @@ class Points(Layer):
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
             self._size = np.broadcast_to(size, self.data.shape).copy()
-        except Exception:
+        except ValueError as e:
             try:
                 self._size = np.broadcast_to(
                     size, self.data.shape[::-1]
                 ).T.copy()
-            except Exception:
+            except ValueError:
                 raise ValueError(
                     trans._(
                         "Size is not compatible for broadcasting",
                         deferred=True,
                     )
-                )
+                ) from e
         self.refresh()
 
     @property
@@ -1499,17 +1499,16 @@ class Points(Layer):
         """
         return self.edge_color[self._indices_view]
 
-    def _set_editable(self, editable=None):
+    def _reset_editable(self) -> None:
         """Set editable mode based on layer properties."""
-        if editable is None:
-            self.editable = True
+        # interaction currently does not work for 2D layers being rendered in 3D
+        self.editable = not (
+            self.ndim == 2 and self._slice_input.ndisplay == 3
+        )
+
+    def _on_editable_changed(self) -> None:
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
-
-        if self.ndim < 3 and self._slice_input.ndisplay == 3:
-            # interaction currently does not work for 2D
-            # layers being rendered in 3D.
-            self.editable = False
 
     def _get_value(self, position) -> Union[None, int]:
         """Index of the point at a given 2D position in data coordinates.
