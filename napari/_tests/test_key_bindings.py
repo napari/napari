@@ -40,7 +40,7 @@ def test_viewer_key_bindings(make_napari_viewer):
         mock_shift_release.method()
 
     # Simulate press only
-    view._Fanvas.events.key_press(key=keys.Key('F'))
+    view._scene_canvas.events.key_press(key=keys.Key('F'))
     mock_press.method.assert_called_once()
     mock_press.reset_mock()
     mock_release.method.assert_not_called()
