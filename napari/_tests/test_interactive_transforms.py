@@ -119,7 +119,7 @@ def test_panzoom_on_space(make_napari_viewer):
     layer = viewer.add_image(data)
 
     layer.mode = 'transform'
-    view.scene_canvas.events.key_press(key=keys.Key('Space'))
+    view._scene_canvas.events.key_press(key=keys.Key('Space'))
     assert layer.mode == 'pan_zoom'
     assert viewer.overlays.interaction_box.show is False
 

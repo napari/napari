@@ -212,16 +212,16 @@ class QtViewer(QSplitter):
         )
         # TODO: temporary but needs to be moved to VispyCanvas
 
-        self.canvas.scene_canvas.events.key_press.connect(
+        self.canvas._scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
         )
-        self.canvas.scene_canvas.events.key_release.connect(
+        self.canvas._scene_canvas.events.key_release.connect(
             self._key_map_handler.on_key_release
         )
 
         # Stacked widget to provide a welcome page
         self._canvas_overlay = QtWidgetOverlay(
-            self, self.canvas.scene_canvas.native
+            self, self.canvas._scene_canvas.native
         )
         self._canvas_overlay.set_welcome_visible(show_welcome_screen)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
@@ -408,7 +408,7 @@ class QtViewer(QSplitter):
             parent=self.canvas.view,
             canvas=self.canvas,
         )
-        self.canvas.scene_canvas.events.resize.connect(
+        self.canvas._scene_canvas.events.resize.connect(
             self.scale_bar._on_position_change
         )
         self.text_overlay = VispyTextOverlay(
@@ -416,7 +416,7 @@ class QtViewer(QSplitter):
             viewer=self.viewer,
             parent=self.canvas.view,
         )
-        self.canvas.scene_canvas.events.resize.connect(
+        self.canvas._scene_canvas.events.resize.connect(
             self.text_overlay._on_position_change
         )
         self.interaction_box_visual = VispyInteractionBox(
@@ -865,8 +865,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        self.canvas.scene_canvas._backend._keyEvent(
-            self.canvas.scene_canvas.events.key_press, event
+        self.canvas._scene_canvas._backend._keyEvent(
+            self.canvas._scene_canvas.events.key_press, event
         )
         event.accept()
 
@@ -878,8 +878,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        self.canvas.scene_canvas._backend._keyEvent(
-            self.canvas.scene_canvas.events.key_release, event
+        self.canvas._scene_canvas._backend._keyEvent(
+            self.canvas._scene_canvas.events.key_release, event
         )
         event.accept()
 

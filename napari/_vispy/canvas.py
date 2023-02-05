@@ -79,7 +79,9 @@ class VispyCanvas:
         self._last_theme_color = None
         self._background_color_override = None
         self.viewer = viewer
-        self.scene_canvas = SceneCanvas(*args, keys=None, vsync=True, **kwargs)
+        self._scene_canvas = SceneCanvas(
+            *args, keys=None, vsync=True, **kwargs
+        )
         self.view = self.central_widget.add_view(border_width=0)
         self._vispy_camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
@@ -93,22 +95,22 @@ class VispyCanvas:
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
 
-        self.scene_canvas.events.ignore_callback_errors = False
-        self.scene_canvas.context.set_depth_func('lequal')
+        self._scene_canvas.events.ignore_callback_errors = False
+        self._scene_canvas.context.set_depth_func('lequal')
 
         # Connecting events from SceneCanvas
-        self.scene_canvas.events.draw.connect(self.enable_dims_play)
-        self.scene_canvas.events.draw.connect(self._vispy_camera.on_draw)
+        self._scene_canvas.events.draw.connect(self.enable_dims_play)
+        self._scene_canvas.events.draw.connect(self._vispy_camera.on_draw)
 
-        self.scene_canvas.events.mouse_double_click.connect(
+        self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click
         )
-        self.scene_canvas.events.mouse_move.connect(self._on_mouse_move)
-        self.scene_canvas.events.mouse_press.connect(self._on_mouse_press)
-        self.scene_canvas.events.mouse_release.connect(self._on_mouse_release)
-        self.scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
-        self.scene_canvas.events.resize.connect(self.on_resize)
-        self.scene_canvas.events.draw.connect(self.on_draw)
+        self._scene_canvas.events.mouse_move.connect(self._on_mouse_move)
+        self._scene_canvas.events.mouse_press.connect(self._on_mouse_press)
+        self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
+        self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
+        self._scene_canvas.events.resize.connect(self.on_resize)
+        self._scene_canvas.events.draw.connect(self.on_draw)
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
@@ -117,7 +119,7 @@ class VispyCanvas:
 
     @property
     def destroyed(self):
-        return self.scene_canvas._backend.destroyed
+        return self._scene_canvas._backend.destroyed
 
     @property
     def background_color_override(self):
@@ -149,47 +151,47 @@ class VispyCanvas:
 
     @property
     def bgcolor(self):
-        return self.scene_canvas.bgcolor.rgba
+        return self._scene_canvas.bgcolor.rgba
 
     @bgcolor.setter
     def bgcolor(self, value):
         _value = self._background_color_override or value
-        self.scene_canvas.bgcolor = _value
+        self._scene_canvas.bgcolor = _value
 
     @property
     def central_widget(self):
         """Overrides SceneCanvas.central_widget to make border_width=0"""
-        if self.scene_canvas._central_widget is None:
-            self.scene_canvas._central_widget = Widget(
+        if self._scene_canvas._central_widget is None:
+            self._scene_canvas._central_widget = Widget(
                 size=self.size,
-                parent=self.scene_canvas.scene,
+                parent=self._scene_canvas.scene,
                 border_width=0,
             )
-        return self.scene_canvas._central_widget
+        return self._scene_canvas._central_widget
 
     @property
     def size(self):
         """Return canvas size as tuple (height, width) or accepts size as tuple (height, width)
         and sets Vispy SceneCanvas size as (width, height)."""
-        return self.scene_canvas.size[::-1]
+        return self._scene_canvas.size[::-1]
 
     @size.setter
     def size(self, size):
-        self.scene_canvas.size = size[::-1]
+        self._scene_canvas.size = size[::-1]
 
     @property
     def cursor(self) -> QCursor:
         """Cursor associated with native widget"""
-        return self.scene_canvas.native.cursor()
+        return self._scene_canvas.native.cursor()
 
     @cursor.setter
     def cursor(self, q_cursor):
         """Setting the cursor of the native widget"""
-        self.scene_canvas.native.setCursor(q_cursor)
+        self._scene_canvas.native.setCursor(q_cursor)
 
     def delete(self):
         """Schedules the native widget for deletion"""
-        self.scene_canvas.native.deleteLater()
+        self._scene_canvas.native.deleteLater()
 
     def _on_interactive(self):
         """Link interactive attributes of view and viewer."""
@@ -354,7 +356,7 @@ class VispyCanvas:
         """
         # Find corners of canvas in world coordinates
         top_left = self._map_canvas2world([0, 0])
-        bottom_right = self._map_canvas2world(self.scene_canvas.size)
+        bottom_right = self._map_canvas2world(self._scene_canvas.size)
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event):
@@ -381,7 +383,7 @@ class VispyCanvas:
                 corner_pixels_displayed=canvas_corners_world[
                     :, displayed_axes
                 ],
-                shape_threshold=self.scene_canvas.size,
+                shape_threshold=self._scene_canvas.size,
             )
 
     def on_resize(self, event):
@@ -411,12 +413,12 @@ class VispyCanvas:
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self._layer_to_visual[layer]
             vispy_layer.order = i
-        self.scene_canvas._draw_order.clear()
-        self.scene_canvas.update()
+        self._scene_canvas._draw_order.clear()
+        self._scene_canvas.update()
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-        return self.scene_canvas.native.grabFramebuffer()
+        return self._scene_canvas.native.grabFramebuffer()
 
     def enable_dims_play(self, *args):
         """Enable playing of animation. False if awaiting a draw event"""

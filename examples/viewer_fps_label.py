@@ -21,7 +21,7 @@ viewer.add_image(np.random.random((5, 5, 5)), colormap='red', opacity=0.8)
 viewer.text_overlay.visible = True
 # note: this is using a private attribute, so it might break
 # without warningin future versions!
-viewer.window._qt_viewer.canvas.scene_canvas.measure_fps(callback=update_fps)
+viewer.window._qt_viewer.canvas._scene_canvas.measure_fps(callback=update_fps)
 
 if __name__ == '__main__':
     napari.run()
