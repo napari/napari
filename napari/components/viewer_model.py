@@ -549,12 +549,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
-            steps = self.layers._steps
-            midpoint = [
-                self.rounded_division(low, high, step)
-                for (low, high), step in zip(ranges, steps)
-            ]
-            self.dims.set_point_step(range(len(ranges)), midpoint)
+            midpoint = tuple(np.mean(ranges, axis=1))
+            self.dims.point = midpoint
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
