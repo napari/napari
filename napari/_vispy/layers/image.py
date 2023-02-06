@@ -107,6 +107,8 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.parent = parent
         self.node.order = self.order
+        for overlay_visual in self.overlays.values():
+            overlay_visual.node.parent = self.node
         self.reset()
 
     def _on_data_change(self):
