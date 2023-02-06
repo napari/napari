@@ -2,7 +2,6 @@
 """
 from weakref import WeakSet
 
-from vispy.color import Color
 from vispy.scene import SceneCanvas, Widget
 
 from napari._vispy.utils.gl import get_max_texture_sizes
