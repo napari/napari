@@ -86,9 +86,9 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         """An item in the dict emitted an event.  Re-emit with key"""
         if not hasattr(event, "key"):
             event.key = self.key(event.source)
-        # re-emit with this object's EventEmitter of the same type if present
-        # otherwise just emit with the EmitterGroup itself
-        getattr(self.events, event.type, self.events)(event)
+
+        # re-emit with this object's EventEmitter
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the re-emitter."""

@@ -6,16 +6,25 @@ from napari.utils.translations import trans
 
 
 class VispyBaseOverlay:
-    def __init__(self, *, overlay, node, parent) -> None:
+    """
+    Base overlay backend for vispy.
+
+    Creates event connections between napari Overlay models and the
+    vispy backend, translating them into rendering.
+    """
+
+    def __init__(self, *, overlay, node, parent=None) -> None:
         super().__init__()
         self.overlay = overlay
 
         self.node = node
-        self.node.parent = parent
         self.node.order = self.overlay.order
 
         self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.opacity.connect(self._on_opacity_change)
+
+        if parent is not None:
+            self.node.parent = parent
 
     def _on_visible_change(self):
         self.node.visible = self.overlay.visible
@@ -28,24 +37,39 @@ class VispyBaseOverlay:
         self._on_opacity_change()
 
     def close(self):
-        disconnect_events(self.layer.events, self)
+        disconnect_events(self.overlay.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
 
 class VispyCanvasOverlay(VispyBaseOverlay):
-    def __init__(self, *, viewer, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.viewer = viewer
+    """
+    Vispy overlay backend for overlays that live in canvas space.
+    """
 
+    def __init__(self, *, overlay, node, parent=None) -> None:
+        super().__init__(overlay=overlay, node=node, parent=None)
+
+        # offsets and size are used to control fine positioning, and will depend
+        # on the subclass and visual that needs to be rendered
         self.x_offset = 10
         self.y_offset = 10
         self.x_size = 0
         self.y_size = 0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
+        self.node.events.parent_change.connect(self._on_parent_change)
+
+    def _on_parent_change(self, event):
+        if event.old is not None:
+            disconnect_events(self, event.old.canvas)
+        if event.new is not None and self.node.canvas is not None:
+            # connect the canvas resize to recalculating the position
+            event.new.canvas.events.resize.connect(self._on_position_change)
 
     def _on_position_change(self, event=None):
+        # subclasses should set sizes correctly and adjust offsets to get
+        # the optimal positioning
         if self.node.canvas is None:
             return
         x_max, y_max = list(self.node.canvas.size)
@@ -102,7 +126,40 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
 
 class VispySceneOverlay(VispyBaseOverlay):
-    def __init__(self, *, viewer, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.viewer = viewer
+    """
+    Vispy overlay backend for overlays that live in scene (2D or 3D) space.
+    """
+
+    def __init__(self, *, overlay, node, parent=None) -> None:
+        super().__init__(overlay=overlay, node=node, parent=None)
         self.node.transform = MatrixTransform()
+
+
+class LayerOverlayMixin:
+    def __init__(self, *, layer, overlay, node, parent=None) -> None:
+        super().__init__(
+            node=node,
+            overlay=overlay,
+            parent=parent,
+        )
+        self.layer = layer
+        self.layer._overlays.events.removed.connect(self.close)
+
+    def close(self):
+        disconnect_events(self.layer.events, self)
+        super().close()
+
+
+class ViewerOverlayMixin:
+    def __init__(self, *, viewer, overlay, node, parent=None) -> None:
+        super().__init__(
+            node=node,
+            overlay=overlay,
+            parent=parent,
+        )
+        self.viewer = viewer
+        self.viewer._overlays.events.removed.connect(self.close)
+
+    def close(self):
+        disconnect_events(self.viewer.events, self)
+        super().close()

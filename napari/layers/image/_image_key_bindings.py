@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import napari
-from napari.layers.image._image_constants import Mode
+from napari.layers.base._base_constants import Mode
 from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
@@ -76,3 +76,9 @@ def activate_image_transform_mode(layer):
 @register_image_action(trans._('Pan/zoom'))
 def activate_image_pan_zoom_mode(layer):
     layer.mode = Mode.PAN_ZOOM
+
+
+image_fun_to_mode = [
+    (activate_image_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_image_transform_mode, Mode.TRANSFORM),
+]

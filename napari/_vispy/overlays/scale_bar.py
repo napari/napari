@@ -2,22 +2,24 @@ import bisect
 
 import numpy as np
 
-from napari._vispy.overlays.base import VispyCanvasOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.utils._units import PREFERRED_VALUES, get_unit_registry
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.theme import get_theme
 
 
-class VispyScaleBarOverlay(VispyCanvasOverlay):
+class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150
         self._scale = 1
         self._unit = None
 
-        super().__init__(node=ScaleBar(), **kwargs)
+        super().__init__(
+            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+        )
         self.x_size = 150  # will be updated on zoom anyways
         # need to change from defaults because the anchor is in the center
         self.y_offset = 20
@@ -120,7 +122,10 @@ class VispyScaleBarOverlay(VispyCanvasOverlay):
                 # set scale color negative of theme background.
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
-                if self.node.parent.parent.canvas.background_color_override:
+                if (
+                    self.node.parent is not None
+                    and self.node.parent.parent.canvas.background_color_override
+                ):
                     background_color = transform_color(
                         self.node.parent.parent.canvas.background_color_override
                     )[0]

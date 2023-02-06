@@ -7,7 +7,11 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
-from napari.layers.base import no_op
+from napari.layers.base import Layer, no_op
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.image.image import _ImageBase
 from napari.layers.labels._labels_constants import (
@@ -204,6 +208,34 @@ class Labels(_ImageBase):
         background label `0` is selected.
     """
 
+    _modeclass = Mode
+
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
+        Mode.PICK: pick,
+        Mode.PAINT: draw,
+        Mode.FILL: draw,
+        Mode.ERASE: draw,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
+        Mode.PICK: 'cross',
+        Mode.PAINT: 'circle',
+        Mode.FILL: 'cross',
+        Mode.ERASE: 'circle',
+    }
+
     _history_limit = 100
 
     def __init__(
@@ -300,7 +332,6 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
 
-        self._mode = Mode.PAN_ZOOM
         self._status = self.mode
         self._preserve_labels = False
 
@@ -661,7 +692,7 @@ class Labels(_ImageBase):
         self._show_selected_label = filter
         self.refresh()
 
-    @property
+    @Layer.mode.getter
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -688,43 +719,15 @@ class Labels(_ImageBase):
         """
         return str(self._mode)
 
-    _drag_modes = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-        Mode.PICK: pick,
-        Mode.PAINT: draw,
-        Mode.FILL: draw,
-        Mode.ERASE: draw,
-    }
-
-    _move_modes = {
-        Mode.PAN_ZOOM: no_op,
-        Mode.TRANSFORM: no_op,
-        Mode.PICK: no_op,
-        Mode.PAINT: no_op,
-        Mode.FILL: no_op,
-        Mode.ERASE: no_op,
-    }
-    _cursor_modes = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.PICK: 'cross',
-        Mode.PAINT: 'circle',
-        Mode.FILL: 'cross',
-        Mode.ERASE: 'circle',
-    }
-
-    @mode.setter
-    def mode(self, mode: Union[str, Mode]):
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
-            return
+    def _mode_setter_helper(self, mode):
+        mode = super()._mode_setter_helper(mode)
+        if mode == self._mode:
+            return mode
 
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
-        self.events.mode(mode=mode)
-        self.refresh()
+        return mode
 
     @property
     def preserve_labels(self):

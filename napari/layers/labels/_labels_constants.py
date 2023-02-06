@@ -31,11 +31,11 @@ class Mode(StringEnum):
     """
 
     PAN_ZOOM = auto()
+    TRANSFORM = auto()
     PICK = auto()
     PAINT = auto()
     FILL = auto()
     ERASE = auto()
-    TRANSFORM = auto()
 
 
 class LabelColorMode(StringEnum):
