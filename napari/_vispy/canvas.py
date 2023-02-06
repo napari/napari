@@ -78,10 +78,8 @@ class VispyCanvas(SceneCanvas):
 
     @bgcolor.setter
     def bgcolor(self, value):
-        color = Color(self._background_color_override or value)
-        # to get correct blending, set canvas alpha to zero
-        color.alpha = 0
-        SceneCanvas.bgcolor.fset(self, color)
+        _value = self._background_color_override or value
+        SceneCanvas.bgcolor.fset(self, _value)
 
     @property
     def central_widget(self):
