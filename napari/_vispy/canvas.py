@@ -122,6 +122,16 @@ class VispyCanvas:
         return self._scene_canvas._backend.destroyed
 
     @property
+    def native(self):
+        """Returns the native widget of the Vispy SceneCanvas."""
+        return self._scene_canvas.native
+
+    @property
+    def screen_changed(self):
+        """Returning signal indicating whether the window screen has changed."""
+        return self._scene_canvas._backend.screen_changed
+
+    @property
     def background_color_override(self):
         return self._background_color_override
 
@@ -182,16 +192,16 @@ class VispyCanvas:
     @property
     def cursor(self) -> QCursor:
         """Cursor associated with native widget"""
-        return self._scene_canvas.native.cursor()
+        return self.native.cursor()
 
     @cursor.setter
     def cursor(self, q_cursor):
         """Setting the cursor of the native widget"""
-        self._scene_canvas.native.setCursor(q_cursor)
+        self.native.setCursor(q_cursor)
 
     def delete(self):
         """Schedules the native widget for deletion"""
-        self._scene_canvas.native.deleteLater()
+        self.native.deleteLater()
 
     def _on_interactive(self):
         """Link interactive attributes of view and viewer."""
@@ -418,7 +428,7 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-        return self._scene_canvas.native.grabFramebuffer()
+        return self.native.grabFramebuffer()
 
     def enable_dims_play(self, *args):
         """Enable playing of animation. False if awaiting a draw event"""

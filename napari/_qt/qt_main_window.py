@@ -159,9 +159,7 @@ class _QtMainWindow(QMainWindow):
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
-            handle.screenChanged.connect(
-                self._qt_viewer.canvas._scene_canvas._backend.screen_changed
-            )
+            handle.screenChanged.connect(self._qt_viewer.canvas.screen_changed)
 
         # this is the line that initializes any Qt-based app-model Actions that
         # were defined somewhere in the `_qt` module and imported in init_qactions
