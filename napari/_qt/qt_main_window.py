@@ -135,8 +135,8 @@ class _QtMainWindow(QMainWindow):
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
 
-        act_dlg = QtActivityDialog(self._qt_viewer._canvas_overlay)
-        self._qt_viewer._canvas_overlay.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer._welcome_widget)
+        self._qt_viewer._welcome_widget.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()
@@ -1371,7 +1371,7 @@ class Window:
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:
-                    add_flash_animation(self._qt_viewer._canvas_overlay)
+                    add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
                 if size is not None or scale is not None:

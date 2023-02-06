@@ -776,7 +776,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'grid', 'layers', 'scale_bar']
+    'field', ['camera', 'cursor', 'dims', 'grid', 'layers']
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
@@ -793,7 +793,7 @@ def test_not_mutable_fields(field):
         assert not evented
 
     # Check attribute is not settable
-    with pytest.raises(TypeError) as err:
+    with pytest.raises((TypeError, ValueError)) as err:
         setattr(viewer, field, 'test')
 
     assert 'has allow_mutation set to False and cannot be assigned' in str(

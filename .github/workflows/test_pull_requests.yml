@@ -15,6 +15,7 @@ jobs:
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,10 +23,13 @@ jobs:
         with:
           python-version: "3.x"
           cache-dependency-path: setup.cfg
+          cache: 'pip'
+      - name: Install Dependencies
+        run: pip install --upgrade pip
+      - name: Install Napari dev
+        run: pip install -e .[build]
       - name: Check Manifest
         run: |
-          pip install --upgrade pip
-          pip install -e .[build]
           make typestubs
           make check-manifest
 
@@ -33,6 +37,7 @@ jobs:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -48,6 +53,7 @@ jobs:
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -133,6 +139,8 @@ jobs:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
+        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
+        timeout-minutes: 35
         uses: aganders3/headless-gui@v1
         with:
           run: python -m tox
