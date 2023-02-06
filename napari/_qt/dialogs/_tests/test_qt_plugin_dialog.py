@@ -285,18 +285,20 @@ def test_plugin_list_handle_action(plugin_dialog):
     )
 
 
-def test_on_enabled_checkbox(plugin_dialog):
+def test_on_enabled_checkbox(plugin_dialog, qtbot):
     # checks npe2 lines
     item = plugin_dialog.installed_list.item(0)
     widget = plugin_dialog.installed_list.itemWidget(item)
 
-    widget.enabled_checkbox.setChecked(False)
+    with qtbot.waitSignal(widget.enabled_checkbox.stateChanged, timeout=500):
+        widget.enabled_checkbox.setChecked(False)
 
     # checks npe1 lines
     item = plugin_dialog.installed_list.item(1)
     widget = plugin_dialog.installed_list.itemWidget(item)
 
-    widget.enabled_checkbox.setChecked(False)
+    with qtbot.waitSignal(widget.enabled_checkbox.stateChanged, timeout=500):
+        widget.enabled_checkbox.setChecked(False)
 
 
 def test_add_items_outdate(plugin_dialog):
