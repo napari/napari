@@ -485,79 +485,36 @@ def test_evented_model_with_property_setters():
     assert t.a == 10
 
 
-def test_evented_model_with_property_setters_events():
+@pytest.fixture()
+def mocked_object():
     t = T()
-    assert 'c' in t.events  # the setter has an event
     t.events.a = Mock(t.events.a)
     t.events.b = Mock(t.events.b)
     t.events.c = Mock(t.events.c)
     t.events.d = Mock(t.events.d)
     t.events.e = Mock(t.events.e)
+    return t
 
-    # setting t.c emits events for everything
-    t.c = [10, 20]
-    t.events.a.assert_called_with(value=10)
-    t.events.b.assert_called_with(value=20)
-    t.events.c.assert_called_with(value=[10, 20])
-    t.events.d.assert_called_with(value=30)
-    t.events.e.assert_called_with(value=100)
-    assert t.a == 10
-    assert t.b == 20
 
-    t.events.a.reset_mock()
-    t.events.b.reset_mock()
-    t.events.c.reset_mock()
-    t.events.d.reset_mock()
-    t.events.e.reset_mock()
+@pytest.mark.parametrize(
+    'attribute,value,expected_event_values',
+    [
+        ('a', 5, {'a': 5, 'b': None, 'c': [5, 1], 'd': 6, 'e': 50}),
+        ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),
+        ('c', [10, 20], {'a': 10, 'b': 20, 'c': [10, 20], 'd': 30, 'e': 100}),
+        ('d', 8, {'a': 4, 'b': 4, 'c': [4, 4], 'd': 8, 'e': 40}),
+        ('e', 100, {'a': 10, 'b': None, 'c': [10, 1], 'd': 11, 'e': 100}),
+    ],
+)
+def test_evented_model_with_property_setters_events_1(
+    mocked_object, attribute, value, expected_event_values
+):
+    assert attribute in mocked_object.events
 
-    # same goes for t.d
-    t.d = 8
-    t.events.a.assert_called_with(value=4)
-    t.events.b.assert_called_with(value=4)
-    t.events.c.assert_called_with(value=[4, 4])
-    t.events.d.assert_called_with(value=8)
-    t.events.e.assert_called_with(value=40)
-    assert t.a == 4
-    assert t.b == 4
-
-    t.events.a.reset_mock()
-    t.events.b.reset_mock()
-    t.events.c.reset_mock()
-    t.events.d.reset_mock()
-    t.events.e.reset_mock()
-
-    # setting t.a emits events for a, c, d, e but not b
-    t.a = 5
-    t.events.a.assert_called_with(value=5)
-    t.events.b.assert_not_called()
-    t.events.c.assert_called_with(value=[5, 4])
-    t.events.d.assert_called_with(value=9)
-    t.events.e.assert_called_with(value=50)
-
-    t.events.a.reset_mock()
-    t.events.b.reset_mock()
-    t.events.c.reset_mock()
-    t.events.d.reset_mock()
-    t.events.e.reset_mock()
-
-    # same goes for t.e
-    t.e = 70
-    t.events.a.assert_called_with(value=7)
-    t.events.b.assert_not_called()
-    t.events.c.assert_called_with(value=[7, 4])
-    t.events.d.assert_called_with(value=11)
-    t.events.e.assert_called_with(value=70)
-
-    t.events.a.reset_mock()
-    t.events.b.reset_mock()
-    t.events.c.reset_mock()
-    t.events.d.reset_mock()
-    t.events.e.reset_mock()
-
-    # t.b emits events for b, c, d but not a, e
-    t.b = 5
-    t.events.a.assert_not_called()
-    t.events.b.assert_called_with(value=5)
-    t.events.c.assert_called_with(value=[7, 5])
-    t.events.d.assert_called_with(value=12)
-    t.events.e.assert_not_called()
+    setattr(mocked_object, attribute, value)
+    for attr, val in expected_event_values.items():
+        emitter = getattr(mocked_object.events, attr)
+        if val is None:
+            emitter.assert_not_called()
+        else:
+            emitter.assert_called_with(value=val)
