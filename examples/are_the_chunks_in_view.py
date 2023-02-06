@@ -11,7 +11,6 @@ from cachey import Cache
 # from https://github.com/janelia-cosem/fibsem-tools
 #   pip install fibsem-tools
 from fibsem_tools.io import read_xarray
-
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
 
@@ -402,7 +401,7 @@ def add_subnodes(
 
     # Zero out data, this is only necessary if our slice size isnt a multiple of chunksize
     texture.set_data(np.zeros(np.array(texture.shape), dtype=np.uint16))
-    
+
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
@@ -457,7 +456,7 @@ def add_subnodes(
         zeros_size = [sl.stop - sl.start for sl in chunk_slice]
         zdata = np.zeros(np.array(zeros_size), dtype=np.uint16)
         texture.set_data(zdata, offset=next_scale_texture_offset)
-        
+
         volume.update()
 
         # now convert the chunk slice to the next scale
@@ -510,6 +509,7 @@ if __name__ == '__main__' and True:
     multiscale_arrays = [array.data for array in large_image["arrays"]]
 
     # Testing with ones is pretty useful for debugging chunk placement for different scales
+    # TODO notice that we're using a ones array for testing instead of real data
     multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
     multiscale_chunk_maps = [
@@ -559,25 +559,16 @@ if __name__ == '__main__' and True:
             name=f"{container}/{dataset}/s{scale}",
         )
 
-    # Start loading
-    import cProfile
-
-    with cProfile.Profile() as pr:
-        pr.enable()
-        # add_subnodes_caller(
-        add_subnodes(
-            view_slice,
-            scale=3,
-            viewer=viewer,
-            cache_manager=cache_manager,
-            arrays=multiscale_arrays,
-            chunk_maps=multiscale_chunk_maps,
-            container=large_image["container"],
-            dataset=large_image["dataset"],
-        )
-        pr.disable()
-        pr.dump_stats("/tmp/single_add_subnodes.cprofile")
-        pr.print_stats()
+    add_subnodes(
+        view_slice,
+        scale=3,
+        viewer=viewer,
+        cache_manager=cache_manager,
+        arrays=multiscale_arrays,
+        chunk_maps=multiscale_chunk_maps,
+        container=large_image["container"],
+        dataset=large_image["dataset"],
+    )
 
     @viewer.bind_key("k")
     def refresher(event):
