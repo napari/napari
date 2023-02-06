@@ -320,10 +320,6 @@ def test_on_enabled_checkbox(plugin_dialog):
 
     widget.enabled_checkbox.setChecked(False)
 
-    # print(plugin_dialog.PluginManagerMock.called)
-
-    # assert False
-
 
 def test_add_items_outdate(plugin_dialog):
     new_plugin = (
@@ -336,17 +332,4 @@ def test_add_items_outdate(plugin_dialog):
         },
     )
     plugin_dialog._plugin_data = [new_plugin]
-    # plugin_dialog._plugin_data = [({'name': 'my-plugin'}, True, {
-    #         "home_page": 'www.mywebsite.com',
-    #         "pypi_versions": ['0.0.0'],
-    #         "conda_versions": ['0.0.0'],
-    #     })]
-    # pm = plugin_dialog.PluginManagerInstanceMock()
-    # plugins = [plugin for plugin in pm.iter_manifests()]
-    # plugin_dialog._plugin_data = plugins
-    # # for plugin in pm.iter_manifests():
-    # #     plugins.append(plugins)
-    # print(plugin_dialog._plugin_data)
     plugin_dialog._add_items()
-
-    # assert False
