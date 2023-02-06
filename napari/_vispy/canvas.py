@@ -11,6 +11,8 @@ from vispy.scene import Widget
 
 from napari._vispy import VispyCamera
 from napari._vispy.utils.gl import get_max_texture_sizes
+from napari._vispy.utils.visual import create_vispy_overlay
+from napari.components.overlays import CanvasOverlay, SceneOverlay
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.interactions import (
@@ -25,6 +27,7 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QCursor, QImage
 
     from napari.components import ViewerModel
+    from napari.components.overlays import Overlay
 
 
 class SceneCanvas(SceneCanvas_):
@@ -87,6 +90,7 @@ class VispyCanvas:
             self.view, self.viewer.camera, self.viewer.dims
         )
         self._layer_to_visual = {}
+        self._overlay_to_visual = {}
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
@@ -94,6 +98,9 @@ class VispyCanvas:
         # get_max_texture_sizes() will return the same results because it's
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
+
+        for overlay in self.viewer._overlays.values():
+            self._add_overlay_to_visual(overlay)
 
         self._scene_canvas.events.ignore_callback_errors = False
         self._scene_canvas.context.set_depth_func('lequal')
@@ -425,6 +432,23 @@ class VispyCanvas:
             vispy_layer.order = i
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
+
+    def _add_overlay_to_visual(self, overlay: Overlay):
+
+        # TODO: Fix issue with node.parent.parent not having attribute background_color_override.
+        if isinstance(overlay, CanvasOverlay):
+            vispy_overlay = create_vispy_overlay(
+                overlay, viewer=self.viewer, parent=self.view
+            )
+        elif isinstance(overlay, SceneOverlay):
+            vispy_overlay = create_vispy_overlay(
+                overlay, viewer=self.viewer, parent=self.view.scene
+            )
+        else:
+            vispy_overlay = create_vispy_overlay(
+                overlay, viewer=self.viewer, parent=self.view.scene
+            )
+        self._overlay_to_visual[overlay] = vispy_overlay
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""

@@ -31,7 +31,6 @@ from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from napari._qt.widgets.qt_welcome import QtWidgetOverlay
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
-from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
@@ -50,11 +49,7 @@ from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
-from napari._vispy import (  # isort:skip
-    VispyCanvas,
-    create_vispy_layer,
-    create_vispy_overlay,
-)
+from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 
 if TYPE_CHECKING:
@@ -207,7 +202,6 @@ class QtViewer(QSplitter):
             size=self.viewer._canvas_size[::-1],
         )
 
-        self.overlay_to_visual = {}
         # TODO: temporary but needs to be moved to VispyCanvas
         self.canvas._scene_canvas.events.key_press.connect(
             self._key_map_handler.on_key_press
@@ -279,8 +273,6 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
-        for overlay in self.viewer._overlays.values():
-            self._add_overlay(overlay)
 
     @property
     def controls(self) -> QtLayerControlsContainer:
@@ -387,16 +379,6 @@ class QtViewer(QSplitter):
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)
-
-    def _add_overlay(self, overlay: Overlay) -> None:
-        vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
-        # TODO: Fix issue with node.parent.parent not having attribute background_color_override.
-        if isinstance(overlay, CanvasOverlay):
-            vispy_overlay.node.parent = self.canvas.view
-
-        elif isinstance(overlay, SceneOverlay):
-            vispy_overlay.node.parent = self.canvas.view.scene
-        self.overlay_to_visual[overlay] = vispy_overlay
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
