@@ -168,7 +168,7 @@ class VispyCanvas:
 
     @property
     def bgcolor(self):
-        return self._scene_canvas.bgcolor.rgba
+        return self._scene_canvas.bgcolor.hex
 
     @bgcolor.setter
     def bgcolor(self, value):
@@ -434,20 +434,13 @@ class VispyCanvas:
         self._scene_canvas.update()
 
     def _add_overlay_to_visual(self, overlay: Overlay):
-
+        """Create vispy overlay and add to dictionary of overlay visuals"""
         # TODO: Fix issue with node.parent.parent not having attribute background_color_override.
+        vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
         if isinstance(overlay, CanvasOverlay):
-            vispy_overlay = create_vispy_overlay(
-                overlay, viewer=self.viewer, parent=self.view
-            )
+            vispy_overlay.node.parent = self.view
         elif isinstance(overlay, SceneOverlay):
-            vispy_overlay = create_vispy_overlay(
-                overlay, viewer=self.viewer, parent=self.view.scene
-            )
-        else:
-            vispy_overlay = create_vispy_overlay(
-                overlay, viewer=self.viewer, parent=self.view.scene
-            )
+            vispy_overlay.node.parent = self.view.scene
         self._overlay_to_visual[overlay] = vispy_overlay
 
     def screenshot(self) -> QImage:
