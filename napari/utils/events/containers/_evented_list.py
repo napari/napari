@@ -200,9 +200,9 @@ class EventedList(TypedMutableSequence[_T]):
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
                 event.index = self.index(event.source)
-        # reemit with this object's EventEmitter of the same type if present
-        # otherwise just emit with the EmitterGroup itself
-        getattr(self.events, event.type, self.events)(event)
+
+        # reemit with this object's EventEmitter
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the reemitter."""
