@@ -435,8 +435,11 @@ class VispyCanvas:
 
     def _add_overlay_to_visual(self, overlay: Overlay):
         """Create vispy overlay and add to dictionary of overlay visuals"""
-        # TODO: Fix issue with node.parent.parent not having attribute background_color_override.
-        vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
+        vispy_overlay = create_vispy_overlay(
+            overlay=overlay,
+            viewer=self.viewer,
+            bg_color_override=self.background_color_override,
+        )
         if isinstance(overlay, CanvasOverlay):
             vispy_overlay.node.parent = self.view
         elif isinstance(overlay, SceneOverlay):
