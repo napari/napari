@@ -328,8 +328,6 @@ def add_subnodes(
 
     Note: scale levels are assumed to be 2x factors of each other
 
-    TODO maybe we should smoosh chunks together within the same resolution level
-
     Parameters
     ----------
     view_slice : tuple or list of slices
@@ -374,9 +372,9 @@ def add_subnodes(
     # Translate the layer we're rendering to the right place
     layer.translate = np.array(min_coord) * 2**scale
 
-    LOGGER.debug(
-        f"add_subnodes {scale} {view_slice}",
-        f"highres interval: {[el.start * 2 ** scale for el in view_slice]},  {[el.stop * 2 ** scale for el in view_slice]}",
+    print(
+        f"add_subnodes {scale} {str(view_slice)}",
+        f"highres interval: {str([el.start * 2 ** scale for el in view_slice])},  {str([el.stop * 2 ** scale for el in view_slice])}",
         f"chunksize: {array.chunksize} arraysize: {array.shape}",
     )
 
@@ -402,6 +400,9 @@ def add_subnodes(
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
 
+    # Zero out data, this is only necessary if our slice size isnt a multiple of chunksize
+    texture.set_data(np.zeros(np.array(texture.shape), dtype=np.uint16))
+    
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
@@ -451,11 +452,12 @@ def add_subnodes(
             sl.start - layer_offset
             for sl, layer_offset in zip(chunk_slice, min_coord)
         ]
+
         # Blank out the region that will be filled in by other scales
         zeros_size = [sl.stop - sl.start for sl in chunk_slice]
         zdata = np.zeros(np.array(zeros_size), dtype=np.uint16)
         texture.set_data(zdata, offset=next_scale_texture_offset)
-
+        
         volume.update()
 
         # now convert the chunk slice to the next scale
@@ -464,8 +466,8 @@ def add_subnodes(
         ]
 
         LOGGER.debug(f"\nSource interval\t{min_coord}, {max_coord}")
-        LOGGER.debug(
-            f"Recursive add on\t{next_chunk_slice} idx {first_priority_idx}",
+        print(
+            f"Recursive add on\t{str(next_chunk_slice)} idx {first_priority_idx}",
             f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
         )
         add_subnodes(
@@ -483,7 +485,7 @@ def add_subnodes(
         volume.update()
 
 
-if __name__ == '__main__' or True:
+if __name__ == '__main__' and True:
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
     large_image = {
@@ -533,7 +535,6 @@ if __name__ == '__main__' or True:
     container = large_image["container"]
     dataset = large_image["dataset"]
 
-    # TODO make images that are multiples of chunksize for now, currently tries to write out of bounds sometimes
     scale = 3
     viewer.add_image(
         da.ones_like(multiscale_arrays[scale], dtype=np.uint16),
@@ -559,16 +560,24 @@ if __name__ == '__main__' or True:
         )
 
     # Start loading
-    add_subnodes_caller(
-        view_slice,
-        scale=3,
-        viewer=viewer,
-        cache_manager=cache_manager,
-        arrays=multiscale_arrays,
-        chunk_maps=multiscale_chunk_maps,
-        container=large_image["container"],
-        dataset=large_image["dataset"],
-    )
+    import cProfile
+
+    with cProfile.Profile() as pr:
+        pr.enable()
+        # add_subnodes_caller(
+        add_subnodes(
+            view_slice,
+            scale=3,
+            viewer=viewer,
+            cache_manager=cache_manager,
+            arrays=multiscale_arrays,
+            chunk_maps=multiscale_chunk_maps,
+            container=large_image["container"],
+            dataset=large_image["dataset"],
+        )
+        pr.disable()
+        pr.dump_stats("/tmp/single_add_subnodes.cprofile")
+        pr.print_stats()
 
     @viewer.bind_key("k")
     def refresher(event):
