@@ -6,7 +6,7 @@ import socket
 import weakref
 from contextlib import contextmanager
 from functools import lru_cache, partial
-from typing import Sequence, Union
+from typing import Iterable, Sequence, Union
 
 import numpy as np
 import qtpy
@@ -143,12 +143,13 @@ def event_hook_removed():
             QtCore.pyqtRestoreInputHook()
 
 
-def disable_with_opacity(obj, widget_list, enabled):
-    """Set enabled state on a list of widgets. If not enabled, decrease opacity."""
-    for widget_name in widget_list:
-        widget = getattr(obj, widget_name)
+def set_widgets_enabled_with_opacity(
+    parent: QWidget, widgets: Iterable[QWidget], enabled: bool
+):
+    """Set enabled state on some widgets. If not enabled, decrease opacity."""
+    for widget in widgets:
         widget.setEnabled(enabled)
-        op = QGraphicsOpacityEffect(obj)
+        op = QGraphicsOpacityEffect(parent)
         op.setOpacity(1 if enabled else 0.5)
         widget.setGraphicsEffect(op)
 
