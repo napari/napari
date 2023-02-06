@@ -108,7 +108,9 @@ class EventedMetaclass(main.ModelMetaclass):
         return cls
 
 
-def _update_dependents_from_setter_code(cls, prop_name, prop, deps, visited=()):
+def _update_dependents_from_setter_code(
+    cls, prop_name, prop, deps, visited=()
+):
     """Recursively find all the dependents of a setter by inspecting the code object.
 
     Update the given deps dictionary with the new findings.
