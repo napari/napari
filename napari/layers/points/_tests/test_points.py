@@ -762,7 +762,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -2523,3 +2523,20 @@ def test_point_slice_request_response(dims_indices, target_indices):
 
     assert len(response.indices) == len(target_indices)
     assert all([a == b for a, b in zip(response.indices, target_indices)])
+
+
+def test_editable_and_visible_are_independent():
+    """See https://github.com/napari/napari/issues/1346"""
+    data = np.empty((0, 2))
+    layer = Points(data)
+    assert layer.editable
+    assert layer.visible
+
+    layer.editable = False
+    layer.visible = False
+    assert not layer.editable
+    assert not layer.visible
+
+    layer.visible = True
+
+    assert not layer.editable

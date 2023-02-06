@@ -7,8 +7,9 @@ Shift a rectangle along its normal vector in 3D
 .. tags:: experimental
 """
 
-import napari
 import numpy as np
+
+import napari
 
 rectangle = np.array(
     [

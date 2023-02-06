@@ -155,7 +155,7 @@ class TextureAtlas2D(Texture2D):
         shape_in_tiles: Tuple[int, int],
         image_converter: Callable[[ArrayLike], ArrayLike],
         **kwargs,
-    ):
+    ) -> None:
         # Each tile's shape in texels, for example (256, 256, 3).
         self.spec = TileSpec.from_shape(tile_shape)
 

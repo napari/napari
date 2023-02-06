@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Generator, Iterable, List, TypeVar, Union
+from typing import TYPE_CHECKING, Generator, Iterable, List, TypeVar, Union
 
-from napari.utils.events.containers._nested_list import MaybeNestedIndex
 from napari.utils.events.containers._selectable_list import (
     SelectableNestableEventedList,
 )
 from napari.utils.tree.node import Node
+
+if TYPE_CHECKING:
+    from napari.utils.events.containers._nested_list import MaybeNestedIndex
 
 NodeType = TypeVar("NodeType", bound=Node)
 
@@ -39,7 +41,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         children: Iterable[NodeType] = (),
         name: str = "Group",
         basetype=Node,
-    ):
+    ) -> None:
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
             self,
@@ -71,7 +73,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
         return super().__getitem__(key)
 
-    def __delitem__(self, key: MaybeNestedIndex):
+    def __delitem__(self, key: "MaybeNestedIndex"):
         """Remove item at ``key``, and unparent."""
         if isinstance(key, (int, tuple)):
             self[key].parent = None  # type: ignore

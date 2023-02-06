@@ -78,7 +78,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
         close_btn=True,
-    ):
+    ) -> None:
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
@@ -313,7 +313,7 @@ class QtCustomTitleBar(QLabel):
 
     def __init__(
         self, parent, title: str = '', vertical=False, close_btn=True
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))

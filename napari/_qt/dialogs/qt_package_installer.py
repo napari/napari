@@ -169,7 +169,11 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     @classmethod
     def available(cls):
-        return call([cls.executable(), "--version"]) == 0
+        executable = cls.executable()
+        try:
+            return call([executable, "--version"]) == 0
+        except FileNotFoundError:  # pragma: no cover
+            return False
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()

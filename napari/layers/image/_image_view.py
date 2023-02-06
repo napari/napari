@@ -36,7 +36,7 @@ class ImageView:
         self,
         view_image: ArrayLike,
         image_converter: Callable[[ArrayLike], ArrayLike],
-    ):
+    ) -> None:
         """Create an ImageView with some default image."""
         self.view = view_image
         self.image_converter = image_converter

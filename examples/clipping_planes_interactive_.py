@@ -7,11 +7,12 @@ for moving the plane
 
 .. tags:: experimental
 """
-import napari
 import numpy as np
-from skimage import data
 from scipy import ndimage
+from skimage import data
 from vispy.geometry import create_sphere
+
+import napari
 
 viewer = napari.Viewer(ndisplay=3)
 
