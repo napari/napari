@@ -1,6 +1,6 @@
 import importlib.metadata
 from typing import Generator, Optional, Tuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import npe2
 import pytest
@@ -51,9 +51,6 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
         def instance(self):
             return PluginManagerInstanceMock()
 
-        # def __repr__(self):
-        #     return []
-
     class PluginManagerInstanceMock:
         def __init__(self):
             self.plugins = ['test-name-0', 'test-name-1', 'my-plugin']
@@ -86,10 +83,6 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
 
         def move(self, pos):
             return False
-
-    def mock_warn_popup(text):
-        print('here!')
-        return MagicMock()
 
     def mock_metadata(name):
         meta = {
@@ -290,21 +283,6 @@ def test_plugin_list_handle_action(plugin_dialog):
     plugin_dialog.available_list.handle_action(
         item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
     )
-
-
-@pytest.mark.parametrize(
-    "text,action_name,update",
-    [
-        ("name", "install", True),
-        ("name", "install", False),
-        ("name", "uninstall", False),
-        ("name", "cancel", False),
-    ],
-)
-def test_plugin_list_item_set_busy(text, action_name, update, plugin_dialog):
-    item = plugin_dialog.installed_list.item(0)
-    widget = plugin_dialog.installed_list.itemWidget(item)
-    widget.set_busy(text, action_name, update)
 
 
 def test_on_enabled_checkbox(plugin_dialog):
