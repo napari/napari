@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from napari.components.overlays import Overlay
 
 
-class SceneCanvas(SceneCanvas_):
+class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
 
     def _process_mouse_event(self, event):
@@ -83,7 +83,7 @@ class VispyCanvas:
         self._last_theme_color = None
         self._background_color_override = None
         self.viewer = viewer
-        self._scene_canvas = SceneCanvas(
+        self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
         )
         self.view = self.central_widget.add_view(border_width=0)
