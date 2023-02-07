@@ -1,3 +1,4 @@
+(getting-started)=
 # Getting started with napari
 
 Welcome to the getting started with **napari** tutorial!

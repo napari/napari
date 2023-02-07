@@ -11,6 +11,7 @@ kernelspec:
   name: python3
 ---
 
+(viewer-tutorial)=
 # napari viewer tutorial
 
 +++

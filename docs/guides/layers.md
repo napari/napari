@@ -1,3 +1,4 @@
+(layers-glance)=
 # Layers at a glance
 
 [Layers](napari.layers) are the basic viewable objects that can be added to a

@@ -1,3 +1,4 @@
+(processing)=
 # Processing
 
 This section contains tutorials for data processing.
