@@ -10,6 +10,7 @@ from vispy.scene import SceneCanvas as SceneCanvas_
 from vispy.scene import Widget
 
 from napari._vispy import VispyCamera
+from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.overlays import CanvasOverlay, SceneOverlay
@@ -98,6 +99,7 @@ class VispyCanvas:
         # get_max_texture_sizes() will return the same results because it's
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
+        self._cursors = QtCursorVisual
 
         for overlay in self.viewer._overlays.values():
             self._add_overlay_to_visual(overlay)
@@ -118,6 +120,8 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
         self._scene_canvas.events.resize.connect(self.on_resize)
         self._scene_canvas.events.draw.connect(self.on_draw)
+        self.viewer.cursor.events.style.connect(self._on_cursor)
+        self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.theme.connect(self._on_theme_change)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
@@ -205,6 +209,31 @@ class VispyCanvas:
     def cursor(self, q_cursor):
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
+
+    def _on_cursor(self):
+        """Set the appearance of the mouse cursor."""
+
+        cursor = self.viewer.cursor.style
+        if cursor in {'square', 'circle'}:
+
+            # Scale size by zoom if needed
+            size = self.viewer.cursor.size
+            if self.viewer.cursor.scaled:
+                size *= self.viewer.camera.zoom
+
+            size = int(size)
+
+            # make sure the square fits within the current canvas
+            if size < 8 or size > (min(*self.size) - 4):
+                self.cursor = self._cursors['cross'].value
+            elif cursor == 'circle':
+                self.cursor = self._cursors.circle(size)
+            else:
+                self.cursor = self._cursors.square(size)
+        elif cursor == 'crosshair':
+            self.cursor = self._cursors.crosshair()
+        else:
+            self.cursor = self._cursors[cursor].value
 
     def delete(self):
         """Schedules the native widget for deletion"""

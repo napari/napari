@@ -9,19 +9,14 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
 from weakref import WeakSet
 
 from qtpy.QtCore import QCoreApplication, QObject, Qt
-from qtpy.QtGui import QCursor, QGuiApplication
+from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari._qt.perf.qt_performance import QtPerformance
-from napari._qt.utils import (
-    QImg2array,
-    circle_pixmap,
-    crosshair_pixmap,
-    square_pixmap,
-)
+from napari._qt.utils import QImg2array
 from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_viewer_buttons import (
     QtLayerButtons,
@@ -241,8 +236,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
-        self.viewer.cursor.events.style.connect(self._on_cursor)
-        self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
 
         self.setAcceptDrops(True)
@@ -746,32 +739,6 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
-
-    def _on_cursor(self):
-        """Set the appearance of the mouse cursor."""
-
-        cursor = self.viewer.cursor.style
-        if cursor in {'square', 'circle'}:
-
-            # Scale size by zoom if needed
-            size = self.viewer.cursor.size
-            if self.viewer.cursor.scaled:
-                size *= self.viewer.camera.zoom
-
-            size = int(size)
-
-            # make sure the square fits within the current canvas
-            if size < 8 or size > (min(*self.canvas.size) - 4):
-                q_cursor = self._cursors['cross']
-            elif cursor == 'circle':
-                q_cursor = QCursor(circle_pixmap(size))
-            else:
-                q_cursor = QCursor(square_pixmap(size))
-        elif cursor == 'crosshair':
-            q_cursor = QCursor(crosshair_pixmap())
-        else:
-            q_cursor = self._cursors[cursor]
-        self.canvas.cursor = q_cursor
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
