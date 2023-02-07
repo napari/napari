@@ -349,7 +349,9 @@ class QtLabelsControls(QtLayerControls):
         self.setFocus()
 
     def toggle_selected_mode(self, state):
-        self.layer.show_selected_label = state == Qt.CheckState.Checked
+        self.layer.show_selected_label = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def changeSize(self, value):
         """Change paint brush size.
@@ -369,7 +371,7 @@ class QtLabelsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if labels are contiguous.
         """
-        self.layer.contiguous = state == Qt.CheckState.Checked
+        self.layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def change_n_edit_dim(self, value):
         """Change the number of editable dimensions of label layer.
@@ -403,7 +405,9 @@ class QtLabelsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if overwriting label is enabled.
         """
-        self.layer.preserve_labels = state == Qt.CheckState.Checked
+        self.layer.preserve_labels = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def change_color_mode(self):
         """Change color mode of label layer"""

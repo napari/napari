@@ -405,7 +405,7 @@ class QtShapesControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        self.layer.text.visible = state == Qt.CheckState.Checked
+        self.layer.text.visible = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""
