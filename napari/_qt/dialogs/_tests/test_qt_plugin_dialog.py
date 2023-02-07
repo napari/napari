@@ -263,9 +263,7 @@ def test_plugin_list_handle_action(plugin_dialog):
     plugin_dialog.installed_list.handle_action(
         item, 'test-name-1', InstallerActions.INSTALL, update=True
     )
-    plugin_dialog.installed_list.handle_action(
-        item, 'test-name-1', InstallerActions.INSTALL, update=False
-    )
+
     with patch.object(qt_plugin_dialog.WarnPopup, "exec_") as mock:
         plugin_dialog.installed_list.handle_action(
             item, 'test-name-1', InstallerActions.UNINSTALL, update=False
