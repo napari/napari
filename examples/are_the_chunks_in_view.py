@@ -11,6 +11,8 @@ from cachey import Cache
 # from https://github.com/janelia-cosem/fibsem-tools
 #   pip install fibsem-tools
 from fibsem_tools.io import read_xarray
+from ome_zarr.io import parse_url
+from ome_zarr.reader import Reader
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
 
@@ -82,6 +84,8 @@ class ChunkCacheManager:
 
 def chunk_centers(array: da.Array):
     """Make a dictionary mapping chunk centers to chunk slices.
+
+    TODO this assumes 3D
 
     Parameters
     ----------
@@ -296,6 +300,7 @@ def add_subnodes_caller(
     chunk_maps=None,
     container="",
     dataset="",
+    scale_factors=[],
 ):
     """
     This function is a stub to to launch an initial recursive call of add_subnodes.
@@ -322,6 +327,7 @@ def add_subnodes(
     container="",
     dataset="",
     alpha=0.8,
+    scale_factors=[],
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
@@ -351,6 +357,8 @@ def add_subnodes(
     alpha : float
         a parameter that tunes the behavior of chunk prioritization
         see prioritised_chunk_loading for more info
+    scale_factors : list of tuples
+        a list of tuples of scale factors for each array
     """
 
     layer_name = f"{container}/{dataset}/s{scale}"
@@ -363,13 +371,15 @@ def add_subnodes(
 
     print(f"view slice {view_slice}")
 
+    # Get some variables specific to this scale level
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
     array = arrays[scale]
     chunk_map = chunk_maps[scale]
+    scale_factor = scale_factors[scale]
 
     # Translate the layer we're rendering to the right place
-    layer.translate = np.array(min_coord) * 2**scale
+    layer.translate = np.array(min_coord) * np.array(scale_factor)
 
     print(
         f"add_subnodes {scale} {str(view_slice)}",
@@ -387,7 +397,7 @@ def add_subnodes(
     ]
 
     # Rescale points to world for priority calculations
-    points_world = points * 2**scale
+    points_world = points * np.array(scale_factor)
 
     # Prioritize chunks using world coordinates
     distances = distance_from_camera_centre_line(points_world, viewer.camera)
@@ -413,9 +423,9 @@ def add_subnodes(
 
             # find position and scale
             node_offset = (
-                min_interval[0] * 2**scale,
-                min_interval[1] * 2**scale,
-                min_interval[2] * 2**scale,
+                min_interval[0] * scale_factor[0],
+                min_interval[1] * scale_factor[1],
+                min_interval[2] * scale_factor[2],
             )
             LOGGER.debug(
                 f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
@@ -459,15 +469,25 @@ def add_subnodes(
 
         volume.update()
 
+        # Compute the relative scale factor between these layers
+        relative_scale_factor = [
+            this_scale / next_scale
+            for this_scale, next_scale in zip(
+                scale_factors[scale], scale_factors[scale - 1]
+            )
+        ]
+
         # now convert the chunk slice to the next scale
         next_chunk_slice = [
-            slice(st.start * 2, st.stop * 2) for st in chunk_slice
+            slice(st.start * dim_scale, st.stop * dim_scale)
+            for st, dim_scale in zip(chunk_slice, relative_scale_factor)
         ]
 
         LOGGER.debug(f"\nSource interval\t{min_coord}, {max_coord}")
         print(
             f"Recursive add on\t{str(next_chunk_slice)} idx {first_priority_idx}",
             f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
+            f"Relative scale factor {relative_scale_factor}",
         )
         add_subnodes(
             next_chunk_slice,
@@ -478,35 +498,109 @@ def add_subnodes(
             chunk_maps=chunk_maps,
             container=container,
             dataset=dataset,
+            scale_factors=scale_factors,
         )
     else:
         # This is for the high res case
         volume.update()
 
 
-if __name__ == '__main__' and True:
-    # TODO get this working with a non-remote large data sample
-    # Chunked, multiscale data
+# TODO capture some sort of metadata about scale factors
+def openorganelle_mouse_kidney_labels():
     large_image = {
         "container": "s3://janelia-cosem-datasets/jrc_mus-kidney/jrc_mus-kidney.n5",
         "dataset": "labels/empanada-mito_seg",
         "scale_levels": 4,
+        "scale_factors": [(1, 1, 1), (2, 2, 2), (4, 4, 4), (8, 8, 8)],
     }
     large_image["arrays"] = [
         read_xarray(
             f"{large_image['container']}/{large_image['dataset']}/s{scale}/",
             storage_options={"anon": True},
-        )
+        ).data
         for scale in range(large_image["scale_levels"])
     ]
+    return large_image
+
+
+def openorganelle_mouse_kidney_em():
+    large_image = {
+        "container": "s3://janelia-cosem-datasets/jrc_mus-kidney/jrc_mus-kidney.n5",
+        "dataset": "em/fibsem-uint8",
+        "scale_levels": 5,
+        "scale_factors": [
+            (1, 1, 1),
+            (2, 2, 2),
+            (4, 4, 4),
+            (8, 8, 8),
+            (16, 16, 16),
+        ],
+    }
+    large_image["arrays"] = [
+        read_xarray(
+            f"{large_image['container']}/{large_image['dataset']}/s{scale}/",
+            storage_options={"anon": True},
+        ).data
+        for scale in range(large_image["scale_levels"])
+    ]
+    return large_image
+
+
+# TODO this one needs testing, it is chunked over 5D
+def idr0044A():
+    large_image = {
+        "container": "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0044A/4007801.zarr",
+        "dataset": "",
+        "scale_levels": 5,
+    }
+    large_image["arrays"] = [
+        read_xarray(
+            f"{large_image['container']}/{scale}/",
+            #            storage_options={"anon": True},
+        ).data[362, 0, :, :, :]
+        for scale in range(large_image["scale_levels"])
+    ]
+    return large_image
+
+
+def idr0075A():
+    large_image = {
+        "container": "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0075A/9528933.zarr",
+        "dataset": "",
+        "scale_levels": 4,
+        "scale_factors": [(1, 1, 1), (1, 2, 2), (1, 4, 4), (1, 8, 8)],
+    }
+    large_image["arrays"] = []
+    for scale in range(large_image["scale_levels"]):
+        url = f"{large_image['container']}/{scale}/"
+        store = parse_url(url, mode="r").store
+
+        reader = Reader(parse_url(url))
+        # nodes may include images, labels etc
+        nodes = list(reader())
+        # first node will be the image pixel data
+        image_node = nodes[0]
+
+        large_image["arrays"].append(image_node.data)
+    return large_image
+
+
+if __name__ == '__main__' and True:
+    # TODO get this working with a non-remote large data sample
+    # Chunked, multiscale data
+
+    # OpenOrganelle Mouse Kidney
+    large_image = openorganelle_mouse_kidney_labels()
+    # large_image = idr0075A()
+    # large_image = openorganelle_mouse_kidney_em()
 
     # view_interval = ((0, 0, 0), [3 * el for el in chunk_strides[3]])
     # view_interval = ((0, 0, 0), (6144, 2048, 4096))
 
     cache_manager = ChunkCacheManager(cache_size=6e9)
 
-    # Make our xarray data look more like typical napari multiscale data
-    multiscale_arrays = [array.data for array in large_image["arrays"]]
+    # TODO if the lowest scale level of these arrays still exceeds texture memory, this breaks
+    multiscale_arrays = large_image["arrays"]
 
     # Testing with ones is pretty useful for debugging chunk placement for different scales
     # TODO notice that we're using a ones array for testing instead of real data
@@ -523,51 +617,64 @@ if __name__ == '__main__' and True:
 
     # view_interval = ((0, 0, 0), multiscale_arrays[0].shape)
     view_slice = [
-        slice(0, multiscale_arrays[3].shape[idx])
-        for idx in range(len(multiscale_arrays[3].shape))
+        slice(0, multiscale_arrays[-1].shape[idx])
+        for idx in range(len(multiscale_arrays[-1].shape))
     ]
 
     viewer = napari.Viewer(ndisplay=3)
 
-    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow"}
+    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow", 4: "winter"}
 
     # Initialize layers
     container = large_image["container"]
     dataset = large_image["dataset"]
+    scale_factors = large_image["scale_factors"]
 
-    scale = 3
+    scale = len(multiscale_arrays) - 1
     viewer.add_image(
         da.ones_like(multiscale_arrays[scale], dtype=np.uint16),
         blending="additive",
-        scale=(2**scale, 2**scale, 2**scale),
+        scale=scale_factors[scale],
         colormap=colormaps[scale],
         opacity=0.8,
         rendering="mip",
         name=f"{container}/{dataset}/s{scale}",
     )
-    for scale in range(3):
+    for scale in range(len(multiscale_arrays) - 1):
+        relative_scale_factor = [
+            this_scale / next_scale
+            for this_scale, next_scale in zip(
+                scale_factors[scale], scale_factors[scale - 1]
+            )
+        ]
+
+        # TODO Make sure this is still smaller than the array
+        scale_shape = np.array(multiscale_arrays[scale + 1].chunksize) * 2
+
         viewer.add_image(
             da.ones(
-                np.array(multiscale_arrays[scale + 1].chunksize) * 2,
+                scale_shape,
                 dtype=np.uint16,
             ),
             blending="additive",
-            scale=(2**scale, 2**scale, 2**scale),
+            scale=scale_factors[scale],
             colormap=colormaps[scale],
             opacity=0.8,
             rendering="mip",
             name=f"{container}/{dataset}/s{scale}",
         )
 
+    # Hooks and calls to start rendering
     add_subnodes(
         view_slice,
-        scale=3,
+        scale=len(multiscale_arrays) - 1,
         viewer=viewer,
         cache_manager=cache_manager,
         arrays=multiscale_arrays,
         chunk_maps=multiscale_chunk_maps,
         container=large_image["container"],
         dataset=large_image["dataset"],
+        scale_factors=scale_factors,
     )
 
     @viewer.bind_key("k")
@@ -575,13 +682,14 @@ if __name__ == '__main__' and True:
         add_subnodes_caller(
             event,
             view_slice,
-            scale=3,
+            scale=len(multiscale_arrays) - 1,
             viewer=viewer,
             cache_manager=cache_manager,
             arrays=multiscale_arrays,
             chunk_maps=multiscale_chunk_maps,
             container=large_image["container"],
             dataset=large_image["dataset"],
+            scale_factors=scale_factors,
         )
 
     # viewer.camera.events.connect(
