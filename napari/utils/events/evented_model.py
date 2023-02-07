@@ -108,29 +108,37 @@ class EventedMetaclass(main.ModelMetaclass):
         return cls
 
 
-def _update_dependents_from_setter_code(cls, prop, setter, deps, visited=()):
+def _update_dependents_from_setter_code(
+    cls, prop_name, prop, deps, visited=()
+):
     """Recursively find all the dependents of a setter by inspecting the code object.
+
     Update the given deps dictionary with the new findings.
     """
-    for name in setter.fget.__code__.co_names:
+    for name in prop.fget.__code__.co_names:
         if name in cls.__fields__:
-            deps.setdefault(name, set()).add(prop)
+            deps.setdefault(name, set()).add(prop_name)
         elif name in cls.__property_setters__ and name not in visited:
             # to avoid infinite recursion, we shouldn't re-check setters we've already seen
             visited = visited + (name,)
-            # setter is the new property, but we leave prop
+            # setter is the new property, but we leave prop_name the same
             setter = cls.__property_setters__[name]
             _update_dependents_from_setter_code(
-                cls, prop, setter, deps, visited
+                cls, prop_name, setter, deps, visited
             )
 
 
 def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
-    Dependencies may be declared in the Model Config to emit an event
-    for a computed property when a model field that it depends on changes
-    e.g.  (@property 'c' depends on model fields 'a' and 'b')
+    Dependencies will be guessed by inspecting the code of each property
+    in order to emit an event for a computed property when a model field
+    that it depends on changes (e.g: @property 'c' depends on model fields
+    'a' and 'b'). Alternatvely, dependencies may be declared excplicitly
+    in the Model Config.
+
+    Note: accessing a field with `getattr()` instead of dot notation won't
+    be automatically detected.
 
     Examples
     --------
@@ -167,21 +175,21 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
 
     _deps = getattr(cls.__config__, 'dependencies', None)
     if _deps:
-        for prop, fields in _deps.items():
-            if prop not in cls.__property_setters__:
+        for prop_name, fields in _deps.items():
+            if prop_name not in cls.__property_setters__:
                 raise ValueError(
                     'Fields with dependencies must be property.setters. '
-                    f'{prop!r} is not.'
+                    f'{prop_name!r} is not.'
                 )
             for field in fields:
                 if field not in cls.__fields__:
                     warnings.warn(f"Unrecognized field dependency: {field}")
-                deps.setdefault(field, set()).add(prop)
+                deps.setdefault(field, set()).add(prop_name)
     else:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
-        for prop, setter in cls.__property_setters__.items():
-            _update_dependents_from_setter_code(cls, prop, setter, deps)
+        for prop_name, prop in cls.__property_setters__.items():
+            _update_dependents_from_setter_code(cls, prop_name, prop, deps)
     return deps
 
 

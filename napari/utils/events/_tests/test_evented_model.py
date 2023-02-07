@@ -506,9 +506,15 @@ def mocked_object():
         ('e', 100, {'a': 10, 'b': None, 'c': [10, 1], 'd': 11, 'e': 100}),
     ],
 )
-def test_evented_model_with_property_setters_events_1(
+def test_evented_model_with_property_setter_events(
     mocked_object, attribute, value, expected_event_values
 ):
+    """Test that setting connected fields and properties fires the right events.
+
+    For each field and property, set a new value and check that all the
+    dependent fields/properties fire events with the correct value,
+    and that non-connected properties fire no event.
+    """
     assert attribute in mocked_object.events
 
     setattr(mocked_object, attribute, value)
