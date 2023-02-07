@@ -27,7 +27,7 @@ def activate_labels_transform_mode(layer):
 
 
 @register_label_mode_action(trans._('Pan/zoom'))
-def activate_labels_pan_zoom_mode(layer):
+def activate_labels_pan_zoom_mode(layer: Labels):
     layer.mode = Mode.PAN_ZOOM
 
 
