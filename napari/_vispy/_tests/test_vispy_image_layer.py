@@ -31,6 +31,17 @@ def _node_scene_size(node: Union[ImageVisual, VolumeVisual]) -> np.ndarray:
     return size[:3]
 
 
+def test_3d_slice_of_3d_image():
+    """See https://github.com/napari/napari/issues/5536"""
+    image = Image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
+    vispy_image = VispyImageLayer(image)
+
+    image._slice_dims(point=(0, 0, 0), ndisplay=3)
+
+    scene_size = _node_scene_size(vispy_image.node)
+    np.testing.assert_array_equal((8, 4, 2), scene_size)
+
+
 @pytest.mark.parametrize('order', permutations((0, 1, 2)))
 def test_3d_slice_of_2d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
