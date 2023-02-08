@@ -5,35 +5,43 @@ from napari.components.overlays import AxesOverlay
 
 def test_init_with_2d_display_of_2_dimensions():
     axes_model = AxesOverlay()
-    viewer = ViewerModel(axis_labels=('a', 'b'))
+    viewer = ViewerModel()
     viewer.dims.ndim = 2
     viewer.dims.ndisplay = 3
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('b', 'a')
+    assert tuple(axes_view.node.text.text) == ('1', '0')
 
 
 def test_init_with_2d_display_of_3_dimensions():
     axes_model = AxesOverlay()
-    viewer = ViewerModel(axis_labels=('a', 'b', 'c'))
+    viewer = ViewerModel()
+    viewer.dims.ndim = 3
+    viewer.dims.ndisplay = 2
+
+    axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
+
+    assert tuple(axes_view.node.text.text) == ('2', '1')
+
+
+def test_init_with_3d_display_of_2_dimensions():
+    axes_model = AxesOverlay()
+    viewer = ViewerModel()
     viewer.dims.ndim = 2
     viewer.dims.ndisplay = 3
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('c', 'b')
+    assert tuple(axes_view.node.text.text) == ('1', '0')
 
 
 def test_init_with_3d_display_of_3_dimensions():
     axes_model = AxesOverlay()
     viewer = ViewerModel()
-    # TODO: passing through initializer replaces 'a' with '0', likely
-    # due to root validator, so set here instead.
     viewer.dims.ndim = 3
     viewer.dims.ndisplay = 3
-    viewer.dims.axis_labels = ('a', 'b', 'c')
 
     axes_view = VispyAxesOverlay(viewer=viewer, overlay=axes_model)
 
-    assert tuple(axes_view.node.text.text) == ('c', 'b', 'a')
+    assert tuple(axes_view.node.text.text) == ('2', '1', '0')
