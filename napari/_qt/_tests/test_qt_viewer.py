@@ -193,7 +193,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     data = np.ones((10, 10))
 
     viewer = make_napari_viewer()
-    vis = viewer.window._qt_viewer.canvas._layer_to_visual
+    vis = viewer.window._qt_viewer.canvas.layer_to_visual
     viewer.add_image(data, colormap='red', name='red')
     viewer.add_image(data, colormap='green', name='green')
     viewer.add_image(data, colormap='blue', name='blue')
@@ -677,8 +677,8 @@ def test_insert_layer_ordering(make_napari_viewer):
     viewer.layers.append(pl1)
     viewer.layers.insert(0, pl2)
 
-    pl1_vispy = viewer.window._qt_viewer.canvas._layer_to_visual[pl1].node
-    pl2_vispy = viewer.window._qt_viewer.canvas._layer_to_visual[pl2].node
+    pl1_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl1].node
+    pl2_vispy = viewer.window._qt_viewer.canvas.layer_to_visual[pl2].node
     assert pl1_vispy.order == 1
     assert pl2_vispy.order == 0
 
