@@ -96,4 +96,4 @@ def test_convert_layer(input, type_):
     ):
         assert id(input.data) == id(
             ll[0].data
-        )  # don't copy data unnecessarily
+        )  # don't copy data unnecessarily, python object id should indicate it's the same object
