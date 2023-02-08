@@ -345,6 +345,11 @@ class QtViewer(QSplitter):
             self._dockPerformance = self._create_performance_dock_widget()
         return self._dockPerformance
 
+    @property
+    def layer_to_visual(self):
+        """Mapping of Napari layer to Vispy layer. Added for backward compatibility"""
+        return self.canvas.layer_to_visual
+
     def _leave_canvas(self):
         """disable status on canvas leave"""
         self.viewer.status = ""

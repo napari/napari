@@ -90,7 +90,7 @@ class VispyCanvas:
         self._vispy_camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self._layer_to_visual = {}
+        self.layer_to_visual = {}
         self._overlay_to_visual = {}
         self._instances.add(self)
 
@@ -443,21 +443,21 @@ class VispyCanvas:
     def add_layer_to_visual(self, napari_layer, vispy_layer):
         if not self.viewer.grid.enabled:
             vispy_layer.node.parent = self.view.scene
-            self._layer_to_visual[napari_layer] = vispy_layer
+            self.layer_to_visual[napari_layer] = vispy_layer
         self._reorder_layers()
 
     def _remove_layer(self, event):
         layer = event.value
-        vispy_layer = self._layer_to_visual[layer]
+        vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
-        del self._layer_to_visual[layer]
+        del self.layer_to_visual[layer]
         self._reorder_layers()
 
     def _reorder_layers(self):
         """When the list is reordered, propagate changes to draw order."""
         for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self._layer_to_visual[layer]
+            vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
