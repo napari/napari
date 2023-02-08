@@ -136,7 +136,9 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
     widget.show()
     qtbot.wait(300)
     qtbot.add_widget(widget)
-    return widget
+    yield widget
+    widget.hide()
+    widget._add_items_timer.stop()
 
 
 @pytest.fixture
@@ -162,7 +164,9 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
     widget.show()
     qtbot.wait(300)
     qtbot.add_widget(widget)
-    return widget
+    yield widget
+    widget.hide()
+    widget._add_items_timer.stop()
 
 
 def test_filter_not_available_plugins(plugin_dialog_constructor):
