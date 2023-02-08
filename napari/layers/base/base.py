@@ -998,7 +998,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         self._slice_input = slice_input
         self.refresh()
-        self._reset_editable()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None

@@ -339,6 +339,10 @@ class QtPointsControls(QtLayerControls):
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
+    def _on_ndisplay_changed(self):
+        # interaction currently does not work for 2D layers being rendered in 3D
+        self.layer.editable = not (self.layer.ndim == 2 and self.ndisplay == 3)
+
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
         set_widgets_enabled_with_opacity(

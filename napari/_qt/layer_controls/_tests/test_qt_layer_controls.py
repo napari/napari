@@ -5,10 +5,12 @@ import pytest
 from qtpy.QtWidgets import QAbstractButton
 
 from napari._qt.layer_controls.qt_layer_controls_container import (
+    QtLayerControlsContainer,
     create_qt_layer_controls,
     layer_to_controls,
 )
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+from napari.components import ViewerModel
 from napari.layers import Labels, Points, Shapes
 
 LayerTypeWithData = namedtuple('LayerTypeWithData', ['type', 'data'])
@@ -80,6 +82,26 @@ def test_set_text_then_set_visible_updates_checkbox(
     layer.text.visible = True
 
     assert ctrl.textDispCheckBox.isChecked()
+
+
+@pytest.mark.parametrize(('ndim', 'editable_after'), ((2, False), (3, True)))
+def test_set_3d_display_with_points(qtbot, ndim, editable_after):
+    """Interactivity only work for 2D points layers
+    being rendered in 2D and not 3D. Verify that layer.editable
+    is set appropriately upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    viewer = ViewerModel()
+    container = QtLayerControlsContainer(viewer)
+    qtbot.addWidget(container)
+    layer = viewer.add_points(np.zeros((4, ndim)))
+    assert viewer.dims.ndisplay == 2
+    assert layer.editable
+
+    viewer.dims.ndisplay = 3
+
+    assert layer.editable == editable_after
 
 
 # The following tests handle changes to the layer's visible and
