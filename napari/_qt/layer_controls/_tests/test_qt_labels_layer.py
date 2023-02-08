@@ -63,3 +63,22 @@ def test_changing_colormap_updates_colorbox(qtbot):
         color_box.color,
         np.round(np.asarray(layer._selected_color) * 255 * layer.opacity),
     )
+
+
+def test_layercontrols_checkboxes(qtbot):
+    """Tests that the Labels LayerControl checkboxes actually set properties properly."""
+    layer = Labels(_LABELS)
+    qtctrl = QtLabelsControls(layer)
+    qtbot.add_widget(qtctrl)
+    qtctrl.selectedColorCheckbox.setChecked(True)
+    assert layer.show_selected_label
+    qtctrl.selectedColorCheckbox.setChecked(False)
+    assert not layer.show_selected_label
+    qtctrl.contigCheckBox.setChecked(True)
+    assert layer.contiguous
+    qtctrl.contigCheckBox.setChecked(False)
+    assert not layer.contiguous
+    qtctrl.preserveLabelsCheckBox.setChecked(True)
+    assert layer.preserve_labels
+    qtctrl.preserveLabelsCheckBox.setChecked(False)
+    assert not layer.preserve_labels
