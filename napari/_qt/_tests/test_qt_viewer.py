@@ -724,7 +724,6 @@ def _node_scene_size(node: Union[ImageVisual, VolumeVisual]) -> np.ndarray:
 def test_axes_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
-    viewer.dims.axis_labels = ('a', 'b', 'c')
 
     layer_visual = viewer._window._qt_viewer.layer_to_visual[layer]
     axes_visual = viewer._window._qt_viewer.overlay_to_visual[
@@ -733,4 +732,4 @@ def test_axes_labels(make_napari_viewer):
 
     layer_size = _node_scene_size(layer_visual.node)
     assert tuple(layer_size) == (8, 4, 2)
-    assert tuple(axes_visual.node.text.text) == ('c', 'b', 'a')
+    assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
