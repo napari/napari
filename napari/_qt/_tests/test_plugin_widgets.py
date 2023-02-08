@@ -108,7 +108,9 @@ def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
     assert [a.text() for a in tp1.parent().actions()] == ['Widg1', 'Widg2']
 
 
-def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
+def test_making_plugin_dock_widgets(
+    test_plugin_widgets, make_napari_viewer, qtbot
+):
     """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_napari_viewer()
     # only take the plugin actions
@@ -147,9 +149,10 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     # Check that widget is destroyed when closed.
     dw.destroyOnClose()
     assert action not in viewer.window.plugins_menu.actions()
-    assert not widg.parent()
+    assert widg.parent() is None
     widg.deleteLater()
     widg.close()
+    qtbot.wait(50)
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
