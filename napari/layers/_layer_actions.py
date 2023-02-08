@@ -50,16 +50,30 @@ def _split_rgb(ll: LayerList):
 def _convert(ll: LayerList, type_: str):
     from napari.layers import Shapes
 
+    float_dtypes = [np.float64, np.float32, np.float16]
+    integer_and_bool_dtypes = [
+        np.int64,
+        np.int32,
+        np.int16,
+        np.int8,
+        np.uint64,
+        np.uint32,
+        np.uint16,
+        np.uint8,
+        bool,
+    ]
     for lay in list(ll.selection):
         idx = ll.index(lay)
         ll.pop(idx)
         if isinstance(lay, Shapes) and type_ == 'labels':
             data = lay.to_labels()
+        elif lay.data.dtype in integer_and_bool_dtypes and type_ == 'labels':
+            data = lay.data
+        elif lay.data.dtype in float_dtypes and type_ == 'labels':
+            data = lay.data.astype(int, copy=False)
         else:
-            data = (
-                lay.data.astype(int, copy=False)
-                if type_ == 'labels'
-                else lay.data
+            raise ValueError(
+                "napari does not know how to convert the data type for this layer"
             )
         new_layer = Layer.create(data, lay._get_base_state(), type_)
         ll.insert(idx, new_layer)
