@@ -139,6 +139,7 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
     yield widget
     widget.hide()
     widget._add_items_timer.stop()
+    assert not widget._add_items_timer.isActive()
 
 
 @pytest.fixture
@@ -285,6 +286,7 @@ def test_plugin_list_handle_action(plugin_dialog):
     plugin_dialog.available_list.handle_action(
         item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
     )
+    plugin_dialog._add_items_timer.stop()
 
 
 def test_on_enabled_checkbox(plugin_dialog, qtbot):
