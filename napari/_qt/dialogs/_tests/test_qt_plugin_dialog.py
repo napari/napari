@@ -287,6 +287,7 @@ def test_plugin_list_handle_action(plugin_dialog):
         item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
     )
     plugin_dialog._add_items_timer.stop()
+    assert not plugin_dialog._add_items_timer.isActive()
 
 
 def test_on_enabled_checkbox(plugin_dialog, qtbot):
