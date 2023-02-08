@@ -148,6 +148,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     dw.destroyOnClose()
     assert action not in viewer.window.plugins_menu.actions()
     assert not widg.parent()
+    widg.deleteLater()
+    widg.close()
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
