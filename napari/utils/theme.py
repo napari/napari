@@ -379,8 +379,8 @@ DARK = Theme(
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
-    font_size='12px',
-    header_size="16px",
+    font_size='12pt',
+    header_size="16pt",
 )
 LIGHT = Theme(
     id='light',
@@ -398,8 +398,8 @@ LIGHT = Theme(
     syntax_style='default',
     console='rgb(255, 255, 255)',
     canvas='white',
-    font_size='12px',
-    header_size="16px",
+    font_size='12pt',
+    header_size="16pt",
 )
 
 register_theme('dark', DARK, "builtin")
