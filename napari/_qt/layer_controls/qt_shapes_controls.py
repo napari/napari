@@ -68,6 +68,8 @@ class QtShapesControls(QtLayerControls):
         Button to add rectangles to shapes layer.
     select_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select shapes.
+    textDispCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if text should be displayed
     vertex_insert_button : qtpy.QtWidgets.QtModeRadioButton
         Button to insert vertex into shape.
     vertex_remove_button : qtpy.QtWidgets.QtModeRadioButton
@@ -402,8 +404,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if text is visible.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
         """
         self.layer.text.visible = Qt.CheckState(state) == Qt.CheckState.Checked
 
