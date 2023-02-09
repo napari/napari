@@ -135,8 +135,8 @@ class QtViewer(QSplitter):
 
     Attributes
     ----------
-    canvas : vispy.scene.SceneCanvas
-        Canvas for rendering the current view.
+    canvas : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas.
     console : QtConsole
         IPython console terminal integrated into the napari GUI.
     controls : QtLayerControlsContainer
