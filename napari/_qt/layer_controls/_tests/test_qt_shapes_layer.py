@@ -39,6 +39,8 @@ def test_text_visible_checkbox(qtbot):
     layer = Shapes(_SHAPES)
     qtctrl = QtShapesControls(layer)
     qtbot.addWidget(qtctrl)
+    qtctrl.textDispCheckBox.setChecked(True)
+    assert layer.text.visible
     qtctrl.textDispCheckBox.setChecked(False)
     assert not layer.text.visible
     qtctrl.textDispCheckBox.setChecked(True)
