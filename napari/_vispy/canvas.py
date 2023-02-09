@@ -149,7 +149,8 @@ class VispyCanvas:
     @background_color_override.setter
     def background_color_override(self, value):
         self._background_color_override = value
-        self.bgcolor = value or self._last_theme_color
+        if self.view in self.central_widget._widgets:
+            self.view.bgcolor = value
 
     def _on_theme_change(self, event):
         self._set_theme_change(event.value)
@@ -176,8 +177,7 @@ class VispyCanvas:
 
     @bgcolor.setter
     def bgcolor(self, value):
-        _value = self._background_color_override or value
-        self._scene_canvas.bgcolor = _value
+        self._scene_canvas.bgcolor = value
 
     @property
     def central_widget(self):
