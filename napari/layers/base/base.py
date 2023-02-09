@@ -871,7 +871,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         settings = get_settings()
         theme = settings.appearance.theme
-        print(f'setting theme is {theme}')
+
         # if set to system theme, get the actual theme
         if theme == 'system':
             theme = napari.utils.theme.get_system_theme()
