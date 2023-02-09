@@ -68,11 +68,15 @@ class QtLabelsControls(QtLayerControls):
         Button to select PAN_ZOOM mode on Labels layer.
     pick_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
+    preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if existing labels are preserved
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
+    selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if only currently selected label is shown.
 
     Raises
     ------
@@ -349,6 +353,13 @@ class QtLabelsControls(QtLayerControls):
         self.setFocus()
 
     def toggle_selected_mode(self, state):
+        """Toggle contiguous state of label layer.
+
+        Parameters
+        ----------
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of selectedColorCheckbox
+        """
         self.layer.show_selected_label = (
             Qt.CheckState(state) == Qt.CheckState.Checked
         )
@@ -402,8 +413,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if overwriting label is enabled.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of preserveLabelsCheckBox
         """
         self.layer.preserve_labels = (
             Qt.CheckState(state) == Qt.CheckState.Checked
