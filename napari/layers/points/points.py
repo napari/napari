@@ -1827,8 +1827,8 @@ class Points(Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
-        from napari.settings import get_settings
         import napari
+        from napari.settings import get_settings
 
         settings = get_settings()
         # then modify... e.g:
