@@ -368,8 +368,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if labels are contiguous.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of contigCheckBox
         """
         self.layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
