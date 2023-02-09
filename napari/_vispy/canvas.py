@@ -25,16 +25,22 @@ from napari.utils.interactions import (
 )
 
 if TYPE_CHECKING:
+    from typing import Callable, List, Tuple, Union
+
+    import numpy.typing as npt
+    from qtpy.QtCore import Qt, pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
+    from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
 
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
+    from napari.utils.events.event import Event
 
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
 
-    def _process_mouse_event(self, event):
+    def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
@@ -57,9 +63,6 @@ class VispyCanvas:
     last_theme_color : Optional[npt.NDArray[np.float]]
         Theme color represented as numpy ndarray of shape (4,) before theme change
         was applied.
-    background_color_override : Optional[npt.NDArray[np.float]]
-        Background color of the canvas represented as numpy ndarray of shape (4,) which overrides the
-        canvas background color indicated in the napari theme settings.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     scene_canvas : vispy.scene.SceneCanvas
@@ -71,6 +74,13 @@ class VispyCanvas:
         scene is viewed and interacted with.
     layer_to_visual : dict(napari.layers, napari._vispy.layers)
         A mapping of the napari layers that have been added to the viewer and their corresponding vispy counterparts.
+    overlay_to_visual : dict(napari.components.overlays, napari._vispy.overlays)
+        A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+    cursors : QtCursorVisual
+        A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
+        creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
+        contains cursors supported by Napari in Vispy.
+
     """
 
     _instances = WeakSet()
@@ -129,7 +139,7 @@ class VispyCanvas:
         self.destroyed.connect(self._disconnect_theme)
 
     @property
-    def destroyed(self):
+    def destroyed(self) -> pyqtBoundSignal:
         return self._scene_canvas._backend.destroyed
 
     @property
@@ -143,20 +153,26 @@ class VispyCanvas:
         return self._scene_canvas._backend.screen_changed
 
     @property
-    def background_color_override(self):
+    def background_color_override(self) -> str:
+        """Background color of VispyCanvas.view returned as hex string. When not None, color is shown instead of
+        VispyCanvas.bgcolor. The setter expects str (any in vispy.color.get_color_names) or hex starting
+        with # or a tuple | np.array ({3,4},) with values between 0 and 1.
+
+        """
         if self.view in self.central_widget._widgets:
-            return self._background_color_override
+            return self.view.bgcolor.hex
 
     @background_color_override.setter
-    def background_color_override(self, value):
-        self._background_color_override = value
+    def background_color_override(
+        self, value: Union[str, npt.ArrayLike]
+    ) -> None:
         if self.view in self.central_widget._widgets:
             self.view.bgcolor = value
 
-    def _on_theme_change(self, event):
+    def _on_theme_change(self, event: Event) -> None:
         self._set_theme_change(event.value)
 
-    def _set_theme_change(self, theme: str):
+    def _set_theme_change(self, theme: str) -> None:
         from napari.utils.theme import get_theme
 
         # Note 1. store last requested theme color, in case we need to reuse it
@@ -169,19 +185,22 @@ class VispyCanvas:
         )[0]
         self.bgcolor = self._last_theme_color
 
-    def _disconnect_theme(self):
+    def _disconnect_theme(self) -> None:
         self.viewer.events.theme.disconnect(self._on_theme_change)
 
     @property
-    def bgcolor(self):
+    def bgcolor(self) -> str:
+        """Background color of the vispy scene canvas as a hex string. The setter expects str
+        (any in vispy.color.get_color_names) or hex starting with # or a tuple | np.array ({3,4},)
+        with values between 0 and 1."""
         return self._scene_canvas.bgcolor.hex
 
     @bgcolor.setter
-    def bgcolor(self, value):
+    def bgcolor(self, value: npt.ArrayLike) -> None:
         self._scene_canvas.bgcolor = value
 
     @property
-    def central_widget(self):
+    def central_widget(self) -> Widget:
         """Overrides SceneCanvas.central_widget to make border_width=0"""
         if self._scene_canvas._central_widget is None:
             self._scene_canvas._central_widget = Widget(
@@ -192,13 +211,13 @@ class VispyCanvas:
         return self._scene_canvas._central_widget
 
     @property
-    def size(self):
+    def size(self) -> Tuple[int, int]:
         """Return canvas size as tuple (height, width) or accepts size as tuple (height, width)
         and sets Vispy SceneCanvas size as (width, height)."""
         return self._scene_canvas.size[::-1]
 
     @size.setter
-    def size(self, size):
+    def size(self, size: Tuple[int, int]):
         self._scene_canvas.size = size[::-1]
 
     @property
@@ -207,12 +226,12 @@ class VispyCanvas:
         return self.native.cursor()
 
     @cursor.setter
-    def cursor(self, q_cursor):
+    def cursor(self, q_cursor: Union[QCursor, Qt.CursorShape]):
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
 
-    def _on_cursor(self):
-        """Set the appearance of the mouse cursor."""
+    def _on_cursor(self) -> None:
+        """Create a QCursor based on the napari cursor settings and set in Vispy."""
 
         cursor = self.viewer.cursor.style
         if cursor in {'square', 'circle'}:
@@ -236,20 +255,22 @@ class VispyCanvas:
         else:
             self.cursor = self._cursors[cursor].value
 
-    def delete(self):
+    def delete(self) -> None:
         """Schedules the native widget for deletion"""
         self.native.deleteLater()
 
-    def _on_interactive(self):
+    def _on_interactive(self) -> None:
         """Link interactive attributes of view and viewer."""
         self.view.interactive = self.viewer.camera.interactive
 
-    def _map_canvas2world(self, position):
+    def _map_canvas2world(
+        self, position: List[int, int]
+    ) -> Tuple[np.float64, np.float64]:
         """Map position from canvas pixels into world coordinates.
 
         Parameters
         ----------
-        position : 2-tuple
+        position : list(int, int)
             Position in canvas (x, y).
 
         Returns
@@ -271,10 +292,11 @@ class VispyCanvas:
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
-
         return tuple(position_world)
 
-    def _process_mouse_event(self, mouse_callbacks, event):
+    def _process_mouse_event(
+        self, mouse_callbacks: Callable, event: MouseEvent
+    ) -> None:
         """Add properties to the mouse event before passing the event to the
         napari events system. Called whenever the mouse moves or is clicked.
         As such, care should be taken to reduce the overhead in this function.
@@ -294,10 +316,14 @@ class VispyCanvas:
 
         Parameters
         ----------
-        mouse_callbacks : function
+        mouse_callbacks : Callable
             Mouse callbacks function.
-        event : vispy.event.Event
-            The vispy event that triggered this method.
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method.
+
+        Returns
+        -------
+        None
         """
         if event.pos is None:
             return
@@ -331,13 +357,17 @@ class VispyCanvas:
         if layer is not None:
             mouse_callbacks(layer, event)
 
-    def _on_mouse_double_click(self, event):
+    def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
 
         Parameters
         ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method. The `event.type` will always be `mouse_double_click`
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method. The `event.type` will always be `mouse_double_click`
+
+        Returns
+        -------
+        None
 
         Notes
         -----
@@ -352,53 +382,69 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_double_click_callbacks, event)
 
-    def _on_mouse_move(self, event):
+    def _on_mouse_move(self, event: MouseEvent) -> None:
         """Called whenever mouse moves over canvas.
 
         Parameters
         ----------
         event : vispy.event.Event
             The vispy event that triggered this method.
+
+        Returns
+        -------
+        None
         """
         self._process_mouse_event(mouse_move_callbacks, event)
 
-    def _on_mouse_press(self, event):
+    def _on_mouse_press(self, event: MouseEvent) -> None:
         """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method.
+
+        Returns
+        -------
+        None
         """
         self._process_mouse_event(mouse_press_callbacks, event)
 
-    def _on_mouse_release(self, event):
+    def _on_mouse_release(self, event: MouseEvent) -> None:
         """Called whenever mouse released in canvas.
 
         Parameters
         ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method.
+
+        Returns
+        -------
+        None
         """
         self._process_mouse_event(mouse_release_callbacks, event)
 
-    def _on_mouse_wheel(self, event):
+    def _on_mouse_wheel(self, event: MouseEvent) -> None:
         """Called whenever mouse wheel activated in canvas.
 
         Parameters
         ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method.
+
+        Returns
+        -------
+        None
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
 
     @property
-    def _canvas_corners_in_world(self):
+    def _canvas_corners_in_world(self) -> npt.NDArray:
         """Location of the corners of canvas in world coordinates.
 
         Returns
         -------
-        corners : 2-tuple
+        corners : np.ndarray
             Coordinates of top left and bottom right canvas pixel in the world.
         """
         # Find corners of canvas in world coordinates
@@ -406,11 +452,20 @@ class VispyCanvas:
         bottom_right = self._map_canvas2world(self._scene_canvas.size)
         return np.array([top_left, bottom_right])
 
-    def on_draw(self, event):
+    def on_draw(self, event: DrawEvent) -> None:
         """Called whenever the canvas is drawn.
 
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
+
+        Parameters
+        ----------
+        event : vispy.app.canvas.DrawEvent
+            The draw event from the vispy canvas.
+
+        Returns
+        -------
+        None
         """
         # The canvas corners in full world coordinates (i.e. across all layers).
         canvas_corners_world = self._canvas_corners_in_world
@@ -433,21 +488,51 @@ class VispyCanvas:
                 shape_threshold=self._scene_canvas.size,
             )
 
-    def on_resize(self, event):
+    def on_resize(self, event: ResizeEvent) -> None:
         """Called whenever canvas is resized.
 
-        event : vispy.util.event.Event
+        Parameters
+        ----------
+        event : vispy.app.canvas.ResizeEvent
             The vispy event that triggered this method.
+
+        Returns
+        -------
+        None
         """
         self.viewer._canvas_size = tuple(self.size)
 
-    def add_layer_to_visual(self, napari_layer, vispy_layer):
+    def add_layer_to_visual(self, napari_layer, vispy_layer) -> None:
+        """Maps a napari layer to its corresponding vispy layer and sets the parent scene of the vispy layer.
+
+        Paremeters
+        ----------
+        napari_layer : napari.layers
+            Any napari layer, the layer type is the same as the vispy layer.
+        vispy_layer : napari._vispy.layers
+            Any vispy layer, the layer type is the same as the napari layer.
+
+        Returns
+        -------
+        None
+        """
         if not self.viewer.grid.enabled:
             vispy_layer.node.parent = self.view.scene
             self.layer_to_visual[napari_layer] = vispy_layer
         self._reorder_layers()
 
-    def _remove_layer(self, event):
+    def _remove_layer(self, event: Event) -> None:
+        """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
+
+         Parameters
+         ----------
+         event: napari.utils.events.event.Event
+            The event causing a particular layer to be removed
+
+        Returns
+        -------
+        None
+        """
         layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
@@ -455,7 +540,7 @@ class VispyCanvas:
         del self.layer_to_visual[layer]
         self._reorder_layers()
 
-    def _reorder_layers(self):
+    def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
@@ -463,7 +548,7 @@ class VispyCanvas:
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _add_overlay_to_visual(self, overlay: Overlay):
+    def _add_overlay_to_visual(self, overlay: Overlay) -> None:
         """Create vispy overlay and add to dictionary of overlay visuals"""
         vispy_overlay = create_vispy_overlay(
             overlay=overlay, viewer=self.viewer
@@ -478,6 +563,6 @@ class VispyCanvas:
         """Return a QImage based on what is shown in the viewer."""
         return self.native.grabFramebuffer()
 
-    def enable_dims_play(self, *args):
+    def enable_dims_play(self, *args) -> None:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
