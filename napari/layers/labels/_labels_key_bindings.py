@@ -22,7 +22,7 @@ def register_label_mode_action(description):
 
 
 @register_label_mode_action(trans._('Transform'))
-def activate_labels_transform_mode(layer):
+def activate_labels_transform_mode(layer: Labels):
     layer.mode = Mode.TRANSFORM
 
 
