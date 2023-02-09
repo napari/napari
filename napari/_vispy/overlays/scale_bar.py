@@ -12,13 +12,10 @@ from napari.utils.theme import get_theme
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(
-        self, *, viewer, overlay, bg_color_override, parent=None
-    ) -> None:
+    def __init__(self, *, viewer, overlay, parent=None) -> None:
         self._target_length = 150
         self._scale = 1
         self._unit = None
-        self.bg_color_override = bg_color_override
 
         super().__init__(
             node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
@@ -125,10 +122,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 # set scale color negative of theme background.
                 # the reason for using the `as_hex` here is to avoid
                 # `UserWarning` which is emitted when RGB values are above 1
-                if self.node.parent is not None and self.bg_color_override:
-                    background_color = transform_color(self.bg_color_override)[
-                        0
-                    ]
+                if self.node.parent is not None and self.node.parent.bgcolor:
+                    background_color = self.node.parent.bgcolor.rgba
                 else:
                     background_color = get_theme(
                         self.viewer.theme, False

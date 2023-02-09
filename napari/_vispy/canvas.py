@@ -465,9 +465,7 @@ class VispyCanvas:
     def _add_overlay_to_visual(self, overlay: Overlay):
         """Create vispy overlay and add to dictionary of overlay visuals"""
         vispy_overlay = create_vispy_overlay(
-            overlay=overlay,
-            viewer=self.viewer,
-            bg_color_override=self.background_color_override,
+            overlay=overlay, viewer=self.viewer
         )
         if isinstance(overlay, CanvasOverlay):
             vispy_overlay.node.parent = self.view
