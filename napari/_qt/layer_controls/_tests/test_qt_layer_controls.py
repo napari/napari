@@ -86,22 +86,41 @@ def test_set_text_then_set_visible_updates_checkbox(
 
 @pytest.mark.parametrize(('ndim', 'editable_after'), ((2, False), (3, True)))
 def test_set_3d_display_with_points(qtbot, ndim, editable_after):
-    """Interactivity only work for 2D points layers
-    being rendered in 2D and not 3D. Verify that layer.editable
-    is set appropriately upon switching to 3D rendering mode.
+    """Interactivity only works for 2D points layers rendered in 2D and not
+    in 3D. Verify that layer.editable is set appropriately upon switching to
+    3D rendering mode.
 
     See: https://github.com/napari/napari/pull/4184
     """
     viewer = ViewerModel()
     container = QtLayerControlsContainer(viewer)
     qtbot.addWidget(container)
-    layer = viewer.add_points(np.zeros((4, ndim)))
+    layer = viewer.add_points(np.zeros((0, ndim)), ndim=ndim)
     assert viewer.dims.ndisplay == 2
     assert layer.editable
 
     viewer.dims.ndisplay = 3
 
     assert layer.editable == editable_after
+
+
+def test_set_3d_display_with_shapes(qtbot):
+    """Interactivity only works for shapes layers rendered in 2D and not
+    in 3D. Verify that layer.editable is set appropriately upon switching to
+    3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    viewer = ViewerModel()
+    container = QtLayerControlsContainer(viewer)
+    qtbot.addWidget(container)
+    layer = viewer.add_shapes(np.zeros((0, 2, 4)))
+    assert viewer.dims.ndisplay == 2
+    assert layer.editable
+
+    viewer.dims.ndisplay = 3
+
+    assert not layer.editable
 
 
 # The following tests handle changes to the layer's visible and
