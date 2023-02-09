@@ -39,7 +39,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
 
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
-    viewer.window._qt_viewer.view.canvas.size = (600, 800)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [100 * np.ones(s, dtype) for s in shapes]
@@ -82,7 +82,7 @@ def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
-    viewer.window._qt_viewer.view.canvas.size = (600, 800)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
 
     shapes = [(4000, 3000, 3), (2000, 1500, 3), (1000, 750, 3), (500, 375, 3)]
     data = [128 * np.ones(s, np.uint8) for s in shapes]
@@ -126,7 +126,7 @@ def test_tiled_changing_contrast_limits(
 
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
-    viewer.window._qt_viewer.view.canvas.size = (600, 800)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s, np.uint8) for s in shapes]
@@ -179,7 +179,7 @@ def test_tiled_single_scale(qtbot, monkeypatch, make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
-    viewer.window._qt_viewer.view.canvas.size = (600, 800)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
 
     # Add a single scale image.
     layer = viewer.add_image(np.ones((4000, 3000)), contrast_limits=[0, 2])
@@ -223,7 +223,7 @@ def test_tiled_labels(qtbot, monkeypatch, make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
-    viewer.window._qt_viewer.view.canvas.size = (600, 800)
+    viewer.window._qt_viewer.view.canvas.size = (800, 600)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s, np.uint8) for s in shapes]

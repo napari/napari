@@ -194,7 +194,7 @@ class QtViewer(QSplitter):
         self.canvas = VispyCanvas(
             viewer=viewer,
             parent=self,
-            size=self.viewer._canvas_size[::-1],
+            size=self.viewer._canvas_size,
         )
 
         # TODO: temporary but needs to be moved to VispyCanvas

@@ -160,7 +160,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=EventedDict
     )
     # 2-tuple indicating height and width
-    _canvas_size: Tuple[int, int] = (600, 800)
+    _canvas_size: Tuple[int, int] = (800, 600)
     _ctx: Mapping
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems

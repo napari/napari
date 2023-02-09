@@ -106,7 +106,7 @@ class Viewer(ViewerModel):
         path : str
             Filename for saving screenshot image.
         size : tuple (int, int)
-            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Size (resolution Height x Width) of the screenshot. By default, the currently displayed size.
             Only used if `canvas_only` is True.
         scale : float
             Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
