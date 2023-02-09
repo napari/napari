@@ -40,7 +40,11 @@ class QtLayerListModel(QtListModel[Layer]):
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
-            return Qt.Checked if layer.visible else Qt.Unchecked
+            return (
+                Qt.CheckState.Checked
+                if layer.visible
+                else Qt.CheckState.Unchecked
+            )
         if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item
             return QSize(200, 34)
         if role == ThumbnailRole:  # return the thumbnail
@@ -66,7 +70,11 @@ class QtLayerListModel(QtListModel[Layer]):
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
         if role == Qt.ItemDataRole.CheckStateRole:
-            self.getItem(index).visible = value
+            # The item model stores a Qt.CheckState enum value that can be
+            # partially checked, but we only use the unchecked and checked
+            # to correspond to the layer's visibility.
+            # https://doc.qt.io/qt-5/qt.html#CheckState-enum
+            self.getItem(index).visible = value == Qt.CheckState.Checked
         elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
             role = Qt.ItemDataRole.DisplayRole

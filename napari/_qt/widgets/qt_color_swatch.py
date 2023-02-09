@@ -78,7 +78,7 @@ class QColorSwatchEdit(QWidget):
         *,
         initial_color: Optional[AnyColorType] = None,
         tooltip: Optional[str] = None,
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         self.setObjectName('QColorSwatchEdit')
 
@@ -150,7 +150,7 @@ class QColorSwatch(QFrame):
         parent: Optional[QWidget] = None,
         tooltip: Optional[str] = None,
         initial_color: Optional[ColorType] = None,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setObjectName('colorSwatch')
         self.setToolTip(tooltip or trans._('click to set color'))
@@ -211,7 +211,7 @@ class QColorLineEdit(QLineEdit):
         The parent widget, by default None
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._compl = QCompleter(list(get_color_dict()) + ['transparent'])
         self._compl.setCompletionMode(QCompleter.InlineCompletion)
@@ -236,7 +236,7 @@ class QColorLineEdit(QLineEdit):
 
 
 class CustomColorDialog(QColorDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setObjectName('CustomColorDialog')
 

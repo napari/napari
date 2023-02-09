@@ -121,7 +121,7 @@ class Foo(KeymapProvider):
         'D': ...,
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.keymap = {
             'B': lambda x: setattr(x, 'B', None),  # overwrite
             'E': lambda x: setattr(x, 'E', None),  # new entry

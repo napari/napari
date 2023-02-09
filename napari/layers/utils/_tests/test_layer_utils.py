@@ -158,7 +158,7 @@ def test_coerce_current_properties_valid_values():
     }
     coerced_current_properties = coerce_current_properties(current_properties)
 
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -423,7 +423,7 @@ def test_register_label_attr_action(monkeypatch):
     monkeypatch.setattr(time, "time", lambda: 1)
 
     class Foo(KeymapProvider):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
             self.value = 0
 

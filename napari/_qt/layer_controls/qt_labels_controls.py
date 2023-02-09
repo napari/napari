@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 from superqt import QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.utils import disable_with_opacity
+from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_mode_buttons import (
     QtModePushButton,
@@ -83,7 +83,7 @@ class QtLabelsControls(QtLayerControls):
 
     layer: 'napari.layers.Labels'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
@@ -97,7 +97,8 @@ class QtLabelsControls(QtLayerControls):
             self._on_n_edit_dimensions_change
         )
         self.layer.events.contour.connect(self._on_contour_change)
-        self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
@@ -210,13 +211,20 @@ class QtLabelsControls(QtLayerControls):
 
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
 
+        self._EDIT_BUTTONS = (
+            self.paint_button,
+            self.pick_button,
+            self.fill_button,
+            self.erase_button,
+        )
+
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
         self.button_group.addButton(self.erase_button)
-        self._on_editable_change()
+        self._on_editable_or_visible_change()
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
@@ -445,29 +453,12 @@ class QtLabelsControls(QtLayerControls):
                 self.colorModeComboBox.findData(self.layer.color_mode)
             )
 
-    def _on_editable_change(self):
-        """Receive layer model editable change event & enable/disable buttons."""
-        # In 3D mode, we need to disable all buttons other than picking
-        # (only picking works in 3D)
-        widget_list = [
-            'pick_button',
-            'fill_button',
-            'paint_button',
-            'erase_button',
-        ]
-        widgets_to_toggle = {
-            (2, True): widget_list,
-            (2, False): widget_list,
-            (3, True): widget_list,
-            (3, False): widget_list,
-        }
-
-        disable_with_opacity(
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
+        set_widgets_enabled_with_opacity(
             self,
-            widgets_to_toggle[
-                (self.layer._slice_input.ndisplay, self.layer.editable)
-            ],
-            self.layer.editable,
+            self._EDIT_BUTTONS,
+            self.layer.editable and self.layer.visible,
         )
 
     def _on_rendering_change(self):
@@ -482,7 +473,7 @@ class QtLabelsControls(QtLayerControls):
         render_visible = self.ndisplay == 3
         self.renderComboBox.setVisible(render_visible)
         self.renderLabel.setVisible(render_visible)
-        self._on_editable_change()
+        self._on_editable_or_visible_change()
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self.colorBox)
@@ -498,7 +489,7 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__()
 
         self.layer = layer

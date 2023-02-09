@@ -88,7 +88,7 @@ class OctreeIntersection:
         The view we are intersecting with the octree.
     """
 
-    def __init__(self, level: OctreeLevel, view: OctreeView):
+    def __init__(self, level: OctreeLevel, view: OctreeView) -> None:
         self.level = level
         self._corners = view.corners
 
