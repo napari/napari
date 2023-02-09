@@ -144,7 +144,8 @@ class VispyCanvas:
 
     @property
     def background_color_override(self):
-        return self._background_color_override
+        if self.view in self.central_widget._widgets:
+            return self._background_color_override
 
     @background_color_override.setter
     def background_color_override(self, value):
