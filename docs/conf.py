@@ -247,7 +247,7 @@ sphinx_gallery_conf = {
     / 'napari'
     / 'resources'
     / 'logo.png',
-    'plot_gallery': True,
+    'plot_gallery': "'True'",  # https://github.com/sphinx-gallery/sphinx-gallery/pull/304/files
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,

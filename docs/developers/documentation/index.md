@@ -203,6 +203,8 @@ There are two ways you can preview the documentation website: by building
 locally, or downloading the GitHub Actions built documentation when you submit
 your pull request.
 
+### 3.1. Building locally
+
 To build the documentation locally, run `make docs` from the root of your local
 clone of the `napari/docs` repository (assuming you've installed the
 [docs prerequisites](#prerequisites)).
@@ -222,7 +224,7 @@ make docs GALLERY_PATH=<path-to-examples-folder>
 ```
 
 The `GALLERY_PATH` option must be given relative to the `docs` folder. If your
-folder structure is 
+folder structure is
 
 ```
 ├── napari-docs
@@ -245,6 +247,33 @@ make docs GALLERY_PATH=../../napari/examples
 
 The rendered HTML will be placed in `docs/_build`. Find `index.html` in this
 folder and drag it into a browser to preview the website with your new document.
+You can also run this Python one-liner to deploy a quick local server on
+[http://localhost:8000](http://localhost:8000):
+
+```shell
+$ python3 -m http.server --directory docs/_build
+```
+
+````{tip}
+There's another `make` task you can use for live previews while editing docs:
+
+```shell
+$ make html-live
+# or for faster reloads:
+# make html-live SPHINXOPTS="-j4"
+```
+
+The first run will take a bit longer and a few napari instances will pop up
+here and there, but the successive ones (triggered automatically every time
+you save a file under `docs/`) will be faster!
+The browser preview will open up automatically at `http://127.0.0.1`,
+no need for further action! Edit the documents at will, and the browser will
+auto-reload.
+Once you are done with the live previews, you can exit via <kbd>Ctrl</kbd>+<kbd>C</kbd>
+on your terminal.
+````
+
+### 3.2. Use the CI artifacts
 
 Alternatively, when you submit your pull request, the napari docs repository
 continuous integration includes a GitHub action that builds the documentation
@@ -264,6 +293,15 @@ then:
 3. Scroll down to **Artifacts** and click on **docs** to download the built documentation:
 
 ![doc-continuous-integration-1](images/doc-ci-3.png)
+
+4. Extract the compressed archive and open the `docs/index.html` file on your preferred browser.
+   You can also use Python's `http.server` module to open a local server on
+   [http://localhost:8000](http://localhost:8000):
+
+```shell
+$ cd ~/Downloads/docs  # or the path where you extracted the 'docs' artifact
+$ python3 -m http.server
+```
 
 ## 4. Submit your pull request
 

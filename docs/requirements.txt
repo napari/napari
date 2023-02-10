@@ -1,4 +1,6 @@
 sphinx<5
+sphinx-autobuild
+sphinx-tabs
 sphinx-tags
 sphinx-design
 sphinx-external-toc
