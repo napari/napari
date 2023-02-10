@@ -114,7 +114,6 @@ class _QtMainWindow(QMainWindow):
 
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
         center.layout().addWidget(self._qt_viewer)
