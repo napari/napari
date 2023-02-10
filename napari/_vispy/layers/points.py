@@ -13,7 +13,7 @@ class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = None
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         self._highlight_width = get_settings().appearance.highlight_thickness
 
         node = PointsVisual()

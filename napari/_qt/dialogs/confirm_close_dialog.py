@@ -14,7 +14,7 @@ from napari.utils.translations import trans
 
 
 class ConfirmCloseDialog(QDialog):
-    def __init__(self, parent, close_app=False):
+    def __init__(self, parent, close_app=False) -> None:
         super().__init__(parent)
         cancel_btn = QPushButton(trans._("Cancel"))
         close_btn = QPushButton(trans._("Close"))

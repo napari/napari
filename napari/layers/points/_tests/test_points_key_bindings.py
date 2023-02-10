@@ -2,15 +2,6 @@ from napari.layers.points import Points
 from napari.layers.points import _points_key_bindings as key_bindings
 
 
-def test_hold_to_pan_zoom(layer):
-    data = [[1, 3], [8, 4], [10, 10], [15, 4]]
-    layer = Points(data, size=1)
-
-    layer.mode = 'select'
-    # need to go through the generator
-    _ = list(key_bindings.hold_to_pan_zoom(layer))
-
-
 def test_modes(layer):
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)

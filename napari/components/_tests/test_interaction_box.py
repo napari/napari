@@ -1,52 +1,103 @@
 import numpy as np
 
-from napari.components.overlays.interaction_box import InteractionBox
-from napari.utils.transforms import Affine
+from napari.components.overlays.interaction_box import SelectionBoxOverlay
+from napari.layers.base._base_constants import InteractionBoxHandle
+from napari.layers.points import Points
+from napari.layers.utils.interaction_box import (
+    generate_interaction_box_vertices,
+    generate_transform_box_from_layer,
+    get_nearby_handle,
+)
 
 
-def test_creation():
-    """Test creating interaction box object"""
-    interaction_box = InteractionBox()
-    assert interaction_box is not None
-
-
-def test_box_from_points():
-    """Test whether setting points creates a axis-aligned containing box"""
-    interaction_box = InteractionBox()
-    interaction_box.points = np.array([[1, 0], [3, 2], [-1, 1]])
-    resulting_box = np.array(
+def test_transform_box_vertices_from_bounds():
+    expected = np.array(
         [
-            [-1.0, 0.0],
-            [1.0, 0.0],
-            [3.0, 0.0],
-            [3.0, 1.0],
-            [3.0, 2.0],
-            [1.0, 2.0],
-            [-1.0, 2.0],
-            [-1.0, 1.0],
-            [1.0, 1.0],
+            [0, 0],
+            [10, 0],
+            [0, 10],
+            [10, 10],
+            [0, 5],
+            [5, 0],
+            [5, 10],
+            [10, 5],
+            [-1, 5],
         ]
     )
-    np.testing.assert_equal(interaction_box._box, resulting_box)
+
+    top_left = 0, 0
+    bottom_right = 10, 10
+    # works in vispy coordinates, so x and y are swapped
+    vertices = generate_interaction_box_vertices(
+        top_left, bottom_right, handles=False
+    )
+    np.testing.assert_allclose(vertices, expected[:4, ::-1])
+    vertices = generate_interaction_box_vertices(
+        top_left, bottom_right, handles=True
+    )
+    np.testing.assert_allclose(vertices, expected[:, ::-1])
 
 
-def test_transform():
-    """Tests whether setting a transform changes the box adequatly"""
-    interaction_box = InteractionBox()
-    interaction_box.points = np.array([[1, 0], [3, 2], [-1, 1]])
-    resulting_box = np.array(
+def test_transform_box_from_layer():
+    pts = np.array([[0, 0], [10, 10]])
+    translate = [-2, 3]
+    scale = [4, 5]
+    layer = Points(pts, translate=translate, scale=scale)
+    vertices = generate_transform_box_from_layer(layer, dims_displayed=(0, 1))
+    # scale/translate should not affect vertices, cause they're in data space
+    expected = np.array(
         [
-            [-1.0, 0.0],
-            [1.0, 0.0],
-            [3.0, 0.0],
-            [3.0, 1.0],
-            [3.0, 2.0],
-            [1.0, 2.0],
-            [-1.0, 2.0],
-            [-1.0, 1.0],
-            [1.0, 1.0],
+            [0, 0],
+            [10, 0],
+            [0, 10],
+            [10, 10],
+            [0, 5],
+            [5, 0],
+            [5, 10],
+            [10, 5],
+            [-1, 5],
         ]
     )
-    interaction_box.transform = Affine(rotate=45)
-    resulting_box = Affine(rotate=45)(resulting_box)
-    np.testing.assert_equal(interaction_box._box, resulting_box)
+    np.testing.assert_allclose(vertices, expected)
+
+
+def test_transform_box_get_nearby_handle():
+    # square box from (0, 0) to (10, 10)
+    vertices = np.array(
+        [
+            [0, 0],
+            [10, 0],
+            [0, 10],
+            [10, 10],
+            [0, 5],
+            [5, 0],
+            [5, 10],
+            [10, 5],
+            [-1, 5],
+        ]
+    )
+    near_top_left = [0.04, -0.05]
+    top_left = get_nearby_handle(near_top_left, vertices)
+    assert top_left == InteractionBoxHandle.TOP_LEFT
+    near_rotation = [-1.05, 4.95]
+    rotation = get_nearby_handle(near_rotation, vertices)
+    assert rotation == InteractionBoxHandle.ROTATION
+    middle = [5, 5]
+    inside = get_nearby_handle(middle, vertices)
+    assert inside == InteractionBoxHandle.INSIDE
+    outside = [12, -1]
+    none = get_nearby_handle(outside, vertices)
+    assert none is None
+
+
+def test_selection_box_from_points():
+    points = np.array(
+        [
+            [0, 5],
+            [-3, 0],
+            [0, 7],
+        ]
+    )
+    selection_box = SelectionBoxOverlay()
+    selection_box.update_from_points(points)
+    assert selection_box.bounds == ((-3, 0), (0, 7))

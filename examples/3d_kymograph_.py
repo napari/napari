@@ -7,10 +7,12 @@ can also be used to render 2d timelapse acquisitions as kymographs.
 
 .. tags:: experimental
 """
-import numpy as np
-import napari
-from tqdm import tqdm
 from itertools import product
+
+import numpy as np
+from tqdm import tqdm
+
+import napari
 
 try:
     from omero.gateway import BlitzGateway

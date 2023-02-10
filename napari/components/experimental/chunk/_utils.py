@@ -50,7 +50,7 @@ class StatWindow:
         The values in our window.
     """
 
-    def __init__(self, size: int):
+    def __init__(self, size: int) -> None:
         self.size = size
         self.values = np.array([])  # float64 array
 
