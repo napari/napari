@@ -46,7 +46,6 @@ from napari_builtins.io import imsave_extensions
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
-
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
 
@@ -137,6 +136,9 @@ class QtViewer(QSplitter):
     ----------
     canvas : napari._vispy.canvas.VispyCanvas
         The VispyCanvas class providing the Vispy SceneCanvas.
+    camera : napari._vispy.VispyCamera
+        The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
+        scene is viewed and interacted with. Access directly within the QtViewer will become deprecated.
     console : QtConsole
         IPython console terminal integrated into the napari GUI.
     controls : QtLayerControlsContainer
@@ -153,6 +155,8 @@ class QtViewer(QSplitter):
         Button controls for napari layers.
     layers : QtLayerList
         Qt view for LayerList controls.
+    view : vispy.scene.widgets.viewbox.ViewBox
+        Rectangular widget in which a subscene is rendered. Access directly within the QtViewer will become deprecated.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     viewerButtons : QtViewerButtons
@@ -259,6 +263,28 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+    @property
+    def view(self):
+        warnings.warn(
+            trans._(
+                "Access to napari.qt.qt_viewer.view will become deprecated in the future. Change to napari.qt.qt_viewer.canvas.view instead."
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.canvas.view
+
+    @property
+    def camera(self):
+        warnings.warn(
+            trans._(
+                "Access to napari.qt.qt_viewer.camera will become deprecated in the future. Change to napari.qt.qt_viewer.canvas.camera instead."
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.canvas.vispy_camera
 
     @property
     def controls(self) -> QtLayerControlsContainer:

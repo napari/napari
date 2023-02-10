@@ -97,7 +97,7 @@ class VispyCanvas:
             *args, keys=None, vsync=True, **kwargs
         )
         self.view = self.central_widget.add_view(border_width=0)
-        self._vispy_camera = VispyCamera(
+        self.vispy_camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
         self.layer_to_visual = {}
@@ -119,7 +119,7 @@ class VispyCanvas:
 
         # Connecting events from SceneCanvas
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
-        self._scene_canvas.events.draw.connect(self._vispy_camera.on_draw)
+        self._scene_canvas.events.draw.connect(self.vispy_camera.on_draw)
 
         self._scene_canvas.events.mouse_double_click.connect(
             self._on_mouse_double_click
