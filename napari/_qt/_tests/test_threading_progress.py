@@ -25,9 +25,10 @@ def test_worker_with_progress(qtbot):
         start_thread=False,
     )
     worker = thread_func()
-    with qtbot.waitSignal(worker.yielded):
+    with qtbot.waitSignal(worker.yielded), qtbot.waitSignal(worker.finished):
         worker.start()
         assert worker.pbar.n == test_val[0]
+    assert test_val[0] == 2
 
 
 def test_function_worker_nonzero_total_warns():
