@@ -353,7 +353,7 @@ class QtLabelsControls(QtLayerControls):
         self.setFocus()
 
     def toggle_selected_mode(self, state):
-        """Toggle contiguous state of label layer.
+        """Toggle display of selected label only.
 
         Parameters
         ----------
