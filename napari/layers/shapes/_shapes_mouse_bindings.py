@@ -192,6 +192,7 @@ def add_path_polygon(layer, event):
     """Add a path or polygon."""
     # on press
     coordinates = layer.world_to_data(event.position)
+    # print(f'add_path_polygon(): layer._is_creating = {layer._is_creating}, event.type = {event.type}, event.is_dragging = {event.is_dragging}')
     if layer._is_creating is False:
         # Start drawing a path
         data = np.array([coordinates, coordinates])
@@ -229,6 +230,7 @@ def add_path_polygon_creating(layer, event):
 
 def add_path_polygon_lasso_creating(layer, event):
     """While a path or polygon move next vertex to be added."""
+    # print(f'add_path_polygon_lasso_creating(): layer._is_creating = {layer._is_creating}, event.type = {event.type}, event.is_dragging = {event.is_dragging}')
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
         _move(layer, coordinates)
