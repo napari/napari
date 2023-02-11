@@ -1,6 +1,7 @@
 from copy import copy
 
 import numpy as np
+import datetime
 
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_models import (
@@ -11,7 +12,9 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import point_to_lines
+from typing import Optional
 
+_last_time_point_added_smooth_lasso: Optional[datetime.datetime] = None
 
 def highlight(layer, event):
     """Highlight hovered shapes."""
@@ -198,10 +201,12 @@ def add_path_polygon(layer, event):
         layer._moving_value = copy(layer._value)
         layer._is_creating = True
         layer._set_highlight()
+    elif event.type == 'mouse_press' and layer._mode == Mode.ADD_POLYGON_LASSO:
+        finish_drawing_shape(layer, event)
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if layer._mode == Mode.ADD_POLYGON:
+        if layer._mode == Mode.ADD_POLYGON or layer._mode == Mode.ADD_POLYGON_LASSO:
             new_type = Polygon
         else:
             new_type = None
@@ -220,6 +225,23 @@ def add_path_polygon_creating(layer, event):
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
         _move(layer, coordinates)
+
+
+def add_path_polygon_lasso_creating(layer, event):
+    """While a path or polygon move next vertex to be added."""
+    if layer._is_creating:
+        coordinates = layer.world_to_data(event.position)
+        _move(layer, coordinates)
+
+        now = datetime.datetime.now()
+        MAX_POINTS_PER_SECOND = 60
+        global _last_time_point_added_smooth_lasso
+        if _last_time_point_added_smooth_lasso is not None:
+            time_diff = now - _last_time_point_added_smooth_lasso
+            if time_diff.seconds < 1 and time_diff.microseconds < 1e6 / MAX_POINTS_PER_SECOND:
+                return
+        _last_time_point_added_smooth_lasso = now
+        add_path_polygon(layer, event)
 
 
 def vertex_insert(layer, event):
@@ -512,7 +534,7 @@ def _move(layer, coordinates):
                 )
             layer._rotate_box(angle, center=layer._fixed_vertex)
             layer.refresh()
-    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
+    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO]:
         if vertex is not None:
             layer._moving_coordinates = coordinates
             layer._is_moving = True

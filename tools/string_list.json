@@ -466,6 +466,7 @@
       "path_button",
       "polygon",
       "polygon_button",
+      "polygon_lasso_button",
       "rectangle",
       "rectangle_button",
       "select",

@@ -26,6 +26,7 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_line,
     add_path_polygon,
     add_path_polygon_creating,
+    add_path_polygon_lasso_creating,
     add_rectangle,
     finish_drawing_shape,
     highlight,
@@ -334,6 +335,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
+        Mode.ADD_POLYGON_LASSO: add_path_polygon,
     }
 
     _move_modes = {
@@ -348,6 +350,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
+        Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso_creating,
     }
 
     _double_click_modes = {
@@ -362,6 +365,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
+        Mode.ADD_POLYGON_LASSO: finish_drawing_shape,
     }
 
     _cursor_modes = {
@@ -376,6 +380,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
+        Mode.ADD_POLYGON_LASSO: 'cross',
     }
 
     _interactive_modes = {
@@ -2391,6 +2396,7 @@ class Shapes(Layer):
                     Mode.DIRECT,
                     Mode.ADD_PATH,
                     Mode.ADD_POLYGON,
+                    Mode.ADD_POLYGON_LASSO,
                     Mode.ADD_RECTANGLE,
                     Mode.ADD_ELLIPSE,
                     Mode.ADD_LINE,
@@ -2484,7 +2490,7 @@ class Shapes(Layer):
                 self._data_view.remove(index)
             else:
                 self._data_view.edit(index, vertices[:-1])
-        if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
+        if self._is_creating is True and (self._mode == Mode.ADD_POLYGON or self._mode == Mode.ADD_POLYGON_LASSO):
             vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
