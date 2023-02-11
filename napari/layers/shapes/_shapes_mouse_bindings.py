@@ -1,7 +1,8 @@
+import datetime
 from copy import copy
+from typing import Optional
 
 import numpy as np
-import datetime
 
 from napari.layers.shapes._shapes_constants import Box, Mode
 from napari.layers.shapes._shapes_models import (
@@ -12,9 +13,9 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import point_to_lines
-from typing import Optional
 
 _last_time_point_added_smooth_lasso: Optional[datetime.datetime] = None
+
 
 def highlight(layer, event):
     """Highlight hovered shapes."""
@@ -207,7 +208,10 @@ def add_path_polygon(layer, event):
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if layer._mode == Mode.ADD_POLYGON or layer._mode == Mode.ADD_POLYGON_LASSO:
+        if (
+            layer._mode == Mode.ADD_POLYGON
+            or layer._mode == Mode.ADD_POLYGON_LASSO
+        ):
             new_type = Polygon
         else:
             new_type = None
@@ -240,7 +244,10 @@ def add_path_polygon_lasso_creating(layer, event):
         global _last_time_point_added_smooth_lasso
         if _last_time_point_added_smooth_lasso is not None:
             time_diff = now - _last_time_point_added_smooth_lasso
-            if time_diff.seconds < 1 and time_diff.microseconds < 1e6 / MAX_POINTS_PER_SECOND:
+            if (
+                time_diff.seconds < 1
+                and time_diff.microseconds < 1e6 / MAX_POINTS_PER_SECOND
+            ):
                 return
         _last_time_point_added_smooth_lasso = now
         add_path_polygon(layer, event)
@@ -536,7 +543,12 @@ def _move(layer, coordinates):
                 )
             layer._rotate_box(angle, center=layer._fixed_vertex)
             layer.refresh()
-    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON, Mode.ADD_POLYGON_LASSO]:
+    elif layer._mode in [
+        Mode.DIRECT,
+        Mode.ADD_PATH,
+        Mode.ADD_POLYGON,
+        Mode.ADD_POLYGON_LASSO,
+    ]:
         if vertex is not None:
             layer._moving_coordinates = coordinates
             layer._is_moving = True

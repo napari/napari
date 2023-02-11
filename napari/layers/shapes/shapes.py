@@ -2490,7 +2490,10 @@ class Shapes(Layer):
                 self._data_view.remove(index)
             else:
                 self._data_view.edit(index, vertices[:-1])
-        if self._is_creating is True and (self._mode == Mode.ADD_POLYGON or self._mode == Mode.ADD_POLYGON_LASSO):
+        if self._is_creating is True and (
+            self._mode == Mode.ADD_POLYGON
+            or self._mode == Mode.ADD_POLYGON_LASSO
+        ):
             vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
