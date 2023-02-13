@@ -50,7 +50,6 @@ def _split_rgb(ll: LayerList):
 def _convert(ll: LayerList, type_: str):
     from napari.layers import Shapes
 
-    float_dtypes = [np.float64, np.float32, np.float16]
     for lay in list(ll.selection):
         idx = ll.index(lay)
         ll.pop(idx)
