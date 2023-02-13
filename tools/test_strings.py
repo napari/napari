@@ -589,7 +589,6 @@ NORMAL = "\x1b[1;0m"
 
 
 if __name__ == '__main__':
-
     issues, outdated_strings, trans_errors = _checks()
     import json
     import pathlib

@@ -58,7 +58,6 @@ def test_reader_dir_with_extension(tmpdir, reader_dialog):
 
 
 def test_reader_dir(tmpdir, reader_dialog):
-
     dir = tmpdir.mkdir('my_dir')
     widg = reader_dialog(pth=dir, readers={'p1': 'p1', 'p2': 'p2'})
     assert (
@@ -89,7 +88,6 @@ def test_get_persist_choice(tmpdir, reader_dialog):
 
 
 def test_prepare_dialog_options_no_readers():
-
     with pytest.raises(ReaderPluginError) as e:
         prepare_remaining_readers(
             ['my-file.fake'], 'fake-reader', RuntimeError('Reading failed')

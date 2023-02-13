@@ -44,7 +44,6 @@ class PolygonBase(Shape):
         interpolation_order=1,
         interpolation_sampling=50,
     ) -> None:
-
         super().__init__(
             edge_width=edge_width,
             z_index=z_index,

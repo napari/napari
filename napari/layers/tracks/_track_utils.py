@@ -67,7 +67,6 @@ class TrackManager:
     """
 
     def __init__(self) -> None:
-
         # store the raw data here
         self._data = None
         self._feature_table = _FeatureTable()

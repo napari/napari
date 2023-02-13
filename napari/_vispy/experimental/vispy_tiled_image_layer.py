@@ -71,7 +71,6 @@ class VispyTiledImageLayer(VispyImageLayer):
     """
 
     def __init__(self, layer: Image) -> None:
-
         # All tiles are stored in a single TileImageVisual.
         visual = TiledImageVisual(
             tile_shape=layer.tile_shape,

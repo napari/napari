@@ -95,7 +95,6 @@ def select_all_in_slice(layer: Points):
     trans._("Select all points in the layer."),
 )
 def select_all_data(layer: Points):
-
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()

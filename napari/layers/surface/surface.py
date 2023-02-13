@@ -173,7 +173,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         wireframe=None,
         normals=None,
     ) -> None:
-
         ndim = data[0].shape[1]
 
         super().__init__(

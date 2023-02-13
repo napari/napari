@@ -765,7 +765,6 @@ class EventEmitter:
             self._emitting = False
             ps = event._pop_source()
             if ps is not self.source:
-
                 raise RuntimeError(
                     trans._(
                         "Event source-stack mismatch.",
