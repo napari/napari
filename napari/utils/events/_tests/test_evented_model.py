@@ -456,11 +456,8 @@ class T(EventedModel):
 
     @property
     def e(self) -> int:
+        # should also work without setter
         return self.a * 10
-
-    @e.setter
-    def e(self, val: int):
-        self.a = val // 10
 
 
 def test_evented_model_with_property_setters():
@@ -503,7 +500,6 @@ def mocked_object():
         ('b', 5, {'a': None, 'b': 5, 'c': [1, 5], 'd': 6, 'e': None}),
         ('c', [10, 20], {'a': 10, 'b': 20, 'c': [10, 20], 'd': 30, 'e': 100}),
         ('d', 8, {'a': 4, 'b': 4, 'c': [4, 4], 'd': 8, 'e': 40}),
-        ('e', 100, {'a': 10, 'b': None, 'c': [10, 1], 'd': 11, 'e': 100}),
     ],
 )
 def test_evented_model_with_property_setter_events(
@@ -524,3 +520,55 @@ def test_evented_model_with_property_setter_events(
             emitter.assert_not_called()
         else:
             emitter.assert_called_with(value=val)
+
+
+def test_evented_model_with_property_without_setter(mocked_object):
+    with pytest.raises(AttributeError):
+        # no setter provided for T.e
+        mocked_object.e = 2
+
+
+def test_evented_model_with_provided_dependencies():
+    class T(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self):
+            return self.a * 2
+
+        class Config:
+            dependencies = {'b': ['a']}
+
+    t = T()
+    t.events.a = Mock(t.events.a)
+    t.events.b = Mock(t.events.b)
+
+    t.a = 2
+    t.events.a.assert_called_with(value=2)
+    t.events.b.assert_called_with(value=4)
+
+    # should fail if property does not exist
+    with pytest.raises(ValueError):
+
+        class T(EventedModel):
+            a: int = 1
+
+            @property
+            def b(self):
+                return self.a * 2
+
+            class Config:
+                dependencies = {'x': ['a']}
+
+    # should warn if field does not exist
+    with pytest.warns(match="Unrecognized field dependency"):
+
+        class T(EventedModel):
+            a: int = 1
+
+            @property
+            def b(self):
+                return self.a * 2
+
+            class Config:
+                dependencies = {'b': ['x']}
