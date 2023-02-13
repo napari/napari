@@ -86,7 +86,7 @@ def chunk_centers(array: da.Array):
     """Make a dictionary mapping chunk centers to chunk slices.
     Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
     and will be used for calculating centers
-    
+
 
     Parameters
     ----------
@@ -304,6 +304,7 @@ def add_subnodes_caller(
     container="",
     dataset="",
     scale_factors=[],
+    worker=None,
 ):
     """
     This function is a stub to to launch an initial recursive call of add_subnodes.
@@ -318,7 +319,228 @@ def add_subnodes_caller(
         container=container,
         dataset=dataset,
         scale_factors=scale_factors,
+        worker=worker,        
     )
+
+
+def render_sequence(
+    view_slice,
+    scale=0,
+    camera=None,
+    cache_manager=None,
+    arrays=None,
+    chunk_maps=None,
+    container="",
+    dataset="",
+    alpha=0.8,
+    scale_factors=[],
+    worker=None,
+    dtype=np.uint16,
+):
+    layer_name = f"{container}/{dataset}/s{scale}"
+
+    print(f"view slice {view_slice}")
+
+    # Get some variables specific to this scale level
+    min_coord = [st.start for st in view_slice]
+    max_coord = [st.stop for st in view_slice]
+    array = arrays[scale]
+    chunk_map = chunk_maps[scale]
+    scale_factor = scale_factors[scale]
+
+    print(
+        f"add_subnodes {scale} {str(view_slice)}",
+        f"highres interval: {str([el.start * 2 ** scale for el in view_slice])},  {str([el.stop * 2 ** scale for el in view_slice])}",
+        f"chunksize: {array.chunksize} arraysize: {array.shape}",
+    )
+
+    # Points for each chunk, for example, centers
+    points = np.array(list(chunk_map.keys()))
+
+    # Mask of whether points are within our interval, this is in array coordinates
+    point_mask = np.array(
+        [
+            np.all(point >= min_coord) and np.all(point <= max_coord)
+            for point in points
+        ]
+    )
+
+    # Rescale points to world for priority calculations
+    points_world = points * np.array(scale_factor)
+
+    # Prioritize chunks using world coordinates
+    distances = distance_from_camera_centre_line(points_world, camera)
+    depth = visual_depth(points_world, camera)
+    priorities = prioritised_chunk_loading(
+        depth, distances, camera.zoom, alpha=alpha, visible=point_mask
+    )
+
+    # Find the highest priority interval for the next higher resolution
+    first_priority_idx = np.argmin(priorities)
+
+    # This node's offset in world space
+    world_offset = np.array(min_coord) * np.array(scale_factor)
+
+    # Iterate over points/chunks and add corresponding nodes when appropriate
+    for idx, point in enumerate(points):
+        # Render *visible* chunks, or all if we're on the last scale level
+        if point_mask[idx] and (idx != first_priority_idx or scale == 0):
+            coord = tuple(point)
+            chunk_slice = chunk_map[coord]
+            offset = [sl.start for sl in chunk_slice]
+            min_interval = offset
+
+            # find position and scale
+            node_offset = (
+                min_interval[0] * scale_factor[0],
+                min_interval[1] * scale_factor[1],
+                min_interval[2] * scale_factor[2],
+            )
+            LOGGER.debug(
+                f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
+            )
+            scale_dataset = f"{dataset}/s{scale}"
+            data = get_chunk(
+                chunk_slice,
+                array=array,
+                container=container,
+                dataset=scale_dataset,
+                cache_manager=cache_manager,
+            )
+
+            # TODO this will probably break with non-3D data
+
+            # Texture slice
+            texture_slice = tuple(
+                [
+                    slice(sl.start - offset, sl.stop - offset)
+                    for sl, offset in zip(chunk_slice, min_coord)
+                ]
+            )
+
+            # Texture coordinates are not necessarily world space
+            # texture_offset = [
+            #     chunk - layer for chunk, layer in zip(min_interval, min_coord)
+            # ]
+            texture_offset = [sl.start for sl in texture_slice]
+
+            yield (
+                data,
+                scale,
+                texture_offset,
+                offset,
+                world_offset,
+                chunk_slice,
+                texture_slice,
+            )
+
+    # recurse on top priority
+    if scale > 0:
+        # Get the coordinates of the first priority chunk for next scale
+        first_priority_coord = tuple(points[first_priority_idx])
+        chunk_slice = chunk_map[first_priority_coord]
+
+        # Needs to be in texture space not array space
+        next_scale_texture_offset = [
+            sl.start - layer_offset
+            for sl, layer_offset in zip(chunk_slice, min_coord)
+        ]
+
+        # Blank out the region that will be filled in by other scales
+        zeros_size = [0, 0, 0]
+        for d in range(len(zeros_size)):
+            sl = chunk_slice[d]
+            chunk_w = sl.stop - sl.start
+            zeros_size[d] = chunk_w
+
+        zdata = np.zeros(np.array(zeros_size, dtype=dtype), dtype=dtype)
+
+        texture_slice = tuple(
+            [
+                slice(sl.start - offset, sl.stop - offset)
+                for sl, offset in zip(chunk_slice, min_coord)
+            ]
+        )
+
+        yield (
+            zdata,
+            scale,
+            next_scale_texture_offset,
+            tuple([sl.start for sl in chunk_slice]),
+            world_offset,
+            chunk_slice,
+            texture_slice,
+        )
+
+        # Compute the relative scale factor between these layers
+        relative_scale_factor = [
+            this_scale / next_scale
+            for this_scale, next_scale in zip(
+                scale_factors[scale], scale_factors[scale - 1]
+            )
+        ]
+
+        # now convert the chunk slice to the next scale
+        next_chunk_slice = [
+            slice(st.start * dim_scale, st.stop * dim_scale)
+            for st, dim_scale in zip(chunk_slice, relative_scale_factor)
+        ]
+
+        print(
+            f"Recursive add on\t{str(next_chunk_slice)} idx {first_priority_idx}",
+            f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
+            f"Relative scale factor {relative_scale_factor}",
+        )
+        yield from render_sequence(
+            next_chunk_slice,
+            scale=scale - 1,
+            camera=camera,
+            cache_manager=cache_manager,
+            arrays=arrays,
+            chunk_maps=chunk_maps,
+            container=container,
+            dataset=dataset,
+            scale_factors=scale_factors,
+            worker=worker,
+            dtype=dtype,
+        )
+
+
+def update_chunk(
+    chunk_tuple, viewer=None, container="", dataset="", scale=0, dtype=np.uint8
+):
+
+    (
+        data,
+        scale,
+        texture_offset,
+        array_offset,
+        node_offset,
+        chunk_slice,
+        texture_slice,
+    ) = chunk_tuple
+
+    layer_name = f"{container}/{dataset}/s{scale}"
+    layer = viewer.layers[layer_name]
+    volume = viewer.window.qt_viewer.layer_to_visual[
+        layer
+    ]._layer_node.get_node(3)
+
+    texture = volume._texture
+
+    # Translate the layer we're rendering to the right place
+    layer.translate = node_offset
+
+    # TODO this cutoff is awful, fix the problem at the source
+    #      this happened because of odd chunk sizes in the scale pyramid
+    new_texture_data = np.asarray(
+        data[: texture.shape[0], : texture.shape[1], : texture.shape[2]],
+        dtype=dtype,
+    )
+    texture.set_data(new_texture_data, offset=texture_offset)
+    layer.data[texture_slice] = new_texture_data
+
+    volume.update()
 
 
 def add_subnodes(
@@ -332,6 +554,7 @@ def add_subnodes(
     dataset="",
     alpha=0.8,
     scale_factors=[],
+    worker=None,
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
@@ -365,164 +588,32 @@ def add_subnodes(
         a list of tuples of scale factors for each array
     """
 
+    camera = viewer.camera
     dtype = np.uint16
-    
-    layer_name = f"{container}/{dataset}/s{scale}"
-    layer = viewer.layers[layer_name]
-    volume = viewer.window.qt_viewer.layer_to_visual[
-        layer
-    ]._layer_node.get_node(3)
 
-    texture = volume._texture
-
-    print(f"view slice {view_slice}")
-
-    # Get some variables specific to this scale level
-    min_coord = [st.start for st in view_slice]
-    max_coord = [st.stop for st in view_slice]
-    array = arrays[scale]
-    chunk_map = chunk_maps[scale]
-    scale_factor = scale_factors[scale]
-
-    # Translate the layer we're rendering to the right place
-    layer.translate = np.array(min_coord) * np.array(scale_factor)
-
-    print(
-        f"add_subnodes {scale} {str(view_slice)}",
-        f"highres interval: {str([el.start * 2 ** scale for el in view_slice])},  {str([el.stop * 2 ** scale for el in view_slice])}",
-        f"chunksize: {array.chunksize} arraysize: {array.shape}",
+    chunk_results = render_sequence(
+        view_slice,
+        scale,
+        camera,
+        cache_manager,
+        arrays=arrays,
+        chunk_maps=chunk_maps,
+        container=container,
+        dataset=dataset,
+        scale_factors=scale_factors,
+        alpha=alpha,
+        dtype=dtype,
     )
 
-    # Points for each chunk, for example, centers
-    points = np.array(list(chunk_map.keys()))
-
-    # Mask of whether points are within our interval, this is in array coordinates
-    point_mask = np.array([
-        np.all(point >= min_coord) and np.all(point <= max_coord)
-        for point in points
-    ])
-
-    # Rescale points to world for priority calculations
-    points_world = points * np.array(scale_factor)
-
-    # Prioritize chunks using world coordinates
-    distances = distance_from_camera_centre_line(points_world, viewer.camera)
-    depth = visual_depth(points_world, viewer.camera)
-    priorities = prioritised_chunk_loading(depth, distances, viewer.camera.zoom, alpha=alpha, visible=point_mask)
-
-    # Find the highest priority interval for the next higher resolution
-    first_priority_idx = np.argmin(priorities)
-
-    # Zero out data, this is only necessary if our slice size isnt a multiple of chunksize
-    texture.set_data(np.zeros(np.array(texture.shape, dtype=dtype), dtype=dtype))
-
-    # Iterate over points/chunks and add corresponding nodes when appropriate
-    for idx, point in enumerate(points):
-        # Render *visible* chunks, or all if we're on the last scale level
-        if point_mask[idx] and (idx != first_priority_idx or scale == 0):
-            coord = tuple(point)
-            chunk_slice = chunk_map[coord]
-            offset = [sl.start for sl in chunk_slice]
-            min_interval = offset
-
-            # find position and scale
-            node_offset = (
-                min_interval[0] * scale_factor[0],
-                min_interval[1] * scale_factor[1],
-                min_interval[2] * scale_factor[2],
-            )
-            LOGGER.debug(
-                f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
-            )
-            scale_dataset = f"{dataset}/s{scale}"
-            data = get_chunk(
-                chunk_slice,
-                array=array,
-                container=container,
-                dataset=scale_dataset,
-                cache_manager=cache_manager,
-            )
-
-            # TODO this will probably break with non-3D data
-
-            # Texture slice
-            texture_slice = tuple([slice(sl.start - offset, sl.stop - offset) for sl, offset in zip(chunk_slice, min_coord)])
-
-            # Texture coordinates are not necessarily world space            
-            # texture_offset = [
-            #     chunk - layer for chunk, layer in zip(min_interval, min_coord)
-            # ]
-            texture_offset = [sl.start for sl in texture_slice]
-
-            # TODO this cutoff is awful, fix the problem at the source
-            #      this happened because of odd chunk sizes in the scale pyramid
-            new_texture_data = np.asarray(data[:texture.shape[0], :texture.shape[1], :texture.shape[2]], dtype=dtype)
-            texture.set_data(
-                new_texture_data, offset=texture_offset
-            )
-            layer.data[texture_slice] = new_texture_data
-
-    # recurse on top priority
-    if scale > 0:
-        # Get the coordinates of the first priority chunk for next scale
-        first_priority_coord = tuple(points[first_priority_idx])
-        chunk_slice = chunk_map[first_priority_coord]
-
-        # Needs to be in texture space not array space
-        next_scale_texture_offset = [
-            sl.start - layer_offset
-            for sl, layer_offset in zip(chunk_slice, min_coord)
-        ]
-
-        # Blank out the region that will be filled in by other scales
-        zeros_size = [0, 0, 0]
-        for d in range(len(zeros_size)):
-            sl = chunk_slice[d]
-            chunk_w = min(sl.stop - sl.start, texture.shape[d] - next_scale_texture_offset[d])
-            zeros_size[d] = chunk_w
-
-        zdata = np.zeros(np.array(zeros_size, dtype=dtype), dtype=dtype)
-
-        texture.set_data(zdata, offset=next_scale_texture_offset)
-
-        volume.update()
-
-        # TODO resume ehcking here, zero out data in layer.data
-        
-        # Compute the relative scale factor between these layers
-        relative_scale_factor = [
-            this_scale / next_scale
-            for this_scale, next_scale in zip(
-                scale_factors[scale], scale_factors[scale - 1]
-            )
-        ]
-
-        # now convert the chunk slice to the next scale
-        next_chunk_slice = [
-            slice(st.start * dim_scale, st.stop * dim_scale)
-            for st, dim_scale in zip(chunk_slice, relative_scale_factor)
-        ]
-
-        LOGGER.debug(f"\nSource interval\t{min_coord}, {max_coord}")
-        print(
-            f"Recursive add on\t{str(next_chunk_slice)} idx {first_priority_idx}",
-            f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
-            f"Relative scale factor {relative_scale_factor}",
-        )
-        add_subnodes(
-            next_chunk_slice,
-            scale=scale - 1,
+    for chunk_tuple in chunk_results:
+        update_chunk(
+            chunk_tuple,
             viewer=viewer,
-            cache_manager=cache_manager,
-            arrays=arrays,
-            chunk_maps=chunk_maps,
             container=container,
             dataset=dataset,
-            scale_factors=scale_factors,
+            scale=scale,
+            dtype=dtype,
         )
-    else:
-        # This is for the high res case
-        volume.update()
 
 
 # TODO capture some sort of metadata about scale factors
@@ -572,13 +663,21 @@ def idr0044A():
         "container": "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0044A/4007801.zarr",
         "dataset": "",
         "scale_levels": 5,
-        "scale_factors": [(1, 1, 1), (1, 2, 2), (1, 4, 4), (1, 8, 8), (1, 16, 16)],
+        "scale_factors": [
+            (1, 1, 1),
+            (1, 2, 2),
+            (1, 4, 4),
+            (1, 8, 8),
+            (1, 16, 16),
+        ],
     }
     large_image["arrays"] = [
         read_xarray(
             f"{large_image['container']}/{scale}/",
             #            storage_options={"anon": True},
-        ).data[362, 0, :, :, :].rechunk((512, 512, 512))
+        )
+        .data[362, 0, :, :, :]
+        .rechunk((512, 512, 512))
         for scale in range(large_image["scale_levels"])
     ]
     return large_image
@@ -613,7 +712,13 @@ def luethi_zenodo_7144919():
         "container": "/Users/kharrington/Data/20200812-CardiomyocyteDifferentiation14-Cycle1.zarr",
         "dataset": "B/03/0",
         "scale_levels": 5,
-        "scale_factors": [(1, 0.1625, 0.1625), (1, 0.325, 0.325), (1, 0.65, 0.65), (1, 1.3, 1.3), (1, 2.6, 2.6)]
+        "scale_factors": [
+            (1, 0.1625, 0.1625),
+            (1, 0.325, 0.325),
+            (1, 0.65, 0.65),
+            (1, 1.3, 1.3),
+            (1, 2.6, 2.6),
+        ],
     }
     large_image["arrays"] = []
     for scale in range(large_image["scale_levels"]):
@@ -623,20 +728,26 @@ def luethi_zenodo_7144919():
         )
 
         # TODO extract scale_factors now
-        
+
         # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
-        large_image["arrays"].append(result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze())
+        large_image["arrays"].append(
+            result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze()
+        )
     return large_image
+
 
 if __name__ == '__main__' and True:
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
 
-    # OpenOrganelle Mouse Kidney
-    # large_image = openorganelle_mouse_kidney_labels()
-    large_image = idr0044A()
-    # large_image = openorganelle_mouse_kidney_em()
+    # These datasets have worked at one point in time
+    large_image = openorganelle_mouse_kidney_labels()
+    # large_image = idr0044A()
     # large_image = luethi_zenodo_7144919()
+
+    # These datasets need testing
+
+    # large_image = openorganelle_mouse_kidney_em()
     # TODO there is a problem with datasets that for some reason have shape == chunksize
     #      these datasets overflow because of memory issues
 
@@ -652,7 +763,6 @@ if __name__ == '__main__' and True:
     # TODO notice that we're using a ones array for testing instead of real data
     # multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
-    
     multiscale_chunk_maps = [
         chunk_centers(array)
         for scale_level, array in enumerate(multiscale_arrays)
@@ -679,6 +789,9 @@ if __name__ == '__main__' and True:
     container = large_image["container"]
     dataset = large_image["dataset"]
     scale_factors = large_image["scale_factors"]
+
+    # Initialize worker
+    worker = None
 
     scale = len(multiscale_arrays) - 1
     viewer.add_image(
@@ -727,6 +840,7 @@ if __name__ == '__main__' and True:
         container=large_image["container"],
         dataset=large_image["dataset"],
         scale_factors=scale_factors,
+        worker=worker,
     )
 
     @viewer.bind_key("k")
@@ -742,6 +856,7 @@ if __name__ == '__main__' and True:
             container=large_image["container"],
             dataset=large_image["dataset"],
             scale_factors=scale_factors,
+            worker=worker,
         )
 
     # viewer.camera.events.connect(
@@ -761,5 +876,3 @@ if __name__ == '__main__' and True:
     # )
 
     # napari.run()
-
-    
