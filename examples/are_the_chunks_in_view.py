@@ -84,8 +84,9 @@ class ChunkCacheManager:
 
 def chunk_centers(array: da.Array):
     """Make a dictionary mapping chunk centers to chunk slices.
-
-    TODO this assumes 3D
+    Note: if array is >3D, then the last 3 dimensions are assumed as ZYX
+    and will be used for calculating centers
+    
 
     Parameters
     ----------
@@ -103,14 +104,16 @@ def chunk_centers(array: da.Array):
     ]
     end_pos = [np.cumsum(sizes) for sizes in array.chunks]
     all_start_pos = list(itertools.product(*start_pos))
-    all_middle_pos = list(itertools.product(*middle_pos))
+    # We impose 3D here
+    all_middle_pos = [el[-3:] for el in list(itertools.product(*middle_pos))]
     all_end_pos = list(itertools.product(*end_pos))
     chunk_slices = []
     for start, end in zip(all_start_pos, all_end_pos):
         chunk_slice = [
             slice(start_i, end_i) for start_i, end_i in zip(start, end)
         ]
-        chunk_slices.append(tuple(chunk_slice))
+        # We impose 3D here
+        chunk_slices.append(tuple(chunk_slice[-3:]))
 
     mapping = dict(zip(all_middle_pos, chunk_slices))
     return mapping
@@ -200,59 +203,59 @@ def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
     """
     chunk_load_priority = depth + alpha * zoom * distance
     if visible is not None:
-        chunk_load_priority[not visible] = np.inf
+        chunk_load_priority[np.logical_not(visible)] = np.inf
     return chunk_load_priority
 
 
-@tz.curry
-def update_point_colors(event, viewer, alpha=1.0):
-    """Update the points based on their distance to current camera.
+# @tz.curry
+# def update_point_colors(event, viewer, alpha=1.0):
+#     """Update the points based on their distance to current camera.
 
-    Parameters:
-    -----------
-    viewer : napari.Viewer
-        Current viewer
-    event : camera.events.angles event
-        The event triggered by changing the camera angles
-    """
-    # TODO we need a grid for each scale, or the grid needs to include all scales
-    points_layer = viewer.layers['grid']
-    points = points_layer.data
-    distances = distance_from_camera_centre_line(points, viewer.camera)
-    depth = visual_depth(points, viewer.camera)
-    priorities = prioritised_chunk_loading(
-        depth, distances, viewer.camera.zoom, alpha=alpha
-    )
-    points_layer.features = pd.DataFrame(
-        {'distance': distances, 'depth': depth, 'priority': priorities}
-    )
-    # TODO want widget to change color
-    points_layer.face_color = 'priority'
-    points_layer.refresh()
+#     Parameters:
+#     -----------
+#     viewer : napari.Viewer
+#         Current viewer
+#     event : camera.events.angles event
+#         The event triggered by changing the camera angles
+#     """
+#     # TODO we need a grid for each scale, or the grid needs to include all scales
+#     points_layer = viewer.layers['grid']
+#     points = points_layer.data
+#     distances = distance_from_camera_centre_line(points, viewer.camera)
+#     depth = visual_depth(points, viewer.camera)
+#     priorities = prioritised_chunk_loading(
+#         depth, distances, viewer.camera.zoom, alpha=alpha
+#     )
+#     points_layer.features = pd.DataFrame(
+#         {'distance': distances, 'depth': depth, 'priority': priorities}
+#     )
+#     # TODO want widget to change color
+#     points_layer.face_color = 'priority'
+#     points_layer.refresh()
 
 
-@tz.curry
-def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
-    """
-    chunk map is a dictionary mapping chunk centers to chunk slices
-    array is the array containing the chunks
-    """
-    # TODO hack here to insert the recursive drawing
-    points = np.array(list(chunk_map.keys()))
-    distances = distance_from_camera_centre_line(points, viewer.camera)
-    depth = visual_depth(points, viewer.camera)
-    priorities = prioritised_chunk_loading(
-        depth, distances, viewer.camera.zoom, alpha=alpha
-    )
-    first_priority_idx = np.argmin(priorities)
-    first_priority_coord = tuple(points[first_priority_idx])
-    chunk_slice = chunk_map[first_priority_coord]
-    offset = [sl.start for sl in chunk_slice]
-    # TODO note that this only updates the highest resolution
-    hi_res_layer = viewer.layers['high-res']
-    hi_res_layer.data = array[chunk_slice]
-    hi_res_layer.translate = offset
-    hi_res_layer.refresh()
+# @tz.curry
+# def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
+#     """
+#     chunk map is a dictionary mapping chunk centers to chunk slices
+#     array is the array containing the chunks
+#     """
+#     # TODO hack here to insert the recursive drawing
+#     points = np.array(list(chunk_map.keys()))
+#     distances = distance_from_camera_centre_line(points, viewer.camera)
+#     depth = visual_depth(points, viewer.camera)
+#     priorities = prioritised_chunk_loading(
+#         depth, distances, viewer.camera.zoom, alpha=alpha
+#     )
+#     first_priority_idx = np.argmin(priorities)
+#     first_priority_coord = tuple(points[first_priority_idx])
+#     chunk_slice = chunk_map[first_priority_coord]
+#     offset = [sl.start for sl in chunk_slice]
+#     # TODO note that this only updates the highest resolution
+#     hi_res_layer = viewer.layers['high-res']
+#     hi_res_layer.data = array[chunk_slice]
+#     hi_res_layer.translate = offset
+#     hi_res_layer.refresh()
 
 
 def get_chunk(
@@ -314,6 +317,7 @@ def add_subnodes_caller(
         chunk_maps=chunk_maps,
         container=container,
         dataset=dataset,
+        scale_factors=scale_factors,
     )
 
 
@@ -361,6 +365,8 @@ def add_subnodes(
         a list of tuples of scale factors for each array
     """
 
+    dtype = np.uint16
+    
     layer_name = f"{container}/{dataset}/s{scale}"
     layer = viewer.layers[layer_name]
     volume = viewer.window.qt_viewer.layer_to_visual[
@@ -391,10 +397,10 @@ def add_subnodes(
     points = np.array(list(chunk_map.keys()))
 
     # Mask of whether points are within our interval, this is in array coordinates
-    point_mask = [
+    point_mask = np.array([
         np.all(point >= min_coord) and np.all(point <= max_coord)
         for point in points
-    ]
+    ])
 
     # Rescale points to world for priority calculations
     points_world = points * np.array(scale_factor)
@@ -402,15 +408,13 @@ def add_subnodes(
     # Prioritize chunks using world coordinates
     distances = distance_from_camera_centre_line(points_world, viewer.camera)
     depth = visual_depth(points_world, viewer.camera)
-    priorities = prioritised_chunk_loading(
-        depth, distances, viewer.camera.zoom, alpha=alpha, visible=point_mask
-    )
+    priorities = prioritised_chunk_loading(depth, distances, viewer.camera.zoom, alpha=alpha, visible=point_mask)
 
     # Find the highest priority interval for the next higher resolution
     first_priority_idx = np.argmin(priorities)
 
     # Zero out data, this is only necessary if our slice size isnt a multiple of chunksize
-    texture.set_data(np.zeros(np.array(texture.shape), dtype=np.uint16))
+    texture.set_data(np.zeros(np.array(texture.shape, dtype=dtype), dtype=dtype))
 
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
@@ -441,14 +445,22 @@ def add_subnodes(
 
             # TODO this will probably break with non-3D data
 
-            # Texture coordinates are not necessarily world space
-            texture_offset = [
-                chunk - layer for chunk, layer in zip(min_interval, min_coord)
-            ]
+            # Texture slice
+            texture_slice = tuple([slice(sl.start - offset, sl.stop - offset) for sl, offset in zip(chunk_slice, min_coord)])
 
+            # Texture coordinates are not necessarily world space            
+            # texture_offset = [
+            #     chunk - layer for chunk, layer in zip(min_interval, min_coord)
+            # ]
+            texture_offset = [sl.start for sl in texture_slice]
+
+            # TODO this cutoff is awful, fix the problem at the source
+            #      this happened because of odd chunk sizes in the scale pyramid
+            new_texture_data = np.asarray(data[:texture.shape[0], :texture.shape[1], :texture.shape[2]], dtype=dtype)
             texture.set_data(
-                np.asarray(data, dtype=np.uint16), offset=texture_offset
+                new_texture_data, offset=texture_offset
             )
+            layer.data[texture_slice] = new_texture_data
 
     # recurse on top priority
     if scale > 0:
@@ -463,12 +475,20 @@ def add_subnodes(
         ]
 
         # Blank out the region that will be filled in by other scales
-        zeros_size = [sl.stop - sl.start for sl in chunk_slice]
-        zdata = np.zeros(np.array(zeros_size), dtype=np.uint16)
+        zeros_size = [0, 0, 0]
+        for d in range(len(zeros_size)):
+            sl = chunk_slice[d]
+            chunk_w = min(sl.stop - sl.start, texture.shape[d] - next_scale_texture_offset[d])
+            zeros_size[d] = chunk_w
+
+        zdata = np.zeros(np.array(zeros_size, dtype=dtype), dtype=dtype)
+
         texture.set_data(zdata, offset=next_scale_texture_offset)
 
         volume.update()
 
+        # TODO resume ehcking here, zero out data in layer.data
+        
         # Compute the relative scale factor between these layers
         relative_scale_factor = [
             this_scale / next_scale
@@ -552,12 +572,13 @@ def idr0044A():
         "container": "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0044A/4007801.zarr",
         "dataset": "",
         "scale_levels": 5,
+        "scale_factors": [(1, 1, 1), (1, 2, 2), (1, 4, 4), (1, 8, 8), (1, 16, 16)],
     }
     large_image["arrays"] = [
         read_xarray(
             f"{large_image['container']}/{scale}/",
             #            storage_options={"anon": True},
-        ).data[362, 0, :, :, :]
+        ).data[362, 0, :, :, :].rechunk((10, 512, 512))
         for scale in range(large_image["scale_levels"])
     ]
     return large_image
@@ -581,18 +602,43 @@ def idr0075A():
         # first node will be the image pixel data
         image_node = nodes[0]
 
-        large_image["arrays"].append(image_node.data)
+        large_image["arrays"].append(image_node.data[0, 0, :, :, :].squeeze())
+    large_image["arrays"] = large_image["arrays"][0]
     return large_image
 
+
+def luethi_zenodo_7144919():
+    # Downloaded from https://zenodo.org/record/7144919#.Y-OvqhPMI0R
+    large_image = {
+        "container": "/Users/kharrington/Data/20200812-CardiomyocyteDifferentiation14-Cycle1.zarr",
+        "dataset": "B/03/0",
+        "scale_levels": 5,
+        "scale_factors": [(1, 0.1625, 0.1625), (1, 0.325, 0.325), (1, 0.65, 0.65), (1, 1.3, 1.3), (1, 2.6, 2.6)]
+    }
+    large_image["arrays"] = []
+    for scale in range(large_image["scale_levels"]):
+        result = read_xarray(
+            f"{large_image['container']}/{large_image['dataset']}/{scale}/",
+            #            storage_options={"anon": True},
+        )
+
+        # TODO extract scale_factors now
+        
+        # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
+        large_image["arrays"].append(result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze())
+    return large_image
 
 if __name__ == '__main__' and True:
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
 
     # OpenOrganelle Mouse Kidney
-    large_image = openorganelle_mouse_kidney_labels()
-    # large_image = idr0075A()
+    # large_image = openorganelle_mouse_kidney_labels()
+    large_image = idr0044A()
     # large_image = openorganelle_mouse_kidney_em()
+    # large_image = luethi_zenodo_7144919()
+    # TODO there is a problem with datasets that for some reason have shape == chunksize
+    #      these datasets overflow because of memory issues
 
     # view_interval = ((0, 0, 0), [3 * el for el in chunk_strides[3]])
     # view_interval = ((0, 0, 0), (6144, 2048, 4096))
@@ -604,8 +650,9 @@ if __name__ == '__main__' and True:
 
     # Testing with ones is pretty useful for debugging chunk placement for different scales
     # TODO notice that we're using a ones array for testing instead of real data
-    multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
+    # multiscale_arrays = [da.ones_like(array) for array in multiscale_arrays]
 
+    
     multiscale_chunk_maps = [
         chunk_centers(array)
         for scale_level, array in enumerate(multiscale_arrays)
@@ -620,10 +667,13 @@ if __name__ == '__main__' and True:
         slice(0, multiscale_arrays[-1].shape[idx])
         for idx in range(len(multiscale_arrays[-1].shape))
     ]
+    # Forcing 3D here
+    view_slice = view_slice[-3:]
 
     viewer = napari.Viewer(ndisplay=3)
 
     colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow", 4: "winter"}
+    # colormaps = {0: "gray", 1: "gray", 2: "gray", 3: "gray", 4: "gray"}
 
     # Initialize layers
     container = large_image["container"]
@@ -639,6 +689,7 @@ if __name__ == '__main__' and True:
         opacity=0.8,
         rendering="mip",
         name=f"{container}/{dataset}/s{scale}",
+        contrast_limits=[0, 500],
     )
     for scale in range(len(multiscale_arrays) - 1):
         relative_scale_factor = [
@@ -662,6 +713,7 @@ if __name__ == '__main__' and True:
             opacity=0.8,
             rendering="mip",
             name=f"{container}/{dataset}/s{scale}",
+            contrast_limits=[0, 500],
         )
 
     # Hooks and calls to start rendering
@@ -709,3 +761,5 @@ if __name__ == '__main__' and True:
     # )
 
     # napari.run()
+
+    
