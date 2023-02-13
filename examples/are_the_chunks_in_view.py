@@ -2,6 +2,8 @@ import itertools
 import logging
 import sys
 
+import time
+
 import dask.array as da
 import numpy as np
 import pandas as pd
@@ -16,7 +18,9 @@ from ome_zarr.reader import Reader
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
 
+from superqt import ensure_main_thread
 import napari
+from napari.qt.threading import thread_worker
 
 LOGGER = logging.getLogger("poor-mans-octree")
 LOGGER.setLevel(logging.DEBUG)
@@ -287,39 +291,46 @@ def get_chunk(
     """
     real_array = cache_manager.get(container, dataset, chunk_slice)
     if real_array is None:
-        real_array = np.asarray(array[chunk_slice].compute())
+        try:
+            real_array = np.asarray(array[chunk_slice].compute())
+        except Exception:
+            print(
+                f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
+            )
+            import pdb
+
+            pdb.set_trace()
+
         cache_manager.put(container, dataset, chunk_slice, real_array)
     return real_array
 
 
-@tz.curry
-def add_subnodes_caller(
-    event,
+@thread_worker
+def render_sequence_caller(
     view_slice,
     scale=0,
-    viewer=None,
+    camera=None,
     cache_manager=None,
     arrays=None,
     chunk_maps=None,
     container="",
     dataset="",
+    alpha=0.8,
     scale_factors=[],
-    worker=None,
+    dtype=np.uint16,
 ):
-    """
-    This function is a stub to to launch an initial recursive call of add_subnodes.
-    """
-    add_subnodes(
+    yield from render_sequence(
         view_slice,
         scale=scale,
-        viewer=viewer,
+        camera=camera,
         cache_manager=cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
         container=container,
         dataset=dataset,
+        alpha=alpha,
         scale_factors=scale_factors,
-        worker=worker,        
+        dtype=dtype,
     )
 
 
@@ -334,7 +345,6 @@ def render_sequence(
     dataset="",
     alpha=0.8,
     scale_factors=[],
-    worker=None,
     dtype=np.uint16,
 ):
     layer_name = f"{container}/{dataset}/s{scale}"
@@ -425,7 +435,7 @@ def render_sequence(
             texture_offset = [sl.start for sl in texture_slice]
 
             yield (
-                data,
+                np.asarray(data),
                 scale,
                 texture_offset,
                 offset,
@@ -463,7 +473,7 @@ def render_sequence(
         )
 
         yield (
-            zdata,
+            np.asarray(zdata),
             scale,
             next_scale_texture_offset,
             tuple([sl.start for sl in chunk_slice]),
@@ -501,15 +511,14 @@ def render_sequence(
             container=container,
             dataset=dataset,
             scale_factors=scale_factors,
-            worker=worker,
             dtype=dtype,
         )
 
 
+@tz.curry
 def update_chunk(
-    chunk_tuple, viewer=None, container="", dataset="", scale=0, dtype=np.uint8
+    chunk_tuple, viewer=None, container="", dataset="", dtype=np.uint8
 ):
-
     (
         data,
         scale,
@@ -541,6 +550,38 @@ def update_chunk(
     layer.data[texture_slice] = new_texture_data
 
     volume.update()
+    time.sleep(0.01)
+
+
+@tz.curry
+def add_subnodes_caller(
+    event,
+    view_slice,
+    scale=0,
+    viewer=None,
+    cache_manager=None,
+    arrays=None,
+    chunk_maps=None,
+    container="",
+    dataset="",
+    scale_factors=[],
+    worker_map={},
+):
+    """
+    This function is a stub to to launch an initial recursive call of add_subnodes.
+    """
+    add_subnodes(
+        view_slice,
+        scale=scale,
+        viewer=viewer,
+        cache_manager=cache_manager,
+        arrays=arrays,
+        chunk_maps=chunk_maps,
+        container=container,
+        dataset=dataset,
+        scale_factors=scale_factors,
+        worker_map=worker_map,
+    )
 
 
 def add_subnodes(
@@ -554,7 +595,7 @@ def add_subnodes(
     dataset="",
     alpha=0.8,
     scale_factors=[],
-    worker=None,
+    worker_map={},
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
@@ -591,7 +632,10 @@ def add_subnodes(
     camera = viewer.camera
     dtype = np.uint16
 
-    chunk_results = render_sequence(
+    if "worker" in worker_map:
+        worker_map["worker"].quit()
+
+    worker_map["worker"] = render_sequence_caller(
         view_slice,
         scale,
         camera,
@@ -605,15 +649,12 @@ def add_subnodes(
         dtype=dtype,
     )
 
-    for chunk_tuple in chunk_results:
+    worker_map["worker"].yielded.connect(
         update_chunk(
-            chunk_tuple,
-            viewer=viewer,
-            container=container,
-            dataset=dataset,
-            scale=scale,
-            dtype=dtype,
+            viewer=viewer, container=container, dataset=dataset, dtype=dtype
         )
+    )
+    worker_map["worker"].start()
 
 
 # TODO capture some sort of metadata about scale factors
@@ -791,7 +832,7 @@ if __name__ == '__main__' and True:
     scale_factors = large_image["scale_factors"]
 
     # Initialize worker
-    worker = None
+    worker_map = {}
 
     scale = len(multiscale_arrays) - 1
     viewer.add_image(
@@ -840,7 +881,7 @@ if __name__ == '__main__' and True:
         container=large_image["container"],
         dataset=large_image["dataset"],
         scale_factors=scale_factors,
-        worker=worker,
+        worker_map=worker_map,
     )
 
     @viewer.bind_key("k")
@@ -856,7 +897,7 @@ if __name__ == '__main__' and True:
             container=large_image["container"],
             dataset=large_image["dataset"],
             scale_factors=scale_factors,
-            worker=worker,
+            worker_map=worker_map,
         )
 
     # viewer.camera.events.connect(
