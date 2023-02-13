@@ -16,8 +16,7 @@ from napari.layers.utils._link_layers import get_linked_layers
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.components import LayerList
-    from napari.viewer import Viewer
+    from napari.components import Dims, LayerList
 
 
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
@@ -133,7 +132,7 @@ def _convert_dtype(ll: LayerList, mode='int64'):
         layer.data = layer.data.astype(np.dtype(mode))
 
 
-def _project(ll: LayerList, viewer: Viewer, axis: int = 0, mode='max'):
+def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
     """Creates a new layer with specified projection.
 
     Parameters
@@ -157,7 +156,7 @@ def _project(ll: LayerList, viewer: Viewer, axis: int = 0, mode='max'):
                 "Projections are only implemented for images", deferred=True
             )
         )
-    axis_index = viewer.dims.order.index(axis)
+    axis_index = dims.order.index(axis)
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
