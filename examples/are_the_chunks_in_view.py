@@ -578,7 +578,7 @@ def idr0044A():
         read_xarray(
             f"{large_image['container']}/{scale}/",
             #            storage_options={"anon": True},
-        ).data[362, 0, :, :, :].rechunk((10, 512, 512))
+        ).data[362, 0, :, :, :].rechunk((512, 512, 512))
         for scale in range(large_image["scale_levels"])
     ]
     return large_image
