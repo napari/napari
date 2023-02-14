@@ -137,7 +137,7 @@ def split_channels(
         for key, val in kwargs.items():
             try:
                 i_kwargs[key] = next(val)
-            except StopIteration:
+            except StopIteration as e:
                 raise IndexError(
                     trans._(
                         "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
@@ -148,7 +148,7 @@ def split_channels(
                         key=key,
                         i=i,
                     )
-                )
+                ) from e
 
         layerdata = (image, i_kwargs, 'image')
         layerdata_list.append(layerdata)

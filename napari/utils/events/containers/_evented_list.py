@@ -85,8 +85,10 @@ class EventedList(TypedMutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = dict(),
-    ):
+        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
+    ) -> None:
+        if lookup is None:
+            lookup = {}
         _events = {
             'inserting': None,  # int
             'inserted': None,  # Tuple[int, Any] - (idx, value)
@@ -197,10 +199,10 @@ class EventedList(TypedMutableSequence[_T]):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                setattr(event, 'index', self.index(event.source))
-        # reemit with this object's EventEmitter of the same type if present
-        # otherwise just emit with the EmitterGroup itself
-        getattr(self.events, event.type, self.events)(event)
+                event.index = self.index(event.source)
+
+        # reemit with this object's EventEmitter
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the reemitter."""

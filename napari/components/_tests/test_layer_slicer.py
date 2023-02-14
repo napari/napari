@@ -38,7 +38,7 @@ class FakeSliceRequest:
 
 
 class FakeAsyncLayer:
-    def __init__(self):
+    def __init__(self) -> None:
         self._slice_request_count: int = 0
         self.slice_count: int = 0
         self.lock: RLock = RLock()
@@ -56,7 +56,7 @@ class FakeAsyncLayer:
 
 
 class FakeSyncLayer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.slice_count: int = 0
 
     def _slice_dims(self, *args, **kwargs) -> None:
@@ -70,7 +70,7 @@ class LockableData:
     it allows us to control when slicing tasks complete.
     """
 
-    def __init__(self, data: LayerDataProtocol):
+    def __init__(self, data: LayerDataProtocol) -> None:
         self.data = data
         self.lock = RLock()
 

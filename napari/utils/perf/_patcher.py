@@ -21,7 +21,7 @@ PatchFunction = Callable[[CallableParent, str, str], None]
 class PatchError(Exception):
     """Failed to patch target, config file error?"""
 
-    def __init__(self, message):
+    def __init__(self, message) -> None:
         self.message = message
 
 
@@ -56,7 +56,7 @@ def _patch_attribute(
         class_str, callable_str = attribute_str.split('.')
         try:
             parent = getattr(module, class_str)
-        except AttributeError:
+        except AttributeError as e:
             raise PatchError(
                 trans._(
                     "Module {module_name} has no attribute {attribute_str}",
@@ -64,7 +64,7 @@ def _patch_attribute(
                     module_name=module.__name__,
                     attribute_str=attribute_str,
                 )
-            )
+            ) from e
         parent_str = class_str
     else:
         # Assume attribute_str is <function>.
@@ -75,7 +75,7 @@ def _patch_attribute(
 
     try:
         getattr(parent, callable_str)
-    except AttributeError:
+    except AttributeError as e:
         raise PatchError(
             trans._(
                 "Parent {parent_str} has no attribute {callable_str}",
@@ -83,7 +83,7 @@ def _patch_attribute(
                 parent_str=parent_str,
                 callable_str=callable_str,
             )
-        )
+        ) from e
 
     label = (
         callable_str if class_str is None else f"{class_str}.{callable_str}"
@@ -128,7 +128,7 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
         module_path = '.'.join(parts[:i])
         try:
             module = import_module(module_path)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             if module is None:
                 # The very first top-level module import failed!
                 raise PatchError(
@@ -137,7 +137,7 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
                         deferred=True,
                         module_path=module_path,
                     )
-                )
+                ) from e
 
             # We successfully imported part of the target_str but then
             # we got a failure. Usually this is because we tried

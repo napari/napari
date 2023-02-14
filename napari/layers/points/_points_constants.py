@@ -31,10 +31,10 @@ class Mode(StringEnum):
     SELECT allows the user to select points by clicking on them
     """
 
-    ADD = auto()
-    SELECT = auto()
     PAN_ZOOM = auto()
     TRANSFORM = auto()
+    ADD = auto()
+    SELECT = auto()
 
 
 class Symbol(StringEnum):

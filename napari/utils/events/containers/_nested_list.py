@@ -4,6 +4,7 @@ see module docstring of evented_list.py for more details
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 from collections import defaultdict
 from typing import (
@@ -245,7 +246,21 @@ class NestableEventedList(EventedList[_T]):
             for attr in ('index', 'new_index'):
                 if hasattr(event, attr):
                     setattr(event, attr, ei)
-        super()._reemit_child_event(event)
+
+        # if the starting event was from a nestable envented list, we can
+        # use the same event type here (e.g: removed, inserted)
+        if isinstance(event.source, NestableEventedList):
+            emitter = getattr(self.events, event.type, self.events)
+        else:
+            emitter = self.events
+
+        # same as normal evented_list, but now we need to account for the
+        # potentially different emitter
+        if not hasattr(event, 'index'):
+            with contextlib.suppress(ValueError):
+                event.index = self.index(event.source)
+
+        emitter(event)
 
     def _non_negative_index(
         self, parent_index: ParentIndex, dest_index: Index
@@ -390,7 +405,11 @@ class NestableEventedList(EventedList[_T]):
             If the terminal source is a slice, or if the source is this root
             object
         """
-        logger.debug(f"move(src_index={src_index}, dest_index={dest_index})")
+        logger.debug(
+            "move(src_index=%s, dest_index=%s)",
+            src_index,
+            dest_index,
+        )
         src_par_i, src_i = split_nested_index(src_index)
         dest_par_i, dest_i = split_nested_index(dest_index)
         dest_i = self._non_negative_index(dest_par_i, dest_i)

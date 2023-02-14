@@ -9,6 +9,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  COLUMNS: 120
+
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
@@ -39,12 +42,6 @@ jobs:
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
-      # run a minimal wm for linux tests that depend on UI events (e.g. setFocus)
-      # see https://github.com/pytest-dev/pytest-qt/issues/206
-      - name: Install WM on Linux
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y herbstluftwm
-
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -52,7 +49,7 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox -v --pre
         env:

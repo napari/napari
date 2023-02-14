@@ -23,7 +23,7 @@ class ChunkedImageLoader(ImageLoader):
         The location we are currently loading or showing.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # We're showing nothing to start.
         self._current: Optional[ImageLocation] = None
 

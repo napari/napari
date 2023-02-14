@@ -52,7 +52,7 @@ class NotebookScreenshot:
         *,
         canvas_only=False,
         alt_text=None,
-    ):
+    ) -> None:
         """Initialize screenshot object.
 
         Parameters
