@@ -6,8 +6,6 @@ class AxesOverlay(SceneOverlay):
 
     Attributes
     ----------
-    visible : bool
-        If axes are visible or not.
     labels : bool
         If axes labels are visible or not. Not the actual
         axes labels are stored in `viewer.dims.axes_labels`.
@@ -22,6 +20,12 @@ class AxesOverlay(SceneOverlay):
         y=dashed, z=dotted.
     arrows : bool
         If axes have arrowheads or not.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
     """
 
     labels: bool = True

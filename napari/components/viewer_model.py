@@ -20,7 +20,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, validator
+from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
 from napari.components._viewer_mouse_bindings import dims_scroll
@@ -31,7 +31,7 @@ from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
-    Overlays,
+    Overlay,
     ScaleBarOverlay,
     TextOverlay,
 )
@@ -41,19 +41,37 @@ from napari.errors import (
     NoAvailableReaderError,
     ReaderPluginError,
 )
-from napari.layers import Image, Labels, Layer, Points, Shapes
+from napari.layers import (
+    Image,
+    Labels,
+    Layer,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from napari.layers._source import layer_source
+from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
 from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
 from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
+from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
+from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
 from napari.layers.utils.stack_utils import split_channels
+from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
-from napari.utils.events import Event, EventedModel, disconnect_events
+from napari.utils.events import (
+    Event,
+    EventedDict,
+    EventedModel,
+    disconnect_events,
+)
 from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.migrations import rename_argument
@@ -88,6 +106,13 @@ def _current_theme() -> str:
     return get_settings().appearance.theme
 
 
+DEFAULT_OVERLAYS = {
+    'scale_bar': ScaleBarOverlay,
+    'text': TextOverlay,
+    'axes': AxesOverlay,
+}
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -118,9 +143,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    axes: AxesOverlay = Field(
-        default_factory=AxesOverlay, allow_mutation=False
-    )
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
@@ -128,20 +150,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBarOverlay = Field(
-        default_factory=ScaleBarOverlay, allow_mutation=False
-    )
-    text_overlay: TextOverlay = Field(
-        default_factory=TextOverlay, allow_mutation=False
-    )
-    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
-
     help: str = ''
     status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-
+    # private track of overlays, only expose the old ones for backward compatibility
+    _overlays: EventedDict[str, Overlay] = PrivateAttr(
+        default_factory=EventedDict
+    )
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
     _ctx: Mapping
@@ -218,6 +235,21 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+
+        self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
+
+    # simple properties exposing overlays for backward compatibility
+    @property
+    def axes(self):
+        return self._overlays['axes']
+
+    @property
+    def scale_bar(self):
+        return self._overlays['scale_bar']
+
+    @property
+    def text_overlay(self):
+        return self._overlays['text']
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -399,7 +431,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.camera.interactive = event.interactive
+        if event.source is self.layers.selection.active:
+            self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -523,6 +556,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
             Shapes: shapes_fun_to_mode,
+            Vectors: vectors_fun_to_mode,
+            Image: image_fun_to_mode,
+            Surface: surface_fun_to_mode,
+            Tracks: tracks_fun_to_mode,
         }
 
         help_li = []
@@ -533,7 +570,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
-            if not shortcuts[action_name]:
+            if not shortcuts.get(action_name, []):
                 continue
             help_li.append(
                 trans._(
