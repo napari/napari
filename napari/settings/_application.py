@@ -18,15 +18,16 @@ GridWidth = conint(ge=-1, ne=0)
 GridHeight = conint(ge=-1, ne=0)
 
 _DEFAULT_MEM_FRACTION = 0.25
-MAX_CACHE = virtual_memory().total * 0.5 / 1e6
+MAX_CACHE = virtual_memory().total * 0.5 / 1e9
 
 
 class DaskSettings(EventedModel):
     enabled: bool = True
     cache: float = Field(
-        virtual_memory().total * _DEFAULT_MEM_FRACTION / 1e6,
+        virtual_memory().total * _DEFAULT_MEM_FRACTION / 1e9,
         ge=0,
         le=MAX_CACHE,
+        title="Cache size (GB)",
     )
 
 
@@ -192,8 +193,10 @@ class ApplicationSettings(EventedModel):
     # convert cache (and max cache) from bytes to mb for widget
     dask: DaskSettings = Field(
         default=DaskSettings().dict(),
-        title=trans._("Enable Dask"),
-        description=trans._("Enable/disable Dask caching."),
+        title=trans._("Dask cache"),
+        description=trans._(
+            "Settings for dask cache (does not work with distributed arrays)"
+        ),
     )
 
     @validator('window_state')

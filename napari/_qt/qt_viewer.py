@@ -323,7 +323,7 @@ class QtViewer(QSplitter):
 
         enabled = dask_setting.enabled
         size = dask_setting.cache
-        resize_dask_cache(int(int(enabled) * size * 1e6))
+        resize_dask_cache(int(int(enabled) * size * 1e9))
 
     @property
     def controls(self) -> QtLayerControlsContainer:
