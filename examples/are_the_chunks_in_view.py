@@ -268,6 +268,7 @@ def get_chunk(
     container=None,
     dataset=None,
     cache_manager=None,
+    dtype=np.uint8,
 ):
     """Get a specified slice from an array (uses a cache).
 
@@ -292,7 +293,7 @@ def get_chunk(
     real_array = cache_manager.get(container, dataset, chunk_slice)
     if real_array is None:
         try:
-            real_array = np.asarray(array[chunk_slice].compute())
+            real_array = np.asarray(array[chunk_slice].compute(), dtype=dtype)
         except Exception:
             print(
                 f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
@@ -358,9 +359,12 @@ def render_sequence(
     chunk_map = chunk_maps[scale]
     scale_factor = scale_factors[scale]
 
+    highres_min = str([el.start * 2 ** scale for el in view_slice])
+    highres_max = str([el.stop * 2 ** scale for el in view_slice])
+    
     print(
         f"add_subnodes {scale} {str(view_slice)}",
-        f"highres interval: {str([el.start * 2 ** scale for el in view_slice])},  {str([el.stop * 2 ** scale for el in view_slice])}",
+        f"highres interval: {highres_min},  {highres_max}",
         f"chunksize: {array.chunksize} arraysize: {array.shape}",
     )
 
@@ -416,9 +420,8 @@ def render_sequence(
                 container=container,
                 dataset=scale_dataset,
                 cache_manager=cache_manager,
+                dtype=dtype,
             )
-
-            # TODO this will probably break with non-3D data
 
             # Texture slice
             texture_slice = tuple(
@@ -538,6 +541,7 @@ def update_chunk(
     texture = volume._texture
 
     # Translate the layer we're rendering to the right place
+    # TODO: this is called too many times. we only need to call it once for each time it changes
     layer.translate = node_offset
 
     # TODO this cutoff is awful, fix the problem at the source
@@ -550,7 +554,6 @@ def update_chunk(
     layer.data[texture_slice] = new_texture_data
 
     volume.update()
-    time.sleep(0.01)
 
 
 @tz.curry
@@ -834,6 +837,10 @@ if __name__ == '__main__' and True:
     # Initialize worker
     worker_map = {}
 
+    # from napari.layers.image.image import Image
+    # Image._set_view_slice = lambda x: None
+    
+    
     scale = len(multiscale_arrays) - 1
     viewer.add_image(
         da.ones_like(multiscale_arrays[scale], dtype=np.uint16),
@@ -870,6 +877,14 @@ if __name__ == '__main__' and True:
             contrast_limits=[0, 500],
         )
 
+    def start_profiling():
+        import yappi
+
+        yappi.set_clock_type("cpu") # Use set_clock_type("wall") for wall time
+        yappi.start()
+
+    # start_profiling()
+    
     # Hooks and calls to start rendering
     add_subnodes(
         view_slice,
@@ -883,6 +898,11 @@ if __name__ == '__main__' and True:
         scale_factors=scale_factors,
         worker_map=worker_map,
     )
+
+    def get_stats():
+        yappi.stop()
+        stats = yappi.get_func_stats()
+        stats.sort("name", "desc").print_all()
 
     @viewer.bind_key("k")
     def refresher(event):
