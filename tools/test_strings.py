@@ -40,10 +40,6 @@ from strings_list import (
     SKIP_WORDS_GLOBAL,
 )
 
-from napari._vispy.experimental.vispy_tiled_image_layer import (
-    VispyTiledImageLayer,
-)
-
 REPO_ROOT = Path(__file__).resolve()
 NAPARI_MODULE = (REPO_ROOT / "napari").relative_to(REPO_ROOT)
 
