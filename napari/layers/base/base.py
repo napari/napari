@@ -618,7 +618,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _on_editable_changed(self) -> None:
         """Executes side-effects on this layer related to changes of the editable state."""
-        pass
 
     @property
     def scale(self):
