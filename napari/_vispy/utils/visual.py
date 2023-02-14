@@ -63,8 +63,10 @@ overlay_to_visual = {
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
 }
-
+print('yes')
 if async_octree:
+    print('no')
+    print('++++++++++++++++++++++++++++++++++++load tiles layerr++++++++++++')
     from napari._vispy.experimental.vispy_tiled_image_layer import (
         VispyTiledImageLayer,
     )

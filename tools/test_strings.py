@@ -40,6 +40,13 @@ from strings_list import (
     SKIP_WORDS_GLOBAL,
 )
 
+# os.environ['NAPARI_ASYNC'] = '1'
+# os.environ['NAPARI_OCTREE'] = '1'
+
+from napari._vispy.experimental.vispy_tiled_image_layer import (
+    VispyTiledImageLayer,
+)
+
 REPO_ROOT = Path(__file__).resolve()
 NAPARI_MODULE = (REPO_ROOT / "napari").relative_to(REPO_ROOT)
 

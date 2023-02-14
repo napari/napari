@@ -38,8 +38,8 @@ class Camera(EventedModel):
     interactive: bool = True
 
     # validators
-    @validator('center', 'angles', pre=True)
-    def _ensure_3_tuple(v):
+    @validator('center', 'angles', pre=True, allow_reuse=True)
+    def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
     @property

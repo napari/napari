@@ -170,7 +170,7 @@ class ApplicationSettings(EventedModel):
         ),
     )
 
-    @validator('window_state')
+    @validator('window_state', allow_reuse=True)
     def _validate_qbtye(cls, v):
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
             raise ValueError(

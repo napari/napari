@@ -31,8 +31,20 @@ label_image = label(cleared)
 # initialise viewer with coins image
 viewer = napari.view_image(image, name='coins', rgb=False)
 
+viewer.theme = 'light'
+
+from napari.settings import get_settings
+import napari
+
+settings = get_settings()
+# then modify... e.g:
+settings.appearance.theme = 'light'
+
 # add the labels
 label_layer = viewer.add_labels(label_image, name='segmentation')
+
+image_layer = viewer.layers[0]
+image_layer.visible = False
 
 if __name__ == '__main__':
     napari.run()
