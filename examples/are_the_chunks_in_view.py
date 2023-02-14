@@ -124,12 +124,12 @@ def chunk_centers(array: da.Array):
 
 
 def rotation_matrix_from_camera(
-    camera: napari.components.Camera,
+    angles,
 ) -> np.ndarray:
-    return R.from_euler(seq='yzx', angles=camera.angles, degrees=True)
+    return R.from_euler(seq='yzx', angles=angles, degrees=True)
 
 
-def visual_depth(points, camera):
+def visual_depth(points, camera_dict):
     """Compute visual depth from camera position to a(n array of) point(s).
 
     Parameters
@@ -146,13 +146,13 @@ def visual_depth(points, camera):
         Position of the points along the view vector of the camera. These can
         be negative (in front of the center) or positive (behind the center).
     """
-    view_direction = camera.view_direction
-    points_relative_to_camera = points - camera.center
+    view_direction = camera_dict["view_direction"]
+    points_relative_to_camera = points - camera_dict["center"]
     projected_length = points_relative_to_camera @ view_direction
     return projected_length
 
 
-def distance_from_camera_centre_line(points, camera):
+def distance_from_camera_centre_line(points, camera_dict):
     """Compute distance from a point or array of points to camera center line.
 
     This is the line aligned to the camera view direction and passing through
@@ -171,11 +171,11 @@ def distance_from_camera_centre_line(points, camera):
     distances : (N,) array of float
         Distances from points to the center line of the camera.
     """
-    view_direction = camera.view_direction
-    projected_length = visual_depth(points, camera)
+    view_direction = camera_dict["view_direction"]
+    projected_length = visual_depth(points, camera_dict)
     projected = view_direction * np.reshape(projected_length, (-1, 1))
     points_relative_to_camera = (
-        points - camera.center
+        points - camera_dict["center"]
     )  # for performance, don't compute this twice in both functions
     distances = np.linalg.norm(projected - points_relative_to_camera, axis=-1)
     return distances
@@ -298,9 +298,8 @@ def get_chunk(
             print(
                 f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
             )
-            import pdb
-
-            pdb.set_trace()
+            # import pdb
+            # pdb.set_trace()
 
         cache_manager.put(container, dataset, chunk_slice, real_array)
     return real_array
@@ -310,7 +309,7 @@ def get_chunk(
 def render_sequence_caller(
     view_slice,
     scale=0,
-    camera=None,
+    camera_dict={},
     cache_manager=None,
     arrays=None,
     chunk_maps=None,
@@ -323,7 +322,7 @@ def render_sequence_caller(
     yield from render_sequence(
         view_slice,
         scale=scale,
-        camera=camera,
+        camera_dict=camera_dict,
         cache_manager=cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
@@ -338,7 +337,7 @@ def render_sequence_caller(
 def render_sequence(
     view_slice,
     scale=0,
-    camera=None,
+    camera_dict={},
     cache_manager=None,
     arrays=None,
     chunk_maps=None,
@@ -359,9 +358,9 @@ def render_sequence(
     chunk_map = chunk_maps[scale]
     scale_factor = scale_factors[scale]
 
-    highres_min = str([el.start * 2 ** scale for el in view_slice])
-    highres_max = str([el.stop * 2 ** scale for el in view_slice])
-    
+    highres_min = str([el.start * 2**scale for el in view_slice])
+    highres_max = str([el.stop * 2**scale for el in view_slice])
+
     print(
         f"add_subnodes {scale} {str(view_slice)}",
         f"highres interval: {highres_min},  {highres_max}",
@@ -383,10 +382,10 @@ def render_sequence(
     points_world = points * np.array(scale_factor)
 
     # Prioritize chunks using world coordinates
-    distances = distance_from_camera_centre_line(points_world, camera)
-    depth = visual_depth(points_world, camera)
+    distances = distance_from_camera_centre_line(points_world, camera_dict)
+    depth = visual_depth(points_world, camera_dict)
     priorities = prioritised_chunk_loading(
-        depth, distances, camera.zoom, alpha=alpha, visible=point_mask
+        depth, distances, camera_dict["zoom"], alpha=alpha, visible=point_mask
     )
 
     # Find the highest priority interval for the next higher resolution
@@ -435,7 +434,7 @@ def render_sequence(
             # texture_offset = [
             #     chunk - layer for chunk, layer in zip(min_interval, min_coord)
             # ]
-            texture_offset = [sl.start for sl in texture_slice]
+            texture_offset = tuple([sl.start for sl in texture_slice])
 
             yield (
                 np.asarray(data),
@@ -454,10 +453,12 @@ def render_sequence(
         chunk_slice = chunk_map[first_priority_coord]
 
         # Needs to be in texture space not array space
-        next_scale_texture_offset = [
-            sl.start - layer_offset
-            for sl, layer_offset in zip(chunk_slice, min_coord)
-        ]
+        next_scale_texture_offset = tuple(
+            [
+                sl.start - layer_offset
+                for sl, layer_offset in zip(chunk_slice, min_coord)
+            ]
+        )
 
         # Blank out the region that will be filled in by other scales
         zeros_size = [0, 0, 0]
@@ -507,7 +508,7 @@ def render_sequence(
         yield from render_sequence(
             next_chunk_slice,
             scale=scale - 1,
-            camera=camera,
+            camera_dict=camera_dict,
             cache_manager=cache_manager,
             arrays=arrays,
             chunk_maps=chunk_maps,
@@ -518,6 +519,7 @@ def render_sequence(
         )
 
 
+# TODO consider filling these chunks into a queue and processing them in batches
 @tz.curry
 def update_chunk(
     chunk_tuple, viewer=None, container="", dataset="", dtype=np.uint8
@@ -540,18 +542,20 @@ def update_chunk(
 
     texture = volume._texture
 
-    # Translate the layer we're rendering to the right place
-    # TODO: this is called too many times. we only need to call it once for each time it changes
+    # # Translate the layer we're rendering to the right place
+    # # TODO: this is called too many times. we only need to call it once for each time it changes
     layer.translate = node_offset
 
-    # TODO this cutoff is awful, fix the problem at the source
-    #      this happened because of odd chunk sizes in the scale pyramid
     new_texture_data = np.asarray(
-        data[: texture.shape[0], : texture.shape[1], : texture.shape[2]],
+        data,
         dtype=dtype,
     )
-    texture.set_data(new_texture_data, offset=texture_offset)
+
     layer.data[texture_slice] = new_texture_data
+
+    # Writing a texture with an offset is slower
+    texture.set_data(new_texture_data, offset=texture_offset)
+    # texture.set_data(np.asarray(layer.data), offset=(0, 0, 0))
 
     volume.update()
 
@@ -573,6 +577,8 @@ def add_subnodes_caller(
     """
     This function is a stub to to launch an initial recursive call of add_subnodes.
     """
+    print("")
+    print(f"add_subnodes_caller")
     add_subnodes(
         view_slice,
         scale=scale,
@@ -632,7 +638,16 @@ def add_subnodes(
         a list of tuples of scale factors for each array
     """
 
+    # TODO it might be necessary to deep copy the camera
+    # TODO update chunk is blocking
     camera = viewer.camera
+    camera_dict = {
+        "angles": tuple(camera.angles),
+        "center": tuple(camera.center),
+        "view_direction": tuple(camera.view_direction),
+        "zoom": camera.zoom,
+    }
+
     dtype = np.uint16
 
     if "worker" in worker_map:
@@ -641,7 +656,7 @@ def add_subnodes(
     worker_map["worker"] = render_sequence_caller(
         view_slice,
         scale,
-        camera,
+        camera_dict,
         cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
@@ -785,9 +800,9 @@ if __name__ == '__main__' and True:
     # Chunked, multiscale data
 
     # These datasets have worked at one point in time
-    large_image = openorganelle_mouse_kidney_labels()
+    # large_image = openorganelle_mouse_kidney_labels()
     # large_image = idr0044A()
-    # large_image = luethi_zenodo_7144919()
+    large_image = luethi_zenodo_7144919()
 
     # These datasets need testing
 
@@ -826,7 +841,7 @@ if __name__ == '__main__' and True:
 
     viewer = napari.Viewer(ndisplay=3)
 
-    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow", 4: "winter"}
+    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow", 4: "bop purple"}
     # colormaps = {0: "gray", 1: "gray", 2: "gray", 3: "gray", 4: "gray"}
 
     # Initialize layers
@@ -839,8 +854,7 @@ if __name__ == '__main__' and True:
 
     # from napari.layers.image.image import Image
     # Image._set_view_slice = lambda x: None
-    
-    
+
     scale = len(multiscale_arrays) - 1
     viewer.add_image(
         da.ones_like(multiscale_arrays[scale], dtype=np.uint16),
@@ -880,11 +894,11 @@ if __name__ == '__main__' and True:
     def start_profiling():
         import yappi
 
-        yappi.set_clock_type("cpu") # Use set_clock_type("wall") for wall time
+        yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
         yappi.start()
 
     # start_profiling()
-    
+
     # Hooks and calls to start rendering
     add_subnodes(
         view_slice,
@@ -924,16 +938,42 @@ if __name__ == '__main__' and True:
     #     debounced(
     #         add_subnodes_caller(
     #             view_slice=view_slice,
-    #             scale=3,
+    #             scale=len(multiscale_arrays) - 1,
     #             viewer=viewer,
     #             cache_manager=cache_manager,
     #             arrays=multiscale_arrays,
     #             chunk_maps=multiscale_chunk_maps,
     #             container=large_image["container"],
     #             dataset=large_image["dataset"],
+    #             scale_factors=scale_factors,
+    #             worker_map=worker_map,
     #         ),
-    #         timeout=100,
+    #         timeout=1000,
     #     )
     # )
+
+    def camera_response(event):
+        add_subnodes_caller(
+            event,
+            view_slice,
+            scale=len(multiscale_arrays) - 1,
+            viewer=viewer,
+            cache_manager=cache_manager,
+            arrays=multiscale_arrays,
+            chunk_maps=multiscale_chunk_maps,
+            container=large_image["container"],
+            dataset=large_image["dataset"],
+            scale_factors=scale_factors,
+            worker_map=worker_map,
+        )
+
+    viewer.camera.events.connect(
+        debounced(
+            camera_response,
+            timeout=1000,
+            # Leading seems to be the only way to get debounced working
+            leading=True,
+        )
+    )
 
     # napari.run()
