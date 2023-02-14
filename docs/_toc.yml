@@ -85,6 +85,14 @@ subtrees:
       - file: plugins/debug_plugins
       - file: plugins/npe2_migration_guide
       - file: plugins/npe1
+      - file: plugins/testing_workshop_docs/index
+        subtrees:
+        - entries:
+          - file: plugins/testing_workshop_docs/1-pythons-assert-keyword
+          - file: plugins/testing_workshop_docs/2-pytest-testing-frameworks
+          - file: plugins/testing_workshop_docs/3-readers-and-fixtures
+          - file: plugins/testing_workshop_docs/4-test-coverage
+          - file: plugins/testing_workshop_docs/testing-resources
   - file: community/index
     subtrees:
     - titlesonly: True
