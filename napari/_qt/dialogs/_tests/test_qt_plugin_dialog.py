@@ -262,7 +262,7 @@ def test_plugin_list_item(plugin_dialog):
     assert plugin_dialog.installed_list._count_visible() == 2
 
 
-def test_plugin_list_handle_action(plugin_dialog):
+def test_plugin_list_handle_action(plugin_dialog, qtbot):
     item = plugin_dialog.installed_list.item(0)
 
     plugin_dialog.installed_list.handle_action(
@@ -283,11 +283,12 @@ def test_plugin_list_handle_action(plugin_dialog):
         update=False,
         version='3',
     )
+
     plugin_dialog.available_list.handle_action(
         item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
     )
-    plugin_dialog._add_items_timer.stop()
-    assert not plugin_dialog._add_items_timer.isActive()
+
+    qtbot.waitUntil(lambda: not plugin_dialog.worker.is_running)
 
 
 def test_on_enabled_checkbox(plugin_dialog, qtbot):
