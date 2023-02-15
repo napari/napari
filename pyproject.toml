@@ -105,6 +105,7 @@ fix = true
 "napari/_vispy/__init__.py" = ["E402"]
 "**/_tests/*.py" = ["B011"]
 "napari/utils/_testsupport.py" = ["B011"]
+"tools/test_strings.py" = ["F401"]
 
 [tool.ruff.isort]
 known-first-party=['napari']
