@@ -2,7 +2,7 @@ import gc
 import os
 import weakref
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List
 from unittest import mock
 
 import numpy as np
@@ -10,8 +10,6 @@ import pytest
 from imageio import imread
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
-from vispy.visuals import ImageVisual, VolumeVisual
-from vispy.visuals.transforms.linear import STTransform
 
 from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
@@ -20,6 +18,7 @@ from napari._tests.utils import (
     layer_test_data,
     skip_local_popups,
     skip_on_win_ci,
+    vispy_image_scene_size,
 )
 from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
@@ -701,27 +700,6 @@ def test_create_non_empty_viewer_model(qtbot):
     gc.collect()
 
 
-def _node_scene_size(node: Union[ImageVisual, VolumeVisual]) -> np.ndarray:
-    """Calculates the size of a vispy image/volume node in 3D space.
-
-    The size is the shape of the node's data multiplied by the
-    node's transform scale factors.
-
-    Returns
-    -------
-    np.ndarray
-        The size of the node as a 3-vector of the form (x, y, z).
-    """
-    data = node._last_data if isinstance(node, VolumeVisual) else node._data
-    # Only use scale to ignore translate offset used to center top-left pixel.
-    transform = STTransform(scale=np.diag(node.transform.matrix))
-    # Vispy uses an xy-style ordering, whereas numpy uses a rc-style
-    # ordering, so reverse the shape before applying the transform.
-    size = transform.map(data.shape[::-1])
-    # The last element should always be one, so ignore it.
-    return size[:3]
-
-
 def test_axes_labels(make_napari_viewer):
     viewer = make_napari_viewer(ndisplay=3)
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
@@ -731,6 +709,6 @@ def test_axes_labels(make_napari_viewer):
         viewer._overlays['axes']
     ]
 
-    layer_size = _node_scene_size(layer_visual.node)
-    assert tuple(layer_size) == (8, 4, 2)
+    layer_visual_size = vispy_image_scene_size(layer_visual)
+    assert tuple(layer_visual_size) == (8, 4, 2)
     assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
