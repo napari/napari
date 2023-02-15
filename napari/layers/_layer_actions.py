@@ -163,6 +163,9 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
     data = getattr(np, mode)(layer.data, axis=axis, keepdims=False)
+
+    # In case the last 2 dimensions are these axes, the data needs to be swapped in order to not have the projection
+    # displayed orthogonal to the image data.
     must_swap = ((0, 1), (2, 0))
     if dims.order[1:] in must_swap:
         data = np.swapaxes(data, 0, 1)
