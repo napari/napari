@@ -139,11 +139,12 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
     ----------
     ll : napari.componenets.LayerList
         The list of current layers in the viewer model.
-    viewer : napari.viewer.Viewer
-        The Napari viewer. Solely used to access the dims model.
+    dims : napari.components.Dims
+        The Dims model of the napari viewer with the current display order of the axes.
     axis : int
-        The axis on which the values of the array will be projected. Note that this axis corresponds to the axis
-        in the original data and not in the dims order.
+        The axis on which the values of the array will be projected. Note that this axis corresponds to the axis in
+        the dims order, e.g if dims order is 2, 0, 1 and axis is 0, then axis 2 of the layer data will be used for the
+        projection.
     mode : str
         Projection mode, either 'max', 'min', 'std', 'sum', 'mean', 'median'."""
 
@@ -156,11 +157,15 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
                 "Projections are only implemented for images", deferred=True
             )
         )
-    axis_index = dims.order.index(axis)
+
+    axis = dims.order[axis]
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis_index, keepdims=False),)
+    data = getattr(np, mode)(layer.data, axis=axis, keepdims=False)
+    must_swap = ((0, 1), (2, 0))
+    if dims.order[1:] in must_swap:
+        data = np.swapaxes(data, 0, 1)
 
     # get the meta data of the layer, but without transforms
     meta = {

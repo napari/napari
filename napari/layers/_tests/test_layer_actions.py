@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from napari.components import Dims
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
@@ -37,13 +38,25 @@ def test_duplicate_layers():
 )
 def test_projections(mode):
     ll = LayerList()
-    ll.append(Image(np.random.rand(8, 8, 8)))
+    ll.append(Image(np.random.rand(6, 7, 8)))
     assert len(ll) == 1
     assert ll[-1].data.ndim == 3
-    _project(ll, mode=mode)
+    dims = Dims(ndim=ll[-1].data.ndim, order=(0, 1, 2))
+    _project(ll, dims=dims, mode=mode)
     assert len(ll) == 2
     # because keepdims = False
-    assert ll[-1].data.shape == (8, 8)
+    assert ll[-1].data.shape == (7, 8)
+
+    # Test swapping axes for proper projection visualization with image visual.
+    ll.selection.active = ll[0]
+    dims.order = (2, 0, 1)
+    _project(ll, dims=dims, mode=mode)
+    assert ll[-1].data.shape == (7, 6)
+
+    ll.selection.active = ll[0]
+    dims.order = (1, 2, 0)
+    _project(ll, dims=dims, mode=mode)
+    assert ll[-1].data.shape == (8, 6)
 
 
 @pytest.mark.parametrize(
