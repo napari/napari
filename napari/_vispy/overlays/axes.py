@@ -17,7 +17,6 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         super().__init__(
             node=Axes(), viewer=viewer, overlay=overlay, parent=parent
         )
-        self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.colored.connect(self._on_data_change)
         self.overlay.events.dashed.connect(self._on_data_change)
         self.overlay.events.labels.connect(self._on_labels_visible_change)
@@ -51,6 +50,8 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             dashed=self.overlay.dashed,
             arrows=self.overlay.arrows,
         )
+
+        self._on_labels_text_change()
 
     def _on_labels_visible_change(self):
         self.node.text.visible = self.overlay.labels
