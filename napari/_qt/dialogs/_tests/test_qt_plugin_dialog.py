@@ -288,7 +288,9 @@ def test_plugin_list_handle_action(plugin_dialog, qtbot):
         item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
     )
 
+    # Wait for refresh worker and stop timer
     qtbot.waitUntil(lambda: not plugin_dialog.worker.is_running)
+    plugin_dialog._add_items_timer.stop()
 
 
 def test_on_enabled_checkbox(plugin_dialog, qtbot):
