@@ -5,13 +5,11 @@ import sys
 from enum import Enum, auto
 from functools import partial
 
-# from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
 import npe2
 
-# from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import QEvent, QPoint, QSize, Qt, QTimer, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
@@ -187,7 +185,7 @@ class PluginListItem(QFrame):
             self.action_button.setVisible(True)
             self.action_button.setDisabled(False)
             self.cancel_btn.setVisible(False)
-        else:
+        else:  # pragma: nocover 
             raise ValueError(f"Not supported {action_name} and {update}")
 
     def setup_ui(self, enabled=True):
