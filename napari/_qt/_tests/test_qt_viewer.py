@@ -66,6 +66,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 
 @skip_local_popups
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
 def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     """Test console has focus when instantiating from viewer."""
     viewer = make_napari_viewer(show=True)
