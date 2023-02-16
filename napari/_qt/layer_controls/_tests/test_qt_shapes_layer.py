@@ -33,3 +33,15 @@ def test_shape_controls_edge_color(qtbot):
     layer.current_edge_color = 'red'
     target_color = transform_color(layer.current_edge_color)[0]
     np.testing.assert_almost_equal(qtctrl.edgeColorEdit.color, target_color)
+
+
+def test_text_visible_checkbox(qtbot):
+    layer = Shapes(_SHAPES)
+    qtctrl = QtShapesControls(layer)
+    qtbot.addWidget(qtctrl)
+    qtctrl.textDispCheckBox.setChecked(True)
+    assert layer.text.visible
+    qtctrl.textDispCheckBox.setChecked(False)
+    assert not layer.text.visible
+    qtctrl.textDispCheckBox.setChecked(True)
+    assert layer.text.visible
