@@ -42,7 +42,7 @@ def test_projections(mode):
     assert len(ll) == 1
     assert ll[-1].data.ndim == 3
     dims = Dims(ndim=ll[-1].data.ndim, order=(0, 1, 2))
-    _project(ll, dims=dims, mode=mode)
+    _project(ll, dims=dims, axis=0, mode=mode)
     assert len(ll) == 2
     # because keepdims = False
     assert ll[-1].data.shape == (7, 8)
