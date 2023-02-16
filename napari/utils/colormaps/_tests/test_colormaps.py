@@ -209,8 +209,8 @@ _MULTI_COLORS_VARIANTS = (
     _MULTI_RGBA_COLORS,
     tuple(tuple(color) for color in _MULTI_RGB_COLORS),
     tuple(tuple(color) for color in _MULTI_RGBA_COLORS),
-    list(list(color) for color in _MULTI_RGB_COLORS),
-    list(list(color) for color in _MULTI_RGBA_COLORS),
+    [list(color) for color in _MULTI_RGB_COLORS],
+    [list(color) for color in _MULTI_RGBA_COLORS],
 )
 
 

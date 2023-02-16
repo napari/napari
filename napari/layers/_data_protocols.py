@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     class ellipsis(Enum):
         Ellipsis = "..."
 
-    Ellipsis = ellipsis.Ellipsis
+    Ellipsis = ellipsis.Ellipsis  # noqa: A001
 else:
     ellipsis = type(Ellipsis)
 

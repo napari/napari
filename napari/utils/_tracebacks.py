@@ -164,7 +164,7 @@ def ansi2html(
     previous_end = 0
     in_span = False
     ansi_codes = []
-    ansi_finder = re.compile("\033\\[" "([\\d;]*)" "([a-zA-z])")
+    ansi_finder = re.compile("\033\\[([\\d;]*)([a-zA-Z])")
     for match in ansi_finder.finditer(ansi_string):
         yield ansi_string[previous_end : match.start()]
         previous_end = match.end()

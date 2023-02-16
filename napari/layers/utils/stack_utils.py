@@ -124,7 +124,7 @@ def split_channels(
         else:
             kwargs[key] = iter(ensure_iterable(val))
 
-    layerdata_list = list()
+    layerdata_list = []
     for i in range(n_channels):
         if multiscale:
             image = [

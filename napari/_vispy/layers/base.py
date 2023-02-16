@@ -205,7 +205,6 @@ class VispyBaseLayer(ABC):
         visual can finish up what it was doing, such as loading data into
         VRAM or animating itself.
         """
-        pass
 
     def close(self):
         """Vispy visual is closing."""

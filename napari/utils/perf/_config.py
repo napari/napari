@@ -21,20 +21,20 @@ class PerfmonConfigError(Exception):
         self.message = message
 
 
-def _patch_perf_timer(parent, callable: str, label: str) -> None:
+def _patch_perf_timer(parent, callable_name: str, label: str) -> None:
     """Patches the callable to run it inside a perf_timer.
 
     Parameters
     ----------
     parent
         The module or class that contains the callable.
-    callable : str
+    callable_name : str
         The name of the callable (function or method).
     label : str
         The <function> or <class>.<method> we are patching.
     """
 
-    @wrapt.patch_function_wrapper(parent, callable)
+    @wrapt.patch_function_wrapper(parent, callable_name)
     def perf_time_callable(wrapped, instance, args, kwargs):
         with perf_timer(f"{label}"):
             return wrapped(*args, **kwargs)

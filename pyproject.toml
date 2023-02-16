@@ -73,8 +73,25 @@ ignore = [
 
 [tool.ruff]
 line-length = 79
-select = ["E", "F", "UP", "I", "W", "YTT", "TCH", "BLE", "B"]
-ignore = ["E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003"]
+select = [
+    "E", "F", "W", #flake8
+    "UP", # pyupgrade
+    "I", # isort
+    "YTT", #flake8-2020
+    "TCH", # flake8-type-checing
+    "BLE", # flake8-blind-exception
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "C4", # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+    "G", # flake8-logging-format
+    "PIE", # flake8-pie
+]
+ignore = [
+    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+    "A003" # flake8-builtins - we have class attributes violating these rule
+
+]
 
 exclude = [
     ".bzr",

@@ -189,11 +189,11 @@ def shift_plane_along_normal(viewer, event):
 viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
-viewer.text_overlay.update(dict(
-    text='Drag the clipping plane surface to move it along its normal.',
-    font_size=20,
-    visible=True,
-))
+viewer.text_overlay.update({
+    "text": 'Drag the clipping plane surface to move it along its normal.',
+    "font_size": 20,
+    "visible": True,
+})
 
 if __name__ == '__main__':
     napari.run()

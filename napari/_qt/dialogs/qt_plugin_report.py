@@ -86,7 +86,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo = QComboBox()
         self.plugin_combo.addItem(self.NULL_OPTION)
         bad_plugins = [e.plugin_name for e in self.plugin_manager.get_errors()]
-        self.plugin_combo.addItems(list(sorted(set(bad_plugins))))
+        self.plugin_combo.addItems(sorted(set(bad_plugins)))
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 

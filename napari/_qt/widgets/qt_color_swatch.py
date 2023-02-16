@@ -169,7 +169,7 @@ class QColorSwatch(QFrame):
     @Slot(np.ndarray)
     def _update_swatch_style(self, color: np.ndarray) -> None:
         """Convert the current color to rgba() string and update appearance."""
-        rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
+        rgba = f'rgba({",".join(str(int(x*255)) for x in  self._color)})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
     def mouseReleaseEvent(self, event: QMouseEvent):

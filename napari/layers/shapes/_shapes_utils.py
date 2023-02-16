@@ -556,7 +556,7 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate({"vertices": data, "segments": edges}, "p")
         vertices, triangles = res['vertices'], res['triangles']
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()

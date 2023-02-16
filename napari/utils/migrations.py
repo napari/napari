@@ -15,6 +15,8 @@ def rename_argument(from_name: str, to_name: str, version: str):
         old name of argument
     to_name : str
         new name of argument
+    version : str
+        version when old argument will be removed
     """
 
     def _wrapper(func):

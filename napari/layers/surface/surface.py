@@ -444,7 +444,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current surface."""
-        pass
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

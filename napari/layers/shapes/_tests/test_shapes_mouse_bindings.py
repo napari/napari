@@ -429,7 +429,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
     mouse_move_callbacks(layer, event)
 
     # drag in the handle to bottom midpoint vertex to rotate 180 degrees
-    position = tuple(tuple(layer._selected_box[3]))
+    position = tuple(layer._selected_box[3])
     # Simulate move, click, and release
     event = ReadOnlyWrapper(
         Event(

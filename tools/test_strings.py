@@ -213,7 +213,7 @@ def find_files(
             if filename.endswith(extensions):
                 found_files.append(fpath)
 
-    return list(sorted(found_files))
+    return sorted(found_files)
 
 
 def find_docstrings(fpath: str) -> Dict[str, str]:
@@ -378,7 +378,7 @@ def find_trans_strings(
     trans_strings = {}
     show_trans_strings.visit(module)
     for string in show_trans_strings._found:
-        key = " ".join([it for it in string.split()])
+        key = " ".join(list(string.split()))
         trans_strings[key] = string
 
     errors = list(show_trans_strings._trans_errors)

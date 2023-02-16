@@ -71,7 +71,7 @@ def test_bind_key():
         return 42
 
     bind_key(kb, 'A', forty_two)
-    assert kb == dict(A=forty_two)
+    assert kb == {"A": forty_two}
 
     # overwrite
     def spam():
@@ -81,7 +81,7 @@ def test_bind_key():
         bind_key(kb, 'A', spam)
 
     bind_key(kb, 'A', spam, overwrite=True)
-    assert kb == dict(A=spam)
+    assert kb == {"A": spam}
 
     # unbind
     bind_key(kb, 'A', None)
@@ -107,7 +107,7 @@ def test_bind_key_decorator():
     def foo():
         ...
 
-    assert kb == dict(A=foo)
+    assert kb == {"A": foo}
 
 
 def test_keymap_provider():
