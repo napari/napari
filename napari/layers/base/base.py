@@ -383,14 +383,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             deselect=WarningEmitter(
                 trans._(
                     "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
                     deferred=True,
                 ),
-                type='deselect',
+                type_name='deselect',
             ),
             mode=Event,
         )
@@ -630,7 +630,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _on_editable_changed(self) -> None:
         """Executes side-effects on this layer related to changes of the editable state."""
-        pass
 
     @property
     def scale(self):
@@ -911,11 +910,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._help
 
     @help.setter
-    def help(self, help):
-        if help == self.help:
+    def help(self, help_text):
+        if help_text == self.help:
             return
-        self._help = help
-        self.events.help(help=help)
+        self._help = help_text
+        self.events.help(help=help_text)
 
     @property
     def interactive(self):
@@ -1219,7 +1218,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         force : bool
             Bool that forces a redraw to occur when `True`.
         """
-        pass
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
