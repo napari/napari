@@ -516,6 +516,7 @@ def render_sequence(
 def update_chunk(
     chunk_tuple, viewer=None, container="", dataset="", dtype=np.uint8
 ):
+    tic = time.perf_counter()
     (
         data,
         scale,
@@ -526,8 +527,6 @@ def update_chunk(
     ) = chunk_tuple
 
     texture_offset = tuple([sl.start for sl in texture_slice])
-
-    LOGGER.debug(f"update_chunk {scale} {array_offset}")
 
     layer_name = f"{container}/{dataset}/s{scale}"
     layer = viewer.layers[layer_name]
@@ -550,11 +549,14 @@ def update_chunk(
 
     # TODO explore efficiency of either approach, or maybe even an alternative
     # Writing a texture with an offset is slower
-    texture.set_data(new_texture_data, offset=texture_offset)    
-    # texture.set_data(np.asarray(layer.data), offset=(0, 0, 0))
+    # texture.set_data(new_texture_data, offset=texture_offset)    
+    texture.set_data(np.asarray(layer.data))
 
     volume.update()
 
+    toc = time.perf_counter()
+    
+    LOGGER.debug(f"update_chunk {scale} {array_offset} with size {new_texture_data.shape} took {toc - tic:0.4f} seconds")
 
 @tz.curry
 def add_subnodes(
@@ -624,6 +626,8 @@ def add_subnodes(
         alpha=alpha,
         dtype=dtype,
     )
+
+    # TODO keep track of a set of keys that describe each chunk that is already rendered
 
     worker_map["worker"].yielded.connect(
         update_chunk(
@@ -758,9 +762,9 @@ if __name__ == '__main__' and True:
     # Chunked, multiscale data
 
     # These datasets have worked at one point in time
-    # large_image = openorganelle_mouse_kidney_labels()
+    large_image = openorganelle_mouse_kidney_labels()
     # large_image = idr0044A()
-    large_image = luethi_zenodo_7144919()
+    # large_image = luethi_zenodo_7144919()
 
     # These datasets need testing
 
