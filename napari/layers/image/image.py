@@ -305,7 +305,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             interpolation2d=Event,
             interpolation3d=Event,
