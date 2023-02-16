@@ -32,9 +32,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from napari._qt.widgets.qt_welcome import QtWidgetOverlay
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
-from napari.components.overlays._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
+from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
@@ -65,13 +63,10 @@ from napari.utils.translations import trans
 from napari_builtins.io import imsave_extensions
 
 from napari._vispy import (  # isort:skip
-    VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
-    VispyScaleBarOverlay,
-    VispyInteractionBox,
-    VispyTextOverlay,
     create_vispy_layer,
+    create_vispy_overlay,
 )
 
 
@@ -225,20 +220,21 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
+        self.overlay_to_visual = {}
 
         self._create_canvas()
 
         # Stacked widget to provide a welcome page
-        self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
-        self._canvas_overlay.set_welcome_visible(show_welcome_screen)
-        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
-        self._canvas_overlay.leave.connect(self._leave_canvas)
-        self._canvas_overlay.enter.connect(self._enter_canvas)
+        self._welcome_widget = QtWidgetOverlay(self, self.canvas.native)
+        self._welcome_widget.set_welcome_visible(show_welcome_screen)
+        self._welcome_widget.sig_dropped.connect(self.dropEvent)
+        self._welcome_widget.leave.connect(self._leave_canvas)
+        self._welcome_widget.enter.connect(self._enter_canvas)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
-        main_layout.addWidget(self._canvas_overlay)
+        main_layout.addWidget(self._welcome_widget)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
@@ -274,9 +270,6 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.camera.on_draw)
 
-        # Add axes, scale bar
-        self._add_visuals()
-
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
 
@@ -310,6 +303,8 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+        for overlay in self.viewer._overlays.values():
+            self._add_overlay(overlay)
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -469,34 +464,15 @@ class QtViewer(QSplitter):
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
-    def _add_visuals(self) -> None:
-        """Add visuals for axes, scale bar, and welcome text."""
+    def _add_overlay(self, overlay: Overlay) -> None:
+        vispy_overlay = create_vispy_overlay(overlay, viewer=self.viewer)
 
-        self.axes = VispyAxesOverlay(
-            overlay=self.viewer.axes,
-            viewer=self.viewer,
-            parent=self.view.scene,
-        )
-        self.scale_bar = VispyScaleBarOverlay(
-            overlay=self.viewer.scale_bar,
-            viewer=self.viewer,
-            parent=self.view,
-        )
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.text_overlay = VispyTextOverlay(
-            overlay=self.viewer.text_overlay,
-            viewer=self.viewer,
-            parent=self.view,
-        )
-        self.canvas.events.resize.connect(
-            self.text_overlay._on_position_change
-        )
-        self.interaction_box_visual = VispyInteractionBox(
-            self.viewer, parent=self.view.scene, order=1e6 + 3
-        )
-        self.interaction_box_mousebindings = InteractionBoxMouseBindings(
-            self.viewer, self.interaction_box_visual
-        )
+        if isinstance(overlay, CanvasOverlay):
+            vispy_overlay.node.parent = self.view
+        elif isinstance(overlay, SceneOverlay):
+            vispy_overlay.node.parent = self.view.scene
+
+        self.overlay_to_visual[overlay] = vispy_overlay
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -695,7 +671,7 @@ class QtViewer(QSplitter):
     def _update_welcome_screen(self):
         """Update welcome screen display based on layer count."""
         if self._show_welcome_screen:
-            self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
+            self._welcome_widget.set_welcome_visible(not self.viewer.layers)
 
     def _screenshot(self, flash=True):
         """Capture a screenshot of the Vispy canvas.
@@ -711,11 +687,11 @@ class QtViewer(QSplitter):
         if flash:
             from napari._qt.utils import add_flash_animation
 
-            # Here we are actually applying the effect to the `_canvas_overlay`
+            # Here we are actually applying the effect to the `_welcome_widget`
             # and not # the `native` widget because it does not work on the
             # `native` widget. It's probably because the widget is in a stack
             # with the `QtWelcomeWidget`.
-            add_flash_animation(self._canvas_overlay)
+            add_flash_animation(self._welcome_widget)
         return img
 
     def screenshot(self, path=None, flash=True):
@@ -1152,7 +1128,7 @@ class QtViewer(QSplitter):
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
         self._show_welcome_screen = visible
-        self._canvas_overlay.set_welcome_visible(visible)
+        self._welcome_widget.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.

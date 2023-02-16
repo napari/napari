@@ -835,10 +835,10 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
-    for property, value in text_kwargs.items():
-        if property == 'string':
+    for property_, value in text_kwargs.items():
+        if property_ == 'string':
             continue
-        layer_value = getattr(layer._text, property)
+        layer_value = getattr(layer._text, property_)
         np.testing.assert_equal(layer_value, value)
 
 
@@ -2523,3 +2523,20 @@ def test_point_slice_request_response(dims_indices, target_indices):
 
     assert len(response.indices) == len(target_indices)
     assert all([a == b for a, b in zip(response.indices, target_indices)])
+
+
+def test_editable_and_visible_are_independent():
+    """See https://github.com/napari/napari/issues/1346"""
+    data = np.empty((0, 2))
+    layer = Points(data)
+    assert layer.editable
+    assert layer.visible
+
+    layer.editable = False
+    layer.visible = False
+    assert not layer.editable
+    assert not layer.visible
+
+    layer.visible = True
+
+    assert not layer.editable

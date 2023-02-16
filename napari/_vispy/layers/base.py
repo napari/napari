@@ -4,6 +4,7 @@ import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari.components.overlays.base import CanvasOverlay, SceneOverlay
 from napari.utils.events import disconnect_events
 
 
@@ -48,6 +49,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self.overlays = {}
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -67,6 +69,7 @@ class VispyBaseLayer(ABC):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
+        self.layer.events._overlays.connect(self._on_overlays_change)
 
     @property
     def _master_transform(self):
@@ -122,6 +125,31 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
+    def _on_overlays_change(self):
+        # avoid circular import; TODO: fix?
+        from napari._vispy.utils.visual import create_vispy_overlay
+
+        overlay_models = self.layer._overlays.values()
+
+        for overlay in overlay_models:
+            if overlay in self.overlays:
+                continue
+
+            overlay_visual = create_vispy_overlay(overlay, layer=self.layer)
+            self.overlays[overlay] = overlay_visual
+            if isinstance(overlay, CanvasOverlay):
+                overlay_visual.node.parent = self.node.parent.parent  # viewbox
+            elif isinstance(overlay, SceneOverlay):
+                overlay_visual.node.parent = self.node
+
+            overlay_visual.node.parent = self.node
+            overlay_visual.reset()
+
+        for overlay in list(self.overlays):
+            if overlay not in overlay_models:
+                overlay_visual = self.overlays.pop(overlay)
+                overlay_visual.close()
+
     def _on_matrix_change(self):
         transform = self.layer._transforms.simplified.set_slice(
             self.layer._slice_input.displayed
@@ -168,6 +196,7 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
+        self._on_overlays_change()
 
     def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.
@@ -176,7 +205,6 @@ class VispyBaseLayer(ABC):
         visual can finish up what it was doing, such as loading data into
         VRAM or animating itself.
         """
-        pass
 
     def close(self):
         """Vispy visual is closing."""

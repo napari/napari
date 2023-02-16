@@ -192,9 +192,9 @@ def test_validate_from_direct_dict():
 
 
 def test_validate_from_format_dict():
-    format = '{class}: {score:.2f}'
-    argument = {'format': format}
-    expected = FormatStringEncoding(format=format)
+    format_str = '{class}: {score:.2f}'
+    argument = {'format': format_str}
+    expected = FormatStringEncoding(format=format_str)
 
     actual = StringEncoding.validate(argument)
 
