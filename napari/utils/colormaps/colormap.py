@@ -5,11 +5,10 @@ import numpy as np
 from pydantic import PrivateAttr, validator
 
 from napari.utils.color import ColorArray
-
-from ..events import EventedModel
-from ..events.custom_types import Array
-from ..translations import trans
-from .colorbars import make_colorbar
+from napari.utils.colormaps.colorbars import make_colorbar
+from napari.utils.events import EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class ColormapInterpolationMode(str, Enum):
@@ -53,7 +52,9 @@ class Colormap(EventedModel):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[np.float32, (-1,)] = None
 
-    def __init__(self, colors, display_name: Optional[str] = None, **data):
+    def __init__(
+        self, colors, display_name: Optional[str] = None, **data
+    ) -> None:
         if display_name is None:
             display_name = data.get('name', 'custom')
 

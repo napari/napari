@@ -8,15 +8,15 @@ from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 
-from ...utils._dtype import normalize_dtype
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events.event_utils import connect_no_arg, connect_setattr
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from ..widgets._slider_compat import QDoubleSlider
-from ..widgets.qt_range_slider_popup import QRangeSliderPopup
-from .qt_colormap_combobox import QtColormapComboBox
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets._slider_compat import QDoubleSlider
+from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
+from napari.utils._dtype import normalize_dtype
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.events.event_utils import connect_no_arg, connect_setattr
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.layers import Image
@@ -68,7 +68,7 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    def __init__(self, layer: Image):
+    def __init__(self, layer: Image) -> None:
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -236,7 +236,7 @@ class AutoScaleButtons(QWidget):
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
-    def __init__(self, layer: Image, parent=None):
+    def __init__(self, layer: Image, parent=None) -> None:
         super().__init__(parent)
 
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)

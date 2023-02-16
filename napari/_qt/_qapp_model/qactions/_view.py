@@ -1,3 +1,9 @@
+"""Actions related to the 'View' menu that require Qt.
+
+'View' actions that do not require Qt should go in
+`napari/_app_model/actions/_view_actions.py`.
+"""
+
 import sys
 from typing import List
 
@@ -9,11 +15,11 @@ from app_model.types import (
     ToggleRule,
 )
 
-from ...._app_model.constants import CommandId, MenuGroup, MenuId
-from ....settings import get_settings
-from ....utils.translations import trans
-from ...qt_main_window import Window
-from ...qt_viewer import QtViewer
+from napari._app_model.constants import CommandId, MenuGroup, MenuId
+from napari._qt.qt_main_window import Window
+from napari._qt.qt_viewer import QtViewer
+from napari.settings import get_settings
+from napari.utils.translations import trans
 
 
 def _toggle_activity_dock(window: Window):

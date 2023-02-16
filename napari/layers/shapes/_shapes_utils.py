@@ -5,8 +5,8 @@ from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
-from ...utils.translations import trans
-from ..utils.layer_utils import segment_normal
+from napari.layers.utils.layer_utils import segment_normal
+from napari.utils.translations import trans
 
 try:
     # see https://github.com/vispy/vispy/issues/1029
@@ -556,7 +556,7 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate({"vertices": data, "segments": edges}, "p")
         vertices, triangles = res['vertices'], res['triangles']
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()

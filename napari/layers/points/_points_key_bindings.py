@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from napari.utils.notifications import show_info
+from app_model.types import KeyCode, KeyMod
 
-from ...layers.utils.layer_utils import (
+from napari.layers.points._points_constants import Mode
+from napari.layers.points.points import Points
+from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from ...utils.translations import trans
-from ._points_constants import Mode
-from .points import Points
+from napari.utils.notifications import show_info
+from napari.utils.translations import trans
 
 
 def register_points_action(description: str, repeatable: bool = False):
@@ -19,21 +20,14 @@ def register_points_mode_action(description):
     return register_layer_attr_action(Points, description, 'mode')
 
 
-@Points.bind_key('Space')
-def hold_to_pan_zoom(layer: Points):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
+@register_points_mode_action(trans._('Transform'))
+def activate_points_transform_mode(layer):
+    layer.mode = Mode.TRANSFORM
 
-        yield
 
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
+@register_points_mode_action(trans._('Pan/zoom'))
+def activate_points_pan_zoom_mode(layer):
+    layer.mode = Mode.PAN_ZOOM
 
 
 @register_points_mode_action(trans._('Add points'))
@@ -46,25 +40,21 @@ def activate_points_select_mode(layer: Points):
     layer.mode = Mode.SELECT
 
 
-@register_points_mode_action(trans._('Pan/zoom'))
-def activate_points_pan_zoom_mode(layer: Points):
-    layer.mode = Mode.PAN_ZOOM
-
-
 points_fun_to_mode = [
+    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_points_transform_mode, Mode.TRANSFORM),
     (activate_points_add_mode, Mode.ADD),
     (activate_points_select_mode, Mode.SELECT),
-    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
 ]
 
 
-@Points.bind_key('Control-C')
+@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyC)
 def copy(layer: Points):
     """Copy any selected points."""
     layer._copy_data()
 
 
-@Points.bind_key('Control-V')
+@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyV)
 def paste(layer: Points):
     """Paste any copied points."""
     layer._paste_data()

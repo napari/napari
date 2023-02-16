@@ -2,13 +2,14 @@ import warnings
 from typing import Optional, Tuple
 
 import numpy as np
+from qtpy.QtCore import Slot
 from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
-from ...components.dims import Dims
-from ...settings._constants import LoopMode
-from ...utils.translations import trans
-from .qt_dims_slider import QtDimSliderWidget
+from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
+from napari.components.dims import Dims
+from napari.settings._constants import LoopMode
+from napari.utils.translations import trans
 
 
 class QtDims(QWidget):
@@ -29,7 +30,7 @@ class QtDims(QWidget):
         List of slider widgets.
     """
 
-    def __init__(self, dims: Dims, parent=None):
+    def __init__(self, dims: Dims, parent=None) -> None:
 
         super().__init__(parent=parent)
 
@@ -46,6 +47,7 @@ class QtDims(QWidget):
 
         self._play_ready = True  # False if currently awaiting a draw event
         self._animation_thread = None
+        self._animation_worker = None
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -194,7 +196,7 @@ class QtDims(QWidget):
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
-        for slider_num in range(number_of_sliders, self.nsliders):
+        for _slider_num in range(number_of_sliders, self.nsliders):
             self._remove_slider_widget(0)
 
     def _remove_slider_widget(self, index):
@@ -298,11 +300,15 @@ class QtDims(QWidget):
                 )
             )
 
+    @Slot()
     def stop(self):
         """Stop axis animation"""
-        if self._animation_thread:
-            self._animation_thread.quit()
-            self._animation_thread.wait()
+        if self._animation_worker is not None:
+            # Thread will be stop by the worker
+            self._animation_worker._stop()
+
+    @Slot()
+    def cleaned_worker(self):
         self._animation_thread = None
         self._animation_worker = None
         self.enable_play()
@@ -310,7 +316,20 @@ class QtDims(QWidget):
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
-        return self._animation_thread and self._animation_thread.isRunning()
+        try:
+            return (
+                self._animation_thread and self._animation_thread.isRunning()
+            )
+        except RuntimeError as e:  # pragma: no cover
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                # checking if threat is partially deleted. Otherwise
+                # reraise exception. For more details see:
+                # https://github.com/napari/napari/pull/5499
+                raise
+            return False
 
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`.

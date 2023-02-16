@@ -4,11 +4,11 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
 
-from ...layers.utils._color_manager_constants import ColorMode
-from ...utils.translations import trans
-from ..utils import qt_signals_blocked
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -45,9 +45,9 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
-    layer: 'napari.layers.Tracks'
+    layer: 'napari.layers.Vectors'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         # dropdown to select the property for mapping edge_color
@@ -125,18 +125,18 @@ class QtVectorsControls(QtLayerControls):
         )
         self.layer.events.edge_color.connect(self._on_edge_color_change)
 
-    def change_edge_color_property(self, property: str):
+    def change_edge_color_property(self, property_name: str):
         """Change edge_color_property of vectors on the layer model.
         This property is the property the edge color is mapped to.
 
         Parameters
         ----------
-        property : str
+        property_name : str
             property to map the edge color to
         """
         mode = self.layer.edge_color_mode
         try:
-            self.layer.edge_color = property
+            self.layer.edge_color = property_name
             self.layer.edge_color_mode = mode
         except TypeError:
             # if the selected property is the wrong type for the current color mode
@@ -204,10 +204,12 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox to indicate whether to render out of slice.
+        state : int
+             Integer value of Qt.CheckState that indicates the check state of outOfSliceCheckBox
         """
-        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
+        self.layer.out_of_slice_display = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.

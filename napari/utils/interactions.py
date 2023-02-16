@@ -1,11 +1,16 @@
 import inspect
-import re
 import sys
 import warnings
+from typing import List
 
 from numpydoc.docscrape import FunctionDoc
 
-from ..utils.translations import trans
+from napari.utils.key_bindings import (
+    KeyBinding,
+    KeyBindingLike,
+    coerce_keybinding,
+)
+from napari.utils.translations import trans
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -217,10 +222,9 @@ def mouse_release_callbacks(obj, event):
 
 
 KEY_SYMBOLS = {
-    'Control': 'Ctrl',
+    'Ctrl': 'Ctrl',
     'Shift': '⇧',
     'Alt': 'Alt',
-    'Option': 'Opt',
     'Meta': '⊞',
     'Left': '←',
     'Right': '→',
@@ -238,12 +242,35 @@ KEY_SYMBOLS = {
 
 joinchar = '+'
 if sys.platform.startswith('darwin'):
-    KEY_SYMBOLS.update(
-        {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
-    )
+    KEY_SYMBOLS.update({'Ctrl': '⌘', 'Alt': '⌥', 'Meta': '⌃'})
     joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
+
+
+def _kb2mods(key_bind: KeyBinding) -> List[str]:
+    """Extract list of modifiers from a key binding.
+
+    Parameters
+    ----------
+    key_bind : KeyBinding
+        The key binding whose mods are to be extracted.
+
+    Returns
+    -------
+    list of str
+        The key modifiers used by the key binding.
+    """
+    mods = []
+    if key_bind.ctrl:
+        mods.append('Ctrl')
+    if key_bind.shift:
+        mods.append('Shift')
+    if key_bind.alt:
+        mods.append('Alt')
+    if key_bind.meta:
+        mods.append('Meta')
+    return mods
 
 
 class Shortcut:
@@ -258,38 +285,45 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: str):
-        """
-        Parameters
+    def __init__(self, shortcut: KeyBindingLike) -> None:
+        """Parameters
         ----------
-        shortcut : string
-            shortcut to format in the form of dash separated keys to press
-
+        shortcut : keybinding-like
+            shortcut to format
         """
-        self._values = re.split('-(?=.+)', shortcut)
-        for shortcut_key in self._values:
-            if (
-                len(shortcut_key) > 1
-                and shortcut_key not in KEY_SYMBOLS.keys()
-            ):
+        error_msg = trans._(
+            "{shortcut} does not seem to be a valid shortcut Key.",
+            shortcut=shortcut,
+        )
+        error = False
 
-                warnings.warn(
-                    trans._(
-                        "{shortcut_key} does not seem to be a valid shortcut Key.",
-                        shortcut_key=shortcut_key,
-                    ),
-                    UserWarning,
-                    stacklevel=2,
-                )
+        try:
+            self._kb = coerce_keybinding(shortcut)
+        except ValueError:
+            error = True
+        else:
+            for part in self._kb.parts:
+                shortcut_key = str(part.key)
+                if len(shortcut_key) > 1 and shortcut_key not in KEY_SYMBOLS:
+                    error = True
+
+        if error:
+            warnings.warn(error_msg, UserWarning, stacklevel=2)
 
     @property
     def qt(self) -> str:
-        return '+'.join(self._values)
+        """Representation of the keybinding as it would appear in Qt.
+
+        Returns
+        -------
+        string
+            Shortcut formatted to be used with Qt.
+        """
+        return str(self._kb)
 
     @property
     def platform(self) -> str:
-        """
-        Format the given shortcut for the current platform.
+        """Format the given shortcut for the current platform.
 
         Replace Cmd, Ctrl, Meta...etc by appropriate symbols if relevant for the
         given platform.
@@ -299,8 +333,13 @@ class Shortcut:
         string
             Shortcut formatted to be displayed on current paltform.
         """
-
-        return joinchar.join(KEY_SYMBOLS.get(x, x) for x in self._values)
+        return ' '.join(
+            joinchar.join(
+                KEY_SYMBOLS.get(x, x)
+                for x in (_kb2mods(part) + [str(part.key)])
+            )
+            for part in self._kb.parts
+        )
 
     def __str__(self):
         return self.platform

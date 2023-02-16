@@ -3,18 +3,22 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events import Event
-from ...utils.geometry import find_nearest_triangle_intersection
-from ...utils.translations import trans
-from ..base import Layer
-from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
-from ..utils.layer_utils import calc_data_range
-from ._surface_constants import Shading
-from ._surface_utils import calculate_barycentric_coordinates
-from .normals import SurfaceNormals
-from .wireframe import SurfaceWireframe
+from napari.layers.base import Layer
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers.surface._surface_constants import Shading
+from napari.layers.surface._surface_utils import (
+    calculate_barycentric_coordinates,
+)
+from napari.layers.surface.normals import SurfaceNormals
+from napari.layers.surface.wireframe import SurfaceWireframe
+from napari.layers.utils.interactivity_utils import (
+    nd_line_segment_to_displayed_data_ray,
+)
+from napari.layers.utils.layer_utils import calc_data_range
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils.events import Event
+from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.translations import trans
 
 
 # Mixin must come before Layer
@@ -168,7 +172,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         experimental_clipping_planes=None,
         wireframe=None,
         normals=None,
-    ):
+    ) -> None:
 
         ndim = data[0].shape[1]
 
@@ -199,7 +203,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying verictes, faces, and optionally vertex values, instead got length {length}.',
+                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {length}.',
                     deferred=True,
                     length=len(data),
                 )
@@ -226,7 +230,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
-        # Trigger generation of view slice and thumbnail
+        # Trigger generation of view slice and thumbnail.
+        # Use _update_dims instead of refresh here because _get_ndim is
+        # dependent on vertex_values as well as vertices.
         self._update_dims()
 
         # Shading mode
@@ -265,6 +271,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
+        self._reset_editable()
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
@@ -279,9 +286,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertices = vertices
 
         self._update_dims()
-        self.refresh()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def vertex_values(self) -> np.ndarray:
@@ -293,9 +299,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._vertex_values = vertex_values
 
-        self.refresh()
+        self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def faces(self) -> np.ndarray:
@@ -309,7 +315,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.refresh()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -438,7 +444,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current surface."""
-        pass
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

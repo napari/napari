@@ -20,43 +20,66 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Extra, Field, validator
+from pydantic import Extra, Field, PrivateAttr, validator
 
-from .. import layers
-from ..errors import (
+from napari import layers
+from napari.components._viewer_mouse_bindings import dims_scroll
+from napari.components.camera import Camera
+from napari.components.cursor import Cursor
+from napari.components.dims import Dims
+from napari.components.grid import GridCanvas
+from napari.components.layerlist import LayerList
+from napari.components.overlays import (
+    AxesOverlay,
+    Overlay,
+    ScaleBarOverlay,
+    TextOverlay,
+)
+from napari.components.tooltip import Tooltip
+from napari.errors import (
     MultipleReaderError,
     NoAvailableReaderError,
     ReaderPluginError,
 )
-from ..layers import Image, Labels, Layer, Points, Shapes
-from ..layers._source import layer_source
-from ..layers.image._image_utils import guess_labels
-from ..layers.labels._labels_key_bindings import labels_fun_to_mode
-from ..layers.points._points_key_bindings import points_fun_to_mode
-from ..layers.shapes._shapes_key_bindings import shapes_fun_to_mode
-from ..layers.utils.stack_utils import split_channels
-from ..plugins.utils import get_potential_readers, get_preferred_reader
-from ..settings import get_settings
-from ..utils._register import create_func as create_add_method
-from ..utils.action_manager import action_manager
-from ..utils.colormaps import ensure_colormap
-from ..utils.events import Event, EventedModel, disconnect_events
-from ..utils.events.event import WarningEmitter
-from ..utils.key_bindings import KeymapProvider
-from ..utils.migrations import rename_argument
-from ..utils.misc import is_sequence
-from ..utils.mouse_bindings import MousemapProvider
-from ..utils.progress import progress
-from ..utils.theme import available_themes
-from ..utils.translations import trans
-from ._viewer_mouse_bindings import dims_scroll
-from .camera import Camera
-from .cursor import Cursor
-from .dims import Dims
-from .grid import GridCanvas
-from .layerlist import LayerList
-from .overlays import AxesOverlay, Overlays, ScaleBarOverlay, TextOverlay
-from .tooltip import Tooltip
+from napari.layers import (
+    Image,
+    Labels,
+    Layer,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
+from napari.layers._source import layer_source
+from napari.layers.image._image_key_bindings import image_fun_to_mode
+from napari.layers.image._image_utils import guess_labels
+from napari.layers.labels._labels_key_bindings import labels_fun_to_mode
+from napari.layers.points._points_key_bindings import points_fun_to_mode
+from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
+from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
+from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
+from napari.layers.utils.stack_utils import split_channels
+from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
+from napari.plugins.utils import get_potential_readers, get_preferred_reader
+from napari.settings import get_settings
+from napari.utils._register import create_func as create_add_method
+from napari.utils.action_manager import action_manager
+from napari.utils.colormaps import ensure_colormap
+from napari.utils.events import (
+    Event,
+    EventedDict,
+    EventedModel,
+    disconnect_events,
+)
+from napari.utils.events.event import WarningEmitter
+from napari.utils.key_bindings import KeymapProvider
+from napari.utils.migrations import rename_argument
+from napari.utils.misc import is_sequence
+from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.progress import progress
+from napari.utils.theme import available_themes, is_theme_available
+from napari.utils.translations import trans
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -71,7 +94,7 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData
+    from napari.types import FullLayerData, LayerData
 
 PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
@@ -81,6 +104,13 @@ __all__ = ['ViewerModel', 'valid_add_kwargs']
 
 def _current_theme() -> str:
     return get_settings().appearance.theme
+
+
+DEFAULT_OVERLAYS = {
+    'scale_bar': ScaleBarOverlay,
+    'text': TextOverlay,
+    'axes': AxesOverlay,
+}
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -113,9 +143,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
-    axes: AxesOverlay = Field(
-        default_factory=AxesOverlay, allow_mutation=False
-    )
     camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
@@ -123,20 +150,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBarOverlay = Field(
-        default_factory=ScaleBarOverlay, allow_mutation=False
-    )
-    text_overlay: TextOverlay = Field(
-        default_factory=TextOverlay, allow_mutation=False
-    )
-    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
-
     help: str = ''
     status: Union[str, Dict] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-
+    # private track of overlays, only expose the old ones for backward compatibility
+    _overlays: EventedDict[str, Overlay] = PrivateAttr(
+        default_factory=EventedDict
+    )
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
     _ctx: Mapping
@@ -144,9 +166,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     mouse_over_canvas: bool = False
 
-    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+    def __init__(
+        self, title='napari', ndisplay=2, order=(), axis_labels=()
+    ) -> None:
         # max_depth=0 means don't look for parent contexts.
-        from .._app_model.context import create_context
+        from napari._app_model.context import create_context
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
@@ -187,7 +211,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
                     deferred=True,
                 ),
-                type="layers_change",
+                type_name="layers_change",
             ),
             reset_view=Event,
         )
@@ -212,6 +236,21 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
 
+        self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
+
+    # simple properties exposing overlays for backward compatibility
+    @property
+    def axes(self):
+        return self._overlays['axes']
+
+    @property
+    def scale_bar(self):
+        return self._overlays['scale_bar']
+
+    @property
+    def text_overlay(self):
+        return self._overlays['text']
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
@@ -228,14 +267,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @validator('theme')
     def _valid_theme(cls, v):
-        themes = available_themes()
-        if v not in available_themes():
+        if not is_theme_available(v):
             raise ValueError(
                 trans._(
                     "Theme '{theme_name}' not found; options are {themes}.",
                     deferred=True,
                     theme_name=v,
-                    themes=themes,
+                    themes=", ".join(available_themes()),
                 )
             )
 
@@ -393,7 +431,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.camera.interactive = event.interactive
+        if event.source is self.layers.selection.active:
+            self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -463,7 +502,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         For example run "viewer.experimental.cmds.loader.help".
         """
-        from .experimental.commands import ExperimentalNamespace
+        from napari.components.experimental.commands import (
+            ExperimentalNamespace,
+        )
 
         return ExperimentalNamespace(self.layers)
 
@@ -515,6 +556,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
             Shapes: shapes_fun_to_mode,
+            Vectors: vectors_fun_to_mode,
+            Image: image_fun_to_mode,
+            Surface: surface_fun_to_mode,
+            Tracks: tracks_fun_to_mode,
         }
 
         help_li = []
@@ -525,7 +570,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 continue
             action_name = f"napari:{fun.__name__}"
             desc = action_manager._actions[action_name].description.lower()
-            if not shortcuts[action_name]:
+            if not shortcuts.get(action_name, []):
                 continue
             help_li.append(
                 trans._(
@@ -598,7 +643,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         interpolation3d='linear',
         rendering='mip',
         depiction='volume',
-        iso_threshold=0.5,
+        iso_threshold=None,
         attenuation=0.05,
         name=None,
         metadata=None,
@@ -823,7 +868,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            layer_list = list()
+            layer_list = []
             for image, i_kwargs, _ in layerdata_list:
                 layer = Image(image, **i_kwargs)
                 self.layers.append(layer)
@@ -867,7 +912,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import _npe2, plugin_manager
+        from napari.plugins import _npe2, plugin_manager
 
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
@@ -1032,7 +1077,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _open_or_raise_error(
         self,
         paths: List[Union[Path, str]],
-        kwargs: Dict[str, Any] = {},
+        kwargs: Dict[str, Any] = None,
         layer_type: Optional[str] = None,
         stack: Union[bool, List[List[str]]] = False,
     ):
@@ -1085,8 +1130,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-        added = []
-        plugin = None
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
@@ -1132,7 +1175,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             # plugin failed
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 raise ReaderPluginError(
                     trans._(
                         'Tried opening with {plugin}, but failed.',
@@ -1200,7 +1243,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         List[Layer]
             A list of any layers that were added to the viewer.
         """
-        from ..plugins.io import read_data_with_plugins
+        from napari.plugins.io import read_data_with_plugins
 
         assert stack is not None
         assert isinstance(paths, list)
@@ -1367,7 +1410,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
                 )
             )
     else:
-        _data.append(dict())
+        _data.append({})
     if len(_data) > 2:
         if _data[2] not in layers.NAMES:
             raise ValueError(
@@ -1499,7 +1542,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
 @lru_cache(maxsize=1)
 def valid_add_kwargs() -> Dict[str, Set[str]]:
     """Return a dict where keys are layer types & values are valid kwargs."""
-    valid = dict()
+    valid = {}
     for meth in dir(ViewerModel):
         if not meth.startswith('add_') or meth[4:] == 'layer':
             continue

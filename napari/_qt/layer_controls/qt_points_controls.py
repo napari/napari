@@ -4,15 +4,25 @@ import numpy as np
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
 
-from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
-from ...utils.action_manager import action_manager
-from ...utils.events import disconnect_events
-from ...utils.translations import trans
-from ..utils import disable_with_opacity, qt_signals_blocked
-from ..widgets._slider_compat import QSlider
-from ..widgets.qt_color_swatch import QColorSwatchEdit
-from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from .qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.utils import (
+    qt_signals_blocked,
+    set_widgets_enabled_with_opacity,
+)
+from napari._qt.widgets._slider_compat import QSlider
+from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari._qt.widgets.qt_mode_buttons import (
+    QtModePushButton,
+    QtModeRadioButton,
+)
+from napari.layers.points._points_constants import (
+    SYMBOL_TRANSLATION,
+    SYMBOL_TRANSLATION_INVERTED,
+    Mode,
+)
+from napari.utils.action_manager import action_manager
+from napari.utils.events import disconnect_events
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import napari.layers
@@ -60,7 +70,7 @@ class QtPointsControls(QtLayerControls):
 
     layer: 'napari.layers.Points'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
@@ -81,7 +91,8 @@ class QtPointsControls(QtLayerControls):
         self.layer._face.events.current_color.connect(
             self._on_current_face_color_change
         )
-        self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Orientation.Horizontal)
@@ -114,17 +125,25 @@ class QtPointsControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
-        self.symbolComboBox = QComboBox()
+        sym_cb = QComboBox()
+        sym_cb.setToolTip(
+            trans._(
+                "Change the symbol of currently selected points and any added afterwards."
+            )
+        )
         current_index = 0
-        for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
-            data = data.value
-            self.symbolComboBox.addItem(text, data)
+        for index, (symbol_string, text) in enumerate(
+            SYMBOL_TRANSLATION.items()
+        ):
+            symbol_string = symbol_string.value
+            sym_cb.addItem(text, symbol_string)
 
-            if data == self.layer.symbol:
+            if symbol_string == self.layer.current_symbol:
                 current_index = index
 
-        self.symbolComboBox.setCurrentIndex(current_index)
-        self.symbolComboBox.currentTextChanged.connect(self.changeSymbol)
+        sym_cb.setCurrentIndex(current_index)
+        sym_cb.currentTextChanged.connect(self.changeSymbol)
+        self.symbolComboBox = sym_cb
 
         self.outOfSliceCheckBox = QCheckBox()
         self.outOfSliceCheckBox.setToolTip(trans._('Out of slice display'))
@@ -165,10 +184,17 @@ class QtPointsControls(QtLayerControls):
         self.textDispCheckBox.setChecked(self.layer.text.visible)
         self.textDispCheckBox.stateChanged.connect(self.change_text_visibility)
 
+        self._EDIT_BUTTONS = (
+            self.select_button,
+            self.addition_button,
+            self.delete_button,
+        )
+
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
+        self._on_editable_or_visible_change()
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
@@ -225,7 +251,7 @@ class QtPointsControls(QtLayerControls):
         text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
-        self.layer.symbol = self.symbolComboBox.currentData()
+        self.layer.current_symbol = SYMBOL_TRANSLATION_INVERTED[text]
 
     def changeSize(self, value):
         """Change size of points on the layer model.
@@ -273,7 +299,7 @@ class QtPointsControls(QtLayerControls):
         """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
-                self.symbolComboBox.findData(self.layer.symbol)
+                self.symbolComboBox.findData(self.layer.current_symbol.value)
             )
 
     def _on_size_change(self):
@@ -313,12 +339,12 @@ class QtPointsControls(QtLayerControls):
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_editable_change(self):
-        """Receive layer model editable change event & enable/disable buttons."""
-        disable_with_opacity(
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
+        set_widgets_enabled_with_opacity(
             self,
-            ['select_button', 'addition_button', 'delete_button'],
-            self.layer.editable,
+            self._EDIT_BUTTONS,
+            self.layer.editable and self.layer.visible,
         )
 
     def close(self):

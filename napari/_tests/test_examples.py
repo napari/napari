@@ -1,7 +1,16 @@
-import sys
 import os
+import runpy
+import sys
+from pathlib import Path
 
+import numpy as np
 import pytest
+import skimage.data
+from qtpy import API_NAME
+
+import napari
+from napari._qt.qt_main_window import Window
+from napari.utils.notifications import notification_manager
 
 # check if this module has been explicitly requested or `--test-examples` is included
 fpath = os.path.join(*__file__.split(os.path.sep)[-3:])
@@ -9,17 +18,6 @@ if '--test-examples' not in sys.argv and fpath not in sys.argv:
     pytest.skip(
         'Use `--test-examples` to test examples', allow_module_level=True
     )
-
-import runpy
-from pathlib import Path
-
-import numpy as np
-import skimage.data
-from qtpy import API_NAME
-
-import napari
-from napari._qt.qt_main_window import Window
-from napari.utils.notifications import notification_manager
 
 # not testing these examples
 skip = [

@@ -26,10 +26,15 @@ import contextlib
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
-from ...translations import trans
-from ..event import EmitterGroup, Event
-from ..types import SupportsEvents
-from ._typed import _L, _T, Index, TypedMutableSequence
+from napari.utils.events.containers._typed import (
+    _L,
+    _T,
+    Index,
+    TypedMutableSequence,
+)
+from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.types import SupportsEvents
+from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +85,10 @@ class EventedList(TypedMutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
-        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = dict(),
-    ):
+        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = None,
+    ) -> None:
+        if lookup is None:
+            lookup = {}
         _events = {
             'inserting': None,  # int
             'inserted': None,  # Tuple[int, Any] - (idx, value)
@@ -178,7 +185,7 @@ class EventedList(TypedMutableSequence[_T]):
             self._process_delete_item(item)
             parent.events.removed(index=index, value=item)
 
-    def _process_delete_item(self, item):
+    def _process_delete_item(self, item: _T):
         """Allow process item in inherited class before event was emitted"""
 
     def insert(self, index: int, value: _T):
@@ -192,10 +199,10 @@ class EventedList(TypedMutableSequence[_T]):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                setattr(event, 'index', self.index(event.source))
-        # reemit with this object's EventEmitter of the same type if present
-        # otherwise just emit with the EmitterGroup itself
-        getattr(self.events, event.type, self.events)(event)
+                event.index = self.index(event.source)
+
+        # reemit with this object's EventEmitter
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the reemitter."""
@@ -262,7 +269,8 @@ class EventedList(TypedMutableSequence[_T]):
             are not ``int`` or ``slice``.
         """
         logger.debug(
-            f"move_multiple(sources={sources}, dest_index={dest_index})"
+            "move_multiple(sources={sources}, dest_index={dest_index})",
+            extra={"sources": sources, "dest_index": dest_index},
         )
 
         # calling list here makes sure that there are no index errors up front

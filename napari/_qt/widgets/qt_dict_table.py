@@ -5,7 +5,7 @@ from qtpy.QtCore import QSize, Slot
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 email_pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 url_pattern = re.compile(
@@ -52,7 +52,7 @@ class QtDictTable(QTableWidget):
         headers: List[str] = None,
         min_section_width: Optional[int] = None,
         max_section_width: int = 480,
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         if min_section_width:
             self.horizontalHeader().setMinimumSectionSize(min_section_width)

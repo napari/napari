@@ -3,16 +3,16 @@ from typing import Sequence, Union
 
 import numpy as np
 
-from ...utils.geometry import (
+from napari.layers.shapes._mesh import Mesh
+from napari.layers.shapes._shapes_constants import ShapeType, shape_classes
+from napari.layers.shapes._shapes_models import Line, Path, Shape
+from napari.layers.shapes._shapes_utils import triangles_intersect_box
+from napari.utils.geometry import (
     inside_triangles,
     intersect_line_with_triangles,
     line_in_triangles_3d,
 )
-from ...utils.translations import trans
-from ._mesh import Mesh
-from ._shapes_constants import ShapeType, shape_classes
-from ._shapes_models import Line, Path, Shape
-from ._shapes_utils import triangles_intersect_box
+from napari.utils.translations import trans
 
 
 class ShapeList:
@@ -67,7 +67,7 @@ class ShapeList:
         be rendered.
     """
 
-    def __init__(self, data=[], ndisplay=2):
+    def __init__(self, data=(), ndisplay=2) -> None:
 
         self._ndisplay = ndisplay
         self.shapes = []
@@ -1124,7 +1124,7 @@ class ShapeList:
         )
         return intersection_points
 
-    def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
 
@@ -1158,7 +1158,7 @@ class ShapeList:
 
         return masks
 
-    def to_labels(self, labels_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -1196,7 +1196,7 @@ class ShapeList:
         return labels
 
     def to_colors(
-        self, colors_shape=None, zoom_factor=1, offset=[0, 0], max_shapes=None
+        self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
     ):
         """Rasterize shapes to an RGBA image array.
 

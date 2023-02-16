@@ -1,14 +1,19 @@
 from vispy.scene.visuals import Text
 
-from ...components._viewer_constants import CanvasPosition
-from .base import VispyCanvasOverlay
+from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari.components._viewer_constants import CanvasPosition
 
 
-class VispyTextOverlay(VispyCanvasOverlay):
+class VispyTextOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Text overlay."""
 
-    def __init__(self, **kwargs):
-        super().__init__(node=Text(pos=(0, 0)), **kwargs)
+    def __init__(self, *, viewer, overlay, parent=None) -> None:
+        super().__init__(
+            node=Text(pos=(0, 0)),
+            viewer=viewer,
+            overlay=overlay,
+            parent=parent,
+        )
 
         self.node.font_size = self.overlay.font_size
         self.node.anchors = ("left", "top")

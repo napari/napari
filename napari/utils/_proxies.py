@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import warnings
@@ -5,8 +6,8 @@ from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
-from ..utils import misc
-from ..utils.translations import trans
+from napari.utils import misc
+from napari.utils.translations import trans
 
 _T = TypeVar("_T")
 
@@ -94,6 +95,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         return self.create(super().__getattr__(name))
 
     def __setattr__(self, name: str, value: Any):
+        if (
+            os.environ.get("NAPARI_ENSURE_PLUGIN_MAIN_THREAD", "0")
+            not in ("0", "False")
+        ) and not in_main_thread():
+            raise RuntimeError(
+                "Setting attributes on a napari object is only allowed from the main Qt thread."
+            )
+
         if self._is_private_attr(name):
             if self._is_called_from_napari():
                 return super().__setattr__(name, value)
@@ -128,3 +137,50 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
     def __call__(self, *args, **kwargs):
         return self.__wrapped__(*args, **kwargs)
+
+
+def in_main_thread_py() -> bool:
+    """
+    Check if caller is in main python thread.
+
+    Returns
+    -------
+    thread_flag : bool
+        True if we are in the main thread, False otherwise.
+    """
+    import threading
+
+    return threading.current_thread() == threading.main_thread()
+
+
+def _in_main_thread() -> bool:
+    """
+    General implementation of checking if we are in a proper thread.
+    If Qt is available and Application is created then assign :py:func:`in_qt_main_thread` to `in_main_thread`.
+    If Qt liba are not available then assign :py:func:`in_main_thread_py` to in_main_thread.
+    IF Qt libs are available but there is no Application ti wil emmit warning and return result of in_main_thread_py.
+
+    Returns
+    -------
+    thread_flag : bool
+        True if we are in the main thread, False otherwise.
+    """
+
+    global in_main_thread
+    try:
+        from napari._qt.utils import in_qt_main_thread
+
+        res = in_qt_main_thread()
+        in_main_thread = in_qt_main_thread
+        return res
+    except ImportError:
+        in_main_thread = in_main_thread_py
+        return in_main_thread_py()
+    except AttributeError:
+        warnings.warn(
+            "Qt libs are available but no QtApplication instance is created"
+        )
+        return in_main_thread_py()
+
+
+in_main_thread = _in_main_thread

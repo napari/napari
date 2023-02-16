@@ -7,15 +7,15 @@ from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
-from ...utils import config
-from ._image_loader import ImageLoader
-from ._image_slice_data import ImageSliceData
-from ._image_view import ImageView
+from napari.layers.image._image_loader import ImageLoader
+from napari.layers.image._image_slice_data import ImageSliceData
+from napari.layers.image._image_view import ImageView
+from napari.utils import config
 
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
-    from ...types import ArrayLike
+    from napari.types import ArrayLike
 
 
 def _create_loader_class() -> ImageLoader:
@@ -27,7 +27,9 @@ def _create_loader_class() -> ImageLoader:
         Return ImageLoader for sync or ChunkImageLoader for async.
     """
     if config.async_loading:
-        from .experimental._chunked_image_loader import ChunkedImageLoader
+        from napari.layers.image.experimental._chunked_image_loader import (
+            ChunkedImageLoader,
+        )
 
         return ChunkedImageLoader()
     else:
@@ -63,7 +65,7 @@ class ImageSlice:
         image: ArrayLike,
         image_converter: Callable[[ArrayLike], ArrayLike],
         rgb: bool = False,
-    ):
+    ) -> None:
         LOGGER.debug("ImageSlice.__init__")
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)

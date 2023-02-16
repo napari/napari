@@ -5,24 +5,24 @@ from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 from pydantic import Field, root_validator, validator
 
-from ...utils.colormaps import Colormap
-from ...utils.colormaps.categorical_colormap import CategoricalColormap
-from ...utils.colormaps.colormap_utils import ColorType, ensure_colormap
-from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ._color_manager_constants import ColorMode
-from .color_manager_utils import (
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager_utils import (
     _validate_colormap_mode,
     _validate_cycle_mode,
     guess_continuous,
     is_color_mapped,
 )
-from .color_transformations import (
+from napari.layers.utils.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color,
     transform_color_with_defaults,
 )
+from napari.utils.colormaps import Colormap
+from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
+from napari.utils.events import EventedModel
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 @dataclass
@@ -60,13 +60,13 @@ class ColorProperties:
                     # ensure the values are a numpy array
                     val['values'] = np.asarray(val['values'])
                     color_properties = cls(**val)
-                except ValueError:
+                except ValueError as e:
                     raise ValueError(
                         trans._(
                             'color_properties dictionary should have keys: name, values, and optionally current_value',
                             deferred=True,
                         )
-                    )
+                    ) from e
 
         elif isinstance(val, cls):
             color_properties = val
@@ -427,7 +427,7 @@ class ColorManager(EventedModel):
                     )
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list = []
+        self, current_color: np.ndarray, update_indices: list = ()
     ):
         """Update the current color and update the colors if requested.
 
@@ -444,7 +444,7 @@ class ColorManager(EventedModel):
             will change the mode to DIRECT.
         """
         self.current_color = transform_color(current_color)[0]
-        if len(update_indices) > 0:
+        if update_indices:
             self.color_mode = ColorMode.DIRECT
             cur_colors = self.colors.copy()
             cur_colors[update_indices] = self.current_color
@@ -463,12 +463,15 @@ class ColorManager(EventedModel):
         ] = None,
         color_mode: Optional[Union[ColorMode, str]] = None,
         current_color: Optional[np.ndarray] = None,
-        default_color_cycle: np.ndarray = np.array([1, 1, 1, 1]),
+        default_color_cycle: ColorType = None,
     ):
         """Initialize a ColorManager object from layer kwargs. This is a convenience
         function to coerce possible inputs into ColorManager kwargs
 
         """
+        if default_color_cycle is None:
+            default_color_cycle = np.array([1, 1, 1, 1])
+
         properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
@@ -493,13 +496,13 @@ class ColorManager(EventedModel):
                     color_properties = ColorProperties(
                         name=prop_name, values=prop_values
                     )
-                except KeyError:
+                except KeyError as e:
                     raise KeyError(
                         trans._(
                             'if color_properties is a string, it should be a property name',
                             deferred=True,
                         )
-                    )
+                    ) from e
         else:
             color_values = colors
             color_properties = None

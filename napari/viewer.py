@@ -5,12 +5,12 @@ from weakref import WeakSet
 
 import magicgui as mgui
 
-from .components.viewer_model import ViewerModel
-from .utils import _magicgui, config
+from napari.components.viewer_model import ViewerModel
+from napari.utils import _magicgui, config
 
 if TYPE_CHECKING:
     # helpful for IDE support
-    from ._qt.qt_main_window import Window
+    from napari._qt.qt_main_window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -47,7 +47,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-    ):
+    ) -> None:
         super().__init__(
             title=title,
             ndisplay=ndisplay,
@@ -56,11 +56,11 @@ class Viewer(ViewerModel):
         )
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
-        from .plugins import _initialize_plugins
+        from napari.plugins import _initialize_plugins
 
         # having this import here makes all of Qt imported lazily, upon
         # instantiating the first Viewer.
-        from .window import Window
+        from napari.window import Window
 
         _initialize_plugins()
 
@@ -146,7 +146,7 @@ class Viewer(ViewerModel):
         self.window.close()
 
         if config.async_loading:
-            from .components.experimental.chunk import chunk_loader
+            from napari.components.experimental.chunk import chunk_loader
 
             # TODO_ASYNC: Find a cleaner way to do this? This fixes some
             # tests. We are telling the ChunkLoader that this layer is
@@ -173,7 +173,7 @@ class Viewer(ViewerModel):
 
         """
         # copy to not iterate while changing.
-        viewers = [v for v in cls._instances]
+        viewers = list(cls._instances)
         ret = len(viewers)
         for viewer in viewers:
             viewer.close()

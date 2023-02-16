@@ -1,29 +1,16 @@
 import numpy as np
+from app_model.types import KeyCode, KeyMod
 
-from ...layers.utils.layer_utils import (
+from napari.layers.labels._labels_constants import Mode
+from napari.layers.labels.labels import Labels
+from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from ...utils.translations import trans
-from ._labels_constants import Mode
-from .labels import Labels
+from napari.utils.translations import trans
 
 MIN_BRUSH_SIZE = 1
 MAX_BRUSH_SIZE = 40
-
-
-@Labels.bind_key('Space')
-def hold_to_pan_zoom(layer: Labels):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
 
 
 def register_label_action(description: str, repeatable: bool = False):
@@ -34,38 +21,44 @@ def register_label_mode_action(description):
     return register_layer_attr_action(Labels, description, 'mode')
 
 
+@register_label_mode_action(trans._('Transform'))
+def activate_labels_transform_mode(layer: Labels):
+    layer.mode = Mode.TRANSFORM
+
+
+@register_label_mode_action(trans._('Pan/zoom'))
+def activate_labels_pan_zoom_mode(layer: Labels):
+    layer.mode = Mode.PAN_ZOOM
+
+
 @register_label_mode_action(trans._("Activate the paint brush"))
-def activate_paint_mode(layer: Labels):
+def activate_labels_paint_mode(layer: Labels):
     layer.mode = Mode.PAINT
 
 
 @register_label_mode_action(trans._("Activate the fill bucket"))
-def activate_fill_mode(layer: Labels):
+def activate_labels_fill_mode(layer: Labels):
     layer.mode = Mode.FILL
 
 
-@register_label_mode_action(trans._('Pan/zoom mode'))
-def activate_label_pan_zoom_mode(layer: Labels):
-    layer.mode = Mode.PAN_ZOOM
-
-
 @register_label_mode_action(trans._('Pick mode'))
-def activate_label_picker_mode(layer: Labels):
+def activate_labels_picker_mode(layer: Labels):
     """Activate the label picker."""
     layer.mode = Mode.PICK
 
 
 @register_label_mode_action(trans._("Activate the label eraser"))
-def activate_label_erase_mode(layer: Labels):
+def activate_labels_erase_mode(layer: Labels):
     layer.mode = Mode.ERASE
 
 
 labels_fun_to_mode = [
-    (activate_label_erase_mode, Mode.ERASE),
-    (activate_paint_mode, Mode.PAINT),
-    (activate_fill_mode, Mode.FILL),
-    (activate_label_picker_mode, Mode.PICK),
-    (activate_label_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_labels_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_labels_transform_mode, Mode.TRANSFORM),
+    (activate_labels_erase_mode, Mode.ERASE),
+    (activate_labels_paint_mode, Mode.PAINT),
+    (activate_labels_fill_mode, Mode.FILL),
+    (activate_labels_picker_mode, Mode.PICK),
 ]
 
 
@@ -126,13 +119,13 @@ def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
 
 
-@Labels.bind_key('Control-Z')
+@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""
     layer.undo()
 
 
-@Labels.bind_key('Control-Shift-Z')
+@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ)
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()

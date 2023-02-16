@@ -9,7 +9,7 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 texture_dtypes = [
     np.dtype(np.uint8),
@@ -96,10 +96,13 @@ def fix_data_dtype(data):
         return data
     else:
         try:
-            dtype = dict(i=np.float32, f=np.float32, u=np.uint16, b=np.uint8)[
-                dtype.kind
-            ]
-        except KeyError:  # not an int or float
+            dtype = {
+                "i": np.float32,
+                "f": np.float32,
+                "u": np.uint16,
+                "b": np.uint8,
+            }[dtype.kind]
+        except KeyError as e:  # not an int or float
             raise TypeError(
                 trans._(
                     'type {dtype} not allowed for texture; must be one of {textures}',  # noqa: E501
@@ -107,44 +110,44 @@ def fix_data_dtype(data):
                     dtype=dtype,
                     textures=set(texture_dtypes),
                 )
-            )
+            ) from e
         return data.astype(dtype)
 
 
 BLENDING_MODES = {
-    'opaque': dict(
-        depth_test=True,
-        cull_face=False,
-        blend=False,
-        blend_func=('one', 'zero'),
-        blend_equation='func_add',
-    ),
-    'translucent': dict(
-        depth_test=True,
-        cull_face=False,
-        blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
-        blend_equation='func_add',
-    ),
-    'translucent_no_depth': dict(
-        depth_test=False,
-        cull_face=False,
-        blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
-        blend_equation='func_add',  # see vispy/vispy#2324
-    ),
-    'additive': dict(
-        depth_test=False,
-        cull_face=False,
-        blend=True,
-        blend_func=('src_alpha', 'one'),
-        blend_equation='func_add',
-    ),
-    'minimum': dict(
-        depth_test=False,
-        cull_face=False,
-        blend=True,
-        blend_func=('one', 'one'),
-        blend_equation='min',
-    ),
+    'opaque': {
+        "depth_test": True,
+        "cull_face": False,
+        "blend": False,
+        "blend_func": ('one', 'zero'),
+        "blend_equation": 'func_add',
+    },
+    'translucent': {
+        "depth_test": True,
+        "cull_face": False,
+        "blend": True,
+        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        "blend_equation": 'func_add',
+    },
+    'translucent_no_depth': {
+        "depth_test": False,
+        "cull_face": False,
+        "blend": True,
+        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        "blend_equation": 'func_add',  # see vispy/vispy#2324
+    },
+    'additive': {
+        "depth_test": False,
+        "cull_face": False,
+        "blend": True,
+        "blend_func": ('src_alpha', 'one'),
+        "blend_equation": 'func_add',
+    },
+    'minimum': {
+        "depth_test": False,
+        "cull_face": False,
+        "blend": True,
+        "blend_func": ('one', 'one'),
+        "blend_equation": 'min',
+    },
 }

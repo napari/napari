@@ -1,4 +1,4 @@
-from ._polgyon_base import PolygonBase
+from napari.layers.shapes._shapes_models._polgyon_base import PolygonBase
 
 
 class Path(PolygonBase):
@@ -25,7 +25,8 @@ class Path(PolygonBase):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
+        interpolation_order=1,
+    ) -> None:
 
         super().__init__(
             data,
@@ -36,4 +37,5 @@ class Path(PolygonBase):
             filled=False,
             closed=False,
             name='path',
+            interpolation_order=interpolation_order,
         )

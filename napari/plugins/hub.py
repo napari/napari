@@ -10,7 +10,7 @@ from urllib import error, request
 
 from npe2 import PackageMetadata
 
-from .utils import normalized_name
+from napari.plugins.utils import normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
@@ -98,9 +98,11 @@ def hub_plugin_info(
 
 
 def iter_hub_plugin_info(
-    skip={}, conda_forge=True
+    skip=None, conda_forge=True
 ) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins."""
+    if skip is None:
+        skip = {}
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
 

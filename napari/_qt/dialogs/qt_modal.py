@@ -2,7 +2,7 @@ from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
-from ...utils.translations import trans
+from napari.utils.translations import trans
 
 
 class QtPopup(QDialog):
@@ -32,7 +32,7 @@ class QtPopup(QDialog):
         Frame of the popup dialog box.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
         self.setObjectName("QtModalPopup")
         self.setModal(False)  # if False, then clicking anywhere else closes it

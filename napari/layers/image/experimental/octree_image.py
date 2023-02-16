@@ -10,17 +10,25 @@ from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
 
-from ....utils.events import Event
-from ....utils.translations import trans
-from ..image import _ImageBase
-from ._octree_slice import OctreeSlice, OctreeView
-from .octree_chunk import OctreeChunk
-from .octree_intersection import OctreeIntersection
-from .octree_level import OctreeLevelInfo
-from .octree_util import OctreeDisplayOptions, OctreeMetadata
+from napari.layers.image.experimental._octree_slice import (
+    OctreeSlice,
+    OctreeView,
+)
+from napari.layers.image.experimental.octree_chunk import OctreeChunk
+from napari.layers.image.experimental.octree_intersection import (
+    OctreeIntersection,
+)
+from napari.layers.image.experimental.octree_level import OctreeLevelInfo
+from napari.layers.image.experimental.octree_util import (
+    OctreeDisplayOptions,
+    OctreeMetadata,
+)
+from napari.layers.image.image import _ImageBase
+from napari.utils.events import Event
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import ChunkRequest
+    from napari.components.experimental.chunk import ChunkRequest
 
 LOGGER = logging.getLogger("napari.octree.image")
 
@@ -68,7 +76,7 @@ class _OctreeImageBase(_ImageBase):
         Settings for how we draw the octree, such as tile size.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
 
         self._view: OctreeView = None
         self._slice: OctreeSlice = None
@@ -418,7 +426,7 @@ class _OctreeImageBase(_ImageBase):
         logic in Image._set_view_slice goes away entirely.
         """
         # Consider non-multiscale data as just having a single level
-        from ....components.experimental.chunk import LayerRef
+        from napari.components.experimental.chunk import LayerRef
 
         multilevel_data = self.data if self.multiscale else [self.data]
 

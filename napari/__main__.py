@@ -2,6 +2,7 @@
 napari command line viewer.
 """
 import argparse
+import contextlib
 import logging
 import os
 import runpy
@@ -13,7 +14,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from .utils.translations import trans
+from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -96,10 +97,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
                     raise IndexError()
             except IndexError:
                 sys.exit(f"error: argument {arg} expected one argument")
-        try:
+        with contextlib.suppress(Exception):
             value = literal_eval(value)
-        except Exception:
-            value = value
 
         out[key] = value
     return out
@@ -270,7 +269,11 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import _initialize_plugins, _npe2, plugin_manager
+            from napari.plugins import (
+                _initialize_plugins,
+                _npe2,
+                plugin_manager,
+            )
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
@@ -436,6 +439,10 @@ def _maybe_rerun_with_macos_fixes():
        This requires relaunching the app from a symlink to the
        desired python executable, conveniently named 'napari'.
     """
+    from napari._qt import API_NAME
+
+    # This import mus be here to raise exception about PySide6 problem
+
     if sys.platform != "darwin":
         return
 
@@ -450,8 +457,6 @@ def _maybe_rerun_with_macos_fixes():
     import platform
     import subprocess
     from tempfile import mkdtemp
-
-    from qtpy import API_NAME
 
     # In principle, we will relaunch to the same python we were using
     executable = sys.executable
@@ -531,6 +536,10 @@ def _maybe_rerun_with_macos_fixes():
             cmd = [executable, sys.argv[0]]
         else:  # we assume it must have been launched via '-m' syntax
             cmd = [executable, "-m", "napari"]
+
+        # this fixes issues running from a venv/virtualenv based virtual
+        # environment with certain python distributions (e.g. pyenv, asdf)
+        env["PYTHONEXECUTABLE"] = sys.executable
 
         # Append original command line arguments.
         if len(sys.argv) > 1:

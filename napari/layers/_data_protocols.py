@@ -11,7 +11,7 @@ from typing import (
     runtime_checkable,
 )
 
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
@@ -19,13 +19,13 @@ _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 if TYPE_CHECKING:
     from enum import Enum
 
-    from ..types import DTypeLike
+    from napari.types import DTypeLike
 
     # https://github.com/python/typing/issues/684#issuecomment-548203158
     class ellipsis(Enum):
         Ellipsis = "..."
 
-    Ellipsis = ellipsis.Ellipsis
+    Ellipsis = ellipsis.Ellipsis  # noqa: A001
 else:
     ellipsis = type(Ellipsis)
 

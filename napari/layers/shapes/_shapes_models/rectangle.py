@@ -1,8 +1,8 @@
 import numpy as np
 
-from ....utils.translations import trans
-from .._shapes_utils import find_corners, rectangle_to_box
-from .shape import Shape
+from napari.layers.shapes._shapes_models.shape import Shape
+from napari.layers.shapes._shapes_utils import find_corners, rectangle_to_box
+from napari.utils.translations import trans
 
 
 class Rectangle(Shape):
@@ -31,7 +31,7 @@ class Rectangle(Shape):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
+    ) -> None:
 
         super().__init__(
             edge_width=edge_width,

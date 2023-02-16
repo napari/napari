@@ -8,11 +8,11 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
-from ...utils.events import Event
-from ...utils.translations import trans
-from ..base import Layer
-from ._track_utils import TrackManager
+from napari.layers.base import Layer
+from napari.layers.tracks._track_utils import TrackManager
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
+from napari.utils.events import Event
+from napari.utils.translations import trans
 
 
 class Tracks(Layer):
@@ -119,7 +119,7 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
 
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
@@ -195,7 +195,7 @@ class Tracks(Layer):
         self.color_by = color_by
         self.colormap = colormap
 
-        self._update_dims()
+        self.refresh()
 
         # reset the display before returning
         self._current_displayed_dims = None
@@ -388,7 +388,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):

@@ -2,13 +2,13 @@ from copy import copy
 
 import numpy as np
 
-from ...layers.utils.layer_utils import segment_normal
-from ..visuals.vectors import VectorsVisual
-from .base import VispyBaseLayer
+from napari._vispy.layers.base import VispyBaseLayer
+from napari._vispy.visuals.vectors import VectorsVisual
+from napari.layers.utils.layer_utils import segment_normal
 
 
 class VispyVectorsLayer(VispyBaseLayer):
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = VectorsVisual()
         super().__init__(layer, node)
 

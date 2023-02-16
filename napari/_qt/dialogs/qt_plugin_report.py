@@ -16,11 +16,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...plugins.exceptions import format_exceptions
-from ...settings import get_settings
-from ...utils.theme import get_theme
-from ...utils.translations import trans
-from ..code_syntax_highlight import Pylighter
+from napari._qt.code_syntax_highlight import Pylighter
+from napari.plugins.exceptions import format_exceptions
+from napari.settings import get_settings
+from napari.utils.theme import get_theme
+from napari.utils.translations import trans
 
 
 class QtPluginErrReporter(QDialog):
@@ -61,7 +61,7 @@ class QtPluginErrReporter(QDialog):
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
-        from ...plugins import plugin_manager
+        from napari.plugins import plugin_manager
 
         self.plugin_manager = plugin_manager
 
@@ -86,7 +86,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo = QComboBox()
         self.plugin_combo.addItem(self.NULL_OPTION)
         bad_plugins = [e.plugin_name for e in self.plugin_manager.get_errors()]
-        self.plugin_combo.addItems(list(sorted(set(bad_plugins))))
+        self.plugin_combo.addItems(sorted(set(bad_plugins)))
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 

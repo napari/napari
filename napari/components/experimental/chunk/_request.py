@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....utils.perf import PerfEvent, block_timer
+from napari.utils.perf import PerfEvent, block_timer
 
 LOGGER = logging.getLogger("napari.loader")
 
 if TYPE_CHECKING:
-    from ....types import ArrayLike
+    from napari.types import ArrayLike
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
@@ -51,7 +51,7 @@ class ChunkLocation:
         Weak reference to the layer.
     """
 
-    def __init__(self, layer_ref: LayerRef):
+    def __init__(self, layer_ref: LayerRef) -> None:
         self.layer_ref = layer_ref
 
     def __eq__(self, other) -> bool:
@@ -90,7 +90,7 @@ class OctreeLocation(ChunkLocation):
         level_index: int,
         row: int,
         col: int,
-    ):
+    ) -> None:
         super().__init__(layer_ref)
         self.slice_id: int = slice_id
         self.level_index: int = level_index
@@ -140,7 +140,7 @@ class ChunkRequest:
         location: ChunkLocation,
         chunks: Dict[str, ArrayLike],
         priority: int = 0,
-    ):
+    ) -> None:
         # Make sure chunks dict is valid.
         for chunk_key, array in chunks.items():
             assert isinstance(chunk_key, str)

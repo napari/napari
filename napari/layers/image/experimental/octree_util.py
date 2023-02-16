@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 
-from ....utils.config import octree_config
+from napari.utils.config import octree_config
 
 if TYPE_CHECKING:
-    from ....components.experimental.chunk import LayerRef
+    from napari.components.experimental.chunk import LayerRef
 
 
 def _get_tile_size() -> int:
@@ -40,7 +40,7 @@ class OctreeDisplayOptions:
         If True draw a grid around the tiles for debugging or demos.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._show_grid = True
 
         # TODO_OCTREE we set this after __init__ which is messy.
@@ -178,7 +178,7 @@ def spiral_index(row_range, col_range):
     x, y = 0, 0
     dx, dy = 0, -1
     # Loop through the desired number of indices
-    for i_ in range(max(total_row, total_col) ** 2):
+    for _ in range(max(total_row, total_col) ** 2):
         # Check if values are in range
         if (-total_row // 2 < x <= total_row // 2) and (
             -total_col // 2 < y <= total_col // 2

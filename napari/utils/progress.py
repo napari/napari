@@ -2,10 +2,9 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
+from napari.utils.events.containers import EventedSet
 from napari.utils.events.event import EmitterGroup, Event
-
-from ..utils.events.containers import EventedSet
-from ..utils.translations import trans
+from napari.utils.translations import trans
 
 
 class progress(tqdm):

@@ -2,14 +2,17 @@
 """
 from typing import List
 
-from ....._vendor.experimental.humanize.src.humanize import naturalsize
-from .....layers.base import Layer
-from .....layers.image import Image
-from .....utils.config import octree_config
-from .._info import LayerInfo, LoadType
-from .._loader import chunk_loader
-from ._tables import RowTable, print_property_table
-from ._utils import highlight
+from napari._vendor.experimental.humanize.src.humanize import naturalsize
+from napari.components.experimental.chunk._commands._tables import (
+    RowTable,
+    print_property_table,
+)
+from napari.components.experimental.chunk._commands._utils import highlight
+from napari.components.experimental.chunk._info import LayerInfo, LoadType
+from napari.components.experimental.chunk._loader import chunk_loader
+from napari.layers.base import Layer
+from napari.layers.image import Image
+from napari.utils.config import octree_config
 
 LOAD_TYPE_STR = {
     LoadType.AUTO: "auto",
@@ -53,7 +56,7 @@ class InfoDisplayer:
         The LayerInfo to display.
     """
 
-    def __init__(self, info: LayerInfo):
+    def __init__(self, info: LayerInfo) -> None:
         self.info = info
         stats = info.stats
         counts = stats.counts
@@ -108,7 +111,7 @@ class ChunkLoaderLayers:
         Formats our table for printing.
     """
 
-    def __init__(self, layers: List[Layer]):
+    def __init__(self, layers: List[Layer]) -> None:
         self.layers = layers
         self.table = RowTable(
             [
@@ -200,7 +203,7 @@ class LevelsTable:
         Show the levels of this layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         self.layer = layer
         self.table = RowTable(["LEVEL", "SHAPE", "TOTAL"])
         self.table = RowTable(
@@ -228,7 +231,7 @@ class LoaderCommands:
         The current list of layers.
     """
 
-    def __init__(self, layerlist: List[Layer]):
+    def __init__(self, layerlist: List[Layer]) -> None:
         self.layerlist = layerlist
 
     def __repr__(self):

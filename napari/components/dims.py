@@ -1,13 +1,17 @@
 from numbers import Integral
-from typing import Literal  # Added to typing in 3.8
-from typing import Sequence, Tuple, Union
+from typing import (
+    Literal,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import root_validator, validator
 
-from ..utils.events import EventedModel
-from ..utils.misc import argsort, reorder_after_dim_reduction
-from ..utils.translations import trans
+from napari.utils.events import EventedModel
+from napari.utils.misc import argsort, reorder_after_dim_reduction
+from napari.utils.translations import trans
 
 
 class Dims(EventedModel):

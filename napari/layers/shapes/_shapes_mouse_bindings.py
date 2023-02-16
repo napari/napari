@@ -2,9 +2,15 @@ from copy import copy
 
 import numpy as np
 
-from ._shapes_constants import Box, Mode
-from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
-from ._shapes_utils import point_to_lines
+from napari.layers.shapes._shapes_constants import Box, Mode
+from napari.layers.shapes._shapes_models import (
+    Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
+)
+from napari.layers.shapes._shapes_utils import point_to_lines
 
 
 def highlight(layer, event):
@@ -482,12 +488,9 @@ def _move(layer, coordinates):
         elif vertex == 8:
             # Rotation handle is being dragged so rotate object
             handle = layer._selected_box[Box.HANDLE]
-            if layer._drag_start is None:
-                layer._fixed_vertex = layer._selected_box[Box.CENTER]
-                offset = handle - layer._fixed_vertex
-                layer._drag_start = -np.degrees(
-                    np.arctan2(offset[0], -offset[1])
-                )
+            layer._fixed_vertex = layer._selected_box[Box.CENTER]
+            offset = handle - layer._fixed_vertex
+            layer._drag_start = -np.degrees(np.arctan2(offset[0], -offset[1]))
 
             new_offset = coord - layer._fixed_vertex
             new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1]))

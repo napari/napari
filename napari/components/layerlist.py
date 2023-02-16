@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..layers import Layer
-from ..layers.image.image import _ImageBase
-from ..utils.events.containers import SelectableEventedList
-from ..utils.naming import inc_name_count
-from ..utils.translations import trans
+from napari.layers import Layer
+from napari.layers.image.image import _ImageBase
+from napari.utils.events.containers import SelectableEventedList
+from napari.utils.naming import inc_name_count
+from napari.utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -56,7 +56,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     """
 
-    def __init__(self, data=()):
+    def __init__(self, data=()) -> None:
         super().__init__(
             data=data,
             basetype=Layer,
@@ -67,8 +67,8 @@ class LayerList(SelectableEventedList[Layer]):
         # Ideally, the app should be aware of the layerlist, but not vice versa.
         # This could probably be done by having the layerlist emit events that the app
         # connects to, then the `_ctx` object would live on the app, (not here)
-        from .._app_model.context import create_context
-        from .._app_model.context._layerlist_context import (
+        from napari._app_model.context import create_context
+        from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
         )
 
@@ -93,7 +93,8 @@ class LayerList(SelectableEventedList[Layer]):
             layer._on_selection(False)
 
     def _process_delete_item(self, item: Layer):
-        item.events.set_data.disconnect(self._clean_cache)
+        super()._process_delete_item(item)
+        item.events.extent.disconnect(self._clean_cache)
         self._clean_cache()
 
     def _clean_cache(self):
@@ -162,7 +163,7 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         self._clean_cache()
-        new_layer.events.set_data.connect(self._clean_cache)
+        new_layer.events.extent.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def toggle_selected_visibility(self):
@@ -296,7 +297,7 @@ class LayerList(SelectableEventedList[Layer]):
     @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
-        return self.get_extent([x for x in self])
+        return self.get_extent(list(self))
 
     @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
@@ -371,7 +372,7 @@ class LayerList(SelectableEventedList[Layer]):
         # adding this method here allows us to emit an event when
         # layers in this group are linked/unlinked.  Which is necessary
         # for updating context
-        from ..layers.utils import _link_layers
+        from napari.layers.utils import _link_layers
 
         if layers is not None:
             layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
@@ -456,7 +457,7 @@ class LayerList(SelectableEventedList[Layer]):
         list of str
             File paths of any files that were written.
         """
-        from ..plugins.io import save_layers
+        from napari.plugins.io import save_layers
 
         layers = (
             [x for x in self if x in self.selection]

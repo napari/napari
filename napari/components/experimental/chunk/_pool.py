@@ -21,7 +21,7 @@ LOGGER = logging.getLogger("napari.loader")
 DoneCallback = Optional[Callable[[Future], None]]
 
 if TYPE_CHECKING:
-    from ._request import ChunkRequest
+    from napari.components.experimental.chunk._request import ChunkRequest
 
 
 class LoaderPool:
@@ -54,8 +54,12 @@ class LoaderPool:
         Requests sit in here for a bit before submission.
     """
 
-    def __init__(self, config: dict, on_done_loader: DoneCallback = None):
-        from ._delay_queue import DelayQueue
+    def __init__(
+        self, config: dict, on_done_loader: DoneCallback = None
+    ) -> None:
+        from napari.components.experimental.chunk._delay_queue import (
+            DelayQueue,
+        )
 
         self.config = config
         self._on_done_loader = on_done_loader

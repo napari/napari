@@ -6,9 +6,9 @@ import logging
 import time
 from typing import Dict
 
-from ....layers.image.experimental.octree_image import _OctreeImageBase
-from ...layerlist import LayerList
-from ..monitor import monitor
+from napari.components.experimental.monitor import monitor
+from napari.components.layerlist import LayerList
+from napari.layers.image.experimental.octree_image import _OctreeImageBase
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -22,7 +22,7 @@ class RemoteMessages:
         The viewer's layers, so we can call into them.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self.layers = layers
         self._frame_number = 0
         self._last_time = None

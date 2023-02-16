@@ -8,30 +8,20 @@ import numpy as np
 import pandas as pd
 from vispy.color import get_color_names
 
-from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
-from ...utils.colormaps.colormap_utils import ColorType
-from ...utils.colormaps.standardize_color import (
-    hex_to_name,
-    rgb_to_hex,
-    transform_color,
+from napari.layers.base import Layer, no_op
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
 )
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.misc import ensure_iterable
-from ...utils.translations import trans
-from ..base import Layer, no_op
-from ..utils.color_manager_utils import guess_continuous, map_property
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
+from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._shapes_constants import (
+    Box,
+    ColorMode,
+    Mode,
+    ShapeType,
+    shape_classes,
 )
-from ..utils.interactivity_utils import nd_line_segment_to_displayed_data_ray
-from ..utils.layer_utils import _FeatureTable, _unique_element
-from ..utils.text_manager import TextManager
-from ._shape_list import ShapeList
-from ._shapes_constants import Box, ColorMode, Mode, ShapeType, shape_classes
-from ._shapes_mouse_bindings import (
+from napari.layers.shapes._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
     add_path_polygon,
@@ -43,7 +33,7 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import (
+from napari.layers.shapes._shapes_utils import (
     create_box,
     extract_shape_type,
     get_default_shape_type,
@@ -51,6 +41,31 @@ from ._shapes_utils import (
     number_of_shapes,
     validate_num_vertices,
 )
+from napari.layers.utils.color_manager_utils import (
+    guess_continuous,
+    map_property,
+)
+from napari.layers.utils.color_transformations import (
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
+from napari.layers.utils.interactivity_utils import (
+    nd_line_segment_to_displayed_data_ray,
+)
+from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
+from napari.layers.utils.text_manager import TextManager
+from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from napari.utils.colormaps.colormap_utils import ColorType
+from napari.utils.colormaps.standardize_color import (
+    hex_to_name,
+    rgb_to_hex,
+    transform_color,
+)
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.misc import ensure_iterable
+from napari.utils.translations import trans
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -296,6 +311,7 @@ class Shapes(Layer):
         won't update during interactive events
     """
 
+    _modeclass = Mode
     _colors = get_color_names()
     _vertex_size = 10
     _rotation_handle_length = 20
@@ -308,6 +324,7 @@ class Shapes(Layer):
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
         Mode.DIRECT: select,
         Mode.VERTEX_INSERT: vertex_insert,
@@ -317,11 +334,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
-        Mode.TRANSFORM: no_op,
     }
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
         Mode.DIRECT: highlight,
         Mode.VERTEX_INSERT: highlight,
@@ -331,11 +348,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
-        Mode.TRANSFORM: no_op,
     }
 
     _double_click_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.SELECT: no_op,
         Mode.DIRECT: no_op,
         Mode.VERTEX_INSERT: no_op,
@@ -345,11 +362,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
-        Mode.TRANSFORM: no_op,
     }
 
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
         Mode.SELECT: 'pointing',
         Mode.DIRECT: 'pointing',
         Mode.VERTEX_INSERT: 'cross',
@@ -359,7 +376,6 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
-        Mode.TRANSFORM: 'standard',
     }
 
     _interactive_modes = {
@@ -398,7 +414,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if data is None:
             if ndim is None:
                 ndim = 2
@@ -433,7 +449,6 @@ class Shapes(Layer):
         )
 
         self.events.add(
-            mode=Event,
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
@@ -499,10 +514,6 @@ class Shapes(Layer):
         self._is_creating = False
         self._clipboard = {}
 
-        # change mode once to trigger the
-        # Mode setting logic
-        self._mode = Mode.SELECT
-        self.mode = Mode.PAN_ZOOM
         self._status = self.mode
 
         self._init_shapes(
@@ -547,7 +558,7 @@ class Shapes(Layer):
         )
 
         # Trigger generation of view slice and thumbnail
-        self._update_dims()
+        self.refresh()
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
@@ -644,6 +655,9 @@ class Shapes(Layer):
             )
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
+        self._data_view.slice_key = np.array(self._slice_indices)[
+            self._slice_input.not_displayed
+        ]
         self.add(
             data,
             shape_type=shape_type,
@@ -655,7 +669,7 @@ class Shapes(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _on_selection(self, selected: bool):
         # this method is slated for removal.  don't add anything new.
@@ -1535,12 +1549,7 @@ class Shapes(Layer):
             The vispy text anchor for the y axis
         """
         ndisplay = self._slice_input.ndisplay
-
-        # short circuit if no text present
-        if self.text.values.shape == ():
-            return self.text.compute_text_coords(
-                np.zeros((0, ndisplay)), ndisplay
-            )
+        order = self._slice_input.order
 
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -1553,7 +1562,9 @@ class Shapes(Layer):
             for position in in_view_shapes_coords
         ]
 
-        return self.text.compute_text_coords(sliced_in_view_coords, ndisplay)
+        return self.text.compute_text_coords(
+            sliced_in_view_coords, ndisplay, order
+        )
 
     @property
     def _view_text_color(self) -> np.ndarray:
@@ -1561,7 +1572,7 @@ class Shapes(Layer):
         self.text.color._apply(self.features)
         return self.text._view_color(self._indices_view)
 
-    @property
+    @Layer.mode.getter
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1583,19 +1594,12 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
+        mode = self._mode_setter_helper(mode)
+        if mode == self._mode:
             return
 
-        if mode.value not in Mode.keys():
-            raise ValueError(
-                trans._(
-                    "Mode not recognized: {mode}", deferred=True, mode=mode
-                )
-            )
-
-        old_mode = self._mode
         self._mode = mode
+        self.events.mode(mode=mode)
 
         draw_modes = {
             Mode.SELECT,
@@ -1604,24 +1608,18 @@ class Shapes(Layer):
             Mode.VERTEX_REMOVE,
         }
 
-        self.events.mode(mode=mode)
-
         # don't update thumbnail on mode changes
         with self.block_thumbnail_update():
-            if not (mode in draw_modes and old_mode in draw_modes):
+            if not (mode in draw_modes and self._mode in draw_modes):
                 # Shapes._finish_drawing() calls Shapes.refresh()
                 self._finish_drawing()
             else:
                 self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self._slice_input.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
+    def _reset_editable(self) -> None:
+        self.editable = self._slice_input.ndisplay == 2
 
+    def _on_editable_changed(self) -> None:
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -2561,7 +2559,7 @@ class Shapes(Layer):
         self._finish_drawing()
         self.events.data(value=self.data)
 
-    def _rotate_box(self, angle, center=[0, 0]):
+    def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2578,7 +2576,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         self._selected_box = box @ transform.T + center
 
-    def _scale_box(self, scale, center=[0, 0]):
+    def _scale_box(self, scale, center=(0, 0)):
         """Perform a scaling on the selected box.
 
         Parameters
@@ -2599,7 +2597,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _transform_box(self, transform, center=[0, 0]):
+    def _transform_box(self, transform, center=(0, 0)):
         """Perform a linear transformation on the selected box.
 
         Parameters

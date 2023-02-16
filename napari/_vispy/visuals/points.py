@@ -1,7 +1,7 @@
 from vispy.scene.visuals import Compound, Line, Text
 
-from .clipping_planes_mixin import ClippingPlanesMixin
-from .markers import Markers
+from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
+from napari._vispy.visuals.markers import Markers
 
 
 class PointsVisual(ClippingPlanesMixin, Compound):
@@ -16,18 +16,9 @@ class PointsVisual(ClippingPlanesMixin, Compound):
         - Text labels (vispy.TextVisual)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__([Markers(), Markers(), Line(), Text()])
         self.scaling = True
-
-    @property
-    def symbol(self):
-        return self._subvisuals[0].symbol
-
-    @symbol.setter
-    def symbol(self, value):
-        for marker in self._subvisuals[:2]:
-            marker.symbol = value
 
     @property
     def scaling(self):

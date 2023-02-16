@@ -38,7 +38,7 @@ def get_image_params():
 
 
 class SlowMemoryStore(zarr.storage.MemoryStore):
-    def __init__(self, load_delay, *args, **kwargs):
+    def __init__(self, load_delay, *args, **kwargs) -> None:
         self.load_delay = load_delay
         super().__init__(*args, **kwargs)
 
@@ -48,7 +48,12 @@ class SlowMemoryStore(zarr.storage.MemoryStore):
 
 
 class AsyncImage2DSuite:
+    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
+    setup to enable.
+    """
+
     params = get_image_params()
+    timeout = 300
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -64,6 +69,7 @@ class AsyncImage2DSuite:
         )
 
         self.layer = Image(self.data)
+        raise NotImplementedError
 
     def time_create_layer(self, *args):
         """Time to create an image layer."""
@@ -79,7 +85,12 @@ class AsyncImage2DSuite:
 
 
 class QtViewerAsyncImage2DSuite:
+    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
+    setup to enable.
+    """
+
     params = get_image_params()
+    timeout = 300
 
     def setup(self, latency, dataname):
         shape = SAMPLE_PARAMS[dataname]['shape']
@@ -102,6 +113,7 @@ class QtViewerAsyncImage2DSuite:
 
         self.viewer = napari.Viewer()
         self.viewer.add_image(self.data)
+        raise NotImplementedError
 
     def time_z_scroll(self, *args):
         layers_to_scroll = 4
@@ -115,6 +127,10 @@ class QtViewerAsyncImage2DSuite:
 
 
 class QtViewerAsyncPointsSuite:
+    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
+    setup to enable.
+    """
+
     n_points = [2**i for i in range(12, 18)]
     params = n_points
 
@@ -128,6 +144,7 @@ class QtViewerAsyncPointsSuite:
         self.viewer.add_image(self.empty_image)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
+        raise NotImplementedError
 
     def time_z_scroll(self, *args):
         for z in range(self.empty_image.shape[0]):
@@ -138,10 +155,15 @@ class QtViewerAsyncPointsSuite:
 
 
 class QtViewerAsyncPointsAndImage2DSuite:
+    """TODO: these benchmarks are skipped. Remove the NotImplementedError in
+    setup to enable.
+    """
+
     n_points = [2**i for i in range(12, 18, 2)]
     chunksize = [256, 512, 1024]
     latency = [0.05 * i for i in range(0, 3)]
     params = (n_points, latency, chunksize)
+    timeout = 600
 
     def setup(self, n_points, latency, chunksize):
         store = SlowMemoryStore(load_delay=latency)
@@ -160,6 +182,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
         self.viewer.add_image(self.image_data)
         self.point_data = np.random.randint(512, size=(n_points, 3))
         self.viewer.add_points(self.point_data)
+        raise NotImplementedError
 
     def time_z_scroll(self, *args):
         for z in range(self.image_data.shape[0]):

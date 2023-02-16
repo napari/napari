@@ -4,11 +4,13 @@ import sys
 import pytest
 from pydantic import ValidationError
 
+from napari.resources._icons import PLUGIN_FILE_NAME
 from napari.settings import get_settings
 from napari.utils.theme import (
     Theme,
     available_themes,
     get_theme,
+    is_theme_available,
     register_theme,
     unregister_theme,
 )
@@ -18,6 +20,7 @@ def test_default_themes():
     themes = available_themes()
     assert 'dark' in themes
     assert 'light' in themes
+    assert 'system' in themes
 
 
 def test_get_theme():
@@ -28,6 +31,13 @@ def test_get_theme():
     # get theme in the new model-based format
     theme = get_theme("dark", False)
     assert isinstance(theme, Theme)
+
+
+def test_get_system_theme(monkeypatch):
+    monkeypatch.setattr('napari.utils.theme.get_system_theme', lambda: 'light')
+    theme = get_theme('system', as_dict=False)
+    # should return the theme specified by get_system_theme
+    assert theme.id == 'light'
 
 
 def test_register_theme():
@@ -45,7 +55,7 @@ def test_register_theme():
     )
 
     # Register blue theme
-    register_theme('test_blue', blue_theme)
+    register_theme('test_blue', blue_theme, "test")
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
@@ -74,7 +84,7 @@ def test_unregister_theme():
     )
 
     # Register blue theme
-    register_theme('test_blue', blue_theme)
+    register_theme('test_blue', blue_theme, "test")
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
@@ -93,7 +103,7 @@ def test_rebuild_theme_settings():
     with pytest.raises(ValidationError):
         settings.appearance.theme = "another-theme"
     blue_theme = get_theme("dark", True)
-    register_theme("another-theme", blue_theme)
+    register_theme("another-theme", blue_theme, "test")
     settings.appearance.theme = "another-theme"
 
 
@@ -122,3 +132,31 @@ def test_theme_syntax_highlight():
     theme = get_theme("dark", False)
     with pytest.raises(ValidationError):
         theme.syntax_style = "invalid"
+
+
+def test_is_theme_available(tmp_path, monkeypatch):
+    (tmp_path / "test_blue").mkdir()
+    (tmp_path / "yellow").mkdir()
+    (tmp_path / "test_blue" / PLUGIN_FILE_NAME).write_text("test-blue")
+    monkeypatch.setattr(
+        "napari.utils.theme._theme_path", lambda x: tmp_path / x
+    )
+
+    n_themes = len(available_themes())
+
+    def mock_install_theme(_themes):
+        theme_dict = _themes["dark"].dict()
+        theme_dict["id"] = "test_blue"
+        register_theme("test_blue", theme_dict, "test")
+
+    monkeypatch.setattr(
+        "napari.utils.theme._install_npe2_themes", mock_install_theme
+    )
+
+    assert len(available_themes()) == n_themes
+    assert is_theme_available("dark")
+    assert not is_theme_available("green")
+    assert not is_theme_available("yellow")
+    assert is_theme_available("test_blue")
+    assert len(available_themes()) == n_themes + 1
+    assert "test_blue" in available_themes()

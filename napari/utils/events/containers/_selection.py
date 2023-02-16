@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
-from ...translations import trans
-from ..event import EmitterGroup
-from ._set import EventedSet
+from napari.utils.events.containers._set import EventedSet
+from napari.utils.events.event import EmitterGroup
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -54,14 +54,18 @@ class Selection(EventedSet[_T]):
         emitted when the current item has changed. (Private event)
     """
 
-    def __init__(self, data: Iterable[_T] = ()):
+    def __init__(self, data: Iterable[_T] = ()) -> None:
         self._active: Optional[_T] = None
         self._current_ = None
         self.events = EmitterGroup(source=self, _current=None, active=None)
         super().__init__(data=data)
         self._update_active()
 
-    def _emit_change(self, added=set(), removed=set()):
+    def _emit_change(self, added=None, removed=None):
+        if added is None:
+            added = set()
+        if removed is None:
+            removed = set()
         self._update_active()
         return super()._emit_change(added=added, removed=removed)
 

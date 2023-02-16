@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from app_model.types import Action, ToggleRule
 
 if TYPE_CHECKING:
-    from ...viewer import Viewer
+    from napari.viewer import Viewer
 
 
 class ViewerToggleAction(Action):
@@ -37,12 +37,12 @@ class ViewerToggleAction(Action):
     def __init__(
         self,
         *,
-        id: str,
+        id: str,  # noqa: A002
         title: str,
         viewer_attribute: str,
         sub_attribute: str,
         **kwargs,
-    ):
+    ) -> None:
         def get_current(viewer: Viewer):
             """return the current value of the viewer attribute"""
             attr = getattr(viewer, viewer_attribute)

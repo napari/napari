@@ -5,16 +5,16 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.events import Event
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..base import Layer
-from ..utils._color_manager_constants import ColorMode
-from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import fix_data_vectors
+from napari.layers.base import Layer
+from napari.layers.utils._color_manager_constants import ColorMode
+from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_transformations import ColorType
+from napari.layers.utils.layer_utils import _FeatureTable
+from napari.layers.vectors._vector_utils import fix_data_vectors
+from napari.utils.colormaps import Colormap, ValidColormapArg
+from napari.utils.events import Event
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
 
 
 class Vectors(Layer):
@@ -176,7 +176,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
 
@@ -245,7 +245,7 @@ class Vectors(Layer):
         self._view_alphas = []
 
         # now that everything is set up, make the layer visible (if set to visible)
-        self._update_dims()
+        self.refresh()
         self.visible = visible
 
     @property
@@ -280,7 +280,7 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):
