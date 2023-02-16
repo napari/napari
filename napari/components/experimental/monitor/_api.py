@@ -81,11 +81,11 @@ class MonitorApi:
     # BaseManager.register() is a bit weird. Not sure now to best deal with
     # it. Most ways I tried led to pickling errors, because this class is being run
     # in the shared memory server process? Feel free to find a better approach.
-    _napari_data_dict = dict()
+    _napari_data_dict = {}
     _napari_messages_queue = Queue()
     _napari_shutdown_event = Event()
 
-    _client_data_dict = dict()
+    _client_data_dict = {}
     _client_messages_queue = Queue()
 
     @staticmethod
