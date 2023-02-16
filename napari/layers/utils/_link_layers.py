@@ -16,7 +16,7 @@ from napari.utils.translations import trans
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
 LinkKey = Tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
 Unlinker = Callable[[], None]
-_UNLINKERS: dict[LinkKey, Unlinker] = dict()
+_UNLINKERS: dict[LinkKey, Unlinker] = {}
 _LINKED_LAYERS: DefaultDict[
     ReferenceType[Layer], Set[ReferenceType[Layer]]
 ] = DefaultDict(set)

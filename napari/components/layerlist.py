@@ -296,7 +296,7 @@ class LayerList(SelectableEventedList[Layer]):
     @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
-        return self.get_extent([x for x in self])
+        return self.get_extent(list(self))
 
     @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:

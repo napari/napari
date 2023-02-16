@@ -136,7 +136,7 @@ class TextManager(EventedModel):
         self.events.values()
         self.color._apply(features)
         # Trigger the main event for vispy layers.
-        self.events(Event(type='refresh'))
+        self.events(Event(type_name='refresh'))
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
