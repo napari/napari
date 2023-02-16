@@ -94,7 +94,7 @@ class PluginListItem(QFrame):
         url: str = '',
         summary: str = '',
         author: str = '',
-        license: str = "UNKNOWN",
+        license: str = "UNKNOWN",  # noqa: A002
         *,
         plugin_name: str = None,
         parent: QWidget = None,
