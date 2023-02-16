@@ -129,7 +129,7 @@ def rotation_matrix_from_camera(
     return R.from_euler(seq='yzx', angles=angles, degrees=True)
 
 
-def visual_depth(points, camera_dict):
+def visual_depth(points, camera):
     """Compute visual depth from camera position to a(n array of) point(s).
 
     Parameters
@@ -146,13 +146,13 @@ def visual_depth(points, camera_dict):
         Position of the points along the view vector of the camera. These can
         be negative (in front of the center) or positive (behind the center).
     """
-    view_direction = camera_dict["view_direction"]
-    points_relative_to_camera = points - camera_dict["center"]
+    view_direction = camera.view_direction
+    points_relative_to_camera = points - camera.center
     projected_length = points_relative_to_camera @ view_direction
     return projected_length
 
 
-def distance_from_camera_centre_line(points, camera_dict):
+def distance_from_camera_centre_line(points, camera):
     """Compute distance from a point or array of points to camera center line.
 
     This is the line aligned to the camera view direction and passing through
@@ -171,11 +171,11 @@ def distance_from_camera_centre_line(points, camera_dict):
     distances : (N,) array of float
         Distances from points to the center line of the camera.
     """
-    view_direction = camera_dict["view_direction"]
-    projected_length = visual_depth(points, camera_dict)
+    view_direction = camera.view_direction
+    projected_length = visual_depth(points, camera)
     projected = view_direction * np.reshape(projected_length, (-1, 1))
     points_relative_to_camera = (
-        points - camera_dict["center"]
+        points - camera.center
     )  # for performance, don't compute this twice in both functions
     distances = np.linalg.norm(projected - points_relative_to_camera, axis=-1)
     return distances
@@ -269,7 +269,7 @@ def get_chunk(
     dataset=None,
     cache_manager=None,
     dtype=np.uint8,
-    numretry=3,
+    num_retry=3,
 ):
     """Get a specified slice from an array (uses a cache).
 
@@ -293,7 +293,7 @@ def get_chunk(
     """
     real_array = cache_manager.get(container, dataset, chunk_slice)
     retry = 0
-    while real_array is None and retry < numretry:
+    while real_array is None and retry < num_retry:
         try:
             real_array = np.asarray(array[chunk_slice].compute(), dtype=dtype)
             # TODO check for a race condition that is causing this exception
@@ -302,9 +302,6 @@ def get_chunk(
             print(
                 f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
             )
-            # import pdb
-            # pdb.set_trace()
-
         cache_manager.put(container, dataset, chunk_slice, real_array)
         retry += 1
     return real_array
@@ -314,7 +311,7 @@ def get_chunk(
 def render_sequence_caller(
     view_slice,
     scale=0,
-    camera_dict={},
+    camera=None,
     cache_manager=None,
     arrays=None,
     chunk_maps=None,
@@ -327,7 +324,7 @@ def render_sequence_caller(
     yield from render_sequence(
         view_slice,
         scale=scale,
-        camera_dict=camera_dict,
+        camera=camera,
         cache_manager=cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
@@ -342,7 +339,7 @@ def render_sequence_caller(
 def render_sequence(
     view_slice,
     scale=0,
-    camera_dict={},
+    camera=None,
     cache_manager=None,
     arrays=None,
     chunk_maps=None,
@@ -387,10 +384,10 @@ def render_sequence(
     points_world = points * np.array(scale_factor)
 
     # Prioritize chunks using world coordinates
-    distances = distance_from_camera_centre_line(points_world, camera_dict)
-    depth = visual_depth(points_world, camera_dict)
+    distances = distance_from_camera_centre_line(points_world, camera)
+    depth = visual_depth(points_world, camera)
     priorities = prioritised_chunk_loading(
-        depth, distances, camera_dict["zoom"], alpha=alpha, visible=point_mask
+        depth, distances, camera.zoom, alpha=alpha, visible=point_mask
     )
 
     # Find the highest priority interval for the next higher resolution
@@ -436,17 +433,10 @@ def render_sequence(
                 ]
             )
 
-            # Texture coordinates are not necessarily world space
-            # texture_offset = [
-            #     chunk - layer for chunk, layer in zip(min_interval, min_coord)
-            # ]
-            texture_offset = tuple([sl.start for sl in texture_slice])
-
             # TODO consider a data class instead of a tuple
             yield (
                 np.asarray(data),
                 scale,
-                texture_offset,
                 offset,
                 world_offset,
                 chunk_slice,
@@ -454,20 +444,13 @@ def render_sequence(
             )
 
     # TODO make sure that all of low res loads first
+    # TODO take this 1 step further and fill all high resolutions with low res
 
     # recurse on top priority
     if scale > 0:
         # Get the coordinates of the first priority chunk for next scale
         first_priority_coord = tuple(points[first_priority_idx])
         chunk_slice = chunk_map[first_priority_coord]
-
-        # Needs to be in texture space not array space
-        next_scale_texture_offset = tuple(
-            [
-                sl.start - layer_offset
-                for sl, layer_offset in zip(chunk_slice, min_coord)
-            ]
-        )
 
         # Blank out the region that will be filled in by other scales
         zeros_size = [0, 0, 0]
@@ -489,7 +472,6 @@ def render_sequence(
         yield (
             np.asarray(zdata),
             scale,
-            next_scale_texture_offset,
             tuple([sl.start for sl in chunk_slice]),
             world_offset,
             chunk_slice,
@@ -518,7 +500,7 @@ def render_sequence(
         yield from render_sequence(
             next_chunk_slice,
             scale=scale - 1,
-            camera_dict=camera_dict,
+            camera=camera,
             cache_manager=cache_manager,
             arrays=arrays,
             chunk_maps=chunk_maps,
@@ -537,12 +519,13 @@ def update_chunk(
     (
         data,
         scale,
-        texture_offset,
         array_offset,
         node_offset,
         chunk_slice,
         texture_slice,
     ) = chunk_tuple
+
+    texture_offset = tuple([sl.start for sl in texture_slice])
 
     LOGGER.debug(f"update_chunk {scale} {array_offset}")
 
@@ -554,8 +537,8 @@ def update_chunk(
 
     texture = volume._texture
 
-    # # Translate the layer we're rendering to the right place
-    # # TODO: this is called too many times. we only need to call it once for each time it changes
+    # Translate the layer we're rendering to the right place
+    # TODO: this is called too many times. we only need to call it once for each time it changes
     layer.translate = node_offset
 
     new_texture_data = np.asarray(
@@ -565,48 +548,17 @@ def update_chunk(
 
     layer.data[texture_slice] = new_texture_data
 
-    # Writing a texture with an offset is slower
-    texture.set_data(new_texture_data, offset=texture_offset)
     # TODO explore efficiency of either approach, or maybe even an alternative
+    # Writing a texture with an offset is slower
+    texture.set_data(new_texture_data, offset=texture_offset)    
     # texture.set_data(np.asarray(layer.data), offset=(0, 0, 0))
 
     volume.update()
 
 
 @tz.curry
-def add_subnodes_caller(
-    event,
-    view_slice,
-    scale=0,
-    viewer=None,
-    cache_manager=None,
-    arrays=None,
-    chunk_maps=None,
-    container="",
-    dataset="",
-    scale_factors=[],
-    worker_map={},
-):
-    """
-    This function is a stub to to launch an initial recursive call of add_subnodes.
-    """
-    print("")
-    print(f"add_subnodes_caller")
-    add_subnodes(
-        view_slice,
-        scale=scale,
-        viewer=viewer,
-        cache_manager=cache_manager,
-        arrays=arrays,
-        chunk_maps=chunk_maps,
-        container=container,
-        dataset=dataset,
-        scale_factors=scale_factors,
-        worker_map=worker_map,
-    )
-
-
 def add_subnodes(
+    event,
     view_slice,
     scale=0,
     viewer=None,
@@ -651,17 +603,7 @@ def add_subnodes(
         a list of tuples of scale factors for each array
     """
 
-    # TODO it might be necessary to deep copy the camera
-    # TODO update chunk is blocking
-    camera = viewer.camera
-    # TODO should we deep copy  a camera or a dict?
-    # TODO check pydantic model to see whether EventedModel can freeze camera
-    camera_dict = {
-        "angles": tuple(camera.angles),
-        "center": tuple(camera.center),
-        "view_direction": tuple(camera.view_direction),
-        "zoom": camera.zoom,
-    }
+    camera = viewer.camera.copy()
 
     # TODO hardcoded dtype
     dtype = np.uint16
@@ -672,7 +614,7 @@ def add_subnodes(
     worker_map["worker"] = render_sequence_caller(
         view_slice,
         scale,
-        camera_dict,
+        camera,
         cache_manager,
         arrays=arrays,
         chunk_maps=chunk_maps,
@@ -934,42 +876,10 @@ if __name__ == '__main__' and True:
         stats = yappi.get_func_stats()
         stats.sort("name", "desc").print_all()
 
+
     @viewer.bind_key("k")
-    def refresher(event):
-        add_subnodes_caller(
-            event,
-            view_slice,
-            scale=len(multiscale_arrays) - 1,
-            viewer=viewer,
-            cache_manager=cache_manager,
-            arrays=multiscale_arrays,
-            chunk_maps=multiscale_chunk_maps,
-            container=large_image["container"],
-            dataset=large_image["dataset"],
-            scale_factors=scale_factors,
-            worker_map=worker_map,
-        )
-
-    # viewer.camera.events.connect(
-    #     debounced(
-    #         add_subnodes_caller(
-    #             view_slice=view_slice,
-    #             scale=len(multiscale_arrays) - 1,
-    #             viewer=viewer,
-    #             cache_manager=cache_manager,
-    #             arrays=multiscale_arrays,
-    #             chunk_maps=multiscale_chunk_maps,
-    #             container=large_image["container"],
-    #             dataset=large_image["dataset"],
-    #             scale_factors=scale_factors,
-    #             worker_map=worker_map,
-    #         ),
-    #         timeout=1000,
-    #     )
-    # )
-
     def camera_response(event):
-        add_subnodes_caller(
+        add_subnodes(
             event,
             view_slice,
             scale=len(multiscale_arrays) - 1,
