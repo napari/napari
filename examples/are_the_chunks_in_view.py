@@ -269,6 +269,7 @@ def get_chunk(
     dataset=None,
     cache_manager=None,
     dtype=np.uint8,
+    numretry=3,
 ):
     """Get a specified slice from an array (uses a cache).
 
@@ -291,9 +292,12 @@ def get_chunk(
         an ndarray of data sliced with chunk_slice
     """
     real_array = cache_manager.get(container, dataset, chunk_slice)
-    if real_array is None:
+    retry = 0
+    while real_array is None and retry < numretry:
         try:
             real_array = np.asarray(array[chunk_slice].compute(), dtype=dtype)
+            # TODO check for a race condition that is causing this exception
+            #      some dask backends are not thread-safe
         except Exception:
             print(
                 f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
@@ -302,6 +306,7 @@ def get_chunk(
             # pdb.set_trace()
 
         cache_manager.put(container, dataset, chunk_slice, real_array)
+        retry += 1
     return real_array
 
 
@@ -397,6 +402,7 @@ def render_sequence(
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
         # Render *visible* chunks, or all if we're on the last scale level
+        #   Skip the chunk at this resolution because it will be shown in higher res
         if point_mask[idx] and (idx != first_priority_idx or scale == 0):
             coord = tuple(point)
             chunk_slice = chunk_map[coord]
@@ -436,6 +442,7 @@ def render_sequence(
             # ]
             texture_offset = tuple([sl.start for sl in texture_slice])
 
+            # TODO consider a data class instead of a tuple
             yield (
                 np.asarray(data),
                 scale,
@@ -445,6 +452,8 @@ def render_sequence(
                 chunk_slice,
                 texture_slice,
             )
+
+    # TODO make sure that all of low res loads first
 
     # recurse on top priority
     if scale > 0:
@@ -476,6 +485,7 @@ def render_sequence(
             ]
         )
 
+        # TODO Note that we need to be blanking out lower res data at the same time
         yield (
             np.asarray(zdata),
             scale,
@@ -534,6 +544,8 @@ def update_chunk(
         texture_slice,
     ) = chunk_tuple
 
+    LOGGER.debug(f"update_chunk {scale} {array_offset}")
+
     layer_name = f"{container}/{dataset}/s{scale}"
     layer = viewer.layers[layer_name]
     volume = viewer.window.qt_viewer.layer_to_visual[
@@ -555,6 +567,7 @@ def update_chunk(
 
     # Writing a texture with an offset is slower
     texture.set_data(new_texture_data, offset=texture_offset)
+    # TODO explore efficiency of either approach, or maybe even an alternative
     # texture.set_data(np.asarray(layer.data), offset=(0, 0, 0))
 
     volume.update()
@@ -641,6 +654,8 @@ def add_subnodes(
     # TODO it might be necessary to deep copy the camera
     # TODO update chunk is blocking
     camera = viewer.camera
+    # TODO should we deep copy  a camera or a dict?
+    # TODO check pydantic model to see whether EventedModel can freeze camera
     camera_dict = {
         "angles": tuple(camera.angles),
         "center": tuple(camera.center),
@@ -648,6 +663,7 @@ def add_subnodes(
         "zoom": camera.zoom,
     }
 
+    # TODO hardcoded dtype
     dtype = np.uint16
 
     if "worker" in worker_map:
@@ -967,13 +983,17 @@ if __name__ == '__main__' and True:
             worker_map=worker_map,
         )
 
+    # TODO note that debounced uses threading.Timer
     viewer.camera.events.connect(
         debounced(
-            camera_response,
+            ensure_main_thread(camera_response),
             timeout=1000,
             # Leading seems to be the only way to get debounced working
-            leading=True,
         )
     )
 
     # napari.run()
+
+    # Overall TODO 2023-02-15
+    # TODO refactor/cleanup
+    # TODO check with timeseries, if not then disable sliders
