@@ -289,7 +289,10 @@ def test_plugin_list_handle_action(plugin_dialog, qtbot):
     )
 
     # Wait for refresh timer, state and worker to be done
-    qtbot.waitUntil(lambda: not plugin_dialog._add_items_timer.isActive() and plugin_dialog.refresh_state == qt_plugin_dialog.RefreshState.DONE)
+    qtbot.waitUntil(
+        lambda: not plugin_dialog._add_items_timer.isActive()
+        and plugin_dialog.refresh_state == qt_plugin_dialog.RefreshState.DONE
+    )
     qtbot.waitUntil(lambda: not plugin_dialog.worker.is_running)
 
 
