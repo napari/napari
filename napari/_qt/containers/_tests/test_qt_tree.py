@@ -145,7 +145,7 @@ def test_node_tree_view(qtbot):
     assert qmodel.getItem(qsel.currentIndex()).index_from_root() == (2, 1, 0)
 
     # clear current in Qt
-    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
+    qsel.setCurrentIndex(QModelIndex(), qsel.SelectionFlag.Current)
     # check current in python
     assert root.selection._current is None
 

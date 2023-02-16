@@ -3,6 +3,8 @@
 import inspect
 import re
 from collections import ChainMap
+from types import FrameType
+from typing import Any, Callable, Optional
 
 from napari.utils.misc import ROOT_DIR, formatdoc
 
@@ -28,7 +30,7 @@ def _inc_name_count_sub(match):
 
 
 @formatdoc
-def inc_name_count(name):
+def inc_name_count(name: str) -> str:
     """Increase a name's count matching `{numbered_patt}` by ``1``.
 
     If the name is not already numbered, append '{sep}[{start}]'.
@@ -82,7 +84,9 @@ class CallerFrame:
 
     """
 
-    def __init__(self, skip_predicate):
+    def __init__(
+        self, skip_predicate: Callable[[int, FrameType], bool]
+    ) -> None:
         self.predicate = skip_predicate
         self.namespace = {}
         self.names = ()
@@ -132,7 +136,7 @@ class CallerFrame:
         del self.names
 
 
-def magic_name(value, *, path_prefix=ROOT_DIR):
+def magic_name(value: Any, *, path_prefix: str = ROOT_DIR) -> Optional[str]:
     """Fetch the name of the variable with the given value passed to the calling function.
 
     Parameters

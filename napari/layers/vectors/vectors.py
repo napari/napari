@@ -176,7 +176,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
 
@@ -245,7 +245,7 @@ class Vectors(Layer):
         self._view_alphas = []
 
         # now that everything is set up, make the layer visible (if set to visible)
-        self._update_dims()
+        self.refresh()
         self.visible = visible
 
     @property
@@ -280,7 +280,7 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):

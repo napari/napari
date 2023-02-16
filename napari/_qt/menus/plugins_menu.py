@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class PluginsMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
 
@@ -72,7 +72,14 @@ class PluginsMenu(NapariMenu):
 
         multiprovider = len(widgets) > 1
         if multiprovider:
-            menu = NapariMenu(plugin_name, self)
+            # use display_name if npe2 plugin
+            from npe2 import plugin_manager as pm
+
+            try:
+                plugin_display_name = pm.get_manifest(plugin_name).display_name
+            except KeyError:
+                plugin_display_name = plugin_name
+            menu = NapariMenu(plugin_display_name, self)
             self.addMenu(menu)
         else:
             menu = self

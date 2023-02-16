@@ -7,15 +7,16 @@ can also be used to render 2d timelapse acquisitions as kymographs.
 
 .. tags:: experimental
 """
-from typing import Dict, List, Tuple
-import numpy as np
-import napari
-from tqdm import tqdm
 from itertools import product
+
+import numpy as np
+from tqdm import tqdm
+
+import napari
 
 try:
     from omero.gateway import BlitzGateway
-except:
+except ModuleNotFoundError:
     print("Could not import BlitzGateway which is")
     print("required to download the sample datasets.")
     print("Please install omero-py:")

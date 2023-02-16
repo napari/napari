@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import warnings
 from functools import partial
@@ -63,7 +64,7 @@ class NapariPluginManager(PluginManager):
 
     ENTRY_POINT = 'napari.plugin'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
@@ -368,11 +369,11 @@ class NapariPluginManager(PluginManager):
             return
 
         _data = {}
-        for theme_name, theme_colors in data.items():
+        for theme_id, theme_colors in data.items():
             try:
                 theme = Theme.parse_obj(theme_colors)
-                register_theme(theme_name, theme)
-                _data[theme_name] = theme
+                register_theme(theme_id, theme, plugin_name)
+                _data[theme_id] = theme
             except (KeyError, ValidationError) as err:
                 warn_msg = trans._(
                     "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for creating themes. {err!r}",
@@ -394,8 +395,8 @@ class NapariPluginManager(PluginManager):
             return
 
         # unregister all themes that were provided by the plugins
-        for theme_name in self._theme_data[plugin_name]:
-            unregister_theme(theme_name)
+        for theme_id in self._theme_data[plugin_name]:
+            unregister_theme(theme_id)
 
         # since its possible that disabled/removed plugin was providing the
         # current theme, we check for this explicitly and if this the case,
@@ -737,11 +738,10 @@ class NapariPluginManager(PluginManager):
                 ext = f".{ext}"
             ext_map[ext] = plugin
 
+            func = None
             # give warning that plugin *may* not be able to read that extension
-            try:
+            with contextlib.suppress(Exception):
                 func = caller._call_plugin(plugin, path=f'_testing_{ext}')
-            except Exception:
-                pass
             if func is None:
                 msg = trans._(
                     'plugin {plugin!r} did not return a {type_} function when provided a path ending in {ext!r}. This *may* indicate a typo?',

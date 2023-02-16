@@ -25,9 +25,10 @@ def test_worker_with_progress(qtbot):
         start_thread=False,
     )
     worker = thread_func()
-    with qtbot.waitSignal(worker.yielded):
+    with qtbot.waitSignal(worker.yielded), qtbot.waitSignal(worker.finished):
         worker.start()
         assert worker.pbar.n == test_val[0]
+    assert test_val[0] == 2
 
 
 def test_function_worker_nonzero_total_warns():
@@ -52,20 +53,23 @@ def test_worker_may_exceed_total(qtbot):
 
     def test_yield(v):
         test_val[0] += 1
-
-    thread_func = qthreading.thread_worker(
-        func,
-        connect={'yielded': test_yield},
-        progress={'total': 1},
-        start_thread=False,
-    )
-    worker = thread_func()
-    with qtbot.waitSignal(worker.yielded):
-        worker.start()
         if test_val[0] < 2:
             assert worker.pbar.n == test_val[0]
         else:
             assert worker.pbar.total == 0
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress={'total': 1},
+        start_thread=False,
+    )
+    worker = thread_func()
+    worker.yielded.connect(test_yield)
+    with qtbot.waitSignal(worker.yielded) and qtbot.waitSignal(
+        worker.finished
+    ):
+        worker.start()
+    assert test_val[0] == 2
 
 
 def test_generator_worker_with_description():

@@ -13,7 +13,11 @@ import magicgui as mgui
 import numpy as np
 from npe2 import plugin_manager as pm
 
-from napari.layers.base._base_constants import Blending
+from napari.layers.base._base_constants import Blending, Mode
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.utils._slice_input import _SliceInput
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
@@ -32,7 +36,7 @@ from napari.utils._magicgui import (
     add_layers_to_viewer,
     get_layers,
 )
-from napari.utils.events import EmitterGroup, Event
+from napari.utils.events import EmitterGroup, Event, EventedDict
 from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import (
     find_front_back_face,
@@ -214,6 +218,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     * `_basename()`: base/default name of the layer
     """
 
+    _modeclass = Mode
+
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
+    }
+
     def __init__(
         self,
         data,
@@ -232,7 +252,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
-    ):
+        mode='pan_zoom',
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -267,6 +288,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
         self._experimental_clipping_planes = ClippingPlaneList()
+        self._mode = self._modeclass('pan_zoom')
 
         self._ndim = ndim
 
@@ -321,6 +343,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
+        # circular import
+        from napari.components.overlays.bounding_box import BoundingBoxOverlay
+        from napari.components.overlays.interaction_box import (
+            SelectionBoxOverlay,
+            TransformBoxOverlay,
+        )
+
+        self._overlays = EventedDict()
+
         self.events = EmitterGroup(
             source=self,
             refresh=Event,
@@ -343,23 +374,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
-            _ndisplay=Event,
+            extent=Event,
+            _overlays=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             deselect=WarningEmitter(
                 trans._(
                     "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
                     deferred=True,
                 ),
-                type='deselect',
+                type_name='deselect',
             ),
+            mode=Event,
         )
         self.name = name
+        self.mode = mode
+        self._overlays.update(
+            {
+                'transform_box': TransformBoxOverlay(),
+                'selection_box': SelectionBoxOverlay(),
+                'bounding_box': BoundingBoxOverlay(),
+            }
+        )
+
+        # TODO: we try to avoid inner event connection, but this might be the only way
+        #       until we figure out nested evented objects
+        self._overlays.events.connect(self.events._overlays)
 
     def __str__(self):
         """Return self.name."""
@@ -369,37 +414,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
-    def _mode_setter_helper(self, mode, Modeclass):
+    def _mode_setter_helper(self, mode):
         """
         Helper to manage callbacks in multiple layers
 
         Parameters
         ----------
-        mode : Modeclass | str
+        mode : type(self._modeclass) | str
             New mode for the current layer.
-        Modeclass : Enum
-            Enum for the current class representing the modes it can takes,
-            this is usually specific on each subclass.
 
         Returns
         -------
-        tuple (new Mode, mode changed)
+        bool : whether mode changed
 
         """
-        mode = Modeclass(mode)
+        mode = self._modeclass(mode)
         assert mode is not None
         if not self.editable:
-            mode = Modeclass.PAN_ZOOM
+            mode = self._modeclass.PAN_ZOOM
         if mode == self._mode:
-            return mode, False
-        if mode.value not in Modeclass.keys():
+            return mode
+
+        if mode.value not in self._modeclass.keys():
             raise ValueError(
                 trans._(
                     "Mode not recognized: {mode}", deferred=True, mode=mode
                 )
             )
-        old_mode = self._mode
-        self._mode = mode
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
@@ -411,13 +452,44 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 ),
             ),
         ]:
-            if mode_dict[old_mode] in callback_list:
-                callback_list.remove(mode_dict[old_mode])
+            if mode_dict[self._mode] in callback_list:
+                callback_list.remove(mode_dict[self._mode])
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        self.interactive = mode == Modeclass.PAN_ZOOM
-        return mode, True
+        self.interactive = mode == self._modeclass.PAN_ZOOM
+        self._overlays['transform_box'].visible = (
+            mode == self._modeclass.TRANSFORM
+        )
+
+        if mode == self._modeclass.TRANSFORM:
+            self.help = trans._(
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+            )
+        elif mode == self._modeclass.PAN_ZOOM:
+            self.help = ''
+
+        return mode
+
+    @property
+    def mode(self) -> str:
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        TRANSFORM allows for manipulation of the layer transform.
+        """
+        return str(self._mode)
+
+    @mode.setter
+    def mode(self, mode):
+        mode = self._mode_setter_helper(mode)
+        if mode == self._mode:
+            return
+        self._mode = mode
+
+        self.events.mode(mode=str(mode))
 
     @classmethod
     def _basename(cls):
@@ -517,29 +589,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.blending()
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """bool: Whether the visual is currently being displayed."""
         return self._visible
 
     @visible.setter
-    def visible(self, visibility):
-        self._visible = visibility
+    def visible(self, visible: bool):
+        self._visible = visible
         self.refresh()
         self.events.visible()
-        self.editable = self._set_editable() if self.visible else False
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         """bool: Whether the current layer data is editable from the viewer."""
         return self._editable
 
     @editable.setter
-    def editable(self, editable):
+    def editable(self, editable: bool):
         if self._editable == editable:
             return
         self._editable = editable
-        self._set_editable(editable=editable)
+        self._on_editable_changed()
         self.events.editable()
+
+    def _reset_editable(self) -> None:
+        """Reset this layer's editable state based on layer properties."""
+        self.editable = True
+
+    def _on_editable_changed(self) -> None:
+        """Executes side-effects on this layer related to changes of the editable state."""
 
     @property
     def scale(self):
@@ -551,7 +629,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if scale is None:
             scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
-        self._update_dims()
+        self._clear_extent()
         self.events.scale()
 
     @property
@@ -562,7 +640,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @translate.setter
     def translate(self, translate):
         self._transforms['data2physical'].translate = np.array(translate)
-        self._update_dims()
+        self._clear_extent()
         self.events.translate()
 
     @property
@@ -573,7 +651,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @rotate.setter
     def rotate(self, rotate):
         self._transforms['data2physical'].rotate = rotate
-        self._update_dims()
+        self._clear_extent()
         self.events.rotate()
 
     @property
@@ -584,7 +662,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @shear.setter
     def shear(self, shear):
         self._transforms['data2physical'].shear = shear
-        self._update_dims()
+        self._clear_extent()
         self.events.shear()
 
     @property
@@ -600,7 +678,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
-        self._update_dims()
+        self._clear_extent()
         self.events.affine()
 
     @property
@@ -648,12 +726,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             assert self._moving_coordinates is not None
         self._private_is_moving = value
 
-    def _update_dims(self, event=None):
-        """Update the dims model and clear the extent cache.
-
-        This function needs to be called whenever data or transform information
-        changes, and should be called before events get emitted.
-        """
+    def _update_dims(self):
+        """Update the dimensionality of transforms and slices when data changes."""
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -667,10 +741,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._slice_input = self._slice_input.with_ndim(ndim)
 
         self._ndim = ndim
-        if 'extent' in self.__dict__:
-            del self.extent
 
-        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
+        self._clear_extent()
 
     @property
     @abstractmethod
@@ -721,6 +793,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             step=abs(data_to_world.scale),
         )
 
+    def _clear_extent(self):
+        """Clears the cached extent.
+
+        This should be called whenever this data or transform information
+        changes, and should be called before any related events get emitted
+        so that they use the updated extent values.
+        """
+        if 'extent' in self.__dict__:
+            del self.extent
+        self.events.extent()
+        self.refresh()
+
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
@@ -735,10 +819,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @abstractmethod
     def _get_ndim(self):
         raise NotImplementedError()
-
-    def _set_editable(self, editable=None):
-        if editable is None:
-            self.editable = True
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
@@ -818,11 +898,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._help
 
     @help.setter
-    def help(self, help):
-        if help == self.help:
+    def help(self, help_text):
+        if help_text == self.help:
             return
-        self._help = help
-        self.events.help(help=help)
+        self._help = help_text
+        self.events.help(help=help_text)
 
     @property
     def interactive(self):
@@ -885,6 +965,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             plane.update(new_plane)
             self._experimental_clipping_planes.append(plane)
 
+    @property
+    def bounding_box(self):
+        return self._overlays['bounding_box']
+
     def set_view_slice(self):
         with self.dask_optimized_slicing():
             self._set_view_slice()
@@ -909,19 +993,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             rendered in canvas.
         """
         slice_input = self._make_slice_input(point, ndisplay, order)
-
         if self._slice_input == slice_input:
             return
-
-        old_ndisplay = self._slice_input.ndisplay
         self._slice_input = slice_input
-
-        if old_ndisplay != ndisplay:
-            self.events._ndisplay()
-
-        # Update the point values
-        self._update_dims()
-        self._set_editable()
+        self.refresh()
+        self._reset_editable()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
@@ -1130,13 +1206,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         force : bool
             Bool that forces a redraw to occur when `True`.
         """
-        pass
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
+            self.events.set_data()
             self._update_thumbnail()
             self._set_highlight(force=True)
 
@@ -1539,12 +1614,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
-            displayed_extent = self.extent.data[:, displayed_axes]
-            data_bbox_clipped = np.clip(
-                data_bbox_int, displayed_extent[0], displayed_extent[1]
-            )
             corners = np.zeros((2, self.ndim), dtype=int)
-            corners[:, displayed_axes] = data_bbox_clipped
+            # Some empty layers (e.g. Points) may have a data extent that only
+            # contains nans, in which case the integer valued corner pixels
+            # cannot be meaningfully set.
+            displayed_extent = self.extent.data[:, displayed_axes]
+            if not np.all(np.isnan(displayed_extent)):
+                data_bbox_clipped = np.clip(
+                    data_bbox_int, displayed_extent[0], displayed_extent[1]
+                )
+                corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
     def _get_source_info(self):
@@ -1775,7 +1854,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         try:
             return Cls(data, **(meta or {}))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             if 'unexpected keyword argument' not in str(exc):
                 raise exc
 

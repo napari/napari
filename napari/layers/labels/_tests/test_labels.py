@@ -454,9 +454,7 @@ def test_large_custom_color_dict():
     label_color_controls = [
         layer._label_color_index[x] for x in range(label_count)
     ]
-    vispy_colors = vispy_colormap.map(
-        np.array([x for x in label_color_controls])
-    )
+    vispy_colors = vispy_colormap.map(np.array(list(label_color_controls)))
 
     assert (label_color == vispy_colors).all()
 
@@ -705,9 +703,7 @@ def test_show_selected_label():
 
     # color of all others is none color
     other_labels = np.unique(layer.data)[2:]
-    other_colors = np.array(
-        list(map(lambda x: layer.get_color(x), other_labels))
-    )
+    other_colors = np.array([layer.get_color(x) for x in other_labels])
     assert np.allclose(other_colors, none_color)
 
 

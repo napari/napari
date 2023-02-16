@@ -8,12 +8,14 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
+    QListView,
     QListWidget,
     QListWidgetItem,
     QSizePolicy,
@@ -76,7 +78,7 @@ class ImplementationListItem(QFrame):
 
     on_changed = Signal()  # when user changes whether plugin is enabled.
 
-    def __init__(self, item: QListWidgetItem, parent: QWidget = None):
+    def __init__(self, item: QListWidgetItem, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.item = item
         self.opacity = QGraphicsOpacityEffect(self)
@@ -163,12 +165,12 @@ class QtHookImplementationListWidget(QListWidget):
         self,
         parent: Optional[QWidget] = None,
         hook_caller: Optional[HookCaller] = None,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragEnabled(True)
-        self.setDragDropMode(self.InternalMove)
-        self.setSelectionMode(self.SingleSelection)
+        self.setDragDropMode(QListView.InternalMove)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setAcceptDrops(True)
         self.setSpacing(1)
         self.setMinimumHeight(1)
@@ -291,7 +293,7 @@ class QtPluginSorter(QWidget):
         parent: Optional[QWidget] = None,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.plugin_manager = plugin_manager

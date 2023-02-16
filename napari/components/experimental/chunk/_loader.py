@@ -35,7 +35,7 @@ class ChunkLoader:
         We only signal one event: chunk_loaded.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         _setup_logging(octree_config)
 
         loader_config = octree_config['loader_defaults']
@@ -272,7 +272,8 @@ class ChunkLoader:
 
         for future_list in self._futures.values():
             # Result blocks until the future is done or cancelled
-            map(lambda x: x.result(), future_list)
+            for x in future_list:
+                x.result()
 
     def wait_for_data_id(self, data_id: int) -> None:
         """Wait for the given data to be loaded.
@@ -298,7 +299,8 @@ class ChunkLoader:
 
         # Calling result() will block until the future has finished or was
         # cancelled.
-        map(lambda x: x.result(), future_list)
+        for x in future_list:
+            x.result()
         del self._futures[data_id]
 
     def shutdown(self) -> None:

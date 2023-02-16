@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class _FakeHookimpl:
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         self.plugin_name = name
 
 
@@ -139,6 +139,13 @@ def get_widget_contribution(
 def populate_qmenu(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
+
+    def _wrap(cmd_):
+        def _wrapped(*args):
+            cmd_.exec(args=args)
+
+        return _wrapped
+
     for item in pm.iter_menu(menu_key):
         if isinstance(item, contributions.Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
@@ -147,7 +154,7 @@ def populate_qmenu(menu: QMenu, menu_key: str):
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *args: cmd.exec(args=args))  # type: ignore
+            action.triggered.connect(_wrap(cmd))
 
 
 def file_extensions_string_for_layers(
@@ -235,12 +242,7 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in pm.iter_widgets():
-        # The plugin_display_name is distinct from the wdg_contrib.display_name
-        # One plugin might have many widgets.
-        plugin_display_name = pm.get_manifest(
-            wdg_contrib.plugin_name
-        ).display_name
-        wdgs[plugin_display_name].append(wdg_contrib.display_name)
+        wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
 
 
@@ -248,7 +250,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     return (
         (
             # use display_name for user facing display
-            pm.get_manifest(plugin_name).display_name,
+            plugin_name,
             {
                 c.key: {'data': c.open, 'display_name': c.display_name}
                 for c in contribs

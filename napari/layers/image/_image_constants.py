@@ -15,7 +15,7 @@ class Interpolation(StringEnum):
     """
 
     BESSEL = auto()
-    BICUBIC = auto()
+    CUBIC = auto()
     LINEAR = auto()
     BLACKMAN = auto()
     CATROM = auto()
@@ -33,24 +33,12 @@ class Interpolation(StringEnum):
     @classmethod
     def view_subset(cls):
         return (
-            cls.BICUBIC,
+            cls.CUBIC,
             cls.LINEAR,
             cls.KAISER,
             cls.NEAREST,
             cls.SPLINE36,
         )
-
-
-class Mode(StringEnum):
-    """
-    Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
-    allows for normal interactivity with the canvas.
-
-    TRANSFORM allows for manipulation of the layer transform.
-    """
-
-    TRANSFORM = auto()
-    PAN_ZOOM = auto()
 
 
 class ImageRendering(StringEnum):

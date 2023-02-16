@@ -48,7 +48,7 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -112,7 +112,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer: 'ViewerModel'):
+    def __init__(self, viewer: 'ViewerModel') -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -353,7 +353,7 @@ class QtDeleteButton(QPushButton):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer) -> None:
         super().__init__()
 
         self.viewer = viewer
@@ -455,7 +455,7 @@ class QtViewerPushButton(QPushButton):
     @_omit_viewer_args
     def __init__(
         self, button_name: str, tooltip: str = '', slot=None, action: str = ''
-    ):
+    ) -> None:
         super().__init__()
 
         self.setToolTip(tooltip or button_name)
@@ -464,71 +464,3 @@ class QtViewerPushButton(QPushButton):
             self.clicked.connect(slot)
         if action:
             action_manager.bind_button(action, self)
-
-
-class QtStateButton(QtViewerPushButton):
-    """Button to toggle between two states.
-    Parameters
-    ----------
-    button_name : str
-        A string that will be used in qss to style the button with the
-        QtStateButton[mode=...] selector,
-    target : object
-        object on which you want to change the property when button pressed.
-    attribute:
-        name of attribute on `object` you wish to change.
-    events: EventEmitter
-        event emitter that will trigger when value is changed
-    onstate: Any
-        value to use for ``setattr(object, attribute, onstate)`` when clicking
-        this button
-    offstate: Any
-        value to use for ``setattr(object, attribute, offstate)`` when clicking
-        this button.
-    """
-
-    def __init__(
-        self,
-        button_name,
-        target,
-        attribute,
-        events,
-        onstate=True,
-        offstate=False,
-    ):
-        warnings.warn(
-            trans._(
-                "QtStateButton is deprecated and will be removed in 0.4.14"
-            ),
-            stacklevel=2,
-            category=FutureWarning,
-        )
-        super().__init__(button_name)
-        self.setCheckable(True)
-
-        self._target = target
-        self._attribute = attribute
-        self._onstate = onstate
-        self._offstate = offstate
-        self._events = events
-        self._events.connect(self._on_change)
-        self.clicked.connect(self.change)
-        self._on_change()
-
-    def change(self):
-        """Toggle between the multiple states of this button."""
-        newstate = self._onstate if self.isChecked() else self._offstate
-        setattr(self._target, self._attribute, newstate)
-
-    def _on_change(self, event=None):
-        """Called wen mirrored value changes
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        with self._events.blocker():
-            if self.isChecked() != (
-                getattr(self._target, self._attribute) == self._onstate
-            ):
-                self.toggle()

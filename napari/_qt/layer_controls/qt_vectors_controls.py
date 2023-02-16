@@ -45,9 +45,9 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
-    layer: 'napari.layers.Tracks'
+    layer: 'napari.layers.Vectors'
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         super().__init__(layer)
 
         # dropdown to select the property for mapping edge_color
@@ -125,18 +125,18 @@ class QtVectorsControls(QtLayerControls):
         )
         self.layer.events.edge_color.connect(self._on_edge_color_change)
 
-    def change_edge_color_property(self, property: str):
+    def change_edge_color_property(self, property_name: str):
         """Change edge_color_property of vectors on the layer model.
         This property is the property the edge color is mapped to.
 
         Parameters
         ----------
-        property : str
+        property_name : str
             property to map the edge color to
         """
         mode = self.layer.edge_color_mode
         try:
-            self.layer.edge_color = property
+            self.layer.edge_color = property_name
             self.layer.edge_color_mode = mode
         except TypeError:
             # if the selected property is the wrong type for the current color mode

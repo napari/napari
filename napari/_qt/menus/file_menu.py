@@ -2,7 +2,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction, QMenu
 
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class FileMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
         self.open_sample_menu = NapariMenu(trans._('Open Sample'), self)
@@ -199,7 +199,18 @@ class FileMenu(NapariMenu):
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
-                menu = self.open_sample_menu.addMenu(plugin_name)
+                # use display_name for the menu item if npe2
+                from npe2 import plugin_manager as pm
+
+                try:
+                    plugin_display_name = pm.get_manifest(
+                        plugin_name
+                    ).display_name
+                except KeyError:
+                    plugin_display_name = plugin_name
+                menu = self.open_sample_menu.addMenu(
+                    QMenu(title=plugin_display_name, parent=self)
+                ).menu()
             else:
                 menu = self.open_sample_menu
 
@@ -213,14 +224,14 @@ class FileMenu(NapariMenu):
                     )
                     action = QAction(full_name, parent=self)
 
-                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                def _add_sample(*_, plg=plugin_name, smp=samp_name):
                     try:
                         self._win._qt_viewer.viewer.open_sample(plg, smp)
                     except MultipleReaderError as e:
                         handle_gui_reading(
                             e.paths,
                             self._win._qt_viewer,
-                            plugin_name=plugin_name,
+                            plugin_name=plg,
                             stack=False,
                         )
 

@@ -16,7 +16,7 @@ from napari.utils.translations import trans
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
 LinkKey = Tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
 Unlinker = Callable[[], None]
-_UNLINKERS: dict[LinkKey, Unlinker] = dict()
+_UNLINKERS: dict[LinkKey, Unlinker] = {}
 _LINKED_LAYERS: DefaultDict[
     ReferenceType[Layer], Set[ReferenceType[Layer]]
 ] = DefaultDict(set)
@@ -188,7 +188,9 @@ def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
 
 def _get_common_evented_attributes(
     layers: Iterable[Layer],
-    exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
+    exclude: set[str] = frozenset(
+        ('thumbnail', 'status', 'name', 'data', 'extent')
+    ),
     with_private=False,
 ) -> set[str]:
     """Get the set of common, non-private evented attributes in ``layers``.
@@ -222,7 +224,7 @@ def _get_common_evented_attributes(
                 "``layers`` iterable must have at least one layer",
                 deferred=True,
             )
-        )
+        ) from None
 
     layer_events = [
         {
@@ -264,6 +266,6 @@ def _unlink_keys(keys: Iterable[LinkKey]):
 
 def _rebuild_link_index():
     links = DefaultDict(set)
-    for l1, l2, attr in _UNLINKERS:
+    for l1, l2, _attr in _UNLINKERS:
         links[l1].add(l2)
     return links
