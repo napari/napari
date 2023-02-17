@@ -41,8 +41,6 @@ from napari._qt.qt_resources import QColoredSVGIcon
 from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
-
-# from napari.plugins import plugin_manager
 from napari.plugins.hub import iter_hub_plugin_info
 from napari.plugins.npe2api import iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
@@ -58,6 +56,9 @@ from napari.utils.translations import trans
 
 # Scaling factor for each list widget item when expanding.
 SCALE = 1.6
+
+CONDA = 'Conda'
+PYPI = 'PyPI'
 
 
 def is_conda_package(pkg: str):
@@ -108,9 +109,9 @@ class PluginListItem(QFrame):
         self.plugin_name.setText(package_name)
 
         if len(versions_pypi) > 0:
-            self._populate_version_dropdown('PyPI')
+            self._populate_version_dropdown(PYPI)
         else:
-            self._populate_version_dropdown('Conda')
+            self._populate_version_dropdown(CONDA)
 
         self.package_name.setText(version)
         if summary:
@@ -124,7 +125,7 @@ class PluginListItem(QFrame):
 
         if installed:
             if is_conda_package(package_name):
-                self.source.setText('Conda')
+                self.source.setText(CONDA)
             self.enabled_checkbox.show()
             self.action_button.setText(trans._("Uninstall"))
             self.action_button.setObjectName("remove_button")
@@ -329,10 +330,10 @@ class PluginListItem(QFrame):
         self.source_choice_dropdown = QComboBox()
 
         if len(self._versions_pypi) is not None:
-            self.source_choice_dropdown.addItem('PyPI')
+            self.source_choice_dropdown.addItem(PYPI)
 
         if len(self._versions_conda) is not None:
-            self.source_choice_dropdown.addItem('Conda')
+            self.source_choice_dropdown.addItem(CONDA)
 
         self.source_choice_dropdown.currentTextChanged.connect(
             self._populate_version_dropdown
@@ -385,7 +386,7 @@ class PluginListItem(QFrame):
         self.version_text = QLabel('Version:')
         self.package_name = QLabel()
         self.source_text = QLabel('Source:')
-        self.source = QLabel('PyPI')
+        self.source = QLabel(PYPI)
 
         info_layout.addWidget(self.source_text, 0, 0)
         info_layout.addWidget(self.source, 1, 0)
@@ -398,7 +399,7 @@ class PluginListItem(QFrame):
 
     def _populate_version_dropdown(self, source: Literal["PyPI", "Conda"]):
         """Display the versions available after selecting a source: pypi or conda."""
-        if source == 'PyPI':
+        if source == PYPI:
             versions = self._versions_pypi
         else:
             versions = self._versions_conda
@@ -424,6 +425,7 @@ class PluginListItem(QFrame):
                 napari.plugins.plugin_manager.set_blocked(
                     npe1_name, not enabled
                 )
+                return
 
     def show_warning(self, message: str = ""):
         """Show warning icon and tooltip."""
@@ -563,7 +565,7 @@ class QPluginList(QListWidget):
         Update buttons appropriately and run the action."""
         tool = (
             InstallerTools.CONDA
-            if item.widget.source_choice_dropdown.currentText() == 'Conda'
+            if item.widget.source_choice_dropdown.currentText() == CONDA
             else InstallerTools.PIP
         )
 
@@ -763,13 +765,6 @@ class QtPluginDialog(QDialog):
         self.installed_list.clear()
         self.available_list.clear()
 
-        # fetch installed
-        # TODO: Why is this imported here?
-        # from npe2 import PluginManager
-
-        # TODO: Why is this imported here?
-        # from napari.plugins import plugin_manager
-
         self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
@@ -848,7 +843,6 @@ class QtPluginDialog(QDialog):
             or running_as_constructor_app()
             or settings.plugins.plugin_api.name == "napari_hub"
         )
-
         if use_hub:
             conda_forge = running_as_constructor_app()
             self.worker = create_worker(
