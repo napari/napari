@@ -545,6 +545,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     viewer.window._qt_viewer.canvas.bgcolor = 'white'
 
     # check that additive behaves correctly, despite white canvas
+    img1_layer.visible = True
     img1_layer.blending = 'additive'
     img2_layer.blending = 'additive'
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -554,6 +555,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_array_equal(screenshot[:, :, 0], img2)
     # minimum should always work with white canvas bgcolor
+    img1_layer.visible = True
     img1_layer.blending = 'minimum'
     img2_layer.blending = 'minimum'
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
