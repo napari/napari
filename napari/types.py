@@ -24,29 +24,6 @@ if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
-try:
-    from numpy.typing import DTypeLike  # requires numpy 1.20
-except ImportError:
-    # Anything that can be coerced into numpy.dtype.
-    # Reference: https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
-    from typing import Protocol, TypeVar
-
-    _DType_co = TypeVar("_DType_co", covariant=True, bound=np.dtype)
-
-    # A protocol for anything with the dtype attribute
-    class _SupportsDType(Protocol[_DType_co]):
-        @property
-        def dtype(self) -> _DType_co:
-            ...
-
-    DTypeLike = Union[  # type: ignore
-        np.dtype,  # default data type (float64)
-        None,
-        type,  # array-scalar types and generic types
-        _SupportsDType[np.dtype],  # anything with a dtype attribute
-        str,  # character codes, type strings, e.g. 'float64'
-    ]
-
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -95,16 +72,7 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-if tuple(np.__version__.split('.')) < ('1', '20'):
-    # this hack is because NewType doesn't allow `Any` as a base type
-    # and numpy <=1.20 didn't provide type stubs for np.ndarray
-    # https://github.com/python/mypy/issues/6701#issuecomment-609638202
-    class ArrayBase(np.ndarray):
-        def __getattr__(self, name: str) -> Any:
-            return object.__getattribute__(self, name)
-
-else:
-    ArrayBase = np.ndarray  # type: ignore
+ArrayBase = np.ndarray
 
 
 ImageData = NewType("ImageData", ArrayBase)
