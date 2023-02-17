@@ -518,12 +518,12 @@ class Dims(EventedModel):
         """Reset dims values to initial states."""
         # Don't reset axis labels
         self.update(
-            dict(
-                range=((0, 2),) * self.ndim,
-                step=(1,) * self.ndim,
-                span=((0, 0),) * self.ndim,
-                order=tuple(range(self.ndim)),
-            )
+            {
+                "range": ((0, 2),) * self.ndim,
+                "step": (1,) * self.ndim,
+                "span": ((0, 0),) * self.ndim,
+                "order": tuple(range(self.ndim)),
+            }
         )
 
     def transpose(self):
