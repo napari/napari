@@ -688,8 +688,8 @@ class Labels(_ImageBase):
         return self._show_selected_label
 
     @show_selected_label.setter
-    def show_selected_label(self, filter):
-        self._show_selected_label = filter
+    def show_selected_label(self, filter_val):
+        self._show_selected_label = filter_val
         self.refresh()
 
     @Layer.mode.getter
@@ -1314,7 +1314,7 @@ class Labels(_ImageBase):
 
         # Transfer valid coordinates to slice_coord,
         # or expand coordinate if 3rd dim in 2D image
-        slice_coord_temp = [m for m in mask_indices.T]
+        slice_coord_temp = list(mask_indices.T)
         if self.n_edit_dimensions < self.ndim:
             for j, i in enumerate(dims_to_paint):
                 slice_coord[i] = slice_coord_temp[j]
