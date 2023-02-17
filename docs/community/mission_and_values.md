@@ -36,9 +36,9 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - being **interactive** and **highly performant** in order to support very large data sets.
 
-- providing a **consistent and stable API** to enable plugin developers to build on top of napari without their code constantly breaking and to enable advanced users to build out sophisticated Python workflows. Right now we are still making breaking changes with minor version numbers `0.x` and do not have a deprecation policy, but we will work to add one soon.  
+- providing a **consistent and stable API** to enable plugin developers to build on top of napari without their code constantly breaking and to enable advanced users to build out sophisticated Python workflows. Right now we are still making breaking changes with minor version numbers `0.x` and do not have a deprecation policy, but we will work to add one soon.
 
-- **ensuring correctness**. We strive for complete test coverage of both the code and GUI, with all code reviewed by a core developer before being included in the repository.
+- ensuring **scientific accuracy**. We prioritise bug fixes and feature development that affect the scientific interpretation of the displayed data. For example, a bug in which point coordinates are offset by one pixel from the overlaid image coordinates is higher priority than one in which a UI button doesn't work.
 
 (our-values)=
 ## Our values
