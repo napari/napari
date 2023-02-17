@@ -37,7 +37,8 @@ from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
-from napari.utils import config, perf
+from napari.settings._application import DaskSettings
+from napari.utils import config, perf, resize_dask_cache
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps.standardize_color import transform_color
@@ -74,6 +75,7 @@ if TYPE_CHECKING:
 
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari.components import ViewerModel
+    from napari.utils.events import Event
 
 
 def _npe2_decode_selected_filter(
@@ -292,10 +294,31 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
+        settings = get_settings()
+        self._update_dask_cache_settings(settings.application.dask)
+
+        settings.application.events.dask.connect(
+            self._update_dask_cache_settings
+        )
+
         for layer in self.viewer.layers:
             self._add_layer(layer)
         for overlay in self.viewer._overlays.values():
             self._add_overlay(overlay)
+
+    @staticmethod
+    def _update_dask_cache_settings(
+        dask_setting: Union[DaskSettings, Event] = None
+    ):
+        """Update dask cache to match settings."""
+        if not dask_setting:
+            return
+        if not isinstance(dask_setting, DaskSettings):
+            dask_setting = dask_setting.value
+
+        enabled = dask_setting.enabled
+        size = dask_setting.cache
+        resize_dask_cache(int(int(enabled) * size * 1e9))
 
     @property
     def controls(self) -> QtLayerControlsContainer:

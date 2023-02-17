@@ -141,18 +141,18 @@ class VispyBaseLayer(ABC):
             else:
                 src_color_blending = 'src_alpha'
                 dst_color_blending = 'one_minus_src_alpha'
-            blending_kwargs = dict(
-                depth_test=blending_kwargs['depth_test'],
-                cull_face=False,
-                blend=True,
-                blend_func=(
+            blending_kwargs = {
+                "depth_test": blending_kwargs['depth_test'],
+                "cull_face": False,
+                "blend": True,
+                "blend_func": (
                     src_color_blending,
                     dst_color_blending,
                     'one',
                     'one',
                 ),
-                blend_equation='func_add',
-            )
+                "blend_equation": 'func_add',
+            }
 
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
@@ -237,7 +237,6 @@ class VispyBaseLayer(ABC):
         visual can finish up what it was doing, such as loading data into
         VRAM or animating itself.
         """
-        pass
 
     def close(self):
         """Vispy visual is closing."""
