@@ -6,13 +6,13 @@ from typing import Any, Tuple, Union
 
 import numpy as np
 import pytest
+from numpy.typing import DTypeLike
 
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
-from napari.types import DTypeLike
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
