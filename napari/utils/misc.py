@@ -65,6 +65,9 @@ def running_as_bundled_app() -> bool:
     except AttributeError:
         return False
 
+    if app_module is None:
+        return False
+
     try:
         metadata = importlib.metadata.metadata(app_module)
     except importlib.metadata.PackageNotFoundError:
