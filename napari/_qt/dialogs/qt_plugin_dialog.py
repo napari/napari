@@ -452,7 +452,7 @@ class QPluginList(QListWidget):
 
         return count - hidden
 
-    @Slot(npe2.PackageMetadata)
+    @Slot(tuple)
     def addItem(
         self,
         project_info_versions: Tuple[
