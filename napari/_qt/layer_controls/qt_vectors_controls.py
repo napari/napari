@@ -204,10 +204,12 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox to indicate whether to render out of slice.
+        state : int
+             Integer value of Qt.CheckState that indicates the check state of outOfSliceCheckBox
         """
-        self.layer.out_of_slice_display = state == Qt.CheckState.Checked
+        self.layer.out_of_slice_display = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
