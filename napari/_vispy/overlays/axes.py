@@ -77,5 +77,4 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         super().reset()
         self._on_data_change()
         self._on_labels_visible_change()
-        self._on_labels_text_change()
         self._on_zoom_change()
