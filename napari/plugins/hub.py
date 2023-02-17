@@ -103,16 +103,15 @@ def _filter_summaries(
 ) -> Union[SummaryDict, None]:
     """Returns the plugin summary specified by plugin_name from a list of summaries."""
 
-    found = False
     cnt = 0
-    while found is False and cnt < len(summaries):
-        if summaries[cnt]['name'].lower().replace('-', '').replace(
-            '_', ''
-        ) == plugin_name.lower().replace('-', '').replace('_', ''):
-            found = True
-        else:
-            cnt += 1
-    return summaries[cnt] if found else None
+    plugin_name = plugin_name.lower().replace('-', '').replace('_', '')
+    for summary in summaries:
+        if (
+            summaries[cnt]['name'].lower().replace('-', '').replace('_', '')
+            == plugin_name
+        ):
+            return summary
+    return None
 
 
 def iter_hub_plugin_info(
