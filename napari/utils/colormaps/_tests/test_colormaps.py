@@ -161,22 +161,36 @@ def test_mpl_colormap_exists():
         assert getattr(cm, name, None) is not None
 
 
-def test_colormap_error_suggestion():
+@pytest.mark.parametrize(
+    "name,display_name",
+    [
+        ('twilight_shifted', 'twilight shifted'),  # MPL
+        ('light_blues', 'light blues'),  # Vispy
+    ],
+)
+def test_colormap_error_suggestion(name, display_name):
     """
     Test that vispy/mpl errors, when using `display_name`, suggest `name`.
     """
-    name = '"twilight_shifted"'
-    display_name = 'twilight shifted'
     with pytest.raises(KeyError) as excinfo:
         vispy_or_mpl_colormap(display_name)
 
-    assert name in str(excinfo.value)
+    error_string = str(excinfo.value)
+    assert 'you might want to use' in error_string
+    assert name in error_string and display_name in error_string
 
-    wrong_name = 'foobar'
+
+def test_colormap_error_from_inexistent_name():
+    """
+    Test that vispy/mpl errors when using a wrong name.
+    """
+    name = 'foobar'
     with pytest.raises(KeyError) as excinfo:
-        vispy_or_mpl_colormap(wrong_name)
+        vispy_or_mpl_colormap(name)
 
-    assert name in str(excinfo.value)
+    error_string = str(excinfo.value)
+    assert 'Recognized colormaps are' in error_string
+    assert name in error_string
 
 
 np.random.seed(0)
