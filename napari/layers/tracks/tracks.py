@@ -120,7 +120,6 @@ class Tracks(Layer):
         cache=True,
         experimental_clipping_planes=None,
     ) -> None:
-
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
             data = np.empty((0, 4))

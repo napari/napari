@@ -1510,7 +1510,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position, dims_displayed
             )
         else:
-
             # adjust for any offset between viewer and data coordinates
             position = self._get_offset_data_position(position)
 
@@ -1663,7 +1662,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return components
 
     def get_source_str(self):
-
         source_info = self._get_source_info()
 
         return (

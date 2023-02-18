@@ -121,7 +121,6 @@ def _extension_string_for_layers(
         selected_layer = layers[0]
         # single selected layer.
         if selected_layer._type_string == 'image':
-
             ext = imsave_extensions()
 
             ext_list = [f"*{val}" for val in ext]
@@ -133,7 +132,6 @@ def _extension_string_for_layers(
             )
 
         elif selected_layer._type_string == 'points':
-
             ext_str = trans._("All Files (*);; *.csv;;")
 
         else:
@@ -192,7 +190,6 @@ class QtViewer(QSplitter):
     def __init__(
         self, viewer: ViewerModel, show_welcome_screen: bool = False
     ) -> None:
-
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -875,7 +872,6 @@ class QtViewer(QSplitter):
 
         cursor = self.viewer.cursor.style
         if cursor in {'square', 'circle'}:
-
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:
