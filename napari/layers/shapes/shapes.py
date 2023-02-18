@@ -1391,7 +1391,6 @@ class Shapes(Layer):
                 contrast_limits = getattr(self, f'{attribute}_contrast_limits')
                 colormap = getattr(self, f'{attribute}_colormap')
                 if update_color_mapping or contrast_limits is None:
-
                     colors, contrast_limits = map_property(
                         prop=color_properties, colormap=colormap
                     )
@@ -1401,7 +1400,6 @@ class Shapes(Layer):
                         contrast_limits,
                     )
                 else:
-
                     colors, _ = map_property(
                         prop=color_properties,
                         colormap=colormap,

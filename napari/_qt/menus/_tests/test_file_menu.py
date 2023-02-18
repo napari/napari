@@ -130,7 +130,6 @@ def test_open_with_plugin(
     filename_call,
     stack,
 ):
-
     viewer = make_napari_viewer()
     action, _a = get_open_with_plugin_action(viewer, menu_str)
     with mock.patch(
