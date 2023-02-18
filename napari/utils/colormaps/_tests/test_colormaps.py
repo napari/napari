@@ -172,9 +172,10 @@ def test_colormap_error_suggestion(name, display_name):
     """
     Test that vispy/mpl errors, when using `display_name`, suggest `name`.
     """
-    with pytest.raises(KeyError, match=rf"{display_name}.*you might want to use.*{name}"):
+    with pytest.raises(
+        KeyError, match=rf"{display_name}.*you might want to use.*{name}"
+    ):
         vispy_or_mpl_colormap(display_name)
-
 
 
 def test_colormap_error_from_inexistent_name():
@@ -184,7 +185,6 @@ def test_colormap_error_from_inexistent_name():
     name = 'foobar'
     with pytest.raises(KeyError, match=rf"{name}.*Recognized colormaps are"):
         vispy_or_mpl_colormap(name)
-
 
 
 np.random.seed(0)
