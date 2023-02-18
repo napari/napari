@@ -39,7 +39,6 @@ class ColumnSpec:
     """
 
     def __init__(self, spec: Union[str, dict]) -> None:
-
         if isinstance(spec, str):
             spec = {'name': spec}  # Spec is the name, then we use defaults.
         self.name = spec.get('name', "")

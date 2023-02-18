@@ -68,7 +68,6 @@ class ShapeList:
     """
 
     def __init__(self, data=(), ndisplay=2) -> None:
-
         self._ndisplay = ndisplay
         self.shapes = []
         self._displayed = []
@@ -495,7 +494,6 @@ class ShapeList:
         for shape, face_color, edge_color in zip(
             shapes, face_colors, edge_colors
         ):
-
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             all_z_index.append(shape.z_index)

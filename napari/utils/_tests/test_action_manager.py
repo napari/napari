@@ -41,7 +41,6 @@ def test_bind_multiple_action(action_manager):
 
 
 def test_bind_unbind_existing_action(action_manager):
-
     action_manager.register_action(
         'napari:test_action_1', lambda: None, 'this is a test action', None
     )

@@ -77,7 +77,6 @@ class _OctreeImageBase(_ImageBase):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-
         self._view: OctreeView = None
         self._slice: OctreeSlice = None
         self._intersection: OctreeIntersection = None

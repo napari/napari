@@ -130,7 +130,6 @@ class NapariPluginManager(PluginManager):
         self,
         name_or_object: Any,
     ) -> Optional[Any]:
-
         if isinstance(name_or_object, str):
             _name = name_or_object
         else:
@@ -441,7 +440,6 @@ class NapariPluginManager(PluginManager):
         args: Union[AugmentedWidget, List[AugmentedWidget]],
         hookimpl: HookImplementation,
     ):
-
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_experimental_provide_dock_widget`'
         for arg in args if isinstance(args, list) else [args]:
