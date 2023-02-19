@@ -7,6 +7,7 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _hide_other_layers,
     _project,
 )
 
@@ -30,6 +31,28 @@ def test_duplicate_layers():
         len(layer_list[1].events.data.callbacks) == 1
     )  # `events` Event Emitter
     assert layer_list[1].source.parent() is layer_list[0]
+
+
+def test_hide_other_layers():
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list[0].visible = True
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[1]
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _hide_other_layers(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is False
 
 
 @pytest.mark.parametrize(
