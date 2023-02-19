@@ -106,6 +106,17 @@ LAYER_ACTIONS: List[Action] = [
         ],
     ),
     Action(
+        id=CommandId.HIDE_OTHER_LAYERS,
+        title=CommandId.HIDE_OTHER_LAYERS.title,
+        callback=_layer_actions._hide_other_layers,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
         id=CommandId.LAYER_LINK_SELECTED,
         title=CommandId.LAYER_LINK_SELECTED.title,
         callback=_layer_actions._link_selected_layers,
