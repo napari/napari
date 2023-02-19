@@ -106,8 +106,8 @@ LAYER_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.HIDE_OTHER_LAYERS,
-        title=CommandId.HIDE_OTHER_LAYERS.title,
+        id=CommandId.LAYER_HIDE_OTHER_LAYERS,
+        title=CommandId.LAYER_HIDE_OTHER_LAYERS.title,
         callback=_layer_actions._hide_other_layers,
         menus=[
             {
