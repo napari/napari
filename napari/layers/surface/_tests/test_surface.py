@@ -311,7 +311,7 @@ def test_surface_normals():
     faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
 
-    normals = dict(face=dict(visible=True, color='red'))
+    normals = {"face": {"visible": True, "color": 'red'}}
     surface_layer = Surface((vertices, faces, values), normals=normals)
     assert isinstance(surface_layer.normals, SurfaceNormals)
     assert surface_layer.normals.face.visible is True
@@ -346,7 +346,7 @@ def test_surface_wireframe():
     faces = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     values = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
 
-    wireframe = dict(visible=True, color='red')
+    wireframe = {"visible": True, "color": 'red'}
     surface_layer = Surface((vertices, faces, values), wireframe=wireframe)
     assert isinstance(surface_layer.wireframe, SurfaceWireframe)
     assert surface_layer.wireframe.visible is True
