@@ -115,7 +115,6 @@ class QtStar(QFrame):
             x_adj = star_center_x - x
             y_adj = star_center_y - y + 3
             if n == 0:
-
                 path.moveTo(x_adj, y_adj)
             else:
                 path.lineTo(x_adj, y_adj)

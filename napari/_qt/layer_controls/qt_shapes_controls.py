@@ -431,6 +431,9 @@ class QtShapesControls(QtLayerControls):
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
+    def _on_ndisplay_changed(self):
+        self.layer.editable = self.ndisplay == 2
+
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
         set_widgets_enabled_with_opacity(

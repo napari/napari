@@ -108,7 +108,6 @@ def link_layers(
     # now, connect requested attributes between all requested layers.
     links = []
     for (lay1, lay2), attribute in product(permutations(layers, 2), attr_set):
-
         key = _link_key(lay1, lay2, attribute)
         # if the layers and attribute are already linked then ignore
         if key in _UNLINKERS:

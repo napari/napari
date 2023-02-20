@@ -49,7 +49,6 @@ class PluginsMenu(NapariMenu):
         self._add_registered_widget(call_all=True)
 
     def _remove_unregistered_widget(self, event):
-
         for action in self.actions():
             if event.value in action.text():
                 self.removeAction(action)

@@ -52,7 +52,6 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
 def _calculate_anchor_upper_left(
     view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
-
     if ndisplay == 2:
         bbox_min, bbox_max = _calculate_bbox_extents(view_data)
         text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
@@ -71,7 +70,6 @@ def _calculate_anchor_upper_left(
 def _calculate_anchor_upper_right(
     view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
-
     if ndisplay == 2:
         bbox_min, bbox_max = _calculate_bbox_extents(view_data)
         text_anchors = np.array([bbox_min[:, 0], bbox_max[:, 1]]).T
