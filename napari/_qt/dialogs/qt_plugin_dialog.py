@@ -640,7 +640,8 @@ class QPluginList(QListWidget):
         self, project_info: npe2.PackageMetadata, is_available: bool
     ):
         """Determines if an installed plugin is up to date with the latest version.
-        If it is not, the latest version will be displayed on the update button."""
+        If it is not, the latest version will be displayed on the update button.
+        """
         if not is_available:
             return
 

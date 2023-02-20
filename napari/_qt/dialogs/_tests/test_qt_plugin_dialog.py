@@ -56,7 +56,6 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
             self.plugins = ['test-name-0', 'test-name-1', 'my-plugin']
 
         def __iter__(self):
-
             yield from self.plugins
 
         def iter_manifests(self):
@@ -258,7 +257,6 @@ def test_version_dropdown(plugin_dialog):
 
 
 def test_plugin_list_item(plugin_dialog):
-
     assert plugin_dialog.installed_list._count_visible() == 2
 
 
