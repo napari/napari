@@ -108,13 +108,13 @@ def register_layer_attr_action(
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
-        except StopIteration:
+        except StopIteration as e:
             raise RuntimeError(
                 trans._(
                     "If actions has no arguments there is no way to know what to set the attribute to.",
                     deferred=True,
                 ),
-            )
+            ) from e
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
@@ -143,26 +143,26 @@ def _nanmin(array):
     """
     call np.min but fall back to avoid nan and inf if necessary
     """
-    min = np.min(array)
-    if not np.isfinite(min):
+    min_value = np.min(array)
+    if not np.isfinite(min_value):
         masked = array[np.isfinite(array)]
         if masked.size == 0:
             return 0
-        min = np.min(masked)
-    return min
+        min_value = np.min(masked)
+    return min_value
 
 
 def _nanmax(array):
     """
     call np.max but fall back to avoid nan and inf if necessary
     """
-    max = np.max(array)
-    if not np.isfinite(max):
+    max_value = np.max(array)
+    if not np.isfinite(max_value):
         masked = array[np.isfinite(array)]
         if masked.size == 0:
             return 1
-        max = np.max(masked)
-    return max
+        max_value = np.max(masked)
+    return max_value
 
 
 def calc_data_range(data, rgb=False):
@@ -710,7 +710,7 @@ class _FeatureTable:
         values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
-    ):
+    ) -> None:
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
 

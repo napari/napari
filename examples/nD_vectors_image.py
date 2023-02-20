@@ -10,9 +10,9 @@ which are vector projections centered on a pixel of the MxNxP grid
 .. tags:: visualization-nD
 """
 
-import napari
 import numpy as np
 
+import napari
 
 # create the viewer and window
 viewer = napari.Viewer()

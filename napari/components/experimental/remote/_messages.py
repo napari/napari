@@ -22,7 +22,7 @@ class RemoteMessages:
         The viewer's layers, so we can call into them.
     """
 
-    def __init__(self, layers: LayerList):
+    def __init__(self, layers: LayerList) -> None:
         self.layers = layers
         self._frame_number = 0
         self._last_time = None

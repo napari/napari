@@ -429,7 +429,7 @@ def test_rotate_shape(create_known_shapes_layer, Event):
     mouse_move_callbacks(layer, event)
 
     # drag in the handle to bottom midpoint vertex to rotate 180 degrees
-    position = tuple(tuple(layer._selected_box[3]))
+    position = tuple(layer._selected_box[3])
     # Simulate move, click, and release
     event = ReadOnlyWrapper(
         Event(
@@ -870,7 +870,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            assert False, 'Unreachable code'  # pragma: no cover
+            raise AssertionError("Unreachable code")  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]
@@ -899,7 +899,7 @@ def test_drag_start_selection(
                 [offset_position[0], offset_position[1]],
             )
         else:
-            assert False, 'Unreachable code'  # pragma: no cover
+            raise AssertionError("Unreachable code")  # pragma: no cover
     else:
         np.testing.assert_array_equal(
             layer._drag_box, [initial_position, offset_position]

@@ -58,7 +58,7 @@ class _LayerSlicer:
         with `@ensure_main_thread`).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Attributes
         ----------
@@ -252,6 +252,6 @@ class _LayerSlicer:
             layer_set = set(layers)
             for task_layers, task in self._layers_to_task.items():
                 if set(task_layers).issubset(layer_set):
-                    logger.debug(f'Found existing task for {task_layers}')
+                    logger.debug('Found existing task for %s', task_layers)
                     return task
         return None

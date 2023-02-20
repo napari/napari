@@ -12,11 +12,10 @@ from scipy import ndimage as ndi
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.layers.base import Layer, no_op
+from napari.layers.base import Layer
 from napari.layers.image._image_constants import (
     ImageRendering,
     Interpolation,
-    Mode,
     VolumeDepiction,
 )
 from napari.layers.image._image_mouse_bindings import (
@@ -246,7 +245,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         depiction='volume',
         plane=None,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -275,6 +274,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             )
         elif rgb is None:
             rgb = rgb_guess
+        self.rgb = rgb
 
         # Determine dimensionality of the data
         ndim = len(data.shape)
@@ -300,13 +300,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         self.events.add(
-            mode=Event,
             interpolation=WarningEmitter(
                 trans._(
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             interpolation2d=Event,
             interpolation3d=Event,
@@ -320,7 +319,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._array_like = True
 
         # Set data
-        self.rgb = rgb
         self._data = data
         if self.multiscale:
             self._data_level = len(self.data) - 1
@@ -349,7 +347,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._attenuation = attenuation
         self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
-        self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
@@ -466,7 +463,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
-        self._set_editable()
+        self._reset_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -691,44 +688,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
-
-    @property
-    def mode(self) -> str:
-        """str: Interactive mode
-
-        Interactive mode. The normal, default mode is PAN_ZOOM, which
-        allows for normal interactivity with the canvas.
-
-        TRANSFORM allows for manipulation of the layer transform.
-        """
-        return str(self._mode)
-
-    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
-
-    _move_modes = {
-        Mode.TRANSFORM: no_op,
-        Mode.PAN_ZOOM: no_op,
-    }
-    _cursor_modes = {
-        Mode.TRANSFORM: 'standard',
-        Mode.PAN_ZOOM: 'standard',
-    }
-
-    @mode.setter
-    def mode(self, mode):
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
-            return
-        assert mode is not None, mode
-
-        if mode == Mode.PAN_ZOOM:
-            self.help = ''
-        else:
-            self.help = trans._(
-                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
-            )
-
-        self.events.mode(mode=mode)
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
@@ -1130,7 +1089,7 @@ Image.__doc__ = _ImageBase.__doc__
 
 
 class _weakref_hide:
-    def __init__(self, obj):
+    def __init__(self, obj) -> None:
         import weakref
 
         self.obj = weakref.ref(obj)

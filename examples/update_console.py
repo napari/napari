@@ -11,8 +11,8 @@ your shapes.
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 # create the viewer and window
 viewer = napari.Viewer()

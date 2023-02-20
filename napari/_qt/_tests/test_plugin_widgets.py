@@ -1,3 +1,4 @@
+from itertools import dropwhile
 from unittest.mock import Mock, patch
 
 import pytest
@@ -16,13 +17,13 @@ class Widg1(QWidget):
 
 
 class Widg2(QWidget):
-    def __init__(self, napari_viewer):
+    def __init__(self, napari_viewer) -> None:
         self.viewer = napari_viewer
         super().__init__()
 
 
 class Widg3(QWidget):
-    def __init__(self, v: Viewer):
+    def __init__(self, v: Viewer) -> None:
         self.viewer = v
         super().__init__()
 
@@ -96,11 +97,8 @@ def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
     qtbot.addWidget(qtwin)
     with patch.object(window, '_qt_window', qtwin):
         actions = PluginsMenu(window=window).actions()
-    for cnt, action in enumerate(actions):
-        if action.text() == "":
-            break
-    actions = actions[cnt + 1 :]
-    texts = [a.text() for a in actions]
+    actions = list(dropwhile(lambda a: a.text() != '', actions))
+    texts = [a.text() for a in actions][1:]
     for t in ['TestP1', 'Widg3 (TestP2)', 'magic (TestP3)']:
         assert t in texts
 
@@ -110,16 +108,14 @@ def test_plugin_widgets_menus(test_plugin_widgets, qtbot):
     assert [a.text() for a in tp1.parent().actions()] == ['Widg1', 'Widg2']
 
 
-def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
+def test_making_plugin_dock_widgets(
+    test_plugin_widgets, make_napari_viewer, qtbot
+):
     """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_napari_viewer()
     # only take the plugin actions
     actions = viewer.window.plugins_menu.actions()
-    for cnt, action in enumerate(actions):
-        if action.text() == "":
-            # this is the separator
-            break
-    actions = actions[cnt + 1 :]
+    actions = list(dropwhile(lambda a: a.text() != '', actions))
 
     # trigger the 'TestP2: Widg3' action
     tp2 = next(m for m in actions if m.text().endswith('(TestP2)'))
@@ -153,7 +149,10 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     # Check that widget is destroyed when closed.
     dw.destroyOnClose()
     assert action not in viewer.window.plugins_menu.actions()
-    assert not widg.parent()
+    assert widg.parent() is None
+    widg.deleteLater()
+    widg.close()
+    qtbot.wait(50)
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
@@ -163,11 +162,7 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     viewer = make_napari_viewer()
     # only take the plugin actions
     actions = viewer.window.plugins_menu.actions()
-    for cnt, action in enumerate(actions):
-        if action.text() == "":
-            # this is the separator
-            break
-    actions = actions[cnt + 1 :]
+    actions = dropwhile(lambda a: a.text() != '', actions)
 
     # trigger the 'TestP3: magic' action
     tp3 = next(m for m in actions if m.text().endswith('(TestP3)'))
