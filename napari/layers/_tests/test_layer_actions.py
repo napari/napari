@@ -72,18 +72,18 @@ def test_convert_dtype(mode):
 
 
 @pytest.mark.parametrize(
-    'input, type_',
+    'layer, type_',
     [
         (Image(np.random.rand(10, 10)), 'labels'),
         (Labels(np.ones((10, 10), dtype=int)), 'image'),
         (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
     ],
 )
-def test_convert_layer(input, type_):
+def test_convert_layer(layer, type_):
     ll = LayerList()
-    input.scale *= 1.5
-    original_scale = input.scale.copy()
-    ll.append(input)
+    layer.scale *= 1.5
+    original_scale = layer.scale.copy()
+    ll.append(layer)
     assert ll[0]._type_string != type_
     _convert(ll, type_)
     assert ll[0]._type_string == type_

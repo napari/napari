@@ -62,7 +62,6 @@ def test_project_point_to_plane(
     ],
 )
 def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
-
     rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
 
     rotated_1 = rotation_matrix.dot(vec_1)

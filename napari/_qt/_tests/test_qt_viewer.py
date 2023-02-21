@@ -70,6 +70,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 
 @skip_local_popups
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
 def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     """Test console has focus when instantiating from viewer."""
     viewer = make_napari_viewer(show=True)
@@ -88,7 +89,6 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
-
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
 
@@ -522,7 +522,6 @@ def test_memory_leaking(qtbot, make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_leaks_image(qtbot, make_napari_viewer):
-
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
     dr = weakref.ref(lr().data)

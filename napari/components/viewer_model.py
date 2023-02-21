@@ -216,7 +216,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
                     deferred=True,
                 ),
-                type="layers_change",
+                type_name="layers_change",
             ),
             reset_view=Event,
         )
@@ -879,7 +879,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            layer_list = list()
+            layer_list = []
             for image, i_kwargs, _ in layerdata_list:
                 layer = Image(image, **i_kwargs)
                 self.layers.append(layer)
@@ -1421,7 +1421,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
                 )
             )
     else:
-        _data.append(dict())
+        _data.append({})
     if len(_data) > 2:
         if _data[2] not in layers.NAMES:
             raise ValueError(
@@ -1553,7 +1553,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
 @lru_cache(maxsize=1)
 def valid_add_kwargs() -> Dict[str, Set[str]]:
     """Return a dict where keys are layer types & values are valid kwargs."""
-    valid = dict()
+    valid = {}
     for meth in dir(ViewerModel):
         if not meth.startswith('add_') or meth[4:] == 'layer':
             continue

@@ -459,7 +459,7 @@ def vispy_or_mpl_colormap(name):
         except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
-            ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
+            ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
             if suggestion:
                 raise KeyError(
                     trans._(
@@ -482,7 +482,7 @@ def vispy_or_mpl_colormap(name):
                             sorted(f'"{cm}"' for cm in colormaps)
                         ),
                     )
-                )
+                ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors

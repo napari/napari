@@ -68,6 +68,8 @@ class QtShapesControls(QtLayerControls):
         Button to add rectangles to shapes layer.
     select_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select shapes.
+    textDispCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if text should be displayed
     vertex_insert_button : qtpy.QtWidgets.QtModeRadioButton
         Button to insert vertex into shape.
     vertex_remove_button : qtpy.QtWidgets.QtModeRadioButton
@@ -402,10 +404,10 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if text is visible.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
         """
-        self.layer.text.visible = state == Qt.CheckState.Checked
+        self.layer.text.visible = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""
@@ -428,6 +430,9 @@ class QtShapesControls(QtLayerControls):
         """Receive layer model face color change event and update color swatch."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
+
+    def _on_ndisplay_changed(self):
+        self.layer.editable = self.ndisplay == 2
 
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
