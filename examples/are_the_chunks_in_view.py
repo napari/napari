@@ -321,6 +321,11 @@ def render_sequence_caller(
     scale_factors=[],
     dtype=np.uint16,
 ):
+    """
+    Entry point for recursive function render_sequence.
+
+    See render_sequence for docs.
+    """
     yield from render_sequence(
         view_slice,
         scale=scale,
@@ -349,6 +354,41 @@ def render_sequence(
     scale_factors=[],
     dtype=np.uint16,
 ):
+    """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
+
+    Note: scale levels are assumed to be 2x factors of each other
+
+    Parameters
+    ----------
+    view_slice : tuple or list of slices
+        A tuple/list of slices defining the region to display
+    scale : float
+        The scale level to display. 0 is highest resolution
+    camera : Camera
+        a napari Camera used for prioritizing data loading
+        Note: the camera instance should be immutable.
+    cache_manager : ChunkCacheManager
+        An instance of a ChunkCacheManager for data fetching
+    arrays : list
+        multiscale arrays to display
+    chunk_maps : list
+        a list of dictionaries mapping chunk coordinates to chunk
+        slices
+    container : str
+        the name of a zarr container, used for making unique keys in
+        cache
+    dataset : str
+        the name of a zarr dataset, used for making unique keys in
+        cache
+    alpha : float
+        a parameter that tunes the behavior of chunk prioritization
+        see prioritised_chunk_loading for more info
+    scale_factors : list of tuples
+        a list of tuples of scale factors for each array
+    dtype : dtype
+        dtype of data
+    """
+
     layer_name = f"{container}/{dataset}/s{scale}"
 
     print(f"view slice {view_slice}")
@@ -531,6 +571,29 @@ def render_sequence(
 def update_chunk(
     chunk_tuple, viewer=None, container="", dataset="", dtype=np.uint8
 ):
+    """Update the display with a chunk
+
+    Update a display when a chunk is recieved. This has been developed
+    as a function that is associated with on_yielded events from a
+    generator that yields chunks of image data (e.g. chunks from a
+    zarr image).
+
+    Parameters
+    ----------
+    chunk_tuple : tuple
+        tuple that contains data and metadata necessary to update the
+        display
+    viewer : napari.viewer.Viewer
+        a napari viewer with layers the given container, dataset that
+        will be updated with the chunk's data
+    container : str
+        a zarr container
+    dataset : str
+        group in container
+    dtype : dtype
+        a numpy-like dtype
+
+    """
     tic = time.perf_counter()
     (
         data,
