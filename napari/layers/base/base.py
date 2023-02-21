@@ -374,7 +374,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
-            reslice=Event,
+            reload=Event,
             extent=Event,
             _overlays=Event,
             select=WarningEmitter(
@@ -1613,7 +1613,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.events.reslice(Event('reslice', layer=self))
+                self.events.reload(Event('reload', layer=self))
 
         else:
             # The stored corner_pixels attribute must contain valid indices.

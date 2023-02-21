@@ -761,9 +761,9 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot):
     np.testing.assert_equal(image.corner_pixels, [[0, 0, 0], [0, 4, 5]])
 
     # Simulate panning to the left by changing the corner pixels in the last
-    # dimension, which corresponds to x/columns, then triggering a reslice.
+    # dimension, which corresponds to x/columns, then triggering a reload.
     image.corner_pixels = np.array([[0, 0, 0], [0, 4, 3]])
-    image.events.reslice(Event('reslice', layer=image))
+    image.events.reload(Event('reload', layer=image))
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][1, 0:4, 0:3])
 
@@ -786,7 +786,7 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer):
     # Simulate zooming into the middle of the higher resolution image.
     image._data_level = 0
     image.corner_pixels = np.array([[0, 2, 3], [0, 6, 7]])
-    image.events.reslice(Event('reslice', layer=image))
+    image.events.reload(Event('reload', layer=image))
 
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[0][2, 2:6, 3:7])
 
