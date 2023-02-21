@@ -3,7 +3,7 @@ from itertools import permutations
 import numpy as np
 import pytest
 
-from napari._tests.utils import vispy_image_scene_size
+from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.layers.image import VispyImageLayer
 from napari.layers import Image
 

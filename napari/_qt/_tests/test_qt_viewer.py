@@ -18,8 +18,8 @@ from napari._tests.utils import (
     layer_test_data,
     skip_local_popups,
     skip_on_win_ci,
-    vispy_image_scene_size,
 )
+from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
