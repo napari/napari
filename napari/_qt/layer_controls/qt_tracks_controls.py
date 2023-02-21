@@ -124,7 +124,6 @@ class QtTracksControls(QtLayerControls):
     def _on_properties_change(self):
         """Change the properties that can be used to color the tracks."""
         with self.layer.events.properties.blocker():
-
             with qt_signals_blocked(self.color_by_combobox):
                 self.color_by_combobox.clear()
             self.color_by_combobox.addItems(self.layer.properties_to_color_by)

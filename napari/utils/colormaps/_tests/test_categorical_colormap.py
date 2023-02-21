@@ -84,7 +84,6 @@ fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
 
 
 def test_categorical_colormap_from_array():
-
     cmap = CategoricalColormap.from_array(fallback_colors)
     np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
 

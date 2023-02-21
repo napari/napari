@@ -244,7 +244,6 @@ def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
 @pytest.mark.parametrize('stack', [True, False])
 @pytest.mark.parametrize('use_dask', [True, False, None])
 def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
-
     fnames = (
         [_write_spec(s) for s in spec]
         if isinstance(spec, list)
