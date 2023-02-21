@@ -390,17 +390,30 @@ def render_sequence(
         depth, distances, camera.zoom, alpha=alpha, visible=point_mask
     )
 
-    # Find the highest priority interval for the next higher resolution
-    first_priority_idx = np.argmin(priorities)
+    # Select the number of chunks
+    # TODO consider using threshold on priorities
+    """
+    Note: 
+    switching from recursing on 1 top chunk to N-best introduces extra
+    complexity, because the shape of texture allocation needs to
+    accommodate projections from all viewpoints around the volume.
+    """
+    n = 1
+    best_priorities = np.argsort(priorities)[:n]
 
     # This node's offset in world space
     world_offset = np.array(min_coord) * np.array(scale_factor)
 
     # Iterate over points/chunks and add corresponding nodes when appropriate
     for idx, point in enumerate(points):
-        # Render *visible* chunks, or all if we're on the last scale level
-        #   Skip the chunk at this resolution because it will be shown in higher res
-        if point_mask[idx] and (idx != first_priority_idx or scale == 0):
+        # TODO: There are 2 strategies here:
+        # 1. Render *visible* chunks, or all if we're on the last scale level
+        #    Skip the chunk at this resolution because it will be shown in higher res
+        #    This fetches less data.
+        # if point_mask[idx] and (idx not in best_priorities or scale == 0):
+        # 2. Render all chunks because we know we will zero out this data when
+        #    it is loaded at the next resolution level.
+        if point_mask[idx]:
             coord = tuple(point)
             chunk_slice = chunk_map[coord]
             offset = [sl.start for sl in chunk_slice]
@@ -446,69 +459,71 @@ def render_sequence(
     # TODO make sure that all of low res loads first
     # TODO take this 1 step further and fill all high resolutions with low res
 
-    # recurse on top priority
+    # recurse on best priorities
     if scale > 0:
-        # Get the coordinates of the first priority chunk for next scale
-        first_priority_coord = tuple(points[first_priority_idx])
-        chunk_slice = chunk_map[first_priority_coord]
+        # The next priorities for loading in higher resolution on are the best ones
+        for priority_idx in best_priorities:
+            # Get the coordinates of the chunk for next scale
+            priority_coord = tuple(points[priority_idx])
+            chunk_slice = chunk_map[priority_coord]
 
-        # Blank out the region that will be filled in by other scales
-        zeros_size = [0, 0, 0]
-        for d in range(len(zeros_size)):
-            sl = chunk_slice[d]
-            chunk_w = sl.stop - sl.start
-            zeros_size[d] = chunk_w
+            # Blank out the region that will be filled in by other scales
+            zeros_size = [0, 0, 0]
+            for d in range(len(zeros_size)):
+                sl = chunk_slice[d]
+                chunk_w = sl.stop - sl.start
+                zeros_size[d] = chunk_w
 
-        zdata = np.zeros(np.array(zeros_size, dtype=dtype), dtype=dtype)
+            zdata = np.zeros(np.array(zeros_size, dtype=dtype), dtype=dtype)
 
-        texture_slice = tuple(
-            [
-                slice(sl.start - offset, sl.stop - offset)
-                for sl, offset in zip(chunk_slice, min_coord)
-            ]
-        )
-
-        # TODO Note that we need to be blanking out lower res data at the same time
-        yield (
-            np.asarray(zdata),
-            scale,
-            tuple([sl.start for sl in chunk_slice]),
-            world_offset,
-            chunk_slice,
-            texture_slice,
-        )
-
-        # Compute the relative scale factor between these layers
-        relative_scale_factor = [
-            this_scale / next_scale
-            for this_scale, next_scale in zip(
-                scale_factors[scale], scale_factors[scale - 1]
+            texture_slice = tuple(
+                [
+                    slice(sl.start - offset, sl.stop - offset)
+                    for sl, offset in zip(chunk_slice, min_coord)
+                ]
             )
-        ]
 
-        # now convert the chunk slice to the next scale
-        next_chunk_slice = [
-            slice(st.start * dim_scale, st.stop * dim_scale)
-            for st, dim_scale in zip(chunk_slice, relative_scale_factor)
-        ]
+            # TODO Note that we need to be blanking out lower res data at the same time
+            yield (
+                np.asarray(zdata),
+                scale,
+                tuple([sl.start for sl in chunk_slice]),
+                world_offset,
+                chunk_slice,
+                texture_slice,
+            )
 
-        print(
-            f"Recursive add on\t{str(next_chunk_slice)} idx {first_priority_idx}",
-            f"visible {point_mask[first_priority_idx]} for scale {scale} to {scale-1}\n",
-            f"Relative scale factor {relative_scale_factor}",
-        )
-        yield from render_sequence(
-            next_chunk_slice,
-            scale=scale - 1,
-            camera=camera,
-            cache_manager=cache_manager,
-            arrays=arrays,
-            chunk_maps=chunk_maps,
-            container=container,
-            dataset=dataset,
-            scale_factors=scale_factors,
-            dtype=dtype,
-        )
+            # Compute the relative scale factor between these layers
+            relative_scale_factor = [
+                this_scale / next_scale
+                for this_scale, next_scale in zip(
+                    scale_factors[scale], scale_factors[scale - 1]
+                )
+            ]
+
+            # now convert the chunk slice to the next scale
+            next_chunk_slice = [
+                slice(st.start * dim_scale, st.stop * dim_scale)
+                for st, dim_scale in zip(chunk_slice, relative_scale_factor)
+            ]
+
+            print(
+                f"Recursive add on\t{str(next_chunk_slice)} idx {priority_idx}",
+                f"visible {point_mask[priority_idx]} for scale {scale} to {scale-1}\n",
+                f"Relative scale factor {relative_scale_factor}",
+            )
+            yield from render_sequence(
+                next_chunk_slice,
+                scale=scale - 1,
+                camera=camera,
+                cache_manager=cache_manager,
+                arrays=arrays,
+                chunk_maps=chunk_maps,
+                container=container,
+                dataset=dataset,
+                scale_factors=scale_factors,
+                dtype=dtype,
+            )
 
 
 # TODO consider filling these chunks into a queue and processing them in batches
@@ -536,10 +551,6 @@ def update_chunk(
 
     texture = volume._texture
 
-    # Translate the layer we're rendering to the right place
-    # TODO: this is called too many times. we only need to call it once for each time it changes
-    layer.translate = node_offset
-
     new_texture_data = np.asarray(
         data,
         dtype=dtype,
@@ -549,14 +560,23 @@ def update_chunk(
 
     # TODO explore efficiency of either approach, or maybe even an alternative
     # Writing a texture with an offset is slower
-    # texture.set_data(new_texture_data, offset=texture_offset)    
+    # texture.set_data(new_texture_data, offset=texture_offset)
     texture.set_data(np.asarray(layer.data))
 
     volume.update()
 
+    # Translate the layer we're rendering to the right place
+    # TODO: this is called too many times. we only need to call it once for each time it changes
+    # Note: this can trigger a refresh, we should do it after setting data to not trigger an
+    #       extra materialization with
+    layer.translate = node_offset
+
     toc = time.perf_counter()
-    
-    LOGGER.debug(f"update_chunk {scale} {array_offset} with size {new_texture_data.shape} took {toc - tic:0.4f} seconds")
+
+    LOGGER.debug(
+        f"update_chunk {scale} {array_offset} with size {new_texture_data.shape} took {toc - tic:0.4f} seconds"
+    )
+
 
 @tz.curry
 def add_subnodes(
@@ -762,9 +782,9 @@ if __name__ == '__main__' and True:
     # Chunked, multiscale data
 
     # These datasets have worked at one point in time
-    large_image = openorganelle_mouse_kidney_labels()
+    # large_image = openorganelle_mouse_kidney_labels()
     # large_image = idr0044A()
-    # large_image = luethi_zenodo_7144919()
+    large_image = luethi_zenodo_7144919()
 
     # These datasets need testing
 
@@ -879,7 +899,6 @@ if __name__ == '__main__' and True:
         yappi.stop()
         stats = yappi.get_func_stats()
         stats.sort("name", "desc").print_all()
-
 
     @viewer.bind_key("k")
     def camera_response(event):
