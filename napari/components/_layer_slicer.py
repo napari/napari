@@ -123,7 +123,7 @@ class _LayerSlicer:
         *,
         layers: Iterable[Layer],
         dims: Dims,
-        _refresh_sync: bool = False,
+        force: bool = False,
     ) -> Optional[Future[dict]]:
         """Slices the given layers with the given dims.
 
@@ -144,11 +144,9 @@ class _LayerSlicer:
             The layers to slice.
         dims: Dims
             The dimensions values associated with the view to be sliced.
-        _refresh_sync: bool
-            True if when forcing synchronous slicing, `refresh` should be used
-            instead of `_slice_dims`. False otherwise. The leading underscore
-            indicates that this is a temporary parameter that will be removed
-            after old-style slicing is removed.
+        force: bool
+            True if slicing should be forced to occur, even when some cache thinks
+            it already has a valid slice ready. False otherwise.
 
         Returns
         -------
@@ -184,10 +182,9 @@ class _LayerSlicer:
 
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
-            if _refresh_sync:
-                layer.refresh()
-            else:
-                layer._slice_dims(dims.point, dims.ndisplay, dims.order)
+            layer._slice_dims(
+                dims.point, dims.ndisplay, dims.order, force=force
+            )
 
         return task
 
@@ -218,7 +215,9 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
-        return {layer: request() for layer, request in requests.items()}
+        result = {layer: request() for layer, request in requests.items()}
+        self.events.ready(Event('ready', value=result))
+        return result
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
         """
@@ -232,8 +231,6 @@ class _LayerSlicer:
         if task.cancelled():
             logger.debug('Cancelled task')
             return
-        result = task.result()
-        self.events.ready(Event('ready', value=result))
 
     def _try_to_remove_task(self, task: Future[Dict]) -> bool:
         """

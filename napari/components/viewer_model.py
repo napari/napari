@@ -381,7 +381,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_layer_reslice(self, event: Event) -> None:
         self._layer_slicer.submit(
-            layers=[event.layer], dims=self.dims, _refresh_sync=True
+            layers=[event.layer], dims=self.dims, force=True
         )
 
     def _update_layers(self, *, layers=None):
