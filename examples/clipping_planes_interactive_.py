@@ -7,11 +7,12 @@ for moving the plane
 
 .. tags:: experimental
 """
-import napari
 import numpy as np
-from skimage import data
 from scipy import ndimage
+from skimage import data
 from vispy.geometry import create_sphere
+
+import napari
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -188,11 +189,11 @@ def shift_plane_along_normal(viewer, event):
 viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
-viewer.text_overlay.update(dict(
-    text='Drag the clipping plane surface to move it along its normal.',
-    font_size=20,
-    visible=True,
-))
+viewer.text_overlay.update({
+    "text": 'Drag the clipping plane surface to move it along its normal.',
+    "font_size": 20,
+    "visible": True,
+})
 
 if __name__ == '__main__':
     napari.run()

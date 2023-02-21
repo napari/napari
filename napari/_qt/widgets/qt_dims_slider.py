@@ -1,4 +1,5 @@
 from typing import Optional, Tuple
+from weakref import ref
 
 import numpy as np
 from qtpy.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
@@ -41,7 +42,7 @@ class QtDimSliderWidget(QWidget):
     play_started = Signal()
     play_stopped = Signal()
 
-    def __init__(self, parent: QWidget, axis: int):
+    def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims = parent
@@ -413,10 +414,9 @@ class QtDimSliderWidget(QWidget):
             _start_thread=True,
             _connect={'frame_requested': self.qt_dims._set_frame},
         )
-        worker.finished.connect(self.qt_dims.cleaned_worker)
+        thread.finished.connect(self.qt_dims.cleaned_worker)
         thread.finished.connect(self.play_stopped)
         self.play_started.emit()
-        self.thread = thread
         return worker, thread
 
 
@@ -433,7 +433,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     editingFinished and when the user clicks on the spin buttons.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, *kwargs)
         self.valueChanged.connect(self.custom_change_event)
 
@@ -488,9 +488,11 @@ class QtPlayButton(QPushButton):
 
     play_requested = Signal(int)  # axis, fps
 
-    def __init__(self, dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP):
+    def __init__(
+        self, qt_dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP
+    ) -> None:
         super().__init__()
-        self.dims = dims
+        self.qt_dims_ref = ref(qt_dims)
         self.axis = axis
         self.reverse = reverse
         self.fps = fps
@@ -553,8 +555,11 @@ class QtPlayButton(QPushButton):
 
     def _on_click(self):
         """Toggle play/stop animation control."""
+        qt_dims = self.qt_dims_ref()
+        if not qt_dims:  # pragma: no cover
+            return
         if self.property('playing') == "True":
-            return self.dims.stop()
+            return qt_dims.stop()
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
@@ -581,7 +586,7 @@ class AnimationWorker(QObject):
     finished = Signal()
     started = Signal()
 
-    def __init__(self, slider):
+    def __init__(self, slider) -> None:
         # FIXME there are attributes defined outsid of __init__.
         super().__init__()
         self._interval = 1
@@ -739,8 +744,6 @@ class AnimationWorker(QObject):
                 return self.finish()
         with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
-        # using a singleShot timer here instead of timer.start() because
-        # it makes it easier to update the interval using signals/slots
         self.timer.start()
 
     def finish(self):

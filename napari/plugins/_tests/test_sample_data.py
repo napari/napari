@@ -11,7 +11,6 @@ from napari.viewer import ViewerModel
 
 
 def test_sample_hook(builtins, tmp_plugin: DynamicPlugin):
-
     viewer = ViewerModel()
     NAME = tmp_plugin.name
     KEY = 'random data'

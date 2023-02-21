@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Final, Optional
 
-from app_model.expressions import Context
+from app_model.expressions import Context, get_context
 from app_model.expressions import create_context as _create_context
-from app_model.expressions import get_context
 
 from napari.utils.translations import trans
 
@@ -22,7 +21,7 @@ class SettingsAwareContext(Context):
 
     _PREFIX: Final[str] = 'settings.'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         from napari.settings import get_settings
 

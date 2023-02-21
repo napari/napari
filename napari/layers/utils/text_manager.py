@@ -92,7 +92,7 @@ class TextManager(EventedModel):
 
     def __init__(
         self, text=None, properties=None, n_text=None, features=None, **kwargs
-    ):
+    ) -> None:
         if n_text is not None:
             _warn_about_deprecated_n_text_parameter()
         if properties is not None:
@@ -136,7 +136,7 @@ class TextManager(EventedModel):
         self.events.values()
         self.color._apply(features)
         # Trigger the main event for vispy layers.
-        self.events(Event(type='refresh'))
+        self.events(Event(type_name='refresh'))
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values

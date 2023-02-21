@@ -24,6 +24,7 @@ class WidgetBuilder:
         },
         "object": {
             "object": widgets.ObjectSchemaWidget,
+            "horizontal_object": widgets.HorizontalObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,

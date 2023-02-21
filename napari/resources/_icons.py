@@ -141,7 +141,6 @@ def write_colorized_svgs(
     opacities: Iterable[float] = (1.0,),
     theme_override: Optional[Dict[str, str]] = None,
 ):
-
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
     svgs = generate_colorized_svgs(
@@ -166,7 +165,11 @@ def build_theme_svgs(theme_name: str, source) -> str:
         svg_paths=ICONS.values(),
         colors=[(theme_name, 'icon')],
         opacities=(0.5, 1),
-        theme_override={'warning': 'warning', 'logo_silhouette': 'background'},
+        theme_override={
+            'warning': 'warning',
+            'error': 'error',
+            'logo_silhouette': 'background',
+        },
     )
     with (out / PLUGIN_FILE_NAME).open('w') as f:
         f.write(source)

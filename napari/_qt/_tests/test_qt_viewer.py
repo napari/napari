@@ -65,9 +65,26 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     assert view.dockConsole.widget() is view.console
 
 
+@skip_local_popups
+@pytest.mark.skipif(os.environ.get("MIN_REQ", "0") == "1", reason="min req")
+def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
+    """Test console has focus when instantiating from viewer."""
+    viewer = make_napari_viewer(show=True)
+    view = viewer.window._qt_viewer
+    assert not view.console.hasFocus(), "console has focus before being shown"
+
+    view.toggle_console_visibility(None)
+
+    def console_has_focus():
+        assert (
+            view.console.hasFocus()
+        ), "console does not have focus when shown"
+
+    qtbot.waitUntil(console_has_focus)
+
+
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
-
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
 
@@ -351,15 +368,15 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
 
     # ensure the flash effect is applied
     assert (
-        viewer.window._qt_viewer._canvas_overlay.graphicsEffect() is not None
+        viewer.window._qt_viewer._welcome_widget.graphicsEffect() is not None
     )
     assert hasattr(
-        viewer.window._qt_viewer._canvas_overlay, "_flash_animation"
+        viewer.window._qt_viewer._welcome_widget, "_flash_animation"
     )
     qtbot.wait(500)  # wait for the animation to finish
-    assert viewer.window._qt_viewer._canvas_overlay.graphicsEffect() is None
+    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
     assert not hasattr(
-        viewer.window._qt_viewer._canvas_overlay, "_flash_animation"
+        viewer.window._qt_viewer._welcome_widget, "_flash_animation"
     )
 
     # clear clipboard and grab image from application view
@@ -398,9 +415,9 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert not clipboard_image.isNull()
 
     # ensure the flash effect is not applied
-    assert viewer.window._qt_viewer._canvas_overlay.graphicsEffect() is None
+    assert viewer.window._qt_viewer._welcome_widget.graphicsEffect() is None
     assert not hasattr(
-        viewer.window._qt_viewer._canvas_overlay, "_flash_animation"
+        viewer.window._qt_viewer._welcome_widget, "_flash_animation"
     )
 
     # clear clipboard and grab image from application view
@@ -498,9 +515,9 @@ def test_memory_leaking(qtbot, make_napari_viewer):
     assert labels() is None
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_image(qtbot, make_napari_viewer):
-
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
     dr = weakref.ref(lr().data)
@@ -513,6 +530,7 @@ def test_leaks_image(qtbot, make_napari_viewer):
     assert not dr()
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_leaks_labels(qtbot, make_napari_viewer):
     viewer = make_napari_viewer(show=True)

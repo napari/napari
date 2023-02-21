@@ -30,8 +30,7 @@ class QtDims(QWidget):
         List of slider widgets.
     """
 
-    def __init__(self, dims: Dims, parent=None):
-
+    def __init__(self, dims: Dims, parent=None) -> None:
         super().__init__(parent=parent)
 
         self.SLIDERHEIGHT = 22
@@ -103,7 +102,7 @@ class QtDims(QWidget):
         self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
-        for (axis, widget) in widgets:
+        for axis, widget in widgets:
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
@@ -196,7 +195,7 @@ class QtDims(QWidget):
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
-        for slider_num in range(number_of_sliders, self.nsliders):
+        for _slider_num in range(number_of_sliders, self.nsliders):
             self._remove_slider_widget(0)
 
     def _remove_slider_widget(self, index):
@@ -309,7 +308,6 @@ class QtDims(QWidget):
 
     @Slot()
     def cleaned_worker(self):
-        print("aaaa")
         self._animation_thread = None
         self._animation_worker = None
         self.enable_play()
@@ -317,7 +315,20 @@ class QtDims(QWidget):
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
-        return self._animation_thread and self._animation_thread.isRunning()
+        try:
+            return (
+                self._animation_thread and self._animation_thread.isRunning()
+            )
+        except RuntimeError as e:  # pragma: no cover
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                # checking if threat is partially deleted. Otherwise
+                # reraise exception. For more details see:
+                # https://github.com/napari/napari/pull/5499
+                raise
+            return False
 
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`.

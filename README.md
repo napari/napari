@@ -13,6 +13,7 @@
 [![Development Status](https://img.shields.io/pypi/status/napari.svg)](https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 [![DOI](https://zenodo.org/badge/144513571.svg)](https://zenodo.org/badge/latestdoi/144513571)
+[![NEP29](https://raster.shields.io/badge/Follows-NEP29-brightgreen.png)](https://numpy.org/neps/nep-0029-deprecation_policy.html)
 
 **napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
 
@@ -47,7 +48,8 @@ import napari
 viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
-![napari viewer showing an image of an astronaut.](https://github.com/napari/docs/blob/main/docs/images/screenshot-add-image.png)
+![napari viewer with a multichannel image of cells displayed as two image layers: nuclei and membrane.](https://github.com/napari/docs/blob/main/docs/images/multichannel_cells.png)
+
 
 To use napari from inside a script, use `napari.run()`:
 
