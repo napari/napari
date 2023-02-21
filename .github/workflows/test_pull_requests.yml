@@ -76,16 +76,16 @@ jobs:
             backend: pyqt5
           # minimum specified requirements
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             toxenv: async-pyqt5-py38-linux
           # test without any Qt backends
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             toxenv: headless-py38-linux
           - python: 3.9
             platform: ubuntu-latest
