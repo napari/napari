@@ -501,7 +501,7 @@ def render_sequence(
 
     # recurse on best priorities
     if scale > 0:
-        # The next priorities for loading in higher resolution on are the best ones
+        # The next priorities for loading in higher resolution are the best ones
         for priority_idx in best_priorities:
             # Get the coordinates of the chunk for next scale
             priority_coord = tuple(points[priority_idx])
