@@ -201,10 +201,7 @@ def add_path_polygon(layer, event):
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if layer._mode == Mode.ADD_POLYGON:
-            new_type = Polygon
-        else:
-            new_type = None
+        new_type = Polygon if layer._mode == Mode.ADD_POLYGON else None
         vertices = layer._data_view.shapes[index].data
         vertices = np.concatenate((vertices, [coordinates]), axis=0)
         # Change the selected vertex
@@ -522,10 +519,7 @@ def _move(layer, coordinates):
                 # DIRECT vertex moving of ellipse not implemented
                 pass
             else:
-                if shape_type == Rectangle:
-                    new_type = Polygon
-                else:
-                    new_type = None
+                new_type = Polygon if shape_type == Rectangle else None
                 vertices = layer._data_view.shapes[index].data
                 vertices[vertex] = coordinates
                 layer._data_view.edit(index, vertices, new_type=new_type)

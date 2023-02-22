@@ -303,10 +303,7 @@ class OctreeLoader:
 
         # If the ideal chunk is in memory then we'll want to draw that one
         # too though
-        if ideal_chunk.in_memory:
-            best_in_memory_chunk = [ideal_chunk]
-        else:
-            best_in_memory_chunk = []
+        best_in_memory_chunk = [ideal_chunk] if ideal_chunk.in_memory else []
 
         # First get any direct children which are in memory. Do not create
         # OctreeChunks or use children that are not already in memory

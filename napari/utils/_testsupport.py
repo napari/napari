@@ -50,7 +50,7 @@ def fail_obj_graph(Klass):
     except ModuleNotFoundError:
         return
 
-    if not len(Klass._instances) == 0:
+    if len(Klass._instances) != 0:
         global COUNTER
         COUNTER += 1
         import gc
