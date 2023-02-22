@@ -1,4 +1,6 @@
-from typing import Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from skimage.draw import line, polygon2mask
@@ -7,6 +9,9 @@ from vispy.visuals.tube import _frenet_frames
 
 from napari.layers.utils.layer_utils import segment_normal
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 try:
     # see https://github.com/vispy/vispy/issues/1029
@@ -1144,3 +1149,70 @@ def validate_num_vertices(
                     shape_length=len(shape),
                 )
             )
+
+
+def perpendicular_distance(
+    point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
+) -> npt.float:
+    """Function to calculate the perpendicular distance of a point to a given euclidean line defined
+    by 2 points, line_start and line_end. Works up to any dimension
+
+    Parameters
+    ---------
+    point : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  which is part of a polygon shape.
+    line_start : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the starting point of a line.
+    line_end : np.ndarray
+        A point defined by a numpy array of shape (viewer.ndims,)  used to define the end point of a line.
+
+    Returns
+    -------
+    np.float
+        A float number representing the distance of point to a euclidean line defined by line_start and line_end.
+    """
+
+    if np.array_equal(line_start, line_end):
+        return np.linalg.norm(point - line_start)
+    else:
+        t = np.dot(point - line_end, line_start - line_end) / np.dot(
+            line_start - line_end, line_start - line_end
+        )
+        return np.linalg.norm(t * (line_start - line_end) + line_end - point)
+
+
+def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
+    """
+    Implementation of the Ramer-Douglas-Peucker algorithm based on:
+    https://github.com/fhirschmann/rdp/blob/master/rdp. This algorithm reduces the amounts of points in a polyline or
+    in this case reduces the number of vertices in a polygon shape.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    epsilon : float
+        A float representing the maximum distance threshold. When the perpendicular distance of a point to a given line
+        is higher, subsequent refinement occurs.
+
+    Returns
+    -------
+    np.ndarray
+        A numpy array of shape (n, viewer.ndims) containing the vertices of a polygon shape.
+    """
+    max_distance_index = -1
+    max_distance = 0.0
+
+    for i in range(1, vertices.shape[0]):
+        d = perpendicular_distance(vertices[i], vertices[0], vertices[-1])
+        if d > max_distance:
+            max_distance_index = i
+            max_distance = d
+
+    if max_distance > epsilon:
+        l1 = rdp(vertices[:max_distance_index], epsilon)
+        l2 = rdp(vertices[max_distance_index:], epsilon)
+        return np.vstack((l1[:-1], l2))
+
+    else:
+        return np.vstack((vertices[0], vertices[-1]))

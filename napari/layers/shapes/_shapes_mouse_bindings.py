@@ -1,6 +1,7 @@
-import datetime
+from __future__ import annotations
+
 from copy import copy
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -12,9 +13,12 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
-from napari.layers.shapes._shapes_utils import point_to_lines
+from napari.layers.shapes._shapes_utils import point_to_lines, rdp
 
-_last_time_point_added_smooth_lasso: Optional[datetime.datetime] = None
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
+_last_cursor_position: Optional[npt.NDArray] = None
 
 
 def highlight(layer, event):
@@ -204,6 +208,10 @@ def add_path_polygon(layer, event):
         layer._is_creating = True
         layer._set_highlight()
     elif event.type == 'mouse_press' and layer._mode == Mode.ADD_POLYGON_LASSO:
+        index = layer._moving_value[0]
+        vertices = layer._data_view.shapes[index].data
+        vertices = rdp(vertices, epsilon=0.5)
+        layer._data_view.edit(index, vertices, new_type=Polygon)
         finish_drawing_shape(layer, event)
     else:
         # Add to an existing path or polygon
@@ -239,17 +247,15 @@ def add_path_polygon_lasso_creating(layer, event):
         coordinates = layer.world_to_data(event.position)
         _move(layer, coordinates)
 
-        now = datetime.datetime.now()
-        MAX_POINTS_PER_SECOND = 60
-        global _last_time_point_added_smooth_lasso
-        if _last_time_point_added_smooth_lasso is not None:
-            time_diff = now - _last_time_point_added_smooth_lasso
-            if (
-                time_diff.seconds < 1
-                and time_diff.microseconds < 1e6 / MAX_POINTS_PER_SECOND
-            ):
+        global _last_cursor_position
+        if _last_cursor_position is not None:
+            # TODO: fix issue when annotating 2d and later 3d  operands could not be broadcast together with shapes ...
+            position_diff = np.linalg.norm(
+                event.position - _last_cursor_position
+            )
+            if position_diff < 5:
                 return
-        _last_time_point_added_smooth_lasso = now
+        _last_cursor_position = np.array(event.position)
         add_path_polygon(layer, event)
 
 
