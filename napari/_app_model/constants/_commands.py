@@ -110,15 +110,15 @@ _COMMAND_INFO = {
     CommandId.TOGGLE_VIEWER_SCALE_BAR_TICKS: _i(trans._('Scale Bar Ticks')),
 
     # Help menubar
-    CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started') ),
-    CommandId.NAPARI_TUTORIALS: _i(trans._('Tutorials') ),
-    CommandId.NAPARI_LAYERS_GUIDE: _i(trans._('Using Layers Guides') ),
-    CommandId.NAPARI_EXAMPLES: _i(trans._('Examples Gallery') ),
-    CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes') ),
-    CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage') ),
-    CommandId.NAPARI_INFO: _i(trans._('napari Info') ),
-    CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub') ),
-    CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...') ),
+    CommandId.NAPARI_GETTING_STARTED: _i(trans._('Getting started')),
+    CommandId.NAPARI_TUTORIALS: _i(trans._('Tutorials')),
+    CommandId.NAPARI_LAYERS_GUIDE: _i(trans._('Using Layers Guides')),
+    CommandId.NAPARI_EXAMPLES: _i(trans._('Examples Gallery')),
+    CommandId.NAPARI_RELEASE_NOTES: _i(trans._('Release Notes')),
+    CommandId.NAPARI_HOMEPAGE: _i(trans._('napari homepage')),
+    CommandId.NAPARI_INFO: _i(trans._('napari Info')),
+    CommandId.NAPARI_GITHUB_ISSUE: _i(trans._('Report an issue on GitHub')),
+    CommandId.TOGGLE_BUG_REPORT_OPT_IN: _i(trans._('Bug Reporting Opt In/Out...')),
 
     # Layer menubar
     CommandId.LAYER_DUPLICATE: _i(trans._('Duplicate Layer')),
