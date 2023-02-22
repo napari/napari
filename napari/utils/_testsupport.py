@@ -88,11 +88,8 @@ def napari_plugin_manager(monkeypatch):
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
     monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
-    try:
+    with suppress(AttributeError):
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    except AttributeError:  # headless tests
-        pass
-
     # prevent discovery of plugins in the environment
     # you can still use `pm.register` to explicitly register something.
     pm.discovery_blocker = patch.object(pm, 'discover')
