@@ -309,16 +309,8 @@ def vertex_remove(layer, event):
         # Removing vertex from ellipse not implemented
         return
     vertices = layer._data_view.shapes[shape_under_cursor].data
-    if len(vertices) <= 2:
+    if len(vertices) <= 2 or (shape_type == Polygon and len(vertices) == 3):
         # If only 2 vertices present, remove whole shape
-        with layer.events.set_data.blocker():
-            if shape_under_cursor in layer.selected_data:
-                layer.selected_data.remove(shape_under_cursor)
-            layer._data_view.remove(shape_under_cursor)
-            shapes = layer.selected_data
-            layer._selected_box = layer.interaction_box(shapes)
-    elif shape_type == Polygon and len(vertices) == 3:
-        # If only 3 vertices of a polygon present remove
         with layer.events.set_data.blocker():
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
