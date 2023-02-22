@@ -692,11 +692,10 @@ def find_front_back_face(
                 click_pos, view_dir, bbox_face_coords[k]
             ):
                 front_face_normal = v
-        elif (np.dot(view_dir, v) + 0.001) > 0:
-            if line_in_quadrilateral_3d(
-                click_pos, view_dir, bbox_face_coords[k]
-            ):
-                back_face_normal = v
+        elif (np.dot(view_dir, v) + 0.001) > 0 and line_in_quadrilateral_3d(
+            click_pos, view_dir, bbox_face_coords[k]
+        ):
+            back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
             break

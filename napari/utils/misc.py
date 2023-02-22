@@ -232,17 +232,18 @@ def ensure_sequence_of_iterables(
         and is_sequence(obj)
         and all(is_iterable(el, allow_none=allow_none) for el in obj)
     ):
-        if length is not None and len(obj) != length:
-            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
-                # sequence of iterables of wrong length
-                raise ValueError(
-                    trans._(
-                        "length of {obj} must equal {length}",
-                        deferred=True,
-                        obj=obj,
-                        length=length,
-                    )
+        if (length is not None and len(obj) != length) and (
+            (len(obj) == 0 and not repeat_empty) or len(obj) > 0
+        ):
+            # sequence of iterables of wrong length
+            raise ValueError(
+                trans._(
+                    "length of {obj} must equal {length}",
+                    deferred=True,
+                    obj=obj,
+                    length=length,
                 )
+            )
 
         if len(obj) > 0 or not repeat_empty:
             return obj

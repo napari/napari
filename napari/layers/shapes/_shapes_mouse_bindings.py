@@ -501,20 +501,20 @@ def _move(layer, coordinates):
                 )
             layer._rotate_box(angle, center=layer._fixed_vertex)
             layer.refresh()
-    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
-        if vertex is not None:
-            layer._moving_coordinates = coordinates
-            layer._is_moving = True
-            index = layer._moving_value[0]
-            shape_type = type(layer._data_view.shapes[index])
-            if shape_type == Ellipse:
-                # DIRECT vertex moving of ellipse not implemented
-                pass
-            else:
-                new_type = Polygon if shape_type == Rectangle else None
-                vertices = layer._data_view.shapes[index].data
-                vertices[vertex] = coordinates
-                layer._data_view.edit(index, vertices, new_type=new_type)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
-                layer.refresh()
+    elif (
+        layer._mode in {Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON}
+        and vertex is not None
+    ):
+        layer._moving_coordinates = coordinates
+        layer._is_moving = True
+        index = layer._moving_value[0]
+        shape_type = type(layer._data_view.shapes[index])
+        if shape_type != Ellipse:
+            # not DIRECT vertex moving of ellipse not implemented
+            new_type = Polygon if shape_type == Rectangle else None
+            vertices = layer._data_view.shapes[index].data
+            vertices[vertex] = coordinates
+            layer._data_view.edit(index, vertices, new_type=new_type)
+            shapes = layer.selected_data
+            layer._selected_box = layer.interaction_box(shapes)
+            layer.refresh()
