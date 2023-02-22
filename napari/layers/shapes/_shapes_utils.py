@@ -1155,7 +1155,7 @@ def perpendicular_distance(
     point: npt.NDArray, line_start: npt.NDArray, line_end: npt.NDArray
 ) -> npt.float:
     """Function to calculate the perpendicular distance of a point to a given euclidean line defined
-    by 2 points, line_start and line_end
+    by 2 points, line_start and line_end. Works up to any dimension
 
     Parameters
     ---------
@@ -1175,9 +1175,10 @@ def perpendicular_distance(
     if np.array_equal(line_start, line_end):
         return np.linalg.norm(point - line_start)
     else:
-        return abs(
-            np.linalg.norm(np.cross(line_end - line_start, point - line_start))
-        ) / np.linalg.norm(line_end - line_start)
+        t = np.dot(point - line_end, line_start - line_end) / np.dot(
+            line_start - line_end, line_start - line_end
+        )
+        return np.linalg.norm(t * (line_start - line_end) + line_end - point)
 
 
 def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
