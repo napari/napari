@@ -2366,9 +2366,7 @@ class Shapes(Layer):
                 # If in select mode just show the interaction boudning box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
-                if self._value[0] is None:
-                    face_color = 'white'
-                elif self._value[1] is None:
+                if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
@@ -2399,9 +2397,7 @@ class Shapes(Layer):
                 if self._mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
 
-                if self._value[0] is None:
-                    face_color = 'white'
-                elif self._value[1] is None:
+                if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
