@@ -297,6 +297,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
             # emit events for any dependent computed properties as well
             for dep in before_deps:
+                # NOTE: this comparison might be expensive! If it is too much, we
+                #       can always remove the are_equal check and fire events for
+                #       all dependents indiscriminately
+                are_equal = pick_equality_operator(after_deps[dep])
                 if not are_equal(after_deps[dep], before_deps[dep]):
                     getattr(self.events, dep)(value=after_deps[dep])
 

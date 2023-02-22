@@ -463,7 +463,7 @@ class T(EventedModel):
 def test_evented_model_with_property_setters():
     t = T()
 
-    assert list(T.__property_setters__) == ['c', 'd', 'e']
+    assert list(T.__properties__) == ['c', 'd', 'e']
     # the metaclass should have figured out that both a and b affect c
     assert T.__field_dependents__ == {'a': {'c', 'd', 'e'}, 'b': {'c', 'd'}}
 
@@ -478,8 +478,9 @@ def test_evented_model_with_property_setters():
     t.d = 4
     assert t.a == 2
     assert t.b == 2
-    t.e = 100
-    assert t.a == 10
+
+    with pytest.raises(AttributeError):
+        t.e = 100
 
 
 @pytest.fixture()
