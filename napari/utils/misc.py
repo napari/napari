@@ -68,6 +68,9 @@ def running_as_bundled_app(*, check_conda=True) -> bool:
     except AttributeError:
         return False
 
+    if app_module is None:
+        return False
+
     try:
         metadata = importlib.metadata.metadata(app_module)
     except importlib.metadata.PackageNotFoundError:
@@ -85,9 +88,11 @@ def running_as_constructor_app() -> bool:
 
 def bundle_bin_dir() -> Optional[str]:
     """Return path to briefcase app_packages/bin if it exists."""
-    bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')
-    if os_path.isdir(bin):
-        return bin
+    bin_path = os_path.join(
+        os_path.dirname(sys.exec_prefix), 'app_packages', 'bin'
+    )
+    if os_path.isdir(bin_path):
+        return bin_path
 
 
 def in_jupyter() -> bool:
@@ -275,7 +280,7 @@ class StringEnumMeta(EnumMeta):
         *,
         module=None,
         qualname=None,
-        type=None,
+        type=None,  # noqa: A002
         start=1,
     ):
         """set the item value case to lowercase for value lookup"""

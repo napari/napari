@@ -173,7 +173,7 @@ class Viewer(ViewerModel):
 
         """
         # copy to not iterate while changing.
-        viewers = [v for v in cls._instances]
+        viewers = list(cls._instances)
         ret = len(viewers)
         for viewer in viewers:
             viewer.close()

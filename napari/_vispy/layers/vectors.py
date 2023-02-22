@@ -18,7 +18,6 @@ class VispyVectorsLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-
         # Make meshes
         vertices, faces = generate_vector_meshes(
             self.layer._view_data,
