@@ -13,7 +13,7 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
-from napari.layers.shapes._shapes_utils import point_to_lines
+from napari.layers.shapes._shapes_utils import point_to_lines, rdp
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -208,6 +208,10 @@ def add_path_polygon(layer, event):
         layer._is_creating = True
         layer._set_highlight()
     elif event.type == 'mouse_press' and layer._mode == Mode.ADD_POLYGON_LASSO:
+        index = layer._moving_value[0]
+        vertices = layer._data_view.shapes[index].data
+        vertices = rdp(vertices, epsilon=0.5)
+        layer._data_view.edit(index, vertices, new_type=Polygon)
         finish_drawing_shape(layer, event)
     else:
         # Add to an existing path or polygon
@@ -245,8 +249,9 @@ def add_path_polygon_lasso_creating(layer, event):
 
         global _last_cursor_position
         if _last_cursor_position is not None:
-            position_diff = (
-                sum((event.position - _last_cursor_position) ** 2) ** 0.5
+            # TODO: fix issue when annotating 2d and later 3d  operands could not be broadcast together with shapes ...
+            position_diff = np.linalg.norm(
+                event.position - _last_cursor_position
             )
             if position_diff < 5:
                 return
