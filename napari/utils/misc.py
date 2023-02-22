@@ -154,10 +154,7 @@ def is_iterable(arg, color=False, allow_none=False):
     elif np.isscalar(arg):
         return False
     elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
-            return False
-        else:
-            return True
+        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
     else:
         return True
 
