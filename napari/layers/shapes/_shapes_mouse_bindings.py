@@ -326,7 +326,7 @@ def vertex_remove(layer, event):
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
     else:
-        if shape_type == Rectangle:
+        if shape_type == Rectangle:  # noqa SIM108
             # Deleting vertex from a rectangle creates a polygon
             new_type = Polygon
         else:
