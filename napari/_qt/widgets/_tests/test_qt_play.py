@@ -91,9 +91,8 @@ def test_animation_thread_once(qtbot):
     nframes = 13
     with make_worker(
         qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
-    ) as worker:
-        with qtbot.waitSignal(worker.finished, timeout=8000):
-            worker.work()
+    ) as worker, qtbot.waitSignal(worker.finished, timeout=8000):
+        worker.work()
     assert worker.current == worker.nz
 
 

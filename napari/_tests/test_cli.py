@@ -11,9 +11,10 @@ from napari import __main__
 @pytest.fixture
 def mock_run():
     """mock to prevent starting the event loop."""
-    with mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'):
-        with mock.patch('napari.run'):
-            yield napari.run
+    with mock.patch(
+        'napari._qt.widgets.qt_splash_screen.NapariSplashScreen'
+    ), mock.patch('napari.run'):
+        yield napari.run
 
 
 def test_cli_works(monkeypatch, capsys):
@@ -94,10 +95,11 @@ def test_cli_passes_kwargs(qt_open, mock_run, monkeypatch, make_napari_viewer):
     """test that we can parse layer keyword arg variants"""
     v = make_napari_viewer()
 
-    with mock.patch('napari.Viewer', return_value=v):
-        with monkeypatch.context() as m:
-            m.setattr(sys, 'argv', ['n', 'file', '--name', 'some name'])
-            __main__._run()
+    with mock.patch(
+        'napari.Viewer', return_value=v
+    ), monkeypatch.context() as m:
+        m.setattr(sys, 'argv', ['n', 'file', '--name', 'some name'])
+        __main__._run()
 
     qt_open.assert_called_once_with(
         ['file'],
@@ -116,25 +118,26 @@ def test_cli_passes_kwargs_stack(
     """test that we can parse layer keyword arg variants"""
     v = make_napari_viewer()
 
-    with mock.patch('napari.Viewer', return_value=v):
-        with monkeypatch.context() as m:
-            m.setattr(
-                sys,
-                'argv',
-                [
-                    'n',
-                    'file',
-                    '--stack',
-                    'file1',
-                    'file2',
-                    '--stack',
-                    'file3',
-                    'file4',
-                    '--name',
-                    'some name',
-                ],
-            )
-            __main__._run()
+    with mock.patch(
+        'napari.Viewer', return_value=v
+    ), monkeypatch.context() as m:
+        m.setattr(
+            sys,
+            'argv',
+            [
+                'n',
+                'file',
+                '--stack',
+                'file1',
+                'file2',
+                '--stack',
+                'file3',
+                'file4',
+                '--name',
+                'some name',
+            ],
+        )
+        __main__._run()
 
     qt_open.assert_called_once_with(
         ['file'],
