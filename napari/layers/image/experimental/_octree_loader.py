@@ -189,9 +189,10 @@ class OctreeLoader:
             # The ideal level is priority 0, 1 is one level above idea, etc.
             priority = chunk.location.level_index - ideal_level
 
-            if chunk.in_memory or (
-                chunk.needs_load and self._load_chunk(chunk, priority)
-            ):
+            if chunk.needs_load:
+                self._load_chunk(chunk, priority)
+
+            if chunk.in_memory:
                 drawable.append(chunk)  # It was a sync load, ready to draw.
 
         # Useful for debugging but very spammy.
@@ -349,7 +350,7 @@ class OctreeLoader:
             # Otherwise that the close in memory ancestor
             return children + drawn_ancestors + ancestors
 
-    def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> None:
+    def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> bool:
         """Load the data for one OctreeChunk.
 
         Parameters
