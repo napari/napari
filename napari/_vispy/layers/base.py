@@ -49,6 +49,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+        self.first_visible = False
         self.overlays = {}
 
         (
@@ -106,6 +107,7 @@ class VispyBaseLayer(ABC):
     @order.setter
     def order(self, order):
         self.node.order = order
+        self._on_blending_change()
 
     @abstractmethod
     def _on_data_change(self):
@@ -120,8 +122,38 @@ class VispyBaseLayer(ABC):
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self):
-        blending_kwargs = BLENDING_MODES[self.layer.blending]
+    def _on_blending_change(self, event=None):
+        blending = self.layer.blending
+        blending_kwargs = BLENDING_MODES[blending].copy()
+
+        if self.first_visible:
+            # if the first layer, then we should blend differently
+            # the goal is to prevent pathological blending with canvas
+            # for minimum, use the src color, ignore alpha & canvas
+            if blending == 'minimum':
+                src_color_blending = 'one'
+                dst_color_blending = 'zero'
+            # for additive, use the src alpha and blend to black
+            elif blending == 'additive':
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'zero'
+            # for all others, use translucent blending
+            else:
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'one_minus_src_alpha'
+            blending_kwargs = {
+                "depth_test": blending_kwargs['depth_test'],
+                "cull_face": False,
+                "blend": True,
+                "blend_func": (
+                    src_color_blending,
+                    dst_color_blending,
+                    'one',
+                    'one',
+                ),
+                "blend_equation": 'func_add',
+            }
+
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
