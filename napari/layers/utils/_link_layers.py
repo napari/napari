@@ -16,7 +16,7 @@ from napari.utils.translations import trans
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
 LinkKey = Tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
 Unlinker = Callable[[], None]
-_UNLINKERS: dict[LinkKey, Unlinker] = dict()
+_UNLINKERS: dict[LinkKey, Unlinker] = {}
 _LINKED_LAYERS: DefaultDict[
     ReferenceType[Layer], Set[ReferenceType[Layer]]
 ] = DefaultDict(set)
@@ -108,7 +108,6 @@ def link_layers(
     # now, connect requested attributes between all requested layers.
     links = []
     for (lay1, lay2), attribute in product(permutations(layers, 2), attr_set):
-
         key = _link_key(lay1, lay2, attribute)
         # if the layers and attribute are already linked then ignore
         if key in _UNLINKERS:

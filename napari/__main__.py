@@ -537,6 +537,10 @@ def _maybe_rerun_with_macos_fixes():
         else:  # we assume it must have been launched via '-m' syntax
             cmd = [executable, "-m", "napari"]
 
+        # this fixes issues running from a venv/virtualenv based virtual
+        # environment with certain python distributions (e.g. pyenv, asdf)
+        env["PYTHONEXECUTABLE"] = sys.executable
+
         # Append original command line arguments.
         if len(sys.argv) > 1:
             cmd.extend(sys.argv[1:])

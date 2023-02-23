@@ -185,7 +185,6 @@ class LayerList(SelectableEventedList[Layer]):
         return self._get_extent_world([layer.extent for layer in self])
 
     def _get_min_and_max(self, mins_list, maxes_list):
-
         # Reverse dimensions since it is the last dimensions that are
         # displayed.
         mins_list = [mins[::-1] for mins in mins_list]
@@ -297,7 +296,7 @@ class LayerList(SelectableEventedList[Layer]):
     @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
-        return self.get_extent([x for x in self])
+        return self.get_extent(list(self))
 
     @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:

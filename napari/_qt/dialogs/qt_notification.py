@@ -352,7 +352,6 @@ class NapariQtNotification(QDialog):
     def from_notification(
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
-
         from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):
@@ -392,7 +391,7 @@ class NapariQtNotification(QDialog):
             >= settings.application.gui_notification_level
             and _QtMainWindow.current()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer._canvas_overlay
+            canvas = _QtMainWindow.current()._qt_viewer._welcome_widget
             cls.from_notification(notification, canvas).show()
 
 

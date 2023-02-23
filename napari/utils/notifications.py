@@ -37,7 +37,9 @@ __all__ = [
     'ErrorNotification',
     'WarningNotification',
     'NotificationManager',
+    'show_debug',
     'show_info',
+    'show_warning',
     'show_error',
     'show_console_notification',
 ]
@@ -110,7 +112,7 @@ class Notification(Event):
         **kwargs,
     ) -> None:
         self.severity = NotificationSeverity(severity)
-        super().__init__(type=str(self.severity).lower(), **kwargs)
+        super().__init__(type_name=str(self.severity).lower(), **kwargs)
         self._message = message
         self.actions = actions
 
@@ -330,6 +332,15 @@ class NotificationManager:
 
 
 notification_manager = NotificationManager()
+
+
+def show_debug(message: str):
+    """
+    Show a debug message in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.DEBUG)
+    )
 
 
 def show_info(message: str):
