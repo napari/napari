@@ -32,10 +32,10 @@ def test_signal_blocker(qtbot):
         obj.go()
 
     # make sure blocker works
-    with qt_signals_blocked(obj), pytest.raises(
-        pytestqt.exceptions.TimeoutError
-    ), qtbot.waitSignal(obj.test_signal, timeout=500):
-        obj.go()
+    with qt_signals_blocked(obj):
+        with pytest.raises(pytestqt.exceptions.TimeoutError):
+            with qtbot.waitSignal(obj.test_signal, timeout=500):
+                obj.go()
 
 
 def test_is_qbyte_valid():

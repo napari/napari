@@ -46,8 +46,7 @@ def test_source_context():
 
 def test_source_assert_parent():
     assert current_source() == Source()
-    with pytest.raises(pydantic.error_wrappers.ValidationError), layer_source(
-        parent=''
-    ):
-        current_source()
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        with layer_source(parent=''):
+            current_source()
     assert current_source() == Source()

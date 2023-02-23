@@ -903,12 +903,11 @@ def test_open_or_get_error_no_prefered_plugin_many_available(
 
     get_settings().plugins.extension2reader = {'*.fake': 'not-a-plugin'}
 
-    with pytest.warns(
-        RuntimeWarning, match="Can't find not-a-plugin plugin"
-    ), pytest.raises(
-        MultipleReaderError, match='Multiple plugins found capable'
-    ):
-        viewer._open_or_raise_error(['my_file.fake'])
+    with pytest.warns(RuntimeWarning, match="Can't find not-a-plugin plugin"):
+        with pytest.raises(
+            MultipleReaderError, match='Multiple plugins found capable'
+        ):
+            viewer._open_or_raise_error(['my_file.fake'])
 
 
 def test_open_or_get_error_preferred_fails(builtins, tmp_path):

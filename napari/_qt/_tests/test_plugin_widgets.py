@@ -192,7 +192,6 @@ def test_inject_viewer_proxy(make_napari_viewer):
     assert isinstance(wdg.viewer, PublicOnlyProxy)
 
     # simulate access from outside napari
-    with patch(
-        'napari.utils.misc.ROOT_DIR', new='/some/other/package'
-    ), pytest.warns(FutureWarning):
-        wdg.fail()
+    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
+        with pytest.warns(FutureWarning):
+            wdg.fail()
