@@ -92,7 +92,6 @@ class CallerFrame:
         self.names = ()
 
     def __enter__(self):
-
         frame = inspect.currentframe().f_back
         try:
             # See issue #1635 regarding potential AttributeError

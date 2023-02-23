@@ -155,9 +155,7 @@ class Extension2ReaderTable(QWidget):
         if '*' in reader_patterns:
             tooltip_text = trans._('Accepts all')
         else:
-            reader_patterns_formatted = ', '.join(
-                sorted(list(reader_patterns))
-            )
+            reader_patterns_formatted = ', '.join(sorted(reader_patterns))
             tooltip_text = trans._(
                 'Accepts: {reader_patterns_formatted}',
                 reader_patterns_formatted=reader_patterns_formatted,

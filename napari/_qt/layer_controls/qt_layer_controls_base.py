@@ -150,7 +150,6 @@ class QtLayerControls(QFrame):
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only.
         """
-        pass
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)

@@ -6,7 +6,10 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.utils import disable_with_opacity, qt_signals_blocked
+from napari._qt.utils import (
+    qt_signals_blocked,
+    set_widgets_enabled_with_opacity,
+)
 from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari._qt.widgets.qt_mode_buttons import (
@@ -65,6 +68,8 @@ class QtShapesControls(QtLayerControls):
         Button to add rectangles to shapes layer.
     select_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select shapes.
+    textDispCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if text should be displayed
     vertex_insert_button : qtpy.QtWidgets.QtModeRadioButton
         Button to insert vertex into shape.
     vertex_remove_button : qtpy.QtWidgets.QtModeRadioButton
@@ -91,7 +96,8 @@ class QtShapesControls(QtLayerControls):
         self.layer.events.current_face_color.connect(
             self._on_current_face_color_change
         )
-        self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        self.layer.events.visible.connect(self._on_editable_or_visible_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Orientation.Horizontal)
@@ -241,6 +247,21 @@ class QtShapesControls(QtLayerControls):
             ),
         )
 
+        self._EDIT_BUTTONS = (
+            self.select_button,
+            self.direct_button,
+            self.rectangle_button,
+            self.ellipse_button,
+            self.line_button,
+            self.path_button,
+            self.polygon_button,
+            self.vertex_remove_button,
+            self.vertex_insert_button,
+            self.delete_button,
+            self.move_back_button,
+            self.move_front_button,
+        )
+
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.direct_button)
@@ -252,6 +273,7 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.polygon_button)
         self.button_group.addButton(self.vertex_insert_button)
         self.button_group.addButton(self.vertex_remove_button)
+        self._on_editable_or_visible_change()
 
         button_grid = QGridLayout()
         button_grid.addWidget(self.vertex_remove_button, 0, 2)
@@ -382,10 +404,10 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if text is visible.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of textDispCheckBox
         """
-        self.layer.text.visible = state == Qt.CheckState.Checked
+        self.layer.text.visible = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def _on_text_visibility_change(self):
         """Receive layer model text visibiltiy change change event and update checkbox."""
@@ -409,25 +431,15 @@ class QtShapesControls(QtLayerControls):
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_editable_change(self):
-        """Receive layer model editable change event & enable/disable buttons."""
-        disable_with_opacity(
+    def _on_ndisplay_changed(self):
+        self.layer.editable = self.ndisplay == 2
+
+    def _on_editable_or_visible_change(self):
+        """Receive layer model editable/visible change event & enable/disable buttons."""
+        set_widgets_enabled_with_opacity(
             self,
-            [
-                'select_button',
-                'direct_button',
-                'rectangle_button',
-                'ellipse_button',
-                'line_button',
-                'path_button',
-                'polygon_button',
-                'vertex_remove_button',
-                'vertex_insert_button',
-                'delete_button',
-                'move_back_button',
-                'move_front_button',
-            ],
-            self.layer.editable,
+            self._EDIT_BUTTONS,
+            self.layer.editable and self.layer.visible,
         )
 
     def close(self):
