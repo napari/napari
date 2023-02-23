@@ -555,7 +555,7 @@ def test_evented_model_with_provided_dependencies():
             a: int = 1
 
             @property
-            def b(self):
+            def b(self):  # pragma: no cover
                 return self.a * 2
 
             class Config:
@@ -568,7 +568,7 @@ def test_evented_model_with_provided_dependencies():
             a: int = 1
 
             @property
-            def b(self):
+            def b(self):  # pragma: no cover
                 return self.a * 2
 
             class Config:
