@@ -373,6 +373,13 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
             # be valid LAB color coordinates. scikit-image handles this by projecting
             # such coordinates into the colorspace, but will also warn when doing this.
             with warnings.catch_warnings():
+                # skimage 0.20.0rc
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Conversion from CIE-LAB, via XYZ to sRGB color space resulted in',
+                    category=UserWarning,
+                )
+                # skimage <0.20
                 warnings.filterwarnings(
                     action='ignore',
                     message='Color data out of range',
