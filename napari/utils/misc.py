@@ -231,10 +231,9 @@ def ensure_sequence_of_iterables(
         obj is not None
         and is_sequence(obj)
         and all(is_iterable(el, allow_none=allow_none) for el in obj)
+        and (not repeat_empty or len(obj) > 0)
     ):
-        if (length is not None and len(obj) != length) and (
-            (len(obj) == 0 and not repeat_empty) or len(obj) > 0
-        ):
+        if length is not None and len(obj) != length:
             # sequence of iterables of wrong length
             raise ValueError(
                 trans._(
