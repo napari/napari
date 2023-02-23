@@ -66,7 +66,7 @@ class TileGrid:
         The parent of the grid.
     """
 
-    def __init__(self, parent: Node):
+    def __init__(self, parent: Node) -> None:
         self.parent = parent
         self.line = self._create_line()
 

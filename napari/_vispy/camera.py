@@ -17,7 +17,7 @@ class VispyCamera:
         napari dims model.
     """
 
-    def __init__(self, view, camera, dims):
+    def __init__(self, view, camera, dims) -> None:
         self._view = view
         self._camera = camera
         self._dims = dims

@@ -46,8 +46,7 @@ class ShortcutEditor(QWidget):
         parent: QWidget = None,
         description: str = "",
         value: dict = None,
-    ):
-
+    ) -> None:
         super().__init__(parent=parent)
 
         # Flag to not run _set_keybinding method after setting special symbols.
@@ -195,7 +194,6 @@ class ShortcutEditor(QWidget):
         actions = self.key_bindings_strs[layer_str]
 
         if len(actions) > 0:
-
             # Set up table based on number of actions and needed columns.
             self._table.setRowCount(len(actions))
             self._table.setColumnCount(5)
@@ -220,7 +218,6 @@ class ShortcutEditor(QWidget):
 
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
-
                 shortcuts = action_manager._shortcuts.get(action_name, [])
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
@@ -544,7 +541,7 @@ class ShortcutDelegate(QItemDelegate):
 class EditorWidget(QLineEdit):
     """Editor widget set in the delegate column in shortcut table."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
     def event(self, event):
@@ -617,7 +614,7 @@ class ShortcutTranslator(QKeySequenceEdit):
     Convert QKeyEvent into QKeySequence.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.hide()
 

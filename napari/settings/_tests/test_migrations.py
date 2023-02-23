@@ -1,5 +1,5 @@
 import os
-from importlib.metadata import distribution
+from importlib.metadata import PackageNotFoundError, distribution
 from unittest.mock import patch
 
 import pytest
@@ -87,7 +87,7 @@ def test_030_to_040_migration():
     try:
         d = distribution('napari-svg')
         assert 'napari.manifest' in {ep.group for ep in d.entry_points}
-    except Exception:
+    except PackageNotFoundError:
         pytest.fail(
             'napari-svg not present as an npe2 plugin. '
             'This test needs updating'

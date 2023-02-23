@@ -20,21 +20,14 @@ def register_points_mode_action(description):
     return register_layer_attr_action(Points, description, 'mode')
 
 
-@Points.bind_key(KeyCode.Space)
-def hold_to_pan_zoom(layer: Points):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
+@register_points_mode_action(trans._('Transform'))
+def activate_points_transform_mode(layer):
+    layer.mode = Mode.TRANSFORM
 
-        yield
 
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
+@register_points_mode_action(trans._('Pan/zoom'))
+def activate_points_pan_zoom_mode(layer):
+    layer.mode = Mode.PAN_ZOOM
 
 
 @register_points_mode_action(trans._('Add points'))
@@ -47,15 +40,11 @@ def activate_points_select_mode(layer: Points):
     layer.mode = Mode.SELECT
 
 
-@register_points_mode_action(trans._('Pan/zoom'))
-def activate_points_pan_zoom_mode(layer: Points):
-    layer.mode = Mode.PAN_ZOOM
-
-
 points_fun_to_mode = [
+    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_points_transform_mode, Mode.TRANSFORM),
     (activate_points_add_mode, Mode.ADD),
     (activate_points_select_mode, Mode.SELECT),
-    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
 ]
 
 
@@ -106,7 +95,6 @@ def select_all_in_slice(layer: Points):
     trans._("Select all points in the layer."),
 )
 def select_all_data(layer: Points):
-
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()

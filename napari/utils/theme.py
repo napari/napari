@@ -23,9 +23,10 @@ from napari.utils.translations import trans
 try:
     from qtpy import QT_VERSION
 
-    major, minor, *rest = QT_VERSION.split('.')
+    major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
-except Exception:
+    del major, minor, QT_VERSION
+except ImportError:
     use_gradients = False
 
 
@@ -57,7 +58,9 @@ class Theme(EventedModel):
     text : Color
         Color used to display text.
     warning : Color
-        Color used to indicate something is wrong.
+        Color used to indicate something needs attention.
+    error : Color
+        Color used to indicate something is wrong or could stop functionality.
     current : Color
         Color used to highlight Qt widget.
     """
@@ -75,6 +78,7 @@ class Theme(EventedModel):
     text: Color
     icon: Color
     warning: Color
+    error: Color
     current: Color
 
     @validator("syntax_style", pre=True)
@@ -177,14 +181,14 @@ def template(css: str, **theme):
 def get_system_theme() -> str:
     """Return the system default theme, either 'dark', or 'light'."""
     try:
-        id = darkdetect.theme().lower()
-    except Exception:
-        id = "dark"
+        id_ = darkdetect.theme().lower()
+    except AttributeError:
+        id_ = "dark"
 
-    return id
+    return id_
 
 
-def get_theme(id, as_dict=None):
+def get_theme(theme_id, as_dict=None):
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -193,7 +197,7 @@ def get_theme(id, as_dict=None):
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         ID of requested theme.
     as_dict : bool
         Flag to indicate that the old-style dictionary
@@ -206,19 +210,19 @@ def get_theme(id, as_dict=None):
         so that manipulating this theme can be done without
         side effects.
     """
-    if id == "system":
-        id = get_system_theme()
+    if theme_id == "system":
+        theme_id = get_system_theme()
 
-    if id not in _themes:
+    if theme_id not in _themes:
         raise ValueError(
             trans._(
                 "Unrecognized theme {id}. Available themes are {themes}",
                 deferred=True,
-                id=id,
+                id=theme_id,
                 themes=available_themes(),
             )
         )
-    theme = _themes[id]
+    theme = _themes[theme_id]
     _theme = theme.copy()
     if as_dict is None:
         warnings.warn(
@@ -244,12 +248,12 @@ def get_theme(id, as_dict=None):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(id, theme, source):
+def register_theme(theme_id, theme, source):
     """Register a new or updated theme.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of requested theme.
     theme : dict of str: str, Theme
         Theme mapping elements to colors.
@@ -259,20 +263,20 @@ def register_theme(id, theme, source):
     if isinstance(theme, dict):
         theme = Theme(**theme)
     assert isinstance(theme, Theme)
-    _themes[id] = theme
+    _themes[theme_id] = theme
 
-    build_theme_svgs(id, source)
+    build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(id):
+def unregister_theme(theme_id):
     """Remove existing theme.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of the theme to be removed.
     """
-    _themes.pop(id, None)
+    _themes.pop(theme_id, None)
 
 
 def available_themes():
@@ -286,12 +290,12 @@ def available_themes():
     return tuple(_themes) + ("system",)
 
 
-def is_theme_available(id):
+def is_theme_available(theme_id):
     """Check if a theme is available.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of requested theme.
 
     Returns
@@ -299,10 +303,10 @@ def is_theme_available(id):
     bool
         True if the theme is available, False otherwise.
     """
-    if id == "system":
+    if theme_id == "system":
         return True
-    if id not in _themes and _theme_path(id).exists():
-        plugin_name_file = _theme_path(id) / PLUGIN_FILE_NAME
+    if theme_id not in _themes and _theme_path(theme_id).exists():
+        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
         if not plugin_name_file.exists():
             return False
         plugin_name = plugin_name_file.read_text()
@@ -310,7 +314,7 @@ def is_theme_available(id):
             npe2.PluginManager.instance().register(plugin_name)
         _install_npe2_themes(_themes)
 
-    return id in _themes
+    return theme_id in _themes
 
 
 def rebuild_theme_settings():
@@ -335,7 +339,8 @@ DARK = Theme(
     highlight='rgb(106, 115, 128)',
     text='rgb(240, 241, 242)',
     icon='rgb(209, 210, 212)',
-    warning='rgb(153, 18, 31)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(153, 18, 31)',
     current='rgb(0, 122, 204)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
@@ -351,7 +356,8 @@ LIGHT = Theme(
     highlight='rgb(163, 158, 156)',
     text='rgb(59, 58, 57)',
     icon='rgb(107, 105, 103)',
-    warning='rgb(255, 18, 31)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(255, 18, 31)',
     current='rgb(253, 240, 148)',
     syntax_style='default',
     console='rgb(255, 255, 255)',

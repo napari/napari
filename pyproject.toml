@@ -71,16 +71,60 @@ ignore = [
   "napari/resources/icons/_themes/*/*.svg"
 ]
 
-[tool.isort]
-profile = "black"
-line_length = 79
-skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
-
 [tool.ruff]
-line-length = 120
-ignore = ["E501"]
-per-file-ignores = {"napari/_vispy/__init__.py" = ["E402"]}
+line-length = 79
+select = [
+    "E", "F", "W", #flake8
+    "UP", # pyupgrade
+    "I", # isort
+    "YTT", #flake8-2020
+    "TCH", # flake8-type-checing
+    "BLE", # flake8-blind-exception
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "C4", # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+    "G", # flake8-logging-format
+    "PIE", # flake8-pie
+]
+ignore = [
+    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+    "A003" # flake8-builtins - we have class attributes violating these rule
+
+]
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "*vendored*",
+    "*_vendor*",
+]
+
 target-version = "py38"
+fix = true
+
+[tool.ruff.per-file-ignores]
+"napari/_vispy/__init__.py" = ["E402"]
+"**/_tests/*.py" = ["B011"]
+"napari/utils/_testsupport.py" = ["B011"]
+
+[tool.ruff.isort]
+known-first-party=['napari']
 
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:

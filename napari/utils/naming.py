@@ -84,13 +84,14 @@ class CallerFrame:
 
     """
 
-    def __init__(self, skip_predicate: Callable[[int, FrameType], bool]):
+    def __init__(
+        self, skip_predicate: Callable[[int, FrameType], bool]
+    ) -> None:
         self.predicate = skip_predicate
         self.namespace = {}
         self.names = ()
 
     def __enter__(self):
-
         frame = inspect.currentframe().f_back
         try:
             # See issue #1635 regarding potential AttributeError

@@ -9,8 +9,8 @@ Display a 4-D image and points layer and swap the displayed dimensions
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [

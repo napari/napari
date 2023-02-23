@@ -21,11 +21,13 @@ def make_colorbar(cmap, size=(18, 28), horizontal=True):
     """
 
     if horizontal:
-        input = np.linspace(0, 1, size[1])
-        bar = np.tile(np.expand_dims(input, 1), size[0]).transpose((1, 0))
+        basic_values = np.linspace(0, 1, size[1])
+        bar = np.tile(np.expand_dims(basic_values, 1), size[0]).transpose(
+            (1, 0)
+        )
     else:
-        input = np.linspace(0, 1, size[0])
-        bar = np.tile(np.expand_dims(input, 1), size[1])
+        basic_values = np.linspace(0, 1, size[0])
+        bar = np.tile(np.expand_dims(basic_values, 1), size[1])
 
     color_array = cmap.map(bar.ravel())
     cbar = color_array.reshape(bar.shape + (4,))
