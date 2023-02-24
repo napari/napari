@@ -1,26 +1,24 @@
 import itertools
 import logging
 import sys
-
 import time
 
 import dask.array as da
 import numpy as np
-import pandas as pd
 import toolz as tz
 from cachey import Cache
-
-# from https://github.com/janelia-cosem/fibsem-tools
-#   pip install fibsem-tools
 from fibsem_tools.io import read_xarray
 from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
-
 from superqt import ensure_main_thread
+
 import napari
 from napari.qt.threading import thread_worker
+
+# from https://github.com/janelia-cosem/fibsem-tools
+#   pip install fibsem-tools
 
 LOGGER = logging.getLogger("poor-mans-octree")
 LOGGER.setLevel(logging.DEBUG)
@@ -320,6 +318,7 @@ def render_sequence_caller(
     alpha=0.8,
     scale_factors=[],
     dtype=np.uint16,
+    dims=None,
 ):
     """
     Entry point for recursive function render_sequence.
@@ -338,6 +337,7 @@ def render_sequence_caller(
         alpha=alpha,
         scale_factors=scale_factors,
         dtype=dtype,
+        dims=dims,
     )
 
 
@@ -353,6 +353,7 @@ def render_sequence(
     alpha=0.8,
     scale_factors=[],
     dtype=np.uint16,
+    dims=None,
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
@@ -469,8 +470,15 @@ def render_sequence(
                 f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
             )
             scale_dataset = f"{dataset}/s{scale}"
+
+            # When we get_chunk chunk_slice needs to be in data space, but chunk slices are 3D
+            data_slice = tuple(
+                [slice(el, el + 1) for el in dims.current_step[:-3]]
+                + [slice(sl.start, sl.stop) for sl in chunk_slice]
+            )
+
             data = get_chunk(
-                chunk_slice,
+                data_slice,
                 array=array,
                 container=container,
                 dataset=scale_dataset,
@@ -478,13 +486,19 @@ def render_sequence(
                 dtype=dtype,
             )
 
-            # Texture slice
+            # Texture slice (needs to be in layer.data dimensions)
+            # TODO there is a 3D ordering assumption here
             texture_slice = tuple(
-                [
+                [slice(el, el + 1) for el in dims.current_step[:-3]]
+                + [
                     slice(sl.start - offset, sl.stop - offset)
                     for sl, offset in zip(chunk_slice, min_coord)
                 ]
             )
+            if texture_slice[1].start < 0:
+                import pdb
+
+                pdb.set_trace()
 
             # TODO consider a data class instead of a tuple
             yield (
@@ -508,16 +522,16 @@ def render_sequence(
             chunk_slice = chunk_map[priority_coord]
 
             # Blank out the region that will be filled in by other scales
-            zeros_size = [0, 0, 0]
-            for d in range(len(zeros_size)):
-                sl = chunk_slice[d]
-                chunk_w = sl.stop - sl.start
-                zeros_size[d] = chunk_w
+            zeros_size = list(array.shape[:-3]) + [
+                sl.stop - sl.start for sl in chunk_slice
+            ]
 
             zdata = np.zeros(np.array(zeros_size, dtype=dtype), dtype=dtype)
 
+            # TODO there is a 3D ordering assumption here
             texture_slice = tuple(
-                [
+                [slice(el, el + 1) for el in dims.current_step[:-3]]
+                + [
                     slice(sl.start - offset, sl.stop - offset)
                     for sl, offset in zip(chunk_slice, min_coord)
                 ]
@@ -563,6 +577,7 @@ def render_sequence(
                 dataset=dataset,
                 scale_factors=scale_factors,
                 dtype=dtype,
+                dims=dims,
             )
 
 
@@ -604,7 +619,8 @@ def update_chunk(
         texture_slice,
     ) = chunk_tuple
 
-    texture_offset = tuple([sl.start for sl in texture_slice])
+    # TODO 3D assumed here as last 3 dimensions
+    texture_offset = tuple([sl.start for sl in texture_slice[-3:]])
 
     layer_name = f"{container}/{dataset}/s{scale}"
     layer = viewer.layers[layer_name]
@@ -619,12 +635,39 @@ def update_chunk(
         dtype=dtype,
     )
 
-    layer.data[texture_slice] = new_texture_data
+    # Note: due to odd dimensions in scale pyramids sometimes we have off by 1
+    ntd_slice = (
+        slice(0, layer.data[texture_slice].shape[1]),
+        slice(0, layer.data[texture_slice].shape[2]),
+        slice(0, layer.data[texture_slice].shape[3]),
+    )
+    if len(new_texture_data.shape) == 3:
+        import pdb
+
+        pdb.set_trace()
+    layer.data[texture_slice] = new_texture_data[
+        : layer.data[texture_slice].shape[0],
+        : layer.data[texture_slice].shape[1],
+        : layer.data[texture_slice].shape[2],
+        : layer.data[texture_slice].shape[3],
+    ]
+
+    """
+    dims.current_step
+(266, 1, 494, 64, 67)
+(Pdb) array.shape
+(532, 2, 988, 256, 271)
+(Pdb)
+"""
+
+    LOGGER.debug(
+        f"update_chunk_pre {scale} {array_offset} with size {new_texture_data.shape} slices {texture_slice} and layer data {layer.data.shape}"
+    )
 
     # TODO explore efficiency of either approach, or maybe even an alternative
     # Writing a texture with an offset is slower
     # texture.set_data(new_texture_data, offset=texture_offset)
-    texture.set_data(np.asarray(layer.data))
+    texture.set_data(np.asarray(layer.data[texture_slice]).squeeze())
 
     volume.update()
 
@@ -632,7 +675,54 @@ def update_chunk(
     # TODO: this is called too many times. we only need to call it once for each time it changes
     # Note: this can trigger a refresh, we should do it after setting data to not trigger an
     #       extra materialization with
+    # TODO this might be a race condition with multiple on_yielded events
+    try:
+        layer.translate = node_offset
+    except Exception:
+        import pdb
+
+        pdb.set_trace()
+    """
+    This error is triggered here ephemerally.
+    
+    WARNING: Traceback (most recent call last):
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/toolz/functoolz.py", line 304, in __call__
+    return self._partial(*args, **kwargs)
+  File "/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py", line 661, in update_chunk
     layer.translate = node_offset
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/base/base.py", line 643, in translate
+    self._clear_extent()
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/base/base.py", line 806, in _clear_extent
+    self.refresh()
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/base/base.py", line 1212, in refresh
+    self.set_view_slice()
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/base/base.py", line 974, in set_view_slice
+    self._set_view_slice()
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/image/image.py", line 735, in _set_view_slice
+    self._update_slice_response(response)
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/image/image.py", line 802, in _update_slice_response
+    self._load_slice(slice_data)
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/image/image.py", line 830, in _load_slice
+    if self._slice.load(data):
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/image/_image_slice.py", line 125, in load
+    return self.loader.load(data)
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/image/_image_loader.py", line 22, in load
+    data.load_sync()
+  File "/Users/kharrington/git/kephale/nesoi/repos/napari/napari/layers/image/_image_slice_data.py", line 44, in load_sync
+    self.image = np.asarray(self.image)
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/dask/array/core.py", line 1699, in __array__
+    x = self.compute()
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/dask/base.py", line 314, in compute
+    (result,) = compute(self, traverse=False, **kwargs)
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/dask/base.py", line 599, in compute
+    results = schedule(dsk, keys, **kwargs)
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/dask/threaded.py", line 89, in get
+    results = get_async(
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/dask/local.py", line 516, in get_async
+    f(key, res, dsk, state, worker_id)
+  File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/dask/cache.py", line 56, in _posttask
+    duration = default_timer() - self.starttimes[key]
+KeyError: ('setitem-0894a5557d8b18e0f8a3165b7ad0b979', 0, 0, 0, 0)"""
 
     toc = time.perf_counter()
 
@@ -696,6 +786,17 @@ def add_subnodes(
     if "worker" in worker_map:
         worker_map["worker"].quit()
 
+    # TODO slice the arrays into 3D now
+
+    arrays_3d = []
+    for array in arrays:
+        # TODO This assumes a 3D ordering
+        slice_to_3d = tuple(
+            [slice(el, el + 1) for el in viewer.dims.current_step[:-3]]
+            + [slice(0, max_size) for max_size in array.shape[-3:]]
+        )
+        arrays_3d.append(array[slice_to_3d])
+
     worker_map["worker"] = render_sequence_caller(
         view_slice,
         scale,
@@ -708,6 +809,7 @@ def add_subnodes(
         scale_factors=scale_factors,
         alpha=alpha,
         dtype=dtype,
+        dims=viewer.dims.copy(),
     )
 
     # TODO keep track of a set of keys that describe each chunk that is already rendered
@@ -779,9 +881,8 @@ def idr0044A():
         read_xarray(
             f"{large_image['container']}/{scale}/",
             #            storage_options={"anon": True},
-        )
-        .data[362, 0, :, :, :]
-        .rechunk((512, 512, 512))
+        ).data.rechunk((1, 1, 128, 128, 128))
+        # .data[362, 0, :, :, :].rechunk((512, 512, 512))
         for scale in range(large_image["scale_levels"])
     ]
     return large_image
@@ -794,24 +895,42 @@ def idr0075A():
         "scale_levels": 4,
         "scale_factors": [(1, 1, 1), (1, 2, 2), (1, 4, 4), (1, 8, 8)],
     }
-    large_image["arrays"] = []
-    for scale in range(large_image["scale_levels"]):
-        url = f"{large_image['container']}/{scale}/"
-        store = parse_url(url, mode="r").store
+    large_image["arrays"] = [
+        read_xarray(
+            f"{large_image['container']}/{scale}/",
+            #            storage_options={"anon": True},
+        ).data
+        # .data[362, 0, :, :, :].rechunk((512, 512, 512))
+        for scale in range(large_image["scale_levels"])
+    ]
+    # .rechunk((1, 1, 128, 128, 128))
+    return large_image
 
-        reader = Reader(parse_url(url))
-        # nodes may include images, labels etc
-        nodes = list(reader())
-        # first node will be the image pixel data
-        image_node = nodes[0]
 
-        large_image["arrays"].append(image_node.data[0, 0, :, :, :].squeeze())
-    large_image["arrays"] = large_image["arrays"][0]
+def idr0051A():
+    large_image = {
+        "container": "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.3/idr0051A/4007817.zarr",
+        "dataset": "",
+        "scale_levels": 3,
+        "scale_factors": [(1, 1, 1), (1, 2, 2), (1, 4, 4)],
+    }
+    large_image["arrays"] = [
+        read_xarray(
+            f"{large_image['container']}/{scale}/",
+            #            storage_options={"anon": True},
+        ).data
+        # .data[362, 0, :, :, :].rechunk((512, 512, 512))
+        for scale in range(large_image["scale_levels"])
+    ]
+    print([array.shape for array in large_image["arrays"]])
+    print([array.chunksize for array in large_image["arrays"]])
+    # .rechunk((1, 1, 128, 128, 128))
     return large_image
 
 
 def luethi_zenodo_7144919():
     # Downloaded from https://zenodo.org/record/7144919#.Y-OvqhPMI0R
+    # TODO use pooch to fetch from zenodo
     large_image = {
         "container": "/Users/kharrington/Data/20200812-CardiomyocyteDifferentiation14-Cycle1.zarr",
         "dataset": "B/03/0",
@@ -835,22 +954,24 @@ def luethi_zenodo_7144919():
 
         # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
         large_image["arrays"].append(
-            result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze()
+            result.data.rechunk((1, 10, 256, 256)).squeeze()
+            # result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze()
         )
     return large_image
 
 
-if __name__ == '__main__' and True:
+if __name__ == '__main__':
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
 
     # These datasets have worked at one point in time
     # large_image = openorganelle_mouse_kidney_labels()
     # large_image = idr0044A()
-    large_image = luethi_zenodo_7144919()
+    # large_image = luethi_zenodo_7144919()
+    large_image = idr0051A()
 
     # These datasets need testing
-
+    # large_image = idr0075A()
     # large_image = openorganelle_mouse_kidney_em()
     # TODO there is a problem with datasets that for some reason have shape == chunksize
     #      these datasets overflow because of memory issues
@@ -922,6 +1043,9 @@ if __name__ == '__main__' and True:
         # TODO Make sure this is still smaller than the array
         scale_shape = np.array(multiscale_arrays[scale + 1].chunksize) * 2
 
+        # TODO this is really not the right thing to do, it is an overallocation
+        scale_shape[:-3] = multiscale_arrays[scale + 1].shape[:-3]
+
         viewer.add_image(
             da.ones(
                 scale_shape,
@@ -984,7 +1108,6 @@ if __name__ == '__main__' and True:
         debounced(
             ensure_main_thread(camera_response),
             timeout=1000,
-            # Leading seems to be the only way to get debounced working
         )
     )
 
