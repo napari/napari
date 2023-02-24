@@ -1,6 +1,7 @@
 import itertools
 import logging
 import sys
+import threading
 import time
 
 import dask.array as da
@@ -466,9 +467,11 @@ def render_sequence(
                 min_interval[1] * scale_factor[1],
                 min_interval[2] * scale_factor[2],
             )
-            LOGGER.debug(
-                f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
-            )
+
+            # LOGGER.debug(
+            #     f"Fetching: {(scale, chunk_slice)} World offset: {node_offset}"
+            # )
+
             scale_dataset = f"{dataset}/s{scale}"
 
             # When we get_chunk chunk_slice needs to be in data space, but chunk slices are 3D
@@ -505,7 +508,8 @@ def render_sequence(
                 np.asarray(data),
                 scale,
                 offset,
-                world_offset,
+                # world_offset,
+                None,
                 chunk_slice,
                 texture_slice,
             )
@@ -537,17 +541,6 @@ def render_sequence(
                 ]
             )
 
-            # TODO Note that we need to be blanking out lower res data at the same time
-            # TODO this is when we should move the node from the next resolution.
-            yield (
-                np.asarray(zdata),
-                scale,
-                tuple([sl.start for sl in chunk_slice]),
-                world_offset,
-                chunk_slice,
-                texture_slice,
-            )
-
             # Compute the relative scale factor between these layers
             relative_scale_factor = [
                 this_scale / next_scale
@@ -561,6 +554,23 @@ def render_sequence(
                 slice(st.start * dim_scale, st.stop * dim_scale)
                 for st, dim_scale in zip(chunk_slice, relative_scale_factor)
             ]
+
+            next_min_coord = [st.start for st in next_chunk_slice]
+            # TODO this offset is incorrect
+            next_world_offset = np.array(next_min_coord) * np.array(
+                scale_factors[scale - 1]
+            )
+
+            # TODO Note that we need to be blanking out lower res data at the same time
+            # TODO this is when we should move the node from the next resolution.
+            yield (
+                np.asarray(zdata),
+                scale,
+                tuple([sl.start for sl in chunk_slice]),
+                next_world_offset,
+                chunk_slice,
+                texture_slice,
+            )
 
             print(
                 f"Recursive add on\t{str(next_chunk_slice)} idx {priority_idx}",
@@ -585,7 +595,12 @@ def render_sequence(
 # TODO consider filling these chunks into a queue and processing them in batches
 @tz.curry
 def update_chunk(
-    chunk_tuple, viewer=None, container="", dataset="", dtype=np.uint8
+    chunk_tuple,
+    viewer_lock=None,
+    viewer=None,
+    container="",
+    dataset="",
+    dtype=np.uint8,
 ):
     """Update the display with a chunk
 
@@ -610,51 +625,52 @@ def update_chunk(
         a numpy-like dtype
 
     """
-    tic = time.perf_counter()
-    (
-        data,
-        scale,
-        array_offset,
-        node_offset,
-        chunk_slice,
-        texture_slice,
-    ) = chunk_tuple
+    with viewer_lock:
+        tic = time.perf_counter()
+        (
+            data,
+            scale,
+            array_offset,
+            node_offset,
+            chunk_slice,
+            texture_slice,
+        ) = chunk_tuple
 
-    # TODO 3D assumed here as last 3 dimensions
-    texture_offset = tuple([sl.start for sl in texture_slice[-3:]])
+        # TODO 3D assumed here as last 3 dimensions
+        texture_offset = tuple([sl.start for sl in texture_slice[-3:]])
 
-    layer_name = f"{container}/{dataset}/s{scale}"
-    layer = viewer.layers[layer_name]
-    volume = viewer.window.qt_viewer.layer_to_visual[
-        layer
-    ]._layer_node.get_node(3)
+        layer_name = f"{container}/{dataset}/s{scale}"
+        layer = viewer.layers[layer_name]
+        volume = viewer.window.qt_viewer.layer_to_visual[
+            layer
+        ]._layer_node.get_node(3)
 
-    texture = volume._texture
+        texture = volume._texture
 
-    new_texture_data = np.asarray(
-        data,
-        dtype=dtype,
-    )
+        new_texture_data = np.asarray(
+            data,
+            dtype=dtype,
+        )
 
-    # Note: due to odd dimensions in scale pyramids sometimes we have off by 1
-    ntd_slice = (
-        slice(0, layer.data[texture_slice].shape[1]),
-        slice(0, layer.data[texture_slice].shape[2]),
-        slice(0, layer.data[texture_slice].shape[3]),
-    )
-    if len(new_texture_data.shape) == 3:
-        import pdb
+        # Note: due to odd dimensions in scale pyramids sometimes we have off by 1
+        ntd_slice = (
+            slice(0, layer.data[texture_slice].shape[1]),
+            slice(0, layer.data[texture_slice].shape[2]),
+            slice(0, layer.data[texture_slice].shape[3]),
+        )
+        if len(new_texture_data.shape) == 3:
+            import pdb
 
-        pdb.set_trace()
-        
-    layer.data[texture_slice] = new_texture_data[
-        : layer.data[texture_slice].shape[0],
-        : layer.data[texture_slice].shape[1],
-        : layer.data[texture_slice].shape[2],
-        : layer.data[texture_slice].shape[3],
-    ]
+            pdb.set_trace()
 
-    """
+        layer.data[texture_slice] = new_texture_data[
+            : layer.data[texture_slice].shape[0],
+            : layer.data[texture_slice].shape[1],
+            : layer.data[texture_slice].shape[2],
+            : layer.data[texture_slice].shape[3],
+        ]
+
+        """
     dims.current_step
 (266, 1, 494, 64, 67)
 (Pdb) array.shape
@@ -662,29 +678,37 @@ def update_chunk(
 (Pdb)
 """
 
-    LOGGER.debug(
-        f"update_chunk_pre {scale} {array_offset} with size {new_texture_data.shape} slices {texture_slice} and layer data {layer.data.shape}"
-    )
+        # TODO explore efficiency of either approach, or maybe even an alternative
+        # Writing a texture with an offset is slower
+        # texture.set_data(new_texture_data, offset=texture_offset)
+        texture.set_data(np.asarray(layer.data[texture_slice]).squeeze())
 
-    # TODO explore efficiency of either approach, or maybe even an alternative
-    # Writing a texture with an offset is slower
-    # texture.set_data(new_texture_data, offset=texture_offset)
-    texture.set_data(np.asarray(layer.data[texture_slice]).squeeze())
+        volume.update()
 
-    volume.update()
+        # Translate the layer we're rendering to the right place
+        # TODO: this is called too many times. we only need to call it once for each time it changes
+        # Note: this can trigger a refresh, we should do it after setting data to not trigger an
+        #       extra materialization with
+        # TODO this might be a race condition with multiple on_yielded events
+        if node_offset is not None:
+            try:
+                # Trigger a refresh of our layer
+                layer.refresh()
 
-    # Translate the layer we're rendering to the right place
-    # TODO: this is called too many times. we only need to call it once for each time it changes
-    # Note: this can trigger a refresh, we should do it after setting data to not trigger an
-    #       extra materialization with
-    # TODO this might be a race condition with multiple on_yielded events
-    try:
-        layer.translate = node_offset
-    except Exception:
-        import pdb
+                next_layer_name = f"{container}/{dataset}/s{scale - 1}"
+                next_layer = viewer.layers[next_layer_name]
+                next_layer.translate = node_offset
+                LOGGER.debug(
+                    f" moving next layer scale {scale - 1} to {node_offset}"
+                )
+            except Exception as e:
+                import pdb
 
-        pdb.set_trace()
-    """
+                pdb.traceback.print_exception(e)
+                pdb.traceback.print_stack()
+
+                pdb.set_trace()
+            """
     This error is triggered here ephemerally.
     
     WARNING: Traceback (most recent call last):
@@ -726,11 +750,162 @@ def update_chunk(
     duration = default_timer() - self.starttimes[key]
 KeyError: ('setitem-0894a5557d8b18e0f8a3165b7ad0b979', 0, 0, 0, 0)"""
 
-    toc = time.perf_counter()
+        if scale == 0:
+            layer.refresh()
 
-    LOGGER.debug(
-        f"update_chunk {scale} {array_offset} with size {new_texture_data.shape} took {toc - tic:0.4f} seconds"
-    )
+        toc = time.perf_counter()
+
+        LOGGER.debug(
+            f"update_chunk {scale} {array_offset} at node offset {node_offset} with size {new_texture_data.shape} took {toc - tic:0.4f} seconds"
+        )
+
+
+"""
+
+Saving some node offset information 
+
+napari.manifest -> 'skan' could not be imported: Could not find file 'napari.yaml' in module 'skan'
+Assistant skips harvesting pyclesperanto as it's not installed.
+>>> view slice [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)]
+add_subnodes 4 [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)] highres interval: [0, 0, 0],  [160, 4320, 5120] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 270, 320)
+2023-02-24 11:01:21,191 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
+2023-02-24 11:01:21,194 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(256, 320, None))) World offset: (0, 0.0, 665.6)
+2023-02-24 11:01:21,203 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0080 seconds
+2023-02-24 11:01:21,207 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(0, 256, None))) World offset: (0, 665.6, 0.0)
+2023-02-24 11:01:21,223 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 64) took 0.0089 seconds
+2023-02-24 11:01:21,234 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(256, 320, None))) World offset: (0, 665.6, 665.6)
+2023-02-24 11:01:21,247 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 14, 256) took 0.0076 seconds
+Recursive add on	[slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] idx 0 visible True for scale 4 to 3
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)]
+add_subnodes 3 [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] highres interval: [0.0, 0.0, 0.0],  [80.0, 4096.0, 4096.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 540, 640)
+2023-02-24 11:01:21,259 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
+2023-02-24 11:01:21,278 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 14, 64) took 0.0080 seconds
+2023-02-24 11:01:21,286 - poor-mans-octree - DEBUG - update_chunk 4 (0, 0, 0) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0078 seconds
+2023-02-24 11:01:21,289 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(256, 512, None))) World offset: (0, 0.0, 332.8)
+2023-02-24 11:01:21,300 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(0, 256, None))) World offset: (0, 332.8, 0.0)
+2023-02-24 11:01:21,306 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0153 seconds
+2023-02-24 11:01:21,327 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0202 seconds
+2023-02-24 11:01:21,341 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(256, 512, None))) World offset: (0, 332.8, 332.8)
+Recursive add on	[slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(512.0, 1024.0, None)] idx 4 visible True for scale 3 to 2
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(512.0, 1024.0, None)]
+add_subnodes 2 [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(512.0, 1024.0, None)] highres interval: [0.0, 2048.0, 2048.0],  [40.0, 4096.0, 4096.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 1080, 1280)
+2023-02-24 11:01:21,354 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(512, 768, None))) World offset: (0, 332.8, 332.8)
+2023-02-24 11:01:21,369 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0202 seconds
+2023-02-24 11:01:21,395 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(768, 1024, None))) World offset: (0, 332.8, 499.20000000000005)
+2023-02-24 11:01:21,410 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0205 seconds
+2023-02-24 11:01:21,426 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(512, 768, None))) World offset: (0, 499.20000000000005, 332.8)
+2023-02-24 11:01:21,432 - poor-mans-octree - DEBUG - update_chunk 3 (0, 256, 256) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0216 seconds
+2023-02-24 11:01:21,463 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 512] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0107 seconds
+2023-02-24 11:01:21,483 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 768] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0195 seconds
+2023-02-24 11:01:21,537 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(768, 1024, None))) World offset: (0, 499.20000000000005, 499.20000000000005)
+2023-02-24 11:01:21,558 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 512] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0200 seconds
+Recursive add on	[slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(1024.0, 1536.0, None)] idx 12 visible True for scale 2 to 1
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(1024.0, 1536.0, None)]
+add_subnodes 1 [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(1024.0, 1536.0, None)] highres interval: [0.0, 2048.0, 2048.0],  [20.0, 3072.0, 3072.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 2160, 2560)
+2023-02-24 11:01:21,571 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(1024, 1280, None))) World offset: (0, 332.8, 332.8)
+2023-02-24 11:01:21,591 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 768] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0214 seconds
+2023-02-24 11:01:21,640 - poor-mans-octree - DEBUG - update_chunk 2 (0, 512, 512) at node offset [  0.  332.8 332.8] with size (3, 10, 256, 256) took 0.0256 seconds
+2023-02-24 11:01:21,700 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(1280, 1536, None))) World offset: (0, 332.8, 416.0)
+2023-02-24 11:01:21,711 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 1024] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0097 seconds
+2023-02-24 11:01:21,799 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(1024, 1280, None))) World offset: (0, 416.0, 332.8)
+2023-02-24 11:01:21,821 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 1280] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0212 seconds
+2023-02-24 11:01:21,895 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(1280, 1536, None))) World offset: (0, 416.0, 416.0)
+2023-02-24 11:01:21,916 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 1024] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0202 seconds
+Recursive add on	[slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(2048.0, 2560.0, None)] idx 44 visible True for scale 1 to 0
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(2048.0, 2560.0, None)]
+add_subnodes 0 [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(2048.0, 2560.0, None)] highres interval: [0.0, 2048.0, 2048.0],  [10.0, 2560.0, 2560.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 4320, 5120)
+2023-02-24 11:01:21,984 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(2048, 2304, None))) World offset: (0, 332.8, 332.8)
+2023-02-24 11:01:22,030 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 1280] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0483 seconds
+2023-02-24 11:01:22,050 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(2304, 2560, None))) World offset: (0, 332.8, 374.40000000000003)
+2023-02-24 11:01:22,084 - poor-mans-octree - DEBUG - update_chunk 1 (0, 1024, 1024) at node offset [  0.  332.8 332.8] with size (3, 10, 256, 256) took 0.0539 seconds
+2023-02-24 11:01:22,115 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(2048, 2304, None))) World offset: (0, 374.40000000000003, 332.8)
+2023-02-24 11:01:22,121 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 2048] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0233 seconds
+2023-02-24 11:01:22,150 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 2304] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0256 seconds
+2023-02-24 11:01:22,166 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(2304, 2560, None))) World offset: (0, 374.40000000000003, 374.40000000000003)
+2023-02-24 11:01:22,207 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 2048] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0298 seconds
+/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py:628: FutureWarning: Public access to Window.qt_viewer is deprecated and will be removed in
+v0.5.0. It is considered an "implementation detail" of the napari
+application, not part of the napari viewer model. If your use case
+requires access to qt_viewer, please open an issue to discuss.
+  volume = viewer.window.qt_viewer.layer_to_visual[
+2023-02-24 11:01:22,256 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 2304] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0279 seconds
+view slice [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)]
+add_subnodes 4 [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)] highres interval: [0, 0, 0],  [160, 4320, 5120] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 270, 320)
+2023-02-24 11:01:43,259 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
+2023-02-24 11:01:43,259 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(256, 320, None))) World offset: (0, 0.0, 665.6)
+2023-02-24 11:01:43,259 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(0, 256, None))) World offset: (0, 665.6, 0.0)
+2023-02-24 11:01:43,260 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(256, 320, None))) World offset: (0, 665.6, 665.6)
+Recursive add on	[slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] idx 0 visible True for scale 4 to 3
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)]
+add_subnodes 3 [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] highres interval: [0.0, 0.0, 0.0],  [80.0, 4096.0, 4096.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 540, 640)
+2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
+2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(256, 512, None))) World offset: (0, 0.0, 332.8)
+2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(0, 256, None))) World offset: (0, 332.8, 0.0)
+2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(256, 512, None))) World offset: (0, 332.8, 332.8)
+Recursive add on	[slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(0.0, 512.0, None)] idx 3 visible True for scale 3 to 2
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(0.0, 512.0, None)]
+add_subnodes 2 [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(0.0, 512.0, None)] highres interval: [0.0, 2048.0, 0.0],  [40.0, 4096.0, 2048.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 1080, 1280)
+2023-02-24 11:01:43,267 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(0, 256, None))) World offset: (0, 332.8, 0.0)
+2023-02-24 11:01:43,272 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0123 seconds
+2023-02-24 11:01:43,279 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 64) took 0.0074 seconds
+2023-02-24 11:01:43,287 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 14, 256) took 0.0080 seconds
+2023-02-24 11:01:43,296 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 14, 64) took 0.0079 seconds
+2023-02-24 11:01:43,305 - poor-mans-octree - DEBUG - update_chunk 4 (0, 0, 0) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0089 seconds
+2023-02-24 11:01:43,337 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0325 seconds
+2023-02-24 11:01:43,370 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(256, 512, None))) World offset: (0, 332.8, 166.4)
+2023-02-24 11:01:43,375 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0376 seconds
+2023-02-24 11:01:43,417 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0416 seconds
+2023-02-24 11:01:43,455 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(0, 256, None))) World offset: (0, 499.20000000000005, 0.0)
+2023-02-24 11:01:43,469 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0521 seconds
+2023-02-24 11:01:43,488 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(256, 512, None))) World offset: (0, 499.20000000000005, 166.4)
+Recursive add on	[slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(512.0, 1024.0, None)] idx 11 visible True for scale 2 to 1
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(512.0, 1024.0, None)]
+add_subnodes 1 [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(512.0, 1024.0, None)] highres interval: [0.0, 2048.0, 1024.0],  [20.0, 3072.0, 2048.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 2160, 2560)
+2023-02-24 11:01:43,521 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(512, 768, None))) World offset: (0, 332.8, 166.4)
+2023-02-24 11:01:43,526 - poor-mans-octree - DEBUG - update_chunk 3 (0, 256, 0) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0568 seconds
+2023-02-24 11:01:43,583 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 0] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0336 seconds
+2023-02-24 11:01:43,619 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 256] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0358 seconds
+2023-02-24 11:01:43,658 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 0] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0389 seconds
+2023-02-24 11:01:43,707 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 256] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0490 seconds
+2023-02-24 11:01:43,758 - poor-mans-octree - DEBUG - update_chunk 2 (0, 512, 256) at node offset [  0.  332.8   0. ] with size (3, 10, 256, 256) took 0.0506 seconds
+2023-02-24 11:01:43,847 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(768, 1024, None))) World offset: (0, 332.8, 249.60000000000002)
+2023-02-24 11:01:43,879 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 512] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0314 seconds
+2023-02-24 11:01:43,937 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(512, 768, None))) World offset: (0, 416.0, 166.4)
+2023-02-24 11:01:43,974 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 768] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0368 seconds
+2023-02-24 11:01:44,038 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(768, 1024, None))) World offset: (0, 416.0, 249.60000000000002)
+2023-02-24 11:01:44,077 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 512] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0378 seconds
+Recursive add on	[slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(1536.0, 2048.0, None)] idx 43 visible True for scale 1 to 0
+ Relative scale factor [1.0, 2.0, 2.0]
+view slice [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(1536.0, 2048.0, None)]
+add_subnodes 0 [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(1536.0, 2048.0, None)] highres interval: [0.0, 2048.0, 1536.0],  [10.0, 2560.0, 2048.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 4320, 5120)
+2023-02-24 11:01:44,146 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(1536, 1792, None))) World offset: (0, 332.8, 249.60000000000002)
+2023-02-24 11:01:44,214 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(1792, 2048, None))) World offset: (0, 332.8, 291.2)
+2023-02-24 11:01:44,225 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 768] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0815 seconds
+2023-02-24 11:01:44,273 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(1536, 1792, None))) World offset: (0, 374.40000000000003, 249.60000000000002)
+2023-02-24 11:01:44,281 - poor-mans-octree - DEBUG - update_chunk 1 (0, 1024, 768) at node offset [  0.  332.8 166.4] with size (3, 10, 256, 256) took 0.0538 seconds
+2023-02-24 11:01:44,322 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(1792, 2048, None))) World offset: (0, 374.40000000000003, 291.2)
+2023-02-24 11:01:44,331 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 1536] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0500 seconds
+2023-02-24 11:01:44,392 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 1792] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0382 seconds
+/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py:628: FutureWarning: Public access to Window.qt_viewer is deprecated and will be removed in
+v0.5.0. It is considered an "implementation detail" of the napari
+application, not part of the napari viewer model. If your use case
+requires access to qt_viewer, please open an issue to discuss.
+  volume = viewer.window.qt_viewer.layer_to_visual[
+2023-02-24 11:01:44,434 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 1536] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0414 seconds
+/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py:628: FutureWarning: Public access to Window.qt_viewer is deprecated and will be removed in
+v0.5.0. It is considered an "implementation detail" of the napari
+application, not part of the napari viewer model. If your use case
+requires access to qt_viewer, please open an issue to discuss.
+  volume = viewer.window.qt_viewer.layer_to_visual[
+2023-02-24 11:01:44,472 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 1792] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0362 seconds
+"""
 
 
 @tz.curry
@@ -747,6 +922,7 @@ def add_subnodes(
     alpha=0.8,
     scale_factors=[],
     worker_map={},
+    viewer_lock=None,
 ):
     """Recursively add multiscale chunks to a napari viewer for some multiscale arrays
 
@@ -818,7 +994,11 @@ def add_subnodes(
 
     worker_map["worker"].yielded.connect(
         update_chunk(
-            viewer=viewer, container=container, dataset=dataset, dtype=dtype
+            viewer_lock=viewer_lock,
+            viewer=viewer,
+            container=container,
+            dataset=dataset,
+            dtype=dtype,
         )
     )
     worker_map["worker"].start()
@@ -1070,6 +1250,8 @@ if __name__ == '__main__':
 
     # start_profiling()
 
+    viewer_lock = threading.Lock()
+
     viewer.dims.current_step = (0, 5, 135, 160)
 
     # Hooks and calls to start rendering
@@ -1084,6 +1266,7 @@ if __name__ == '__main__':
         dataset=large_image["dataset"],
         scale_factors=scale_factors,
         worker_map=worker_map,
+        viewer_lock=viewer_lock,
     )
 
     def get_stats():
@@ -1105,6 +1288,7 @@ if __name__ == '__main__':
             dataset=large_image["dataset"],
             scale_factors=scale_factors,
             worker_map=worker_map,
+            viewer_lock=viewer_lock,
         )
 
     # TODO note that debounced uses threading.Timer
