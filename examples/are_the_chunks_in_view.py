@@ -1,6 +1,6 @@
-import os
 import itertools
 import logging
+import os
 import sys
 import threading
 import time
@@ -10,8 +10,7 @@ import numpy as np
 import toolz as tz
 from cachey import Cache
 from fibsem_tools.io import read_xarray
-from ome_zarr.io import parse_url
-from ome_zarr.reader import Reader
+from magicgui import magic_factory
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
 from superqt import ensure_main_thread
@@ -299,7 +298,7 @@ def get_chunk(
             # TODO check for a race condition that is causing this exception
             #      some dask backends are not thread-safe
         except Exception:
-            LOGGER.info(
+            print(
                 f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
             )
         cache_manager.put(container, dataset, chunk_slice, real_array)
@@ -571,11 +570,11 @@ def render_sequence(
                 texture_slice,
             )
 
-            LOGGER.info(
-                f"Recursive add on\t{str(next_chunk_slice)} idx {priority_idx}",
-                f"visible {point_mask[priority_idx]} for scale {scale} to {scale-1}\n",
-                f"Relative scale factor {relative_scale_factor}",
-            )
+            # LOGGER.info(
+            #     f"Recursive add on\t{str(next_chunk_slice)} idx {priority_idx}",
+            #     f"visible {point_mask[priority_idx]} for scale {scale} to {scale-1}\n",
+            #     f"Relative scale factor {relative_scale_factor}",
+            # )
             yield from render_sequence(
                 next_chunk_slice,
                 scale=scale - 1,
@@ -974,7 +973,7 @@ def luethi_zenodo_7144919():
     dest_dir = pooch.retrieve(
         url="https://zenodo.org/record/7144919/files/20200812-CardiomyocyteDifferentiation14-Cycle1.zarr.zip?download=1",
         known_hash="e6773fc97dcf3689e2f42e6504e0d4f4d0845c329dfbdfe92f61c2f3f1a4d55d",
-        processor=pooch.Unzip()
+        processor=pooch.Unzip(),
     )
     local_container = os.path.split(dest_dir[0])[0]
     print(local_container)
@@ -1007,7 +1006,10 @@ def luethi_zenodo_7144919():
     return large_image
 
 
-if __name__ == '__main__':
+@magic_factory(
+    call_button="Poor Octree Renderer",
+)
+def poor_octree_widget(viewer: "napari.viewer.Viewer"):
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
 
@@ -1107,14 +1109,6 @@ if __name__ == '__main__':
             contrast_limits=[0, 500],
         )
 
-    def start_profiling():
-        import yappi
-
-        yappi.set_clock_type("cpu")  # Use set_clock_type("wall") for wall time
-        yappi.start()
-
-    # start_profiling()
-
     viewer_lock = threading.Lock()
 
     viewer.dims.current_step = (0, 5, 135, 160)
@@ -1133,11 +1127,6 @@ if __name__ == '__main__':
         worker_map=worker_map,
         viewer_lock=viewer_lock,
     )
-
-    def get_stats():
-        yappi.stop()
-        stats = yappi.get_func_stats()
-        stats.sort("name", "desc").print_all()
 
     @viewer.bind_key("k")
     def camera_response(event):
@@ -1179,3 +1168,16 @@ if __name__ == '__main__':
     # Overall TODO 2023-02-15
     # TODO refactor/cleanup
     # TODO check with timeseries, if not then disable sliders
+
+
+if __name__ == "__main__":
+    import napari
+
+    viewer = napari.Viewer()
+
+    widget = poor_octree_widget()
+
+    widget(viewer)
+
+    # viewer.window.add_dock_widget(widget, name="Poor Octree Renderer")
+    # widget_demo.show()
