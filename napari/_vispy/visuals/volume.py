@@ -118,6 +118,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
         bool discard_fragment = true;
+        vec4 label_id = vec4(0.0);
         """,
     in_loop="""
         // check if value is different from the background value
@@ -126,7 +127,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 label_id = $get_data(iloc);
-                color = $map_to_label_color(lable_id.r);
+                color = sample_label_color(label_id.r);
                 if (floatNotEqual(color.a, 0) ) {
                     // fully transparent color is considered as background, see napari/napari#5227
                     // when the value mapped to non-transparent color is reached
