@@ -1009,7 +1009,11 @@ def luethi_zenodo_7144919():
 @magic_factory(
     call_button="Poor Octree Renderer",
 )
-def poor_octree_widget(viewer: "napari.viewer.Viewer", alpha: float = 0.8):
+def poor_octree_widget(
+    viewer: "napari.viewer.Viewer",
+    alpha: float = 0.8,
+    colormap: str = "multiscale",
+):
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
 
@@ -1056,8 +1060,16 @@ def poor_octree_widget(viewer: "napari.viewer.Viewer", alpha: float = 0.8):
 
     viewer = napari.Viewer(ndisplay=3)
 
-    colormaps = {0: "red", 1: "blue", 2: "green", 3: "yellow", 4: "bop purple"}
-    # colormaps = {0: "gray", 1: "gray", 2: "gray", 3: "gray", 4: "gray"}
+    if colormap == "multiscale":
+        colormaps = {
+            0: "red",
+            1: "blue",
+            2: "green",
+            3: "yellow",
+            4: "bop purple",
+        }
+    else:
+        colormaps = {0: "gray", 1: "gray", 2: "gray", 3: "gray", 4: "gray"}
 
     # Initialize layers
     container = large_image["container"]
@@ -1131,11 +1143,10 @@ def poor_octree_widget(viewer: "napari.viewer.Viewer", alpha: float = 0.8):
             viewer_lock=viewer_lock,
             alpha=alpha,
         )
-        
+
     # Trigger the first render pass
     camera_response(None)
 
-        
     # TODO note that debounced uses threading.Timer
     # Connect to camera
     viewer.camera.events.connect(
@@ -1167,7 +1178,7 @@ if __name__ == "__main__":
 
     widget = poor_octree_widget()
 
-    widget(viewer)
+    # widget(viewer)
 
-    # viewer.window.add_dock_widget(widget, name="Poor Octree Renderer")
+    viewer.window.add_dock_widget(widget, name="Poor Octree Renderer")
     # widget_demo.show()
