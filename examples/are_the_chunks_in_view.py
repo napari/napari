@@ -1,3 +1,4 @@
+import os
 import itertools
 import logging
 import sys
@@ -298,7 +299,7 @@ def get_chunk(
             # TODO check for a race condition that is causing this exception
             #      some dask backends are not thread-safe
         except Exception:
-            print(
+            LOGGER.info(
                 f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
             )
         cache_manager.put(container, dataset, chunk_slice, real_array)
@@ -393,8 +394,6 @@ def render_sequence(
 
     layer_name = f"{container}/{dataset}/s{scale}"
 
-    print(f"view slice {view_slice}")
-
     # Get some variables specific to this scale level
     min_coord = [st.start for st in view_slice]
     max_coord = [st.stop for st in view_slice]
@@ -405,11 +404,11 @@ def render_sequence(
     highres_min = str([el.start * 2**scale for el in view_slice])
     highres_max = str([el.stop * 2**scale for el in view_slice])
 
-    print(
-        f"add_subnodes {scale} {str(view_slice)}",
-        f"highres interval: {highres_min},  {highres_max}",
-        f"chunksize: {array.chunksize} arraysize: {array.shape}",
-    )
+    # LOGGER.info(
+    #     f"add_subnodes {scale} {str(view_slice)}",
+    #     f"highres interval: {highres_min},  {highres_max}",
+    #     f"chunksize: {array.chunksize} arraysize: {array.shape}",
+    # )
 
     # Points for each chunk, for example, centers
     points = np.array(list(chunk_map.keys()))
@@ -572,7 +571,7 @@ def render_sequence(
                 texture_slice,
             )
 
-            print(
+            LOGGER.info(
                 f"Recursive add on\t{str(next_chunk_slice)} idx {priority_idx}",
                 f"visible {point_mask[priority_idx]} for scale {scale} to {scale-1}\n",
                 f"Relative scale factor {relative_scale_factor}",
@@ -682,6 +681,7 @@ def update_chunk(
         # Writing a texture with an offset is slower
         # texture.set_data(new_texture_data, offset=texture_offset)
         texture.set_data(np.asarray(layer.data[texture_slice]).squeeze())
+        # TODO we might need to zero out parts of the texture when there is a ragged boundary size
 
         volume.update()
 
@@ -709,7 +709,8 @@ def update_chunk(
 
                 pdb.set_trace()
             """
-    This error is triggered here ephemerally.
+    This error is triggered here infrequently.
+            
     
     WARNING: Traceback (most recent call last):
   File "/Users/kharrington/mambaforge/envs/nesoi/lib/python3.10/site-packages/toolz/functoolz.py", line 304, in __call__
@@ -750,6 +751,7 @@ def update_chunk(
     duration = default_timer() - self.starttimes[key]
 KeyError: ('setitem-0894a5557d8b18e0f8a3165b7ad0b979', 0, 0, 0, 0)"""
 
+        # The node translate calls made when zeroing will update everyone except 0
         if scale == 0:
             layer.refresh()
 
@@ -758,154 +760,6 @@ KeyError: ('setitem-0894a5557d8b18e0f8a3165b7ad0b979', 0, 0, 0, 0)"""
         LOGGER.debug(
             f"update_chunk {scale} {array_offset} at node offset {node_offset} with size {new_texture_data.shape} took {toc - tic:0.4f} seconds"
         )
-
-
-"""
-
-Saving some node offset information 
-
-napari.manifest -> 'skan' could not be imported: Could not find file 'napari.yaml' in module 'skan'
-Assistant skips harvesting pyclesperanto as it's not installed.
->>> view slice [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)]
-add_subnodes 4 [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)] highres interval: [0, 0, 0],  [160, 4320, 5120] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 270, 320)
-2023-02-24 11:01:21,191 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
-2023-02-24 11:01:21,194 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(256, 320, None))) World offset: (0, 0.0, 665.6)
-2023-02-24 11:01:21,203 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0080 seconds
-2023-02-24 11:01:21,207 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(0, 256, None))) World offset: (0, 665.6, 0.0)
-2023-02-24 11:01:21,223 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 64) took 0.0089 seconds
-2023-02-24 11:01:21,234 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(256, 320, None))) World offset: (0, 665.6, 665.6)
-2023-02-24 11:01:21,247 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 14, 256) took 0.0076 seconds
-Recursive add on	[slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] idx 0 visible True for scale 4 to 3
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)]
-add_subnodes 3 [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] highres interval: [0.0, 0.0, 0.0],  [80.0, 4096.0, 4096.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 540, 640)
-2023-02-24 11:01:21,259 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
-2023-02-24 11:01:21,278 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 14, 64) took 0.0080 seconds
-2023-02-24 11:01:21,286 - poor-mans-octree - DEBUG - update_chunk 4 (0, 0, 0) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0078 seconds
-2023-02-24 11:01:21,289 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(256, 512, None))) World offset: (0, 0.0, 332.8)
-2023-02-24 11:01:21,300 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(0, 256, None))) World offset: (0, 332.8, 0.0)
-2023-02-24 11:01:21,306 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0153 seconds
-2023-02-24 11:01:21,327 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0202 seconds
-2023-02-24 11:01:21,341 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(256, 512, None))) World offset: (0, 332.8, 332.8)
-Recursive add on	[slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(512.0, 1024.0, None)] idx 4 visible True for scale 3 to 2
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(512.0, 1024.0, None)]
-add_subnodes 2 [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(512.0, 1024.0, None)] highres interval: [0.0, 2048.0, 2048.0],  [40.0, 4096.0, 4096.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 1080, 1280)
-2023-02-24 11:01:21,354 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(512, 768, None))) World offset: (0, 332.8, 332.8)
-2023-02-24 11:01:21,369 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0202 seconds
-2023-02-24 11:01:21,395 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(768, 1024, None))) World offset: (0, 332.8, 499.20000000000005)
-2023-02-24 11:01:21,410 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0205 seconds
-2023-02-24 11:01:21,426 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(512, 768, None))) World offset: (0, 499.20000000000005, 332.8)
-2023-02-24 11:01:21,432 - poor-mans-octree - DEBUG - update_chunk 3 (0, 256, 256) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0216 seconds
-2023-02-24 11:01:21,463 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 512] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0107 seconds
-2023-02-24 11:01:21,483 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 768] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0195 seconds
-2023-02-24 11:01:21,537 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(768, 1024, None))) World offset: (0, 499.20000000000005, 499.20000000000005)
-2023-02-24 11:01:21,558 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 512] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0200 seconds
-Recursive add on	[slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(1024.0, 1536.0, None)] idx 12 visible True for scale 2 to 1
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(1024.0, 1536.0, None)]
-add_subnodes 1 [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(1024.0, 1536.0, None)] highres interval: [0.0, 2048.0, 2048.0],  [20.0, 3072.0, 3072.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 2160, 2560)
-2023-02-24 11:01:21,571 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(1024, 1280, None))) World offset: (0, 332.8, 332.8)
-2023-02-24 11:01:21,591 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 768] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0214 seconds
-2023-02-24 11:01:21,640 - poor-mans-octree - DEBUG - update_chunk 2 (0, 512, 512) at node offset [  0.  332.8 332.8] with size (3, 10, 256, 256) took 0.0256 seconds
-2023-02-24 11:01:21,700 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(1280, 1536, None))) World offset: (0, 332.8, 416.0)
-2023-02-24 11:01:21,711 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 1024] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0097 seconds
-2023-02-24 11:01:21,799 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(1024, 1280, None))) World offset: (0, 416.0, 332.8)
-2023-02-24 11:01:21,821 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 1280] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0212 seconds
-2023-02-24 11:01:21,895 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(1280, 1536, None))) World offset: (0, 416.0, 416.0)
-2023-02-24 11:01:21,916 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 1024] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0202 seconds
-Recursive add on	[slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(2048.0, 2560.0, None)] idx 44 visible True for scale 1 to 0
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(2048.0, 2560.0, None)]
-add_subnodes 0 [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(2048.0, 2560.0, None)] highres interval: [0.0, 2048.0, 2048.0],  [10.0, 2560.0, 2560.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 4320, 5120)
-2023-02-24 11:01:21,984 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(2048, 2304, None))) World offset: (0, 332.8, 332.8)
-2023-02-24 11:01:22,030 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 1280] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0483 seconds
-2023-02-24 11:01:22,050 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(2304, 2560, None))) World offset: (0, 332.8, 374.40000000000003)
-2023-02-24 11:01:22,084 - poor-mans-octree - DEBUG - update_chunk 1 (0, 1024, 1024) at node offset [  0.  332.8 332.8] with size (3, 10, 256, 256) took 0.0539 seconds
-2023-02-24 11:01:22,115 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(2048, 2304, None))) World offset: (0, 374.40000000000003, 332.8)
-2023-02-24 11:01:22,121 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 2048] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0233 seconds
-2023-02-24 11:01:22,150 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 2304] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0256 seconds
-2023-02-24 11:01:22,166 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(2304, 2560, None))) World offset: (0, 374.40000000000003, 374.40000000000003)
-2023-02-24 11:01:22,207 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 2048] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0298 seconds
-/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py:628: FutureWarning: Public access to Window.qt_viewer is deprecated and will be removed in
-v0.5.0. It is considered an "implementation detail" of the napari
-application, not part of the napari viewer model. If your use case
-requires access to qt_viewer, please open an issue to discuss.
-  volume = viewer.window.qt_viewer.layer_to_visual[
-2023-02-24 11:01:22,256 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 2304] at node offset [  0.  332.8 332.8] with size (1, 10, 256, 256) took 0.0279 seconds
-view slice [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)]
-add_subnodes 4 [slice(0, 10, None), slice(0, 270, None), slice(0, 320, None)] highres interval: [0, 0, 0],  [160, 4320, 5120] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 270, 320)
-2023-02-24 11:01:43,259 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
-2023-02-24 11:01:43,259 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(0, 256, None), slice(256, 320, None))) World offset: (0, 0.0, 665.6)
-2023-02-24 11:01:43,259 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(0, 256, None))) World offset: (0, 665.6, 0.0)
-2023-02-24 11:01:43,260 - poor-mans-octree - DEBUG - Fetching: (4, (slice(0, 10, None), slice(256, 270, None), slice(256, 320, None))) World offset: (0, 665.6, 665.6)
-Recursive add on	[slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] idx 0 visible True for scale 4 to 3
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)]
-add_subnodes 3 [slice(0.0, 10.0, None), slice(0.0, 512.0, None), slice(0.0, 512.0, None)] highres interval: [0.0, 0.0, 0.0],  [80.0, 4096.0, 4096.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 540, 640)
-2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(0, 256, None))) World offset: (0, 0.0, 0.0)
-2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(0, 256, None), slice(256, 512, None))) World offset: (0, 0.0, 332.8)
-2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(0, 256, None))) World offset: (0, 332.8, 0.0)
-2023-02-24 11:01:43,263 - poor-mans-octree - DEBUG - Fetching: (3, (slice(0, 10, None), slice(256, 512, None), slice(256, 512, None))) World offset: (0, 332.8, 332.8)
-Recursive add on	[slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(0.0, 512.0, None)] idx 3 visible True for scale 3 to 2
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(0.0, 512.0, None)]
-add_subnodes 2 [slice(0.0, 10.0, None), slice(512.0, 1024.0, None), slice(0.0, 512.0, None)] highres interval: [0.0, 2048.0, 0.0],  [40.0, 4096.0, 2048.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 1080, 1280)
-2023-02-24 11:01:43,267 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(0, 256, None))) World offset: (0, 332.8, 0.0)
-2023-02-24 11:01:43,272 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0123 seconds
-2023-02-24 11:01:43,279 - poor-mans-octree - DEBUG - update_chunk 4 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 64) took 0.0074 seconds
-2023-02-24 11:01:43,287 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 14, 256) took 0.0080 seconds
-2023-02-24 11:01:43,296 - poor-mans-octree - DEBUG - update_chunk 4 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 14, 64) took 0.0079 seconds
-2023-02-24 11:01:43,305 - poor-mans-octree - DEBUG - update_chunk 4 (0, 0, 0) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0089 seconds
-2023-02-24 11:01:43,337 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0325 seconds
-2023-02-24 11:01:43,370 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(512, 768, None), slice(256, 512, None))) World offset: (0, 332.8, 166.4)
-2023-02-24 11:01:43,375 - poor-mans-octree - DEBUG - update_chunk 3 [0, 0, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0376 seconds
-2023-02-24 11:01:43,417 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 0] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0416 seconds
-2023-02-24 11:01:43,455 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(0, 256, None))) World offset: (0, 499.20000000000005, 0.0)
-2023-02-24 11:01:43,469 - poor-mans-octree - DEBUG - update_chunk 3 [0, 256, 256] at node offset [0. 0. 0.] with size (1, 10, 256, 256) took 0.0521 seconds
-2023-02-24 11:01:43,488 - poor-mans-octree - DEBUG - Fetching: (2, (slice(0, 10, None), slice(768, 1024, None), slice(256, 512, None))) World offset: (0, 499.20000000000005, 166.4)
-Recursive add on	[slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(512.0, 1024.0, None)] idx 11 visible True for scale 2 to 1
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(512.0, 1024.0, None)]
-add_subnodes 1 [slice(0.0, 10.0, None), slice(1024.0, 1536.0, None), slice(512.0, 1024.0, None)] highres interval: [0.0, 2048.0, 1024.0],  [20.0, 3072.0, 2048.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 2160, 2560)
-2023-02-24 11:01:43,521 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(512, 768, None))) World offset: (0, 332.8, 166.4)
-2023-02-24 11:01:43,526 - poor-mans-octree - DEBUG - update_chunk 3 (0, 256, 0) at node offset [0. 0. 0.] with size (3, 10, 256, 256) took 0.0568 seconds
-2023-02-24 11:01:43,583 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 0] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0336 seconds
-2023-02-24 11:01:43,619 - poor-mans-octree - DEBUG - update_chunk 2 [0, 512, 256] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0358 seconds
-2023-02-24 11:01:43,658 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 0] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0389 seconds
-2023-02-24 11:01:43,707 - poor-mans-octree - DEBUG - update_chunk 2 [0, 768, 256] at node offset [  0.  332.8   0. ] with size (1, 10, 256, 256) took 0.0490 seconds
-2023-02-24 11:01:43,758 - poor-mans-octree - DEBUG - update_chunk 2 (0, 512, 256) at node offset [  0.  332.8   0. ] with size (3, 10, 256, 256) took 0.0506 seconds
-2023-02-24 11:01:43,847 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1024, 1280, None), slice(768, 1024, None))) World offset: (0, 332.8, 249.60000000000002)
-2023-02-24 11:01:43,879 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 512] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0314 seconds
-2023-02-24 11:01:43,937 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(512, 768, None))) World offset: (0, 416.0, 166.4)
-2023-02-24 11:01:43,974 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1024, 768] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0368 seconds
-2023-02-24 11:01:44,038 - poor-mans-octree - DEBUG - Fetching: (1, (slice(0, 10, None), slice(1280, 1536, None), slice(768, 1024, None))) World offset: (0, 416.0, 249.60000000000002)
-2023-02-24 11:01:44,077 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 512] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0378 seconds
-Recursive add on	[slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(1536.0, 2048.0, None)] idx 43 visible True for scale 1 to 0
- Relative scale factor [1.0, 2.0, 2.0]
-view slice [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(1536.0, 2048.0, None)]
-add_subnodes 0 [slice(0.0, 10.0, None), slice(2048.0, 2560.0, None), slice(1536.0, 2048.0, None)] highres interval: [0.0, 2048.0, 1536.0],  [10.0, 2560.0, 2048.0] chunksize: (1, 10, 256, 256) arraysize: (3, 10, 4320, 5120)
-2023-02-24 11:01:44,146 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(1536, 1792, None))) World offset: (0, 332.8, 249.60000000000002)
-2023-02-24 11:01:44,214 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2048, 2304, None), slice(1792, 2048, None))) World offset: (0, 332.8, 291.2)
-2023-02-24 11:01:44,225 - poor-mans-octree - DEBUG - update_chunk 1 [0, 1280, 768] at node offset [  0.  332.8 166.4] with size (1, 10, 256, 256) took 0.0815 seconds
-2023-02-24 11:01:44,273 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(1536, 1792, None))) World offset: (0, 374.40000000000003, 249.60000000000002)
-2023-02-24 11:01:44,281 - poor-mans-octree - DEBUG - update_chunk 1 (0, 1024, 768) at node offset [  0.  332.8 166.4] with size (3, 10, 256, 256) took 0.0538 seconds
-2023-02-24 11:01:44,322 - poor-mans-octree - DEBUG - Fetching: (0, (slice(0, 10, None), slice(2304, 2560, None), slice(1792, 2048, None))) World offset: (0, 374.40000000000003, 291.2)
-2023-02-24 11:01:44,331 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 1536] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0500 seconds
-2023-02-24 11:01:44,392 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2048, 1792] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0382 seconds
-/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py:628: FutureWarning: Public access to Window.qt_viewer is deprecated and will be removed in
-v0.5.0. It is considered an "implementation detail" of the napari
-application, not part of the napari viewer model. If your use case
-requires access to qt_viewer, please open an issue to discuss.
-  volume = viewer.window.qt_viewer.layer_to_visual[
-2023-02-24 11:01:44,434 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 1536] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0414 seconds
-/Users/kharrington/nesoi/repos/napari/examples/are_the_chunks_in_view.py:628: FutureWarning: Public access to Window.qt_viewer is deprecated and will be removed in
-v0.5.0. It is considered an "implementation detail" of the napari
-application, not part of the napari viewer model. If your use case
-requires access to qt_viewer, please open an issue to discuss.
-  volume = viewer.window.qt_viewer.layer_to_visual[
-2023-02-24 11:01:44,472 - poor-mans-octree - DEBUG - update_chunk 0 [0, 2304, 1792] at node offset [  0.  332.8 249.6] with size (1, 10, 256, 256) took 0.0362 seconds
-"""
 
 
 @tz.curry
@@ -1104,17 +958,28 @@ def idr0051A():
         # .data[362, 0, :, :, :].rechunk((512, 512, 512))
         for scale in range(large_image["scale_levels"])
     ]
-    print([array.shape for array in large_image["arrays"]])
-    print([array.chunksize for array in large_image["arrays"]])
     # .rechunk((1, 1, 128, 128, 128))
     return large_image
 
 
 def luethi_zenodo_7144919():
+    import pooch
+
     # Downloaded from https://zenodo.org/record/7144919#.Y-OvqhPMI0R
     # TODO use pooch to fetch from zenodo
+    # zip_path = pooch.retrieve(
+    #     url="https://zenodo.org/record/7144919#.Y-OvqhPMI0R",
+    #     known_hash=None,# Update hash
+    # )
+    dest_dir = pooch.retrieve(
+        url="https://zenodo.org/record/7144919/files/20200812-CardiomyocyteDifferentiation14-Cycle1.zarr.zip?download=1",
+        known_hash="e6773fc97dcf3689e2f42e6504e0d4f4d0845c329dfbdfe92f61c2f3f1a4d55d",
+        processor=pooch.Unzip()
+    )
+    local_container = os.path.split(dest_dir[0])[0]
+    print(local_container)
     large_image = {
-        "container": "/Users/kharrington/Data/20200812-CardiomyocyteDifferentiation14-Cycle1.zarr",
+        "container": local_container,
         "dataset": "B/03/0",
         "scale_levels": 5,
         "scale_factors": [
