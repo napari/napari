@@ -11,7 +11,7 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.translations import trans
 
 
-@Shapes.bind_key(KeyCode.Shift)
+@Shapes.bind_key(KeyCode.Shift, overwrite=True)
 def hold_to_lock_aspect_ratio(layer: Shapes):
     """Hold to lock aspect ratio when resizing a shape."""
     # on key press
