@@ -1009,7 +1009,7 @@ def luethi_zenodo_7144919():
 @magic_factory(
     call_button="Poor Octree Renderer",
 )
-def poor_octree_widget(viewer: "napari.viewer.Viewer"):
+def poor_octree_widget(viewer: "napari.viewer.Viewer", alpha: float = 0.8):
     # TODO get this working with a non-remote large data sample
     # Chunked, multiscale data
 
@@ -1114,20 +1114,6 @@ def poor_octree_widget(viewer: "napari.viewer.Viewer"):
     viewer.dims.current_step = (0, 5, 135, 160)
 
     # Hooks and calls to start rendering
-    add_subnodes(
-        view_slice,
-        scale=len(multiscale_arrays) - 1,
-        viewer=viewer,
-        cache_manager=cache_manager,
-        arrays=multiscale_arrays,
-        chunk_maps=multiscale_chunk_maps,
-        container=large_image["container"],
-        dataset=large_image["dataset"],
-        scale_factors=scale_factors,
-        worker_map=worker_map,
-        viewer_lock=viewer_lock,
-    )
-
     @viewer.bind_key("k")
     def camera_response(event):
         add_subnodes(
@@ -1143,10 +1129,14 @@ def poor_octree_widget(viewer: "napari.viewer.Viewer"):
             scale_factors=scale_factors,
             worker_map=worker_map,
             viewer_lock=viewer_lock,
+            alpha=alpha,
         )
+        
+    # Trigger the first render pass
+    camera_response(None)
 
+        
     # TODO note that debounced uses threading.Timer
-
     # Connect to camera
     viewer.camera.events.connect(
         debounced(
