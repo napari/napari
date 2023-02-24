@@ -35,6 +35,7 @@ int detectAdjacentBackground(float val_neg, float val_pos)
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {
     // Calculate color by incorporating ambient and diffuse lighting
+    vec4 color0 = $get_data(loc);
     vec4 color1;
     vec4 color2;
     float val0 = colorToVal(color0);
