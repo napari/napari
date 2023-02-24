@@ -483,19 +483,41 @@ class QtViewer(QSplitter):
             )
         return None
 
-    def _weak_referenceable(self, obj):
-        """bool: Can obj be weakly referenced?
+    def _weakref_if_possible(self, obj):
+        """Create a weakref to obj.
 
-        Parameters
-        ----------
-        obj : Object
+        Cannot create weakrefs to many Python built-in datatypes such as list, dict, str.
+
+        From https://docs.python.org/3/library/weakref.html: "Objects which support weak
+        references include class instances, functions written in Python (but not in C),
+        instance methods, sets, frozensets, some file objects, generators, type objects,
+        sockets, arrays, deques, regular expression pattern objects, and code objects."
+
+        Args:
+            obj (Object): object
+
+        Returns:
+            weakref|Object: Returns a weakref if possible
         """
         try:
-            ref(obj)
+            newref = ref(obj)
         except TypeError:
-            return False
+            newref = obj
+        return newref
+
+    def _unwrap_if_weakref(self, value):
+        """Returns value or if that is weakref the object referenced by value.
+
+        Args:
+            value (Object|weakref): Can be a weakref
+
+        Returns:
+            Object|None: Returns object or None if weakref is dead.
+        """
+        if isinstance(value, ref):
+            return value()
         else:
-            return True
+            return value
 
     def add_to_console_backlog(self, variables):
         """Save variables for pushing to console when instantiated, creating weakrefs when possible.
@@ -514,16 +536,9 @@ class QtViewer(QSplitter):
         if isinstance(variables, dict):
             # weakly reference values if possible
             new_dict = {
-                k: ref(v) if self._weak_referenceable(v) else v
-                for k, v in variables.items()
+                k: self._weakref_if_possible(v) for k, v in variables.items()
             }
             self.console_backlog.append(new_dict)
-        elif isinstance(variables, list):
-            # weakly reference values if possible
-            new_list = [
-                ref(v) if self._weak_referenceable(v) else v for v in variables
-            ]
-            self.console_backlog.append(new_list)
         else:
             self.console_backlog.append(variables)
 
@@ -550,24 +565,12 @@ class QtViewer(QSplitter):
                     for i in self.console_backlog:
                         if isinstance(i, dict):
                             # recover weak refs
-                            new_dict = {
-                                k: v() if isinstance(v, ref) else v
-                                for k, v in i.items()
-                            }
                             self.console.push(
                                 {
-                                    k: v
-                                    for k, v in new_dict.items()
-                                    if v is not None
+                                    k: self._unwrap_if_weakref(v)
+                                    for k, v in i.items()
+                                    if self._unwrap_if_weakref(v) is not None
                                 }
-                            )
-                        elif isinstance(i, list):
-                            # recover weak refs
-                            new_list = [
-                                v() if isinstance(v, ref) else v for v in i
-                            ]
-                            self.console.push(
-                                [v for v in new_list if v is not None]
                             )
                         else:
                             self.console.push(i)
