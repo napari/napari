@@ -6,7 +6,7 @@ import typing
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
-from weakref import WeakSet
+from weakref import WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -483,6 +483,50 @@ class QtViewer(QSplitter):
             )
         return None
 
+    def _weak_referenceable(self, obj):
+        """bool: Can obj be weakly referenced?
+
+        Parameters
+        ----------
+        obj : Object
+        """
+        try:
+            ref(obj)
+        except TypeError:
+            return False
+        else:
+            return True
+
+    def add_to_console_backlog(self, variables):
+        """Save variables for pushing to console when instantiated, creating weakrefs when possible.
+
+        Parameters
+        ----------
+        variables : dict, str or list/tuple of str
+            The variables to inject into the console's namespace.  If a dict, a
+            simple update is done.  If a str, the string is assumed to have
+            variable names separated by spaces.  A list/tuple of str can also
+            be used to give the variable names.  If just the variable names are
+            give (list/tuple/str) then the variable values looked up in the
+            callers frame.
+        """
+
+        if isinstance(variables, dict):
+            # weakly reference values if possible
+            new_dict = {
+                k: ref(v) if self._weak_referenceable(v) else v
+                for k, v in variables.items()
+            }
+            self.console_backlog.append(new_dict)
+        elif isinstance(variables, list):
+            # weakly reference values if possible
+            new_list = [
+                ref(v) if self._weak_referenceable(v) else v for v in variables
+            ]
+            self.console_backlog.append(new_list)
+        else:
+            self.console_backlog.append(variables)
+
     @property
     def console_backlog(self):
         """List: items to push to console when instantiated."""
@@ -504,7 +548,29 @@ class QtViewer(QSplitter):
                         {'napari': napari, 'action_manager': action_manager}
                     )
                     for i in self.console_backlog:
-                        self.console.push(i)
+                        if isinstance(i, dict):
+                            # recover weak refs
+                            new_dict = {
+                                k: v() if isinstance(v, ref) else v
+                                for k, v in i.items()
+                            }
+                            self.console.push(
+                                {
+                                    k: v
+                                    for k, v in new_dict.items()
+                                    if v is not None
+                                }
+                            )
+                        elif isinstance(i, list):
+                            # recover weak refs
+                            new_list = [
+                                v() if isinstance(v, ref) else v for v in i
+                            ]
+                            self.console.push(
+                                [v for v in new_list if v is not None]
+                            )
+                        else:
+                            self.console.push(i)
                     self._console_backlog = []
             except ModuleNotFoundError:
                 warnings.warn(
