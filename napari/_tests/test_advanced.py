@@ -192,6 +192,15 @@ def test_update_lazy_console(make_napari_viewer):
     locs = locals()
     viewer.update_console(locs)
 
+    # Create class objects that will have weakrefs
+    class Foo:
+        pass
+
+    obj1 = Foo()
+    obj2 = Foo()
+    viewer.update_console({'obj1': obj1, 'obj2': obj2})
+    del obj1
+
     # Check viewer in console
     assert view.console.kernel_client is not None
     assert 'viewer' in view.console.shell.user_ns
@@ -204,6 +213,10 @@ def test_update_lazy_console(make_napari_viewer):
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
+    assert 'obj1' not in view.console.shell.user_ns
+    assert 'obj2' in view.console.shell.user_ns
+    assert view.console.shell.user_ns['obj2'] == obj2
+    del viewer.window._qt_viewer.console.shell.user_ns['obj2']
     for k in locs.keys():
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
