@@ -538,6 +538,7 @@ def render_sequence(
             )
 
             # TODO Note that we need to be blanking out lower res data at the same time
+            # TODO this is when we should move the node from the next resolution.
             yield (
                 np.asarray(zdata),
                 scale,
@@ -645,6 +646,7 @@ def update_chunk(
         import pdb
 
         pdb.set_trace()
+        
     layer.data[texture_slice] = new_texture_data[
         : layer.data[texture_slice].shape[0],
         : layer.data[texture_slice].shape[1],
@@ -967,8 +969,8 @@ if __name__ == '__main__':
     # These datasets have worked at one point in time
     # large_image = openorganelle_mouse_kidney_labels()
     # large_image = idr0044A()
-    # large_image = luethi_zenodo_7144919()
-    large_image = idr0051A()
+    large_image = luethi_zenodo_7144919()
+    # large_image = idr0051A()
 
     # These datasets need testing
     # large_image = idr0075A()
@@ -1068,6 +1070,8 @@ if __name__ == '__main__':
 
     # start_profiling()
 
+    viewer.dims.current_step = (0, 5, 135, 160)
+
     # Hooks and calls to start rendering
     add_subnodes(
         view_slice,
@@ -1104,7 +1108,17 @@ if __name__ == '__main__':
         )
 
     # TODO note that debounced uses threading.Timer
+
+    # Connect to camera
     viewer.camera.events.connect(
+        debounced(
+            ensure_main_thread(camera_response),
+            timeout=1000,
+        )
+    )
+
+    # Connect to dims (to get sliders)
+    viewer.dims.events.connect(
         debounced(
             ensure_main_thread(camera_response),
             timeout=1000,
