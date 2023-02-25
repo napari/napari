@@ -486,18 +486,22 @@ class QtViewer(QSplitter):
     def _weakref_if_possible(self, obj):
         """Create a weakref to obj.
 
-        Cannot create weakrefs to many Python built-in datatypes such as list, dict, str.
+        Parameters
+        ----------
+        obj : object
+            Cannot create weakrefs to many Python built-in datatypes such as
+            list, dict, str.
 
-        From https://docs.python.org/3/library/weakref.html: "Objects which support weak
-        references include class instances, functions written in Python (but not in C),
-        instance methods, sets, frozensets, some file objects, generators, type objects,
-        sockets, arrays, deques, regular expression pattern objects, and code objects."
+            From https://docs.python.org/3/library/weakref.html: "Objects which
+            support weak references include class instances, functions written
+            in Python (but not in C), instance methods, sets, frozensets, some
+            file objects, generators, type objects, sockets, arrays, deques,
+            regular expression pattern objects, and code objects."
 
-        Args:
-            obj (Object): object
-
-        Returns:
-            weakref|Object: Returns a weakref if possible
+        Returns
+        -------
+        weakref or object
+            Returns a weakref if possible.
         """
         try:
             newref = ref(obj)
@@ -508,11 +512,15 @@ class QtViewer(QSplitter):
     def _unwrap_if_weakref(self, value):
         """Returns value or if that is weakref the object referenced by value.
 
-        Args:
-            value (Object|weakref): Can be a weakref
+        Parameters
+        ----------
+        value : object or weakref
+            No-op for types other than weakref.
 
-        Returns:
-            Object|None: Returns object or None if weakref is dead.
+        Returns
+        -------
+        object or None
+            Returns object or None if weakref is dead.
         """
         if isinstance(value, ref):
             return value()
@@ -520,7 +528,8 @@ class QtViewer(QSplitter):
             return value
 
     def add_to_console_backlog(self, variables):
-        """Save variables for pushing to console when instantiated, creating weakrefs when possible.
+        """Save variables for pushing to console when instantiated, creating
+        weakrefs when possible.
 
         Parameters
         ----------
@@ -532,7 +541,6 @@ class QtViewer(QSplitter):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-
         if isinstance(variables, dict):
             # weakly reference values if possible
             new_dict = {
