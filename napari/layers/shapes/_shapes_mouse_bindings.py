@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -14,11 +13,6 @@ from napari.layers.shapes._shapes_models import (
     Rectangle,
 )
 from napari.layers.shapes._shapes_utils import point_to_lines, rdp
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
-
-_last_cursor_position: Optional[npt.NDArray] = None
 
 
 def highlight(layer, event):
@@ -197,8 +191,11 @@ def add_path_polygon(layer, event):
     """Add a path or polygon."""
     # on press
     coordinates = layer.world_to_data(event.position)
-    # print(f'add_path_polygon(): layer._is_creating = {layer._is_creating}, event.type = {event.type}, event.is_dragging = {event.is_dragging}')
     if layer._is_creating is False:
+        # Reset last cursor position in case shapes were drawn in different dimension beforehand.
+        global _last_cursor_position
+        _last_cursor_position = None
+
         # Start drawing a path
         data = np.array([coordinates, coordinates])
         layer.add(data, shape_type='path')
