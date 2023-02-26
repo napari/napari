@@ -111,6 +111,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             self._private_attr_warning(name, typ)
 
         setattr(self.__wrapped__, name, value)
+        return None
 
     def __getitem__(self, key):
         return self.create(super().__getitem__(key))

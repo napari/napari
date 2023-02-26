@@ -311,15 +311,16 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
                 out_dtype
             )
-        else:
-            np.maximum(data, 0, out=data, dtype=data.dtype)
-            if data.dtype == np.int8:
-                return (data * 2).astype(np.uint8)
-            if data.max() < out_max:
-                return data.astype(out_dtype)
-            return np.right_shift(
-                data, (data.dtype.itemsize - 1) * 8 - 1
-            ).astype(out_dtype)
+
+        np.maximum(data, 0, out=data, dtype=data.dtype)
+        if data.dtype == np.int8:
+            return (data * 2).astype(np.uint8)
+        if data.max() < out_max:
+            return data.astype(out_dtype)
+        return np.right_shift(data, (data.dtype.itemsize - 1) * 8 - 1).astype(
+            out_dtype
+        )
+    return None
 
 
 def get_current_properties(

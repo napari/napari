@@ -128,8 +128,8 @@ def _convert_dtype(ll: LayerList, mode='int64'):
                 deferred=True,
             )
         )
-    else:
-        layer.data = layer.data.astype(np.dtype(mode))
+
+    layer.data = layer.data.astype(np.dtype(mode))
 
 
 def _project(ll: LayerList, axis: int = 0, mode='max'):

@@ -93,6 +93,7 @@ def bundle_bin_dir() -> Optional[str]:
     )
     if os_path.isdir(bin_path):
         return bin_path
+    return None
 
 
 def in_jupyter() -> bool:
@@ -138,8 +139,8 @@ def ensure_iterable(arg, color=False):
     """
     if is_iterable(arg, color=color):
         return arg
-    else:
-        return itertools.repeat(arg)
+
+    return itertools.repeat(arg)
 
 
 def is_iterable(arg, color=False, allow_none=False):
@@ -153,10 +154,10 @@ def is_iterable(arg, color=False, allow_none=False):
         or np.isscalar(arg)
     ):
         return False
-    elif color and isinstance(arg, (list, np.ndarray)):
+    if color and isinstance(arg, (list, np.ndarray)):
         return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
-    else:
-        return True
+
+    return True
 
 
 def is_sequence(arg):
@@ -285,17 +286,17 @@ class StringEnumMeta(EnumMeta):
         if names is None:
             if isinstance(value, str):
                 return super().__call__(value.lower())
-            elif isinstance(value, cls):
+            if isinstance(value, cls):
                 return value
-            else:
-                raise ValueError(
-                    trans._(
-                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                        deferred=True,
-                        class_name=cls,
-                        dtype=builtins.type(value),
-                    )
+
+            raise ValueError(
+                trans._(
+                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                    deferred=True,
+                    class_name=cls,
+                    dtype=builtins.type(value),
                 )
+            )
 
         # otherwise create new Enum class
         return cls._create_(
@@ -325,7 +326,7 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
     def __eq__(self, other):
         if type(self) is type(other):
             return self is other
-        elif isinstance(other, str):
+        if isinstance(other, str):
             return str(self) == other
         return NotImplemented
 

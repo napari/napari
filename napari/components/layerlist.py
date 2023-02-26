@@ -308,47 +308,47 @@ class LayerList(SelectableEventedList[Layer]):
         """
         if len(self) == 0:
             return [(0, 1, 1)] * self.ndim
-        else:
-            # Determine minimum step size across all layers
-            layer_extent_list = [layer.extent for layer in self]
-            scales = [extent.step for extent in layer_extent_list]
-            min_steps = self._step_size_from_scales(scales)
 
-            # Pixel-based layers need to be offset by 0.5 * min_steps to align
-            # Dims.range with pixel centers in world coordinates
-            pixel_offsets = [
-                0.5 * min_steps
-                if isinstance(layer, _ImageBase)
-                else [0] * len(min_steps)
-                for layer in self
-            ]
+        # Determine minimum step size across all layers
+        layer_extent_list = [layer.extent for layer in self]
+        scales = [extent.step for extent in layer_extent_list]
+        min_steps = self._step_size_from_scales(scales)
 
-            # Non-pixel layers need an offset of the range stop by min_steps since the upper
-            # limit of Dims.range is non-inclusive.
-            point_offsets = [
-                [0] * len(min_steps)
-                if isinstance(layer, _ImageBase)
-                else min_steps
-                for layer in self
-            ]
+        # Pixel-based layers need to be offset by 0.5 * min_steps to align
+        # Dims.range with pixel centers in world coordinates
+        pixel_offsets = [
+            0.5 * min_steps
+            if isinstance(layer, _ImageBase)
+            else [0] * len(min_steps)
+            for layer in self
+        ]
 
-            # Determine world coordinate extents similarly to
-            # `_get_extent_world`, but including offsets calculated above.
-            extrema = [extent.world for extent in layer_extent_list]
-            mins = [
-                e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
-            ]
-            maxs = [
-                e[1] + o1[: len(e[0])] + o2[: len(e[0])]
-                for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
-            ]
-            min_v, max_v = self._get_min_and_max(mins, maxs)
+        # Non-pixel layers need an offset of the range stop by min_steps since the upper
+        # limit of Dims.range is non-inclusive.
+        point_offsets = [
+            [0] * len(min_steps)
+            if isinstance(layer, _ImageBase)
+            else min_steps
+            for layer in self
+        ]
 
-            # form range tuples, switching back to original dimension order
-            return [
-                (start, stop, step)
-                for start, stop, step in zip(min_v, max_v, min_steps)
-            ]
+        # Determine world coordinate extents similarly to
+        # `_get_extent_world`, but including offsets calculated above.
+        extrema = [extent.world for extent in layer_extent_list]
+        mins = [
+            e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
+        ]
+        maxs = [
+            e[1] + o1[: len(e[0])] + o2[: len(e[0])]
+            for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
+        ]
+        min_v, max_v = self._get_min_and_max(mins, maxs)
+
+        # form range tuples, switching back to original dimension order
+        return [
+            (start, stop, step)
+            for start, stop, step in zip(min_v, max_v, min_steps)
+        ]
 
     @property
     def ndim(self) -> int:

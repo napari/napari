@@ -280,8 +280,8 @@ class QtDims(QWidget):
                     fps, loop_mode, frame_range
                 )
                 return
-            else:
-                self.stop()
+
+            self.stop()
 
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)

@@ -1106,8 +1106,8 @@ class Shapes(Layer):
                 raise ValueError(
                     trans._('Length of list does not match number of shapes')
                 )
-            else:
-                widths = width
+
+            widths = width
         else:
             widths = [width for _ in range(self.nshapes)]
 
@@ -1135,8 +1135,8 @@ class Shapes(Layer):
                 raise ValueError(
                     trans._('Length of list does not match number of shapes')
                 )
-            else:
-                z_indices = z_index
+
+            z_indices = z_index
         else:
             z_indices = [z_index for _ in range(self.nshapes)]
 
@@ -1466,15 +1466,15 @@ class Shapes(Layer):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             return color in self.properties
-        elif isinstance(color, (list, np.ndarray)):
+        if isinstance(color, (list, np.ndarray)):
             return False
-        else:
-            raise ValueError(
-                trans._(
-                    'face_color should be the name of a color, an array of colors, or the name of an property',
-                    deferred=True,
-                )
+
+        raise ValueError(
+            trans._(
+                'face_color should be the name of a color, an array of colors, or the name of an property',
+                deferred=True,
             )
+        )
 
     def _get_state(self):
         """Get dictionary of layer state.

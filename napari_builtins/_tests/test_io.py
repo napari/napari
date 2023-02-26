@@ -289,8 +289,8 @@ def test_irregular_images(_write_spec, stack):
         ):
             magic_imread(fnames, use_dask=False, stack=stack)
         return
-    else:
-        images = magic_imread(fnames, use_dask=False, stack=stack)
+
+    images = magic_imread(fnames, use_dask=False, stack=stack)
     assert isinstance(images, list)
     assert len(images) == 2
     assert all(img.shape == spec.shape for img, spec in zip(images, specs))

@@ -359,10 +359,9 @@ def _guess_layer_type_from_column_names(
         column_names
     ):
         return 'shapes'
-    elif {'axis-0', 'axis-1'}.issubset(column_names):
+    if {'axis-0', 'axis-1'}.issubset(column_names):
         return 'points'
-    else:
-        return None
+    return None
 
 
 def read_csv(
@@ -414,7 +413,7 @@ def read_csv(
                         filename=filename,
                     )
                 )
-            elif layer_type != require_type and require_type.lower() != "any":
+            if layer_type != require_type and require_type.lower() != "any":
                 raise ValueError(
                     trans._(
                         'File "{filename}" not recognized as {require_type} data',

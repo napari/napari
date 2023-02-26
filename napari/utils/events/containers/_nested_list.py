@@ -52,7 +52,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
     """
     if isinstance(index, (slice, int)):
         return (index,)  # single integer inserts to self
-    elif isinstance(index, tuple):
+    if isinstance(index, tuple):
         return index
 
     raise TypeError(

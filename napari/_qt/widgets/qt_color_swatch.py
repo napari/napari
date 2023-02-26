@@ -200,6 +200,8 @@ class QColorSwatch(QFrame):
         self._color = _color
         if emit or np.all(_color == TRANSPARENT):
             self.color_changed.emit(_color)
+            return None
+        return None
 
 
 class QColorLineEdit(QLineEdit):
@@ -311,3 +313,4 @@ class QColorPopup(QtPopup):
         if event.key() == Qt.Key.Key_Escape:
             return self.color_dialog.reject()
         self.color_dialog.keyPressEvent(event)
+        return None

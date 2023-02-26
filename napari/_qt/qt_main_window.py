@@ -403,6 +403,7 @@ class _QtMainWindow(QMainWindow):
             self._qt_viewer.dims.stop()
             return super().close()
         self._is_close_dialog[quit_app] = True
+        return None
         # here we inform that confirmation dialog is not open
 
     def close_window(self):
@@ -844,7 +845,7 @@ class Window:
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            return
+            return None
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
 
@@ -1135,13 +1136,13 @@ class Window:
                 allowed_areas=allowed_areas,
                 shortcut=shortcut,
             )
-        else:
-            return self.add_dock_widget(
-                widget,
-                name=name or function.__name__.replace('_', ' '),
-                area=area,
-                allowed_areas=allowed_areas,
-            )
+
+        return self.add_dock_widget(
+            widget,
+            name=name or function.__name__.replace('_', ' '),
+            area=area,
+            allowed_areas=allowed_areas,
+        )
 
     def resize(self, width, height):
         """Resize the window.

@@ -71,7 +71,7 @@ def no_op(layer: Layer, event: Event) -> None:
     None
 
     """
-    return None
+    return
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -1139,7 +1139,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             The data value along the supplied ray.
 
         """
-        return None
+        return
 
     def projected_distance_from_mouse_drag(
         self,
@@ -1361,8 +1361,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order = np.array(world_dims)
         if offset <= 0:
             return list(range(-offset)) + list(order - offset)
-        else:
-            return list(order[order >= offset] - offset)
+
+        return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (ndisplay, 2) bounding box around the data"""
@@ -1634,7 +1634,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 components['plugin'] = self.source.reader_plugin
             return components
 
-        elif self.source.sample:
+        if self.source.sample:
             components['layer_base'] = self.name
             components['source_type'] = 'sample'
             try:
@@ -1645,17 +1645,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 components['plugin'] = self.source.sample[0]
             return components
 
-        elif self.source.widget:
+        if self.source.widget:
             components['layer_base'] = self.name
             components['source_type'] = 'widget'
             components['plugin'] = self.source.widget._function.__name__
             return components
 
-        else:
-            components['layer_base'] = self.name
-            components['source_type'] = ''
-            components['plugin'] = ''
-            return components
+        components['layer_base'] = self.name
+        components['source_type'] = ''
+        components['plugin'] = ''
+        return components
 
     def get_source_str(self):
         source_info = self._get_source_info()

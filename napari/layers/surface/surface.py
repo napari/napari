@@ -503,7 +503,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         value : None
             Value of the data at the coord.
         """
-        return None
+        return
 
     def _get_value_3d(
         self,

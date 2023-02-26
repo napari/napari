@@ -272,7 +272,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'rgb' was set to True but data does not have suitable dimensions."
                 )
             )
-        elif rgb is None:
+        if rgb is None:
             rgb = rgb_guess
         self.rgb = rgb
 
@@ -399,8 +399,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
             return np.zeros((1,) * self._slice_input.ndisplay + (3,))
-        else:
-            return np.zeros((1,) * self._slice_input.ndisplay)
+
+        return np.zeros((1,) * self._slice_input.ndisplay)
 
     def _get_order(self) -> Tuple[int]:
         """Return the ordered displayed dimensions, but reduced to fit in the slice space."""
@@ -410,8 +410,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
             return order + (max(order) + 1,)
-        else:
-            return order
+
+        return order
 
     @property
     def _data_view(self):

@@ -470,7 +470,7 @@ class EventEmitter:
         callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
-            return
+            return None
 
         # deal with the ref
         _ref: Union[str, None]
@@ -1024,7 +1024,7 @@ class EmitterGroup(EventEmitter):
                         name=name,
                     )
                 )
-            elif hasattr(self, name):
+            if hasattr(self, name):
                 raise ValueError(
                     trans._(
                         "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",

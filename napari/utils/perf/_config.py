@@ -156,10 +156,10 @@ def _create_perf_config():
 
     if value is None or value == "0":
         return None  # Totally disabled
-    elif value == "1":
+    if value == "1":
         return PerfmonConfig(None)  # Legacy no config, Qt events only.
-    else:
-        return PerfmonConfig(value)  # Normal parse the config file.
+
+    return PerfmonConfig(value)  # Normal parse the config file.
 
 
 # The global instance

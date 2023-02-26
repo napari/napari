@@ -1034,13 +1034,13 @@ class ShapeList:
         indices = inside_triangles(triangles - coord)
         shapes = self._mesh.displayed_triangles_index[indices, 0]
 
-        if len(shapes) > 0:
-            z_list = self._z_order.tolist()
-            order_indices = np.array([z_list.index(m) for m in shapes])
-            ordered_shapes = shapes[np.argsort(order_indices)]
-            return ordered_shapes[0]
-        else:
+        if len(shapes) == 0:
             return None
+
+        z_list = self._z_order.tolist()
+        order_indices = np.array([z_list.index(m) for m in shapes])
+        ordered_shapes = shapes[np.argsort(order_indices)]
+        return ordered_shapes[0]
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
@@ -1072,20 +1072,20 @@ class ShapeList:
             triangles=triangles,
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if len(intersected_shapes) > 0:
-            intersection_points = self._triangle_intersection(
-                triangle_indices=inside,
-                ray_position=ray_position,
-                ray_direction=ray_direction,
-            )
-            start_to_intersection = intersection_points - ray_position
-            distances = np.linalg.norm(start_to_intersection, axis=1)
-            closest_shape_index = np.argmin(distances)
-            shape = intersected_shapes[closest_shape_index]
-            intersection = intersection_points[closest_shape_index]
-            return shape, intersection
-        else:
+        if len(intersected_shapes) == 0:
             return None, None
+
+        intersection_points = self._triangle_intersection(
+            triangle_indices=inside,
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+        )
+        start_to_intersection = intersection_points - ray_position
+        distances = np.linalg.norm(start_to_intersection, axis=1)
+        closest_shape_index = np.argmin(distances)
+        shape = intersected_shapes[closest_shape_index]
+        intersection = intersection_points[closest_shape_index]
+        return shape, intersection
 
     def _triangle_intersection(
         self,

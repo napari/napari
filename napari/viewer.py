@@ -87,8 +87,7 @@ class Viewer(ViewerModel):
         """
         if self.window._qt_viewer._console is None:
             return
-        else:
-            self.window._qt_viewer.console.push(variables)
+        self.window._qt_viewer.console.push(variables)
 
     def screenshot(
         self,
