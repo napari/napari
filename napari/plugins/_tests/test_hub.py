@@ -5,14 +5,14 @@ from napari.plugins import hub
 
 # Mock data
 # ----------------------------------------------------------------------------
-HUB_REPLY = b'''{"authors": [{"email": "sofroniewn@gmail.com", "name": "Nicholas Sofroniew"}],
+HUB_REPLY = b"""{"authors": [{"email": "sofroniewn@gmail.com", "name": "Nicholas Sofroniew"}],
 "development_status": ["Development Status :: 4 - Beta"],
 "license": "BSD-3-Clause",
 "name": "napari-svg",
 "project_site": "https://github.com/napari/napari-svg",
 "summary": "A plugin",
 "version": "0.1.6",
-"visibility": "public"}'''
+"visibility": "public"}"""
 ANACONDA_REPLY_DIFFERENT_PYPI = b'{"versions": ["0.1.5"]}'
 ANACONDA_REPLY_SAME_PYPI = b'{"versions": ["0.1.5", "0.1.6"]}'
 ANACONDA_REPLY_EMPTY = b'{"versions": []}'
