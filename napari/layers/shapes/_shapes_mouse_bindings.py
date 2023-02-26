@@ -294,7 +294,8 @@ def finish_drawing_polygon(
 
     index = layer._moving_value[0]
     vertices = layer._data_view.shapes[index].data
-    rdp(vertices, epsilon=0.5)
+    vertices = rdp(vertices, epsilon=0.5)
+    layer._data_view.edit(index, vertices, new_type=Polygon)
     finish_drawing_shape(layer, event)
 
 
