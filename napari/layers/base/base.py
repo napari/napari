@@ -1001,10 +1001,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
     ) -> _SliceInput:
-        if point is None:
-            point = (0,) * self.ndim
-        else:
-            point = tuple(point)
+        point = (0,) * self.ndim if point is None else tuple(point)
 
         ndim = len(point)
 

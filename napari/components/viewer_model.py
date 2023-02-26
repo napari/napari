@@ -1052,7 +1052,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ) as pbr:
             for _path in pbr:
                 # If _path is a list, set stack to True
-                _stack = True if isinstance(_path, list) else False
+                _stack = isinstance(_path, list)
                 # If _path is not a list already, make it a list.
                 _path = [_path] if not isinstance(_path, list) else _path
                 if plugin:

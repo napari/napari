@@ -63,7 +63,7 @@ def test_register_theme():
 
     # Check that the dark theme has not been overwritten
     dark_theme = get_theme('dark', True)
-    assert not dark_theme['background'] == blue_theme['background']
+    assert dark_theme['background'] != blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
     theme = get_theme('test_blue', True)

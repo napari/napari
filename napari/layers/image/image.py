@@ -963,10 +963,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         coord = np.round(coord).astype(int)
 
         raw = self._slice.image.raw
-        if self.rgb:
-            shape = raw.shape[:-1]
-        else:
-            shape = raw.shape
+        shape = raw.shape[:-1] if self.rgb else raw.shape
 
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate

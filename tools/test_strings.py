@@ -599,10 +599,7 @@ if __name__ == '__main__':
     import json
     import pathlib
 
-    if len(sys.argv) > 1:
-        edit_cmd = sys.argv[1]
-    else:
-        edit_cmd = None
+    edit_cmd = sys.argv[1] if len(sys.argv) > 1 else None
 
     pth = pathlib.Path(__file__).parent / 'string_list.json'
     data = json.loads(pth.read_text())
