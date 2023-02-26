@@ -94,7 +94,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
             try:
                 value = unknown[i + 1]
                 if value.startswith("--"):
-                    raise IndexError()
+                    raise IndexError
             except IndexError:
                 sys.exit(f"error: argument {arg} expected one argument")
         with contextlib.suppress(Exception):

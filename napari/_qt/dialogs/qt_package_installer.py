@@ -66,19 +66,19 @@ class AbstractInstallerTool:
     @classmethod
     def executable(cls):
         "Path to the executable that will run the task"
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # abstract method
     def arguments(self):
         "Arguments supplied to the executable"
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # abstract method
     def environment(
         self, env: QProcessEnvironment = None
     ) -> QProcessEnvironment:
         "Changes needed in the environment variables."
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @staticmethod
     def constraints() -> Sequence[str]:
@@ -92,7 +92,7 @@ class AbstractInstallerTool:
         """
         Check if the tool is available by performing a little test
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class PipInstallerTool(AbstractInstallerTool):

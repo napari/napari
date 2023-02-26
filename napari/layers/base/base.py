@@ -748,12 +748,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @abstractmethod
     def data(self):
         # user writes own docstring
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @data.setter
     @abstractmethod
     def data(self, data):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -764,7 +764,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         -------
         extent_data : array, shape (2, D)
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def _extent_world(self) -> np.ndarray:
@@ -818,7 +818,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _get_ndim(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
@@ -847,7 +847,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _get_state(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def _type_string(self):
@@ -975,7 +975,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _set_view_slice(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _slice_dims(self, point=None, ndisplay=2, order=None):
         """Slice data with values from a global dims model.
@@ -1023,7 +1023,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @abstractmethod
     def _update_thumbnail(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def _get_value(self, position):
@@ -1039,7 +1039,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         value : tuple
             Value of the data.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get_value(
         self,
