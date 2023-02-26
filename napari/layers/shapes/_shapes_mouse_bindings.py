@@ -329,6 +329,8 @@ def add_path_polygon(layer: napari.layers.Shapes, event: ReadOnlyWrapper):
         layer._set_highlight()
     elif event.type == 'mouse_move':
         add_vertex_to_polygon(layer, event, coordinates)
+    elif event.type == 'mouse_press' and layer._mode == Mode.ADD_PATH:
+        add_vertex_to_polygon(layer, event, coordinates)
 
 
 def add_path_polygon_creating(
