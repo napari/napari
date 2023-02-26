@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -12,7 +13,19 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
-from napari.layers.shapes._shapes_utils import point_to_lines, rdp
+from napari.layers.shapes._shapes_utils import (
+    below_distance_threshold,
+    point_to_lines,
+    rdp,
+)
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
+    import napari.layers
+    from napari.utils._proxies import ReadOnlyWrapper
+
+_last_vertex_position = None
 
 
 def highlight(layer, event):
@@ -187,14 +200,124 @@ def finish_drawing_shape(layer, event):
     layer._finish_drawing()
 
 
-def add_path_polygon(layer, event):
-    """Add a path or polygon."""
+def add_vertex_to_polygon(
+    layer: napari.layers.Shapes,
+    event: ReadOnlyWrapper,
+    coordinates: npt.ArrayLike,
+) -> None:
+    """Function to add a vertex to an existing path or polygon
+
+    Parameters
+    ----------
+    layer: napari.layers.Shapes
+        A napari shapes layer
+    event: ReadOnlyWrapper
+        A read only wrapper around a mouse event
+    coordinates: npt.ArrayLike
+        An array like object representing the coordinates of the vertex to be added to the existing path or polygon
+
+    Returns
+    -------
+    None
+    """
+    # Add to an existing path or polygon
+    index = layer._moving_value[0]
+    if (
+        layer._mode == Mode.ADD_POLYGON
+        or layer._mode == Mode.ADD_POLYGON_LASSO
+    ):
+        new_type = Polygon
+    else:
+        new_type = None
+    vertices = layer._data_view.shapes[index].data
+    vertices = np.concatenate((vertices, [coordinates]), axis=0)
+
+    # Change the selected vertex
+    value = layer.get_value(event.position, world=True)
+    layer._value = (value[0], value[1] + 1)
+    layer._moving_value = copy(layer._value)
+    layer._data_view.edit(index, vertices, new_type=new_type)
+    layer._selected_box = layer.interaction_box(layer.selected_data)
+
+
+def drag_polygon(layer: napari.layers.Shapes, event: ReadOnlyWrapper) -> None:
+    """Function encompassing the actions to be taken when there is a drag mouse event when drawing a polygon
+
+    Parameters
+    ----------
+    layer: napari.layers.Shapes
+        A napari shapes layer
+    event: ReadOnlyWrapper
+        A read only wrapper around a mouse event
+
+    Returns
+    -------
+    None
+    """
+    if layer._is_creating:
+        global _last_vertex_position
+        _last_vertex_position = np.array(event.position)
+        yield
+
+        while event.type == 'mouse_move':
+            # while mouse moves let vertex track mouse cursor but do not add to data
+            coordinates = layer.world_to_data(event.position)
+            _move(layer, coordinates)
+            yield
+
+        # In order not to add vertex twice when clicking 2 times at the same position
+        if not np.array_equal(_last_vertex_position, event.position):
+            # Conversion needed because of read only wrapper returning tuple instead of numpy array when having drag event.
+            _last_vertex_position = np.array(event.position)
+            coordinates = layer.world_to_data(event.position)
+            _move(layer, coordinates)
+            add_vertex_to_polygon(layer, event, coordinates)
+
+
+def finish_drawing_polygon(
+    layer: napari.layers.Shapes, event: ReadOnlyWrapper
+) -> None:
+    """Function which allows for finishing the drawing of a polygon and applying a polygon vertices reduction
+    algorithm called RDP.
+
+    Parameters
+    ----------
+    layer: napari.layers.Shapes
+        A napari shapes layer
+    event: ReadOnlyWrapper
+        A read only wrapper around a mouse doubleclick event
+
+    Returns
+    -------
+    None
+    """
+
+    index = layer._moving_value[0]
+    vertices = layer._data_view.shapes[index].data
+    rdp(vertices, epsilon=0.5)
+    finish_drawing_shape(layer, event)
+
+
+def add_path_polygon(layer: napari.layers.Shapes, event: ReadOnlyWrapper):
+    """Add a path or polygon to the shapes layer and add vertices to it in case of a mouse move event.
+
+    Parameters
+    ----------
+    layer: napari.layers.Shapes
+        A napari shapes layer
+    event: ReadOnlyWrapper
+        A read only wrapper around a mouse event
+
+    Returns
+    -------
+    None
+    """
     # on press
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Reset last cursor position in case shapes were drawn in different dimension beforehand.
-        global _last_cursor_position
-        _last_cursor_position = None
+        global _last_vertex_position
+        _last_vertex_position = None
 
         # Start drawing a path
         data = np.array([coordinates, coordinates])
@@ -204,55 +327,57 @@ def add_path_polygon(layer, event):
         layer._moving_value = copy(layer._value)
         layer._is_creating = True
         layer._set_highlight()
-    elif event.type == 'mouse_press' and layer._mode == Mode.ADD_POLYGON_LASSO:
-        index = layer._moving_value[0]
-        vertices = layer._data_view.shapes[index].data
-        vertices = rdp(vertices, epsilon=0.5)
-        layer._data_view.edit(index, vertices, new_type=Polygon)
-        finish_drawing_shape(layer, event)
-    else:
-        # Add to an existing path or polygon
-        index = layer._moving_value[0]
-        if (
-            layer._mode == Mode.ADD_POLYGON
-            or layer._mode == Mode.ADD_POLYGON_LASSO
-        ):
-            new_type = Polygon
-        else:
-            new_type = None
-        vertices = layer._data_view.shapes[index].data
-        vertices = np.concatenate((vertices, [coordinates]), axis=0)
-        # Change the selected vertex
-        value = layer.get_value(event.position, world=True)
-        layer._value = (value[0], value[1] + 1)
-        layer._moving_value = copy(layer._value)
-        layer._data_view.edit(index, vertices, new_type=new_type)
-        layer._selected_box = layer.interaction_box(layer.selected_data)
+    elif event.type == 'mouse_move':
+        add_vertex_to_polygon(layer, event, coordinates)
 
 
-def add_path_polygon_creating(layer, event):
-    """While a path or polygon move next vertex to be added."""
+def add_path_polygon_creating(
+    layer: napari.layers.Shapes, event: ReadOnlyWrapper
+) -> None:
+    """While creating a path or polygon and the mouse is moving, move the vertex to be added on click
+
+    Parameters
+    ----------
+    layer: napari.layers.Shapes
+        A napari shapes layer
+    event: ReadOnlyWrapper
+        A read only wrapper around a mouse event
+
+    Returns
+    -------
+    None
+    """
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
         _move(layer, coordinates)
 
 
-def add_path_polygon_lasso_creating(layer, event):
-    """While a path or polygon move next vertex to be added."""
-    # print(f'add_path_polygon_lasso_creating(): layer._is_creating = {layer._is_creating}, event.type = {event.type}, event.is_dragging = {event.is_dragging}')
+def add_path_polygon_lasso_creating(
+    layer: napari.layers.Shapes, event: ReadOnlyWrapper
+) -> None:
+    """While creating a polygon and moving the mouse check whether the current position is above a given threshold
+    and if so add vertex to the polygon.
+
+    Parameters
+    ----------
+    layer: napari.layers.Shapes
+        A napari shapes layer
+    event: ReadOnlyWrapper
+        A read only wrapper around a mouse event
+
+    Returns
+    -------
+    None
+    """
     if layer._is_creating:
         coordinates = layer.world_to_data(event.position)
         _move(layer, coordinates)
 
-        global _last_cursor_position
-        if _last_cursor_position is not None:
-            # TODO: fix issue when annotating 2d and later 3d  operands could not be broadcast together with shapes ...
-            position_diff = np.linalg.norm(
-                event.position - _last_cursor_position
-            )
-            if position_diff < 5:
-                return
-        _last_cursor_position = np.array(event.position)
+        global _last_vertex_position
+        if below_distance_threshold(15, _last_vertex_position, event.position):
+            return
+        _last_vertex_position = np.array(event.position)
+        # Required for adding vertices to the polygon shape as the mouse is moving
         add_path_polygon(layer, event)
 
 

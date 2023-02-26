@@ -28,6 +28,8 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     add_path_polygon_creating,
     add_path_polygon_lasso_creating,
     add_rectangle,
+    drag_polygon,
+    finish_drawing_polygon,
     finish_drawing_shape,
     highlight,
     select,
@@ -334,7 +336,7 @@ class Shapes(Layer):
         Mode.ADD_ELLIPSE: add_ellipse,
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
-        Mode.ADD_POLYGON: add_path_polygon,
+        Mode.ADD_POLYGON: [add_path_polygon, drag_polygon],
         Mode.ADD_POLYGON_LASSO: add_path_polygon,
     }
 
@@ -349,7 +351,7 @@ class Shapes(Layer):
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
-        Mode.ADD_POLYGON: add_path_polygon_creating,
+        Mode.ADD_POLYGON: add_path_polygon_lasso_creating,
         Mode.ADD_POLYGON_LASSO: add_path_polygon_lasso_creating,
     }
 
@@ -364,7 +366,7 @@ class Shapes(Layer):
         Mode.ADD_ELLIPSE: no_op,
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
-        Mode.ADD_POLYGON: finish_drawing_shape,
+        Mode.ADD_POLYGON: finish_drawing_polygon,
         Mode.ADD_POLYGON_LASSO: finish_drawing_shape,
     }
 

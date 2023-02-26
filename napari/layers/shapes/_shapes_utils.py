@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 from skimage.draw import line, polygon2mask
@@ -1216,3 +1216,31 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
 
     else:
         return np.vstack((vertices[0], vertices[-1]))
+
+
+def below_distance_threshold(
+    threshold: int,
+    last_vertex_position: npt.ArrayLike,
+    cursor_position: npt.ArrayLike,
+) -> Optional[bool]:
+    """Check whether the location of the last added vertex and the current position is below a certain threshold.
+
+    threshold: int
+        A threshold representing the number of pixels in canvas space, below which a boolean True is returned
+    last_vertex_position: npt.ArrayLike
+        An array like object indicating the location of the last added vertex on the canvas.
+    cursor_position: npt.ArrayLike
+        An array like object indicating the current location of the mouse cursor on the canvas
+
+    Returns
+    -------
+    Optional[bool]
+        A boolean True when the distance between the last vertex position and the mouse cursor position is below
+        the threshold.
+    """
+    if last_vertex_position is not None:
+        position_diff = np.linalg.norm(cursor_position - last_vertex_position)
+        if position_diff < threshold:
+            return True
+        else:
+            return
