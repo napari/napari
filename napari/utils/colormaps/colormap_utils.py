@@ -459,10 +459,7 @@ def vispy_or_mpl_colormap(name):
     else:
         try:
             mpl_cmap = getattr(cm, name)
-            if name in _MATPLOTLIB_COLORMAP_NAMES:
-                display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
-            else:
-                display_name = name
+            display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
         except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
@@ -647,7 +644,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name = cmap.name
                 AVAILABLE_COLORMAPS[name] = cmap
             elif not all(
-                (isinstance(i, VispyColormap) or isinstance(i, Colormap))
+                (isinstance(i, (VispyColormap, Colormap)))
                 for i in colormap.values()
             ):
                 raise TypeError(

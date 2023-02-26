@@ -96,10 +96,7 @@ class GridCanvas(EventedModel):
             n_row, n_column = self.actual_shape(nlayers)
 
             # Adjust for forward or reverse ordering
-            if self.stride < 0:
-                adj_i = nlayers - index - 1
-            else:
-                adj_i = index
+            adj_i = nlayers - index - 1 if self.stride < 0 else index
 
             adj_i = adj_i // abs(self.stride)
             adj_i = adj_i % (n_row * n_column)

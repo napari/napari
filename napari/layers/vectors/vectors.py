@@ -261,22 +261,21 @@ class Vectors(Layer):
         n_vectors = len(self.data)
 
         # Adjust the props/color arrays when the number of vectors has changed
-        with self.events.blocker_all():
-            with self._edge.events.blocker_all():
-                self._feature_table.resize(n_vectors)
-                if n_vectors < previous_n_vectors:
-                    # If there are now fewer points, remove the size and colors of the
-                    # extra ones
-                    if len(self._edge.colors) > n_vectors:
-                        self._edge._remove(
-                            np.arange(n_vectors, len(self._edge.colors))
-                        )
+        with self.events.blocker_all(), self._edge.events.blocker_all():
+            self._feature_table.resize(n_vectors)
+            if n_vectors < previous_n_vectors:
+                # If there are now fewer points, remove the size and colors of the
+                # extra ones
+                if len(self._edge.colors) > n_vectors:
+                    self._edge._remove(
+                        np.arange(n_vectors, len(self._edge.colors))
+                    )
 
-                elif n_vectors > previous_n_vectors:
-                    # If there are now more points, add the size and colors of the
-                    # new ones
-                    adding = n_vectors - previous_n_vectors
-                    self._edge._add(n_colors=adding)
+            elif n_vectors > previous_n_vectors:
+                # If there are now more points, add the size and colors of the
+                # new ones
+                adding = n_vectors - previous_n_vectors
+                self._edge._add(n_colors=adding)
 
         self._update_dims()
         self.events.data(value=self.data)

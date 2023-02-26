@@ -76,10 +76,7 @@ class CategoricalColormap(EventedModel):
                 }
             else:
                 colormap = {}
-            if 'fallback_color' in params:
-                fallback_color = params['fallback_color']
-            else:
-                fallback_color = 'white'
+            fallback_color = params.get("fallback_color", "white")
         else:
             colormap = {k: transform_color(v)[0] for k, v in params.items()}
             fallback_color = 'white'
@@ -94,7 +91,7 @@ class CategoricalColormap(EventedModel):
     def validate_type(cls, val):
         if isinstance(val, cls):
             return val
-        if isinstance(val, list) or isinstance(val, np.ndarray):
+        if isinstance(val, (list, np.ndarray)):
             return cls.from_array(val)
         elif isinstance(val, dict):
             return cls.from_dict(val)
