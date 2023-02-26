@@ -376,7 +376,7 @@ def add_path_polygon_lasso_creating(
         _move(layer, coordinates)
 
         global _last_vertex_position
-        if below_distance_threshold(15, _last_vertex_position, event.position):
+        if below_distance_threshold(5, _last_vertex_position, event.position):
             return
         _last_vertex_position = np.array(event.position)
         # Required for adding vertices to the polygon shape as the mouse is moving
