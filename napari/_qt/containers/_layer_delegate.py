@@ -134,10 +134,13 @@ class LayerDelegate(QStyledItemDelegate):
         """
         Check loading state of the layer and pause loading movie if necessary.
         """
-        if self.layer_index and self.layer_index.isValid():
-            if self.layer_index.data(LoadedRole):
-                self.load_movie.setPaused(True)
-                self.loading_frame_changed.emit()
+        if (
+            self.layer_index
+            and self.layer_index.isValid()
+            and self.layer_index.data(LoadedRole)
+        ):
+            self.load_movie.setPaused(True)
+            self.loading_frame_changed.emit()
 
     def _paint_loading(
         self,
