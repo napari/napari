@@ -90,7 +90,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         modes.
     depiction : str
         3D Depiction mode. Must be one of {'volume', 'plane'}.
-        The default value is 'volume'.
+        The default value is 'volume'.f
     iso_threshold : float
         Threshold for isosurface.
     attenuation : float
