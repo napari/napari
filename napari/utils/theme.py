@@ -26,7 +26,7 @@ try:
     major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
     del major, minor, QT_VERSION
-except ImportError:
+except (ImportError, RuntimeError):
     use_gradients = False
 
 
