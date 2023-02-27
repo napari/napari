@@ -78,7 +78,7 @@ class ImplementationListItem(QFrame):
 
     on_changed = Signal()  # when user changes whether plugin is enabled.
 
-    def __init__(self, item: QListWidgetItem, parent: QWidget = None):
+    def __init__(self, item: QListWidgetItem, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.item = item
         self.opacity = QGraphicsOpacityEffect(self)
@@ -165,7 +165,7 @@ class QtHookImplementationListWidget(QListWidget):
         self,
         parent: Optional[QWidget] = None,
         hook_caller: Optional[HookCaller] = None,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragEnabled(True)
@@ -293,7 +293,7 @@ class QtPluginSorter(QWidget):
         parent: Optional[QWidget] = None,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self.plugin_manager = plugin_manager

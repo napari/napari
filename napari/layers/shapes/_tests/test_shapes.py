@@ -216,7 +216,7 @@ def test_setting_current_properties():
     }
 
     coerced_current_properties = layer.current_properties
-    for k, v in coerced_current_properties.items():
+    for k in coerced_current_properties:
         value = coerced_current_properties[k]
         assert isinstance(value, np.ndarray)
         np.testing.assert_equal(value, expected_current_properties[k])
@@ -316,10 +316,10 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['shape_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
 
-    for property, value in text_kwargs.items():
-        if property == 'string':
+    for property_, value in text_kwargs.items():
+        if property_ == 'string':
             continue
-        layer_value = getattr(layer._text, property)
+        layer_value = getattr(layer._text, property_)
         np.testing.assert_equal(layer_value, value)
 
 
@@ -1715,9 +1715,8 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Shapes(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])

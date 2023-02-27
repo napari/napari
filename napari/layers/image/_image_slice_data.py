@@ -33,7 +33,7 @@ class ImageSliceData:
         indices: Tuple[Optional[slice], ...],
         image: ArrayLike,
         thumbnail_source: ArrayLike,
-    ):
+    ) -> None:
         self.layer = layer
         self.indices = indices
         self.image = image

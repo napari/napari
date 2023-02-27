@@ -260,11 +260,7 @@ def is_collinear(points):
 
     # The collinearity test takes three points, the first two are the first
     # two in the list, and then the third is iterated through in the loop
-    for p in points[2:]:
-        if orientation(points[0], points[1], p) != 0:
-            return False
-
-    return True
+    return all(orientation(points[0], points[1], p) == 0 for p in points[2:])
 
 
 def point_to_lines(point, lines):
@@ -556,7 +552,7 @@ def triangulate_face(data):
         # connect last with first vertex
         edges[-1, 1] = 0
 
-        res = triangulate(dict(vertices=data, segments=edges), "p")
+        res = triangulate({"vertices": data, "segments": edges}, "p")
         vertices, triangles = res['vertices'], res['triangles']
     else:
         vertices, triangles = PolygonData(vertices=data).triangulate()
@@ -973,7 +969,7 @@ def points_in_poly(points, vertices):
         d = np.where(abs(d) < tolerance, 0, d)
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
-            cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
+            cond_4 = d[0] * (points[:, 1] - vertices[i, 1]) > 0
         else:
             cond_4 = points[:, 0] < (
                 d[0] * (points[:, 1] - vertices[i, 1]) / d[1] + vertices[i, 0]

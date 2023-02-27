@@ -56,14 +56,14 @@ class PluginListItem(QFrame):
         url: str = '',
         summary: str = '',
         author: str = '',
-        license: str = "UNKNOWN",
+        license: str = "UNKNOWN",  # noqa: A002
         *,
         plugin_name: str = None,
         parent: QWidget = None,
         enabled: bool = True,
         installed: bool = False,
         npe_version=1,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
@@ -246,7 +246,7 @@ class PluginListItem(QFrame):
 
 
 class QPluginList(QListWidget):
-    def __init__(self, parent: QWidget, installer: InstallerQueue):
+    def __init__(self, parent: QWidget, installer: InstallerQueue) -> None:
         super().__init__(parent)
         self.installer = installer
         self.setSortingEnabled(True)
@@ -478,7 +478,7 @@ class RefreshState(Enum):
 
 
 class QtPluginDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()

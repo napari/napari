@@ -31,8 +31,7 @@ class Rectangle(Shape):
         z_index=0,
         dims_order=None,
         ndisplay=2,
-    ):
-
+    ) -> None:
         super().__init__(
             edge_width=edge_width,
             z_index=z_index,

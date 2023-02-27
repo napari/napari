@@ -30,8 +30,7 @@ class QtDims(QWidget):
         List of slider widgets.
     """
 
-    def __init__(self, dims: Dims, parent=None):
-
+    def __init__(self, dims: Dims, parent=None) -> None:
         super().__init__(parent=parent)
 
         self.SLIDERHEIGHT = 22
@@ -103,7 +102,7 @@ class QtDims(QWidget):
         self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
-        for (axis, widget) in widgets:
+        for axis, widget in widgets:
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
@@ -196,7 +195,7 @@ class QtDims(QWidget):
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
-        for slider_num in range(number_of_sliders, self.nsliders):
+        for _slider_num in range(number_of_sliders, self.nsliders):
             self._remove_slider_widget(0)
 
     def _remove_slider_widget(self, index):

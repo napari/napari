@@ -9,6 +9,10 @@ import pandas as pd
 from vispy.color import get_color_names
 
 from napari.layers.base import Layer, no_op
+from napari.layers.base._base_mouse_bindings import (
+    highlight_box_handles,
+    transform_with_box,
+)
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_constants import (
     Box,
@@ -307,6 +311,7 @@ class Shapes(Layer):
         won't update during interactive events
     """
 
+    _modeclass = Mode
     _colors = get_color_names()
     _vertex_size = 10
     _rotation_handle_length = 20
@@ -319,6 +324,7 @@ class Shapes(Layer):
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: transform_with_box,
         Mode.SELECT: select,
         Mode.DIRECT: select,
         Mode.VERTEX_INSERT: vertex_insert,
@@ -328,11 +334,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
-        Mode.TRANSFORM: no_op,
     }
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: highlight_box_handles,
         Mode.SELECT: highlight,
         Mode.DIRECT: highlight,
         Mode.VERTEX_INSERT: highlight,
@@ -342,11 +348,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
-        Mode.TRANSFORM: no_op,
     }
 
     _double_click_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.SELECT: no_op,
         Mode.DIRECT: no_op,
         Mode.VERTEX_INSERT: no_op,
@@ -356,11 +362,11 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
-        Mode.TRANSFORM: no_op,
     }
 
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
         Mode.SELECT: 'pointing',
         Mode.DIRECT: 'pointing',
         Mode.VERTEX_INSERT: 'cross',
@@ -370,7 +376,6 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
-        Mode.TRANSFORM: 'standard',
     }
 
     _interactive_modes = {
@@ -409,7 +414,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-    ):
+    ) -> None:
         if data is None:
             if ndim is None:
                 ndim = 2
@@ -444,7 +449,6 @@ class Shapes(Layer):
         )
 
         self.events.add(
-            mode=Event,
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
@@ -510,10 +514,6 @@ class Shapes(Layer):
         self._is_creating = False
         self._clipboard = {}
 
-        # change mode once to trigger the
-        # Mode setting logic
-        self._mode = Mode.SELECT
-        self.mode = Mode.PAN_ZOOM
         self._status = self.mode
 
         self._init_shapes(
@@ -669,7 +669,7 @@ class Shapes(Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     def _on_selection(self, selected: bool):
         # this method is slated for removal.  don't add anything new.
@@ -752,10 +752,7 @@ class Shapes(Layer):
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        if self.nshapes == 0:
-            ndim = self.ndim
-        else:
-            ndim = self.data[0].shape[1]
+        ndim = self.ndim if self.nshapes == 0 else self.data[0].shape[1]
         return ndim
 
     @property
@@ -1391,7 +1388,6 @@ class Shapes(Layer):
                 contrast_limits = getattr(self, f'{attribute}_contrast_limits')
                 colormap = getattr(self, f'{attribute}_colormap')
                 if update_color_mapping or contrast_limits is None:
-
                     colors, contrast_limits = map_property(
                         prop=color_properties, colormap=colormap
                     )
@@ -1401,7 +1397,6 @@ class Shapes(Layer):
                         contrast_limits,
                     )
                 else:
-
                     colors, _ = map_property(
                         prop=color_properties,
                         colormap=colormap,
@@ -1470,10 +1465,7 @@ class Shapes(Layer):
     def _is_color_mapped(self, color):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
-            if color in self.properties:
-                return True
-            else:
-                return False
+            return color in self.properties
         elif isinstance(color, (list, np.ndarray)):
             return False
         else:
@@ -1572,7 +1564,7 @@ class Shapes(Layer):
         self.text.color._apply(self.features)
         return self.text._view_color(self._indices_view)
 
-    @property
+    @Layer.mode.getter
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1594,19 +1586,12 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode, changed = self._mode_setter_helper(mode, Mode)
-        if not changed:
+        mode = self._mode_setter_helper(mode)
+        if mode == self._mode:
             return
 
-        if mode.value not in Mode.keys():
-            raise ValueError(
-                trans._(
-                    "Mode not recognized: {mode}", deferred=True, mode=mode
-                )
-            )
-
-        old_mode = self._mode
         self._mode = mode
+        self.events.mode(mode=mode)
 
         draw_modes = {
             Mode.SELECT,
@@ -1615,24 +1600,18 @@ class Shapes(Layer):
             Mode.VERTEX_REMOVE,
         }
 
-        self.events.mode(mode=mode)
-
         # don't update thumbnail on mode changes
         with self.block_thumbnail_update():
-            if not (mode in draw_modes and old_mode in draw_modes):
+            if not (mode in draw_modes and self._mode in draw_modes):
                 # Shapes._finish_drawing() calls Shapes.refresh()
                 self._finish_drawing()
             else:
                 self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self._slice_input.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
+    def _reset_editable(self) -> None:
+        self.editable = self._slice_input.ndisplay == 2
 
+    def _on_editable_changed(self) -> None:
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -2260,13 +2239,13 @@ class Shapes(Layer):
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         ndisplay = self._slice_input.ndisplay
-        if not ndisplay == self._ndisplay_stored:
+        if ndisplay != self._ndisplay_stored:
             self.selected_data = set()
             self._data_view.ndisplay = min(self.ndim, ndisplay)
             self._ndisplay_stored = ndisplay
             self._clipboard = {}
 
-        if not self._slice_input.order == self._display_order_stored:
+        if self._slice_input.order != self._display_order_stored:
             self.selected_data = set()
             self._data_view.update_dims_order(self._slice_input.order)
             self._display_order_stored = copy(self._slice_input.order)
@@ -2387,9 +2366,7 @@ class Shapes(Layer):
                 # If in select mode just show the interaction boudning box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
-                if self._value[0] is None:
-                    face_color = 'white'
-                elif self._value[1] is None:
+                if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
@@ -2420,9 +2397,7 @@ class Shapes(Layer):
                 if self._mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
 
-                if self._value[0] is None:
-                    face_color = 'white'
-                elif self._value[1] is None:
+                if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
@@ -2572,7 +2547,7 @@ class Shapes(Layer):
         self._finish_drawing()
         self.events.data(value=self.data)
 
-    def _rotate_box(self, angle, center=[0, 0]):
+    def _rotate_box(self, angle, center=(0, 0)):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2589,7 +2564,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         self._selected_box = box @ transform.T + center
 
-    def _scale_box(self, scale, center=[0, 0]):
+    def _scale_box(self, scale, center=(0, 0)):
         """Perform a scaling on the selected box.
 
         Parameters
@@ -2610,7 +2585,7 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
-    def _transform_box(self, transform, center=[0, 0]):
+    def _transform_box(self, transform, center=(0, 0)):
         """Perform a linear transformation on the selected box.
 
         Parameters

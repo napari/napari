@@ -27,7 +27,7 @@ def test_stack_to_images_basic():
 
 def test_stack_to_images_multiscale():
     """Test that a 3 channel multiscale image returns 3 multiscale images."""
-    data = list()
+    data = []
     data.append(np.random.randint(0, 200, (3, 128, 128)))
     data.append(np.random.randint(0, 200, (3, 64, 64)))
     data.append(np.random.randint(0, 200, (3, 32, 32)))
@@ -185,13 +185,13 @@ def test_split_channels(kwargs):
     result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
-    for d, meta, _ in result_list:
+    for d, _meta, _ in result_list:
         assert d.shape == (128, 128)
 
 
 def test_split_channels_multiscale(kwargs):
     """Test split_channels with multiscale expecting List[LayerData]"""
-    data = list()
+    data = []
     data.append(np.random.randint(0, 200, (3, 128, 128)))
     data.append(np.random.randint(0, 200, (3, 64, 64)))
     data.append(np.random.randint(0, 200, (3, 32, 32)))

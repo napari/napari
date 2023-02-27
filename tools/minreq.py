@@ -28,6 +28,9 @@ def pin_config_minimum_requirements(config_filename):
     config['options.extras_require']['pyqt5'] = config[
         'options.extras_require'
     ]['pyqt5'].replace('>=', '==')
+    config['options.extras_require']['testing'] = config[
+        'options.extras_require'
+    ]['testing'].replace('>=', '==')
 
     # rewrite setup.cfg with new config
     with open(config_filename, 'w') as fout:

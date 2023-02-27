@@ -119,14 +119,10 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-    ):
-
+    ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
-        if data is None:
-            data = np.empty((0, 4))
-        else:
-            # convert data to a numpy array if it is not already one
-            data = np.asarray(data)
+        # otherwise convert the data to an np.ndarray
+        data = np.empty((0, 4)) if data is None else np.asarray(data)
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -388,7 +384,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
-        self._set_editable()
+        self._reset_editable()
 
     @property
     def features(self):

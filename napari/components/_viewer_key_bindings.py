@@ -33,7 +33,6 @@ def register_viewer_action(description):
 
 @register_viewer_action(trans._("Reset scroll."))
 def reset_scroll_progress(viewer: Viewer):
-
     # on key press
     viewer.dims._scroll_progress = 0
     yield

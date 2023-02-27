@@ -80,7 +80,7 @@ class ActionManager:
 
     _actions: Dict[str, Action]
 
-    def __init__(self):
+    def __init__(self) -> None:
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
         self._shortcuts: Dict[str, List[str]] = defaultdict(list)
@@ -216,14 +216,13 @@ class ActionManager:
         """
         self._validate_action_name(name)
 
-        if action := self._actions.get(name):
-            if isgeneratorfunction(action):
-                raise ValueError(
-                    trans._(
-                        '`bind_button` cannot be used with generator functions',
-                        deferred=True,
-                    )
+        if (action := self._actions.get(name)) and isgeneratorfunction(action):
+            raise ValueError(
+                trans._(
+                    '`bind_button` cannot be used with generator functions',
+                    deferred=True,
                 )
+            )
 
         button.clicked.connect(lambda: self.trigger(name))
         if name in self._actions:

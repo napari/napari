@@ -23,8 +23,7 @@ class VispyCanvas(SceneCanvas):
 
     _instances = WeakSet()
 
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self, *args, **kwargs) -> None:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self.max_texture_sizes = None

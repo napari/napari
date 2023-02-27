@@ -35,7 +35,7 @@ class Array(np.ndarray):
         if isinstance(dtype, tuple):
             dtype, shape = dtype
         else:
-            shape = tuple()
+            shape = ()
 
         result = np.array(val, dtype=dtype, copy=False, ndmin=len(shape))
 
@@ -93,13 +93,13 @@ def conint(
 ) -> Type[int]:
     """Extended version of `pydantic.types.conint` that includes not-equal."""
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        strict=strict,
-        gt=gt,
-        ge=ge,
-        lt=lt,
-        le=le,
-        multiple_of=multiple_of,
-        ne=ne,
-    )
+    namespace = {
+        "strict": strict,
+        "gt": gt,
+        "ge": ge,
+        "lt": lt,
+        "le": le,
+        "multiple_of": multiple_of,
+        "ne": ne,
+    }
     return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
