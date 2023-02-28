@@ -264,12 +264,16 @@ def test_plugin_list_handle_action(plugin_dialog, qtbot):
     item = plugin_dialog.installed_list.item(0)
 
     plugin_dialog.installed_list.handle_action(
-        item, 'test-name-1', InstallerActions.INSTALL, update=True
+        item,
+        'test-name-1',
+        InstallerActions.UPGRADE,
     )
 
     with patch.object(qt_plugin_dialog.WarnPopup, "exec_") as mock:
         plugin_dialog.installed_list.handle_action(
-            item, 'test-name-1', InstallerActions.UNINSTALL, update=False
+            item,
+            'test-name-1',
+            InstallerActions.UNINSTALL,
         )
         assert mock.called
 
@@ -278,12 +282,11 @@ def test_plugin_list_handle_action(plugin_dialog, qtbot):
         item,
         'test-name-1',
         InstallerActions.INSTALL,
-        update=False,
         version='3',
     )
 
     plugin_dialog.available_list.handle_action(
-        item, 'test-name-1', InstallerActions.CANCEL, update=False, version='3'
+        item, 'test-name-1', InstallerActions.CANCEL, version='3'
     )
 
     # Wait for refresh timer, state and worker to be done
