@@ -23,6 +23,7 @@ import numpy as np
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
+from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor
@@ -165,6 +166,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
+
+    # Need to use default factory because slicer is not copyable which
+    # is required for default values.
+    _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -374,6 +379,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
+    def _on_layer_reload(self, event: Event) -> None:
+        self._layer_slicer.submit(
+            layers=[event.layer], dims=self.dims, force=True
+        )
+
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
@@ -383,10 +393,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-        for layer in layers:
-            layer._slice_dims(
-                self.dims.point, self.dims.ndisplay, self.dims.order
-            )
+        self._layer_slicer.submit(layers=layers, dims=self.dims)
+        # If the currently selected layer is sliced asynchronously, then the value
+        # shown with this position may be incorrect. See the discussion for more details:
+        # https://github.com/napari/napari/pull/5377#discussion_r1036280855
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
@@ -531,6 +541,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+        layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, "mode"):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
@@ -1052,7 +1063,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ) as pbr:
             for _path in pbr:
                 # If _path is a list, set stack to True
-                _stack = True if isinstance(_path, list) else False
+                _stack = isinstance(_path, list)
                 # If _path is not a list already, make it a list.
                 _path = [_path] if not isinstance(_path, list) else _path
                 if plugin:

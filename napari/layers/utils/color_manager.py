@@ -301,10 +301,7 @@ class ColorManager(EventedModel):
             (i.e., reset the range to 0-new_max_value).
         """
         if self.color_mode == ColorMode.DIRECT:
-            if color is None:
-                new_color = self.current_color
-            else:
-                new_color = color
+            new_color = self.current_color if color is None else color
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=new_color,

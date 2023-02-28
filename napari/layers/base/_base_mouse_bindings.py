@@ -15,7 +15,7 @@ def highlight_box_handles(layer, event):
     """
     Highlight the hovered handle of a TransformBox.
     """
-    if not len(event.dims_displayed) == 2:
+    if len(event.dims_displayed) != 2:
         return
 
     # we work in data space so we're axis aligned which simplifies calculation
@@ -150,7 +150,7 @@ def transform_with_box(layer, event):
     """
     Translate, rescale or rotate a layer by dragging a TransformBox handle.
     """
-    if not len(event.dims_displayed) == 2:
+    if len(event.dims_displayed) != 2:
         return
 
     # we work in data space so we're axis aligned which simplifies calculation
