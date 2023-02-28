@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class FileMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
         self.open_sample_menu = NapariMenu(trans._('Open Sample'), self)
@@ -223,14 +223,14 @@ class FileMenu(NapariMenu):
                     )
                     action = QAction(full_name, parent=self)
 
-                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                def _add_sample(*_, plg=plugin_name, smp=samp_name):
                     try:
                         self._win._qt_viewer.viewer.open_sample(plg, smp)
                     except MultipleReaderError as e:
                         handle_gui_reading(
                             e.paths,
                             self._win._qt_viewer,
-                            plugin_name=plugin_name,
+                            plugin_name=plg,
                             stack=False,
                         )
 

@@ -56,7 +56,7 @@ class InfoDisplayer:
         The LayerInfo to display.
     """
 
-    def __init__(self, info: LayerInfo):
+    def __init__(self, info: LayerInfo) -> None:
         self.info = info
         stats = info.stats
         counts = stats.counts
@@ -111,7 +111,7 @@ class ChunkLoaderLayers:
         Formats our table for printing.
     """
 
-    def __init__(self, layers: List[Layer]):
+    def __init__(self, layers: List[Layer]) -> None:
         self.layers = layers
         self.table = RowTable(
             [
@@ -203,7 +203,7 @@ class LevelsTable:
         Show the levels of this layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         self.layer = layer
         self.table = RowTable(["LEVEL", "SHAPE", "TOTAL"])
         self.table = RowTable(
@@ -231,7 +231,7 @@ class LoaderCommands:
         The current list of layers.
     """
 
-    def __init__(self, layerlist: List[Layer]):
+    def __init__(self, layerlist: List[Layer]) -> None:
         self.layerlist = layerlist
 
     def __repr__(self):

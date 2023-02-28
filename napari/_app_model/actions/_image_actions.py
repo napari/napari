@@ -39,6 +39,7 @@ IMAGE_ACTIONS = [
         short_title=CommandId.IMAGE_ORIENT_PLANE_NORMAL_ALONG_VIEW_DIRECTION.title,
         callback=_image_actions.orient_plane_normal_along_view_direction,
     ),
+    # TODO: remove this?
     Action(
         id=CommandId.IMAGE_HOLD_TO_PAN_ZOOM,
         title=CommandId.IMAGE_HOLD_TO_PAN_ZOOM.description,

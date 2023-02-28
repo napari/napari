@@ -88,7 +88,15 @@ SHAPES_ACTIONS = [
         title=CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE.description,
         short_title=CommandId.SHAPES_ACTIVATE_PAN_ZOOM_MODE.title,
         callback=AttrRestoreCallback(
-            _shapes_actions.activate_shape_pan_zoom_mode, "mode"
+            _shapes_actions.activate_shapes_pan_zoom_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.SHAPES_ACTIVATE_TRANSFORM_MODE,
+        title=CommandId.SHAPES_ACTIVATE_TRANSFORM_MODE.description,
+        short_title=CommandId.SHAPES_ACTIVATE_TRANSFORM_MODE.title,
+        callback=AttrRestoreCallback(
+            _shapes_actions.activate_shapes_transform_mode, "mode"
         ),
     ),
     Action(

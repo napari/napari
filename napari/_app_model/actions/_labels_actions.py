@@ -11,7 +11,6 @@ from app_model.types import Action, ToggleRule
 
 from napari._app_model.actions import (
     AttrRestoreCallback,
-    GeneratorCallback,
     RepeatableAction,
 )
 from napari._app_model.constants import CommandId
@@ -20,17 +19,11 @@ from napari.layers.labels import _labels_key_bindings as _labels_actions
 # actions ported to app_model from components/_viewer_key_bindings
 LABELS_ACTIONS = [
     Action(
-        id=CommandId.LABELS_HOLD_TO_PAN_ZOOM,
-        title=CommandId.LABELS_HOLD_TO_PAN_ZOOM.description,
-        short_title=CommandId.LABELS_HOLD_TO_PAN_ZOOM.title,
-        callback=GeneratorCallback(_labels_actions.hold_to_pan_zoom),
-    ),
-    Action(
         id=CommandId.LABELS_ACTIVATE_PAINT_MODE,
         title=CommandId.LABELS_ACTIVATE_PAINT_MODE.description,
         short_title=CommandId.LABELS_ACTIVATE_PAINT_MODE.title,
         callback=AttrRestoreCallback(
-            _labels_actions.activate_paint_mode, "mode"
+            _labels_actions.activate_labels_paint_mode, "mode"
         ),
     ),
     Action(
@@ -38,7 +31,7 @@ LABELS_ACTIONS = [
         title=CommandId.LABELS_ACTIVATE_FILL_MODE.description,
         short_title=CommandId.LABELS_ACTIVATE_FILL_MODE.title,
         callback=AttrRestoreCallback(
-            _labels_actions.activate_fill_mode, "mode"
+            _labels_actions.activate_labels_fill_mode, "mode"
         ),
     ),
     Action(
@@ -46,14 +39,15 @@ LABELS_ACTIONS = [
         title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.description,
         short_title=CommandId.LABELS_ACTIVATE_PAN_ZOOM_MODE.title,
         callback=AttrRestoreCallback(
-            _labels_actions.activate_label_pan_zoom_mode, "mode"
+            _labels_actions.activate_labels_pan_zoom_mode, "mode"
         ),
     ),
     Action(
         id=CommandId.LABELS_ACTIVATE_PICKER_MODE,
-        title=CommandId.LABELS_ACTIVATE_PICKER_MODE.title,
+        title=CommandId.LABELS_ACTIVATE_PICKER_MODE.description,
+        short_title=CommandId.LABELS_ACTIVATE_PICKER_MODE.title,
         callback=AttrRestoreCallback(
-            _labels_actions.activate_label_picker_mode, "mode"
+            _labels_actions.activate_labels_picker_mode, "mode"
         ),
     ),
     Action(
@@ -61,7 +55,15 @@ LABELS_ACTIONS = [
         title=CommandId.LABELS_ACTIVATE_ERASE_MODE.description,
         short_title=CommandId.LABELS_ACTIVATE_ERASE_MODE.title,
         callback=AttrRestoreCallback(
-            _labels_actions.activate_label_erase_mode, "mode"
+            _labels_actions.activate_labels_erase_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE,
+        title=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE.description,
+        short_title=CommandId.LABELS_ACTIVATE_TRANSFORM_MODE.title,
+        callback=AttrRestoreCallback(
+            _labels_actions.activate_labels_transform_mode, "mode"
         ),
     ),
     Action(

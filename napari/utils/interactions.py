@@ -285,7 +285,7 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: KeyBindingLike):
+    def __init__(self, shortcut: KeyBindingLike) -> None:
         """Parameters
         ----------
         shortcut : keybinding-like

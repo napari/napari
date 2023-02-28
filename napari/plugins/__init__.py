@@ -1,9 +1,8 @@
 from functools import lru_cache
 
 from app_model.types import KeyBindingRule
-from npe2 import PackageMetadata
+from npe2 import PackageMetadata, PluginManifest
 from npe2 import PluginManager as _PluginManager
-from npe2 import PluginManifest
 
 from napari.plugins import _npe2
 from napari.plugins._plugin_manager import NapariPluginManager

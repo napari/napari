@@ -9,37 +9,42 @@ from __future__ import annotations
 
 from app_model.types import Action
 
-from napari._app_model.actions import AttrRestoreCallback, GeneratorCallback
+from napari._app_model.actions import AttrRestoreCallback
 from napari._app_model.constants import CommandId
 from napari.layers.points import _points_key_bindings as _points_actions
 
 # actions ported to app_model from components/_viewer_key_bindings
 POINTS_ACTIONS = [
     Action(
-        id=CommandId.POINTS_HOLD_TO_PAN_ZOOM,
-        title=CommandId.POINTS_HOLD_TO_PAN_ZOOM.description,
-        short_title=CommandId.POINTS_HOLD_TO_PAN_ZOOM.title,
-        callback=GeneratorCallback(_points_actions.hold_to_pan_zoom),
-    ),
-    Action(
         id=CommandId.POINTS_ACTIVATE_ADD_MODE,
-        title=CommandId.POINTS_ACTIVATE_ADD_MODE.title,
+        title=CommandId.POINTS_ACTIVATE_ADD_MODE.description,
+        short_title=CommandId.POINTS_ACTIVATE_ADD_MODE.title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_add_mode, "mode"
         ),
     ),
     Action(
         id=CommandId.POINTS_ACTIVATE_SELECT_MODE,
-        title=CommandId.POINTS_ACTIVATE_SELECT_MODE.title,
+        title=CommandId.POINTS_ACTIVATE_SELECT_MODE.description,
+        short_title=CommandId.POINTS_ACTIVATE_SELECT_MODE.title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_select_mode, "mode"
         ),
     ),
     Action(
         id=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE,
-        title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.title,
+        title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.description,
+        short_title=CommandId.POINTS_ACTIVATE_PAN_ZOOM_MODE.title,
         callback=AttrRestoreCallback(
             _points_actions.activate_points_pan_zoom_mode, "mode"
+        ),
+    ),
+    Action(
+        id=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE,
+        title=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE.description,
+        short_title=CommandId.POINTS_ACTIVATE_TRANSFORM_MODE.title,
+        callback=AttrRestoreCallback(
+            _points_actions.activate_points_transform_mode, "mode"
         ),
     ),
     Action(

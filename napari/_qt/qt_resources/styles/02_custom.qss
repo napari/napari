@@ -267,12 +267,15 @@ QLabel#logo_silhouette {
 
 /* ------------------------------------------------------ */
 
+QFrame#empty_controls_widget {
+    min-height: 225px;
+    min-width: 240px;
+}
+
 QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 295px;
-    min-width: 240px;
     margin-left: 10px;
     margin-right: 8px;
     margin-bottom: 4px;
@@ -837,7 +840,7 @@ QtLayerList::indicator:checked {
 
 /* --------------- Menus (application and context menus) ---------------- */
 
-QModelMenu::separator {
+QMenu::separator, QModelMenu::separator {
 	height: 1 px;
 	background: {{ opacity(text, 90) }};
 	margin-left: 17 px;
@@ -846,6 +849,14 @@ QModelMenu::separator {
 	margin-bottom: 3 px;
 }
 
-QModelMenu {
+QMenu:disabled, QModelMenu:disabled {
+  background-color: {{ background }};
+  selection-background-color: transparent;
+  border: 1px solid;
+  border-color: {{ foreground }};
+  color: {{ opacity(text, 90) }};
+}
+
+QMenu, QModelMenu {
 	padding: 6 px;
 }

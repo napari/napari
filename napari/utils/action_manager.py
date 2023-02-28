@@ -80,7 +80,7 @@ class ActionManager:
 
     _actions: Dict[str, Action]
 
-    def __init__(self):
+    def __init__(self) -> None:
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
         self._shortcuts: Dict[str, List[str]] = defaultdict(list)

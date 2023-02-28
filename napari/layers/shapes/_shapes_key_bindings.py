@@ -5,22 +5,6 @@ from napari.layers.shapes._shapes_mouse_bindings import _move
 from napari.layers.shapes.shapes import Shapes
 
 
-def hold_to_pan_zoom(layer: Shapes):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
-
-
 def hold_to_lock_aspect_ratio(layer: Shapes):
     """Hold to lock aspect ratio when resizing a shape."""
     # on key press
@@ -44,6 +28,14 @@ def hold_to_lock_aspect_ratio(layer: Shapes):
     layer._fixed_aspect = False
     if layer._is_moving:
         _move(layer, layer._moving_coordinates)
+
+
+def activate_shapes_transform_mode(layer):
+    layer.mode = Mode.TRANSFORM
+
+
+def activate_shapes_pan_zoom_mode(layer):
+    layer.mode = Mode.PAN_ZOOM
 
 
 def activate_add_rectangle_mode(layer: Shapes):
@@ -81,11 +73,6 @@ def activate_select_mode(layer: Shapes):
     layer.mode = Mode.SELECT
 
 
-def activate_shape_pan_zoom_mode(layer: Shapes):
-    """Activate pan and zoom mode."""
-    layer.mode = Mode.PAN_ZOOM
-
-
 def activate_vertex_insert_mode(layer: Shapes):
     """Activate vertex insertion tool."""
     layer.mode = Mode.VERTEX_INSERT
@@ -97,6 +84,8 @@ def activate_vertex_remove_mode(layer: Shapes):
 
 
 shapes_fun_to_mode = [
+    (activate_shapes_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_shapes_transform_mode, Mode.TRANSFORM),
     (activate_add_rectangle_mode, Mode.ADD_RECTANGLE),
     (activate_add_ellipse_mode, Mode.ADD_ELLIPSE),
     (activate_add_line_mode, Mode.ADD_LINE),
@@ -104,7 +93,6 @@ shapes_fun_to_mode = [
     (activate_add_polygon_mode, Mode.ADD_POLYGON),
     (activate_direct_mode, Mode.DIRECT),
     (activate_select_mode, Mode.SELECT),
-    (activate_shape_pan_zoom_mode, Mode.PAN_ZOOM),
     (activate_vertex_insert_mode, Mode.VERTEX_INSERT),
     (activate_vertex_remove_mode, Mode.VERTEX_REMOVE),
 ]

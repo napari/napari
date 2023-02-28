@@ -32,7 +32,7 @@ class QtPopup(QDialog):
         Frame of the popup dialog box.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
         self.setObjectName("QtModalPopup")
         self.setModal(False)  # if False, then clicking anywhere else closes it

@@ -7,46 +7,38 @@ MIN_BRUSH_SIZE = 1
 MAX_BRUSH_SIZE = 40
 
 
-def hold_to_pan_zoom(layer: Labels):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
+def activate_labels_transform_mode(layer: Labels):
+    layer.mode = Mode.TRANSFORM
 
 
-def activate_paint_mode(layer: Labels):
-    layer.mode = Mode.PAINT
-
-
-def activate_fill_mode(layer: Labels):
-    layer.mode = Mode.FILL
-
-
-def activate_label_pan_zoom_mode(layer: Labels):
+def activate_labels_pan_zoom_mode(layer: Labels):
     layer.mode = Mode.PAN_ZOOM
 
 
-def activate_label_picker_mode(layer: Labels):
+def activate_labels_paint_mode(layer: Labels):
+    layer.mode = Mode.PAINT
+
+
+def activate_labels_fill_mode(layer: Labels):
+    layer.mode = Mode.FILL
+
+
+def activate_labels_picker_mode(layer: Labels):
     """Activate the label picker."""
     layer.mode = Mode.PICK
 
 
-def activate_label_erase_mode(layer: Labels):
+def activate_labels_erase_mode(layer: Labels):
     layer.mode = Mode.ERASE
 
 
 labels_fun_to_mode = [
-    (activate_label_erase_mode, Mode.ERASE),
-    (activate_paint_mode, Mode.PAINT),
-    (activate_fill_mode, Mode.FILL),
-    (activate_label_picker_mode, Mode.PICK),
-    (activate_label_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_labels_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_labels_transform_mode, Mode.TRANSFORM),
+    (activate_labels_erase_mode, Mode.ERASE),
+    (activate_labels_paint_mode, Mode.PAINT),
+    (activate_labels_fill_mode, Mode.FILL),
+    (activate_labels_picker_mode, Mode.PICK),
 ]
 
 

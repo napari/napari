@@ -9,6 +9,7 @@ from app_model.types import Action
 
 from napari._app_model._submenus import SUBMENUS
 from napari._app_model.actions import GeneratorCallback, RepeatableAction
+from napari._app_model.actions._base_actions import BASE_LAYER_ACTIONS
 from napari._app_model.actions._help_actions import HELP_ACTIONS
 from napari._app_model.actions._image_actions import IMAGE_ACTIONS
 from napari._app_model.actions._labels_actions import LABELS_ACTIONS
@@ -74,6 +75,7 @@ class NapariApplication(Application):
         )
 
         for action in chain(
+            BASE_LAYER_ACTIONS,
             HELP_ACTIONS,
             IMAGE_ACTIONS,
             LABELS_ACTIONS,

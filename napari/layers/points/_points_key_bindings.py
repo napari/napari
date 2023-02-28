@@ -6,20 +6,12 @@ from napari.utils.notifications import show_info
 from napari.utils.translations import trans
 
 
-def hold_to_pan_zoom(layer: Points):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
+def activate_points_transform_mode(layer):
+    layer.mode = Mode.TRANSFORM
 
-        yield
 
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
+def activate_points_pan_zoom_mode(layer):
+    layer.mode = Mode.PAN_ZOOM
 
 
 def activate_points_add_mode(layer: Points):
@@ -30,14 +22,11 @@ def activate_points_select_mode(layer: Points):
     layer.mode = Mode.SELECT
 
 
-def activate_points_pan_zoom_mode(layer: Points):
-    layer.mode = Mode.PAN_ZOOM
-
-
 points_fun_to_mode = [
+    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_points_transform_mode, Mode.TRANSFORM),
     (activate_points_add_mode, Mode.ADD),
     (activate_points_select_mode, Mode.SELECT),
-    (activate_points_pan_zoom_mode, Mode.PAN_ZOOM),
 ]
 
 

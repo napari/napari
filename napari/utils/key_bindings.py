@@ -260,7 +260,7 @@ class KeybindingDescriptor:
         Function to bind.
     """
 
-    def __init__(self, func):
+    def __init__(self, func) -> None:
         self.__func__ = func
 
     def __get__(self, instance, cls):
@@ -279,7 +279,7 @@ class KeymapProvider:
         Instance keymap.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.keymap = {}
 
@@ -328,7 +328,7 @@ class KeymapHandler:
         Classes that provide the keymaps for this class to handle.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._key_release_generators = {}
         self.keymap_providers = []
