@@ -158,8 +158,9 @@ class PluginListItem(QFrame):
     def set_busy(
         self,
         text: str,
-        action_name: Literal["install", "uninstall", "cancel"] = None,
-        update: bool = False,
+        action_name: Literal[
+            "install", "uninstall", "cancel", "upgrade"
+        ] = None,
     ):
         """Updates status text and what buttons are visible when any button is pushed.
 
@@ -169,15 +170,13 @@ class PluginListItem(QFrame):
             The new string to be displayed as the status.
         action_name: str
             The action of the button pressed.
-        update: bool
-            States whether this install is an update or not.
 
         """
         self.item_status.setText(text)
-        if action_name == 'install' and update:
+        if action_name == 'upgrade':
             self.cancel_btn.setVisible(True)
             self.action_button.setVisible(False)
-        elif (action_name in {'uninstall', 'install'}) and not update:
+        elif action_name in {'uninstall', 'install'}:
             self.action_button.setVisible(False)
             self.cancel_btn.setVisible(True)
         elif action_name == 'cancel':
@@ -185,7 +184,7 @@ class PluginListItem(QFrame):
             self.action_button.setDisabled(False)
             self.cancel_btn.setVisible(False)
         else:  # pragma: nocover
-            raise ValueError(f"Not supported {action_name} and {update}")
+            raise ValueError(f"Not supported {action_name}")
 
     def setup_ui(self, enabled=True):
         """Define the layout of the PluginListItem"""
@@ -516,7 +515,6 @@ class QPluginList(QListWidget):
                 item,
                 pkg_name,
                 action_name,
-                update=False,
                 version=widg.version_choice_dropdown.currentText(),
                 installer_choice=widg.source_choice_dropdown.currentText(),
             )
@@ -527,8 +525,7 @@ class QPluginList(QListWidget):
                 self.handle_action,
                 item,
                 pkg_name,
-                InstallerActions.INSTALL,
-                update=True,
+                InstallerActions.UPGRADE,
             )
         )
         widg.cancel_btn.clicked.connect(
@@ -557,7 +554,6 @@ class QPluginList(QListWidget):
         item: QListWidgetItem,
         pkg_name: str,
         action_name: InstallerActions,
-        update: bool = False,
         version: str = None,
         installer_choice: Optional[str] = None,
     ):
@@ -590,45 +586,52 @@ class QPluginList(QListWidget):
             self._warn_dialog.move(global_point)
 
         if action_name == InstallerActions.INSTALL:
-            if update:
-                if hasattr(item, 'latest_version'):
-                    pkg_name += f"=={item.latest_version}"
-
-                widget.set_busy(trans._("updating..."), action_name, update)
-                widget.action_button.setDisabled(True)
-            else:
-                if version:
-                    pkg_name += f"=={item.widget.version_choice_dropdown.currentText()}"
-                widget.set_busy(trans._("installing..."), action_name, update)
+            if version:
+                pkg_name += (
+                    f"=={item.widget.version_choice_dropdown.currentText()}"
+                )
+            widget.set_busy(trans._("installing..."), action_name)
 
             job_id = self.installer.install(
                 tool=tool,
                 pkgs=[pkg_name],
                 # origins="TODO",
-                upgrade=update,
             )
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
-        elif action_name == InstallerActions.UNINSTALL:
-            widget.set_busy(
-                trans._("uninstalling..."), action_name, update=False
+
+        if action_name == InstallerActions.UPGRADE:
+            if hasattr(item, 'latest_version'):
+                pkg_name += f"=={item.latest_version}"
+
+            widget.set_busy(trans._("updating..."), action_name)
+            widget.action_button.setDisabled(True)
+
+            job_id = self.installer.upgrade(
+                tool=tool,
+                pkgs=[pkg_name],
+                # origins="TODO",
             )
+            if self._warn_dialog:
+                self._warn_dialog.exec_()
+            self.scrollToTop()
+
+        elif action_name == InstallerActions.UNINSTALL:
+            widget.set_busy(trans._("uninstalling..."), action_name)
             widget.update_btn.setDisabled(True)
             job_id = self.installer.uninstall(
                 tool=tool,
                 pkgs=[pkg_name],
                 # origins="TODO",
-                upgrade=False,
+                # upgrade=False,
             )
             widget.setProperty("current_job_id", job_id)
             if self._warn_dialog:
                 self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == InstallerActions.CANCEL:
-            widget.set_busy(
-                trans._("cancelling..."), action_name, update=False
-            )
+            widget.set_busy(trans._("cancelling..."), action_name)
             try:
                 job_id = widget.property("current_job_id")
                 self.installer.cancel(job_id)

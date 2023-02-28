@@ -43,6 +43,7 @@ class InstallerActions(StringEnum):
     INSTALL = auto()
     UNINSTALL = auto()
     CANCEL = auto()
+    UPGRADE = auto()
 
 
 class InstallerTools(StringEnum):
@@ -57,13 +58,10 @@ class AbstractInstallerTool:
     pkgs: Tuple[str, ...]
     origins: Tuple[str, ...] = ()
     prefix: Optional[str] = None
-    upgrade: Optional[bool] = False
 
     @property
     def ident(self):
-        return hash(
-            (self.action, *self.pkgs, *self.origins, self.prefix, self.upgrade)
-        )
+        return hash((self.action, *self.pkgs, *self.origins, self.prefix))
 
     # abstract method
     @classmethod
@@ -110,15 +108,16 @@ class PipInstallerTool(AbstractInstallerTool):
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
         if self.action == InstallerActions.INSTALL:
-            if self.upgrade:
-                args += [
-                    'install',
-                    '--upgrade',
-                    '-c',
-                    self._constraints_file(),
-                ]
-            else:
-                args += ['install', '-c', self._constraints_file()]
+            args += ['install', '-c', self._constraints_file()]
+            for origin in self.origins:
+                args += ['--extra-index-url', origin]
+        elif self.action == InstallerActions.UPGRADE:
+            args += [
+                'install',
+                '--upgrade',
+                '-c',
+                self._constraints_file(),
+            ]
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
         elif self.action == InstallerActions.UNINSTALL:
@@ -188,7 +187,10 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        args = [self.action.value, '-y', '--prefix', prefix]
+        if self.action.value == "upgrade":
+            args = ['update', '-y', '--prefix', prefix]
+        else:
+            args = [self.action.value, '-y', '--prefix', prefix]
         args.append('--override-channels')
         for channel in (*self.origins, *self._default_channels()):
             args.extend(["-c", channel])
@@ -273,7 +275,6 @@ class InstallerQueue(QProcess):
         *,
         prefix: Optional[str] = None,
         origins: Sequence[str] = (),
-        upgrade: bool = False,
         **kwargs,
     ) -> JobId:
         """Install packages in `pkgs` into `prefix` using `tool` with additional
@@ -301,7 +302,44 @@ class InstallerQueue(QProcess):
             pkgs=pkgs,
             prefix=prefix,
             origins=origins,
-            upgrade=upgrade,
+            **kwargs,
+        )
+        return self._queue_item(item)
+
+    def upgrade(
+        self,
+        tool: InstallerTools,
+        pkgs: Sequence[str],
+        *,
+        prefix: Optional[str] = None,
+        origins: Sequence[str] = (),
+        **kwargs,
+    ) -> JobId:
+        """Upgrade packages in `pkgs` into `prefix` using `tool` with additional
+        `origins` as source for `pkgs`.
+
+        Parameters
+        ----------
+        tool : InstallerTools
+            Which type of installation tool to use.
+        pkgs : Sequence[str]
+            List of packages to install.
+        prefix : Optional[str], optional
+            Optional prefix to install packages into.
+        origins : Optional[Sequence[str]], optional
+            Additional sources for packages to be downloaded from.
+
+        Returns
+        -------
+        JobId : int
+            ID that can be used to cancel the process.
+        """
+        item = self._build_queue_item(
+            tool=tool,
+            action=InstallerActions.UPGRADE,
+            pkgs=pkgs,
+            prefix=prefix,
+            origins=origins,
             **kwargs,
         )
         return self._queue_item(item)
@@ -409,7 +447,6 @@ class InstallerQueue(QProcess):
         pkgs: Sequence[str],
         prefix: Optional[str] = None,
         origins: Sequence[str] = (),
-        upgrade: bool = False,
         **kwargs,
     ) -> AbstractInstallerTool:
         return self._get_tool(tool)(
@@ -417,7 +454,6 @@ class InstallerQueue(QProcess):
             action=action,
             origins=origins,
             prefix=prefix,
-            upgrade=upgrade,
             **kwargs,
         )
 
