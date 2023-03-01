@@ -106,6 +106,7 @@ ignore = [
     "Q000",
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
     "TRY003", # require implement multiple exception class
+    "RUF005", # problem with numpy compatybility, see https://github.com/charliermarsh/ruff/issues/2142#issuecomment-1451038741
 
 ]
 
