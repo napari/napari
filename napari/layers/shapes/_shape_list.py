@@ -1181,7 +1181,7 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
@@ -1226,7 +1226,7 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
+            colors_shape = self.displayed_vertices.max(axis=0).astype(int)
 
         colors = np.zeros((*tuple(colors_shape), 4), dtype=float)
         colors[..., 3] = 1
