@@ -60,13 +60,13 @@ class ColorProperties:
                     # ensure the values are a numpy array
                     val['values'] = np.asarray(val['values'])
                     color_properties = cls(**val)
-                except ValueError:
+                except ValueError as e:
                     raise ValueError(
                         trans._(
                             'color_properties dictionary should have keys: name, values, and optionally current_value',
                             deferred=True,
                         )
-                    )
+                    ) from e
 
         elif isinstance(val, cls):
             color_properties = val
@@ -156,18 +156,18 @@ class ColorManager(EventedModel):
     )
 
     # validators
-    @validator('continuous_colormap', pre=True)
+    @validator('continuous_colormap', pre=True, allow_reuse=True)
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
 
-    @validator('colors', pre=True)
+    @validator('colors', pre=True, allow_reuse=True)
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
         else:
             return np.empty((0, 4))
 
-    @validator('current_color', pre=True)
+    @validator('current_color', pre=True, allow_reuse=True)
     def _coerce_current_color(cls, v):
         if v is None:
             return v
@@ -176,7 +176,7 @@ class ColorManager(EventedModel):
         else:
             return transform_color(v)[0]
 
-    @root_validator()
+    @root_validator(allow_reuse=True)
     def _validate_colors(cls, values):
         color_mode = values['color_mode']
         if color_mode == ColorMode.CYCLE:
@@ -301,10 +301,7 @@ class ColorManager(EventedModel):
             (i.e., reset the range to 0-new_max_value).
         """
         if self.color_mode == ColorMode.DIRECT:
-            if color is None:
-                new_color = self.current_color
-            else:
-                new_color = color
+            new_color = self.current_color if color is None else color
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=new_color,
@@ -427,7 +424,7 @@ class ColorManager(EventedModel):
                     )
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list = []
+        self, current_color: np.ndarray, update_indices: list = ()
     ):
         """Update the current color and update the colors if requested.
 
@@ -444,7 +441,7 @@ class ColorManager(EventedModel):
             will change the mode to DIRECT.
         """
         self.current_color = transform_color(current_color)[0]
-        if len(update_indices) > 0:
+        if update_indices:
             self.color_mode = ColorMode.DIRECT
             cur_colors = self.colors.copy()
             cur_colors[update_indices] = self.current_color
@@ -463,12 +460,15 @@ class ColorManager(EventedModel):
         ] = None,
         color_mode: Optional[Union[ColorMode, str]] = None,
         current_color: Optional[np.ndarray] = None,
-        default_color_cycle: np.ndarray = np.array([1, 1, 1, 1]),
+        default_color_cycle: ColorType = None,
     ):
         """Initialize a ColorManager object from layer kwargs. This is a convenience
         function to coerce possible inputs into ColorManager kwargs
 
         """
+        if default_color_cycle is None:
+            default_color_cycle = np.array([1, 1, 1, 1])
+
         properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
@@ -493,13 +493,13 @@ class ColorManager(EventedModel):
                     color_properties = ColorProperties(
                         name=prop_name, values=prop_values
                     )
-                except KeyError:
+                except KeyError as e:
                     raise KeyError(
                         trans._(
                             'if color_properties is a string, it should be a property name',
                             deferred=True,
                         )
-                    )
+                    ) from e
         else:
             color_values = colors
             color_properties = None

@@ -2,6 +2,7 @@
 napari command line viewer.
 """
 import argparse
+import contextlib
 import logging
 import os
 import runpy
@@ -96,10 +97,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
                     raise IndexError()
             except IndexError:
                 sys.exit(f"error: argument {arg} expected one argument")
-        try:
+        with contextlib.suppress(Exception):
             value = literal_eval(value)
-        except Exception:
-            value = value
 
         out[key] = value
     return out
@@ -537,6 +536,10 @@ def _maybe_rerun_with_macos_fixes():
             cmd = [executable, sys.argv[0]]
         else:  # we assume it must have been launched via '-m' syntax
             cmd = [executable, "-m", "napari"]
+
+        # this fixes issues running from a venv/virtualenv based virtual
+        # environment with certain python distributions (e.g. pyenv, asdf)
+        env["PYTHONEXECUTABLE"] = sys.executable
 
         # Append original command line arguments.
         if len(sys.argv) > 1:

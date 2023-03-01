@@ -11,10 +11,14 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  COLUMNS: 120
+
 jobs:
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,10 +26,13 @@ jobs:
         with:
           python-version: "3.x"
           cache-dependency-path: setup.cfg
+          cache: 'pip'
+      - name: Install Dependencies
+        run: pip install --upgrade pip
+      - name: Install Napari dev
+        run: pip install -e .[build]
       - name: Check Manifest
         run: |
-          pip install --upgrade pip
-          pip install -e .[build]
           make typestubs
           make check-manifest
 
@@ -33,6 +40,7 @@ jobs:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -48,6 +56,7 @@ jobs:
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -84,10 +93,9 @@ jobs:
           - python: 3.9
             platform: ubuntu-latest
             backend: pyside6
-# uncoment when new qtpy is released
-#          - python: '3.10'
-#            platform: ubuntu-latest
-#            backend: pyside6
+          - python: '3.10'
+            platform: ubuntu-latest
+            backend: pyside6
 
     steps:
       - name: Cancel Previous Runs
@@ -134,7 +142,9 @@ jobs:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
-        uses: GabrielBB/xvfb-action@v1
+        # the longest is macos-latest 3.9 pyqt5 at ~30 minutes.
+        timeout-minutes: 35
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox
         env:
@@ -144,6 +154,7 @@ jobs:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
+          FORCE_COLOR: 1
       - uses: actions/upload-artifact@v3
         with:
           name: upload pytest timing reports as json
@@ -176,7 +187,7 @@ jobs:
           pip install ./napari-from-github[all,testing]
 
       - name: Test
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: |
             python -m pytest --pyargs napari --color=yes
@@ -198,6 +209,6 @@ jobs:
           pip install setuptools tox tox-gh-actions
 
       - name: Test
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: tox -e py39-linux-pyside2-examples

@@ -169,7 +169,11 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     @classmethod
     def available(cls):
-        return call([cls.executable(), "--version"]) == 0
+        executable = cls.executable()
+        try:
+            return call([executable, "--version"]) == 0
+        except FileNotFoundError:  # pragma: no cover
+            return False
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
@@ -498,8 +502,11 @@ class InstallerQueue(QProcess):
 def _get_python_exe():
     # Note: is_bundled_app() returns False even if using a Briefcase bundle...
     # Workaround: see if sys.executable is set to something something napari on Mac
-    if sys.executable.endswith("napari") and sys.platform == 'darwin':
+    if (
+        sys.executable.endswith("napari")
+        and sys.platform == 'darwin'
+        and (python := Path(sys.prefix) / "bin" / "python3").is_file()
+    ):
         # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
-        if (python := Path(sys.prefix) / "bin" / "python3").is_file():
-            return str(python)
+        return str(python)
     return sys.executable

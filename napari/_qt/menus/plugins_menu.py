@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class PluginsMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window') -> None:
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
 
@@ -49,7 +49,6 @@ class PluginsMenu(NapariMenu):
         self._add_registered_widget(call_all=True)
 
     def _remove_unregistered_widget(self, event):
-
         for action in self.actions():
             if event.value in action.text():
                 self.removeAction(action)
@@ -94,7 +93,7 @@ class PluginsMenu(NapariMenu):
 
             def _add_toggle_widget(*, key=key, hook_type=hook_type):
                 full_name = menu_item_template.format(*key)
-                if full_name in self._win._dock_widgets.keys():
+                if full_name in self._win._dock_widgets:
                     dock_widget = self._win._dock_widgets[full_name]
                     if dock_widget.isVisible():
                         dock_widget.hide()

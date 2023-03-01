@@ -8,7 +8,9 @@ This file provides a minimal working example using a progress bar alongside
 .. tags:: interactivity
 """
 from time import sleep
+
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
 import napari
 from napari.qt import thread_worker
 
@@ -64,11 +66,11 @@ def return_func(return_val):
     connect={'returned': return_func},
 )
 def my_function(*_):
-    sum = 0
+    sum_val = 0
     for i in range(10):
-        sum += i
+        sum_val += i
         sleep(0.1)
-    return sum
+    return sum_val
 
 
 button_layout = QVBoxLayout()

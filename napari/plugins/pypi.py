@@ -82,11 +82,9 @@ def iter_napari_plugin_info() -> Iterator[Tuple[PackageMetadata, bool]]:
         _info = cast(Dict[str, str], dict(info))
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
-        # receive (and it doesn't currently receive this from the hub API)
+        # receive
         _info.pop("display_name", None)
 
-        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
-        # parity with the hub api.  change this later.
         name = _info.pop("name")
         meta = PackageMetadata(name=normalized_name(name), **_info)
         yield meta, (name in conda)

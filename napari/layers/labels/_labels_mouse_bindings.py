@@ -29,7 +29,6 @@ def draw(layer, event):
 
     # on press
     with layer.block_history():
-
         layer._draw(new_label, coordinates, coordinates)
         yield
 

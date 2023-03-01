@@ -67,7 +67,7 @@ class QtActivityDialog(QDialog):
     MIN_WIDTH = 250
     MIN_HEIGHT = 185
 
-    def __init__(self, parent=None, toggle_button=None):
+    def __init__(self, parent=None, toggle_button=None) -> None:
         super().__init__(parent)
         self._toggleButton = toggle_button
 

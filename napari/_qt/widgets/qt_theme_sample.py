@@ -59,7 +59,7 @@ officia deserunt mollit anim id est laborum.</p>
 
 
 class TabDemo(QTabWidget):
-    def __init__(self, parent=None, emphasized=False):
+    def __init__(self, parent=None, emphasized=False) -> None:
         super().__init__(parent)
         self.setProperty('emphasized', emphasized)
         self.tab1 = QWidget()
@@ -88,7 +88,7 @@ class TabDemo(QTabWidget):
 
 
 class SampleWidget(QWidget):
-    def __init__(self, theme='dark', emphasized=False):
+    def __init__(self, theme='dark', emphasized=False) -> None:
         super().__init__(None)
         self.setProperty('emphasized', emphasized)
         self.setStyleSheet(get_stylesheet(theme))
