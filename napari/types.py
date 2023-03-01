@@ -19,7 +19,7 @@ import numpy as np
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
-    import dask.array
+    import dask.array  # noqa ICN001
     import zarr
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget

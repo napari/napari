@@ -95,6 +95,7 @@ select = [
     "RET", # flake8-return
     "TID",  # flake8-tidy-imports # replace absolutify import
     "TRY", # tryceratops
+    "ICN", # flake8-import-conventions
 ]
 ignore = [
     "E501", "UP006", "TCH001", "TCH002", "TCH003",
@@ -154,6 +155,12 @@ keep-runtime-typing = true
 
 [tool.ruff.isort]
 known-first-party=['napari']
+
+[tool.ruff.flake8-import-conventions]
+[tool.ruff.flake8-import-conventions.extend-aliases]
+# Declare a custom alias for the `matplotlib` module.
+"dask.array" = "da"
+xarray = "xr"
 
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
