@@ -44,14 +44,12 @@ from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.plugins import plugin_manager
-from napari.plugins.hub import iter_hub_plugin_info
 from napari.plugins.pypi import _user_agent, iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
 from napari.settings import get_settings
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
 from napari.utils.misc import (
     parse_version,
-    running_as_bundled_app,
     running_as_constructor_app,
 )
 from napari.utils.translations import trans
@@ -851,19 +849,9 @@ class QtPluginDialog(QDialog):
         )
 
         # fetch available plugins
-        settings = get_settings()
-        use_hub = (
-            running_as_bundled_app()
-            or running_as_constructor_app()
-            or settings.plugins.plugin_api.name == "napari_hub"
-        )
-        if use_hub:
-            conda_forge = running_as_constructor_app()
-            self.worker = create_worker(
-                iter_hub_plugin_info, conda_forge=conda_forge
-            )
-        else:
-            self.worker = create_worker(iter_napari_plugin_info)
+        get_settings()
+
+        self.worker = create_worker(iter_napari_plugin_info)
 
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
@@ -1022,12 +1010,10 @@ class QtPluginDialog(QDialog):
     def _install_packages(self, packages: Sequence[str] = ()):
         if not packages:
             _packages = self.direct_entry_edit.text()
-            if os.path.exists(_packages):
-                packages = [_packages]
-            else:
-                packages = _packages.split()
+            packages = (
+                [_packages] if os.path.exists(_packages) else _packages.split()
+            )
             self.direct_entry_edit.clear()
-
         if packages:
             self.installer.install(packages)
 
