@@ -13,6 +13,7 @@ from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
+from napari.utils.events import Event
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -95,7 +96,7 @@ def _toggle_visibility(ll: LayerList):
 
 def _reload(ll: LayerList):
     for lay in ll.selection:
-        lay.refresh()
+        lay.events.reload(Event('reload', layer=lay))
 
 
 def _link_selected_layers(ll: LayerList):
