@@ -95,6 +95,7 @@ class LockableData:
 @pytest.fixture()
 def layer_slicer():
     layer_slicer = _LayerSlicer()
+    layer_slicer._force_sync = False
     yield layer_slicer
     layer_slicer.shutdown()
 
