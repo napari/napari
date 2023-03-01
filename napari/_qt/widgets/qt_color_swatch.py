@@ -215,7 +215,7 @@ class QColorLineEdit(QLineEdit):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self._compl = QCompleter(list(get_color_dict()) + ['transparent'])
+        self._compl = QCompleter([*list(get_color_dict()), "transparent"])
         self._compl.setCompletionMode(QCompleter.InlineCompletion)
         self.setCompleter(self._compl)
         self.setTextMargins(2, 2, 2, 2)

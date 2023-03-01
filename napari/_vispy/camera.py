@@ -80,7 +80,7 @@ class VispyCamera:
             center = tuple(self._view.camera.center)
         else:
             # in 2D, we arbitrarily choose 0.0 as the center in z
-            center = tuple(self._view.camera.center[:2]) + (0.0,)
+            center = (*tuple(self._view.camera.center[:2]), 0.0)
         # switch from VisPy xyz ordering to NumPy prc ordering
         center = center[::-1]
         return center

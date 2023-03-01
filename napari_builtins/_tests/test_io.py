@@ -232,9 +232,7 @@ def test_single_file(spec: ImageSpec, _write_spec, stacks: int):
     fnames = [str(_write_spec(spec)) for _ in range(stacks)]
     [(layer_data,)] = npe2.read(fnames, stack=stacks > 1)
     assert isinstance(layer_data, np.ndarray if stacks == 1 else da.Array)
-    assert layer_data.shape == tuple(
-        i for i in (stacks,) + spec.shape if i > 1
-    )
+    assert layer_data.shape == tuple(i for i in (stacks, *spec.shape) if i > 1)
     assert layer_data.dtype == spec.dtype
 
 
@@ -253,7 +251,7 @@ def test_magic_imread(_write_spec, spec: ImageSpec, stack, use_dask):
     if isinstance(spec, ImageSpec):
         expect_shape = spec.shape
     else:
-        expect_shape = (len(spec),) + spec[0].shape if stack else spec[0].shape
+        expect_shape = (len(spec), *spec[0].shape) if stack else spec[0].shape
     expect_shape = tuple(i for i in expect_shape if i > 1)
 
     expected_arr_type = (

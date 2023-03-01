@@ -173,7 +173,7 @@ class NestableEventedList(EventedList[_T]):
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> NestableEventedList[_T]:  # noqa
+    def __getitem__(self, key: slice) -> NestableEventedList[_T]:
         ...  # pragma: no cover
 
     @overload
@@ -242,7 +242,7 @@ class NestableEventedList(EventedList[_T]):
         if hasattr(event, 'index'):
             # This event is coming from a nested List...
             # update the index as a nested index.
-            ei = (self.index(event.source),) + ensure_tuple_index(event.index)
+            ei = (self.index(event.source), *ensure_tuple_index(event.index))
             for attr in ('index', 'new_index'):
                 if hasattr(event, attr):
                     setattr(event, attr, ei)
@@ -375,7 +375,7 @@ class NestableEventedList(EventedList[_T]):
             if src_par == dest_par and src_i == dest_i - ddec:
                 continue
 
-            yield src_par + (src_i,), dest_par + (dest_i - ddec,)
+            yield (*src_par, src_i), (*dest_par, dest_i - ddec)
             popped[src_par].append(src_i)
             dumped.append(dest_i - ddec)
 
@@ -413,7 +413,7 @@ class NestableEventedList(EventedList[_T]):
         src_par_i, src_i = split_nested_index(src_index)
         dest_par_i, dest_i = split_nested_index(dest_index)
         dest_i = self._non_negative_index(dest_par_i, dest_i)
-        dest_index = dest_par_i + (dest_i,)
+        dest_index = (*dest_par_i, dest_i)
 
         if isinstance(src_i, slice):
             raise TypeError(
@@ -461,7 +461,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(e, list):
             return self.__newlike__(e)
         if self._basetypes:
-            _types = tuple(self._basetypes) + (NestableEventedList,)
+            _types = (*tuple(self._basetypes), NestableEventedList)
             if not isinstance(e, _types):
                 raise TypeError(
                     trans._(
@@ -479,9 +479,9 @@ class NestableEventedList(EventedList[_T]):
         Depth first traversal of the tree
         """
         for i, item in enumerate(self[start:stop]):
-            yield root + (i,) if root else i
+            yield (*root, i) if root else i
             if isinstance(item, NestableEventedList):
-                yield from item._iter_indices(root=root + (i,))
+                yield from item._iter_indices(root=(*root, i))
 
     def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
         """Return true if `index` is valid for this nestable list."""

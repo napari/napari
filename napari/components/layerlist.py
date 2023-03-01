@@ -433,7 +433,7 @@ class LayerList(SelectableEventedList[Layer]):
         If ``plugin`` is provided and multiple layers are targeted, then
         we call we call
         :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
-        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
+        that plugin, and if it doesn`t return a ``WriterFunction`` we error,
         otherwise we call it and if that fails if it we error.
 
         Parameters

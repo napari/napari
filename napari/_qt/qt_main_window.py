@@ -993,7 +993,7 @@ class Window:
                 dock_widget.show()
                 dock_widget.raise_()
             elif dock_widget.area in ('right', 'left'):
-                _wdg = current_dws_in_area + [dock_widget]
+                _wdg = [*current_dws_in_area, dock_widget]
                 # add sizes to push lower widgets up
                 sizes = list(range(1, len(_wdg) * 4, 4))
                 self._qt_window.resizeDocks(

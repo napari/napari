@@ -287,7 +287,7 @@ def available_themes():
     list of str
         ids of available themes.
     """
-    return tuple(_themes) + ("system",)
+    return (*tuple(_themes), 'system')
 
 
 def is_theme_available(theme_id):

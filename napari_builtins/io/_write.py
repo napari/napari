@@ -191,9 +191,9 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         prop_table = []
 
     # add index of each point
-    column_names = ['index'] + column_names
+    column_names = ["index", *column_names]
     indices = np.expand_dims(list(range(data.shape[0])), axis=1)
-    table = np.concatenate([indices, data] + prop_table, axis=1)
+    table = np.concatenate([indices, data, *prop_table], axis=1)
 
     # write table to csv file
     write_csv(path, table, column_names)
@@ -239,7 +239,7 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     column_names = [f'axis-{str(n)}' for n in range(n_dimensions)]
 
     # add shape id and vertex id of each vertex
-    column_names = ['index', 'shape-type', 'vertex-index'] + column_names
+    column_names = ["index", "shape-type", "vertex-index", *column_names]
 
     # concatenate shape data into 2D array
     len_shapes = [s.shape[0] for s in data]

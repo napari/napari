@@ -324,7 +324,7 @@ def _shapes_csv_to_layerdata(
     n_shapes = max(inds) + 1
     # Determine when shape id changes
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
-    shape_boundaries = [0] + transitions + [len(table)]
+    shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
         raise ValueError(
             trans._('Expected number of shapes not found', deferred=True)

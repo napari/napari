@@ -409,7 +409,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return order + (max(order) + 1,)
+            return (*order, max(order) + 1)
 
         return order
 
@@ -905,7 +905,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 downsampled = ndi.zoom(
-                    image, zoom_factor + (1,), prefilter=False, order=0
+                    image, (*zoom_factor, 1), prefilter=False, order=0
                 )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
@@ -936,7 +936,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled**self.gamma
             color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape(downsampled.shape + (4,))
+            colormapped = color_array.reshape((*downsampled.shape, 4))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 

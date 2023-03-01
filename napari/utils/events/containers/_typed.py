@@ -75,14 +75,14 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T):  # noqa: F811
+    def __setitem__(self, key: int, value: _T):
         ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):  # noqa: F811
+    def __setitem__(self, key: slice, value: Iterable[_T]):
         ...  # pragma: no cover
 
-    def __setitem__(self, key, value):  # noqa: F811
+    def __setitem__(self, key, value):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError(
@@ -109,14 +109,14 @@ class TypedMutableSequence(MutableSequence[_T]):
         return super().__contains__(key)
 
     @overload
-    def __getitem__(self, key: int) -> _T:  # noqa: F811
+    def __getitem__(self, key: int) -> _T:
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':  # noqa
+    def __getitem__(self, key: slice) -> 'TypedMutableSequence[_T]':
         ...  # pragma: no cover
 
-    def __getitem__(self, key):  # noqa: F811
+    def __getitem__(self, key):
         """Get an item from the list
 
         Parameters

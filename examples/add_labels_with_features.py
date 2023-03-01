@@ -44,7 +44,7 @@ label_features = {
     'row': ['none']
     + ['top'] * 4
     + ['bottom'] * 4,  # background is row: none
-    'size': ['none'] + list(coin_sizes),  # background is size: none
+    'size': ["none", *list(coin_sizes)],  # background is size: none
 }
 
 color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}

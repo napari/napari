@@ -30,7 +30,7 @@ def register_layer_action(
     Parameters
     ----------
     keymapprovider : KeymapProvider
-        class on which to register the keybindings – this will typically be
+        class on which to register the keybindings - this will typically be
         the instance in focus that will handle the keyboard shortcut.
     description : str
         The description of the action, this will typically be translated and
@@ -86,7 +86,7 @@ def register_layer_attr_action(
     Parameters
     ----------
     keymapprovider : KeymapProvider
-        class on which to register the keybindings – this will typically be
+        class on which to register the keybindings - this will typically be
         the instance in focus that will handle the keyboard shortcut.
     description : str
         The description of the action, this will typically be translated and

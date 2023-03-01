@@ -631,12 +631,12 @@ if __name__ == '__main__':
 
             print()
             print(
-                f"{RED}i{NORMAL} : ignore –  add to ignored localised strings"
+                f"{RED}i{NORMAL} : ignore -  add to ignored localised strings"
             )
-            print(f"{RED}q{NORMAL} : quit –  quit w/o saving")
-            print(f"{RED}c{NORMAL} : continue –  go to next")
+            print(f"{RED}q{NORMAL} : quit -  quit w/o saving")
+            print(f"{RED}c{NORMAL} : continue -  go to next")
             if edit_cmd:
-                print(f"{RED}e{NORMAL} : EDIT – using {edit_cmd!r}")
+                print(f"{RED}e{NORMAL} : EDIT - using {edit_cmd!r}")
             else:
                 print(
                     "- : Edit not available, call with python tools/test_strings.py  '$COMMAND {filename} {linenumber} '"

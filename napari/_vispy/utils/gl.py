@@ -105,7 +105,7 @@ def fix_data_dtype(data):
     except KeyError as e:  # not an int or float
         raise TypeError(
             trans._(
-                'type {dtype} not allowed for texture; must be one of {textures}',  # noqa: E501
+                'type {dtype} not allowed for texture; must be one of {textures}',
                 deferred=True,
                 dtype=dtype,
                 textures=set(texture_dtypes),

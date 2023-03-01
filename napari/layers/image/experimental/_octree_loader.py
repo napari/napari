@@ -341,7 +341,7 @@ class OctreeLoader:
             drawn_ancestors = [drawn_ancestors[-1]]
 
         # If the closest ancestor is drawn just take that one
-        if len(ancestors) > 0 and ancestors == drawn_ancestors:  # noqa SIM114
+        if len(ancestors) > 0 and ancestors == drawn_ancestors:
             return children + drawn_ancestors + best_in_memory_chunk
         # If the ideal chunk is in memory take that one
         if len(best_in_memory_chunk) > 0:

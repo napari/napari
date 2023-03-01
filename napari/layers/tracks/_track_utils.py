@@ -264,7 +264,7 @@ class TrackManager:
 
         # check that graph nodes exist in the track id lookup
         for node_idx, parents_idx in graph.items():
-            nodes = [node_idx] + parents_idx
+            nodes = [node_idx, *parents_idx]
             for node in nodes:
                 if node not in unique_track_ids:
                     raise ValueError(
