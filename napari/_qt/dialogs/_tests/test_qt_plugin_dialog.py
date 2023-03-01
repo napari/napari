@@ -11,13 +11,12 @@ from napari._qt.dialogs.qt_package_installer import InstallerActions
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa
 
 
-def _iter_napari_hub_or_pypi_plugin_info(
+def _iter_napari_pypi_plugin_info(
     conda_forge: bool = True,
 ) -> Generator[Tuple[Optional[npe2.PackageMetadata], bool], None, None]:
-    """Mock the hub and pypi methods to collect available plugins.
+    """Mock the pypi method to collect available plugins.
 
-    This will mock `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
-    and `napari.plugins.npe2api.iter_napari_plugin_info` for pypi.
+    This will mock napari.plugins.pypi.iter_napari_plugin_info` for pypi.
 
     It will return two fake plugins that will populate the available plugins
     list (the bottom one). The first plugin will not be available on
@@ -106,12 +105,11 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
         def set_blocked(self, plugin, blocked):
             return False
 
-    for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
-        monkeypatch.setattr(
-            qt_plugin_dialog,
-            method_name,
-            _iter_napari_hub_or_pypi_plugin_info,
-        )
+    monkeypatch.setattr(
+        qt_plugin_dialog,
+        "iter_napari_plugin_info",
+        _iter_napari_pypi_plugin_info,
+    )
 
     monkeypatch.setattr(qt_plugin_dialog, 'WarnPopup', WarnPopupMock)
 
@@ -146,12 +144,11 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
     """
     Fixture that provides a plugin dialog for a constructor based install.
     """
-    for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
-        monkeypatch.setattr(
-            qt_plugin_dialog,
-            method_name,
-            _iter_napari_hub_or_pypi_plugin_info,
-        )
+    monkeypatch.setattr(
+        qt_plugin_dialog,
+        "iter_napari_plugin_info",
+        _iter_napari_pypi_plugin_info,
+    )
 
     # This is patching `napari.utils.misc.running_as_constructor_app` function
     # to mock a constructor based install.

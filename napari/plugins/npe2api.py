@@ -85,7 +85,7 @@ def iter_napari_plugin_info() -> (
 
         # TODO: use this better.
         # this would require changing the api that qt_plugin_dialog expects to
-        # receive (and it doesn't currently receive this from the hub API)
+        # receive
         _info.pop("display_name", None)
 
         # TODO: once the new version of npe2 is out, this can be refactored
@@ -96,9 +96,6 @@ def iter_napari_plugin_info() -> (
             "conda_versions": _info.pop("conda_versions"),
         }
         name = _info.pop("name")
-
-        # TODO: I'd prefer we didn't normalize the name here, but it's needed for
-        # parity with the hub api.  change this later.
         meta = PackageMetadata(name=normalized_name(name), **_info)
 
         yield meta, (name in conda), extra_info
