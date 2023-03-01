@@ -311,7 +311,7 @@ class NestableEventedList(EventedList[_T]):
 
         dest_par, dest_i = split_nested_index(dest_index)
         if isinstance(dest_i, slice):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     "Destination index may not be a slice",
                     deferred=True,
@@ -353,7 +353,7 @@ class NestableEventedList(EventedList[_T]):
 
             src_par, src_i = split_nested_index(idx)
             if isinstance(src_i, slice):
-                raise ValueError(
+                raise TypeError(
                     trans._(
                         "Terminal source index may not be a slice",
                         deferred=True,
@@ -416,7 +416,7 @@ class NestableEventedList(EventedList[_T]):
         dest_index = dest_par_i + (dest_i,)
 
         if isinstance(src_i, slice):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     "Terminal source index may not be a slice",
                     deferred=True,
@@ -424,7 +424,7 @@ class NestableEventedList(EventedList[_T]):
             )
 
         if isinstance(dest_i, slice):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     "Destination index may not be a slice",
                     deferred=True,
@@ -490,7 +490,8 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(index, tuple):
             try:
                 self[index]
-                return True
             except IndexError:
                 return False
+            else:
+                return True
         raise TypeError(f"Not supported index type {type(index)}")

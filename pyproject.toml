@@ -93,6 +93,8 @@ select = [
     "Q", # flake8-quotes
     "RSE", # flake8-raise
     "RET", # flake8-return
+    "TID",  # flake8-tidy-imports # partialy covers absolufy-imports
+    "TRY", # tryceratops
 ]
 ignore = [
     "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
@@ -101,6 +103,7 @@ ignore = [
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
     "Q000",
     "RET504", # not fixed yet https://github.com/charliermarsh/ruff/issues/2950
+    "TRY003", # require implement multiple exception class
 
 ]
 

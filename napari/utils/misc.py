@@ -258,7 +258,7 @@ def formatdoc(obj):
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}
         )
-        return obj
+        return obj  # noqa: TRY300
     finally:
         del frame
 

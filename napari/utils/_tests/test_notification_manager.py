@@ -70,7 +70,7 @@ def test_notification_manager_no_gui(monkeypatch):
         # pytest intercepts the error, so we can manually call sys.excepthook
         assert sys.excepthook == notification_manager.receive_error
         try:
-            raise ValueError("a")
+            raise ValueError("a")  # noqa TRY301
         except ValueError:
             sys.excepthook(*sys.exc_info())
         assert len(notification_manager.records) == 3
@@ -135,7 +135,7 @@ def test_notification_manager_no_gui_with_threading():
         exception_thread.join(timeout=DEFAULT_TIMEOUT_SECS)
 
         try:
-            raise ValueError("a")
+            raise ValueError("a")  # noqa TRY301
         except ValueError:
             threading.excepthook(sys.exc_info())
 

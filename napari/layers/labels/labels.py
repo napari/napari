@@ -1516,8 +1516,8 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
         # for difference from indexing numpy
         try:
             import xarray as xr
-
-            return tuple(xr.DataArray(i) for i in indices)
         except ModuleNotFoundError:
             pass
+        else:
+            return tuple(xr.DataArray(i) for i in indices)
     return tuple(indices)

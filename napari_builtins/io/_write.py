@@ -317,8 +317,8 @@ def write_layer_data_with_plugins(
             for fname in os.listdir(tmp):
                 written.append(os.path.join(path, fname))
                 shutil.move(os.path.join(tmp, fname), path)
-    except Exception as exc:
+    except Exception:
         if not already_existed:
             shutil.rmtree(path, ignore_errors=True)
-        raise exc
+        raise
     return written

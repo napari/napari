@@ -279,7 +279,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'Cannot add single nor multiple shape',
                     deferred=True,
@@ -313,7 +313,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise ValueError(
+            raise TypeError(
                 trans._(
                     'shape must be subclass of Shape',
                     deferred=True,

@@ -23,7 +23,7 @@ def test_error_reporter(qtbot, monkeypatch):
     error_message = 'my special error'
     try:
         # we need to raise to make sure a __traceback__ is attached to the error.
-        raise PluginError(
+        raise PluginError(  # noqa TRY301
             error_message, plugin_name='test_plugin', plugin="mock"
         )
     except PluginError:

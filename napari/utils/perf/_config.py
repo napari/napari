@@ -138,7 +138,7 @@ class PerfmonConfig:
             return False
 
     @property
-    def trace_file_on_start(self) -> str:
+    def trace_file_on_start(self) -> Optional[str]:
         """Return path of trace file to write or None."""
         if self.config_path is None:
             return None  # don't trace on start in legacy mode
@@ -146,9 +146,10 @@ class PerfmonConfig:
             path = self.data["trace_file_on_start"]
 
             # Return None if it was empty string or false.
-            return path if path else None
         except KeyError:
             return None
+        else:
+            return path or None
 
 
 def _create_perf_config():

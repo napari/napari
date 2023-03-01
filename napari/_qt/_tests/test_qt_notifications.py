@@ -253,7 +253,7 @@ def test_notification_error(count_show, monkeypatch):
         NotificationSeverity.INFO,
     )
     try:
-        raise ValueError('error!')
+        raise ValueError('error!')  # noqa TRY301
     except ValueError as e:
         notif = ErrorNotification(e)
 

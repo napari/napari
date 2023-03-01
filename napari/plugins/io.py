@@ -384,7 +384,7 @@ def _write_multiple_layers_with_plugins(
                 layer_types=layer_types,
             )
 
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     try:
         return (

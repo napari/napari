@@ -22,7 +22,7 @@ def test_format_exceptions(cgitb, as_html, monkeypatch):
     # otherwise they will miss the __traceback__ attributes.
     try:
         try:
-            raise ValueError('cause')
+            raise ValueError('cause')  # noqa TRY301
         except ValueError as e:
             raise PluginError(
                 'some error',
