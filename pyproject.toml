@@ -97,7 +97,7 @@ select = [
     "TRY", # tryceratops
 ]
 ignore = [
-    "E501", "UP006", "UP007", "TCH001", "TCH002", "TCH003",
+    "E501", "UP006", "TCH001", "TCH002", "TCH003",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "SIM117", # flake8-simplify - we some of merged with statements are not looking great with black, reanble after drop python 3.9
@@ -147,6 +147,10 @@ docstring-quotes = "double"
 [tool.ruff.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+
+[tool.ruff.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
 
 [tool.ruff.isort]
 known-first-party=['napari']
