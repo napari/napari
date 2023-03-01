@@ -35,14 +35,12 @@ from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_message_popup import WarnPopup
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.plugins import plugin_manager
-from napari.plugins.hub import iter_hub_plugin_info
 from napari.plugins.pypi import iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
 from napari.resources import LOADING_GIF_PATH
 from napari.settings import get_settings
 from napari.utils.misc import (
     parse_version,
-    running_as_bundled_app,
     running_as_constructor_app,
 )
 from napari.utils.translations import trans
@@ -589,19 +587,9 @@ class QtPluginDialog(QDialog):
         )
 
         # fetch available plugins
-        settings = get_settings()
-        use_hub = (
-            running_as_bundled_app()
-            or running_as_constructor_app()
-            or settings.plugins.plugin_api.name == "napari_hub"
-        )
-        if use_hub:
-            conda_forge = running_as_constructor_app()
-            self.worker = create_worker(
-                iter_hub_plugin_info, conda_forge=conda_forge
-            )
-        else:
-            self.worker = create_worker(iter_napari_plugin_info)
+        get_settings()
+
+        self.worker = create_worker(iter_napari_plugin_info)
 
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
