@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app_model.types import KeyCode
+
 import napari
 from napari.layers.base._base_constants import Mode
 from napari.layers.image.image import Image
@@ -14,24 +16,25 @@ def register_image_action(description: str, repeatable: bool = False):
     return register_layer_action(Image, description, repeatable)
 
 
-@Image.bind_key('z')
+@Image.bind_key('z', overwrite=True)
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
-@Image.bind_key('y')
+@Image.bind_key('y', overwrite=True)
 @register_image_action(trans._('orient plane normal along y-axis'))
 def orient_plane_normal_along_y(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
-@Image.bind_key('x')
+@Image.bind_key('x', overwrite=True)
 @register_image_action(trans._('orient plane normal along x-axis'))
 def orient_plane_normal_along_x(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
+@Image.bind_key('o', overwrite=True)
 @register_image_action(trans._('orient plane normal along view direction'))
 def orient_plane_normal_along_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
@@ -54,7 +57,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
     )
 
 
-@Image.bind_key('Space')
+@Image.bind_key('Space', overwrite=True)
 def hold_to_pan_zoom(layer):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
