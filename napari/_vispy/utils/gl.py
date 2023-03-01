@@ -114,40 +114,44 @@ def fix_data_dtype(data):
         return data.astype(dtype)
 
 
+# blend_func parameters are multiplying:
+# - source color
+# - destination color
+# - source alpha
+# - destination alpha
+# they do not apply to min/max blending equation
+
 BLENDING_MODES = {
     'opaque': {
         "depth_test": True,
         "cull_face": False,
         "blend": False,
-        "blend_func": ('one', 'zero'),
-        "blend_equation": 'func_add',
     },
     'translucent': {
         "depth_test": True,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
         "blend_equation": 'func_add',
     },
     'translucent_no_depth': {
         "depth_test": False,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        "blend_func": ('src_alpha', 'one_minus_src_alpha', 'one', 'one'),
         "blend_equation": 'func_add',  # see vispy/vispy#2324
     },
     'additive': {
         "depth_test": False,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('src_alpha', 'one'),
+        "blend_func": ('src_alpha', 'dst_alpha', 'one', 'one'),
         "blend_equation": 'func_add',
     },
     'minimum': {
         "depth_test": False,
         "cull_face": False,
         "blend": True,
-        "blend_func": ('one', 'one'),
         "blend_equation": 'min',
     },
 }

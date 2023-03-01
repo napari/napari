@@ -26,7 +26,7 @@ try:
     major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
     del major, minor, QT_VERSION
-except ImportError:
+except (ImportError, RuntimeError):
     use_gradients = False
 
 
@@ -81,7 +81,7 @@ class Theme(EventedModel):
     error: Color
     current: Color
 
-    @validator("syntax_style", pre=True)
+    @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
