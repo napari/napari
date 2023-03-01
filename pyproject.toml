@@ -93,7 +93,7 @@ select = [
     "Q", # flake8-quotes
     "RSE", # flake8-raise
     "RET", # flake8-return
-    "TID",  # flake8-tidy-imports # partialy covers absolufy-imports
+    "TID",  # flake8-tidy-imports # replace absolutify import
     "TRY", # tryceratops
 ]
 ignore = [
@@ -143,6 +143,10 @@ fix = true
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
+
+[tool.ruff.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
 
 [tool.ruff.isort]
 known-first-party=['napari']
