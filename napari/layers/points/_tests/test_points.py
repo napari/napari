@@ -380,7 +380,7 @@ def test_removing_selected_points():
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
-    keep = [1, 2, *list(range(4, 10))]
+    keep = [1, 2, *range(4, 10)]
     assert np.all(layer.data == data[keep])
     assert layer._value is None
 

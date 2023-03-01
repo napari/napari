@@ -1228,7 +1228,7 @@ class ShapeList:
         if colors_shape is None:
             colors_shape = self.displayed_vertices.max(axis=0).astype(int)
 
-        colors = np.zeros((*tuple(colors_shape), 4), dtype=float)
+        colors = np.zeros((*colors_shape, 4), dtype=float)
         colors[..., 3] = 1
 
         z_order = self._z_order[::-1]

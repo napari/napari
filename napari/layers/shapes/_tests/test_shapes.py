@@ -1209,7 +1209,7 @@ def test_removing_selected_shapes():
     # Select three shapes and remove them
     layer.selected_data = {1, 7, 8}
     layer.remove_selected()
-    keep = [0, *list(range(2, 7))] + [9]
+    keep = [0, *range(2, 7)] + [9]
     data_keep = [data[i] for i in keep]
     shape_type_keep = [shape_type[i] for i in keep]
     assert len(layer.data) == len(data_keep)
