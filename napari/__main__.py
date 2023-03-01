@@ -77,21 +77,21 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
-    for i, arg in enumerate(unknown):
-        if not arg.startswith("--"):
+    for i, raw_arg in enumerate(unknown):
+        if not raw_arg.startswith("--"):
             continue
-        arg = arg.lstrip('-')
+        arg = raw_arg.lstrip('-')
 
         key, *value = arg.split("=", maxsplit=1)
         key = key.replace('-', '_')
         if key not in valid:
-            sys.exit(f"error: unrecognized argument: --{arg}")
+            sys.exit(f"error: unrecognized argument: {raw_arg}")
 
         if value:
             value = value[0]
         else:
             if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
-                sys.exit(f"error: argument --{arg} expected one argument")
+                sys.exit(f"error: argument {raw_arg} expected one argument")
             value = unknown[i + 1]
         with contextlib.suppress(Exception):
             value = literal_eval(value)
