@@ -83,15 +83,15 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
         arg = arg.lstrip('-')
 
         key, *value = arg.split("=", maxsplit=1)
-
+        key = key.replace('-', '_')
         if key not in valid:
-            sys.exit(f"error: unrecognized argument: {arg}")
+            sys.exit(f"error: unrecognized argument: --{arg}")
 
         if value:
             value = value[0]
         else:
             if len(unknown) <= i + 1 or unknown[i + 1].startswith("--"):
-                sys.exit(f"error: argument {arg} expected one argument")
+                sys.exit(f"error: argument --{arg} expected one argument")
             value = unknown[i + 1]
         with contextlib.suppress(Exception):
             value = literal_eval(value)
