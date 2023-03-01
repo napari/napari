@@ -393,7 +393,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
     # Check clicked shape selected
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
-    np.testing.assert_allclose(layer.data[0], [*orig_data, 10, 5])
+    np.testing.assert_allclose(layer.data[0], orig_data + np.array([10, 5]))
 
 
 def test_rotate_shape(create_known_shapes_layer, Event):
