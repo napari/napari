@@ -161,6 +161,7 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
     layer_data_order = [i for i in range(len(layer.data.shape))]
     dims_order = list(dims.order)
     move_order = [dims_order.index(i) for i in layer_data_order]
+    print(dims_order, move_order)
     data = getattr(np, mode)(
         np.moveaxis(layer.data, layer_data_order, move_order),
         axis=axis,
@@ -168,7 +169,7 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
     )
     # In case the last 2 dimensions are these axes, the data needs to be swapped in order to not have the projection
     # displayed orthogonal to the image data.
-    must_swap = ((0, 1), (2, 0))
+    must_swap = ((0, 1), (2, 1), (1, 0))
     if dims.order[1:] in must_swap:
         data = np.swapaxes(data, 0, 1)
 
