@@ -1789,7 +1789,7 @@ def test_edge_width():
 
     # Test setting edge width with number
     layer.edge_width = 4
-    assert all([width == 4 for width in layer.edge_width])
+    assert all(width == 4 for width in layer.edge_width)
 
     # Test setting edge width with list
     new_widths = [2] * 5 + [3] * 4
@@ -1834,7 +1834,7 @@ def test_z_index():
 
     # Test setting index with number
     layer.z_index = 4
-    assert all([idx == 4 for idx in layer.z_index])
+    assert all(idx == 4 for idx in layer.z_index)
 
     # Test setting index with list
     new_z_indices = [2] * 5 + [3] * 4
