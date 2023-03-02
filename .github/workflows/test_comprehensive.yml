@@ -37,6 +37,7 @@ jobs:
 
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
+    timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -133,6 +134,7 @@ jobs:
 
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -160,6 +162,7 @@ jobs:
 
   test_examples:
     name: test examples
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
