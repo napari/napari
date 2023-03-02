@@ -146,7 +146,8 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
         the dims order, e.g if dims order is 2, 0, 1 and axis is 0, then axis 2 of the layer data will be used for the
         projection.
     mode : str
-        Projection mode, either 'max', 'min', 'std', 'sum', 'mean', 'median'."""
+        Projection mode, either 'max', 'min', 'std', 'sum', 'mean', 'median'.
+    """
 
     layer = ll.selection.active
     if not layer:
@@ -158,7 +159,7 @@ def _project(ll: LayerList, dims: Dims, axis: int = 0, mode='max'):
             )
         )
 
-    layer_data_order = [i for i in range(len(layer.data.shape))]
+    layer_data_order = list(range(len(layer.data.shape)))
     dims_order = list(dims.order)
     move_order = [dims_order.index(i) for i in layer_data_order]
     data = getattr(np, mode)(
