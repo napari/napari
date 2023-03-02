@@ -1210,12 +1210,15 @@ def rdp(vertices: npt.NDArray, epsilon: float) -> npt.NDArray:
             max_distance = d
 
     if max_distance > epsilon:
-        l1 = rdp(vertices[:max_distance_index], epsilon)
+        l1 = rdp(vertices[: max_distance_index + 1], epsilon)
         l2 = rdp(vertices[max_distance_index:], epsilon)
         return np.vstack((l1[:-1], l2))
-
-    else:
+    elif epsilon != 0:
+        # This part of the algorithm is actually responsible for removing the datapoints.
         return np.vstack((vertices[0], vertices[-1]))
+    else:
+        # When epsilon is 0, avoid removing datapoints
+        return vertices
 
 
 def below_distance_threshold(
