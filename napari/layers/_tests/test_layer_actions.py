@@ -11,12 +11,13 @@ from napari.layers._layer_actions import (
 )
 
 
-def test_duplicate_layers():
+@pytest.mark.parametrize('layer_type', [Points, Shapes])
+def test_duplicate_layers(layer_type):
     def _dummy():
         pass
 
     layer_list = LayerList()
-    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(layer_type([], name="test"))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
     assert len(layer_list[0].events.data.callbacks) == 2

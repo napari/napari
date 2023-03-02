@@ -1485,6 +1485,12 @@ class Shapes(Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
+        face_color = self.face_color
+        edge_color = self.edge_color
+        if len(face_color) == 0:
+            face_color = self._current_face_color
+        if len(edge_color) == 0:
+            edge_color = self._current_edge_color
         state.update(
             {
                 'ndim': self.ndim,
@@ -1495,11 +1501,11 @@ class Shapes(Layer):
                 'opacity': self.opacity,
                 'z_index': self.z_index,
                 'edge_width': self.edge_width,
-                'face_color': self._current_face_color,
+                'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': self._current_edge_color,
+                'edge_color': edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
