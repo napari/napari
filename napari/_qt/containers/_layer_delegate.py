@@ -190,31 +190,30 @@ class LayerDelegate(QStyledItemDelegate):
                     index, state, Qt.ItemDataRole.CheckStateRole
                 )
         # catch alt-click on the vis checkbox and toggle *other* layer visibility
-        if event.type() == QMouseEvent.MouseButtonRelease:
-            if (
-                event.button() == Qt.MouseButton.LeftButton
-                and event.modifiers() == Qt.AltModifier
-            ):
-                self.initStyleOption(option, index)
-                style = option.widget.style()
-                check_rect = style.subElementRect(
-                    style.SubElement.SE_ItemViewItemCheckIndicator,
-                    option,
-                    option.widget,
+        if event.type() == QMouseEvent.MouseButtonRelease and (
+            event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            self.initStyleOption(option, index)
+            style = option.widget.style()
+            check_rect = style.subElementRect(
+                style.SubElement.SE_ItemViewItemCheckIndicator,
+                option,
+                option.widget,
+            )
+            if check_rect.contains(event.pos()):
+                cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
+                clicked_layer = index.data(ItemRole)
+                layer_list: LayerList = model.sourceModel()._root
+                other_layers = [
+                    layer for layer in layer_list if layer != clicked_layer
+                ]
+                for layer in other_layers:
+                    layer.visible = not layer.visible
+                state = cur_state
+                return model.setData(
+                    index, state, Qt.ItemDataRole.CheckStateRole
                 )
-                if check_rect.contains(event.pos()):
-                    cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
-                    clicked_layer = index.data(ItemRole)
-                    layer_list: LayerList = model.sourceModel()._root
-                    other_layers = [
-                        layer for layer in layer_list if layer != clicked_layer
-                    ]
-                    for layer in other_layers:
-                        layer.visible = not layer.visible
-                    state = cur_state
-                    return model.setData(
-                        index, state, Qt.ItemDataRole.CheckStateRole
-                    )
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
 
