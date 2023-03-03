@@ -13,7 +13,9 @@ from napari.plugins._tests.test_npe2 import mock_pm  # noqa
 
 def _iter_napari_pypi_plugin_info(
     conda_forge: bool = True,
-) -> Generator[Tuple[Optional[npe2.PackageMetadata], bool], None, None]:
+) -> Generator[
+    Tuple[Optional[npe2.PackageMetadata], bool], None, None
+]:  # pragma: no cover  (this function is used in thread and codecov has a problem with the collection of coverage in such cases)
     """Mock the pypi method to collect available plugins.
 
     This will mock napari.plugins.pypi.iter_napari_plugin_info` for pypi.
@@ -52,7 +54,11 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
 
     class PluginManagerInstanceMock:
         def __init__(self):
-            self.plugins = ['test-name-0', 'test-name-1', 'my-plugin']
+            self.plugins = {
+                'test-name-0': True,
+                'test-name-1': True,
+                'my-plugin': True,
+            }
 
         def __iter__(self):
             yield from self.plugins
@@ -67,10 +73,12 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
             return ['plugin']
 
         def enable(self, plugin):
-            return True
+            self.plugins[plugin] = True
+            return
 
         def disable(self, plugin):
-            return True
+            self.plugins[plugin] = False
+            return
 
     class WarnPopupMock:
         def __init__(self, text):
@@ -93,17 +101,23 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
         return meta
 
     class OldPluginManagerMock:
+        def __init__(self):
+            self.plugins = [('test-1', False, 'test-1')]
+
         def iter_available(self):
-            return [('test-1', False, 'test-1')]
+            return self.plugins
 
         def discover(self):
             return None
 
         def is_blocked(self, plugin):
-            return False
+            return self.plugins[0][1]
 
         def set_blocked(self, plugin, blocked):
-            return False
+            plugin = list(self.plugins[0])
+            plugin[1] = blocked
+            self.plugins = [tuple(plugin)]
+            return
 
     monkeypatch.setattr(
         qt_plugin_dialog,
@@ -317,3 +331,5 @@ def test_add_items_outdate(plugin_dialog):
     )
     plugin_dialog._plugin_data = [new_plugin]
     plugin_dialog._add_items()
+
+    assert 'my-plugin' not in plugin_dialog.available_set
