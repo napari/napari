@@ -243,7 +243,7 @@ def test_version_dropdown(plugin_dialog):
     """
     widget = plugin_dialog.available_list.item(1).widget
   	assert widget.version_choice_dropdown.currentText() == "3"
-  	# switch from PyPI source to conda one. 
+  	# switch from PyPI source to conda one.
 	widget.source_choice_dropdown.setCurrentIndex(1)
 	assert widget.version_choice_dropdown.currentText() == "4.5"
 
