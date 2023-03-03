@@ -95,9 +95,9 @@ LAYER_ACTIONS: List[Action] = [
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
-        id=CommandId.LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.LAYER_TOGGLE_VISIBILITY.title,
-        callback=_layer_actions._toggle_visibility,
+        id=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY,
+        title=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY.title,
+        callback=_layer_actions._show_hide_selected,
         menus=[
             {
                 'id': MenuId.LAYERLIST_CONTEXT,
@@ -106,9 +106,9 @@ LAYER_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.LAYER_HIDE_OTHER_LAYERS,
-        title=CommandId.LAYER_HIDE_OTHER_LAYERS.title,
-        callback=_layer_actions._hide_other_layers,
+        id=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY,
+        title=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY.title,
+        callback=_layer_actions._hide_show_unselected,
         menus=[
             {
                 'id': MenuId.LAYERLIST_CONTEXT,

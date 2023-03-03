@@ -18,6 +18,10 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.components import LayerList
 
+# toggle for showing/hiding selected layers
+SHOW_SELECTED: bool = True
+SHOW_UNSELECTED: bool = False
+
 
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
     from copy import deepcopy
@@ -88,15 +92,19 @@ def _merge_stack(ll: LayerList, rgb=False):
     ll.append(merged)
 
 
-def _toggle_visibility(ll: LayerList):
+def _show_hide_selected(ll: LayerList):
+    global SHOW_SELECTED
     for lay in ll.selection:
-        lay.visible = not lay.visible
+        lay.visible = SHOW_SELECTED
+    SHOW_SELECTED = not SHOW_SELECTED
 
 
-def _hide_other_layers(ll: LayerList):
+def _hide_show_unselected(ll: LayerList):
+    global SHOW_UNSELECTED
     for lay in ll:
         if lay not in ll.selection:
-            lay.visible = False
+            lay.visible = SHOW_UNSELECTED
+    SHOW_UNSELECTED = not SHOW_UNSELECTED
 
 
 def _link_selected_layers(ll: LayerList):

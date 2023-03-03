@@ -51,8 +51,8 @@ class CommandId(str, Enum):
     LAYER_SPLIT_STACK = 'napari:layer:split_stack'
     LAYER_SPLIT_RGB = 'napari:layer:split_rgb'
     LAYER_MERGE_STACK = 'napari:layer:merge_stack'
-    LAYER_TOGGLE_VISIBILITY = 'napari:layer:toggle_visibility'
-    LAYER_HIDE_OTHER_LAYERS = 'napari:layer:hide_other_layers'
+    SELECTED_LAYER_TOGGLE_VISIBILITY = 'napari:layer:show_hide_selected'
+    UNSELECTED_LAYER_TOGGLE_VISIBILITY = 'napari:layer:show_hide_unselected'
 
     LAYER_LINK_SELECTED = 'napari:layer:link_selected_layers'
     LAYER_UNLINK_SELECTED = 'napari:layer:unlink_selected_layers'
@@ -126,8 +126,8 @@ _COMMAND_INFO = {
     CommandId.LAYER_SPLIT_STACK: _i(trans._('Split Stack'),),
     CommandId.LAYER_SPLIT_RGB: _i(trans._('Split RGB'),),
     CommandId.LAYER_MERGE_STACK: _i(trans._('Merge to Stack'),),
-    CommandId.LAYER_TOGGLE_VISIBILITY: _i(trans._('Toggle visibility'),),
-    CommandId.LAYER_HIDE_OTHER_LAYERS: _i(trans._('Hide Other Layers'),),
+    CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY: _i(trans._('Show/Hide Selected Layers'),),
+    CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY: _i(trans._('Hide/Show Unselected Layers'),),
     CommandId.LAYER_LINK_SELECTED: _i(trans._('Link Layers'),),
     CommandId.LAYER_UNLINK_SELECTED: _i(trans._('Unlink Layers'),),
     CommandId.LAYER_SELECT_LINKED: _i(trans._('Select Linked Layers'),),
