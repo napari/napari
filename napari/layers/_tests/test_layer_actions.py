@@ -7,8 +7,9 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
-    _hide_other_layers,
+    _hide_show_unselected,
     _project,
+    _show_hide_selected,
 )
 
 
@@ -33,7 +34,7 @@ def test_duplicate_layers():
     assert layer_list[1].source.parent() is layer_list[0]
 
 
-def test_hide_other_layers():
+def test_hide_show_unselected_layers():
     layer_list = LayerList()
     layer_list.append(Points([[0, 0]], name="test"))
     layer_list.append(Image(np.random.rand(8, 8, 8)))
@@ -48,11 +49,45 @@ def test_hide_other_layers():
     assert layer_list[1].visible is True
     assert layer_list[2].visible is True
 
-    _hide_other_layers(layer_list)
+    _hide_show_unselected(layer_list)
 
     assert layer_list[0].visible is False
     assert layer_list[1].visible is True
     assert layer_list[2].visible is False
+
+    _hide_show_unselected(layer_list)
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+
+def test_show_hide_selected_layers():
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[0:2]
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _show_hide_selected(layer_list)
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _show_hide_selected(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is False
+    assert layer_list[2].visible is True
 
 
 @pytest.mark.parametrize(
