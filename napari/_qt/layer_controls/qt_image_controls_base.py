@@ -173,10 +173,11 @@ class QtBaseImageControls(QtLayerControls):
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update dropdown menu."""
         name = self.layer.colormap.name
-        if name not in self.colormapComboBox._allitems:
-            if cm := AVAILABLE_COLORMAPS.get(name):
-                self.colormapComboBox._allitems.add(name)
-                self.colormapComboBox.addItem(cm._display_name, name)
+        if name not in self.colormapComboBox._allitems and (
+            cm := AVAILABLE_COLORMAPS.get(name)
+        ):
+            self.colormapComboBox._allitems.add(name)
+            self.colormapComboBox.addItem(cm._display_name, name)
 
         if name != self.colormapComboBox.currentData():
             index = self.colormapComboBox.findData(name)

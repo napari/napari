@@ -119,8 +119,8 @@ def test_signature(layer):
     fail_msg = f"signatures don't match for class {name}"
     if name == 'Image':
         # If Image just test that class params appear in method
-        for class_param in class_parameters.keys():
-            assert class_param in method_parameters.keys(), fail_msg
+        for class_param in class_parameters:
+            assert class_param in method_parameters, fail_msg
     else:
         assert class_parameters == method_parameters, fail_msg
 

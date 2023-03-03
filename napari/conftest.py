@@ -28,6 +28,7 @@ Notes for using the plugin-related fixtures here:
        ...
    ```
 """
+
 from __future__ import annotations
 
 import os
@@ -40,11 +41,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakKeyDictionary
 
-try:
+with suppress(ModuleNotFoundError):
     __import__('dotenv').load_dotenv()
-except ModuleNotFoundError:
-    pass
-
 
 import dask.threaded
 import numpy as np

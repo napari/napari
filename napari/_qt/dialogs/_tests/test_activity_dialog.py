@@ -68,10 +68,9 @@ def test_progress_with_context(make_napari_viewer):
     """Test adding/removing of progress bar with context manager"""
     viewer = make_napari_viewer(show=SHOW)
 
-    with assert_pbar_added_to(viewer):
-        with progress(range(100)) as prog:
-            pbar = get_qt_labeled_progress_bar(prog, viewer)
-            assert pbar.qt_progress_bar.maximum() == prog.total == 100
+    with assert_pbar_added_to(viewer), progress(range(100)) as prog:
+        pbar = get_qt_labeled_progress_bar(prog, viewer)
+        assert pbar.qt_progress_bar.maximum() == prog.total == 100
 
 
 def test_closing_viewer_no_error(make_napari_viewer):

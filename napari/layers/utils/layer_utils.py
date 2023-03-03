@@ -118,10 +118,7 @@ def register_layer_attr_action(
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
-            if args:
-                obj = args[0]
-            else:
-                obj = kwargs[first_variable_name]
+            obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 
@@ -261,10 +258,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
     d = b - a
 
     if d.ndim == 1:
-        if len(d) == 2:
-            normal = np.array([d[1], -d[0]])
-        else:
-            normal = np.cross(d, p)
+        normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
         if norm == 0:
             norm = 1
@@ -508,10 +502,7 @@ def compute_multiscale_level(
 
     # Find the highest level (lowest resolution) allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    if len(locations) > 0:
-        level = locations[-1][0]
-    else:
-        level = 0
+    level = locations[-1][0] if len(locations) > 0 else 0
     return level
 
 
