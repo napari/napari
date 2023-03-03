@@ -569,6 +569,22 @@ QPushButton#install_choice {
   color: {{ darken(text, 35) }};
 }
 
+QPushButton#plugin_name_web {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+QPushButton#plugin_name_web:hover {
+  background-color: {{ foreground }}
+}
+
+QPushButton#plugin_name {
+  background-color: {{ darken(foreground, 20) }};
+}
+QPushButton#plugin_name:hover {
+  background-color: {{ darken(foreground, 20) }};
+}
+
+
 QWidget#install_choice_widget {
   background-color: {{ darken(foreground, 20) }};
   color: {{ darken(text, 35) }};

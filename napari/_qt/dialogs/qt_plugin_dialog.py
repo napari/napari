@@ -208,7 +208,7 @@ class PluginListItem(QFrame):
         self.row1.addWidget(self.enabled_checkbox)
         self.plugin_name = QPushButton(self)
         # Do not want to highlight on hover unless there is a website.
-        if self.url:
+        if self.url and self.url != 'UNKNOWN' and self.url != '':
             self.plugin_name.setObjectName('plugin_name_web')
         else:
             self.plugin_name.setObjectName('plugin_name')
