@@ -242,10 +242,10 @@ def test_version_dropdown(plugin_dialog):
     Test that when the source drop down is changed, it displays the other versions properly.
     """
     widget = plugin_dialog.available_list.item(1).widget
-  	assert widget.version_choice_dropdown.currentText() == "3"
-  	# switch from PyPI source to conda one.
-	widget.source_choice_dropdown.setCurrentIndex(1)
-	assert widget.version_choice_dropdown.currentText() == "4.5"
+    assert widget.version_choice_dropdown.currentText() == "3"
+    # switch from PyPI source to conda one.
+    widget.source_choice_dropdown.setCurrentIndex(1)
+    assert widget.version_choice_dropdown.currentText() == "4.5"
 
 
 def test_plugin_list_count_items(plugin_dialog):
