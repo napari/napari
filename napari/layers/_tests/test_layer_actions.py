@@ -71,7 +71,8 @@ def test_show_hide_selected_layers():
     layer_list[1].visible = True
     layer_list[2].visible = True
 
-    layer_list.selection.active = layer_list[0:2]
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
 
     assert layer_list[0].visible is False
     assert layer_list[1].visible is True
