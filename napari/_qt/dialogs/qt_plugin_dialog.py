@@ -181,7 +181,7 @@ class PluginListItem(QFrame):
             self.action_button.setVisible(True)
             self.action_button.setDisabled(False)
             self.cancel_btn.setVisible(False)
-        else:  # pragma: nocover
+        else:  # pragma: no cover
             raise ValueError(f"Not supported {action_name}")
 
     def setup_ui(self, enabled=True):
@@ -208,7 +208,7 @@ class PluginListItem(QFrame):
         self.row1.addWidget(self.enabled_checkbox)
         self.plugin_name = QPushButton(self)
         # Do not want to highlight on hover unless there is a website.
-        if self.url and self.url != 'UNKNOWN' and self.url != '':
+        if self.url and self.url != 'UNKNOWN':
             self.plugin_name.setObjectName('plugin_name_web')
         else:
             self.plugin_name.setObjectName('plugin_name')

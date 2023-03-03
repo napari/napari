@@ -187,7 +187,7 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        if self.action.value == "upgrade":
+        if self.action == InstallerActions.UPGRADE:
             args = ['update', '-y', '--prefix', prefix]
         else:
             args = [self.action.value, '-y', '--prefix', prefix]
