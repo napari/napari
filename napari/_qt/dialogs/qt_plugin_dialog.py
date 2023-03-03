@@ -716,6 +716,7 @@ class QtPluginDialog(QDialog):
         super().__init__(parent)
         self.refresh_state = RefreshState.DONE
         self.already_installed = set()
+        self.available_set = set()
 
         self._plugin_data = []  # Store plugin data while populating lists
         self.all_plugin_data = []  # Store all plugin data
@@ -768,6 +769,7 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         self.already_installed = set()
+        self.available_set = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
             norm_name = normalized_name(distname or '')
@@ -1038,13 +1040,15 @@ class QtPluginDialog(QDialog):
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info, is_available)
         else:
-            self.available_list.addItem(
-                (
-                    project_info,
-                    extra_info['pypi_versions'],
-                    extra_info['conda_versions'],
+            if project_info.name not in self.available_set:
+                self.available_set.add(project_info.name)
+                self.available_list.addItem(
+                    (
+                        project_info,
+                        extra_info['pypi_versions'],
+                        extra_info['conda_versions'],
+                    )
                 )
-            )
             if not is_available:
                 self.available_list.tag_unavailable(project_info)
 
