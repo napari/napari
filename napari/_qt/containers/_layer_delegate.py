@@ -73,6 +73,10 @@ class LayerDelegate(QStyledItemDelegate):
     the appropriate icon for the layer, and some additional style/UX issues.
     """
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._layer_visibility_states = {}
+
     def paint(
         self,
         painter: QPainter,
@@ -153,6 +157,7 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
+        global layer_states
         if (
             event.type() == QMouseEvent.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
@@ -189,7 +194,8 @@ class LayerDelegate(QStyledItemDelegate):
                 return model.setData(
                     index, state, Qt.ItemDataRole.CheckStateRole
                 )
-        # catch alt-click on the vis checkbox and toggle *other* layer visibility
+        # catch alt-click on the vis checkbox and hide *other* layer visibility
+        # on second alt-click, restore the visibility state of the layers
         if event.type() == QMouseEvent.MouseButtonRelease and (
             event.button() == Qt.MouseButton.LeftButton
             and event.modifiers() == Qt.AltModifier
@@ -208,9 +214,18 @@ class LayerDelegate(QStyledItemDelegate):
                 other_layers = [
                     layer for layer in layer_list if layer != clicked_layer
                 ]
-                for layer in other_layers:
-                    layer.visible = not layer.visible
-                state = cur_state
+                if (
+                    not self._layer_visibility_states
+                ):  # first option-click, hide others
+                    for layer in other_layers:
+                        self._layer_visibility_states[layer] = layer.visible
+                        layer.visible = False
+                    state = Qt.CheckState.Checked
+                else:  # second option-click, restore previous visibility
+                    for layer, state in self._layer_visibility_states.items():
+                        layer.visible = state
+                    self._layer_visibility_states = {}
+                    state = Qt.CheckState.Checked
                 return model.setData(
                     index, state, Qt.ItemDataRole.CheckStateRole
                 )
