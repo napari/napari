@@ -18,9 +18,9 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from napari.components import LayerList
 
-# toggle for showing/hiding selected layers
-SHOW_SELECTED: bool = True
-SHOW_UNSELECTED: bool = False
+# set the initial hebavior for showing/hiding (un)selected layers
+SHOW_SELECTED: bool = True  # set to True, so first time will show
+SHOW_UNSELECTED: bool = False  # set to False, so first time will hide
 
 
 def _duplicate_layer(ll: LayerList, *, name: str = ''):
@@ -95,7 +95,7 @@ def _merge_stack(ll: LayerList, rgb=False):
 def _show_hide_selected(ll: LayerList):
     global SHOW_SELECTED
     for lay in ll.selection:
-        lay.visible = SHOW_SELECTED
+        lay.visible = SHOW_SELECTED  # first time True, so will show
     SHOW_SELECTED = not SHOW_SELECTED
 
 
@@ -103,7 +103,7 @@ def _hide_show_unselected(ll: LayerList):
     global SHOW_UNSELECTED
     for lay in ll:
         if lay not in ll.selection:
-            lay.visible = SHOW_UNSELECTED
+            lay.visible = SHOW_UNSELECTED  # first time False, so will hide
     SHOW_UNSELECTED = not SHOW_UNSELECTED
 
 
