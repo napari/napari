@@ -44,21 +44,42 @@ def _iter_napari_pypi_plugin_info(
         }
 
 
+class PluginsMock:
+    def __init__(self):
+        self.plugins = {
+            'test-name-0': True,
+            'test-name-1': True,
+            'my-plugin': True,
+        }
+
+
+class OldPluginsMock:
+    def __init__(self):
+        self.plugins = [('test-1', False, 'test-1')]
+        self.enabled = [True]
+
+
 @pytest.fixture
-def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
+def old_plugins(qtbot):
+    return OldPluginsMock()
+
+
+@pytest.fixture
+def plugins(qtbot):
+    return PluginsMock()
+
+
+@pytest.fixture
+def plugin_dialog(qtbot, monkeypatch, mock_pm, plugins, old_plugins):  # noqa
     """Fixture that provides a plugin dialog for a normal napari install."""
 
     class PluginManagerMock:
         def instance(self):
-            return PluginManagerInstanceMock()
+            return PluginManagerInstanceMock(plugins)
 
     class PluginManagerInstanceMock:
-        def __init__(self):
-            self.plugins = {
-                'test-name-0': True,
-                'test-name-1': True,
-                'my-plugin': True,
-            }
+        def __init__(self, plugins):
+            self.plugins = plugins.plugins
 
         def __iter__(self):
             yield from self.plugins
@@ -102,7 +123,8 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
 
     class OldPluginManagerMock:
         def __init__(self):
-            self.plugins = [('test-1', False, 'test-1')]
+            self.plugins = old_plugins.plugins
+            self.enabled = old_plugins.enabled
 
         def iter_available(self):
             return self.plugins
@@ -114,9 +136,7 @@ def plugin_dialog(qtbot, monkeypatch, mock_pm):  # noqa
             return self.plugins[0][1]
 
         def set_blocked(self, plugin, blocked):
-            plugin = list(self.plugins[0])
-            plugin[1] = blocked
-            self.plugins = [tuple(plugin)]
+            self.enabled[0] = not blocked
             return
 
     monkeypatch.setattr(
@@ -303,20 +323,24 @@ def test_plugin_list_handle_action(plugin_dialog, qtbot):
     qtbot.waitUntil(lambda: not plugin_dialog.worker.is_running)
 
 
-def test_on_enabled_checkbox(plugin_dialog, qtbot):
+def test_on_enabled_checkbox(plugin_dialog, qtbot, plugins, old_plugins):
     # checks npe2 lines
     item = plugin_dialog.installed_list.item(0)
     widget = plugin_dialog.installed_list.itemWidget(item)
 
+    assert plugins.plugins['my-plugin'] is True
     with qtbot.waitSignal(widget.enabled_checkbox.stateChanged, timeout=500):
         widget.enabled_checkbox.setChecked(False)
+    assert plugins.plugins['my-plugin'] is False
 
     # checks npe1 lines
     item = plugin_dialog.installed_list.item(1)
     widget = plugin_dialog.installed_list.itemWidget(item)
 
+    assert old_plugins.enabled[0] is True
     with qtbot.waitSignal(widget.enabled_checkbox.stateChanged, timeout=500):
         widget.enabled_checkbox.setChecked(False)
+    assert old_plugins.enabled[0] is False
 
 
 def test_add_items_outdate(plugin_dialog):
