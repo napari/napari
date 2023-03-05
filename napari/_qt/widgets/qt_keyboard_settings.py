@@ -29,12 +29,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.interactions import Shortcut
 from napari.utils.translations import trans
 
-# Dict used to format strings returned from converted key press events.
-# For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
-# In order to be consistent with the code base, the values in KEY_SUBS will
-# be subsituted.
-KEY_SUBS = {'Control': 'Ctrl'}
-
 
 class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
