@@ -1,7 +1,7 @@
 import contextlib
 from collections import OrderedDict
 
-from app_model.backends.qt._qkeymap import (
+from app_model.backends.qt import (
     qkey2modelkey,
     qkeysequence2modelkeybinding,
 )
