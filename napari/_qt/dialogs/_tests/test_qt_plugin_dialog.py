@@ -9,6 +9,7 @@ import napari.plugins
 from napari._qt.dialogs import qt_plugin_dialog
 from napari._qt.dialogs.qt_package_installer import InstallerActions
 from napari.plugins._tests.test_npe2 import mock_pm  # noqa
+from napari.utils.translations import trans
 
 
 def _iter_napari_pypi_plugin_info(
@@ -288,12 +289,15 @@ def test_plugin_list_count_items(plugin_dialog):
 
 def test_plugin_list_handle_action(plugin_dialog, qtbot):
     item = plugin_dialog.installed_list.item(0)
-
-    plugin_dialog.installed_list.handle_action(
-        item,
-        'test-name-1',
-        InstallerActions.UPGRADE,
-    )
+    with patch.object(qt_plugin_dialog.PluginListItem, "set_busy") as mock:
+        plugin_dialog.installed_list.handle_action(
+            item,
+            'test-name-1',
+            InstallerActions.UPGRADE,
+        )
+        mock.assert_called_with(
+            trans._("updating..."), InstallerActions.UPGRADE
+        )
 
     with patch.object(qt_plugin_dialog.WarnPopup, "exec_") as mock:
         plugin_dialog.installed_list.handle_action(
@@ -304,16 +308,23 @@ def test_plugin_list_handle_action(plugin_dialog, qtbot):
         assert mock.called
 
     item = plugin_dialog.available_list.item(0)
-    plugin_dialog.available_list.handle_action(
-        item,
-        'test-name-1',
-        InstallerActions.INSTALL,
-        version='3',
-    )
+    with patch.object(qt_plugin_dialog.PluginListItem, "set_busy") as mock:
+        plugin_dialog.available_list.handle_action(
+            item,
+            'test-name-1',
+            InstallerActions.INSTALL,
+            version='3',
+        )
+        mock.assert_called_with(
+            trans._("installing..."), InstallerActions.INSTALL
+        )
 
-    plugin_dialog.available_list.handle_action(
-        item, 'test-name-1', InstallerActions.CANCEL, version='3'
-    )
+        plugin_dialog.available_list.handle_action(
+            item, 'test-name-1', InstallerActions.CANCEL, version='3'
+        )
+        mock.assert_called_with(
+            trans._("cancelling..."), InstallerActions.CANCEL
+        )
 
     # Wait for refresh timer, state and worker to be done
     qtbot.waitUntil(
@@ -343,9 +354,10 @@ def test_on_enabled_checkbox(plugin_dialog, qtbot, plugins, old_plugins):
     assert old_plugins.enabled[0] is False
 
 
-def test_add_items_outdate(plugin_dialog):
+def test_add_items_outdated(plugin_dialog):
+    """Test that a plugin is tagged as outdated (a newer version is available), the update button becomes visible."""
     new_plugin = (
-        npe2.PackageMetadata(name="my-plugin", version="0.3.0"),
+        npe2.PackageMetadata(name="my-plugin", version="0.4.0"),
         True,
         {
             "home_page": 'www.mywebsite.com',
@@ -353,7 +365,11 @@ def test_add_items_outdate(plugin_dialog):
             "conda_versions": ['0.3.0'],
         },
     )
-    plugin_dialog._plugin_data = [new_plugin]
-    plugin_dialog._add_items()
 
-    assert 'my-plugin' not in plugin_dialog.available_set
+    plugin_dialog._plugin_data = [new_plugin]
+
+    plugin_dialog._add_items()
+    item = plugin_dialog.installed_list.item(0)
+    widget = plugin_dialog.installed_list.itemWidget(item)
+
+    assert widget.update_btn.isVisible()
