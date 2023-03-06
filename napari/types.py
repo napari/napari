@@ -156,7 +156,7 @@ def _register_types_with_magicgui():
                 ),
             )
         register_type(
-            Optional[data_type],
+            Optional[data_type],  # type: ignore
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
