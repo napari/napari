@@ -157,7 +157,6 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
-        global layer_states
         if (
             event.type() == QMouseEvent.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
