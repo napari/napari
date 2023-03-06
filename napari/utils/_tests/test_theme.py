@@ -2,12 +2,15 @@ import os
 import sys
 
 import pytest
+from npe2 import PluginManager, PluginManifest
+from npe2.manifest.schema import ContributionPoints
 from pydantic import ValidationError
 
 from napari.resources._icons import PLUGIN_FILE_NAME
 from napari.settings import get_settings
 from napari.utils.theme import (
     Theme,
+    _install_npe2_themes,
     available_themes,
     get_theme,
     is_theme_available,
@@ -160,3 +163,43 @@ def test_is_theme_available(tmp_path, monkeypatch):
     assert is_theme_available("test_blue")
     assert len(available_themes()) == n_themes + 1
     assert "test_blue" in available_themes()
+
+
+def test_theme_registration(monkeypatch, caplog):
+    data = {"dark": get_theme("dark", as_dict=False)}
+
+    manifest = PluginManifest(
+        name="theme_test",
+        display_name="Theme Test",
+        contributions=ContributionPoints(
+            themes=[
+                {
+                    "id": "theme1",
+                    "label": "Theme 1",
+                    "type": "dark",
+                    "syntax_style": "native",
+                    "colors": {},
+                },
+                {
+                    "id": "theme2",
+                    "label": "Theme 2",
+                    "type": "dark",
+                    "syntax_style": "does_not_exist",
+                    "colors": {},
+                },
+            ]
+        ),
+    )
+
+    def mock_iter_manifests(disabled):
+        return [manifest]
+
+    monkeypatch.setattr(
+        PluginManager.instance(), "iter_manifests", mock_iter_manifests
+    )
+    monkeypatch.setattr("napari.utils.theme._themes", data)
+    _install_npe2_themes(data)
+
+    assert "theme1" in data
+    assert "theme2" not in data
+    assert "Registration theme failed" in caplog.text
