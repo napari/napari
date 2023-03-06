@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     List,
     NewType,
+    Optional,
     Sequence,
     Tuple,
     Type,
@@ -149,6 +150,19 @@ def _register_types_with_magicgui():
         if sys.version_info >= (3, 9):
             register_type(
                 Future[data_type],  # type: ignore
+                choices=_mgui.get_layers_data,
+                return_callback=partial(
+                    _mgui.add_future_data, _from_tuple=False
+                ),
+            )
+        register_type(
+            Optional[data_type],
+            choices=_mgui.get_layers_data,
+            return_callback=_mgui.add_layer_data_to_viewer,
+        )
+        if sys.version_info >= (3, 9):
+            register_type(
+                Future[Optional[data_type]],  # type: ignore
                 choices=_mgui.get_layers_data,
                 return_callback=partial(
                     _mgui.add_future_data, _from_tuple=False
