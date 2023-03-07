@@ -11,11 +11,12 @@ interpolation in a regular grid (of size = of the kernel) around each fragment,
 and then using the weights in the kernel to add up the final fragment value.
 """
 
-from skimage import data
-import napari
 import numpy as np
-from scipy.signal.windows import gaussian
 from magicgui import magicgui
+from scipy.signal.windows import gaussian
+from skimage import data
+
+import napari
 
 viewer = napari.view_image(data.astronaut(), rgb=True, interpolation='custom')
 
@@ -44,9 +45,9 @@ def ridge_detection_kernel():
 
 @magicgui(
     auto_call=True,
-    kernel_size=dict(widget_type='Slider', min=1, max=20),
-    sigma=dict(widget_type='FloatSlider', min=0.1, max=5, step=0.1),
-    kernel_type=dict(choices=['none', 'gaussian', 'sharpen', 'ridge_detection']),
+    kernel_size={"widget_type": 'Slider', "min": 1, "max": 20},
+    sigma={"widget_type": 'FloatSlider', "min": 0.1, "max": 5, "step": 0.1},
+    kernel_type={"choices": ['none', 'gaussian', 'sharpen', 'ridge_detection']},
 )
 def gpu_kernel(image: napari.layers.Image, kernel_type: str = 'gaussian', kernel_size: int = 5, sigma: float = 1):
     if kernel_type == 'none':
