@@ -3,9 +3,7 @@
 Async/octree has its own little JSON config file. This is temporary
 until napari has a system-wide one.
 """
-import json
 import logging
-from pathlib import Path
 from typing import Optional
 
 from napari.settings import get_settings
@@ -74,9 +72,9 @@ def get_octree_config() -> dict:
     dict
         The config data we should use.
     """
-    # TODO the following is commented out to disallow setting octree via 
+    # TODO the following is commented out to disallow setting octree via
     # environment variables and forcing octree to always be False
-    
+
     # settings = get_settings()
     # octree_var = settings.experimental.octree
 

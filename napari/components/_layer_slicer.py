@@ -17,8 +17,8 @@ from typing import (
 
 from napari.components import Dims
 from napari.layers import Layer
-from napari.utils.events.event import EmitterGroup, Event
 from napari.settings import get_settings
+from napari.utils.events.event import EmitterGroup, Event
 
 logger = logging.getLogger("napari.components._layer_slicer")
 
