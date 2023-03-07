@@ -76,6 +76,7 @@ def _add_layer_data_to_viewer(
             if len(return_type.__args__) != 2 or return_type.__args__[
                 1
             ] is not type(None):
+                # this case should be impossible, but we'll check anyway.
                 raise TypeError(
                     f"napari supports only Optional[<layer_data_type>], not {return_type}"
                 )
