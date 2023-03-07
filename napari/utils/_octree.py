@@ -22,7 +22,7 @@ DEFAULT_OCTREE_CONFIG = {
         "delay_queue_ms": 100,
     },
     "octree": {
-        "enabled": True,
+        "enabled": False,
         "tile_size": 256,
         "log_path": None,
         "loaders": {
@@ -74,27 +74,30 @@ def get_octree_config() -> dict:
     dict
         The config data we should use.
     """
-    settings = get_settings()
-    octree_var = settings.experimental.octree
+    # TODO the following is commented out to disallow setting octree via 
+    # environment variables and forcing octree to always be False
+    
+    # settings = get_settings()
+    # octree_var = settings.experimental.octree
 
-    if octree_var in [True, False]:
-        octree_var = str(int(octree_var))
+    # if octree_var in [True, False]:
+    #     octree_var = str(int(octree_var))
 
-    # If NAPARI_OCTREE is not enabled, defer to NAPARI_ASYNC
-    if octree_var in [None, "0"]:
-        # This will return DEFAULT_ASYNC_CONFIG or None.
-        return _get_async_config()
+    # # If NAPARI_OCTREE is not enabled, defer to NAPARI_ASYNC
+    # if octree_var in [None, "0"]:
+    #     # This will return DEFAULT_ASYNC_CONFIG or None.
+    #     return _get_async_config()
 
-    # If NAPARI_OCTREE is "1" then use default config.
-    if octree_var == "1":
-        return DEFAULT_OCTREE_CONFIG
+    # # If NAPARI_OCTREE is "1" then use default config.
+    # if octree_var == "1":
+    #     return DEFAULT_OCTREE_CONFIG
 
-    # NAPARI_OCTREE should be a config file path
-    path = Path(octree_var).expanduser()
-    with path.open() as infile:
-        json_config = json.load(infile)
+    # # NAPARI_OCTREE should be a config file path
+    # path = Path(octree_var).expanduser()
+    # with path.open() as infile:
+    #     json_config = json.load(infile)
 
-    # Need to set this for the preferences dialog to build.
-    settings.experimental.octree = True
-
+    # # Need to set this for the preferences dialog to build.
+    # settings.experimental.octree = False
+    json_config = DEFAULT_OCTREE_CONFIG
     return json_config

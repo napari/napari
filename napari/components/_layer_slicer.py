@@ -18,6 +18,7 @@ from typing import (
 from napari.components import Dims
 from napari.layers import Layer
 from napari.utils.events.event import EmitterGroup, Event
+from napari.settings import get_settings
 
 logger = logging.getLogger("napari.components._layer_slicer")
 
@@ -74,7 +75,7 @@ class _LayerSlicer:
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._force_sync = True
+        self._force_sync = get_settings().experimental.async_
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
         self._lock_layers_to_task = RLock()
 
