@@ -3,7 +3,9 @@ import sys
 
 import pytest
 from npe2 import PluginManager, PluginManifest
+from npe2 import __version__ as npe2_version
 from npe2.manifest.schema import ContributionPoints
+from packaging.version import parse as parse_version
 from pydantic import ValidationError
 
 from napari.resources._icons import PLUGIN_FILE_NAME
@@ -165,6 +167,10 @@ def test_is_theme_available(tmp_path, monkeypatch):
     assert "test_blue" in available_themes()
 
 
+@pytest.mark.skipif(
+    parse_version(npe2_version) < parse_version("0.6.2"),
+    reason="requires npe2 0.6.2 for syntax style contributions",
+)
 def test_theme_registration(monkeypatch, caplog):
     data = {"dark": get_theme("dark", as_dict=False)}
 
