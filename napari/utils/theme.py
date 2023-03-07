@@ -105,8 +105,8 @@ class Theme(EventedModel):
         return value
 
 
-add_pattern = re.compile(r"{{\s?add\((\w+),?\s?([-\d]+)?\)\s?}}")
-subtract_pattern = re.compile(r"{{\s?subtract\((\w+),?\s?([-\d]+)?\)\s?}}")
+increase_pattern = re.compile(r"{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}")
+decrease_pattern = re.compile(r"{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}")
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
@@ -175,12 +175,12 @@ def gradient(stops, horizontal=True):
 
 def template(css: str, **theme):
     def _increase_match(matchobj):
-        px_size, px = matchobj.groups()
-        return increase(theme[px_size], px)
+        font_size, to_add = matchobj.groups()
+        return increase(theme[font_size], to_add)
 
     def _decrease_match(matchobj):
-        px_size, px = matchobj.groups()
-        return decrease(theme[px_size], px)
+        font_size, to_subtract = matchobj.groups()
+        return decrease(theme[font_size], to_subtract)
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
@@ -200,8 +200,8 @@ def template(css: str, **theme):
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
-        css = add_pattern.sub(_increase_match, css)
-        css = subtract_pattern.sub(_decrease_match, css)
+        css = increase_pattern.sub(_increase_match, css)
+        css = decrease_pattern.sub(_decrease_match, css)
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
