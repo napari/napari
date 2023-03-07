@@ -638,6 +638,7 @@ class Window:
         theme.events.warning.connect(self._update_theme_no_event)
         theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._update_theme_no_event)
+        theme.events.font_size.connect(self._update_theme_no_event)
         theme.events.canvas.connect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -662,6 +663,7 @@ class Window:
         theme.events.warning.disconnect(self._update_theme_no_event)
         theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._update_theme_no_event)
+        theme.events.font_size.disconnect(self._update_theme_no_event)
         theme.events.canvas.disconnect(
             lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -1271,12 +1273,8 @@ class Window:
             self._qt_viewer.viewer.theme = value
             if value == "system":
                 # system isn't a theme, so get the name and set style sheet
-                actual_theme_name = get_system_theme()
-                self._qt_window.setStyleSheet(
-                    get_stylesheet(actual_theme_name)
-                )
-            else:
-                self._qt_window.setStyleSheet(get_stylesheet(value))
+                value = get_system_theme()
+            self._qt_window.setStyleSheet(get_stylesheet(value))
 
     def _status_changed(self, event):
         """Update status bar.

@@ -137,6 +137,7 @@ def test_theme_font_size():
     theme = get_theme("dark", False)
     theme.font_size = "15pt"
     assert theme.font_size == "15pt"
+
     with pytest.raises(ValidationError):
         theme.font_size = "0pt"
     with pytest.raises(ValidationError):
