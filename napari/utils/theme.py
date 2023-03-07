@@ -97,7 +97,7 @@ class Theme(EventedModel):
     @validator("font_size", pre=True)
     def _ensure_font_size(value: str) -> str:
         assert "pt" in value, trans._(
-            "Font size must be in pixels.", deferred=True
+            "Font size must be in points (pt).", deferred=True
         )
         assert int(value[:-2]) > 0, trans._(
             "Font size must be greater than 0.", deferred=True
@@ -113,14 +113,14 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(px_size: str, px: int):
+def decrease(font_size: str, pt: int):
     """Decrease fontsize."""
-    return f"{int(px_size[:-2]) - int(px)}pt"
+    return f"{int(font_size[:-2]) - int(pt)}pt"
 
 
-def increase(px_size: str, px: int):
+def increase(font_size: str, pt: int):
     """Increase fontsize."""
-    return f"{int(px_size[:-2]) + int(px)}pt"
+    return f"{int(font_size[:-2]) + int(pt)}pt"
 
 
 def darken(color: Union[str, Color], percentage=10):
@@ -380,7 +380,6 @@ DARK = Theme(
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt',
-    header_size="16pt",
 )
 LIGHT = Theme(
     id='light',
@@ -399,7 +398,6 @@ LIGHT = Theme(
     console='rgb(255, 255, 255)',
     canvas='white',
     font_size='12pt',
-    header_size="16pt",
 )
 
 register_theme('dark', DARK, "builtin")

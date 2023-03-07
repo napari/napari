@@ -128,6 +128,21 @@ def test_theme(color):
     theme.background = color
 
 
+@pytest.mark.skipif(
+    os.getenv('CI') and sys.version_info < (3, 9),
+    reason="Testing theme on CI is extremely slow ~ 15s per test."
+    "Skip for now until we find the reason",
+)
+def test_theme_font_size():
+    theme = get_theme("dark", False)
+    theme.font_size = "15pt"
+    assert theme.font_size == "15pt"
+    with pytest.raises(ValidationError):
+        theme.font_size = "0pt"
+    with pytest.raises(ValidationError):
+        theme.font_size = "12px"
+
+
 def test_theme_syntax_highlight():
     theme = get_theme("dark", False)
     with pytest.raises(ValidationError):
