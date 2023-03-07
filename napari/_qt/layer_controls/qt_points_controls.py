@@ -1,3 +1,4 @@
+import contextlib
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -312,10 +313,8 @@ class QtPointsControls(QtLayerControls):
                 self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
             if max_val > self.sizeSlider.maximum():
                 self.sizeSlider.setMaximum(int(max_val + 1))
-            try:
+            with contextlib.suppress(TypeError):
                 self.sizeSlider.setValue(int(value))
-            except TypeError:
-                pass
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):
@@ -338,6 +337,9 @@ class QtPointsControls(QtLayerControls):
         """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
+
+    def _on_ndisplay_changed(self):
+        self.layer.editable = not (self.layer.ndim == 2 and self.ndisplay == 3)
 
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""

@@ -31,7 +31,6 @@ class QtDims(QWidget):
     """
 
     def __init__(self, dims: Dims, parent=None) -> None:
-
         super().__init__(parent=parent)
 
         self.SLIDERHEIGHT = 22
@@ -104,7 +103,7 @@ class QtDims(QWidget):
         self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
-        for (axis, widget) in widgets:
+        for axis, widget in widgets:
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False

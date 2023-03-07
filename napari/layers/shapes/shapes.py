@@ -752,10 +752,7 @@ class Shapes(Layer):
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        if self.nshapes == 0:
-            ndim = self.ndim
-        else:
-            ndim = self.data[0].shape[1]
+        ndim = self.ndim if self.nshapes == 0 else self.data[0].shape[1]
         return ndim
 
     @property
@@ -1391,7 +1388,6 @@ class Shapes(Layer):
                 contrast_limits = getattr(self, f'{attribute}_contrast_limits')
                 colormap = getattr(self, f'{attribute}_colormap')
                 if update_color_mapping or contrast_limits is None:
-
                     colors, contrast_limits = map_property(
                         prop=color_properties, colormap=colormap
                     )
@@ -1401,7 +1397,6 @@ class Shapes(Layer):
                         contrast_limits,
                     )
                 else:
-
                     colors, _ = map_property(
                         prop=color_properties,
                         colormap=colormap,
@@ -1470,10 +1465,7 @@ class Shapes(Layer):
     def _is_color_mapped(self, color):
         """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
-            if color in self.properties:
-                return True
-            else:
-                return False
+            return color in self.properties
         elif isinstance(color, (list, np.ndarray)):
             return False
         else:
@@ -2247,13 +2239,13 @@ class Shapes(Layer):
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         ndisplay = self._slice_input.ndisplay
-        if not ndisplay == self._ndisplay_stored:
+        if ndisplay != self._ndisplay_stored:
             self.selected_data = set()
             self._data_view.ndisplay = min(self.ndim, ndisplay)
             self._ndisplay_stored = ndisplay
             self._clipboard = {}
 
-        if not self._slice_input.order == self._display_order_stored:
+        if self._slice_input.order != self._display_order_stored:
             self.selected_data = set()
             self._data_view.update_dims_order(self._slice_input.order)
             self._display_order_stored = copy(self._slice_input.order)
@@ -2374,9 +2366,7 @@ class Shapes(Layer):
                 # If in select mode just show the interaction boudning box
                 # including its vertices and the rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
-                if self._value[0] is None:
-                    face_color = 'white'
-                elif self._value[1] is None:
+                if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
@@ -2407,9 +2397,7 @@ class Shapes(Layer):
                 if self._mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
 
-                if self._value[0] is None:
-                    face_color = 'white'
-                elif self._value[1] is None:
+                if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color

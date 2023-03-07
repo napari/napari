@@ -68,7 +68,6 @@ class ShapeList:
     """
 
     def __init__(self, data=(), ndisplay=2) -> None:
-
         self._ndisplay = ndisplay
         self.shapes = []
         self._displayed = []
@@ -495,7 +494,6 @@ class ShapeList:
         for shape, face_color, edge_color in zip(
             shapes, face_colors, edge_colors
         ):
-
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             all_z_index.append(shape.z_index)
@@ -713,7 +711,7 @@ class ShapeList:
             cur_shape = self.shapes[index]
             if type(new_type) == str:
                 shape_type = ShapeType(new_type)
-                if shape_type in shape_classes.keys():
+                if shape_type in shape_classes:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
@@ -835,7 +833,7 @@ class ShapeList:
             Order that the dimensions are rendered in.
         """
         for index in range(len(self.shapes)):
-            if not self.shapes[index].dims_order == dims_order:
+            if self.shapes[index].dims_order != dims_order:
                 shape = self.shapes[index]
                 shape.dims_order = dims_order
                 self.remove(index, renumber=False)

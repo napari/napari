@@ -305,7 +305,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             interpolation2d=Event,
             interpolation3d=Event,
@@ -901,12 +901,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         zoom_factor = tuple(new_shape / image.shape[:2])
         if self.rgb:
-            # warning filter can be removed with scipy 1.4
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    image, zoom_factor + (1,), prefilter=False, order=0
-                )
+            downsampled = ndi.zoom(
+                image, zoom_factor + (1,), prefilter=False, order=0
+            )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -923,12 +920,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
-            # warning filter can be removed with scipy 1.4
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    image, zoom_factor, prefilter=False, order=0
-                )
+            downsampled = ndi.zoom(
+                image, zoom_factor, prefilter=False, order=0
+            )
             low, high = self.contrast_limits
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
@@ -963,10 +957,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         coord = np.round(coord).astype(int)
 
         raw = self._slice.image.raw
-        if self.rgb:
-            shape = raw.shape[:-1]
-        else:
-            shape = raw.shape
+        shape = raw.shape[:-1] if self.rgb else raw.shape
 
         if self.ndim < len(coord):
             # handle 3D views of 2D data by omitting extra coordinate

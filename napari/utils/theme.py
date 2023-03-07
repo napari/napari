@@ -26,7 +26,7 @@ try:
     major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
     del major, minor, QT_VERSION
-except ImportError:
+except (ImportError, RuntimeError):
     use_gradients = False
 
 
@@ -81,14 +81,15 @@ class Theme(EventedModel):
     error: Color
     current: Color
 
-    @validator("syntax_style", pre=True)
+    @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
-            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            "Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}",
             deferred=True,
             syntax_style=f" {', '.join(STYLE_MAP)}",
+            value=value,
         )
         return value
 
@@ -188,7 +189,7 @@ def get_system_theme() -> str:
     return id_
 
 
-def get_theme(id, as_dict=None):
+def get_theme(theme_id, as_dict=None):
     """Get a copy of theme based on it's id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -197,7 +198,7 @@ def get_theme(id, as_dict=None):
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         ID of requested theme.
     as_dict : bool
         Flag to indicate that the old-style dictionary
@@ -210,19 +211,19 @@ def get_theme(id, as_dict=None):
         so that manipulating this theme can be done without
         side effects.
     """
-    if id == "system":
-        id = get_system_theme()
+    if theme_id == "system":
+        theme_id = get_system_theme()
 
-    if id not in _themes:
+    if theme_id not in _themes:
         raise ValueError(
             trans._(
                 "Unrecognized theme {id}. Available themes are {themes}",
                 deferred=True,
-                id=id,
+                id=theme_id,
                 themes=available_themes(),
             )
         )
-    theme = _themes[id]
+    theme = _themes[theme_id]
     _theme = theme.copy()
     if as_dict is None:
         warnings.warn(
@@ -248,12 +249,12 @@ def get_theme(id, as_dict=None):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(id, theme, source):
+def register_theme(theme_id, theme, source):
     """Register a new or updated theme.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of requested theme.
     theme : dict of str: str, Theme
         Theme mapping elements to colors.
@@ -263,20 +264,20 @@ def register_theme(id, theme, source):
     if isinstance(theme, dict):
         theme = Theme(**theme)
     assert isinstance(theme, Theme)
-    _themes[id] = theme
+    _themes[theme_id] = theme
 
-    build_theme_svgs(id, source)
+    build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(id):
+def unregister_theme(theme_id):
     """Remove existing theme.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of the theme to be removed.
     """
-    _themes.pop(id, None)
+    _themes.pop(theme_id, None)
 
 
 def available_themes():
@@ -290,12 +291,12 @@ def available_themes():
     return tuple(_themes) + ("system",)
 
 
-def is_theme_available(id):
+def is_theme_available(theme_id):
     """Check if a theme is available.
 
     Parameters
     ----------
-    id : str
+    theme_id : str
         id of requested theme.
 
     Returns
@@ -303,10 +304,10 @@ def is_theme_available(id):
     bool
         True if the theme is available, False otherwise.
     """
-    if id == "system":
+    if theme_id == "system":
         return True
-    if id not in _themes and _theme_path(id).exists():
-        plugin_name_file = _theme_path(id) / PLUGIN_FILE_NAME
+    if theme_id not in _themes and _theme_path(theme_id).exists():
+        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
         if not plugin_name_file.exists():
             return False
         plugin_name = plugin_name_file.read_text()
@@ -314,7 +315,7 @@ def is_theme_available(id):
             npe2.PluginManager.instance().register(plugin_name)
         _install_npe2_themes(_themes)
 
-    return id in _themes
+    return theme_id in _themes
 
 
 def rebuild_theme_settings():

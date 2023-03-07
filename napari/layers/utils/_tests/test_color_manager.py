@@ -108,7 +108,6 @@ invalid_keys = {'values': np.array(['A', 'B', 'C'])}
 
 @pytest.mark.parametrize('c_props', [wrong_type, invalid_keys])
 def test_invalid_color_properties(c_props):
-
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
     with pytest.raises(ValidationError):
         _ = ColorManager(

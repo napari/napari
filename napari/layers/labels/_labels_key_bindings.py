@@ -22,12 +22,12 @@ def register_label_mode_action(description):
 
 
 @register_label_mode_action(trans._('Transform'))
-def activate_labels_transform_mode(layer):
+def activate_labels_transform_mode(layer: Labels):
     layer.mode = Mode.TRANSFORM
 
 
 @register_label_mode_action(trans._('Pan/zoom'))
-def activate_labels_pan_zoom_mode(layer):
+def activate_labels_pan_zoom_mode(layer: Labels):
     layer.mode = Mode.PAN_ZOOM
 
 
@@ -119,13 +119,13 @@ def toggle_preserve_labels(layer: Labels):
     layer.preserve_labels = not layer.preserve_labels
 
 
-@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ)
+@Labels.bind_key(KeyMod.CtrlCmd | KeyCode.KeyZ, overwrite=True)
 def undo(layer: Labels):
     """Undo the last paint or fill action since the view slice has changed."""
     layer.undo()
 
 
-@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ)
+@Labels.bind_key(KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyZ, overwrite=True)
 def redo(layer: Labels):
     """Redo any previously undone actions."""
     layer.redo()

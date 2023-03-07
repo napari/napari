@@ -12,6 +12,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  COLUMNS: 120
+
 concurrency:
   group: comprehensive-test
 
@@ -47,16 +50,16 @@ jobs:
             backend: pyqt5
           # test with minimum specified requirements
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             toxenv: headless-py38-linux
 
 

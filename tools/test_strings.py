@@ -6,9 +6,9 @@ TODO:
   * Find nested funcs inside if/else
 
 
-Rune manually with
+Run manually with
 
-    $ python tools/test_strings.py
+    $ pytest -Wignore tools/ --tb=short
 
 To interactively be prompted whether new strings should be ignored or need translations.
 
@@ -38,6 +38,12 @@ from strings_list import (
     SKIP_FOLDERS,
     SKIP_WORDS,
     SKIP_WORDS_GLOBAL,
+)
+
+# this import is required for octree, but since the env var
+# isn't triggering it properly, I've added it here to avoid errors
+from napari._vispy.experimental.vispy_tiled_image_layer import (
+    VispyTiledImageLayer,
 )
 
 REPO_ROOT = Path(__file__).resolve()
@@ -213,7 +219,7 @@ def find_files(
             if filename.endswith(extensions):
                 found_files.append(fpath)
 
-    return list(sorted(found_files))
+    return sorted(found_files)
 
 
 def find_docstrings(fpath: str) -> Dict[str, str]:
@@ -378,7 +384,7 @@ def find_trans_strings(
     trans_strings = {}
     show_trans_strings.visit(module)
     for string in show_trans_strings._found:
-        key = " ".join([it for it in string.split()])
+        key = " ".join(list(string.split()))
         trans_strings[key] = string
 
     errors = list(show_trans_strings._trans_errors)
@@ -589,15 +595,11 @@ NORMAL = "\x1b[1;0m"
 
 
 if __name__ == '__main__':
-
     issues, outdated_strings, trans_errors = _checks()
     import json
     import pathlib
 
-    if len(sys.argv) > 1:
-        edit_cmd = sys.argv[1]
-    else:
-        edit_cmd = None
+    edit_cmd = sys.argv[1] if len(sys.argv) > 1 else None
 
     pth = pathlib.Path(__file__).parent / 'string_list.json'
     data = json.loads(pth.read_text())

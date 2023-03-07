@@ -14,7 +14,6 @@ layer_data = [(lay[1], {}, lay[0].__name__.lower()) for lay in layer_test_data]
 
 def _impl(path):
     """just a dummy Hookimpl object to return from mocks"""
-    pass
 
 
 _testimpl = HookImplementation(_impl, plugin_name='testimpl')
@@ -94,7 +93,6 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
         "napari.plugins.io.read_data_with_plugins",
         MagicMock(return_value=(layer_data, _testimpl)),
     ):
-
         v = ViewerModel()
         v._add_layers_with_plugins(['mock_path'], kwargs=kwargs, stack=False)
         expected_source = Source(path='mock_path', reader_plugin='testimpl')
