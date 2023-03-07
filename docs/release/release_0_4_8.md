@@ -108,7 +108,7 @@ and
 - Add events to plugin manager (#2663)
 - Add napari module to console namespace (#2687)
 - Change deprecation warnings to future warnings (#2707)
-- Add strict_qt and block_plugin_discovery parameters to make_napari_viewer (#2715)
+- Add strict_qt and block_plugin_discovery parameters to make_napari_viewer (#2715)
 
 ## Bug Fixes
 
@@ -148,8 +148,8 @@ and
 - Fix tracks icons, and visibility icons (#2708)
 - Patch horizontalAdvance for older Qt versions (#2711)
 - Fix segfaults in test (#2716) 
-- Fix napari_provide_sample_data documentation typo (#2718)
-- Fix mpl colormaps (#2719)
+- Fix napari_provide_sample_data documentation typo (#2718)
+- Fix mpl colormaps (#2719)
 - Fix active layer keybindings (#2722)
 - Fix labels with large maximum value (#2723)
 - Fix progressbar and notifications segfaults in test (#2726)

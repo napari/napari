@@ -388,7 +388,7 @@ non-compliant licensing schemes or bad packaging practices.
 #### Tasks
 
 * [ ] Add documentation about conda-forge in the release guide
-* [ ] Add documentation about conda-forge in the plugin developer guide
+* [ ] Add documentation about conda-forge in the plugin developer guide
 * [ ] Ensure the cookiecutter template has some notion of conda packaging
 * [ ] Decide which packages need to be governed by the _napari pinnings_ metapackage
 

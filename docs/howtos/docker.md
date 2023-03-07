@@ -57,7 +57,7 @@ This image features a series of environment variables you can use to customize i
 * `XPRA_EXIT_WITH_CLIENT="yes"`: By default, Xpra will exit if you close the browser tab
 * `XPRA_XVFB_SCREEN="1920x1080x24+32"`: The resolution and bit depth of the virtual display created by Xvfb
 
-## For development
+## For development
 
 The Docker images are also useful for developers who need to debug issues on Linux.
 The images include the latest napari version published on PyPI by default, but you can also install your own local version of napari if needed.

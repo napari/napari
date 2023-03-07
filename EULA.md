@@ -528,7 +528,7 @@ copy and install the Utilities you receive with the software on to other third p
 programs and databases you have developed with the software.  You must delete all the Utilities installed onto a third party machine within the earlier of (i)
 when you have finished debugging or deploying your programs; or (ii) thirty (30) days after installation of the Utilities onto that machine. We may add
 additional files to this list from time to time.
-        c. Build Services and Enterprise Build Servers.  You may install and use any number of copies of the software onto your build machines or servers,
+        c. Build Services and Enterprise Build Servers.  You may install and use any number of copies of the software onto your build machines or servers,
 solely for the purpose of:
             i. Compiling, building, verifying and archiving your programs;
             ii. Creating and configuring build systems internal to your organization to support your internal build environment; or
@@ -631,14 +631,14 @@ using these features, you consent to the transmission of this information. Micro
 Internet protocol address, the type of operating system, browser, and name and version of the software you are using, and the language code of the device
 where you installed the software. Microsoft uses this information to make the Internet-based services available to you.
                 • Software Use and Performance.  This software collects info about your hardware and how you use the software and automatically sends error
-reports to Microsoft.  These reports include information about problems that occur in the software.  Reports might unintentionally contain personal
+reports to Microsoft.  These reports include information about problems that occur in the software.  Reports might unintentionally contain personal
 information. For example, a report that contains a snapshot of computer memory might include your name. Part of a document you were working on could be
 included as well, but this information in reports or any info collected about hardware or your software use will not be used to identify or contact you.
                 • Digital Certificates. The software uses digital certificates. These digital certificates confirm the identity of Internet users sending
 X.509 standard encryption information. They also can be used to digitally sign files and macros to verify the integrity and origin of the file contents. The
 software retrieves certificates and updates certificate revocation lists using the Internet, when available.
                 • Windows Application Certification Kit. To ensure you have the latest certification tests, when launched this software periodically checks a
-Windows Application Certification Kit file on download.microsft.com to see if an update is available.  If an update is found, you are prompted and provided a
+Windows Application Certification Kit file on download.microsft.com to see if an update is available.  If an update is found, you are prompted and provided a
 link to a web site where you can download the update. You may use the Windows Application Certification Kit solely to test your programs before you submit
 them for a potential Microsoft Windows Certification and for inclusion on the Microsoft Windows Store. The results you receive are for informational purposes
 only. Microsoft has no obligation to either (i) provide you with a Windows Certification for your programs and/or ii) include your program in the Microsoft
@@ -678,10 +678,10 @@ law; and
             iv. maintain and comply with a written statement available to your customers that describes your privacy practices regarding data and information
 you collect, use and that you share with any third parties.
         c. Location Framework. The software may contain a location framework component or APIs that enable support of location services in programs.
-Programs that receive device location must comply with the requirements related to the Location Service APIs as described in the Microsoft Store Policies
+Programs that receive device location must comply with the requirements related to the Location Service APIs as described in the Microsoft Store Policies
 (https://docs.microsoft.com/en-us/legal/windows/agreements/store-policies).   If you choose to collect device location data outside of the control of Windows
-system settings, you must obtain legally sufficient consent for your data practices, and such practices must comply with all other applicable laws and
-regulations. 
+system settings, you must obtain legally sufficient consent for your data practices, and such practices must comply with all other applicable laws and
+regulations.
         d. Security.  If your application or service collects, stores or transmits personal information, it must do so securely, by using modern cryptography
 methods.
     4. BACKUP COPY. You may make one backup copy of the software. You may use it only to reinstall the software.
@@ -786,10 +786,10 @@ IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW.
         the associated installation directory, those license terms
         control.
 
-    -   THIRD PARTY COMPONENTS.  The software may include third party
+    -   THIRD PARTY COMPONENTS.  The software may include third party
         components with separate legal notices or governed by other
         agreements, as may be described in the ThirdPartyNotices file(s)
-        accompanying the software. 
+        accompanying the software.
 
 -   SCOPE OF LICENSE. The software is licensed, not sold. This agreement
     only gives you some rights to use the software. Microsoft reserves
