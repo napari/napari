@@ -1,6 +1,10 @@
 from numbers import Integral
-from typing import Literal  # Added to typing in 3.8
-from typing import Sequence, Tuple, Union
+from typing import (
+    Literal,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -81,13 +85,13 @@ class Dims(EventedModel):
     _scroll_progress: int = 0
 
     # validators
-    @validator('axis_labels', pre=True)
-    def _string_to_list(v):
+    @validator('axis_labels', pre=True, allow_reuse=True)
+    def _string_to_list(cls, v):
         if isinstance(v, str):
             return list(v)
         return v
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def _check_dims(cls, values):
         """Check the consitency of dimensionaity for all attributes
 

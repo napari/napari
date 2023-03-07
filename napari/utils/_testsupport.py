@@ -47,10 +47,10 @@ def fail_obj_graph(Klass):
 
     try:
         import objgraph
-    except ImportError:
+    except ModuleNotFoundError:
         return
 
-    if not len(Klass._instances) == 0:
+    if len(Klass._instances) != 0:
         global COUNTER
         COUNTER += 1
         import gc
@@ -88,11 +88,8 @@ def napari_plugin_manager(monkeypatch):
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
     monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
-    try:
+    with suppress(AttributeError):
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    except AttributeError:  # headless tests
-        pass
-
     # prevent discovery of plugins in the environment
     # you can still use `pm.register` to explicitly register something.
     pm.discovery_blocker = patch.object(pm, 'discover')
@@ -224,10 +221,12 @@ def make_napari_viewer(
     def actual_factory(
         *model_args,
         ViewerClass=Viewer,
-        strict_qt=is_internal_test or os.getenv("NAPARI_STRICT_QT"),
+        strict_qt=None,
         block_plugin_discovery=True,
         **model_kwargs,
     ):
+        if strict_qt is None:
+            strict_qt = is_internal_test or os.getenv("NAPARI_STRICT_QT")
         nonlocal _strict
         _strict = strict_qt
 

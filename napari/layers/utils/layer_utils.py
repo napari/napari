@@ -108,20 +108,17 @@ def register_layer_attr_action(
         sig = inspect.signature(func)
         try:
             first_variable_name = next(iter(sig.parameters))
-        except StopIteration:
+        except StopIteration as e:
             raise RuntimeError(
                 trans._(
                     "If actions has no arguments there is no way to know what to set the attribute to.",
                     deferred=True,
                 ),
-            )
+            ) from e
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
-            if args:
-                obj = args[0]
-            else:
-                obj = kwargs[first_variable_name]
+            obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 
@@ -143,26 +140,26 @@ def _nanmin(array):
     """
     call np.min but fall back to avoid nan and inf if necessary
     """
-    min = np.min(array)
-    if not np.isfinite(min):
+    min_value = np.min(array)
+    if not np.isfinite(min_value):
         masked = array[np.isfinite(array)]
         if masked.size == 0:
             return 0
-        min = np.min(masked)
-    return min
+        min_value = np.min(masked)
+    return min_value
 
 
 def _nanmax(array):
     """
     call np.max but fall back to avoid nan and inf if necessary
     """
-    max = np.max(array)
-    if not np.isfinite(max):
+    max_value = np.max(array)
+    if not np.isfinite(max_value):
         masked = array[np.isfinite(array)]
         if masked.size == 0:
             return 1
-        max = np.max(masked)
-    return max
+        max_value = np.max(masked)
+    return max_value
 
 
 def calc_data_range(data, rgb=False):
@@ -261,10 +258,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
     d = b - a
 
     if d.ndim == 1:
-        if len(d) == 2:
-            normal = np.array([d[1], -d[0]])
-        else:
-            normal = np.cross(d, p)
+        normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
         norm = np.linalg.norm(normal)
         if norm == 0:
             norm = 1
@@ -284,18 +278,20 @@ def segment_normal(a, b, p=(0, 0, 1)):
 
 def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     """
-    Convert array content to uint8.
+    Convert array content to uint8, always returning a copy.
 
-    If all negative values are changed on 0.
+    Based on skimage.util.dtype._convert but limited to an output type uint8,
+    so should be equivalent to skimage.util.dtype.img_as_ubyte.
 
-    If values are integer and bellow 256 it is simple casting otherwise maximum value for this data type is picked
-    and values are scaled by 255/maximum type value.
+    If all negative, values are clipped to 0.
 
-    Binary images ar converted to [0,255] images.
+    If values are integers and below 256, this simply casts.
+    Otherwise the maximum value for the input data type is determined and
+    output values are proportionally scaled by this value.
 
-    float images are multiply by 255 and then casted to uint8.
+    Binary images are converted so that False -> 0, True -> 255.
 
-    Based on skimage.util.dtype.convert but limited to output type uint8
+    Float images are multiplied by 255 and then cast to uint8.
     """
     out_dtype = np.dtype(np.uint8)
     out_max = np.iinfo(out_dtype).max
@@ -308,6 +304,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
+        image_out = np.nan_to_num(image_out, copy=False)
         return image_out.astype(out_dtype)
 
     if in_kind in "ui":
@@ -508,10 +505,7 @@ def compute_multiscale_level(
 
     # Find the highest level (lowest resolution) allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    if len(locations) > 0:
-        level = locations[-1][0]
-    else:
-        level = 0
+    level = locations[-1][0] if len(locations) > 0 else 0
     return level
 
 
@@ -710,7 +704,7 @@ class _FeatureTable:
         values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
-    ):
+    ) -> None:
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
 

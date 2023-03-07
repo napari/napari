@@ -508,3 +508,55 @@ def test_screenshot_has_no_border(make_napari_viewer):
 
     expected = np.broadcast_to([255, 0, 0, 255], screenshot.shape)
     np.testing.assert_array_equal(screenshot, expected)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_blending_modes_with_canvas(make_napari_viewer):
+    shape = (60, 80)
+    viewer = make_napari_viewer(show=True)
+
+    # add two images with different values
+    img1 = np.full(shape, 20, np.uint8)
+    img2 = np.full(shape, 50, np.uint8)
+    img1_layer = viewer.add_image(img1)
+    img2_layer = viewer.add_image(img2)
+
+    # invert shape cause vispy xy is flipped
+    viewer.window._qt_viewer.canvas.size = shape[::-1]
+    viewer.camera.zoom = 1
+
+    # check that additive behaves correctly with black canvas
+    img1_layer.blending = 'additive'
+    img2_layer.blending = 'additive'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img1 + img2)
+
+    # minimum should not result in black background if canvas is black
+    img1_layer.blending = 'minimum'
+    img2_layer.blending = 'minimum'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))
+    # toggle visibility of bottom layer
+    img1_layer.visible = False
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img2)
+    # and canvas should not affect the above results
+    viewer.window._qt_viewer.canvas.bgcolor = 'white'
+
+    # check that additive behaves correctly, despite white canvas
+    img1_layer.visible = True
+    img1_layer.blending = 'additive'
+    img2_layer.blending = 'additive'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img1 + img2)
+    # toggle visibility of bottom layer
+    img1_layer.visible = False
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], img2)
+    # minimum should always work with white canvas bgcolor
+    img1_layer.visible = True
+    img1_layer.blending = 'minimum'
+    img2_layer.blending = 'minimum'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    np.testing.assert_array_equal(screenshot[:, :, 0], np.minimum(img1, img2))

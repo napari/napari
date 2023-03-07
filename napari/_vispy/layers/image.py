@@ -13,7 +13,7 @@ from napari.utils.translations import trans
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None, texture_format=None):
+    def __init__(self, custom_node: Node = None, texture_format=None) -> None:
         if (
             texture_format == 'auto'
             and 'texture_float' not in get_gl_extensions()
@@ -36,7 +36,6 @@ class ImageLayerNode:
         )
 
     def get_node(self, ndisplay: int) -> Node:
-
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
@@ -48,8 +47,7 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None, texture_format='auto'):
-
+    def __init__(self, layer, node=None, texture_format='auto') -> None:
         # Use custom node from caller, or our standard image/volume nodes.
         self._layer_node = ImageLayerNode(node, texture_format=texture_format)
 
@@ -110,6 +108,8 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.parent = parent
         self.node.order = self.order
+        for overlay_visual in self.overlays.values():
+            overlay_visual.node.parent = self.node
         self.reset()
 
     def _on_data_change(self):

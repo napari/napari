@@ -23,7 +23,16 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QEventLoop,
+    QPoint,
+    QProcess,
+    QRect,
+    QSize,
+    Qt,
+    Slot,
+)
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -105,7 +114,6 @@ class _QtMainWindow(QMainWindow):
 
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
         center.layout().addWidget(self._qt_viewer)
@@ -115,6 +123,8 @@ class _QtMainWindow(QMainWindow):
         self.setWindowTitle(self._qt_viewer.viewer.title)
 
         self._maximized_flag = False
+        self._fullscreen_flag = False
+        self._normal_geometry = QRect()
         self._window_size = None
         self._window_pos = None
         self._old_size = None
@@ -124,8 +134,8 @@ class _QtMainWindow(QMainWindow):
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
 
-        act_dlg = QtActivityDialog(self._qt_viewer._canvas_overlay)
-        self._qt_viewer._canvas_overlay.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer._welcome_widget)
+        self._qt_viewer._welcome_widget.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()
@@ -206,7 +216,62 @@ class _QtMainWindow(QMainWindow):
             with contextlib.suppress(ValueError):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
+
         return super().event(e)
+
+    def isFullScreen(self):
+        # Needed to prevent errors when going to fullscreen mode on Windows
+        # Use a flag attribute to determine if the window is in full screen mode
+        # See https://bugreports.qt.io/browse/QTBUG-41309
+        # Based on https://github.com/spyder-ide/spyder/pull/7720
+        return self._fullscreen_flag
+
+    def showNormal(self):
+        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
+        #   * Set fullscreen flag
+        #   * Remove `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
+        #   * Set geometry to previously stored normal geometry or default empty QRect
+        # Always call super `showNormal` to set Qt window state
+        # See https://bugreports.qt.io/browse/QTBUG-41309
+        # Based on https://github.com/spyder-ide/spyder/pull/7720
+        self._fullscreen_flag = False
+        if os.name == 'nt':
+            self.setWindowFlags(
+                self.windowFlags()
+                ^ (Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+            )
+            self.setGeometry(self._normal_geometry)
+        super().showNormal()
+
+    def showFullScreen(self):
+        # Needed to prevent errors when going to fullscreen mode on Windows. Here we:
+        #   * Set fullscreen flag
+        #   * Add `Qt.FramelessWindowHint` and `Qt.WindowStaysOnTopHint` window flags if needed
+        #   * Call super `showNormal` to update the normal screen geometry to apply it later if needed
+        #   * Save window normal geometry if needed
+        #   * Get screen geometry
+        #   * Set geometry window to use total screen geometry +1 in every direction if needed
+        # If the workaround is not needed just call super `showFullScreen`
+        # See https://bugreports.qt.io/browse/QTBUG-41309
+        # Based on https://github.com/spyder-ide/spyder/pull/7720
+        self._fullscreen_flag = True
+        if os.name == 'nt':
+            self.setWindowFlags(
+                self.windowFlags()
+                | Qt.FramelessWindowHint
+                | Qt.WindowStaysOnTopHint
+            )
+            super().showNormal()
+            self._normal_geometry = self.normalGeometry()
+            screen_rect = self.windowHandle().screen().geometry()
+            self.setGeometry(
+                screen_rect.left() - 1,
+                screen_rect.top() - 1,
+                screen_rect.width() + 2,
+                screen_rect.height() + 2,
+            )
+        else:
+            super().showFullScreen()
 
     def _load_window_settings(self):
         """
@@ -287,8 +352,8 @@ class _QtMainWindow(QMainWindow):
             self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
-            self.setWindowState(Qt.WindowState.WindowFullScreen)
             self._maximized_flag = window_maximized
+            self.showFullScreen()
         elif window_maximized:
             self.setWindowState(Qt.WindowState.WindowMaximized)
 
@@ -485,7 +550,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True):
+    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -1134,32 +1199,32 @@ class Window:
         settings = get_settings()
         try:
             self._qt_window.show(block=block)
-        except (AttributeError, RuntimeError):
+        except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
                 trans._(
                     "This viewer has already been closed and deleted. Please create a new one.",
                     deferred=True,
                 )
-            )
+            ) from e
 
         if settings.application.first_time:
             settings.application.first_time = False
             try:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
                     trans._(
                         "This viewer has already been closed and deleted. Please create a new one.",
                         deferred=True,
                     )
-                )
+                ) from e
         else:
             try:
                 if settings.application.save_window_geometry:
                     self._qt_window._set_window_settings(
                         *self._qt_window._load_window_settings()
                     )
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 import warnings
 
                 warnings.warn(
@@ -1201,18 +1266,16 @@ class Window:
         """Update widget color theme."""
         settings = get_settings()
         with contextlib.suppress(AttributeError, RuntimeError):
-            if event:
-                value = event.value
-                self._qt_viewer.viewer.theme = value
-                settings.appearance.theme = value
-            else:
-                value = (
-                    get_system_theme()
-                    if settings.appearance.theme == "system"
-                    else self._qt_viewer.viewer.theme
+            value = event.value if event else settings.appearance.theme
+            self._qt_viewer.viewer.theme = value
+            if value == "system":
+                # system isn't a theme, so get the name and set style sheet
+                actual_theme_name = get_system_theme()
+                self._qt_window.setStyleSheet(
+                    get_stylesheet(actual_theme_name)
                 )
-
-            self._qt_window.setStyleSheet(get_stylesheet(value))
+            else:
+                self._qt_window.setStyleSheet(get_stylesheet(value))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1307,7 +1370,7 @@ class Window:
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:
-                    add_flash_animation(self._qt_viewer._canvas_overlay)
+                    add_flash_animation(self._qt_viewer._welcome_widget)
             finally:
                 # make sure we always go back to the right canvas size
                 if size is not None or scale is not None:

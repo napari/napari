@@ -20,6 +20,7 @@ def test_default_themes():
     themes = available_themes()
     assert 'dark' in themes
     assert 'light' in themes
+    assert 'system' in themes
 
 
 def test_get_theme():
@@ -30,6 +31,13 @@ def test_get_theme():
     # get theme in the new model-based format
     theme = get_theme("dark", False)
     assert isinstance(theme, Theme)
+
+
+def test_get_system_theme(monkeypatch):
+    monkeypatch.setattr('napari.utils.theme.get_system_theme', lambda: 'light')
+    theme = get_theme('system', as_dict=False)
+    # should return the theme specified by get_system_theme
+    assert theme.id == 'light'
 
 
 def test_register_theme():
@@ -55,7 +63,7 @@ def test_register_theme():
 
     # Check that the dark theme has not been overwritten
     dark_theme = get_theme('dark', True)
-    assert not dark_theme['background'] == blue_theme['background']
+    assert dark_theme['background'] != blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
     theme = get_theme('test_blue', True)

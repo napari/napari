@@ -78,13 +78,13 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
             )
         try:
             color_array = ColorArray.validate(value)
-        except (ValueError, AttributeError, KeyError):
+        except (ValueError, AttributeError, KeyError) as e:
             raise TypeError(
                 trans._(
                     'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
                     deferred=True,
                 )
-            )
+            ) from e
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
         return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
@@ -204,11 +204,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True)
+    @validator('colormap', pre=True, always=True, allow_reuse=True)
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True)
+    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> Optional[Tuple[float, float]]:

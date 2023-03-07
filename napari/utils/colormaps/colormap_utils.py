@@ -373,6 +373,13 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
             # be valid LAB color coordinates. scikit-image handles this by projecting
             # such coordinates into the colorspace, but will also warn when doing this.
             with warnings.catch_warnings():
+                # skimage 0.20.0rc
+                warnings.filterwarnings(
+                    action='ignore',
+                    message='Conversion from CIE-LAB, via XYZ to sRGB color space resulted in',
+                    category=UserWarning,
+                )
+                # skimage <0.20
                 warnings.filterwarnings(
                     action='ignore',
                     message='Color data out of range',
@@ -452,14 +459,11 @@ def vispy_or_mpl_colormap(name):
     else:
         try:
             mpl_cmap = getattr(cm, name)
-            if name in _MATPLOTLIB_COLORMAP_NAMES:
-                display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
-            else:
-                display_name = name
-        except AttributeError:
+            display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
+        except AttributeError as e:
             suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
                 name
-            ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
+            ) or _VISPY_COLORMAPS_TRANSLATIONS_REVERSE.get(name)
             if suggestion:
                 raise KeyError(
                     trans._(
@@ -468,7 +472,7 @@ def vispy_or_mpl_colormap(name):
                         name=name,
                         suggestion=suggestion,
                     )
-                )
+                ) from e
             else:
                 colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
                     set(_MATPLOTLIB_COLORMAP_NAMES)
@@ -482,7 +486,7 @@ def vispy_or_mpl_colormap(name):
                             sorted(f'"{cm}"' for cm in colormaps)
                         ),
                     )
-                )
+                ) from e
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors
@@ -640,7 +644,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name = cmap.name
                 AVAILABLE_COLORMAPS[name] = cmap
             elif not all(
-                (isinstance(i, VispyColormap) or isinstance(i, Colormap))
+                (isinstance(i, (VispyColormap, Colormap)))
                 for i in colormap.values()
             ):
                 raise TypeError(

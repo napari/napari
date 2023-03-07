@@ -46,7 +46,7 @@ def create_qt_layer_controls(layer):
 
     Parameters
     ----------
-    layer : napari.layers._base_layer.Layer
+    layer : napari.layers.Layer
         Layer that needs its controls widget created.
 
     Returns
@@ -94,13 +94,14 @@ class QtLayerControlsContainer(QStackedWidget):
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer) -> None:
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
+        self.empty_widget.setObjectName("empty_controls_widget")
         self.widgets = {}
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)
@@ -108,6 +109,19 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
+        viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
+
+    def _on_ndisplay_changed(self, event):
+        """Responds to a change in the dimensionality displayed in the canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Event with the new dimensionality value at `event.value`.
+        """
+        for widget in self.widgets.values():
+            if widget is not self.empty_widget:
+                widget.ndisplay = event.value
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -115,7 +129,7 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
         layer = event.value
         if layer is None:
@@ -134,6 +148,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         layer = event.value
         controls = create_qt_layer_controls(layer)
+        controls.ndisplay = self.viewer.dims.ndisplay
         self.addWidget(controls)
         self.widgets[layer] = controls
 
@@ -148,7 +163,6 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        # controls.close()
         controls.hide()
         controls.deleteLater()
         controls = None

@@ -196,7 +196,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self._events.source = self
@@ -330,6 +330,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """
+        if self is other:
+            return True
         if not isinstance(other, EventedModel):
             return self.dict() == other
 

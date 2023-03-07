@@ -249,7 +249,7 @@ def imshow(
     order=(),
     axis_labels=(),
     show=True,
-) -> Tuple[Viewer, List[Image]]:
+) -> Tuple[Viewer, List["Image"]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
