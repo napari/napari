@@ -356,13 +356,19 @@ def test_on_enabled_checkbox(plugin_dialog, qtbot, plugins, old_plugins):
 
 def test_add_items_outdated(plugin_dialog):
     """Test that a plugin is tagged as outdated (a newer version is available), the update button becomes visible."""
+
+    # The plugin is being added to the available plugins list.  When the dialog is being built
+    # this one will be listed as available, and it will be found as already installed.
+    # Then, it will check if the installed version is a lower version than the one available.
+    # In this case, my-plugin is installed with version 0.1.0, so the one we are trying to install
+    # is newer, so the update button should pop up.
     new_plugin = (
         npe2.PackageMetadata(name="my-plugin", version="0.4.0"),
         True,
         {
             "home_page": 'www.mywebsite.com',
-            "pypi_versions": ['0.3.0'],
-            "conda_versions": ['0.3.0'],
+            "pypi_versions": ['0.4.0'],
+            "conda_versions": ['0.4.0'],
         },
     )
 
