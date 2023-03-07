@@ -364,7 +364,7 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True)
+    @validator('blending', pre=True, always=True, allow_reuse=True)
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 

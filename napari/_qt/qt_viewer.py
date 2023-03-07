@@ -12,6 +12,7 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt import ensure_main_thread
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -245,6 +246,8 @@ class QtViewer(QSplitter):
             'pointing': Qt.CursorShape.PointingHandCursor,
             'standard': Qt.CursorShape.ArrowCursor,
         }
+
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
@@ -522,6 +525,19 @@ class QtViewer(QSplitter):
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
+    @ensure_main_thread
+    def _on_slice_ready(self, event):
+        responses = event.value
+        for layer, response in responses.items():
+            # Update the layer slice state to temporarily support behavior
+            # that depends on it.
+            layer._update_slice_response(response)
+            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
+            # notifies the corresponding vispy layer of the new slice.
+            layer.events.set_data()
+            layer._update_thumbnail()
+            layer._set_highlight(force=True)
+
     def _on_active_change(self):
         """When active layer changes change keymap handler."""
         self._key_map_handler.keymap_providers = (
@@ -565,6 +581,10 @@ class QtViewer(QSplitter):
 
         vispy_layer.node.parent = self.view.scene
         self.layer_to_visual[layer] = vispy_layer
+
+        # ensure correct canvas blending
+        layer.events.visible.connect(self._reorder_layers)
+
         self._reorder_layers()
 
     def _remove_layer(self, event):
@@ -576,6 +596,7 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         layer = event.value
+        layer.events.visible.disconnect(self._reorder_layers)
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
@@ -584,9 +605,19 @@ class QtViewer(QSplitter):
 
     def _reorder_layers(self):
         """When the list is reordered, propagate changes to draw order."""
+        first_visible_found = False
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
+
+            # the bottommost visible layer needs special treatment for blending
+            if layer.visible and not first_visible_found:
+                vispy_layer.first_visible = True
+                first_visible_found = True
+            else:
+                vispy_layer.first_visible = False
+            vispy_layer._on_blending_change()
+
         self.canvas._draw_order.clear()
         self.canvas.update()
 

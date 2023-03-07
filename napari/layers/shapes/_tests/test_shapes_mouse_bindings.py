@@ -772,7 +772,7 @@ def test_all_modes_covered(attr):
     As we do not need to test whether a key is in a dict or not.
     """
     mode_dict = getattr(Shapes, attr)
-    assert {k.value for k in mode_dict.keys()} == set(Mode.keys())
+    assert {k.value for k in mode_dict} == set(Mode.keys())
 
 
 @pytest.mark.parametrize(

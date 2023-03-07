@@ -26,7 +26,7 @@ try:
     major, minor, *_ = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)
     del major, minor, QT_VERSION
-except ImportError:
+except (ImportError, RuntimeError):
     use_gradients = False
 
 
@@ -81,14 +81,15 @@ class Theme(EventedModel):
     error: Color
     current: Color
 
-    @validator("syntax_style", pre=True)
+    @validator("syntax_style", pre=True, allow_reuse=True)
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
-            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            "Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}",
             deferred=True,
             syntax_style=f" {', '.join(STYLE_MAP)}",
+            value=value,
         )
         return value
 

@@ -27,11 +27,11 @@ class Plane(EventedModel):
     normal: Tuple[float, float, float] = (1, 0, 0)
     position: Tuple[float, float, float] = (0, 0, 0)
 
-    @validator('normal')
+    @validator('normal', allow_reuse=True)
     def _normalise_vector(cls, v):
         return tuple(v / np.linalg.norm(v))
 
-    @validator('normal', 'position', pre=True)
+    @validator('normal', 'position', pre=True, allow_reuse=True)
     def _ensure_tuple(cls, v):
         return tuple(v)
 

@@ -169,11 +169,11 @@ def test_equality():
     )
 
     assert text_manager_1 == text_manager_2
-    assert not (text_manager_1 != text_manager_2)
+    assert text_manager_1 == text_manager_2
 
     text_manager_2.color = 'blue'
     assert text_manager_1 != text_manager_2
-    assert not (text_manager_1 == text_manager_2)
+    assert text_manager_1 != text_manager_2
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')

@@ -83,7 +83,7 @@ class ShortcutEditor(QWidget):
                 actions = {}
             else:
                 actions = action_manager._get_provider_actions(layer)
-                for name in actions.keys():
+                for name in actions:
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
 
@@ -510,7 +510,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for action_name in action_manager._actions.keys():
+        for action_name in action_manager._actions:
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 
@@ -600,7 +600,7 @@ class EditorWidget(QLineEdit):
         keys_li = []
         # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
         for val in parsed:
-            if val in KEY_SUBS.keys():
+            if val in KEY_SUBS:
                 keys_li.append(KEY_SUBS[val])
             else:
                 keys_li.append(val)

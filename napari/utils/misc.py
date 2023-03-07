@@ -147,17 +147,14 @@ def is_iterable(arg, color=False, allow_none=False):
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None and not allow_none:
-        return False
-    elif type(arg) is str:
-        return False
-    elif np.isscalar(arg):
+    if (
+        (arg is None and not allow_none)
+        or isinstance(arg, str)
+        or np.isscalar(arg)
+    ):
         return False
     elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
-            return False
-        else:
-            return True
+        return np.array(arg).ndim != 1 or len(arg) not in [3, 4]
     else:
         return True
 
@@ -234,18 +231,18 @@ def ensure_sequence_of_iterables(
         obj is not None
         and is_sequence(obj)
         and all(is_iterable(el, allow_none=allow_none) for el in obj)
+        and (not repeat_empty or len(obj) > 0)
     ):
         if length is not None and len(obj) != length:
-            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
-                # sequence of iterables of wrong length
-                raise ValueError(
-                    trans._(
-                        "length of {obj} must equal {length}",
-                        deferred=True,
-                        obj=obj,
-                        length=length,
-                    )
+            # sequence of iterables of wrong length
+            raise ValueError(
+                trans._(
+                    "length of {obj} must equal {length}",
+                    deferred=True,
+                    obj=obj,
+                    length=length,
                 )
+            )
 
         if len(obj) > 0 or not repeat_empty:
             return obj

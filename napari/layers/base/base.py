@@ -374,6 +374,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            reload=Event,
             extent=Event,
             _overlays=Event,
             select=WarningEmitter(
@@ -868,9 +869,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                thumbnail = convert_to_uint8(thumbnail)
+            thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
@@ -977,7 +976,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def _slice_dims(self, point=None, ndisplay=2, order=None):
+    def _slice_dims(
+        self, point=None, ndisplay=2, order=None, force: bool = False
+    ):
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -991,20 +992,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order : list of int
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
+        force: bool
+            True if slicing should be forced to occur, even when some cache thinks
+            it already has a valid slice ready. False otherwise.
         """
         slice_input = self._make_slice_input(point, ndisplay, order)
-        if self._slice_input == slice_input:
-            return
-        self._slice_input = slice_input
-        self.refresh()
+        if force or (self._slice_input != slice_input):
+            self._slice_input = slice_input
+            self.refresh()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
     ) -> _SliceInput:
-        if point is None:
-            point = (0,) * self.ndim
-        else:
-            point = tuple(point)
+        point = (0,) * self.ndim if point is None else tuple(point)
 
         ndim = len(point)
 
@@ -1608,7 +1608,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.events.reload(Event('reload', layer=self))
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
