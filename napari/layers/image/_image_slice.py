@@ -137,6 +137,7 @@ class ImageSlice:
         bool
             True if the data was used, False if was for the wrong slice.
         """
+        print('on_loaded')
         if not self.loader.match(data):
             return False  # data was not used.
 

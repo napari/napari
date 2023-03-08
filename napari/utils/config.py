@@ -55,7 +55,7 @@ https://github.com/napari/napari/pull/1909.
 octree_config = get_octree_config()
 
 # Shorthand for async loading with or without an octree.
-async_loading = octree_config is not None
+async_loading = False
 
 # Shorthand for async with an octree.
 async_octree = octree_config and octree_config['octree']['enabled']

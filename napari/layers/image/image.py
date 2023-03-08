@@ -786,6 +786,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Update the slice output state currently on the layer."""
         self._slice_input = response.dims
 
+        # TODO: remove the following 2 lines:
         # For the old experimental async code.
         self._empty = False
         slice_data = self._SliceDataClass(
@@ -797,6 +798,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         self._transforms[0] = response.tile_to_data
 
+        # TODO remove the following line
         # For the old experimental async code, where loading might be sync
         # or async.
         self._load_slice(slice_data)
@@ -827,6 +829,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         ----------
         data : Slice
         """
+        print('_load_slice')
         if self._slice.load(data):
             # The load was synchronous.
             self._on_data_loaded(data, sync=True)
@@ -992,20 +995,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return [p + 0.5 for p in position]
 
-    # For async we add an on_chunk_loaded() method.
-    if config.async_loading:
+    # # For async we add an on_chunk_loaded() method.
+    # if config.async_loading:
 
-        def on_chunk_loaded(self, request: ChunkRequest) -> None:
-            """An asynchronous ChunkRequest was loaded.
+    #     def on_chunk_loaded(self, request: ChunkRequest) -> None:
+    #         """An asynchronous ChunkRequest was loaded.
 
-            Parameters
-            ----------
-            request : ChunkRequest
-                This request was loaded.
-            """
-            # Convert the ChunkRequest to SliceData and use it.
-            data = self._SliceDataClass.from_request(self, request)
-            self._on_data_loaded(data, sync=False)
+    #         Parameters
+    #         ----------
+    #         request : ChunkRequest
+    #             This request was loaded.
+    #         """
+    #         # Convert the ChunkRequest to SliceData and use it.
+    #         data = self._SliceDataClass.from_request(self, request)
+    #         self._on_data_loaded(data, sync=False)
 
 
 class Image(_ImageBase):
