@@ -871,9 +871,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                thumbnail = convert_to_uint8(thumbnail)
+            thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
