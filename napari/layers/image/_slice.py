@@ -71,7 +71,7 @@ class _ImageSliceRequest:
 
     dims: _SliceInput
     data: Any = field(repr=False)
-    dask_indexer: DaskIndexer
+    dask_indexer: DaskIndexer = field(repr=False)
     indices: Tuple[Union[int, slice], ...]
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray

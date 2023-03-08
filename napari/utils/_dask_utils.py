@@ -2,6 +2,8 @@
 """
 import collections.abc
 import contextlib
+import logging
+from threading import RLock
 from typing import Callable, ContextManager, Optional, Tuple
 
 import dask
@@ -13,9 +15,14 @@ from dask.cache import Cache
 #: this is a global cache (all layers will use it), but individual layers
 #: can opt out using Layer(..., cache=False)
 _DASK_CACHE = Cache(1)
+# The dask cache is not thread safe, so guard access.
+# See https://github.com/napari/napari/issues/5591
+_DASK_CACHE_LOCK = RLock()
 _DEFAULT_MEM_FRACTION = 0.25
 
 DaskIndexer = Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]
+
+logger = logging.getLogger("napari.utils._dask_utils")
 
 
 def resize_dask_cache(
@@ -61,19 +68,24 @@ def resize_dask_cache(
     if nbytes is None and mem_fraction is not None:
         nbytes = virtual_memory().total * mem_fraction
 
-    avail = _DASK_CACHE.cache.available_bytes
-    # if we don't have a cache already, create one.
-    if avail == 1:
-        # If neither nbytes nor mem_fraction was provided, use default
-        if nbytes is None:
-            nbytes = virtual_memory().total * _DEFAULT_MEM_FRACTION
-        _DASK_CACHE.cache.resize(nbytes)
-    elif nbytes is not None and nbytes != _DASK_CACHE.cache.available_bytes:
-        # if the cache has already been registered, then calling
-        # resize_dask_cache() without supplying either mem_fraction or nbytes
-        # is a no-op:
-        _DASK_CACHE.cache.resize(nbytes)
-    return _DASK_CACHE
+    with _DASK_CACHE_LOCK:
+        avail = _DASK_CACHE.cache.available_bytes
+        # if we don't have a cache already, create one.
+        if avail == 1:
+            # If neither nbytes nor mem_fraction was provided, use default
+            if nbytes is None:
+                nbytes = virtual_memory().total * _DEFAULT_MEM_FRACTION
+            logger.debug('resize_dask_cache: resizing to %d bytes', nbytes)
+            _DASK_CACHE.cache.resize(nbytes)
+        elif (
+            nbytes is not None and nbytes != _DASK_CACHE.cache.available_bytes
+        ):
+            # if the cache has already been registered, then calling
+            # resize_dask_cache() without supplying either mem_fraction or nbytes
+            # is a no-op:
+            logger.debug('resize_dask_cache: resizing to %d bytes', nbytes)
+            _DASK_CACHE.cache.resize(nbytes)
+        return _DASK_CACHE
 
 
 def _is_dask_data(data) -> bool:
@@ -135,11 +147,12 @@ def configure_dask(data, cache=True) -> DaskIndexer:
         return contextlib.nullcontext
 
     _cache = resize_dask_cache() if cache else contextlib.nullcontext()
+    lock = _DASK_CACHE_LOCK if cache else contextlib.nullcontext()
 
     @contextlib.contextmanager
     def dask_optimized_slicing(memfrac=0.5):
         opts = {"optimization.fuse.active": False}
-        with dask.config.set(opts) as cfg, _cache as c:
+        with dask.config.set(opts) as cfg, lock, _cache as c:
             yield cfg, c
 
     return dask_optimized_slicing
