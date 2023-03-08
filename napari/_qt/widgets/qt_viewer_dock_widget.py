@@ -272,7 +272,6 @@ class QtViewerDockWidget(QDockWidget):
 
                 viewer.window.plugins_menu.actions()[idx].setChecked(visible)
 
-            self.setVisible(visible)
             # AttributeError: This error happens when the plugins menu is not yet built.
             # ValueError: This error is when the action is from the windows menu.
 
