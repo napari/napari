@@ -46,7 +46,6 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.components import Dims
-    from napari.components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
