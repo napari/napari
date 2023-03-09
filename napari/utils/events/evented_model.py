@@ -270,6 +270,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._super_setattr_(name, value)
             return
 
+        # equality comparisons may be expensive, so just avoid them if
+        # event has no callbacks connected
+        emitter = getattr(self.events, name)
+        if not emitter.callbacks:
+            self._super_setattr_(name, value)
+
         # grab current value
         before = getattr(self, name, object())
         before_deps = {}
@@ -293,16 +299,18 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if not are_equal(after, before):
-            getattr(self.events, name)(value=after)  # emit event
+            emitter(value=after)  # emit event
 
             # emit events for any dependent computed properties as well
             for dep in before_deps:
-                # NOTE: this comparison might be expensive! If it is too much, we
-                #       can always remove the are_equal check and fire events for
-                #       all dependents indiscriminately
+                # equality comparisons may be expensive, so just avoid them if
+                # event has no callbacks connected
+                dep_emitter = getattr(self.events, dep)
+                if not emitter.callbacks:
+                    continue
                 are_equal = pick_equality_operator(after_deps[dep])
                 if not are_equal(after_deps[dep], before_deps[dep]):
-                    getattr(self.events, dep)(value=after_deps[dep])
+                    dep_emitter(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property
