@@ -389,8 +389,8 @@ def _install_npe2_themes(themes=None):
             theme_dict.update(theme_colors)
             try:
                 register_theme(theme.id, theme_dict, manifest.name)
-            except ValueError as e:
-                logging.exception("Registration theme failed.\n%s", e)
+            except ValueError:
+                logging.exception("Registration theme failed.")
 
 
 _install_npe2_themes(_themes)
