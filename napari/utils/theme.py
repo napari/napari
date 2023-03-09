@@ -1,5 +1,6 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
+import logging
 import re
 import warnings
 from ast import literal_eval
@@ -86,9 +87,10 @@ class Theme(EventedModel):
         from pygments.styles import STYLE_MAP
 
         assert value in STYLE_MAP, trans._(
-            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            "Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}",
             deferred=True,
             syntax_style=f" {', '.join(STYLE_MAP)}",
+            value=value,
         )
         return value
 
@@ -385,7 +387,10 @@ def _install_npe2_themes(themes=None):
             theme_colors = theme.colors.dict(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
-            register_theme(theme.id, theme_dict, manifest.name)
+            try:
+                register_theme(theme.id, theme_dict, manifest.name)
+            except ValueError as e:
+                logging.exception("Registration theme failed.\n%s", e)
 
 
 _install_npe2_themes(_themes)
