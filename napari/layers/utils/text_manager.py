@@ -109,7 +109,6 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = text
         super().__init__(**kwargs)
-        self.events.add(values=Event)
         self.apply(features)
 
     @property
