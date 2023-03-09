@@ -143,6 +143,7 @@ fix = true
 "tools/**" = ["INP001", "T20"]
 "examples/**" = ["INP001", "T20"]
 "bundle.py" = ["T20"]
+"**/vendored/**" = ["TID"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
