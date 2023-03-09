@@ -271,12 +271,32 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return
 
         # grab current value
+        field_dep = self.__field_dependents__.get(name, {})
+        has_callbacks = {
+            name: bool(getattr(self.events, name).callbacks)
+            for name in field_dep
+        }
+        emitter = getattr(self.events, name)
+        # equality comparisons may be expensive, so just avoid them if
+        # event has no callbacks connected
+        if not (
+            emitter.callbacks
+            or self._events.callbacks
+            or any(has_callbacks.values())
+        ):
+            self._super_setattr_(name, value)
+            return
+
+        dep_with_callbacks = [
+            dep for dep, has_cb in has_callbacks.items() if has_cb
+        ]
+
         before = getattr(self, name, object())
         before_deps = {}
         with warnings.catch_warnings():
             # we still need to check for deprecated properties
             warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in self.__field_dependents__.get(name, {}):
+            for dep in dep_with_callbacks:
                 before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
@@ -288,21 +308,23 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with warnings.catch_warnings():
             # we still need to check for deprecated properties
             warnings.simplefilter("ignore", DeprecationWarning)
-            for dep in self.__field_dependents__.get(name, {}):
+            for dep in dep_with_callbacks:
                 after_deps[dep] = getattr(self, dep, object())
 
         are_equal = self.__eq_operators__.get(name, operator.eq)
-        if not are_equal(after, before):
-            getattr(self.events, name)(value=after)  # emit event
+        if are_equal(after, before):
+            # no change
+            return
+        emitter(value=after)  # emit event
 
-            # emit events for any dependent computed properties as well
-            for dep in before_deps:
-                # NOTE: this comparison might be expensive! If it is too much, we
-                #       can always remove the are_equal check and fire events for
-                #       all dependents indiscriminately
-                are_equal = pick_equality_operator(after_deps[dep])
-                if not are_equal(after_deps[dep], before_deps[dep]):
-                    getattr(self.events, dep)(value=after_deps[dep])
+        # emit events for any dependent computed properties as well
+        for dep in before_deps:
+            # NOTE: this comparison might be expensive! If it is too much, we
+            #       can always remove the are_equal check and fire events for
+            #       all dependents indiscriminately
+            are_equal = pick_equality_operator(after_deps[dep])
+            if not are_equal(after_deps[dep], before_deps[dep]):
+                getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property
