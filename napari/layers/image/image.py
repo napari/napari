@@ -828,7 +828,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         ----------
         data : Slice
         """
-        print('_load_slice')
         if self._slice.load(data):
             # The load was synchronous.
             self._on_data_loaded(data, sync=True)

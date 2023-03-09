@@ -208,6 +208,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+        settings.experimental.events.async_.connect(
+            self._update_async
+        )
 
         # Add extra events - ideally these will be removed too!
         self.events.add(
@@ -451,6 +454,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
+
+    def _update_async(self, event: Event) -> None:
+        """Set layer slicer to force synchronous if async is disabled."""
+        self._layer_slicer._force_sync = not event.value
 
     def _update_status_bar_from_cursor(self, event=None):
         """Update the status bar based on the current cursor position.

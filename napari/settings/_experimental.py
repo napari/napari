@@ -16,7 +16,7 @@ class ExperimentalSettings(EventedSettings):
             "Asynchronous loading of image data. \nThis setting partially loads data while viewing. \nYou must restart napari for changes of this setting to apply."
         ),
         env="napari_async",
-        requires_restart=True,
+        requires_restart=False,
     )
     octree: Union[bool, str] = Field(
         False,
