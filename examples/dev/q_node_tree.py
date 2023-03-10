@@ -21,7 +21,7 @@ from napari.utils.tree import Group, Node
 
 get_app()
 
-# create a group of nodes. 
+# create a group of nodes.
 root = Group(
     [
         Node(name='6'),

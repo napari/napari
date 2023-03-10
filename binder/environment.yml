@@ -25,7 +25,7 @@ dependencies:
 - pydantic >=1.8.1
 - qtpy >=1.7.0
 - scipy >=1.2.0
-- superqt >=0.2.2
+- superqt >=0.4.1
 - tifffile >=2020.2.16
 - typing_extensions
 - toolz >=0.10.0

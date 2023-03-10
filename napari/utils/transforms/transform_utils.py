@@ -286,7 +286,7 @@ def expand_upper_triangular(vector):
     """
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
-    if N != np.floor(N):
+    if np.floor(N) != N:
         raise ValueError(
             trans._(
                 '{number} is a strange number of shear elements',

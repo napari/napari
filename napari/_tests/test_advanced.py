@@ -176,7 +176,7 @@ def test_update_console(make_napari_viewer):
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
-    for k in locs.keys():
+    for k in locs:
         del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 

@@ -555,10 +555,7 @@ def point_in_quadrilateral_2d(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
     in_triangles = inside_triangles(triangle_vertices - point)
-    if in_triangles.sum() < 1:
-        return False
-    else:
-        return True
+    return in_triangles.sum() >= 1
 
 
 def line_in_quadrilateral_3d(
@@ -690,16 +687,15 @@ def find_front_back_face(
 
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
-        if (np.dot(view_dir, v) + 0.001) < 0:
+        if np.dot(view_dir, v) < -0.001:
             if line_in_quadrilateral_3d(
                 click_pos, view_dir, bbox_face_coords[k]
             ):
                 front_face_normal = v
-        elif (np.dot(view_dir, v) + 0.001) > 0:
-            if line_in_quadrilateral_3d(
-                click_pos, view_dir, bbox_face_coords[k]
-            ):
-                back_face_normal = v
+        elif line_in_quadrilateral_3d(
+            click_pos, view_dir, bbox_face_coords[k]
+        ):
+            back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
             break
