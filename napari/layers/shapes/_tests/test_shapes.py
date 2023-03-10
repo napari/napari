@@ -1715,9 +1715,8 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Shapes(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1790,7 +1789,7 @@ def test_edge_width():
 
     # Test setting edge width with number
     layer.edge_width = 4
-    assert all([width == 4 for width in layer.edge_width])
+    assert all(width == 4 for width in layer.edge_width)
 
     # Test setting edge width with list
     new_widths = [2] * 5 + [3] * 4
@@ -1835,7 +1834,7 @@ def test_z_index():
 
     # Test setting index with number
     layer.z_index = 4
-    assert all([idx == 4 for idx in layer.z_index])
+    assert all(idx == 4 for idx in layer.z_index)
 
     # Test setting index with list
     new_z_indices = [2] * 5 + [3] * 4

@@ -48,6 +48,7 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
+import contextlib
 import inspect
 import os
 import warnings
@@ -1222,11 +1223,9 @@ def _is_pos_arg(param: inspect.Parameter):
     )
 
 
-try:
+with contextlib.suppress(ImportError):
     # this could move somewhere higher up in napari imports ... but where?
     __import__('dotenv').load_dotenv()
-except ImportError:
-    pass
 
 
 def _noop(*a, **k):

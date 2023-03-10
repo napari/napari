@@ -1064,9 +1064,8 @@ def test_colormap_with_categorical_properties(attribute):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=properties)
 
-    with pytest.raises(TypeError):
-        with pytest.warns(UserWarning):
-            setattr(layer, f'{attribute}_color_mode', 'colormap')
+    with pytest.raises(TypeError), pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -2488,7 +2487,7 @@ def test_point_slice_request_response(dims_indices, target_indices):
     response = request()
 
     assert len(response.indices) == len(target_indices)
-    assert all([a == b for a, b in zip(response.indices, target_indices)])
+    assert all(a == b for a, b in zip(response.indices, target_indices))
 
 
 def test_editable_and_visible_are_independent():

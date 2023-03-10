@@ -156,18 +156,18 @@ class ColorManager(EventedModel):
     )
 
     # validators
-    @validator('continuous_colormap', pre=True)
+    @validator('continuous_colormap', pre=True, allow_reuse=True)
     def _ensure_continuous_colormap(cls, v):
         return ensure_colormap(v)
 
-    @validator('colors', pre=True)
+    @validator('colors', pre=True, allow_reuse=True)
     def _ensure_color_array(cls, v):
         if len(v) > 0:
             return transform_color(v)
         else:
             return np.empty((0, 4))
 
-    @validator('current_color', pre=True)
+    @validator('current_color', pre=True, allow_reuse=True)
     def _coerce_current_color(cls, v):
         if v is None:
             return v
@@ -176,7 +176,7 @@ class ColorManager(EventedModel):
         else:
             return transform_color(v)[0]
 
-    @root_validator()
+    @root_validator(allow_reuse=True)
     def _validate_colors(cls, values):
         color_mode = values['color_mode']
         if color_mode == ColorMode.CYCLE:
@@ -301,10 +301,7 @@ class ColorManager(EventedModel):
             (i.e., reset the range to 0-new_max_value).
         """
         if self.color_mode == ColorMode.DIRECT:
-            if color is None:
-                new_color = self.current_color
-            else:
-                new_color = color
+            new_color = self.current_color if color is None else color
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=new_color,
