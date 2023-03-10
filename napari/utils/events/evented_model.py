@@ -104,6 +104,15 @@ class EventedMetaclass(main.ModelMetaclass):
         for name, attr in namespace.items():
             if isinstance(attr, property):
                 cls.__properties__[name] = attr
+                # determine compare operator
+                if (
+                    hasattr(attr.fget, "__annotations__")
+                    and "return" in attr.fget.__annotations__
+                ):
+                    cls.__eq_operators__[name] = pick_equality_operator(
+                        attr.fget.__annotations__["return"]
+                    )
+
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
@@ -318,9 +327,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         emitter(value=after)  # emit event
 
         # emit events for any dependent computed properties as well
-        for dep in before_deps:
-            are_equal = pick_equality_operator(after_deps[dep])
-            if not are_equal(after_deps[dep], before_deps[dep]):
+        for dep, value_ in before_deps.items():
+            if dep in self.__eq_operators__:
+                are_equal = self.__eq_operators__[dep]
+            else:
+                are_equal = pick_equality_operator(after_deps[dep])
+            if not are_equal(after_deps[dep], value_):
                 getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically

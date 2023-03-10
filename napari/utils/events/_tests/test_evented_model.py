@@ -1,4 +1,5 @@
 import inspect
+import operator
 from enum import auto
 from typing import ClassVar, List, Protocol, Sequence, Union, runtime_checkable
 from unittest.mock import Mock
@@ -573,3 +574,93 @@ def test_evented_model_with_provided_dependencies():
 
             class Config:
                 dependencies = {'b': ['x']}
+
+
+def test_property_get_eq_operator():
+    """Test if the __eq_operators__ for properties are properly recognized"""
+
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> float:  # pragma: no cover
+            return self.a * 2
+
+        @property
+        def c(self):  # pragma: no cover
+            return self.a * 3
+
+    assert Tt.__eq_operators__ == {'a': operator.eq, 'b': operator.eq}
+
+
+def test_reduce_event(monkeypatch):
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> float:
+            return self.a * 2
+
+        @property
+        def c(self):
+            return self.a * 3
+
+    eq_op_get = Mock(return_value=operator.eq)
+    monkeypatch.setattr(
+        "napari.utils.events.evented_model.pick_equality_operator", eq_op_get
+    )
+
+    t = Tt()
+
+    a_eq = Mock(return_value=False)
+    b_eq = Mock(return_value=False)
+
+    t.__eq_operators__["a"] = a_eq
+    t.__eq_operators__["b"] = b_eq
+
+    t.a = 2
+    a_eq.assert_not_called()
+    b_eq.assert_not_called()
+
+    call1 = Mock()
+    t.events.a.connect(call1)
+
+    t.a = 3
+
+    call1.assert_called_once()
+    assert call1.call_args.args[0].value == 3
+    a_eq.assert_called_once()
+    b_eq.assert_not_called()
+    eq_op_get.assert_not_called()
+
+    call2 = Mock()
+    t.events.b.connect(call2)
+    call1.reset_mock()
+    a_eq.reset_mock()
+
+    t.a = 4
+    call1.assert_called_once()
+    call2.assert_called_once()
+    assert call1.call_args.args[0].value == 4
+    assert call2.call_args.args[0].value == 8
+    a_eq.assert_called_once()
+    b_eq.assert_called_once()
+    eq_op_get.assert_not_called()
+
+    call3 = Mock()
+    t.events.c.connect(call3)
+    call1.reset_mock()
+    call2.reset_mock()
+    a_eq.reset_mock()
+    b_eq.reset_mock()
+
+    t.a = 3
+    call1.assert_called_once()
+    call2.assert_called_once()
+    call3.assert_called_once()
+    assert call1.call_args.args[0].value == 3
+    assert call2.call_args.args[0].value == 6
+    assert call3.call_args.args[0].value == 9
+    a_eq.assert_called_once()
+    b_eq.assert_called_once()
+    eq_op_get.assert_called_once_with(9)
