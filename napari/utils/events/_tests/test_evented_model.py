@@ -593,7 +593,7 @@ def test_property_get_eq_operator():
     assert Tt.__eq_operators__ == {'a': operator.eq, 'b': operator.eq}
 
 
-def test_reduce_event(monkeypatch):
+def test_events_are_fired_only_if_necessary(monkeypatch):
     class Tt(EventedModel):
         a: int = 1
 
