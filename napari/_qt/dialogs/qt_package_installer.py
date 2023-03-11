@@ -201,7 +201,8 @@ class CondaInstallerTool(AbstractInstallerTool):
     ) -> QProcessEnvironment:
         if env is None:
             env = QProcessEnvironment.systemEnvironment()
-            # Fix for macOS, related to https://github.com/napari/napari/pull/5531
+            # Fix for macOS when napari launched from terminal
+            # related to https://github.com/napari/napari/pull/5531
             env.remove("PYTHONEXECUTABLE")
         self._add_constraints_to_env(env)
         if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
