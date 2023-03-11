@@ -560,6 +560,7 @@ class QPluginList(QListWidget):
         tool = (
             InstallerTools.CONDA
             if item.widget.source_choice_dropdown.currentText() == CONDA
+            or is_conda_package(pkg_name)
             else InstallerTools.PIP
         )
 
