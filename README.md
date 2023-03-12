@@ -61,7 +61,7 @@ viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 
-## features
+## featuress
 
 Check out the scripts in our [`examples` folder](examples) to see some of the functionality we're developing!
 
