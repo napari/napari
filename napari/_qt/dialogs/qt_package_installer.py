@@ -201,9 +201,6 @@ class CondaInstallerTool(AbstractInstallerTool):
     ) -> QProcessEnvironment:
         if env is None:
             env = QProcessEnvironment.systemEnvironment()
-            # Fix for macOS when napari launched from terminal
-            # related to https://github.com/napari/napari/pull/5531
-            env.remove("PYTHONEXECUTABLE")
         self._add_constraints_to_env(env)
         if 10 <= log.getEffectiveLevel() < 30:  # DEBUG level
             env.insert('CONDA_VERBOSITY', '3')
@@ -215,6 +212,10 @@ class CondaInstallerTool(AbstractInstallerTool):
             if not env.contains("USERPROFILE"):
                 env.insert("HOME", os.path.expanduser("~"))
                 env.insert("USERPROFILE", os.path.expanduser("~"))
+        if sys.platform == 'darwin' and env.contains('PYTHONEXECUTABLE'):
+            # Fix for macOS when napari launched from terminal
+            # related to https://github.com/napari/napari/pull/5531
+            env.remove("PYTHONEXECUTABLE")
         return env
 
     @staticmethod
