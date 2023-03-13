@@ -413,7 +413,7 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
         spec = importlib.util.spec_from_file_location(module_name, fpath)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-    except ImportError:
+    except ModuleNotFoundError:
         module = None
 
     return module
