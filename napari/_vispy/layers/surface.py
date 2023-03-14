@@ -44,11 +44,10 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def _on_data_change(self):
         ndisplay = self.layer._slice_input.ndisplay
-        if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
-            vertices = None
-            faces = None
-            vertex_values = np.array([0])
-        else:
+        vertices = None
+        faces = None
+        vertex_values = None
+        if len(self.layer._data_view) and len(self.layer._view_faces):
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
             # reverse order to get zyx instead of xyz
@@ -57,22 +56,15 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
             # due to above xyz>zyx, also reverse order of faces to fix handedness of normals
             faces = self.layer._view_faces[:, ::-1]
-            vertex_values = self.layer._view_vertex_values
 
-        if vertices is not None and ndisplay == 3 and self.layer.ndim == 2:
+            values = self.layer._view_vertex_values
+            if len(values):
+                vertex_values = values
+
+        # making sure the vertex data is 3D prevents shape errors with
+        # attached filters, instead of trying to attach/detach each time
+        if vertices is not None and vertices.shape[-1] == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
-
-        # manually detach filters when we go to 2D to avoid dimensionality issues
-        # see comments in napari#3475. The filter is set again after set_data!
-        if ndisplay == 2:
-            filt = self.node.shading_filter
-            try:
-                self.node.detach(filt)
-                self.node.shading = None
-                self.node.shading_filter = None
-            except ValueError:
-                # sometimes we try to detach non-attached filters, which causes a ValueError
-                pass
 
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
