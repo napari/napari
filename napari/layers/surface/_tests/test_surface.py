@@ -214,6 +214,44 @@ def test_shading():
     assert layer.shading == shading
 
 
+def test_texture():
+    """Test setting texture"""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+
+    texture = np.random.random((32, 32, 3)).astype(np.float32)
+    texcoords = vertices[:, :2]
+    layer = Surface(data, texture=texture, texcoords=texcoords)
+
+    np.testing.assert_allclose(layer.texture, texture)
+    np.testing.assert_allclose(layer.texcoords, texcoords)
+
+    assert layer._has_texture
+    layer.texture = None
+    assert not layer._has_texture
+    layer.texcoords = None
+    assert not layer._has_texture
+    layer.texture = texture
+    assert not layer._has_texture
+    layer.texcoords = texcoords
+    assert layer._has_texture
+
+
+def test_colors():
+    """Test setting vertex colors"""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+
+    layer = Surface(data, vertex_colors=data[0] + 0.5)
+    np.testing.assert_allclose(layer.vertex_colors, data[0] + 0.5)
+
+
 @pytest.mark.parametrize(
     "ray_start,ray_direction,expected_value,expected_index",
     [
