@@ -593,6 +593,23 @@ def test_property_get_eq_operator():
     assert Tt.__eq_operators__ == {'a': operator.eq, 'b': operator.eq}
 
 
+def test_property_str_annotation():
+    """Test if the __str_annotations__ for properties are properly recognized"""
+
+    class Tt(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> "np.ndarray":  # pragma: no cover
+            return np.ndarray([self.a, self.a])
+
+        @property
+        def c(self):  # pragma: no cover
+            return self.a * 3
+
+    assert Tt.__eq_operators__ == {'a': operator.eq}
+
+
 def test_events_are_fired_only_if_necessary(monkeypatch):
     class Tt(EventedModel):
         a: int = 1

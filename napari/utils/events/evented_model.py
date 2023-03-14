@@ -108,6 +108,9 @@ class EventedMetaclass(main.ModelMetaclass):
                 if (
                     hasattr(attr.fget, "__annotations__")
                     and "return" in attr.fget.__annotations__
+                    and not isinstance(
+                        attr.fget.__annotations__["return"], str
+                    )
                 ):
                     cls.__eq_operators__[name] = pick_equality_operator(
                         attr.fget.__annotations__["return"]
