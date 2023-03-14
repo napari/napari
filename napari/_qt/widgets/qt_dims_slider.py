@@ -35,7 +35,6 @@ class QtDimSliderWidget(QWidget):
     This widget *must* be instantiated with a parent QtDims.
     """
 
-    axis_label_changed = Signal(int, str)  # axis, label
     fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
@@ -193,12 +192,10 @@ class QtDimSliderWidget(QWidget):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
         self.axis_label.setText(label)
-        self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
         """Update dimension slider label."""
         self.dims.set_axis_label(self.axis, self.axis_label.text())
-        self.axis_label_changed.emit(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):
         """Clear focus from dimension slider label."""
