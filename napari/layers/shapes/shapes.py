@@ -1487,9 +1487,9 @@ class Shapes(Layer):
         state = self._get_base_state()
         face_color = self.face_color
         edge_color = self.edge_color
-        if len(face_color) == 0:
+        if not face_color.size:
             face_color = self._current_face_color
-        if len(edge_color) == 0:
+        if not edge_color.size:
             edge_color = self._current_edge_color
         state.update(
             {

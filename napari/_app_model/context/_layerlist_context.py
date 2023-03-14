@@ -131,7 +131,7 @@ def _active_is_image_3d(s: LayerSel) -> bool:
 
 
 def _empty_shapes_layer_selected(s: LayerSel) -> bool:
-    return any(x._type_string == "shapes" and len(x.data) == 0 for x in s)
+    return any(x._type_string == "shapes" and not x.size for x in s)
 
 
 class LayerListContextKeys(ContextNamespace['LayerSel']):
