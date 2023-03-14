@@ -234,7 +234,7 @@ class LayerDelegate(QStyledItemDelegate):
                 layer.visible = layer == clicked_layer  # hide others
             # make a note that this layer was alt-clicked
             self._alt_click_layer = ref(clicked_layer)
-        elif self._alt_click_layer() == clicked_layer:
+        elif self._alt_click_layer() is clicked_layer:
             # second alt-click on same layer, so restore visibility
             # account for any added/deleted layers when restoring
             for layer in layer_list:
@@ -249,7 +249,7 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             # option-click on a different layer, hide others, show it
             for layer in layer_list:
-                layer.visible = layer == clicked_layer
+                layer.visible = layer is clicked_layer
             # make a note that this layer was alt-clicked
             self._alt_click_layer = ref(clicked_layer)
 
