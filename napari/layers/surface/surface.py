@@ -27,10 +27,12 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
     Surface layer renders meshes onto the canvas.
 
-    Note that surfaces may be colored by, in descending priority:
+    Note that surfaces may be colored by:
         * texture (requires both texture and texcoords to be set)
-        * vertex_colors
-        * vertex_values (colormap)
+        AND
+            * vertex_colors (higher precedence)
+            OR
+            * vertex_values + colormap
 
     Parameters
     ----------
@@ -221,7 +223,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             normals=Event,
             texture=Event,
             texcoords=Event,
-            vertex_colors=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -335,6 +336,8 @@ class Surface(IntensityVisualizationMixin, Layer):
     @vertex_values.setter
     def vertex_values(self, vertex_values: np.ndarray):
         """Array of values (n, 1) used to color vertices with a colormap."""
+        if vertex_values is None:
+            vertex_values = np.ones(len(self._vertices))
 
         self._vertex_values = vertex_values
 
@@ -348,8 +351,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertex_colors.setter
     def vertex_colors(self, vertex_colors: Optional[np.ndarray]):
-        """Array of values (n, 3) used to color vertices."""
-
+        """Array of values (n, 3) used to directly color vertices."""
         self._vertex_colors = vertex_colors
 
         self._update_dims()
@@ -453,22 +455,25 @@ class Surface(IntensityVisualizationMixin, Layer):
     @texture.setter
     def texture(self, texture: np.ndarray):
         self._texture = texture
-
-        self._update_dims()
         self.events.texture(value=self._texture)
-        self._reset_editable()
 
     @property
     def texcoords(self) -> Optional[np.ndarray]:
         return self._texcoords
 
     @texcoords.setter
-    def texcoords(self, texture: np.ndarray):
-        self._texcoords = texture
-
-        self._update_dims()
+    def texcoords(self, texcoords: np.ndarray):
+        self._texcoords = texcoords
         self.events.texcoords(value=self._texcoords)
-        self._reset_editable()
+
+    @property
+    def _has_texture(self) -> bool:
+        """Whether the layer has sufficient data for texturing"""
+        return bool(
+            self.texture is not None
+            and self.texcoords is not None
+            and len(self.texcoords)
+        )
 
     def _get_state(self):
         """Get dictionary of layer state.

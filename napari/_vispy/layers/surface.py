@@ -1,5 +1,6 @@
 import numpy as np
 from vispy.color import Colormap as VispyColormap
+from vispy.geometry import MeshData
 from vispy.visuals.filters import TextureFilter
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -46,68 +47,49 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _init_or_set_texture_filter(self) -> bool:
-        # TODO: support multiple textures, higher-dimensional texcoords
-        texture = self.layer.texture
-        texcoords = self.layer.texcoords
-        layer_has_texture = bool(
-            texture is not None and texcoords is not None and len(texcoords)
-        )
-
-        if not layer_has_texture:
-            return layer_has_texture
-
-        if self._texture_filter is None:
-            self._texture_filter = TextureFilter(texture, texcoords)
-            self.node.attach(self._texture_filter)
-        else:
-            self._texture_filter.texture = texture
-            self._texture_filter.texcoords = texcoords
-
-        return layer_has_texture
-
     def _on_texture_change(self):
         """Update or apply the texture filter"""
-        layer_has_texture = self._init_or_set_texture_filter()
+        if self.layer._has_texture and self._texture_filter is None:
+            self._texture_filter = TextureFilter(
+                self.layer.texture,
+                self.layer.texcoords,
+            )
+            self.node.attach(self._texture_filter)
+        elif self.layer._has_texture:
+            self._texture_filter.texture = self.layer.texture
+            self._texture_filter.texcoords = self.layer.texcoords
 
         if self._texture_filter is not None:
             # TODO: add a texure checkbox to surface layer controls?
-            self._texture_filter.enabled = layer_has_texture
-
-            # make the mesh pure-white to not interfere with the texture
-            # TODO: consider if this is desired or make an option
-            if self._texture_filter.enabled and self._meshdata is not None:
-                self.node.set_data(
-                    vertices=self._meshdata.get_vertices(),
-                    faces=self._meshdata.get_faces(),
-                    color="white",
-                )
-
+            self._texture_filter.enabled = self.layer._has_texture
             self.node.update()
 
     def _on_data_change(self):
+        vertices = None
+        faces = None
         vertex_values = None
         vertex_colors = None
-        if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
-            vertices = None
-            faces = None
-        else:
+        if len(self.layer._data_view) and len(self.layer._view_faces):
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
             # reverse order to get zyx instead of xyz
             vertices = np.asarray(
                 self.layer._data_view[:, ::-1], dtype=np.float32
             )
-            # due to above xyz>zyx, also reverse order of faces to fix handedness of normals
+            # due to above xyz>zyx, also reverse order of faces to fix
+            # handedness of normals
             faces = self.layer._view_faces[:, ::-1]
 
-            if len(self.layer._view_vertex_values):
-                vertex_values = self.layer._view_vertex_values
-            if len(self.layer._view_vertex_colors):
-                vertex_colors = self.layer._view_vertex_colors
+            values = self.layer._view_vertex_values
+            if len(values):
+                vertex_values = values
 
-        # making sure the vertex data is 3D prevents degenerate
-        # normal calculations
+            colors = self.layer._view_vertex_colors
+            if len(colors):
+                vertex_colors = colors
+
+        # making sure the vertex data is 3D prevents shape errors with
+        # attached filters, instead of trying to attach/detach each time
         if vertices is not None and vertices.shape[-1] == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
         assert vertices is None or vertices.shape[-1] == 3
@@ -117,9 +99,14 @@ class VispySurfaceLayer(VispyBaseLayer):
             faces=faces,
             vertex_values=vertex_values,
             vertex_colors=vertex_colors,
+            color="white",
         )
 
-        self._meshdata = self.node.mesh_data
+        # disable normals in 2D to avoid shape errors
+        if self.layer._slice_input.ndisplay == 2:
+            self._meshdata = MeshData()
+        else:
+            self._meshdata = self.node.mesh_data
 
         self._on_face_normals_change()
         self._on_vertex_normals_change()
