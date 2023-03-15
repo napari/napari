@@ -10,7 +10,7 @@ repos:
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.255
+    rev: v0.0.256
     hooks:
       - id: ruff
         exclude: _vendor|vendored
