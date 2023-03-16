@@ -19,6 +19,7 @@ def rng() -> np.random.Generator:
     return np.random.default_rng(0)
 
 
+@pytest.mark.sync_only
 def test_async_slice_image_on_current_step_change(
     make_napari_viewer, qtbot, rng
 ):
@@ -32,6 +33,7 @@ def test_async_slice_image_on_current_step_change(
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[2, :, :])
 
 
+@pytest.mark.sync_only
 def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
@@ -43,6 +45,7 @@ def test_async_slice_image_on_order_change(make_napari_viewer, qtbot, rng):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[:, 2, :])
 
 
+@pytest.mark.sync_only
 def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = rng.random((3, 4, 5))
@@ -54,6 +57,7 @@ def test_async_slice_image_on_ndisplay_change(make_napari_viewer, qtbot, rng):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data)
 
 
+@pytest.mark.sync_only
 def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     viewer = make_napari_viewer()
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
@@ -75,6 +79,7 @@ def test_async_slice_multiscale_image_on_pan(make_napari_viewer, qtbot, rng):
     wait_until_vispy_image_data_equal(qtbot, vispy_image, data[1][1, 0:4, 0:3])
 
 
+@pytest.mark.sync_only
 def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
     viewer = make_napari_viewer()
     data = [rng.random((4, 8, 10)), rng.random((2, 4, 5))]
