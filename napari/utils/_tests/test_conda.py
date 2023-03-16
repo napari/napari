@@ -11,6 +11,10 @@ from napari.utils.conda import is_conda_package
     [
         ("some-package", True),
         ("some-other-package", False),
+        ("some-package-other", False),
+        ("other-some-package", False),
+        ("package", False),
+        ("some", False),
     ],
 )
 def test_is_conda_package(pkg_name, expected, tmp_path):
