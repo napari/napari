@@ -1,7 +1,5 @@
 import importlib.metadata
 import os
-import re
-import sys
 from enum import Enum, auto
 from functools import partial
 from pathlib import Path
@@ -44,6 +42,7 @@ from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari.plugins.npe2api import iter_napari_plugin_info
 from napari.plugins.utils import normalized_name
 from napari.settings import get_settings
+from napari.utils.conda import is_conda_package
 from napari.utils.misc import (
     parse_version,
     running_as_constructor_app,
@@ -57,25 +56,7 @@ SCALE = 1.6
 
 CONDA = 'Conda'
 PYPI = 'PyPI'
-
-
-def is_conda_package(pkg: str):
-    """Determines if plugin was installed through conda.
-
-    Returns
-    -------
-    bool: True if a conda package, False if not
-    """
-
-    # Installed conda packages within a conda installation and environment can be identified as files
-    # with the template `<package-name>-<version>-<build-string>.json` saved within a `conda-meta` folder within
-    # the given environment of interest.
-
-    conda_meta_dir = Path(sys.prefix) / 'conda-meta'
-    return any(
-        re.match(rf"{pkg}-[^-]+-[^-]+.json", p.name)
-        for p in conda_meta_dir.glob(f"{pkg}-*-*.json")
-    )
+_IS_NAPARI_CONDA_INSTALLED = is_conda_package('napari')
 
 
 class PluginListItem(QFrame):
@@ -329,7 +310,10 @@ class PluginListItem(QFrame):
         if len(self._versions_pypi) is not None:
             self.source_choice_dropdown.addItem(PYPI)
 
-        if len(self._versions_conda) is not None:
+        if (
+            _IS_NAPARI_CONDA_INSTALLED
+            and len(self._versions_conda) is not None
+        ):
             self.source_choice_dropdown.addItem(CONDA)
 
         self.source_choice_dropdown.currentTextChanged.connect(
