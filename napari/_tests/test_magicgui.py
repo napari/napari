@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import time
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pytest
@@ -12,6 +12,12 @@ from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.misc import all_subclasses
+
+if TYPE_CHECKING:
+    import typing
+
+    import napari.types
+
 
 try:
     import qtpy  # noqa
@@ -53,6 +59,27 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert len(viewer.layers) == 1
     assert isinstance(viewer.layers[0], LayerType)
     assert viewer.layers[0].source.widget == add_data
+
+
+def test_add_layer_data_to_viewer_optional(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    @magicgui
+    def func_optional(a: bool) -> 'typing.Optional[napari.types.ImageData]':
+        if a:
+            return np.zeros((10, 10))
+        return None
+
+    viewer.window.add_dock_widget(func_optional)
+    assert not viewer.layers
+
+    func_optional(a=True)
+
+    assert len(viewer.layers) == 1
+
+    func_optional(a=False)
+
+    assert len(viewer.layers) == 1
 
 
 @pytest.mark.skipif(
