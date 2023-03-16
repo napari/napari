@@ -307,13 +307,10 @@ class PluginListItem(QFrame):
         self.version_choice_text = QLabel('Version:')
         self.source_choice_dropdown = QComboBox()
 
-        if len(self._versions_pypi) is not None:
+        if len(self._versions_pypi):
             self.source_choice_dropdown.addItem(PYPI)
 
-        if (
-            _IS_NAPARI_CONDA_INSTALLED
-            and len(self._versions_conda) is not None
-        ):
+        if _IS_NAPARI_CONDA_INSTALLED and len(self._versions_conda):
             self.source_choice_dropdown.addItem(CONDA)
 
         self.source_choice_dropdown.currentTextChanged.connect(
