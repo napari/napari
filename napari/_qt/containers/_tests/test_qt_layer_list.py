@@ -48,30 +48,41 @@ def test_alt_click_to_show_single_layer(qtbot):
     # hide the middle-layer, image2 and ensure it's unchecked
     image2.visible = False
     assert check_state_at_layer_index(view, 1) == Qt.CheckState.Unchecked
-    # ensure the other layers are visible, checked
+
+    # ensure the other layers are visible & checked
     assert image3.visible
     assert check_state_at_layer_index(view, 0) == Qt.CheckState.Checked
     assert image1.visible
     assert check_state_at_layer_index(view, 2) == Qt.CheckState.Checked
 
-    # mock an alt-click on top-most layer, image3
-    index = layer_to_model_index(view, 0)
+    # mock an alt-click on bottom-most layer, image1
+    index = layer_to_model_index(view, 2)
     delegate._show_on_alt_click_hide_others(view.model(), index)
 
-    # only image3 should be shown, while image1, image2 be hidden
-    assert image3.visible
-    assert check_state_at_layer_index(view, 0) == Qt.CheckState.Checked
-    assert not image1.visible
-    assert check_state_at_layer_index(view, 2) == Qt.CheckState.Unchecked
+    # only image1 should be shown, while image3, image2 be hidden
+    assert not image3.visible
+    assert check_state_at_layer_index(view, 0) == Qt.CheckState.Unchecked
     assert not image2.visible
     assert check_state_at_layer_index(view, 1) == Qt.CheckState.Unchecked
+    assert image1.visible
+    assert check_state_at_layer_index(view, 2) == Qt.CheckState.Checked
 
-    # mock second alt-click, which should restore initial state
+    # add a layer (will be at position 0)
+    image4 = Image(np.zeros((4, 3)))
+    layers.append(image4)
+    assert image4.visible
+
+    # remove a layer (image3, which has been pushed down to position 1
+    layers.pop(1)
+
+    # mock second alt-click on image1, which should restore initial state
     delegate._show_on_alt_click_hide_others(view.model(), index)
 
-    assert image3.visible
-    assert not image2.visible
+    # image4 should remain visible (not part of initial state)
+    # image2 should be not visible--that was the initial state
+    assert image4.visible
     assert image1.visible
+    assert not image2.visible
 
 
 def make_qt_layer_list_with_layer(qtbot) -> Tuple[QtLayerList, Image]:
