@@ -60,7 +60,6 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._texture_filter.texcoords = self.layer.texcoords
 
         if self._texture_filter is not None:
-            # TODO: add a texure checkbox to surface layer controls?
             self._texture_filter.enabled = self.layer._has_texture
             self.node.update()
 

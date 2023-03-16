@@ -228,19 +228,22 @@ def test_texture():
 
     np.testing.assert_allclose(layer.texture, texture)
     np.testing.assert_allclose(layer.texcoords, texcoords)
-
-    assert layer._has_texture
-    layer.texture = None
-    assert not layer._has_texture
-    layer.texcoords = None
-    assert not layer._has_texture
-    layer.texture = texture
-    assert not layer._has_texture
-    layer.texcoords = texcoords
     assert layer._has_texture
 
+    layer.texture, layer.texcoords = None, texcoords
+    assert not layer._has_texture
 
-def test_colors():
+    layer.texture, layer.texcoords = texture, None
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = None, None
+    assert not layer._has_texture
+
+    layer.texture, layer.texcoords = texture, texcoords
+    assert layer._has_texture
+
+
+def test_vertex_colors():
     """Test setting vertex colors"""
     np.random.seed(0)
     vertices = np.random.random((10, 3))
@@ -248,8 +251,12 @@ def test_colors():
     values = np.random.random(10)
     data = (vertices, faces, values)
 
-    layer = Surface(data, vertex_colors=data[0] + 0.5)
-    np.testing.assert_allclose(layer.vertex_colors, data[0] + 0.5)
+    vertex_colors = np.random.random((len(vertices), 3))
+    layer = Surface(data, vertex_colors=vertex_colors)
+    np.testing.assert_allclose(layer.vertex_colors, vertex_colors)
+
+    layer.vertex_colors = vertex_colors**2
+    np.testing.assert_allclose(layer.vertex_colors, vertex_colors**2)
 
 
 @pytest.mark.parametrize(

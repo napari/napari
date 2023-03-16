@@ -241,12 +241,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._vertex_values = np.ones(len(self._vertices))
 
-        # TODO: support multiple textures and texcoords?
-        # texture should be 2D or 2D + RGB
         self._texture = texture
         self._texcoords = texcoords
-
-        # TODO: validate size/shape of vertex_colors if not None
         self._vertex_colors = vertex_colors
 
         # Set contrast_limits and colormaps
@@ -262,6 +258,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self._slice_input.ndisplay))
         self._view_faces = np.zeros((0, 3))
+        self._view_vertex_values = []
         self._view_vertex_colors = []
 
         # Trigger generation of view slice and thumbnail.
@@ -494,7 +491,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'wireframe': self.wireframe.dict(),
                 'normals': self.normals.dict(),
                 'texture': self.texture,
-                'texcoords': self.texture,
+                'texcoords': self.texcoords,
                 'vertex_colors': self.vertex_colors,
             }
         )
@@ -540,7 +537,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._view_vertex_values = self._slice_associated_data(
             self.vertex_values,
             vertex_ndim,
-            dims=1,
         )
 
         # TODO: ensure vertex_colors matches dims with vertex_values
