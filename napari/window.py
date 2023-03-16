@@ -14,7 +14,6 @@ try:
     from napari._qt import Window
 
 except ImportError as e:
-
     err = e
 
     class Window:  # type: ignore

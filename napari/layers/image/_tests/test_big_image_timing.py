@@ -15,9 +15,9 @@ data_zarr = zarr.zeros((100_000, 1000, 1000))
 @pytest.mark.parametrize(
     'kwargs',
     [
-        dict(multiscale=False, contrast_limits=[0, 1]),
-        dict(multiscale=False),
-        dict(contrast_limits=[0, 1]),
+        {"multiscale": False, "contrast_limits": [0, 1]},
+        {"multiscale": False},
+        {"contrast_limits": [0, 1]},
         {},
     ],
     ids=('all', 'multiscale', 'clims', 'nothing'),

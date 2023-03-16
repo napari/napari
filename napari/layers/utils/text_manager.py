@@ -109,7 +109,6 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = text
         super().__init__(**kwargs)
-        self.events.add(values=Event)
         self.apply(features)
 
     @property
@@ -136,7 +135,7 @@ class TextManager(EventedModel):
         self.events.values()
         self.color._apply(features)
         # Trigger the main event for vispy layers.
-        self.events(Event(type='refresh'))
+        self.events(Event(type_name='refresh'))
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -365,7 +364,7 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True)
+    @validator('blending', pre=True, always=True, allow_reuse=True)
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 

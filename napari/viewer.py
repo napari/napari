@@ -140,6 +140,8 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Shutdown the slicer first to avoid processing any more tasks.
+        self._layer_slicer.shutdown()
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
@@ -173,7 +175,7 @@ class Viewer(ViewerModel):
 
         """
         # copy to not iterate while changing.
-        viewers = [v for v in cls._instances]
+        viewers = list(cls._instances)
         ret = len(viewers)
         for viewer in viewers:
             viewer.close()

@@ -52,7 +52,6 @@ class Mesh:
     _types = ['face', 'edge']
 
     def __init__(self, ndisplay=2) -> None:
-
         self._ndisplay = ndisplay
         self.clear()
 

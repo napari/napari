@@ -68,11 +68,15 @@ class QtLabelsControls(QtLayerControls):
         Button to select PAN_ZOOM mode on Labels layer.
     pick_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
+    preserveLabelsCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if existing labels are preserved
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
+    selectedColorCheckbox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if only currently selected label is shown.
 
     Raises
     ------
@@ -176,17 +180,17 @@ class QtLabelsControls(QtLayerControls):
             checked=True,
         )
         action_manager.bind_button(
-            'napari:activate_label_pan_zoom_mode', self.panzoom_button
+            'napari:activate_labels_pan_zoom_mode', self.panzoom_button
         )
 
         self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
         action_manager.bind_button(
-            'napari:activate_label_picker_mode', self.pick_button
+            'napari:activate_labels_picker_mode', self.pick_button
         )
 
         self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
         action_manager.bind_button(
-            'napari:activate_paint_mode', self.paint_button
+            'napari:activate_labels_paint_mode', self.paint_button
         )
 
         self.fill_button = QtModeRadioButton(
@@ -195,7 +199,7 @@ class QtLabelsControls(QtLayerControls):
             Mode.FILL,
         )
         action_manager.bind_button(
-            'napari:activate_fill_mode',
+            'napari:activate_labels_fill_mode',
             self.fill_button,
         )
 
@@ -205,7 +209,7 @@ class QtLabelsControls(QtLayerControls):
             Mode.ERASE,
         )
         action_manager.bind_button(
-            'napari:activate_label_erase_mode',
+            'napari:activate_labels_erase_mode',
             self.erase_button,
         )
 
@@ -349,7 +353,16 @@ class QtLabelsControls(QtLayerControls):
         self.setFocus()
 
     def toggle_selected_mode(self, state):
-        self.layer.show_selected_label = state == Qt.CheckState.Checked
+        """Toggle display of selected label only.
+
+        Parameters
+        ----------
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of selectedColorCheckbox
+        """
+        self.layer.show_selected_label = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def changeSize(self, value):
         """Change paint brush size.
@@ -366,10 +379,10 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if labels are contiguous.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of contigCheckBox
         """
-        self.layer.contiguous = state == Qt.CheckState.Checked
+        self.layer.contiguous = Qt.CheckState(state) == Qt.CheckState.Checked
 
     def change_n_edit_dim(self, value):
         """Change the number of editable dimensions of label layer.
@@ -400,10 +413,12 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if overwriting label is enabled.
+        state : int
+            Integer value of Qt.CheckState that indicates the check state of preserveLabelsCheckBox
         """
-        self.layer.preserve_labels = state == Qt.CheckState.Checked
+        self.layer.preserve_labels = (
+            Qt.CheckState(state) == Qt.CheckState.Checked
+        )
 
     def change_color_mode(self):
         """Change color mode of label layer"""

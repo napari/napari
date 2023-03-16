@@ -374,6 +374,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            reload=Event,
             extent=Event,
             _overlays=Event,
             select=WarningEmitter(
@@ -381,14 +382,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
                     deferred=True,
                 ),
-                type='select',
+                type_name='select',
             ),
             deselect=WarningEmitter(
                 trans._(
                     "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
                     deferred=True,
                 ),
-                type='deselect',
+                type_name='deselect',
             ),
             mode=Event,
         )
@@ -618,7 +619,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _on_editable_changed(self) -> None:
         """Executes side-effects on this layer related to changes of the editable state."""
-        pass
 
     @property
     def scale(self):
@@ -869,9 +869,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                thumbnail = convert_to_uint8(thumbnail)
+            thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
@@ -899,11 +897,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._help
 
     @help.setter
-    def help(self, help):
-        if help == self.help:
+    def help(self, help_text):
+        if help_text == self.help:
             return
-        self._help = help
-        self.events.help(help=help)
+        self._help = help_text
+        self.events.help(help=help_text)
 
     @property
     def interactive(self):
@@ -978,7 +976,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def _slice_dims(self, point=None, ndisplay=2, order=None):
+    def _slice_dims(
+        self, point=None, ndisplay=2, order=None, force: bool = False
+    ):
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -992,21 +992,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order : list of int
             Order of dimensions, where last `ndisplay` will be
             rendered in canvas.
+        force: bool
+            True if slicing should be forced to occur, even when some cache thinks
+            it already has a valid slice ready. False otherwise.
         """
         slice_input = self._make_slice_input(point, ndisplay, order)
-        if self._slice_input == slice_input:
-            return
-        self._slice_input = slice_input
-        self.refresh()
-        self._reset_editable()
+        if force or (self._slice_input != slice_input):
+            self._slice_input = slice_input
+            self.refresh()
 
     def _make_slice_input(
         self, point=None, ndisplay=2, order=None
     ) -> _SliceInput:
-        if point is None:
-            point = (0,) * self.ndim
-        else:
-            point = tuple(point)
+        point = (0,) * self.ndim if point is None else tuple(point)
 
         ndim = len(point)
 
@@ -1207,7 +1205,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         force : bool
             Bool that forces a redraw to occur when `True`.
         """
-        pass
 
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice."""
@@ -1512,7 +1509,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position, dims_displayed
             )
         else:
-
             # adjust for any offset between viewer and data coordinates
             position = self._get_offset_data_position(position)
 
@@ -1612,7 +1608,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ):
                 self._data_level = level
                 self.corner_pixels = corners
-                self.refresh()
+                self.events.reload(Event('reload', layer=self))
 
         else:
             # The stored corner_pixels attribute must contain valid indices.
@@ -1665,7 +1661,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return components
 
     def get_source_str(self):
-
         source_info = self._get_source_info()
 
         return (

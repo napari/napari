@@ -352,7 +352,6 @@ class NapariQtNotification(QDialog):
     def from_notification(
         cls, notification: Notification, parent: QWidget = None
     ) -> NapariQtNotification:
-
         from napari.utils.notifications import ErrorNotification
 
         if isinstance(notification, ErrorNotification):

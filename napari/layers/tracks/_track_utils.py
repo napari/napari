@@ -67,7 +67,6 @@ class TrackManager:
     """
 
     def __init__(self) -> None:
-
         # store the raw data here
         self._data = None
         self._feature_table = _FeatureTable()
@@ -241,7 +240,7 @@ class TrackManager:
                 trans._('track id must be an integer', deferred=True)
             )
 
-        if not all([t >= 0 for t in data[:, 1]]):
+        if not all(t >= 0 for t in data[:, 1]):
             raise ValueError(
                 trans._(
                     'track timestamps must be greater than zero', deferred=True

@@ -204,11 +204,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
-    @validator('colormap', pre=True, always=True)
+    @validator('colormap', pre=True, always=True, allow_reuse=True)
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
-    @validator('contrast_limits', pre=True, always=True)
+    @validator('contrast_limits', pre=True, always=True, allow_reuse=True)
     def _check_contrast_limits(
         cls, contrast_limits
     ) -> Optional[Tuple[float, float]]:

@@ -23,6 +23,7 @@ import numpy as np
 from pydantic import Extra, Field, PrivateAttr, validator
 
 from napari import layers
+from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import dims_scroll
 from napari.components.camera import Camera
 from napari.components.cursor import Cursor
@@ -166,6 +167,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # different events systems
     mouse_over_canvas: bool = False
 
+    # Need to use default factory because slicer is not copyable which
+    # is required for default values.
+    _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
+
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
@@ -211,7 +216,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     "This event will be removed in 0.5.0. Please use viewer.layers.events instead",
                     deferred=True,
                 ),
-                type="layers_change",
+                type_name="layers_change",
             ),
             reset_view=Event,
         )
@@ -265,7 +270,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.grid_width,
         )
 
-    @validator('theme')
+    @validator('theme', allow_reuse=True)
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
@@ -374,6 +379,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
+    def _on_layer_reload(self, event: Event) -> None:
+        self._layer_slicer.submit(
+            layers=[event.layer], dims=self.dims, force=True
+        )
+
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
@@ -383,10 +393,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-        for layer in layers:
-            layer._slice_dims(
-                self.dims.point, self.dims.ndisplay, self.dims.order
-            )
+        self._layer_slicer.submit(layers=layers, dims=self.dims)
+        # If the currently selected layer is sliced asynchronously, then the value
+        # shown with this position may be incorrect. See the discussion for more details:
+        # https://github.com/napari/napari/pull/5377#discussion_r1036280855
         position = list(self.cursor.position)
         for ind in self.dims.order[: -self.dims.ndisplay]:
             position[ind] = self.dims.point[ind]
@@ -531,6 +541,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
+        layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, "mode"):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
@@ -659,6 +670,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
+        custom_interpolation_kernel_2d=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -790,6 +802,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
             Values on the negative side of the normal are discarded if the plane is enabled.
+        custom_interpolation_kernel_2d : np.ndarray
+            Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
         Returns
         -------
@@ -833,6 +847,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'cache': cache,
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
+            'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -845,6 +860,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'contrast_limits',
             'metadata',
             'experimental_clipping_planes',
+            'custom_interpolation_kernel_2d',
         }
 
         if channel_axis is None:
@@ -868,7 +884,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            layer_list = list()
+            layer_list = []
             for image, i_kwargs, _ in layerdata_list:
                 layer = Image(image, **i_kwargs)
                 self.layers.append(layer)
@@ -1052,7 +1068,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         ) as pbr:
             for _path in pbr:
                 # If _path is a list, set stack to True
-                _stack = True if isinstance(_path, list) else False
+                _stack = isinstance(_path, list)
                 # If _path is not a list already, make it a list.
                 _path = [_path] if not isinstance(_path, list) else _path
                 if plugin:
@@ -1410,7 +1426,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
                 )
             )
     else:
-        _data.append(dict())
+        _data.append({})
     if len(_data) > 2:
         if _data[2] not in layers.NAMES:
             raise ValueError(
@@ -1542,7 +1558,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
 @lru_cache(maxsize=1)
 def valid_add_kwargs() -> Dict[str, Set[str]]:
     """Return a dict where keys are layer types & values are valid kwargs."""
-    valid = dict()
+    valid = {}
     for meth in dir(ViewerModel):
         if not meth.startswith('add_') or meth[4:] == 'layer':
             continue
