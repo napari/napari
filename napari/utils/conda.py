@@ -20,8 +20,8 @@ def is_conda_package(package_name: str) -> bool:
     Notes
     -----
     Installed conda packages within a conda installation and environment can
-    be identified as `<package-name>-<version>-<build-string>.json` files
-    saved within a `conda-meta` folder within the given environment of
+    be identified as ``<package-name>-<version>-<build-string>.json`` files
+    saved within a ``conda-meta`` folder within the given environment of
     interest.
     """
     conda_meta_dir = Path(sys.prefix) / 'conda-meta'
