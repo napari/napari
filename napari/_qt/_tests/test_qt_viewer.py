@@ -703,7 +703,7 @@ def test_axes_labels(make_napari_viewer):
     layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = viewer._window._qt_viewer.layer_to_visual[layer]
-    axes_visual = viewer._window._qt_viewer.overlay_to_visual[
+    axes_visual = viewer._window._qt_viewer.canvas._overlay_to_visual[
         viewer._overlays['axes']
     ]
 
