@@ -1,11 +1,12 @@
 """
 Surface with texture and vertex_colors
-==========
+======================================
 
 Display a 3D surface with texture mapping and colors
 
 .. tags:: visualization-nD
 """
+
 import numpy as np
 from vispy.io import imread, load_data_file, read_mesh
 
@@ -16,14 +17,12 @@ viewer = napari.Viewer(ndisplay=3)
 
 # load the model and texture
 mesh_path = load_data_file('spot/spot.obj.gz')
-vertices, faces, normals, texcoords = read_mesh(mesh_path)
+vertices, faces, _normals, texcoords = read_mesh(mesh_path)
 n = len(vertices)
 texture_path = load_data_file('spot/spot.png')
 texture = np.flipud(imread(texture_path))
 
-offset = np.zeros(vertices.shape)
-offset[:, 0] = 1
-
+np.random.seed(0)
 viewer.add_surface(
     (vertices, faces, np.random.random((3, 3, n))),
     texture=texture,
@@ -33,16 +32,20 @@ viewer.add_surface(
     name="vertex_values and texture",
 )
 viewer.add_surface(
-    (vertices + offset, faces),
+    (vertices, faces),
+    translate=(1, 0, 0),
     texture=texture,
     texcoords=texcoords,
     shading="flat",
     name="texture only",
 )
 viewer.add_surface(
-    (vertices - offset, faces),
+    (vertices, faces),
+    translate=(-1, 0, 0),
     texture=texture,
     texcoords=texcoords,
+    # the vertices are _roughly_ in [-1, 1] for this model and RGB values just
+    # get clipped to [0, 1], adding 0.5 brightens it up a little :)
     vertex_colors=vertices + 0.5,
     shading="none",
     name="vertex_colors and texture",
