@@ -514,9 +514,12 @@ class VispyCanvas:
         -------
         None
         """
-        if not self.viewer.grid.enabled:
-            vispy_layer.node.parent = self.view.scene
-            self.layer_to_visual[napari_layer] = vispy_layer
+
+        vispy_layer.node.parent = self.view.scene
+        self.layer_to_visual[napari_layer] = vispy_layer
+
+        napari_layer.events.visible.connect(self._reorder_layers)
+
         self._reorder_layers()
 
     def _remove_layer(self, event: Event) -> None:
@@ -540,9 +543,20 @@ class VispyCanvas:
 
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
+        first_visible_found = False
+
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
+
+            # the bottommost visible layer needs special treatment for blending
+            if layer.visible and not first_visible_found:
+                vispy_layer.first_visible = True
+                first_visible_found = True
+            else:
+                vispy_layer.first_visible = False
+            vispy_layer._on_blending_change()
+
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
