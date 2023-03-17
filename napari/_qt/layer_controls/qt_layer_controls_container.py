@@ -29,6 +29,8 @@ layer_to_controls = {
     Tracks: QtTracksControls,
 }
 
+# TODO ASYNC: [REMOVE] This block adds extra image controls when using old
+# async. New async does not need these.
 if config.async_loading:
     from napari.layers.image.experimental.octree_image import _OctreeImageBase
 

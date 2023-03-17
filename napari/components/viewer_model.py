@@ -208,7 +208,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
-        settings.experimental.events.async_.connect(self._update_async)
+        settings.experimental.events.asynchronous.connect(self._update_async)
 
         # Add extra events - ideally these will be removed too!
         self.events.add(

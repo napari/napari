@@ -127,17 +127,17 @@ class PreferencesDialog(QDialog):
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
 
-        # TODO this should be removed when octree is fully deprecated
+        # TODO this should be removed when old async/octree is fully deprecated
         if name.lower() == 'experimental':
             form_layout = form.widget.layout()
             for i in range(form_layout.count()):
-                wdg = form_layout.itemAt(
-                    i, form_layout.ItemRole.FieldRole
-                ).widget()
-                if wdg._name == 'octree':
-                    wdg.opacity.setOpacity(0.3)
-                    wdg.setDisabled(True)
-                    break
+                layout = form_layout.itemAt(i, form_layout.ItemRole.FieldRole)
+                if layout:
+                    wdg = layout.widget()
+                    if wdg._name == 'octree' or wdg._name == 'async_':
+                        wdg.opacity.setOpacity(0.3)
+                        wdg.setDisabled(True)
+
         self._list.addItem(field.field_info.title or field.name)
         self._stack.addWidget(form)
 

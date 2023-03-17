@@ -278,6 +278,8 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
+        # TODO ASYNC: [REMOVE] This block sets up a chunk receiver for the old
+        # async which is superceded by the LayerSlicer.
         # moved from the old layerlist... still feels misplaced.
         # can you help me move this elsewhere?
         if config.async_loading:
@@ -529,7 +531,7 @@ class QtViewer(QSplitter):
     def _on_slice_ready(self, event):
         responses = event.value
         for layer, response in responses.items():
-            # Update the layer slice state to temporarily support behavior
+            # TODO ASYNC: [REMOVE] Update the layer slice state to temporarily support behavior
             # that depends on it.
             layer._update_slice_response(response)
             # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`

@@ -251,6 +251,8 @@ def quit_app():
 
         monitor.stop()
 
+    # TODO ASYNC: [REMOVE] This block ensures that the old async loader is
+    # shut down properly (replaced by the LayerSlicer)
     if config.async_loading:
         # Shutdown the chunkloader
         from napari.components.experimental.chunk import chunk_loader

@@ -46,6 +46,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.components import Dims
+    from napari.components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -812,6 +813,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def _SliceDataClass(self):
+        # TODO ASYNC: [REMOVE] This switches to specialized ImageSliceData for
+        # old async. New async uses the base class.
         # Use special ChunkedSlideData for async.
         if config.async_loading:
             from napari.layers.image.experimental._chunked_slice_data import (
@@ -828,6 +831,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         ----------
         data : Slice
         """
+        # TODO ASYNC: Remove the async portion of this block - is the sync
+        # portion still needed?
         if self._slice.load(data):
             # The load was synchronous.
             self._on_data_loaded(data, sync=True)
@@ -850,27 +855,37 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         sync : bool
             If True the chunk was loaded synchronously.
         """
+        # TODO ASYNC: There are quite a few things here which aren't covered by
+        # QtViewer._on_slice_ready - where should they go, if anywhere?
+
+        # TODO ASYNC: The following block is not triggered elsewhere
         # Transpose after the load.
         data.transpose(self._get_order())
 
+        # TODO ASYNC: The following block is still needed for both sync and
+        # # async
         # Pass the loaded data to the slice.
         if not self._slice.on_loaded(data):
             # Slice rejected it, was it for the wrong indices?
             return
 
+        # TODO ASYNC: The following block is not triggered elsewhere
         # Notify the world.
         if self.multiscale:
             self.events.scale()
             self.events.translate()
 
+        # TODO ASYNC: confirmed that this is not necessary for async
         # Announcing we are in the loaded state will make our node visible
         # if it was invisible during the load.
         self.events.loaded()
 
+        # TODO ASYNC: confirmed that this is not necessary for async
         if not sync:
             # TODO_ASYNC: Avoid calling self.refresh(), because it would
             # call our _set_view_slice(). Do we need a "refresh without
             # set_view_slice()" method that we can call?
+            # TODO ASYNC: this now happens in `QtViewer._on_slice_ready`
 
             self.events.set_data(value=self._slice)  # update vispy
             self._update_thumbnail()
@@ -993,20 +1008,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return [p + 0.5 for p in position]
 
-    # # For async we add an on_chunk_loaded() method.
-    # if config.async_loading:
+    # TODO ASYNC: [REMOVE] Adds a new method to accept slice requests and
+    # trigger the `_on_data_loaded` method
+    # For async we add an on_chunk_loaded() method.
+    if config.async_loading:
 
-    #     def on_chunk_loaded(self, request: ChunkRequest) -> None:
-    #         """An asynchronous ChunkRequest was loaded.
+        def on_chunk_loaded(self, request: ChunkRequest) -> None:
+            """An asynchronous ChunkRequest was loaded.
 
-    #         Parameters
-    #         ----------
-    #         request : ChunkRequest
-    #             This request was loaded.
-    #         """
-    #         # Convert the ChunkRequest to SliceData and use it.
-    #         data = self._SliceDataClass.from_request(self, request)
-    #         self._on_data_loaded(data, sync=False)
+            Parameters
+            ----------
+            request : ChunkRequest
+                This request was loaded.
+            """
+            # Convert the ChunkRequest to SliceData and use it.
+            data = self._SliceDataClass.from_request(self, request)
+            self._on_data_loaded(data, sync=False)
 
 
 class Image(_ImageBase):

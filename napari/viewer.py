@@ -147,6 +147,9 @@ class Viewer(ViewerModel):
         # Close the main window
         self.window.close()
 
+        # TODO ASYNC: [REMOVE] This block ensures the layer is removed from
+        # old async tracking layer map whenever a layer is deleted (replaced
+        # by logic in the LayerSlicer).
         if config.async_loading:
             from napari.components.experimental.chunk import chunk_loader
 

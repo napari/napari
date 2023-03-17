@@ -9,14 +9,23 @@ from napari.utils.translations import trans
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(env=...) for one of its attributes
 class ExperimentalSettings(EventedSettings):
-    async_: bool = Field(
+    asynchronous: bool = Field(
         False,
         title=trans._("Render Images Asynchronously"),
+        description=trans._(
+            "Asynchronous loading of image data. \nThis setting partially loads data while viewing."
+        ),
+        env="napari_asynchronous",
+        requires_restart=False,
+    )
+    async_: bool = Field(
+        False,
+        title=trans._("Legacy async setting (deprecated)"),
         description=trans._(
             "Asynchronous loading of image data. \nThis setting partially loads data while viewing. \nYou must restart napari for changes of this setting to apply."
         ),
         env="napari_async",
-        requires_restart=False,
+        requires_restart=True,
     )
     octree: Union[bool, str] = Field(
         False,

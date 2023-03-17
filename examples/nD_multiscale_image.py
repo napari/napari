@@ -7,10 +7,22 @@ Displays an nD multiscale image
 .. tags:: visualization-advanced
 """
 
+import logging
+
 import numpy as np
 from skimage.transform import pyramid_gaussian
 
 import napari
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+console = logging.StreamHandler()
+console.setLevel(level=logging.DEBUG)
+formatter = logging.Formatter("%(levelname)s : %(message)s")
+console.setFormatter(formatter)
+logger.addHandler(console)
+
 
 # create multiscale from random data
 base = np.random.random((1536, 1536))

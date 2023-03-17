@@ -26,6 +26,8 @@ def _create_loader_class() -> ImageLoader:
     ImageLoader
         Return ImageLoader for sync or ChunkImageLoader for async.
     """
+    # TODO ASYNC: [REMOVE] This switches to a specialized ImageLoader class for
+    # old async. New async does not need this.
     if config.async_loading:
         from napari.layers.image.experimental._chunked_image_loader import (
             ChunkedImageLoader,
