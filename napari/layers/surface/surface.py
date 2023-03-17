@@ -27,12 +27,14 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
     Surface layer renders meshes onto the canvas.
 
-    Note that surfaces may be colored by:
-        * texture (requires both texture and texcoords to be set)
-        AND
-            * vertex_colors (higher precedence)
-            OR
-            * vertex_values + colormap
+    Surfaces may be colored by:
+        * setting `vertex_values`, which colors the surface with the selected
+          `colormap` (default is uniform ones)
+        * setting `vertex_colors`, replaces/overrides any color from
+          `vertex_values`
+        * setting both `texture` and `texcoords`, which applies the texture
+          (which may be transparent) on top the colors from `vertex_values` or
+          `vertex_colors`
 
     Parameters
     ----------
@@ -54,10 +56,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         string to assign as a name to a colormap and the value must be a
         Colormap.
     texture: (I, J) or (I, J, C) array
-        A 2D texture to be mapped onto the surface.
+        A 2D texture to be mapped onto the mesh using `texcoords`.
         C may be 3 (RGB) or 4 (RGBA) channels for a color texture.
     texcoords: (N, 2) array
         2D coordinates for each vertex, mapping into the texture.
+        Coordinates should be in [0.0, 1.0] and scale to sample the 2D texture.
     vertex_colors: (K0, ..., KL, N, C) array of color values
         Take care that the (optional) L additional dimensions match those of
         vertex_values for slicing to work properly.
@@ -348,9 +351,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertex_colors.setter
     def vertex_colors(self, vertex_colors: Optional[np.ndarray]):
-        """Array of values (n, 3) used to directly color vertices."""
+        """Array of values (N, C) used to directly color vertices."""
         self._vertex_colors = vertex_colors
-
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()

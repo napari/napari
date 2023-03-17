@@ -40,6 +40,19 @@ def test_random_surface_no_values():
     assert layer._view_vertex_values.ndim == 1
 
 
+def test_random_surface_clearing_vertex_values():
+    """Test setting `vertex_values=None` resets values to uniform ones."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    assert np.all(layer.vertex_values == values)
+    layer.vertex_values = None
+    assert np.all(layer.vertex_values == np.ones(len(vertices)))
+
+
 def test_random_3D_surface():
     """Test instantiating Surface layer with random 3D data."""
     np.random.seed(0)

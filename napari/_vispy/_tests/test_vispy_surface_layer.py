@@ -40,6 +40,7 @@ def test_shading(cube_layer):
     ids=("2D", "1Ch", "RGB", "RGBA"),
 )
 def test_add_texture(cube_layer, texture_shape):
+    np.random.seed(0)
     visual = VispySurfaceLayer(cube_layer)
     assert visual._texture_filter is None
 

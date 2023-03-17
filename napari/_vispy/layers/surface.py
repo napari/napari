@@ -90,7 +90,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         # making sure the vertex data is 3D prevents shape errors with
         # attached filters, instead of trying to attach/detach each time
         if vertices is not None and vertices.shape[-1] == 2:
-            vertices = np.pad(vertices, ((0, 0), (0, 1)))
+            vertices = np.pad(
+                vertices,
+                ((0, 0), (0, 1)),
+                mode='constant',
+                constant_values=0,
+            )
         assert vertices is None or vertices.shape[-1] == 3
 
         self.node.set_data(
@@ -98,7 +103,6 @@ class VispySurfaceLayer(VispyBaseLayer):
             faces=faces,
             vertex_values=vertex_values,
             vertex_colors=vertex_colors,
-            color="white",
         )
 
         # disable normals in 2D to avoid shape errors
