@@ -535,6 +535,7 @@ class VispyCanvas:
         None
         """
         layer = event.value
+        layer.events.visible.disconnect(self._reorder_layers)
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
