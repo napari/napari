@@ -86,7 +86,6 @@ class VispyCanvas:
     _instances = WeakSet()
 
     def __init__(self, viewer: ViewerModel, *args, **kwargs) -> None:
-
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self.max_texture_sizes = None
@@ -235,7 +234,6 @@ class VispyCanvas:
 
         cursor = self.viewer.cursor.style
         if cursor in {'square', 'circle'}:
-
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:

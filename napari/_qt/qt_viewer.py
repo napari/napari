@@ -11,6 +11,7 @@ from weakref import WeakSet
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt import ensure_main_thread
 
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
@@ -30,7 +31,8 @@ from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
-from napari.utils import config, perf
+from napari.settings._application import DaskSettings
+from napari.utils import config, perf, resize_dask_cache
 from napari.utils.action_manager import action_manager
 from napari.utils.history import (
     get_open_history,
@@ -51,6 +53,7 @@ if TYPE_CHECKING:
 
     from napari._qt.layer_controls import QtLayerControlsContainer
     from napari.components import ViewerModel
+    from napari.utils.events import Event
 
 
 def _npe2_decode_selected_filter(
@@ -96,7 +99,6 @@ def _extension_string_for_layers(
         selected_layer = layers[0]
         # single selected layer.
         if selected_layer._type_string == 'image':
-
             ext = imsave_extensions()
 
             ext_list = [f"*{val}" for val in ext]
@@ -108,7 +110,6 @@ def _extension_string_for_layers(
             )
 
         elif selected_layer._type_string == 'points':
-
             ext_str = trans._("All Files (*);; *.csv;;")
 
         else:
@@ -135,7 +136,8 @@ class QtViewer(QSplitter):
     Attributes
     ----------
     canvas : napari._vispy.canvas.VispyCanvas
-        The VispyCanvas class providing the Vispy SceneCanvas.
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
     console : QtConsole
         IPython console terminal integrated into the napari GUI.
     controls : QtLayerControlsContainer
@@ -166,7 +168,6 @@ class QtViewer(QSplitter):
         show_welcome_screen: bool = False,
         canvas_class: Type[VispyCanvas] = VispyCanvas,
     ) -> None:
-
         super().__init__()
         self._instances.add(self)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -225,6 +226,8 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
+
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
         self.viewer.layers.events.removed.connect(self._update_welcome_screen)
@@ -259,6 +262,13 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
+        settings = get_settings()
+        self._update_dask_cache_settings(settings.application.dask)
+
+        settings.application.events.dask.connect(
+            self._update_dask_cache_settings
+        )
+
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
@@ -291,6 +301,20 @@ class QtViewer(QSplitter):
             stacklevel=2,
         )
         return self.canvas.vispy_camera
+
+    @staticmethod
+    def _update_dask_cache_settings(
+        dask_setting: Union[DaskSettings, Event] = None
+    ):
+        """Update dask cache to match settings."""
+        if not dask_setting:
+            return
+        if not isinstance(dask_setting, DaskSettings):
+            dask_setting = dask_setting.value
+
+        enabled = dask_setting.enabled
+        size = dask_setting.cache
+        resize_dask_cache(int(int(enabled) * size * 1e9))
 
     @property
     def controls(self) -> QtLayerControlsContainer:
@@ -453,6 +477,19 @@ class QtViewer(QSplitter):
         if console is not None:
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
+
+    @ensure_main_thread
+    def _on_slice_ready(self, event):
+        responses = event.value
+        for layer, response in responses.items():
+            # Update the layer slice state to temporarily support behavior
+            # that depends on it.
+            layer._update_slice_response(response)
+            # The rest of `Layer.refresh` after `set_view_slice`, where `set_data`
+            # notifies the corresponding vispy layer of the new slice.
+            layer.events.set_data()
+            layer._update_thumbnail()
+            layer._set_highlight(force=True)
 
     def _on_active_change(self):
         """When active layer changes change keymap handler."""

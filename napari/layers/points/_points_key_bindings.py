@@ -48,13 +48,13 @@ points_fun_to_mode = [
 ]
 
 
-@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyC)
+@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyC, overwrite=True)
 def copy(layer: Points):
     """Copy any selected points."""
     layer._copy_data()
 
 
-@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyV)
+@Points.bind_key(KeyMod.CtrlCmd | KeyCode.KeyV, overwrite=True)
 def paste(layer: Points):
     """Paste any copied points."""
     layer._paste_data()
@@ -95,7 +95,6 @@ def select_all_in_slice(layer: Points):
     trans._("Select all points in the layer."),
 )
 def select_all_data(layer: Points):
-
     # If all points are already selected, deselect all points
     if len(layer.selected_data) == len(layer.data):
         layer.selected_data = set()

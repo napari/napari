@@ -21,22 +21,31 @@
                     "desktop": true
                 },
                 "linux": {
-                    "Categories": [
-                        "Graphics",
-                        "Science"
-                    ]
+                  "Categories": [
+                    "Graphics",
+                    "Science"
+                  ],
+                  "StartupWMClass": "napari"
                 },
                 "osx": {
-                    "CFBundleName": "napari",
-                    "CFBundleDisplayName": "napari",
-                    "CFBundleVersion": "__PKG_VERSION__",
-                    "entitlements": [
-                        "com.apple.security.files.user-selected.read-write",
-                        "com.apple.security.files.downloads.read-write",
-                        "com.apple.security.assets.pictures.read-write",
-                        "com.apple.security.assets.music.read-write",
-                        "com.apple.security.assets.movies.read-write"
-                    ]
+                  "link_in_bundle": {
+                    "{{ PREFIX }}/bin/python": "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python"
+                  },
+                  "command": [
+                    "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python",
+                    "-m",
+                    "napari"
+                  ],
+                  "CFBundleName": "napari",
+                  "CFBundleDisplayName": "napari",
+                  "CFBundleVersion": "__PKG_VERSION__",
+                  "entitlements": [
+                    "com.apple.security.files.user-selected.read-write",
+                    "com.apple.security.files.downloads.read-write",
+                    "com.apple.security.assets.pictures.read-write",
+                    "com.apple.security.assets.music.read-write",
+                    "com.apple.security.assets.movies.read-write"
+                  ]
                 }
             }
         }

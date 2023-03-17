@@ -84,19 +84,19 @@ if __name__ == "__main__":
 
     properties = {
         'class': (['A', 'B', 'C', 'D'] * (len(coords) // 4 + 1))[
-            : len(coords)
-        ],
+                 : len(coords)
+                 ],
     }
     color_cycle = ['blue', 'magenta', 'green']
 
-    kwargs = dict(
-        shape_type=args.type,
-        properties=properties if args.properties else None,
-        face_color='class' if args.properties else [1,1,1,1],
-        face_color_cycle=color_cycle,
-        edge_color='class' if args.properties else [1,1,1,1],
-        edge_color_cycle=color_cycle,
-    )
+    kwargs = {
+        "shape_type": args.type,
+        "properties": properties if args.properties else None,
+        "face_color": 'class' if args.properties else [1, 1, 1, 1],
+        "face_color_cycle": color_cycle,
+        "edge_color": 'class' if args.properties else [1, 1, 1, 1],
+        "edge_color_cycle": color_cycle,
+    }
 
     layer = time_me(
         "time to create layer",

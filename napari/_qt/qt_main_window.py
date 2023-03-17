@@ -1408,9 +1408,10 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+
         img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
-            imsave(path, img)  # scikit-image imsave method
+            imsave(path, img)
         return img
 
     def clipboard(self, flash=True, canvas_only=False):

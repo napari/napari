@@ -8,7 +8,7 @@ from napari.utils.events import EventEmitter
 
 def test_event_blocker_count_none():
     """Test event emitter block counter with no emission."""
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     with e.blocker() as block:
         pass
     assert block.count == 0
@@ -16,7 +16,7 @@ def test_event_blocker_count_none():
 
 def test_event_blocker_count():
     """Test event emitter block counter with emission."""
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     with e.blocker() as block:
         e()
         e()
@@ -36,7 +36,7 @@ def test_weakref_event_emitter():
     so we can keep only weak refs.
 
     """
-    e = EventEmitter(type='test_weak')
+    e = EventEmitter(type_name='test_weak')
 
     class Obj:
         def cb(self):
@@ -66,7 +66,7 @@ def test_weakref_event_emitter_cb(disconnect_and_should_be_none):
     We thus expect the wekref to be None only if explicitely disconnected
 
     """
-    e = EventEmitter(type='test_weak')
+    e = EventEmitter(type_name='test_weak')
 
     def cb(self):
         pass
@@ -122,7 +122,7 @@ def test_error_on_connect():
 
     t = Test()
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
 
     e.connect(t.meth1)
     e()
@@ -174,7 +174,7 @@ def test_event_order_func():
     fun3.__module__ = "napari.test.sample"
     fun5.__module__ = "napari.test.sample"
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     e.connect(fun1)
     e.connect(partial(fun2, val=2))
     e()
@@ -219,7 +219,7 @@ def test_event_order_methods():
     t1 = Test()
     t2 = Test2()
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     e.connect(t1.fun1)
     e.connect(t2.fun3)
     e()
@@ -246,7 +246,7 @@ def test_no_event_arg():
 
     t = TestOb()
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     e.connect(t.fun)
     e.connect(simple_fun)
     e()
@@ -264,7 +264,7 @@ def test_to_many_positional():
 
     t = TestOb()
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     with pytest.raises(RuntimeError):
         e.connect(t.fun)
     with pytest.raises(RuntimeError):
@@ -289,7 +289,7 @@ def test_disconnect_object():
 
     t = TestOb()
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     e.connect(t.fun1)
     e.connect(t.fun2)
     e.connect(fun1)
@@ -319,7 +319,7 @@ def test_weakref_disconnect():
 
     t = TestOb()
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     e.connect(t.fun1)
     e()
 
@@ -341,7 +341,7 @@ def test_none_disconnect():
     def fun2(event):
         count_list.append(2)
 
-    e = EventEmitter(type="test")
+    e = EventEmitter(type_name="test")
     e.connect(fun1)
     e()
     assert count_list == [1]
