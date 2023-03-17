@@ -5,7 +5,7 @@ import traceback
 import typing
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
 from weakref import WeakSet
 
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -161,7 +161,10 @@ class QtViewer(QSplitter):
     _instances = WeakSet()
 
     def __init__(
-        self, viewer: ViewerModel, show_welcome_screen: bool = False
+        self,
+        viewer: ViewerModel,
+        show_welcome_screen: bool = False,
+        canvas_class: Type[VispyCanvas] = VispyCanvas,
     ) -> None:
 
         super().__init__()
@@ -190,7 +193,7 @@ class QtViewer(QSplitter):
         self._dockPerformance = None
 
         # This dictionary holds the corresponding vispy visual for each layer
-        self.canvas = VispyCanvas(
+        self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
             size=self.viewer._canvas_size,
