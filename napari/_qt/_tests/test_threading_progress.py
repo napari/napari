@@ -65,9 +65,7 @@ def test_worker_may_exceed_total(qtbot):
     )
     worker = thread_func()
     worker.yielded.connect(test_yield)
-    with qtbot.waitSignal(worker.yielded) and qtbot.waitSignal(
-        worker.finished
-    ):
+    with qtbot.waitSignals([worker.yielded, worker.finished]):
         worker.start()
     assert test_val[0] == 2
 
