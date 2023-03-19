@@ -157,13 +157,34 @@ class LayerDelegate(QStyledItemDelegate):
             event.type() == QMouseEvent.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
-            pnt = (
-                event.globalPosition().toPoint()
-                if hasattr(event, "globalPosition")
-                else event.globalPos()
+            # Check if eye icon was right-clicked, to open vis menu
+            self.initStyleOption(option, index)
+            style = option.widget.style()
+            check_rect = style.subElementRect(
+                style.SubElement.SE_ItemViewItemCheckIndicator,
+                option,
+                option.widget,
             )
+            if check_rect.contains(event.pos()):
+                pnt = (
+                    event.globalPosition().toPoint()
+                    if hasattr(event, "globalPosition")
+                    else event.globalPos()
+                )
 
-            self.show_context_menu(index, model, pnt, option.widget)
+                self.show_visibility_context_menu(
+                    index, model, pnt, option.widget
+                )
+
+            # if not eye icon, use the regular layer contextual menu
+            else:
+                pnt = (
+                    event.globalPosition().toPoint()
+                    if hasattr(event, "globalPosition")
+                    else event.globalPos()
+                )
+
+                self.show_layer_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty
@@ -192,7 +213,7 @@ class LayerDelegate(QStyledItemDelegate):
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
 
-    def show_context_menu(self, index, model, pos: QPoint, parent):
+    def show_layer_context_menu(self, index, model, pos: QPoint, parent):
         """Show the layerlist context menu.
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
@@ -204,3 +225,16 @@ class LayerDelegate(QStyledItemDelegate):
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(get_context(layer_list))
         self._context_menu.exec_(pos)
+
+    def show_visibility_context_menu(self, index, model, pos: QPoint, parent):
+        """Show the layerlist context menu.
+        To add a new item to the menu, update the _VISIBILITY_ACTIONS dict.
+        """
+        if not hasattr(self, '_visibility_menu'):
+            self._visibility_menu = build_qmodel_menu(
+                MenuId.VISIBILITY_CONTEXT, parent=parent
+            )
+
+        layer_list: LayerList = model.sourceModel()._root
+        self._visibility_menu.update_from_context(get_context(layer_list))
+        self._visibility_menu.exec_(pos)

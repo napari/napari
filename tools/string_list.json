@@ -161,6 +161,7 @@
       "napari:window:view:toggle_viewer_scale_bar_ticks"
     ],
     "napari/_app_model/constants/_menus.py": [
+      "napari/visibility",
       "napari/layers/context",
       "napari/layers/convert_dtype",
       "napari/layers/project",

@@ -10,6 +10,7 @@ from napari.layers._layer_actions import (
     _hide_show_unselected,
     _project,
     _show_hide_selected,
+    _toggle_visibility,
 )
 
 
@@ -34,11 +35,34 @@ def test_duplicate_layers():
     assert layer_list[1].source.parent() is layer_list[0]
 
 
+def test_toggle_selected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _toggle_visibility(layer_list)
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is False
+    assert layer_list[2].visible is True
+
+    _toggle_visibility(layer_list)
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+
 def test_hide_show_unselected_layers():
-    layer_list = LayerList()
-    layer_list.append(Points([[0, 0]], name="test"))
-    layer_list.append(Image(np.random.rand(8, 8, 8)))
-    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list = make_three_layer_layerlist()
     layer_list[0].visible = True
     layer_list[1].visible = True
     layer_list[2].visible = True
@@ -63,10 +87,7 @@ def test_hide_show_unselected_layers():
 
 
 def test_show_hide_selected_layers():
-    layer_list = LayerList()
-    layer_list.append(Points([[0, 0]], name="test"))
-    layer_list.append(Image(np.random.rand(8, 8, 8)))
-    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list = make_three_layer_layerlist()
     layer_list[0].visible = False
     layer_list[1].visible = True
     layer_list[2].visible = True
@@ -147,3 +168,12 @@ def test_convert_layer(layer, type_):
     _convert(ll, type_)
     assert ll[0]._type_string == type_
     assert np.array_equal(ll[0].scale, original_scale)
+
+
+def make_three_layer_layerlist():
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]], name="test"))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+    layer_list.append(Image(np.random.rand(8, 8, 8)))
+
+    return layer_list

@@ -95,28 +95,6 @@ LAYER_ACTIONS: List[Action] = [
         menus=[LAYERCTX_SPLITMERGE],
     ),
     Action(
-        id=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY.title,
-        callback=_layer_actions._show_hide_selected,
-        menus=[
-            {
-                'id': MenuId.LAYERLIST_CONTEXT,
-                'group': MenuGroup.NAVIGATION,
-            }
-        ],
-    ),
-    Action(
-        id=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY.title,
-        callback=_layer_actions._hide_show_unselected,
-        menus=[
-            {
-                'id': MenuId.LAYERLIST_CONTEXT,
-                'group': MenuGroup.NAVIGATION,
-            }
-        ],
-    ),
-    Action(
         id=CommandId.LAYER_LINK_SELECTED,
         title=CommandId.LAYER_LINK_SELECTED.title,
         callback=_layer_actions._link_selected_layers,
@@ -141,6 +119,44 @@ LAYER_ACTIONS: List[Action] = [
     ),
 ]
 
+
+# Statically defined Layer actions.
+# modifying this list at runtime has no effect.
+VISIBILITY_ACTIONS: List[Action] = [
+    Action(
+        id=CommandId.LAYER_TOGGLE_VISIBILITY,
+        title=CommandId.LAYER_TOGGLE_VISIBILITY.title,
+        callback=_layer_actions._toggle_visibility,
+        menus=[
+            {
+                'id': MenuId.VISIBILITY_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY,
+        title=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY.title,
+        callback=_layer_actions._show_hide_selected,
+        menus=[
+            {
+                'id': MenuId.VISIBILITY_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY,
+        title=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY.title,
+        callback=_layer_actions._hide_show_unselected,
+        menus=[
+            {
+                'id': MenuId.VISIBILITY_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+]
 
 for _dtype in (
     'int8',

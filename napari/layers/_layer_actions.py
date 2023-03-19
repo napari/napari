@@ -88,6 +88,11 @@ def _merge_stack(ll: LayerList, rgb=False):
     ll.append(merged)
 
 
+def _toggle_visibility(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = not lay.visible
+
+
 def _show_hide_selected(ll: LayerList):
     for lay in ll.selection:
         # show_selected is initialized as True, so will show first time
