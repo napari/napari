@@ -36,7 +36,9 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: |
+            setup.cfg
+            docs/requirements.txt
 
       - uses: tlambert03/setup-qt-libs@v1
 

@@ -242,6 +242,7 @@ def imshow(
     cache=True,
     plane=None,
     experimental_clipping_planes=None,
+    custom_interpolation_kernel_2d=None,
     viewer=None,
     title='napari',
     ndisplay=2,
@@ -379,6 +380,8 @@ def imshow(
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
+    custom_interpolation_kernel_2d : np.ndarray
+        Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
     viewer : Viewer object, optional, by default None.
     title : string, optional
         The title of the viewer window. By default 'napari'.
@@ -431,6 +434,7 @@ def imshow(
         cache=cache,
         plane=plane,
         experimental_clipping_planes=experimental_clipping_planes,
+        custom_interpolation_kernel_2d=custom_interpolation_kernel_2d,
         title=title,
         ndisplay=ndisplay,
         order=order,
