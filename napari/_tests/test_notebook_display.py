@@ -48,7 +48,10 @@ def test_nbscreenshot(make_napari_viewer):
         (r"¯\_(ツ)_/¯", '¯\\_(ツ)_/¯'),  # Japanese emoticon
         # # Special characters
         ("田中さんにあげて下さい", "田中さんにあげて下さい"),  # two-byte characters
-        ("表ポあA鷗ŒéB逍Üßªąñ丂㐀𠀀", "表ポあA鷗ŒéB逍Üßªąñ丂㐀𠀀"),  # special unicode chars
+        (
+            "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
+            "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀",  # noqa: RUF001
+        ),  # special unicode chars
         ("گچپژ", "گچپژ"),  # Persian special characters
         # # Script injection
         ("<script>alert(0)</script>", None),  # script injection 1
