@@ -2,7 +2,7 @@ import numbers
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -324,6 +324,7 @@ class Points(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         text=None,
         symbol='o',
@@ -432,6 +433,7 @@ class Points(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -567,8 +569,8 @@ class Points(Layer):
                     new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
-                # Add new colors, updating current property value to handle
-                # any in-place modification of feature_defaults.
+                # Add new colors, updating the current property value before
+                # to handle any in-place modification of feature_defaults.
                 # Also see: https://github.com/napari/napari/issues/5634
                 current_properties = self._feature_table.currents()
                 self._edge._update_current_properties(current_properties)
@@ -639,6 +641,12 @@ class Points(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:

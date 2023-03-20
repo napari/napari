@@ -64,6 +64,23 @@ def test_empty_points_with_features():
     assert_colors_equal(pts.face_color, list('rgb'))
 
 
+def test_empty_points_with_features_alt():
+    pts = Points(
+        features={'a': np.empty(0, int)},
+        face_color_cycle=list('rgb'),
+    )
+    pts.feature_defaults = {'a': 0}
+    pts.face_color = 'a'
+
+    pts.add([0, 0])
+    pts.feature_defaults = {'a': 1}
+    pts.add([50, 50])
+    pts.feature_defaults = {'a': 2}
+    pts.add([100, 100])
+
+    assert_colors_equal(pts.face_color, list('rgb'))
+
+
 def test_empty_points_with_properties():
     """Test instantiating an empty Points layer with properties
 

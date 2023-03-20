@@ -704,9 +704,10 @@ class _FeatureTable:
         values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
         *,
         num_data: Optional[int] = None,
+        defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
     ) -> None:
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
+        self._defaults = _validate_defaults(defaults, self._values)
 
     @property
     def values(self) -> pd.DataFrame:
@@ -716,18 +717,13 @@ class _FeatureTable:
     def set_values(self, values, *, num_data=None) -> None:
         """Sets the feature values table."""
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
+        self._defaults = _validate_defaults(None, self._values)
 
-    def _make_defaults(self) -> pd.DataFrame:
-        """Makes the default values table from the feature values."""
-        return pd.DataFrame(
-            {
-                name: _get_default_column(column)
-                for name, column in self._values.items()
-            },
-            index=range(1),
-            copy=True,
-        )
+    def set_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        """Sets the feature default values."""
+        self._defaults = _validate_defaults(defaults, self._values)
 
     @property
     def defaults(self) -> pd.DataFrame:
@@ -841,6 +837,7 @@ class _FeatureTable:
         cls,
         *,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        feature_defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
         properties: Optional[
             Union[Dict[str, np.ndarray], pd.DataFrame]
         ] = None,
@@ -917,6 +914,22 @@ def _validate_features(
         }
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
+
+
+def _validate_defaults(
+    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]],
+    values: pd.DataFrame,
+) -> pd.DataFrame:
+    if defaults is None:
+        defaults = {}
+    for column in values.columns:
+        if column not in defaults:
+            defaults[column] = _get_default_column(values[column])
+        # Should raise if default value type is not compatible with values dtype.
+        defaults[column] = pd.Series(
+            defaults[column], dtype=values.dtypes[column], index=range(1)
+        )
+    return pd.DataFrame(defaults, index=range(1), copy=True)
 
 
 def _features_from_properties(
