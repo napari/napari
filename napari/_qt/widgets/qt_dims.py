@@ -135,18 +135,14 @@ class QtDims(QWidget):
         visible at all times, with minimal space, without setting stretch on
         the layout.
         """
-        displayed_sliders_idx = [
-            idx
+        displayed_labels = [
+            self.slider_widgets[idx].axis_label
             for idx, displayed in enumerate(self._displayed_sliders)
             if displayed
         ]
-        if displayed_sliders_idx:
+        if displayed_labels:
             fm = QFontMetrics(QFont("", 0))
             labels = self.findChildren(QLineEdit, 'axis_label')
-            displayed_labels = [
-                self.slider_widgets[slider_idx].axis_label
-                for slider_idx in displayed_sliders_idx
-            ]
             # set maximum width to no more than 20% of slider width
             maxwidth = int(self.slider_widgets[0].width() * 0.2)
             # set new base width to the width of the longest label being displayed
