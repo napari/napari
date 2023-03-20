@@ -675,6 +675,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         cache=True,
         plane=None,
         experimental_clipping_planes=None,
+        custom_interpolation_kernel_2d=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -806,6 +807,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal', and 'enabled'}.
             Values on the negative side of the normal are discarded if the plane is enabled.
+        custom_interpolation_kernel_2d : np.ndarray
+            Convolution kernel used with the 'custom' interpolation mode in 2D rendering.
 
         Returns
         -------
@@ -849,6 +852,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'cache': cache,
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
+            'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -861,6 +865,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'contrast_limits',
             'metadata',
             'experimental_clipping_planes',
+            'custom_interpolation_kernel_2d',
         }
 
         if channel_axis is None:
