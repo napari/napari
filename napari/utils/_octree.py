@@ -78,9 +78,6 @@ def get_octree_config() -> dict:
     dict
         The config data we should use.
     """
-    # TODO the following is commented out to disallow setting octree via
-    # environment variables and forcing octree to always be False
-
     settings = get_settings()
     octree_var = settings.experimental.octree
 
@@ -94,7 +91,7 @@ def get_octree_config() -> dict:
 
     # If NAPARI_OCTREE is "1" then use default config.
     if octree_var == "1":
-        LOGGER.warn(
+        LOGGER.warning(
             'Deprecation Warning: Octree will be removed in a future release.'
         )
         return DEFAULT_OCTREE_CONFIG
