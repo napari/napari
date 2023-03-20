@@ -252,11 +252,18 @@ def test_update_dims_labels(qtbot):
     view.dims.axis_labels = list('TZYX')
     assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
+    observed_axis_labels_event = False
+
+    def on_axis_labels_changed():
+        nonlocal observed_axis_labels_event
+        observed_axis_labels_event = True
+
+    view.dims.events.axis_labels.connect(on_axis_labels_changed)
     first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
     first_label.setText('napari')
-    # first_label.editingFinished.emit()
     assert first_label.text() == view.dims.axis_labels[0]
+    assert observed_axis_labels_event
 
 
 def test_slider_press_updates_last_used(qtbot):

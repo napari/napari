@@ -212,6 +212,10 @@ class CondaInstallerTool(AbstractInstallerTool):
             if not env.contains("USERPROFILE"):
                 env.insert("HOME", os.path.expanduser("~"))
                 env.insert("USERPROFILE", os.path.expanduser("~"))
+        if sys.platform == 'darwin' and env.contains('PYTHONEXECUTABLE'):
+            # Fix for macOS when napari launched from terminal
+            # related to https://github.com/napari/napari/pull/5531
+            env.remove("PYTHONEXECUTABLE")
         return env
 
     @staticmethod
