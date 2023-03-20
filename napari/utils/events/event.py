@@ -193,11 +193,9 @@ class Event:
                 attr = getattr(self, name)
 
                 attrs.append(f"{name}={attr!r}")
-            return (  # noqa TRY301
-                f'<{self.__class__.__name__} {" ".join(attrs)}>'
-            )
         finally:
             _event_repr_depth -= 1
+        return f'<{self.__class__.__name__} {" ".join(attrs)}>'
 
     def __str__(self) -> str:
         """Shorter string representation"""
