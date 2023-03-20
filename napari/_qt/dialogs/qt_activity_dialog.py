@@ -233,7 +233,6 @@ class QtActivityDialog(QDialog):
             for potential_parent in pbars:
                 if potential_parent.progress is prog:
                     return potential_parent
-            return None
         return None
 
     def close_progress_bar(self, prog):
