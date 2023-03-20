@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import (
+    assert_colors_equal,
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
@@ -44,6 +45,23 @@ def _make_cycled_properties(values, length):
 def test_empty_points():
     pts = Points()
     assert pts.data.shape == (0, 2)
+
+
+def test_empty_points_with_features():
+    pts = Points(
+        features={'a': np.empty(0, int)},
+        face_color_cycle=list('rgb'),
+    )
+    pts.feature_defaults['a'] = 0
+    pts.face_color = 'a'
+
+    pts.add([0, 0])
+    pts.feature_defaults['a'] = 1
+    pts.add([50, 50])
+    pts.feature_defaults['a'] = 2
+    pts.add([100, 100])
+
+    assert_colors_equal(pts.face_color, list('rgb'))
 
 
 def test_empty_points_with_properties():

@@ -567,8 +567,13 @@ class Points(Layer):
                     new_symbol = self.current_symbol
                 symbol = np.repeat([new_symbol], adding, axis=0)
 
-                # add new colors
+                # Add new colors, updating current property value to handle
+                # any in-place modification of feature_defaults.
+                # Also see: https://github.com/napari/napari/issues/5634
+                current_properties = self._feature_table.currents()
+                self._edge._update_current_properties(current_properties)
                 self._edge._add(n_colors=adding)
+                self._face._update_current_properties(current_properties)
                 self._face._add(n_colors=adding)
 
                 shown = np.repeat([True], adding, axis=0)
