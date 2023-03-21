@@ -48,37 +48,24 @@ def test_empty_points():
 
 
 def test_empty_points_with_features():
-    pts = Points(
-        features={'a': np.empty(0, int)},
-        face_color_cycle=list('rgb'),
-    )
-    pts.feature_defaults['a'] = 0
-    pts.face_color = 'a'
-
-    pts.add([0, 0])
-    pts.feature_defaults['a'] = 1
-    pts.add([50, 50])
-    pts.feature_defaults['a'] = 2
-    pts.add([100, 100])
-
-    assert_colors_equal(pts.face_color, list('rgb'))
-
-
-def test_empty_points_with_features_alt():
-    pts = Points(
+    """See the following for the issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    points = Points(
         features={'a': np.empty(0, int)},
         feature_defaults={'a': 0},
         face_color='a',
         face_color_cycle=list('rgb'),
     )
 
-    pts.add([0, 0])
-    pts.feature_defaults = {'a': 1}
-    pts.add([50, 50])
-    pts.feature_defaults = {'a': 2}
-    pts.add([100, 100])
+    points.add([0, 0])
+    points.feature_defaults['a'] = 1
+    points.add([50, 50])
+    points.feature_defaults['a'] = 2
+    points.add([100, 100])
 
-    assert_colors_equal(pts.face_color, list('rgb'))
+    assert_colors_equal(points.face_color, list('rgb'))
 
 
 def test_empty_points_with_properties():

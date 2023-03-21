@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_colors_equal,
+    check_layer_world_data_extent,
+)
 from napari.components import ViewerModel
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import Anchor
@@ -43,6 +46,27 @@ def test_update_thumbnail_empty_shapes():
     layer = Shapes()
     layer._allow_thumbnail_update = True
     layer._update_thumbnail()
+
+
+def test_empty_shapes_with_features():
+    """See the following for the points issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    shapes = Shapes(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
+        face_color_cycle=list('rgb'),
+    )
+
+    shapes.add_rectangles([[0, 0], [1, 1]])
+    shapes.feature_defaults['a'] = 1
+    shapes.add_rectangles([[1, 1], [2, 2]])
+    shapes.feature_defaults['a'] = 2
+    shapes.add_rectangles([[2, 2], [3, 3]])
+
+    assert_colors_equal(shapes.face_color, list('rgb'))
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}

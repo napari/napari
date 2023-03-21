@@ -58,9 +58,11 @@ class Points(Layer):
     ndim : int
         Number of dimensions for shapes. When data is not None, ndim must be D.
         An empty points layer can be instantiated with arbitrary ndim.
-    features : dict[str, array-like] or DataFrame
+    features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -649,6 +651,10 @@ class Points(Layer):
         self, defaults: Union[Dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
         self.events.feature_defaults()
 
     @property
