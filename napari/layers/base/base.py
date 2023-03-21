@@ -1124,7 +1124,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[float, int]:
+    ) -> Union[
+        float, int, None, Tuple[Union[float, int, None], Optional[int]]
+    ]:
         """Get the layer data value along a ray
 
         Parameters

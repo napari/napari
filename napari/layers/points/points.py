@@ -1508,7 +1508,7 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    def _get_value(self, position) -> Union[None, int]:
+    def _get_value(self, position) -> Optional[int]:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -1549,7 +1549,7 @@ class Points(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[int, None]:
+    ) -> Optional[int]:
         """Get the layer data value along a ray
 
         Parameters

@@ -2704,7 +2704,7 @@ class Shapes(Layer):
             dims_displayed=dims_displayed,
         )
 
-        return (value, None)
+        return value, None
 
     def _get_index_and_intersection(
         self,

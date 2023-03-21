@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -510,7 +510,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
-    ) -> Tuple[Union[None, float, int], None]:
+    ) -> Tuple[Union[None, float, int], Optional[int]]:
         """Get the layer data value along a ray
 
         Parameters
