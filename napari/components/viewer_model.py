@@ -136,10 +136,35 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ----------
     window : Window
         Parent window.
+    camera: napari.Camera
+        The Napari camera object modeling the position and view.
+    cursor: napari.Cursor
+        The Napari cursor object containing the position and properties of the cursor.
+    grid: napari.Gridcanvas
+        The Napari gridcanvas allowing for the current implementation of a gridview of the canvas.
     layers : LayerList
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
+    help: str
+        A help message of the viewer model
+    tooltip: napari.Tooltip
+        A tooltip showing extra information on the cursor
+    theme: str
+        Name of the Napari theme of the viewer
+    canvas_size: Tuple[int, int]
+        The canvas size following the Numpy convention of height x width
+    title: str
+        The title of the viewer model
+    overlays: napari.EventedDict[str, Overlay]
+        An EventedDict with as keys the string names of different napari overlays and as values the napari.Overlay
+        objects.
+    ctx: Mapping
+        Viewer object context mapping.
+    mouse_over_canvas: bool
+        Indicating whether the mouse cursor is on the viewer canvas.
+    layer_slicer: napari._Layer_Slicer
+        A layer slicer object controlling the creation of a slice
     """
 
     # Using allow_mutation=False means these attributes aren't settable and don't
