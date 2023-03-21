@@ -527,7 +527,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         value
             The data value along the supplied ray.
         vertex : None
-            Index of vertex if any that is at the coordinates. Always returns `None`.
+            Index of vertex if any that is at the coordinates.
         """
         if len(dims_displayed) != 3:
             # only applies to 3D
