@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -155,6 +155,7 @@ class Vectors(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         property_choices=None,
         edge_width=1,
@@ -222,6 +223,7 @@ class Vectors(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -235,7 +237,7 @@ class Vectors(Layer):
             categorical_colormap=edge_color_cycle,
             properties=self.properties
             if self._data.size > 0
-            else self.property_choices,
+            else self._feature_table.currents(),
         )
 
         # Data containing vectors in the currently viewed slice
@@ -275,6 +277,9 @@ class Vectors(Layer):
                 # If there are now more points, add the size and colors of the
                 # new ones
                 adding = n_vectors - previous_n_vectors
+                self._edge._update_current_properties(
+                    self._feature_table.currents()
+                )
                 self._edge._add(n_colors=adding)
 
         self._update_dims()
@@ -343,6 +348,13 @@ class Vectors(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.feature_defaults()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:

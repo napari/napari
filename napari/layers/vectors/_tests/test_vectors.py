@@ -3,7 +3,10 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_colors_equal,
+    check_layer_world_data_extent,
+)
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -63,6 +66,27 @@ def test_empty_vectors():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
+
+
+def test_empty_vectors_with_features():
+    """See the following for the points issues this covers:
+    https://github.com/napari/napari/issues/5632
+    https://github.com/napari/napari/issues/5634
+    """
+    vectors = Vectors(
+        features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        edge_color='a',
+        edge_color_cycle=list('rgb'),
+    )
+
+    vectors.data = np.concatenate((vectors.data, [[[0, 0], [1, 1]]]))
+    vectors.feature_defaults['a'] = 1
+    vectors.data = np.concatenate((vectors.data, [[[1, 1], [2, 2]]]))
+    vectors.feature_defaults['a'] = 2
+    vectors.data = np.concatenate((vectors.data, [[[2, 2], [3, 3]]]))
+
+    assert_colors_equal(vectors.edge_color, list('rgb'))
 
 
 def test_empty_vectors_with_property_choices():
