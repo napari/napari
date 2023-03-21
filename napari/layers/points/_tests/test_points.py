@@ -67,10 +67,10 @@ def test_empty_points_with_features():
 def test_empty_points_with_features_alt():
     pts = Points(
         features={'a': np.empty(0, int)},
+        feature_defaults={'a': 0},
+        face_color='a',
         face_color_cycle=list('rgb'),
     )
-    pts.feature_defaults = {'a': 0}
-    pts.face_color = 'a'
 
     pts.add([0, 0])
     pts.feature_defaults = {'a': 1}

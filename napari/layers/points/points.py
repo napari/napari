@@ -473,7 +473,9 @@ class Points(Layer):
         self._status = self.mode
 
         color_properties = (
-            self.properties if self._data.size > 0 else self.property_choices
+            self._feature_table.properties()
+            if self._data.size > 0
+            else self._feature_table.currents()
         )
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -647,6 +649,7 @@ class Points(Layer):
         self, defaults: Union[Dict[str, Any], pd.DataFrame]
     ) -> None:
         self._feature_table.set_defaults(defaults)
+        self.events.feature_defaults()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:

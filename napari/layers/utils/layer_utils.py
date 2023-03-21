@@ -875,7 +875,7 @@ class _FeatureTable:
                 property_choices=property_choices,
                 num_data=num_data,
             )
-        return cls(features, num_data=num_data)
+        return cls(features, defaults=feature_defaults, num_data=num_data)
 
 
 def _get_default_column(column: pd.Series) -> pd.Series:
