@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.utils.events.event import Event
+    from napari.utils.key_bindings import KeymapHandler
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -76,6 +77,8 @@ class VispyCanvas:
         A mapping of the napari layers that have been added to the viewer and their corresponding vispy counterparts.
     overlay_to_visual : dict(napari.components.overlays, napari._vispy.overlays)
         A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+    key_map_handler : napari.utils.KeymapHandler
+        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     cursors : QtCursorVisual
         A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
         creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
@@ -85,7 +88,13 @@ class VispyCanvas:
 
     _instances = WeakSet()
 
-    def __init__(self, viewer: ViewerModel, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        viewer: ViewerModel,
+        key_map_handler: KeymapHandler,
+        *args,
+        **kwargs,
+    ) -> None:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self.max_texture_sizes = None
@@ -101,6 +110,7 @@ class VispyCanvas:
         )
         self.layer_to_visual = {}
         self._overlay_to_visual = {}
+        self._key_map_handler = key_map_handler
         self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
@@ -117,6 +127,12 @@ class VispyCanvas:
         self._scene_canvas.context.set_depth_func('lequal')
 
         # Connecting events from SceneCanvas
+        self._scene_canvas.events.key_press.connect(
+            self._key_map_handler.on_key_press
+        )
+        self._scene_canvas.events.key_release.connect(
+            self._key_map_handler.on_key_release
+        )
         self._scene_canvas.events.draw.connect(self.enable_dims_play)
         self._scene_canvas.events.draw.connect(self.vispy_camera.on_draw)
 

@@ -197,15 +197,8 @@ class QtViewer(QSplitter):
         self.canvas = canvas_class(
             viewer=viewer,
             parent=self,
+            key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
-        )
-
-        # TODO: temporary but needs to be moved to VispyCanvas
-        self.canvas._scene_canvas.events.key_press.connect(
-            self._key_map_handler.on_key_press
-        )
-        self.canvas._scene_canvas.events.key_release.connect(
-            self._key_map_handler.on_key_release
         )
 
         # Stacked widget to provide a welcome page
