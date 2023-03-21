@@ -4,6 +4,7 @@ default_shortcuts = {
     'napari:toggle_ndisplay': ['Control-Y'],
     'napari:toggle_theme': ['Control-Shift-T'],
     'napari:reset_view': ['Control-R'],
+    'napari:delete_selected_layers': ['Control-Delete'],
     'napari:show_shortcuts': ['Control-Alt-/'],
     'napari:increment_dims_left': ['Left'],
     'napari:increment_dims_right': ['Right'],
@@ -61,5 +62,4 @@ default_shortcuts = {
     # surface
     'napari:activate_surface_pan_zoom_mode': ['1'],
     'napari:activate_surface_transform_mode': ['2'],
-
 }
