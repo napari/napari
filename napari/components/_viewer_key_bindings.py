@@ -76,6 +76,11 @@ def reset_view(viewer: Viewer):
     viewer.reset_view()
 
 
+@register_viewer_action(trans._("Delete selected layers."))
+def delete_selected_layers(viewer: Viewer):
+    viewer.layers.remove_selected()
+
+
 @register_viewer_action(trans._("Increment dimensions slider to the left."))
 def increment_dims_left(viewer: Viewer):
     viewer.dims._increment_dims_left()
