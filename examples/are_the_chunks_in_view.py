@@ -9,11 +9,14 @@ import dask.array as da
 import numpy as np
 import toolz as tz
 from cachey import Cache
-from fibsem_tools.io import read_xarray
+from fibsem_tools import read_xarray
 from magicgui import magic_factory
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
 from superqt import ensure_main_thread
+
+from ome_zarr.io import parse_url
+from ome_zarr.reader import Reader
 
 import napari
 from napari.qt.threading import thread_worker
@@ -962,6 +965,7 @@ def idr0051A():
 
 
 def luethi_zenodo_7144919():
+    import os
     import pooch
 
     # Downloaded from https://zenodo.org/record/7144919#.Y-OvqhPMI0R
@@ -977,6 +981,12 @@ def luethi_zenodo_7144919():
     )
     local_container = os.path.split(dest_dir[0])[0]
     print(local_container)
+    store = parse_url(local_container, mode="r").store
+    reader = Reader(parse_url(local_container))
+    nodes = list(reader())
+    image_node = nodes[0]
+    dask_data = image_node.data
+
     large_image = {
         "container": local_container,
         "dataset": "B/03/0",
@@ -988,23 +998,20 @@ def luethi_zenodo_7144919():
             (1, 1.3, 1.3),
             (1, 2.6, 2.6),
         ],
+        "chunk_size": (1, 10, 256, 256)
     }
     large_image["arrays"] = []
     for scale in range(large_image["scale_levels"]):
-        result = read_xarray(
-            f"{large_image['container']}/{large_image['dataset']}/{scale}/",
-            #            storage_options={"anon": True},
-        )
+        array = dask_data[scale]
 
         # TODO extract scale_factors now
 
         # large_image["arrays"].append(result.data.rechunk((3, 10, 256, 256)))
         large_image["arrays"].append(
-            result.data.rechunk((1, 10, 256, 256)).squeeze()
+            array.rechunk((1, 10, 256, 256)).squeeze()
             # result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze()
         )
     return large_image
-
 
 @magic_factory(
     call_button="Poor Octree Renderer",
@@ -1058,7 +1065,7 @@ def poor_octree_widget(
     # Forcing 3D here
     view_slice = view_slice[-3:]
 
-    viewer = napari.Viewer(ndisplay=3)
+    # viewer = napari.Viewer(ndisplay=3)
 
     if colormap == "multiscale":
         colormaps = {
