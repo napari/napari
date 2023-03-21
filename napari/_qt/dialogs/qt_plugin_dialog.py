@@ -713,6 +713,8 @@ class RefreshState(Enum):
 
 
 class QtPluginDialog(QDialog):
+    available_list: QPluginList
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.refresh_state = RefreshState.DONE
