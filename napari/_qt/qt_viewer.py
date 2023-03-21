@@ -295,7 +295,7 @@ class QtViewer(QSplitter):
         """
         warnings.warn(
             trans._(
-                "Access to QtViewer.camera will become deprecated in the future. Change to QtViewer.canvas.camera instead."
+                "Access to QtViewer.camera will become deprecated in the 0.6.0. Change to QtViewer.canvas.camera instead."
             ),
             FutureWarning,
             stacklevel=2,
