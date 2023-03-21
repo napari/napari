@@ -11,6 +11,7 @@ other than '1'.
 
 import os
 from configparser import ConfigParser
+from pathlib import Path
 
 
 def pin_config_minimum_requirements(config_filename):
@@ -44,3 +45,9 @@ if __name__ == '__main__':
             os.path.dirname(__file__), "..", "setup.cfg"
         )
         pin_config_minimum_requirements(config_filename)
+
+        tox_file = Path(__file__).parent.parent / 'tox.ini'
+
+        tox_file.write_text(
+            tox_file.read_text().replace(' --only-binary :all:', '')
+        )
