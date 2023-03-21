@@ -100,7 +100,7 @@ def main():
         ),
     ]:
         print(f"\n * Checking '{org}/{reponame}'\n")
-        if not source:
+        if source is None:
             diff = check_vendored_module(org, reponame, tag)
         else:
             diff = check_vendored_files(

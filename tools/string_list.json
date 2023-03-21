@@ -932,6 +932,7 @@
       "napari:reset_view",
       "napari:toggle_grid",
       "napari:toggle_ndisplay",
+      "napari:delete_selected_layers",
       "perspective",
       "Control-Backspace",
       "console",
