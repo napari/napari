@@ -20,7 +20,10 @@ import numpy as np
 from typing_extensions import TypedDict, get_args
 
 if TYPE_CHECKING:
-    import dask.array  # noqa ICN001
+    # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
+    # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
+    # magicgui properly register it.
+    import dask.array  # noqa: ICN001
     import zarr
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
