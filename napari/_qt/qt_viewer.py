@@ -132,6 +132,9 @@ class QtViewer(QSplitter):
     show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
         canvas. Default is `False`.
+    canvas_class : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
 
     Attributes
     ----------
@@ -150,14 +153,24 @@ class QtViewer(QSplitter):
         QWidget wrapped in a QDockWidget with forwarded viewer events.
     dockLayerList : QtViewerDockWidget
         QWidget wrapped in a QDockWidget with forwarded viewer events.
+    key_map_handler : napari.utils.KeymapHandler
+        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     layerButtons : QtLayerButtons
         Button controls for napari layers.
     layers : QtLayerList
         Qt view for LayerList controls.
+    qt_poll : Optional[QtPoll]
+        A QtPoll object required for octree or monitor.
+    remote_manager : RemoteManager
+        A remote manager processing commands from remote clients and sending out messages when polled.
+    show_welcome_screen : bool
+        Boolean indicating whether to show the welcome screen.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     viewerButtons : QtViewerButtons
         Button controls for the napari viewer.
+    welcome_widget : QtWidgetOverlay
+        QtWidgetOverlay providing the stacked widgets for the welcome page.
     """
 
     _instances = WeakSet()
