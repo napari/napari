@@ -104,7 +104,7 @@ def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
 
 def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
     """
-    Create vispy visuals for each overlay contained in an Overlays model based on their type,
+    Create vispy visual for Overlay  based on its type.
 
     Parameters
     ----------
