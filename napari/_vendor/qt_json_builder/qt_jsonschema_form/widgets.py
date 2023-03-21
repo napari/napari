@@ -158,6 +158,7 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
         if 'maximum' in self.schema:
             self.setMaximum(self.schema['maximum'])
 
+
     def setDescription(self, description: str):
         self.description = description
 
@@ -643,13 +644,12 @@ class Extension2ReaderWidget(SchemaWidgetMixin, Extension2ReaderTable):
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
-
 class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     def __init__(
-            self,
-            schema: dict,
-            ui_schema: dict,
-            widget_builder: 'WidgetBuilder',
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -678,20 +678,19 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
         self.description = description
 
     def populate_from_schema(
-            self,
-            schema: dict,
-            ui_schema: dict,
-            widget_builder: 'WidgetBuilder',
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         raise NotImplementedError
 
-
 class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
     def populate_from_schema(
-            self,
-            schema: dict,
-            ui_schema: dict,
-            widget_builder: 'WidgetBuilder',
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QHBoxLayout()
         self.setLayout(layout)
@@ -711,6 +710,7 @@ class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
             widget.on_changed.connect(partial(self.widget_on_changed, name))
             layout.addWidget(widget)
 
+
             widgets[name] = widget
 
         return widgets
@@ -719,10 +719,10 @@ class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
 class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
 
     def populate_from_schema(
-            self,
-            schema: dict,
-            ui_schema: dict,
-            widget_builder: 'WidgetBuilder',
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
@@ -738,6 +738,7 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
             description = sub_schema.get('description', "")
+
 
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(

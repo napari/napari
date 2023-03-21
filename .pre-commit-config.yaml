@@ -11,19 +11,19 @@ repos:
 -   repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:
-      - id: black
-        pass_filenames: true
-        exclude: _vendor|vendored|examples
+    - id: black
+      pass_filenames: true
+      exclude: _vendor|vendored|examples
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.254
     hooks:
-          - id: ruff
-            exclude: _vendor|vendored
+      - id: ruff
+        exclude: _vendor|vendored
 -   repo: https://github.com/seddonym/import-linter
     rev: v1.8.0
     hooks:
-        - id: import-linter
-          stages: [ manual ]
+    - id: import-linter
+      stages: [manual]
 -   repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.22.0
     hooks:

@@ -54,28 +54,26 @@
       "Viewer",
       "current_viewer"
     ],
-    "napari/_app_model/_app.py": [
-      "__module__"
-    ],
+    "napari/_app_model/_app.py": ["__module__"],
     "napari/_app_model/actions/_help_actions.py": [
-      "dev",
-      "examples_gallery",
-      "getting_started",
-      "github_issue",
-      "group",
-      "homepage",
-      "https://github.com/napari/napari/issues",
-      "https://napari.org",
-      "https://napari.org/{VERSION}/gallery.html",
-      "https://napari.org/{VERSION}/howtos/layers/index.html",
-      "https://napari.org/{VERSION}/release/release_{VERSION.replace(\".\", \"_\")}.html",
-      "https://napari.org/{VERSION}/tutorials/index.html",
-      "https://napari.org/{VERSION}/tutorials/start_index.html",
-      "id",
-      "layers_guide",
-      "release_notes",
-      "tutorials",
-      "when"
+        "dev",
+        "examples_gallery",
+        "getting_started",
+        "github_issue",
+        "group",
+        "homepage",
+        "https://github.com/napari/napari/issues",
+        "https://napari.org",
+        "https://napari.org/{VERSION}/gallery.html",
+        "https://napari.org/{VERSION}/howtos/layers/index.html",
+        "https://napari.org/{VERSION}/release/release_{VERSION.replace(\".\", \"_\")}.html",
+        "https://napari.org/{VERSION}/tutorials/index.html",
+        "https://napari.org/{VERSION}/tutorials/start_index.html",
+        "id",
+        "layers_guide",
+        "release_notes",
+        "tutorials",
+        "when"
     ],
     "napari/_app_model/actions/_layer_actions.py": [
       "when",
@@ -100,18 +98,18 @@
       "LAYER_PROJECT_{mode.upper()}"
     ],
     "napari/_app_model/actions/_view_actions.py": [
-      "1_render",
-      "arrows",
-      "axes",
-      "colored",
-      "dashed",
-      "group",
-      "id",
-      "labels",
-      "order",
-      "scale_bar",
-      "ticks",
-      "visible"
+        "1_render",
+        "arrows",
+        "axes",
+        "colored",
+        "dashed",
+        "group",
+        "id",
+        "labels",
+        "order",
+        "scale_bar",
+        "ticks",
+        "visible"
     ],
     "napari/_app_model/constants/_commands.py": [
       "napari:layer:duplicate",
@@ -214,25 +212,25 @@
     ],
     "napari/_qt/_constants.py": [],
     "napari/_qt/_qapp_model/_menus.py": [
-      "QWidget"
+        "QWidget"
     ],
     "napari/_qt/_qapp_model/qactions/__init__.py": [
-      "QtViewer",
-      "Window"
+        "QtViewer",
+        "Window"
     ],
     "napari/_qt/_qapp_model/qactions/_help.py": [
-      "group",
-      "id"
+        "group",
+        "id"
     ],
     "napari/_qt/_qapp_model/qactions/_view.py": [
-      "darwin",
-      "group",
-      "id",
-      "linux",
-      "order",
-      "primary",
-      "when",
-      "win"
+        "darwin",
+        "group",
+        "id",
+        "linux",
+        "order",
+        "primary",
+        "when",
+        "win"
     ],
     "napari/_qt/code_syntax_highlight.py": [
       "monospace",
@@ -373,56 +371,56 @@
       "NapariQtNotification"
     ],
     "napari/_qt/dialogs/qt_package_installer.py": [
-      "\n - ",
-      "&",
-      "--extra-index-url",
-      "--no-warn-script-location",
-      "--override-channels",
-      "--prefix",
-      "--upgrade",
-      "--version",
-      "-c",
-      "-m",
-      "-napari-constraints.txt",
-      "-vvv",
-      "-y",
-      ".bat",
-      "3",
-      "Action '{self.action}' not supported!",
-      "CONDA",
-      "CONDA_EXE",
-      "CONDA_PINNED_PACKAGES",
-      "CONDA_VERBOSITY",
-      "Cannot unregister %s, not a known napari plugin.",
-      "HOME",
-      "InstallerTool {tool} not recognized!",
-      "MAMBA_EXE",
-      "No job with id {job_id}. Current queue:\n - ",
-      "PIP_USER_AGENT_USER_DATA",
-      "PYTHONPATH",
-      "Prefix has not been specified!",
-      "TEMP",
-      "TMP",
-      "USERPROFILE",
-      "bin",
-      "conda-forge",
-      "conda-meta",
-      "condabin",
-      "conda{bat}",
-      "darwin",
-      "dev",
-      "install",
-      "linux",
-      "napari=={_napari_version}",
-      "napari={version}",
-      "nt",
-      "pip",
-      "python3",
-      "rc",
-      "uninstall",
-      "w",
-      "{item.ident} -> {item.executable()} {item.arguments()}",
-      "~"
+        "\n - ",
+        "&",
+        "--extra-index-url",
+        "--no-warn-script-location",
+        "--override-channels",
+        "--prefix",
+        "--upgrade",
+        "--version",
+        "-c",
+        "-m",
+        "-napari-constraints.txt",
+        "-vvv",
+        "-y",
+        ".bat",
+        "3",
+        "Action '{self.action}' not supported!",
+        "CONDA",
+        "CONDA_EXE",
+        "CONDA_PINNED_PACKAGES",
+        "CONDA_VERBOSITY",
+        "Cannot unregister %s, not a known napari plugin.",
+        "HOME",
+        "InstallerTool {tool} not recognized!",
+        "MAMBA_EXE",
+        "No job with id {job_id}. Current queue:\n - ",
+        "PIP_USER_AGENT_USER_DATA",
+        "PYTHONPATH",
+        "Prefix has not been specified!",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+        "bin",
+        "conda-forge",
+        "conda-meta",
+        "condabin",
+        "conda{bat}",
+        "darwin",
+        "dev",
+        "install",
+        "linux",
+        "napari=={_napari_version}",
+        "napari={version}",
+        "nt",
+        "pip",
+        "python3",
+        "rc",
+        "uninstall",
+        "w",
+        "{item.ident} -> {item.executable()} {item.arguments()}",
+        "~"
     ],
     "napari/_qt/dialogs/qt_plugin_dialog.py": [
       "cancel",
@@ -529,13 +527,10 @@
       "napari:activate_labels_pan_zoom_mode",
       "napari:activate_labels_picker_mode"
     ],
-    "napari/_qt/layer_controls/qt_layer_controls_base.py": [
-      "close",
-      "layer"
-    ],
+    "napari/_qt/layer_controls/qt_layer_controls_base.py": ["close", "layer"],
     "napari/_qt/layer_controls/qt_layer_controls_container.py": [
-      "emphasized",
-      "empty_controls_widget"
+        "emphasized",
+        "empty_controls_widget"
     ],
     "napari/_qt/layer_controls/qt_points_controls.py": [
       "add_points",
@@ -1045,14 +1040,10 @@
     ],
     "napari/_vispy/image.py": [],
     "napari/_vispy/layers/base.py": [
-      "clipping_planes",
-      "experimental_clipping_planes"
+        "clipping_planes",
+        "experimental_clipping_planes"
     ],
-    "napari/_vispy/layers/image.py": [
-      "auto",
-      "tile2data",
-      "texture_float"
-    ],
+    "napari/_vispy/layers/image.py": ["auto", "tile2data", "texture_float"],
     "napari/_vispy/layers/points.py": [
       "blending",
       "transparent",
@@ -1076,15 +1067,9 @@
       "face",
       "vertex"
     ],
-    "napari/_vispy/layers/tracks.py": [
-      "white"
-    ],
-    "napari/_vispy/layers/vectors.py": [
-      "constant"
-    ],
-    "napari/_vispy/markers.py": [
-      "a_position"
-    ],
+    "napari/_vispy/layers/tracks.py": ["white"],
+    "napari/_vispy/layers/vectors.py": ["constant"],
+    "napari/_vispy/markers.py": ["a_position"],
     "napari/_vispy/overlays/axes.py": [],
     "napari/_vispy/overlays/interaction_box.py": [],
     "napari/_vispy/overlays/scale_bar.py": [
@@ -1160,21 +1145,19 @@
       "resources"
     ],
     "napari/_vispy/visuals/axes.py": [
-      "1",
-      "center",
-      "gl",
-      "segments"
+        "1",
+        "center",
+        "gl",
+        "segments"
     ],
     "napari/_vispy/visuals/bounding_box.py": [
-      "red"
+        "red"
     ],
-    "napari/_vispy/visuals/clipping_planes_mixin.py": [
-      "_PVisual"
-    ],
+    "napari/_vispy/visuals/clipping_planes_mixin.py": ["_PVisual"],
     "napari/_vispy/visuals/interaction_box.py": [
-      "diamond",
-      "disc",
-      "square"
+        "diamond",
+        "disc",
+        "square"
     ],
     "napari/_vispy/visuals/markers.py": [
       "a_position",
@@ -1186,19 +1169,14 @@
       "canvas_size_max"
     ],
     "napari/_vispy/visuals/scale_bar.py": [
-      "1px",
-      "center",
-      "gl",
-      "segments",
-      "top"
+        "1px",
+        "center",
+        "gl",
+        "segments",
+        "top"
     ],
-    "napari/_vispy/visuals/surface.py": [
-      "face",
-      "vertex"
-    ],
-    "napari/_vispy/visuals/tracks.py": [
-      "white"
-    ],
+    "napari/_vispy/visuals/surface.py": ["face", "vertex"],
+    "napari/_vispy/visuals/tracks.py": ["white"],
     "napari/_vispy/visuals/volume.py": [
       "fragment",
       "iso_categorical",
@@ -1229,12 +1207,12 @@
     ],
     "napari/benchmarks/__init__.py": [],
     "napari/benchmarks/benchmark_image_layer.py": [
-      "CI",
-      "Skip on CI (not enough memory)"
+        "CI",
+        "Skip on CI (not enough memory)"
     ],
     "napari/benchmarks/benchmark_labels_layer.py": [
-      "CI",
-      "Skip on CI (not enough memory)"
+        "CI",
+        "Skip on CI (not enough memory)"
     ],
     "napari/benchmarks/benchmark_points_layer.py": [
       "mask_shape",
@@ -1243,18 +1221,15 @@
     ],
     "napari/benchmarks/benchmark_qt_viewer.py": [],
     "napari/benchmarks/benchmark_qt_viewer_image.py": [],
-    "napari/benchmarks/benchmark_qt_viewer_labels.py": [
-      "paint",
-      "mouse_move"
-    ],
+    "napari/benchmarks/benchmark_qt_viewer_labels.py": ["paint", "mouse_move"],
     "napari/benchmarks/benchmark_qt_slicing.py": [
-      "chunk_shape",
-      "dtype",
-      "jrc_hela-2 (scale 3)",
-      "shape",
-      "skin_data",
-      "uint16",
-      "uint8"
+        "chunk_shape",
+        "dtype",
+        "jrc_hela-2 (scale 3)",
+        "shape",
+        "skin_data",
+        "uint16",
+        "uint8"
     ],
     "napari/benchmarks/benchmark_shapes_layer.py": [
       "Event",
@@ -1270,8 +1245,8 @@
     ],
     "napari/benchmarks/benchmark_surface_layer.py": [],
     "napari/benchmarks/benchmark_tracks_layer.py": [
-      "n_tracks",
-      "size"
+        "n_tracks",
+        "size"
     ],
     "napari/benchmarks/benchmark_text_manager.py": [
       "car",
@@ -1297,14 +1272,14 @@
       "transform"
     ],
     "napari/components/_layer_slicer.py": [
-      "Cancelled task",
-      "Cancelling task for %s",
-      "Found existing task for %s",
-      "Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).",
-      "Task not found",
-      "_SliceResponse",
-      "napari.components._layer_slicer",
-      "ready"
+        "Cancelled task",
+        "Cancelling task for %s",
+        "Found existing task for %s",
+        "Slicing {len(not_done_futures)} tasks did not complete within timeout ({timeout}s).",
+        "Task not found",
+        "_SliceResponse",
+        "napari.components._layer_slicer",
+        "ready"
     ],
     "napari/components/_viewer_constants.py": [
       "bottom_left",
@@ -1322,18 +1297,12 @@
       "crosshair"
     ],
     "napari/components/_viewer_key_bindings.py": [
-      "napari:{func.__name__}",
-      "system"
+        "napari:{func.__name__}",
+        "system"
     ],
-    "napari/components/_viewer_mouse_bindings.py": [
-      "Control"
-    ],
+    "napari/components/_viewer_mouse_bindings.py": ["Control"],
     "napari/components/axes.py": [],
-    "napari/components/camera.py": [
-      "angles",
-      "center",
-      "yzx"
-    ],
+    "napari/components/camera.py": ["angles", "center", "yzx"],
     "napari/components/cursor.py": [],
     "napari/components/dims.py": [
       "axis_labels",
@@ -1552,8 +1521,8 @@
       "_ranges"
     ],
     "napari/components/overlays/bounding_box.py": [
-      "blue",
-      "red"
+        "blue",
+        "red"
     ],
     "napari/components/scale_bar.py": [],
     "napari/components/text_overlay.py": [],
@@ -1653,23 +1622,20 @@
       "affine"
     ],
     "napari/layers/_multiscale_data.py": [
-      "<MultiScaleData at {hex(id(self))}. {len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
+        "<MultiScaleData at {hex(id(self))}. {len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
     ],
-    "napari/layers/_source.py": [
-      "_LAYER_SOURCE",
-      "parent"
-    ],
+    "napari/layers/_source.py": ["_LAYER_SOURCE", "parent"],
     "napari/layers/base/__init__.py": [],
     "napari/layers/base/_base_constants.py": [
-      "{handle} has no opposite handle."
+        "{handle} has no opposite handle."
     ],
     "napari/layers/base/_base_mouse_bindings.py": [
-      "Control",
-      "Shift",
-      "data2physical",
-      "ignore",
-      "mouse_move",
-      "transform_box"
+        "Control",
+        "Shift",
+        "data2physical",
+        "ignore",
+        "mouse_move",
+        "transform_box"
     ],
     "napari/layers/base/base.py": [
       "<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>",
@@ -1718,25 +1684,17 @@
     ],
     "napari/layers/image/__init__.py": [],
     "napari/layers/image/_image_loader.py": [],
-    "napari/layers/image/_image_mouse_bindings.py": [
-      "Shift",
-      "mouse_move"
-    ],
+    "napari/layers/image/_image_mouse_bindings.py": ["Shift", "mouse_move"],
     "napari/layers/image/_image_slice.py": [
       "ImageSlice.__init__",
       "f",
       "napari.loader"
     ],
     "napari/layers/image/_image_slice_data.py": [],
-    "napari/layers/image/_image_utils.py": [
-      "dtype",
-      "image",
-      "labels",
-      "ndim"
-    ],
+    "napari/layers/image/_image_utils.py": ["dtype", "image", "labels", "ndim"],
     "napari/layers/image/_image_view.py": [],
     "napari/layers/image/_slice.py": [
-      "tile2data"
+        "tile2data"
     ],
     "napari/layers/image/experimental/__init__.py": [],
     "napari/layers/image/experimental/_chunk_set.py": [],
@@ -1849,11 +1807,7 @@
       "bicubic",
       "cubic"
     ],
-    "napari/layers/intensity_mixin.py": [
-      "_contrast_limits",
-      "Image",
-      "slice"
-    ],
+    "napari/layers/intensity_mixin.py": ["_contrast_limits", "Image", "slice"],
     "napari/layers/labels/__init__.py": [],
     "napari/layers/labels/_labels_constants.py": [
       "backspace",
@@ -1861,15 +1815,11 @@
       "delete"
     ],
     "napari/layers/labels/_labels_key_bindings.py": [
-      "mode",
-      "preserve_labels"
+        "mode",
+        "preserve_labels"
     ],
-    "napari/layers/labels/_labels_mouse_bindings.py": [
-      "mouse_move"
-    ],
-    "napari/layers/labels/_labels_utils.py": [
-      "dtype"
-    ],
+    "napari/layers/labels/_labels_mouse_bindings.py": ["mouse_move"],
+    "napari/layers/labels/_labels_utils.py": ["dtype"],
     "napari/layers/labels/labels.py": [
       "black",
       "circle",
@@ -2053,13 +2003,9 @@
     ],
     "napari/layers/surface/__init__.py": [],
     "napari/layers/surface/_surface_key_bindings.py": [
-      "mode"
+        "mode"
     ],
-    "napari/layers/surface/normals.py": [
-      "black",
-      "blue",
-      "orange"
-    ],
+    "napari/layers/surface/normals.py": ["black", "blue", "orange"],
     "napari/layers/surface/surface.py": [
       "colormap",
       "contrast_limits",
@@ -2073,17 +2019,12 @@
       "normals",
       "wireframe"
     ],
-    "napari/layers/surface/wireframe.py": [
-      "black"
-    ],
+    "napari/layers/surface/wireframe.py": ["black"],
     "napari/layers/tracks/__init__.py": [],
     "napari/layers/tracks/_tracks_key_bindings.py": [
-      "mode"
+        "mode"
     ],
-    "napari/layers/tracks/_track_utils.py": [
-      "ID:{i}",
-      "track_id"
-    ],
+    "napari/layers/tracks/_track_utils.py": ["ID:{i}", "track_id"],
     "napari/layers/tracks/tracks.py": [
       "additive",
       "color_by",
@@ -2162,22 +2103,11 @@
     ],
     "napari/layers/utils/color_transformations.py": [],
     "napari/layers/utils/interaction_box.py": [
-      "only 2D coordinates are accepted"
+        "only 2D coordinates are accepted"
     ],
-    "napari/layers/utils/interactivity_utils.py": [
-      "j, ij -> i"
-    ],
-    "napari/layers/utils/layer_utils.py": [
-      "b",
-      "f",
-      "u",
-      "ui",
-      "napari:"
-    ],
-    "napari/layers/utils/plane.py": [
-      "normal",
-      "position"
-    ],
+    "napari/layers/utils/interactivity_utils.py": ["j, ij -> i"],
+    "napari/layers/utils/layer_utils.py": ["b", "f", "u", "ui", "napari:"],
+    "napari/layers/utils/plane.py": ["normal", "position"],
     "napari/layers/utils/stack_utils.py": [
       "additive",
       "affine",
@@ -2243,11 +2173,9 @@
     ],
     "napari/layers/vectors/__init__.py": [],
     "napari/layers/vectors/_vectors_key_bindings.py": [
-      "mode"
+        "mode"
     ],
-    "napari/layers/vectors/_vector_utils.py": [
-      "D"
-    ],
+    "napari/layers/vectors/_vector_utils.py": ["D"],
     "napari/layers/vectors/vectors.py": [
       "current_value",
       "data",
@@ -2269,11 +2197,9 @@
       "out_of_slice_display"
     ],
     "napari/plugins/__init__.py": [
-      "{1} ({0})",
-      "0.4.0",
-      "builtins",
-      "Main Plugin manager instance",
-      "Template to use for namespacing a plugin item in the menu bar"
+        "{1} ({0})", "0.4.0", "builtins",
+        "Main Plugin manager instance",
+        "Template to use for namespacing a plugin item in the menu bar"
     ],
     "napari/plugins/_builtins.py": [
       ".csv",
@@ -2569,13 +2495,8 @@
       "python{sys.version_info.major}.{sys.version_info.minor}",
       "{os.path.basename(sys.prefix)}_{hashlib.sha1(sys.prefix.encode()).hexdigest()}"
     ],
-    "napari/utils/_base.py": [
-      "en",
-      "settings.yaml"
-    ],
-    "napari/utils/_dask_utils.py": [
-      "optimization.fuse.active"
-    ],
+    "napari/utils/_base.py": ["en", "settings.yaml"],
+    "napari/utils/_dask_utils.py": ["optimization.fuse.active"],
     "napari/utils/_magicgui.py": [
       "Data",
       "native",

@@ -25,12 +25,12 @@ viewer = napari.Viewer()
 # and minimum blending mode. Note that the bottom-most layer
 # must be translucent or opaque to prevent blending with the canvas.
 viewer.add_image(data.cells3d(),
-                 name=["membrane", "nuclei"],
-                 channel_axis=1,
-                 contrast_limits=[[1110, 23855], [1600, 50000]],
-                 colormap=["I Purple", "I Orange"],
-                 blending=["translucent_no_depth", "minimum"]
-                 )
+                            name=["membrane", "nuclei"],
+                            channel_axis=1,
+                            contrast_limits = [[1110, 23855], [1600, 50000]],
+                            colormap = ["I Purple", "I Orange"],
+                            blending= ["translucent_no_depth", "minimum"]
+                            )
 
 if __name__ == '__main__':
     napari.run()
