@@ -697,6 +697,9 @@ class _FeatureTable:
         the number of points, which is used to check that the features
         table has the expected number of rows. If None, then the default
         DataFrame index is used.
+    defaults: Optional[Union[Dict[str, Any], pd.DataFrame]]
+        The default feature values, which if specified should have the same keys
+        as the values provided. If None, will be inferred from the values.
     """
 
     def __init__(
@@ -719,16 +722,16 @@ class _FeatureTable:
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = _validate_defaults(None, self._values)
 
+    @property
+    def defaults(self) -> pd.DataFrame:
+        """The default values one-row table."""
+        return self._defaults
+
     def set_defaults(
         self, defaults: Union[Dict[str, Any], pd.DataFrame]
     ) -> None:
         """Sets the feature default values."""
         self._defaults = _validate_defaults(defaults, self._values)
-
-    @property
-    def defaults(self) -> pd.DataFrame:
-        """The default values one-row table."""
-        return self._defaults
 
     def properties(self) -> Dict[str, np.ndarray]:
         """Converts this to a deprecated properties dictionary.
@@ -895,7 +898,7 @@ def _validate_features(
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces a features table into a pandas DataFrame.
+    """Validates and coerces feature values into a pandas DataFrame.
 
     See Also
     --------
@@ -920,16 +923,41 @@ def _validate_defaults(
     defaults: Optional[Union[Dict[str, Any], pd.DataFrame]],
     values: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Validates and coerces feature default values into a pandas DataFrame.
+
+    See Also
+    --------
+    :class:`_FeatureTable` : See initialization for parameter descriptions.
+    """
     if defaults is None:
-        defaults = {}
-    for column in values.columns:
-        if column not in defaults:
-            defaults[column] = _get_default_column(values[column])
-        # Should raise if default value type is not compatible with values dtype.
-        defaults[column] = pd.Series(
-            defaults[column], dtype=values.dtypes[column], index=range(1)
+        defaults = {c: _get_default_column(values[c]) for c in values.columns}
+    else:
+        default_columns = set(defaults.keys())
+        value_columns = set(values.keys())
+
+        extra_defaults = default_columns - value_columns
+        if len(extra_defaults) > 0:
+            raise ValueError(
+                f'Feature defaults contain some extra columns not in feature values: {extra_defaults}'
+            )
+
+        missing_defaults = value_columns - default_columns
+        if len(missing_defaults) > 0:
+            raise ValueError(
+                f'Feature defaults is missing some columns in feature values: {missing_defaults}'
+            )
+
+    # Convert to series first to capture the per-column dtype, since
+    # DataFrame initializer does not support passing multiple dtypes.
+    default_series = {
+        c: pd.Series(
+            defaults[c],
+            dtype=values.dtypes[c],
+            index=range(1),
         )
-    return pd.DataFrame(defaults, index=range(1), copy=True)
+        for c in defaults
+    }
+    return pd.DataFrame(default_series, index=range(1), copy=True)
 
 
 def _features_from_properties(

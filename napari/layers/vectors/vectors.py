@@ -384,6 +384,7 @@ class Vectors(Layer):
                 'property_choices': self.property_choices,
                 'ndim': self.ndim,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
                 'out_of_slice_display': self.out_of_slice_display,
             }
         )

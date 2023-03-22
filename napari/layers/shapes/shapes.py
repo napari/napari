@@ -1517,6 +1517,7 @@ class Shapes(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
             }
         )
         return state

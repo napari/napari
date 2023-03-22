@@ -482,6 +482,7 @@ def test_remove_selected_removes_corresponding_attributes():
         symbol=symbol[1:],
         edge_width=size[1:],
         features={'feature': feature[1:]},
+        feature_defaults={'feature': feature[0]},
         face_color=color[1:],
         edge_color=color[1:],
         text=text,  # computed from feature
