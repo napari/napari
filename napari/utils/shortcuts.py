@@ -9,6 +9,7 @@ default_shortcuts = {
     'napari:toggle_ndisplay': [KeyMod.CtrlCmd | KeyCode.KeyY],
     'napari:toggle_theme': [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyT],
     'napari:reset_view': [KeyMod.CtrlCmd | KeyCode.KeyR],
+    'napari:delete_selected_layers': [KeyMod.CtrlCmd | KeyCode.Delete],
     'napari:show_shortcuts': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.Slash],
     'napari:increment_dims_left': [KeyCode.LeftArrow],
     'napari:increment_dims_right': [KeyCode.RightArrow],
