@@ -415,12 +415,14 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
 
 
 def test_feature_table_set_values_with_same_columns(feature_table):
-    new_values = {
-        'class': pd.Series(
-            ['building', 'sky'], dtype=feature_table.values.dtypes['class']
-        ),
-        'confidence': pd.Series([1, 0.5]),
-    }
+    new_values = pd.DataFrame(
+        {
+            'class': pd.Series(
+                ['building', 'sky'], dtype=feature_table.values.dtypes['class']
+            ),
+            'confidence': pd.Series([1, 0.5]),
+        }
+    )
     assert not feature_table.values['class'].equals(new_values['class'])
     assert not feature_table.values['confidence'].equals(
         new_values['confidence']
