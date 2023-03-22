@@ -137,7 +137,7 @@ fix = true
 
 [tool.ruff.per-file-ignores]
 "napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301"]
 "napari/utils/_testsupport.py" = ["B011"]
 "tools/test_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20"]
