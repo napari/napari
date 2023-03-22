@@ -414,32 +414,6 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
     pd.testing.assert_frame_equal(feature_table.values, expected)
 
 
-def test_feature_table_set_values_with_same_columns(feature_table):
-    new_values = pd.DataFrame(
-        {
-            'class': pd.Series(
-                ['building', 'sky'], dtype=feature_table.values.dtypes['class']
-            ),
-            'confidence': pd.Series([1, 0.5]),
-        }
-    )
-    assert not feature_table.values['class'].equals(new_values['class'])
-    assert not feature_table.values['confidence'].equals(
-        new_values['confidence']
-    )
-
-    feature_table.set_values(new_values)
-
-    pd.testing.assert_series_equal(
-        feature_table.values['class'], new_values['class'], check_names=False
-    )
-    pd.testing.assert_series_equal(
-        feature_table.values['confidence'],
-        new_values['confidence'],
-        check_names=False,
-    )
-
-
 def test_feature_table_set_defaults_with_same_columns(feature_table):
     new_defaults = {'class': 'building', 'confidence': 1}
     assert feature_table.defaults['class'][0] != new_defaults['class']

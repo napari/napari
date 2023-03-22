@@ -710,7 +710,7 @@ class _FeatureTable:
         defaults: Optional[Union[Dict[str, Any], pd.DataFrame]] = None,
     ) -> None:
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = _validate_defaults(defaults, self._values)
+        self._defaults = _validate_feature_defaults(defaults, self._values)
 
     @property
     def values(self) -> pd.DataFrame:
@@ -720,7 +720,7 @@ class _FeatureTable:
     def set_values(self, values, *, num_data=None) -> None:
         """Sets the feature values table."""
         self._values = _validate_features(values, num_data=num_data)
-        self._defaults = _validate_defaults(None, self._values)
+        self._defaults = _validate_feature_defaults(None, self._values)
 
     @property
     def defaults(self) -> pd.DataFrame:
@@ -731,7 +731,7 @@ class _FeatureTable:
         self, defaults: Union[Dict[str, Any], pd.DataFrame]
     ) -> None:
         """Sets the feature default values."""
-        self._defaults = _validate_defaults(defaults, self._values)
+        self._defaults = _validate_feature_defaults(defaults, self._values)
 
     def properties(self) -> Dict[str, np.ndarray]:
         """Converts this to a deprecated properties dictionary.
@@ -919,7 +919,7 @@ def _validate_features(
     return pd.DataFrame(data=features, index=index)
 
 
-def _validate_defaults(
+def _validate_feature_defaults(
     defaults: Optional[Union[Dict[str, Any], pd.DataFrame]],
     values: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -948,7 +948,7 @@ def _validate_defaults(
             )
 
     # Convert to series first to capture the per-column dtype, since
-    # DataFrame initializer does not support passing multiple dtypes.
+    # the DataFrame initializer does not support passing multiple dtypes.
     default_series = {
         c: pd.Series(
             defaults[c],
@@ -957,7 +957,7 @@ def _validate_defaults(
         )
         for c in defaults
     }
-    return pd.DataFrame(default_series, index=range(1), copy=True)
+    return pd.DataFrame(default_series, index=range(1))
 
 
 def _features_from_properties(
