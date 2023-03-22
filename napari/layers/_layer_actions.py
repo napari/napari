@@ -93,21 +93,26 @@ def _toggle_visibility(ll: LayerList):
         lay.visible = not lay.visible
 
 
-def _show_hide_selected(ll: LayerList):
+def _show_selected(ll: LayerList):
     for lay in ll.selection:
-        # show_selected is initialized as True, so will show first time
-        lay.visible = ll.show_selected
-    # now toggle show_selected, so will hide next time
-    ll.show_selected = not ll.show_selected
+        lay.visible = True
 
 
-def _hide_show_unselected(ll: LayerList):
+def _hide_selected(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = False
+
+
+def _show_unselected(ll: LayerList):
     for lay in ll:
         if lay not in ll.selection:
-            # show_unselected is initialized as False, so will hide first time
-            lay.visible = ll.show_unselected  # first time False, so will hide
-    # now toggle show_unselected, so will show next time
-    ll.show_unselected = not ll.show_unselected
+            lay.visible = True
+
+
+def _hide_unselected(ll: LayerList):
+    for lay in ll:
+        if lay not in ll.selection:
+            lay.visible = False
 
 
 def _link_selected_layers(ll: LayerList):

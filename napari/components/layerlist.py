@@ -81,13 +81,6 @@ class LayerList(SelectableEventedList[Layer]):
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
 
-        # set the initial hebavior for showing/hiding (un)selected layers
-        # via contextual menu
-        # set to True, so first time the action will show selected
-        self.show_selected: bool = True
-        # set False, so first time the action will hide unselected
-        self.show_unselected: bool = False
-
     def _on_selection_changed(self, event):
         # This method is a temporary workaround to the fact that the Points
         # layer needs to know when its selection state changes so that it can

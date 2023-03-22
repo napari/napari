@@ -7,9 +7,11 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
-    _hide_show_unselected,
+    _hide_selected,
+    _hide_unselected,
     _project,
-    _show_hide_selected,
+    _show_selected,
+    _show_unselected,
     _toggle_visibility,
 )
 
@@ -61,7 +63,7 @@ def test_toggle_selected_layers():
     assert layer_list[2].visible is True
 
 
-def test_hide_show_unselected_layers():
+def test_hide_unselected_layers():
     layer_list = make_three_layer_layerlist()
     layer_list[0].visible = True
     layer_list[1].visible = True
@@ -73,20 +75,33 @@ def test_hide_show_unselected_layers():
     assert layer_list[1].visible is True
     assert layer_list[2].visible is True
 
-    _hide_show_unselected(layer_list)
+    _hide_unselected(layer_list)
 
     assert layer_list[0].visible is False
     assert layer_list[1].visible is True
     assert layer_list[2].visible is False
 
-    _hide_show_unselected(layer_list)
+
+def test_show_unselected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[1]
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _show_unselected(layer_list)
 
     assert layer_list[0].visible is True
     assert layer_list[1].visible is True
     assert layer_list[2].visible is True
 
 
-def test_show_hide_selected_layers():
+def test_hide_selected_layers():
     layer_list = make_three_layer_layerlist()
     layer_list[0].visible = False
     layer_list[1].visible = True
@@ -99,16 +114,30 @@ def test_show_hide_selected_layers():
     assert layer_list[1].visible is True
     assert layer_list[2].visible is True
 
-    _show_hide_selected(layer_list)
-
-    assert layer_list[0].visible is True
-    assert layer_list[1].visible is True
-    assert layer_list[2].visible is True
-
-    _show_hide_selected(layer_list)
+    _hide_selected(layer_list)
 
     assert layer_list[0].visible is False
     assert layer_list[1].visible is False
+    assert layer_list[2].visible is True
+
+
+def test_show_selected_layers():
+    layer_list = make_three_layer_layerlist()
+    layer_list[0].visible = False
+    layer_list[1].visible = True
+    layer_list[2].visible = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    assert layer_list[0].visible is False
+    assert layer_list[1].visible is True
+    assert layer_list[2].visible is True
+
+    _show_selected(layer_list)
+
+    assert layer_list[0].visible is True
+    assert layer_list[1].visible is True
     assert layer_list[2].visible is True
 
 

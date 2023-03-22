@@ -135,9 +135,9 @@ VISIBILITY_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.SELECTED_LAYER_TOGGLE_VISIBILITY.title,
-        callback=_layer_actions._show_hide_selected,
+        id=CommandId.SHOW_SELECTED_LAYERS,
+        title=CommandId.SHOW_SELECTED_LAYERS.title,
+        callback=_layer_actions._show_selected,
         menus=[
             {
                 'id': MenuId.VISIBILITY_CONTEXT,
@@ -146,9 +146,31 @@ VISIBILITY_ACTIONS: List[Action] = [
         ],
     ),
     Action(
-        id=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY,
-        title=CommandId.UNSELECTED_LAYER_TOGGLE_VISIBILITY.title,
-        callback=_layer_actions._hide_show_unselected,
+        id=CommandId.HIDE_SELECTED_LAYERS,
+        title=CommandId.HIDE_SELECTED_LAYERS.title,
+        callback=_layer_actions._hide_selected,
+        menus=[
+            {
+                'id': MenuId.VISIBILITY_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.SHOW_UNSELECTED_LAYERS,
+        title=CommandId.SHOW_UNSELECTED_LAYERS.title,
+        callback=_layer_actions._show_unselected,
+        menus=[
+            {
+                'id': MenuId.VISIBILITY_CONTEXT,
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id=CommandId.HIDE_UNSELECTED_LAYERS,
+        title=CommandId.HIDE_UNSELECTED_LAYERS.title,
+        callback=_layer_actions._hide_unselected,
         menus=[
             {
                 'id': MenuId.VISIBILITY_CONTEXT,
