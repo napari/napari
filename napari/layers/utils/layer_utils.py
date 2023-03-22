@@ -934,17 +934,23 @@ def _validate_feature_defaults(
     else:
         default_columns = set(defaults.keys())
         value_columns = set(values.keys())
-
         extra_defaults = default_columns - value_columns
         if len(extra_defaults) > 0:
             raise ValueError(
-                f'Feature defaults contain some extra columns not in feature values: {extra_defaults}'
+                trans._(
+                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
+                    deferred=True,
+                    extra_defaults=extra_defaults,
+                )
             )
-
         missing_defaults = value_columns - default_columns
         if len(missing_defaults) > 0:
             raise ValueError(
-                f'Feature defaults is missing some columns in feature values: {missing_defaults}'
+                trans._(
+                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
+                    deferred=True,
+                    missing_defaults=missing_defaults,
+                )
             )
 
     # Convert to series first to capture the per-column dtype, since

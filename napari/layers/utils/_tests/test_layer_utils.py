@@ -415,32 +415,28 @@ def test_feature_table_from_layer_with_unordered_pd_series_features():
 
 
 def test_feature_table_set_defaults_with_same_columns(feature_table):
-    new_defaults = {'class': 'building', 'confidence': 1}
-    assert feature_table.defaults['class'][0] != new_defaults['class']
-    assert (
-        feature_table.defaults['confidence'][0] != new_defaults['confidence']
-    )
+    defaults = {'class': 'building', 'confidence': 1}
+    assert feature_table.defaults['class'][0] != defaults['class']
+    assert feature_table.defaults['confidence'][0] != defaults['confidence']
 
-    feature_table.set_defaults(new_defaults)
+    feature_table.set_defaults(defaults)
 
-    assert feature_table.defaults['class'][0] == new_defaults['class']
-    assert (
-        feature_table.defaults['confidence'][0] == new_defaults['confidence']
-    )
+    assert feature_table.defaults['class'][0] == defaults['class']
+    assert feature_table.defaults['confidence'][0] == defaults['confidence']
 
 
 def test_feature_table_set_defaults_with_extra_column(feature_table):
-    new_defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
+    defaults = {'class': 'building', 'confidence': 0, 'cat': 'kermit'}
     assert 'cat' not in feature_table.values.columns
     with pytest.raises(ValueError):
-        feature_table.set_defaults(new_defaults)
+        feature_table.set_defaults(defaults)
 
 
 def test_feature_table_set_defaults_with_missing_column(feature_table):
-    new_defaults = {'class': 'building'}
+    defaults = {'class': 'building'}
     assert len(feature_table.values.columns) > 1
     with pytest.raises(ValueError):
-        feature_table.set_defaults(new_defaults)
+        feature_table.set_defaults(defaults)
 
 
 def test_register_label_attr_action(monkeypatch):
