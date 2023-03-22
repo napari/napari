@@ -890,6 +890,13 @@ def _get_default_column(column: pd.Series) -> pd.Series:
         choices = column.dtype.categories
         if choices.size > 0:
             value = choices[0]
+    elif isinstance(column.dtype, np.dtype) and np.issubdtype(
+        column.dtype, np.integer
+    ):
+        # For numpy backed columns that store integers there's no way to
+        # store missing values, so passing None creates an np.float64 series
+        # containing NaN. Therefore, use a default of 0 instead.
+        value = 0
     return pd.Series(data=value, dtype=column.dtype, index=range(1))
 
 
@@ -952,18 +959,18 @@ def _validate_feature_defaults(
                     missing_defaults=missing_defaults,
                 )
             )
+        # Convert to series first to capture the per-column dtype from values,
+        # since the DataFrame initializer does not support passing multiple dtypes.
+        defaults = {
+            c: pd.Series(
+                defaults[c],
+                dtype=values.dtypes[c],
+                index=range(1),
+            )
+            for c in defaults
+        }
 
-    # Convert to series first to capture the per-column dtype, since
-    # the DataFrame initializer does not support passing multiple dtypes.
-    default_series = {
-        c: pd.Series(
-            defaults[c],
-            dtype=values.dtypes[c],
-            index=range(1),
-        )
-        for c in defaults
-    }
-    return pd.DataFrame(default_series, index=range(1))
+    return pd.DataFrame(defaults, index=range(1))
 
 
 def _features_from_properties(

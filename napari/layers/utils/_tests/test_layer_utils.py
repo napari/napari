@@ -209,6 +209,16 @@ def test_feature_table_from_layer_with_num_data_only():
     assert feature_table.defaults.shape == (1, 0)
 
 
+def test_feature_table_from_layer_with_empty_int_features():
+    feature_table = _FeatureTable.from_layer(
+        features={'a': np.empty(0, dtype=np.int64)}
+    )
+    assert feature_table.values['a'].dtype == np.int64
+    assert len(feature_table.values['a']) == 0
+    assert feature_table.defaults['a'].dtype == np.int64
+    assert feature_table.defaults['a'][0] == 0
+
+
 def test_feature_table_from_layer_with_properties_and_num_data():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
