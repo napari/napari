@@ -62,7 +62,7 @@ def test_empty_points_with_features():
     points.add([0, 0])
     points.feature_defaults['a'] = 1
     points.add([50, 50])
-    points.feature_defaults['a'] = 2
+    points.feature_defaults = {'a': 2}
     points.add([100, 100])
 
     assert_colors_equal(points.face_color, list('rgb'))

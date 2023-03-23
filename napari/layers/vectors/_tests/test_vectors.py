@@ -83,7 +83,7 @@ def test_empty_vectors_with_features():
     vectors.data = np.concatenate((vectors.data, [[[0, 0], [1, 1]]]))
     vectors.feature_defaults['a'] = 1
     vectors.data = np.concatenate((vectors.data, [[[1, 1], [2, 2]]]))
-    vectors.feature_defaults['a'] = 2
+    vectors.feature_defaults = {'a': 2}
     vectors.data = np.concatenate((vectors.data, [[[2, 2], [3, 3]]]))
 
     assert_colors_equal(vectors.edge_color, list('rgb'))

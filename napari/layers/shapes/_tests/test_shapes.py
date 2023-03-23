@@ -63,7 +63,7 @@ def test_empty_shapes_with_features():
     shapes.add_rectangles([[0, 0], [1, 1]])
     shapes.feature_defaults['a'] = 1
     shapes.add_rectangles([[1, 1], [2, 2]])
-    shapes.feature_defaults['a'] = 2
+    shapes.feature_defaults = {'a': 2}
     shapes.add_rectangles([[2, 2], [3, 3]])
 
     assert_colors_equal(shapes.face_color, list('rgb'))
