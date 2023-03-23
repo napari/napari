@@ -141,35 +141,35 @@ class QtViewer(QSplitter):
     canvas : napari._vispy.canvas.VispyCanvas
         The VispyCanvas class providing the Vispy SceneCanvas. Users can also
         have a custom canvas here.
-    console : QtConsole
-        IPython console terminal integrated into the napari GUI.
-    controls : QtLayerControlsContainer
-        Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
-    dockConsole : QtViewerDockWidget
-        QWidget wrapped in a QDockWidget with forwarded viewer events.
-    dockLayerControls : QtViewerDockWidget
-        QWidget wrapped in a QDockWidget with forwarded viewer events.
-    dockLayerList : QtViewerDockWidget
-        QWidget wrapped in a QDockWidget with forwarded viewer events.
-    key_map_handler : napari.utils.KeymapHandler
-        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
-    layerButtons : QtLayerButtons
-        Button controls for napari layers.
-    layers : QtLayerList
-        Qt view for LayerList controls.
-    qt_poll : Optional[QtPoll]
-        A QtPoll object required for octree or monitor.
-    remote_manager : RemoteManager
-        A remote manager processing commands from remote clients and sending out messages when polled.
     show_welcome_screen : bool
         Boolean indicating whether to show the welcome screen.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    viewerButtons : QtViewerButtons
+    _console : napari_console.QtConsole
+        IPython console terminal integrated into the napari GUI.
+    _controls : napari._qt.layer_controls.QtLayerControlsContainer
+        Qt view for GUI controls.
+    _dockConsole : napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget
+        QWidget wrapped in a QDockWidget with forwarded viewer events.
+    _dockLayerControls : napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget
+        QWidget wrapped in a QDockWidget with forwarded viewer events.
+    _dockLayerList : napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget
+        QWidget wrapped in a QDockWidget with forwarded viewer events.
+    _key_map_handler : napari.utils.key_bindings.KeymapHandler
+        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
+    _layerButtons : napari._qt.widgets.qt_viewer_buttons.QtLayerButtons
+        Button controls for napari layers.
+    _layers : napari._qt.containers.QtLayerList
+        Qt view for LayerList controls.
+    _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
+        A QtPoll object required for octree or monitor.
+    _remote_manager : napari.components.experimental.remote.RemoteManager
+        A remote manager processing commands from remote clients and sending out messages when polled.
+    _viewerButtons : napari._qt.widgets.qt_viewer_buttons.QtViewerButtons
         Button controls for the napari viewer.
-    welcome_widget : QtWidgetOverlay
+    _welcome_widget : napari._qt.widgets.qt_welcome.QtWidgetOverlay
         QtWidgetOverlay providing the stacked widgets for the welcome page.
     """
 
