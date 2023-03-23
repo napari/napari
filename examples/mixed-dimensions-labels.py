@@ -31,7 +31,7 @@ viewer = napari.Viewer(ndisplay=3)
 
 image_layer = viewer.add_image(blobs3dt)
 labels_layer = viewer.add_labels(labels)
-viewer.dims.point_step = (5, 0, 0, 0)
+viewer.dims.point_slider = (5, 0, 0, 0)
 
 if __name__ == '__main__':
     napari.run()

@@ -228,7 +228,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
-        self.dims.events.point_step.connect(self._update_layers)
+        self.dims.events.point_slider.connect(self._update_layers)
         self.cursor.events.position.connect(
             self._update_status_bar_from_cursor
         )
@@ -425,12 +425,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.reset()
         else:
             ranges = self.layers._ranges
-            steps = self.layers._steps
             self.dims.update(
                 dict(
                     ndim=len(ranges),
                     range=ranges,
-                    step=steps,
                 )
             )
 
@@ -560,12 +558,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if len(self.layers) == 1:
             self.reset_view()
             ranges = self.layers._ranges
-            steps = self.layers._steps
             midpoint = [
                 self.rounded_division(low, high, step)
-                for (low, high), step in zip(ranges, steps)
+                for low, high, step in ranges
             ]
-            self.dims.point_step = midpoint
+            self.dims.point_slider = midpoint
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):

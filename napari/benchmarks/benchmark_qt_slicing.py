@@ -119,7 +119,7 @@ class QtViewerAsyncImage2DSuite:
         layers_to_scroll = 4
         for z in range(layers_to_scroll):
             z = z * (self.data.shape[2] // layers_to_scroll)
-            self.viewer.dims.set_point_step(0, z)
+            self.viewer.dims.set_point_slider(0, z)
 
     def teardown(self, *args):
         if self.viewer is not None:
@@ -148,7 +148,7 @@ class QtViewerAsyncPointsSuite:
 
     def time_z_scroll(self, *args):
         for z in range(self.empty_image.shape[0]):
-            self.viewer.dims.set_point_step(0, z)
+            self.viewer.dims.set_point_slider(0, z)
 
     def teardown(self, *args):
         self.viewer.window.close()
@@ -186,7 +186,7 @@ class QtViewerAsyncPointsAndImage2DSuite:
 
     def time_z_scroll(self, *args):
         for z in range(self.image_data.shape[0]):
-            self.viewer.dims.set_point_step(0, z)
+            self.viewer.dims.set_point_slider(0, z)
 
     def teardown(self, *args):
         self.viewer.window.close()

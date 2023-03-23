@@ -349,8 +349,8 @@ def test_submit_with_one_3d_image(layer_slicer):
     dims = Dims(
         ndim=3,
         ndisplay=2,
-        range=((0, 8), (0, 7), (0, 6)),
-        span=((2, 2), (0, 0), (0, 0)),
+        range=((0, 8, 1), (0, 7, 1), (0, 6, 1)),
+        point=(2, 0, 0),
     )
 
     with lockable_data.lock:
@@ -376,8 +376,8 @@ def test_submit_with_one_3d_points(layer_slicer):
     dims = Dims(
         ndim=3,
         ndisplay=2,
-        range=((0, 3), (0, 3), (0, 3)),
-        span=((1, 1), (0, 0), (0, 0)),
+        range=((0, 3, 1), (0, 3, 1), (0, 3, 1)),
+        point=(1, 0, 0),
     )
 
     with lockable_internal_data.lock:

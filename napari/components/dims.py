@@ -1,6 +1,8 @@
 import warnings
+from collections import namedtuple
 from numbers import Integral
 from typing import (
+    Any,
     Literal,
     Sequence,
     Tuple,
@@ -13,6 +15,8 @@ from pydantic import root_validator, validator
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
+
+RangeTuple = namedtuple('RangeTuple', ('start', 'stop', 'step'))
 
 
 class Dims(EventedModel):
@@ -53,7 +57,7 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
-    point_step : tuple of int
+    point_slider : tuple of int
         Tuple the slider position for each dims slider, in world coordinates.
     nsteps : tuple of int
         Number of steps available to each slider. These are calculated from
@@ -78,9 +82,10 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
-    range: Tuple[Tuple[float, float], ...] = ()
-    step: Tuple[float, ...] = ()
-    span: Tuple[Tuple[float, float], ...] = ()
+    range: Tuple[RangeTuple[float, float, float], ...] = ()
+    left_margin: Tuple[float, ...] = ()
+    right_margin: Tuple[float, ...] = ()
+    point: Tuple[float, ...] = ()
 
     last_used: int = 0
 
@@ -88,13 +93,28 @@ class Dims(EventedModel):
     _scroll_progress: int = 0
 
     # validators
-    @validator('order', 'axis_labels', 'step', pre=True, allow_reuse=True)
+    # check fields is false to allow private fields to work
+    @validator(
+        'order',
+        'axis_labels',
+        'point',
+        'left_margin',
+        'right_margin',
+        pre=True,
+        allow_reuse=True,
+    )
     def _as_tuple(v):
         return tuple(v)
 
-    @validator('range', 'span', pre=True)
+    @validator('range', pre=True)
     def _sorted_ranges(v):
-        return tuple(sorted(float(el) for el in dim) for dim in v)
+        range_ = []
+        for rng in v:
+            start, stop = sorted(rng[:2])
+            step = rng[2]
+            # ensure step is not bigger than full range thickness and coerce to proper type
+            range_.append((start, stop, np.clip(step, 0, stop - start)))
+        return range_
 
     @root_validator(skip_on_failure=True, allow_reuse=True)
     def _check_dims(cls, values):
@@ -107,22 +127,23 @@ class Dims(EventedModel):
         """
         ndim = values['ndim']
 
-        values['range'] = ensure_ndim(
-            values['range'], ndim, default=(0.0, 2.0)
+        range_ = ensure_ndim(values['range'], ndim, default=(0.0, 2.0, 1.0))
+        values['range'] = tuple(RangeTuple(*rng) for rng in range_)
+
+        point = ensure_ndim(values['point'], ndim, default=0.0)
+        # ensure point is limited to range
+        values['point'] = tuple(
+            np.clip(pt, rng.start, rng.stop)
+            for pt, rng in zip(point, values['range'])
         )
 
-        values['span'] = ensure_ndim(values['span'], ndim, default=(0.0, 0.0))
-        # ensure span is limited to range
-        values['span'] = tuple(
-            tuple(np.clip(sp, min_val, max_val))
-            for sp, (min_val, max_val) in zip(values['span'], values['range'])
+        # TODO: do we need to coerce the margins at all here or are we ok with
+        #       margins going out of the range?
+        values['left_margin'] = ensure_ndim(
+            values['left_margin'], ndim, default=0.0
         )
-
-        values['step'] = ensure_ndim(values['step'], ndim, default=1.0)
-        # ensure step is not bigger than range
-        values['step'] = tuple(
-            np.clip(st, 0, max_val - min_val)
-            for st, (min_val, max_val) in zip(values['step'], values['range'])
+        values['right_margin'] = ensure_ndim(
+            values['right_margin'], ndim, default=0.0
         )
 
         # order and label default computation is too different to include in ensure_ndim()
@@ -168,140 +189,71 @@ class Dims(EventedModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # to be removed if/when deprecating current_step
-        self.events.span.connect(self.events.current_step)
-
-    @property
-    def _span_step(self) -> Tuple[float, ...]:
-        return tuple(
-            (
-                # "or 1" ensures degenerate dimension works
-                int(round((low - min_val) / (step or 1))),
-                int(round((high - min_val) / (step or 1))),
-            )
-            for (low, high), (min_val, _), step in zip(
-                self.span, self.range, self.step
-            )
-        )
-
-    @_span_step.setter
-    def _span_step(self, value):
-        self.span = [
-            (
-                min_val + low * step,
-                min_val + high * step,
-            )
-            for (low, high), (min_val, _), step in zip(
-                value, self.range, self.step
-            )
-        ]
+        self.events.point_slider.connect(self.events.current_step)
 
     @property
     def nsteps(self) -> Tuple[float]:
         return tuple(
             # "or 1" ensures degenerate dimension works
-            int((max_val - min_val) / (step or 1))
-            for (min_val, max_val), step in zip(self.range, self.step)
+            int((rng.stop - rng.start) / (rng.step or 1))
+            for rng in self.range
         )
 
     @nsteps.setter
     def nsteps(self, value):
-        self.step = [
-            (max_val - min_val) / nsteps
-            for (min_val, max_val), nsteps in zip(self.range, value)
-        ]
-
-    @property
-    def thickness(self) -> Tuple[float]:
-        return tuple(high - low for low, high in self.span)
-
-    @thickness.setter
-    def thickness(self, value):
-        # change slice thickness by resizing the span symmetrically
-        span = []
-        for new_thickness, (min_val, max_val), (low, high) in zip(
-            value, self.range, self.span
-        ):
-            # find the maximum possible change in thickness (can't go further than range)
-            max_change = min(abs(low - min_val), abs(max_val - high))
-            # move low and high end of the span by half the thickness change
-            thickness_change = min(
-                (new_thickness - (high - low)) / 2, max_change
-            )
-            new_low = max(min_val, low - thickness_change)
-            new_high = min(max_val, high + thickness_change)
-            span.append((new_low, new_high))
-        self.span = span
-
-    @property
-    def _thickness_step(self) -> Tuple[float]:
-        return tuple(
-            # "or 1" ensures degenerate dimension works
-            thickness / (step or 1)
-            for thickness, step in zip(self.thickness, self.step)
-        )
-
-    @_thickness_step.setter
-    def _thickness_step(self, value):
-        self.thickness = [
-            thickness * step for thickness, step in zip(value, self.step)
-        ]
-
-    @property
-    def point(self) -> Tuple[float]:
-        return tuple((low + high) / 2 for low, high in self.span)
-
-    @point.setter
-    def point(self, value):
-        # move the slice so its center is on the specified point, preserving thickness
-        # if not possible, move it as far as it can be moved
-        span = []
-        for point, (min_val, max_val), thickness in zip(
-            value, self.range, self.thickness
-        ):
-            # calculate real limits, including half thickness
-            half_thk = thickness / 2
-            min_pt, max_pt = (min_val + half_thk, max_val - half_thk)
-            point = np.clip(point, min_pt, max_pt)
-            span.append((point - half_thk, point + half_thk))
-        self.span = span
-
-    @property
-    def point_step(self):
-        return tuple(
-            int(round((point - min_val) / (step or 1)))
-            for point, (min_val, _), step in zip(
-                self.point, self.range, self.step
-            )
-        )
-
-    @point_step.setter
-    def point_step(self, value):
-        self.point = [
-            min_val + point * step
-            for point, (min_val, _), step in zip(value, self.range, self.step)
+        self.range = [
+            (rng.start, rng.stop, (rng.stop - rng.start) / nsteps)
+            for rng, nsteps in zip(self.range, value)
         ]
 
     @property
     def current_step(self) -> Tuple[int]:
         warnings.warn(
             trans._(
-                'Dims.current_step is deprecated. Use Dims.point_step instead.'
+                'Dims.current_step is deprecated. Use Dims.point_slider instead.'
             ),
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.point_step
+        return self.point_slider
 
     @current_step.setter
     def current_step(self, value: Tuple[int]):
         warnings.warn(
             trans._(
-                'Dims.current_step is deprecated. Use Dims.point_step instead.'
+                'Dims.current_step is deprecated. Use Dims.point_slider instead.'
             ),
             DeprecationWarning,
             stacklevel=2,
         )
-        self.point_step = value
+        self.point_slider = value
+
+    @property
+    def point_slider(self):
+        return tuple(
+            int(round((point - rng.start) / (rng.step or 1)))
+            for point, rng in zip(self.point, self.range)
+        )
+
+    @point_slider.setter
+    def point_slider(self, value):
+        self.point = [
+            rng.start + point * rng.step
+            for point, rng in zip(value, self.range)
+        ]
+
+    @property
+    def thickness(self) -> Tuple[float]:
+        return tuple(
+            left + right
+            for left, right in zip(self._left_margin, self._right_margin)
+        )
+
+    @thickness.setter
+    def thickness(self, value):
+        self._left_margin = self._right_margin = (
+            tuple(val / 2) for val in value
+        )
 
     @property
     def displayed(self) -> Tuple[int]:
@@ -346,61 +298,12 @@ class Dims(EventedModel):
             full_range[ax] = val
         self.range = full_range
 
-    def _set_span(
-        self,
-        axis: Union[int, Sequence[int]],
-        value: Union[
-            Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
-        ],
-    ):
-        axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
-        full_span = list(self.span)
-        range_ = list(self.range)
-        for ax, val in zip(axis, value):
-            min_val, max_val = range_[ax]
-            low, high = sorted(val)
-            span = max(min_val, low), min(max_val, high)
-            full_span[ax] = span
-        self.span = full_span
-
-    def _set_step(
-        self,
-        axis: Union[int, Sequence[int]],
-        value: Union[float, Sequence[float]],
-    ):
-        axis, value = self._sanitize_input(
-            axis, value, value_is_sequence=False
-        )
-        full_step = list(self.step)
-        for ax, val in zip(axis, value):
-            full_step[ax] = val
-        self.step = full_step
-
-    def _set_span_step(
-        self,
-        axis: Union[int, Sequence[int]],
-        value: Union[Sequence[int], Sequence[Sequence[int]]],
-    ):
-        axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
-        range_ = list(self.range)
-        step = list(self.step)
-        value_world = []
-        for ax, val in zip(axis, value):
-            min_val, _ = range_[ax]
-            step_size = step[ax]
-            value_world.append([min_val + v * step_size for v in val])
-        self.set_span(axis, value_world)
-
     def set_point(
         self,
         axis: Union[int, Sequence[int]],
         value: Union[Union[int, float], Sequence[Union[int, float]]],
     ):
         """Sets point to slice dimension in world coordinates.
-
-        The current thickness is preserved, and the point is set as
-        the center of the slice. If too close to (or beyond) the edge to fit
-        the whole thickness, the position is clipped as appropriate.
 
         Parameters
         ----------
@@ -412,23 +315,12 @@ class Dims(EventedModel):
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
         )
-        full_span = list(self.span)
-        point = list(self.point)
-        range_ = list(self.range)
-        point_clips = [
-            (mn + th / 2, mx - th / 2)
-            for (mn, mx), th in zip(range_, self.thickness)
-        ]
+        full_point = list(self.point)
         for ax, val in zip(axis, value):
-            val = np.clip(val, *point_clips[ax])
-            shift = val - point[ax]
-            min_val, max_val = range_[ax]
-            low, high = tuple(v + shift for v in full_span[ax])
-            span = max(min_val, low), min(max_val, high)
-            full_span[ax] = span
-        self.span = full_span
+            full_point[ax] = val
+        self.point = full_point
 
-    def set_point_step(
+    def set_point_slider(
         self,
         axis: Union[int, Sequence[int]],
         value: Union[int, Sequence[int]],
@@ -437,12 +329,10 @@ class Dims(EventedModel):
             axis, value, value_is_sequence=False
         )
         range_ = list(self.range)
-        step = list(self.step)
         value_world = []
         for ax, val in zip(axis, value):
-            min_val, _ = range_[ax]
-            step_size = step[ax]
-            value_world.append(min_val + val * step_size)
+            rng = range_[ax]
+            value_world.append(rng.start + val * rng.step)
         self.set_point(axis, value_world)
 
     def set_axis_label(
@@ -467,62 +357,16 @@ class Dims(EventedModel):
             full_axis_labels[ax] = val
         self.axis_labels = full_axis_labels
 
-    def _set_thickness(
-        self,
-        axis: Union[int, Sequence[int]],
-        value: Union[Union[int, float], Sequence[Union[int, float]]],
-    ):
-        """Set the slider slice thickness for this dimension. If the new thickness
-        would extend beyond the range limits, it is instead clipped to prevent it.
-
-        Parameters
-        ----------
-        axis : int or sequence of int
-            Dimension index or a sequence of axes whose slice thickness will be set.
-        value : scalar or sequence of scalars
-            Value of the slice thickness.
-        """
-        axis, value = self._sanitize_input(
-            axis, value, value_is_sequence=False
-        )
-        full_span = list(self.span)
-        range_ = list(self.range)
-        for ax, val in zip(axis, value):
-            min_val, max_val = range_[ax]
-            low, high = full_span[ax]
-            max_change = min(abs(low - min_val), abs(max_val - high))
-            thickness_change = min((val - (high - low)) / 2, max_change)
-            new_low = max(min_val, low - thickness_change)
-            new_high = min(max_val, high + thickness_change)
-            full_span[ax] = new_low, new_high
-        self.span = full_span
-
-    def _set_thickness_step(
-        self,
-        axis: Union[int, Sequence[int]],
-        value: Union[int, Sequence[int]],
-    ):
-        axis, value = self._sanitize_input(
-            axis, value, value_is_sequence=False
-        )
-        range_ = list(self.range)
-        step = list(self.step)
-        value_world = []
-        for ax, val in zip(axis, value):
-            min_val, _ = range_[ax]
-            step_size = step[ax]
-            value_world.append(min_val + val * step_size)
-        self.set_thickness(axis, value_world)
-
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
         self.update(
             {
-                "range": ((0, 2),) * self.ndim,
-                "step": (1,) * self.ndim,
-                "span": ((0, 0),) * self.ndim,
+                "range": ((0, 2, 1),) * self.ndim,
+                "point": (0,) * self.ndim,
                 "order": tuple(range(self.ndim)),
+                "left_margin": (0,) * self.ndim,
+                "right_margin": (0,) * self.ndim,
             }
         )
 
@@ -546,7 +390,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_step(axis, self.point_step[axis] + 1)
+        self.set_point_slider(axis, self.point_slider[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -558,7 +402,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_point_step(axis, self.point_step[axis] - 1)
+        self.set_point_slider(axis, self.point_slider[axis] - 1)
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -615,7 +459,7 @@ class Dims(EventedModel):
         return axis, value
 
 
-def ensure_ndim(value: Tuple, ndim: int, default: Tuple):
+def ensure_ndim(value: Tuple, ndim: int, default: Any):
     """
     Ensure that the value has same number of elements as ndim.
 
