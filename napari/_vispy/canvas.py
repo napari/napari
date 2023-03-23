@@ -59,31 +59,31 @@ class VispyCanvas:
 
     Attributes
     ----------
+    layer_to_visual : dict(napari.layers, napari._vispy.layers)
+        A mapping of the napari layers that have been added to the viewer and their corresponding vispy counterparts.
     max_texture_sizes : Tuple[int, int]
         The max textures sizes as a (2d, 3d) tuple.
-    last_theme_color : Optional[npt.NDArray[np.float]]
-        Theme color represented as numpy ndarray of shape (4,) before theme change
-        was applied.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    scene_canvas : vispy.scene.SceneCanvas
-        The vispy SceneCanvas which automatically draws the contents of a scene.
     view : vispy.scene.widgets.viewbox.ViewBox
         Rectangular widget in which a subscene is rendered.
     vispy_camera : napari._vispy.VispyCamera
         The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
         scene is viewed and interacted with.
-    layer_to_visual : dict(napari.layers, napari._vispy.layers)
-        A mapping of the napari layers that have been added to the viewer and their corresponding vispy counterparts.
-    overlay_to_visual : dict(napari.components.overlays, napari._vispy.overlays)
-        A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
-    key_map_handler : napari.utils.KeymapHandler
-        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
-    cursors : QtCursorVisual
+    _cursors : QtCursorVisual
         A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
         creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
         contains cursors supported by Napari in Vispy.
-
+    _key_map_handler : napari.utils.key_bindings.KeymapHandler
+        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
+    _last_theme_color : Optional[npt.NDArray[np.float]]
+        Theme color represented as numpy ndarray of shape (4,) before theme change
+        was applied.
+    _overlay_to_visual : dict(napari.components.overlays, napari._vispy.overlays)
+        A mapping of the napari overlays that are part of the viewer and their corresponding Vispy counterparts.
+    _scene_canvas : napari._vispy.canvas.NapariSceneCanvas
+        SceneCanvas which automatically draws the contents of a scene. It is ultimately a VispySceneCanvas, but allows
+        for ignoring mousewheel events with modifiers.
     """
 
     _instances = WeakSet()
