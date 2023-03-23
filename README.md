@@ -61,7 +61,7 @@ viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 
-## features
+## featuress
 
 Check out the scripts in our [`examples` folder](examples) to see some of the functionality we're developing!
 
@@ -93,7 +93,7 @@ Contributions are encouraged! Please read our [contributing guide](https://napar
 ## governance
 
 You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact the [@napari/steering-council and @napari/core-devs](https://napari.org/community/team.html#current-core-developers).
-
+###update
 ## citing napari
 
 If you find `napari` useful please cite [this repository](https://github.com/napari/napari) using its DOI as follows:
