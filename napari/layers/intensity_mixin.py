@@ -43,6 +43,7 @@ class IntensityVisualizationMixin:
         self._contrast_limits_range = [None, None]
         self._auto_contrast_source = 'slice'
         self._keep_auto_contrast = False
+        self._custom_colormaps = {}
 
     def reset_contrast_limits(self: 'Image', mode=None):
         """Scale contrast limits to data range"""
@@ -67,7 +68,11 @@ class IntensityVisualizationMixin:
         return self._colormap
 
     def _set_colormap(self, colormap):
-        self._colormap = ensure_colormap(colormap)
+        self._colormap = ensure_colormap(
+            colormap, custom_colormaps=self._custom_colormaps
+        )
+        if self._colormap.name not in self.colormaps:
+            self._custom_colormaps[self._colormap.name] = self._colormap
         self._update_thumbnail()
         self.events.colormap()
 
@@ -78,7 +83,7 @@ class IntensityVisualizationMixin:
     @property
     def colormaps(self):
         """tuple of str: names of available colormaps."""
-        return tuple(self._colormaps.keys())
+        return (*self._colormaps, *self._custom_colormaps)
 
     @property
     def contrast_limits(self):
