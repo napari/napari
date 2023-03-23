@@ -137,11 +137,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     camera: napari.components.camera.Camera
         The camera object modeling the position and view.
     cursor: napari.components.cursor.Cursor
-        The Napari cursor object containing the position and properties of the cursor.
+        The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
     grid: napari.components.grid.Gridcanvas
-        The Napari gridcanvas allowing for the current implementation of a gridview of the canvas.
+        Gridcanvas allowing for the current implementation of a gridview of the canvas.
     help: str
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
