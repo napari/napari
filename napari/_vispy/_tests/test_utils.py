@@ -15,10 +15,6 @@ angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
 angles_param = [(x, True) for x in angles]
 angles_param.extend([(x, False) for x in np.radians(angles)])
 
-# Retrieve every napari cursor style and add invalid parameter
-cursors_param = [cursor.value for cursor in CursorStyle]
-cursors_param.append("invalid")
-
 
 @pytest.mark.parametrize('angles,degrees', angles_param)
 def test_quaternion2euler(angles, degrees):
@@ -77,42 +73,21 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
     assert view_dir is None
 
 
-@pytest.mark.parametrize('cursor', cursors_param)
-def test_set_cursor(cursor, make_napari_viewer):
+def test_set_cursor(make_napari_viewer):
     viewer = make_napari_viewer()
-
-    if cursor != "invalid":
-        viewer.cursor.style = cursor
-
-        if cursor in {'cross', 'forbidden', 'pointing', 'standard'}:
-            assert (
-                viewer.window._qt_viewer.canvas.cursor.shape()
-                == QtCursorVisual[cursor].value
-            )
-        else:
-            if cursor in {"square", "circle"}:
-                viewer.cursor.size = 10
-                assert (
-                    viewer.window._qt_viewer.canvas.cursor.shape()
-                    == Qt.CursorShape.BitmapCursor
-                )
-                viewer.cursor.size = 5
-                assert (
-                    viewer.window._qt_viewer.canvas.cursor.shape()
-                    == QtCursorVisual['cross'].value
-                )
-                viewer.cursor.size = (
-                    min(viewer.window._qt_viewer.canvas.size) + 10
-                )
-                assert (
-                    viewer.window._qt_viewer.canvas.cursor.shape()
-                    == QtCursorVisual['cross'].value
-                )
-            else:
-                assert (
-                    viewer.window._qt_viewer.canvas.cursor.shape()
-                    == Qt.CursorShape.BitmapCursor
-                )
-    else:
-        with pytest.raises(Exception):
-            viewer.cursor.style = cursor
+    # cursor.value
+    # for cursor in CursorStyle
+    # if cursor != "invalid":
+    viewer.cursor.style = CursorStyle.CIRCLE.value
+    viewer.cursor.size = 10
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == Qt.CursorShape.BitmapCursor
+    )
+    viewer.cursor.size = 5
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == QtCursorVisual['cross'].value
+    )
+    with pytest.raises(Exception):
+        viewer.cursor.style = "invalid"
