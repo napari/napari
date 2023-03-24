@@ -383,6 +383,26 @@ def test_current_viewer(make_napari_viewer):
     assert current_viewer() is not viewer2
 
 
+def test_all_open_viewers(make_napari_viewer):
+    """Test that the viewer made last is the "current_viewer()" until another is activated"""
+    from napari import all_open_viewers
+    assert all_open_viewers() is None
+    # Make two DIFFERENT viewers
+    viewer1: Viewer = make_napari_viewer()
+    viewer2: Viewer = make_napari_viewer()
+    assert viewer2 is not viewer1
+    # Ensure the full list is returned by napari.all_open_viewers()
+    assert all_open_viewers() == [viewer1, viewer2]
+    # The order of the list changes, depending on which were most recently active
+    viewer1.window.activate()
+    assert all_open_viewers() == [viewer2, viewer1]
+    viewer1.close()
+    assert all_open_viewers() == [viewer2]
+    # When there are no more open viewers, None is returned
+    viewer2.close()
+    assert all_open_viewers() is None
+
+
 def test_reset_empty(make_napari_viewer):
     """
     Test that resetting an empty viewer doesn't crash

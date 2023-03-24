@@ -39,7 +39,7 @@ _submod_attrs = {
         'view_vectors',
         'imshow',
     ],
-    'viewer': ['Viewer', 'current_viewer'],
+    'viewer': ['Viewer', 'current_viewer', 'all_open_viewers'],
 }
 
 # All imports in __init__ are hidden inside of `__getattr__` to prevent

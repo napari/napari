@@ -48,6 +48,40 @@ def test_current_viewer(make_napari_viewer):
     assert _QtMainWindow.current() is None
 
 
+def test_all_open_viewers(make_napari_viewer):
+    """Test that we can retrieve all the open viewer windows easily."""
+    assert _QtMainWindow.all_open_viewers() is None
+
+    # when we create a new viewer it becomes accessible in the list of Viewer.all_open_viewers()
+    v1 = make_napari_viewer(title='v1')
+    assert _QtMainWindow._instances == [v1.window._qt_window]
+    assert _QtMainWindow.all_open_viewers() == [v1]
+
+    v2 = make_napari_viewer(title='v2')
+    assert v1 is not v2  # they are two DIFFERENT viewers
+    assert _QtMainWindow._instances == [
+        v1.window._qt_window,
+        v2.window._qt_window,
+    ]
+    assert _QtMainWindow.all_open_viewers() == [v1, v2]
+
+    # The order of the list changes, depending on which were most recently active
+    v1.window.activate()
+    assert _QtMainWindow._instances == [
+        v2.window._qt_window,
+        v1.window._qt_window,
+    ]
+    assert _QtMainWindow.all_open_viewers() == [v2, v1]
+
+    v1.close()
+    assert _QtMainWindow._instances == [v2.window._qt_window]
+    assert _QtMainWindow.all_open_viewers() == [v2]
+
+    # and when none are left, Viewer.all_open_viewers() becomes None again
+    v2.close()
+    assert _QtMainWindow.all_open_viewers() is None
+
+
 def test_set_geometry(make_napari_viewer):
     viewer = make_napari_viewer()
     values = (70, 70, 1000, 700)

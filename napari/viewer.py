@@ -190,3 +190,13 @@ def current_viewer() -> Optional[Viewer]:
         return _QtMainWindow.current_viewer()
     except ImportError:
         return None
+
+
+def all_open_viewers() -> list:
+    """Return a list of all open napari viewers, or None."""
+    try:
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        return _QtMainWindow.all_open_viewers()
+    except ImportError:
+        return None
