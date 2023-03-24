@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 import numpy as np
 from qtpy.QtCore import Slot
 from qtpy.QtGui import QFont, QFontMetrics
-from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
 from napari.components.dims import Dims
@@ -141,20 +141,25 @@ class QtDims(QWidget):
             if displayed
         ]
         if displayed_labels:
-            fm = QFontMetrics(QFont("", 0))
-            labels = self.findChildren(QLineEdit, 'axis_label')
+            fm = self.fontMetrics()
             # set maximum width to no more than 20% of slider width
             maxwidth = int(self.slider_widgets[0].width() * 0.2)
-            # set new base width to the width of the longest label being displayed
+            # set new width to the width of the longest label being displayed
             newwidth = max(
                 [
-                    int(fm.boundingRect(dlab.text()).width())
+                    int(fm.boundingRect(dlab.full_text).width())
                     for dlab in displayed_labels
                 ]
             )
 
-            for labl in labels:
-                labl_width = min([newwidth + 10, maxwidth])
+            for slider in self.slider_widgets:
+                labl = slider.axis_label
+                # here the average width of a character is used as base measure
+                # to add some extra width. We use 4 to take into account a
+                # space and the possible 3 dots (`...`) for elided text
+                margin_width = int(fm.averageCharWidth() * 4)
+                base_labl_width = min([newwidth, maxwidth])
+                labl_width = base_labl_width + margin_width
                 labl.setFixedWidth(labl_width)
 
     def _resize_slice_labels(self):
@@ -191,6 +196,7 @@ class QtDims(QWidget):
             slider_widget.axis_label.textChanged.connect(
                 self._resize_axis_labels
             )
+            slider_widget.size_changed.connect(self._resize_axis_labels)
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)

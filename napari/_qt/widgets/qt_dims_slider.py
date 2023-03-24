@@ -28,6 +28,85 @@ from napari.utils.events.event_utils import connect_setattr_value
 from napari.utils.translations import trans
 
 
+class QtDimSliderAxisLabel(QLineEdit):
+    """QLineEdit with capabilities to show elided text."""
+
+    def __init__(
+        self,
+        parent: QWidget = None,
+        elide_position: Qt.TextElideMode = Qt.ElideRight,
+    ) -> None:
+        super().__init__(parent=parent)
+        self.elide_position = elide_position
+        self.full_text = ""
+
+        # The `textEdited` signal doesn't trigger the `textChanged` signal if
+        # text is changed with `setText`, so we connect to `textEdited` to only
+        # update full_text when text is being edited by the user graphically.
+        # To update full_text programatically `set_text` needs to be used.
+        self.textEdited.connect(self._update_full_text)
+
+    def _update_elided_text(self):
+        """Elided full text taking into account the widget width and set it."""
+        fm = self.fontMetrics()
+        # take into account for the width that when text is elided
+        # 3 dots (`...`) could be added
+        elided_dots_width = 0
+        if self.elide_position != Qt.ElideNone:
+            elided_dots_width = int(fm.averageCharWidth() * 3)
+        elided_text = fm.elidedText(
+            self.full_text,
+            self.elide_position,
+            self.width() - elided_dots_width,
+        )
+        self.setText(elided_text)
+
+    def _update_full_text(self, text):
+        """Update the full text of the widget.
+
+        The full text is the actual text the widget has without eliding it.
+
+        Parameters
+        ----------
+        text : str
+            New text for the widget.
+        """
+        self.full_text = text
+
+    def set_text(self, text):
+        """Update the widget text.
+
+        This updates the full text and also sets the elided text version if
+        necessary.
+
+        Parameters
+        ----------
+        text : str
+            New text for the widget.
+        """
+        self._update_full_text(text)
+        if not self.hasFocus():
+            self._update_elided_text()
+
+    def focusInEvent(self, event):
+        """Set the full text when the widget is focused."""
+        self.setText(self.full_text)
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        """
+        Set an elided version of the text (if needee) when the focus is out.
+        """
+        self._update_elided_text()
+        super().focusOutEvent(event)
+
+    def resizeEvent(self, event):
+        """Update elided text being shown when the widget is resized."""
+        if not self.hasFocus():
+            self._update_elided_text()
+        super().resizeEvent(event)
+
+
 class QtDimSliderWidget(QWidget):
     """Compound widget to hold the label, slider and play button for an axis.
 
@@ -38,6 +117,7 @@ class QtDimSliderWidget(QWidget):
     fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
+    size_changed = Signal()
     play_started = Signal()
     play_stopped = Signal()
 
@@ -121,9 +201,9 @@ class QtDimSliderWidget(QWidget):
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
-        label = QLineEdit(self)
+        label = QtDimSliderAxisLabel(self)
         label.setObjectName('axis_label')  # needed for _update_label
-        label.setText(self.dims.axis_labels[self.axis])
+        label.set_text(self.dims.axis_labels[self.axis])
         label.home(False)
         label.setToolTip(trans._('Edit to change axis label'))
         label.setAcceptDrops(False)
@@ -191,11 +271,11 @@ class QtDimSliderWidget(QWidget):
     def _pull_label(self):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
-        self.axis_label.setText(label)
+        self.axis_label.set_text(label)
 
     def _update_label(self):
         """Update dimension slider label."""
-        self.dims.set_axis_label(self.axis, self.axis_label.text())
+        self.dims.set_axis_label(self.axis, self.axis_label.full_text)
 
     def _clear_label_focus(self):
         """Clear focus from dimension slider label."""
@@ -414,6 +494,11 @@ class QtDimSliderWidget(QWidget):
         thread.finished.connect(self.play_stopped)
         self.play_started.emit()
         return worker, thread
+
+    def resizeEvent(self, event):
+        """Emit a signal to inform about a size change."""
+        self.size_changed.emit()
+        super().resizeEvent(event)
 
 
 class QtCustomDoubleSpinBox(QDoubleSpinBox):
