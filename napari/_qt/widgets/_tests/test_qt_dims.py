@@ -261,7 +261,7 @@ def test_update_dims_labels(qtbot):
     view.dims.events.axis_labels.connect(on_axis_labels_changed)
     first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
-    first_label.setText('napari')
+    first_label.set_text('napari')
     assert first_label.text() == view.dims.axis_labels[0]
     assert observed_axis_labels_event
 
