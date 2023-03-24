@@ -161,8 +161,7 @@ def test_slider_range(qtbot):
 
     # Check the maximum allowed value of the slider stays one less
     # than the allowed nsteps of the dims after updates
-    view.dims.set_range(0, (1, 5))
-    view.dims._set_step(0, 2)
+    view.dims.set_range(0, (1, 5, 2))
     assert first_slider.minimum() == 0
     assert first_slider.maximum() == view.dims.nsteps[0] - 1
     assert first_slider.singleStep() == 1
@@ -174,7 +173,7 @@ def test_singleton_dims(qtbot):
     """
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 1))
+    dims.set_range(0, (0, 1, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 
@@ -309,7 +308,7 @@ def test_play_button(qtbot):
 def test_slice_labels(qtbot):
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 20))
+    dims.set_range(0, (0, 20, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 
@@ -329,7 +328,7 @@ def test_slice_labels(qtbot):
 
 def test_not_playing_after_ndim_changes(qtbot):
     """See https://github.com/napari/napari/issues/3998"""
-    dims = Dims(ndim=3, ndisplay=2, range=((0, 10), (0, 20), (0, 30)))
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
     view = QtDims(dims)
     qtbot.addWidget(view)
     # Loop to prevent finishing before the assertions in this test.
@@ -344,7 +343,7 @@ def test_not_playing_after_ndim_changes(qtbot):
 
 def test_not_playing_after_ndisplay_changes(qtbot):
     """See https://github.com/napari/napari/issues/3998"""
-    dims = Dims(ndim=3, ndisplay=2, range=((0, 10), (0, 20), (0, 30)))
+    dims = Dims(ndim=3, ndisplay=2, range=((0, 10, 1), (0, 20, 1), (0, 30, 1)))
     view = QtDims(dims)
     qtbot.addWidget(view)
     # Loop to prevent finishing before the assertions in this test.
