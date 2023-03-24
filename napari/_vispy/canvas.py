@@ -118,7 +118,6 @@ class VispyCanvas:
         # get_max_texture_sizes() will return the same results because it's
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
-        self._cursors = QtCursorVisual
 
         for overlay in self.viewer._overlays.values():
             self._add_overlay_to_visual(overlay)
@@ -259,15 +258,15 @@ class VispyCanvas:
 
             # make sure the square fits within the current canvas
             if size < 8 or size > (min(*self.size) - 4):
-                self.cursor = self._cursors['cross'].value
+                self.cursor = QtCursorVisual['cross'].value
             elif cursor == 'circle':
-                self.cursor = self._cursors.circle(size)
+                self.cursor = QtCursorVisual.circle(size)
             else:
-                self.cursor = self._cursors.square(size)
+                self.cursor = QtCursorVisual.square(size)
         elif cursor == 'crosshair':
-            self.cursor = self._cursors.crosshair()
+            self.cursor = QtCursorVisual.crosshair()
         else:
-            self.cursor = self._cursors[cursor].value
+            self.cursor = QtCursorVisual[cursor].value
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
