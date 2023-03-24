@@ -20,8 +20,7 @@ def make_worker(
     qtbot.addWidget(qtdims)
     nz = 8
     step = 1
-    dims.set_range(0, (0, nz))
-    dims._set_step(0, step)
+    dims.set_range(0, (0, nz, step))
     slider_widget = qtdims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
