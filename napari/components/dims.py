@@ -1,9 +1,9 @@
 import warnings
-from collections import namedtuple
 from numbers import Integral
 from typing import (
     Any,
     Literal,
+    NamedTuple,
     Sequence,
     Tuple,
     Union,
@@ -16,7 +16,11 @@ from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
 
-RangeTuple = namedtuple('RangeTuple', ('start', 'stop', 'step'))
+
+class RangeTuple(NamedTuple):
+    start: float
+    stop: float
+    step: float
 
 
 class Dims(EventedModel):
@@ -82,7 +86,7 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
-    range: Tuple[RangeTuple[float, float, float], ...] = ()
+    range: Tuple[RangeTuple, ...] = ()
     left_margin: Tuple[float, ...] = ()
     right_margin: Tuple[float, ...] = ()
     point: Tuple[float, ...] = ()
