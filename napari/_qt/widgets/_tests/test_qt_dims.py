@@ -244,11 +244,16 @@ def test_order_when_changing_ndim(qtbot):
 def test_update_dims_labels(qtbot):
     """
     Test that the slider_widget axis labels are updated with the dims model
-    and vice versa.
+    and vice versa with eliding capabilites.
     """
     ndim = 4
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
+
+    # set initial widget width and show it to be able to trigger `resizeEvent`
+    view.setFixedWidth(100)
+    view.show()
+
     view.dims.axis_labels = list('TZYX')
     assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
@@ -261,9 +266,18 @@ def test_update_dims_labels(qtbot):
     view.dims.events.axis_labels.connect(on_axis_labels_changed)
     first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
+
+    # check that the label text corresponds with the dims model
+    # while being elided on the GUI
     first_label.set_text('napari')
-    assert first_label.text() == view.dims.axis_labels[0]
+    assert first_label.full_text == view.dims.axis_labels[0]
+    assert "…" in first_label.text()
     assert observed_axis_labels_event
+
+    # increase width to check the full text is shown
+    view.setFixedWidth(250)
+    assert first_label.full_text == view.dims.axis_labels[0]
+    assert first_label.text() == view.dims.axis_labels[0]
 
 
 def test_slider_press_updates_last_used(qtbot):
