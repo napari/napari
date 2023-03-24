@@ -270,7 +270,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._super_setattr_(name, value)
             return
 
-        # grab current value, also for dependent properties
+        # grab current value
         before = getattr(self, name, object())
         before_deps = {}
         with warnings.catch_warnings():
