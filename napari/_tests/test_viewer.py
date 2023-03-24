@@ -386,6 +386,7 @@ def test_current_viewer(make_napari_viewer):
 def test_all_open_viewers(make_napari_viewer):
     """Test that the viewer made last is the "current_viewer()" until another is activated"""
     from napari import all_open_viewers
+
     assert all_open_viewers() is None
     # Make two DIFFERENT viewers
     viewer1: Viewer = make_napari_viewer()
