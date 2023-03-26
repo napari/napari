@@ -122,14 +122,27 @@ conda install -c conda-forge "napari=*=*pyside2"
 In some cases, `conda`'s default solver can struggle to find out which packages need to be
 installed for napari. If it takes too long or you get the wrong version of napari
 (see below), consider:
-1. Overriding your default channels to use only `conda-forge` by adding `--override-channels`
-and specifying the napari and Python versions explicitly. For example, use {{ python_version_code }}
-to get Python {{ python_version }} and {{ napari_conda_version }} to specify the napari version as
-{{ napari_version }}, the current release.
+1. Overriding your default channels to use only `conda-forge` by adding
+`--override-channels` and specifying the napari and Python versions explicitly. 
+For example, use {{ python_version_code }} to get Python {{ python_version }} and
+{{ napari_conda_version }} to specify the napari version as {{ napari_version }}, 
+the current release.
 
-2. You can try installing [`mamba`](https://github.com/mamba-org/mamba) in your base
-environment with `conda install -n base -c conda-forge mamba` and use its faster solver
-by replacing `conda` for `mamba` in the above instructions.
+2. Switching to the new, faster [`libmamba` solver](https://conda.github.io/conda-libmamba-solver/libmamba-vs-classic/), 
+by updating your `conda` (>22.11), if needed, and then installing and activating 
+the solver, as follows:
+```
+conda update -n base conda
+conda install -n base conda-libmamba-solver
+conda config --set solver libmamba
+```
+3. Alternately, consider installing [`mamba`](https://github.com/mamba-org/mamba)
+in your base environment with `conda install -n base -c conda-forge mamba`. 
+Then you can use `mamba` by replacing `conda` with `mamba` in the installation instructions, for example:
+```
+mamba install napari
+```
+
 ````
 
 
