@@ -74,8 +74,22 @@ jobs:
           sudo ln -s /usr/lib/x86_64-linux-gnu/libgdbm.so.6 /usr/lib/x86_64-linux-gnu/libgdbm.so.5
           xvfb-run --auto-servernum python bundle.py
       - name: Make Bundle (Windows & MacOS)
-        if: runner.os != 'Linux'
+        if: ${{(runner.os != 'Linux') && ! ((matrix.platform == 'windows') && (github.event_name == 'pull_request'))}}
         run: python bundle.py
+      - name: Report Failures
+        if: ${{ failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLATFORM: ${{ matrix.platform }}
+          PYTHON: ${{ matrix.python }}
+          BACKEND: ${{ matrix.toxenv }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: "[test-bot] Bundle creation fail"
+        with:
+          filename: .github/TEST_FAIL_TEMPLATE.md
+          update_existing: true
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
