@@ -73,6 +73,14 @@ def new_label(layer: Labels):
 
 
 @register_label_action(
+    trans._("Set the currently selected label to the background."),
+)
+def set_background_label(layer: Labels):
+    """Set the currently selected label to the largest used label plus one."""
+    layer.selected_label = 0
+
+
+@register_label_action(
     trans._("Decrease the currently selected label by one."),
 )
 def decrease_label_id(layer: Labels):
