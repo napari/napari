@@ -252,7 +252,7 @@ class ShortcutEditor(QWidget):
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
                 item_shortcut.setTextAlignment(
-                    int(Qt.AlignVCenter | Qt.AlignRight)
+                    int(Qt.AlignVCenter | Qt.AlignCenter)
                 )
 
                 item_shortcut2 = QTableWidgetItem(
@@ -262,7 +262,7 @@ class ShortcutEditor(QWidget):
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
                 item_shortcut2.setTextAlignment(
-                    int(Qt.AlignVCenter | Qt.AlignRight)
+                    int(Qt.AlignVCenter | Qt.AlignCenter)
                 )
 
                 # action_name is stored in the table to use later, but is not shown on dialog.
