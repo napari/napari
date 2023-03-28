@@ -237,7 +237,7 @@ class ShortcutEditor(QWidget):
                 self._table.setItem(row, self._action_name_col, item)
                 # Ensure long descriptions can be wrapped in cells
                 item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
-                item.setFlags(item.flags() | Qt.TextWordWrap)
+                item.setFlags(item.flags() | Qt.ItemFlag.TextWordWrap)
                 self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
