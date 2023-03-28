@@ -221,9 +221,9 @@ class ShortcutEditor(QWidget):
 
             # Column set up.
             self._table.setColumnWidth(self._action_name_col, 400)
-            self._table.setColumnWidth(self._shortcut_col, 125)
-            self._table.setColumnWidth(self._shortcut_col2, 125)
-            self._table.setColumnWidth(self._icon_col, 50)
+            self._table.setColumnWidth(self._shortcut_col, 140)
+            self._table.setColumnWidth(self._shortcut_col2, 120)
+            self._table.setColumnWidth(self._icon_col, 40)
 
             # Add some padding to rows
             self._table.setStyleSheet("QTableView::item { padding: 6px; }")
