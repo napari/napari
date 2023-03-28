@@ -233,11 +233,11 @@ class ShortcutEditor(QWidget):
                 shortcuts = action_manager._shortcuts.get(action_name, [])
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
-                item.setFlags(Qt.ItemFlag.NoItemFlags)
+                item.setFlags(Qt.NoItemFlags)
                 self._table.setItem(row, self._action_name_col, item)
                 # Ensure long descriptions can be wrapped in cells
                 item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
-                item.setFlags(item.flags() | Qt.ItemFlag.TextWordWrap)
+                item.setFlags(item.flags() | Qt.TextWordWrap)
                 self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
