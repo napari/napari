@@ -60,10 +60,14 @@ class Surface(IntensityVisualizationMixin, Layer):
         C may be 3 (RGB) or 4 (RGBA) channels for a color texture.
     texcoords: (N, 2) array
         2D coordinates for each vertex, mapping into the texture.
-        Coordinates should be in [0.0, 1.0] and scale to sample the 2D texture.
-    vertex_colors: (K0, ..., KL, N, C) array of color values
+        The number of texture coords must match the number of vertices (N).
+        Coordinates should be in [0.0, 1.0] and are scaled to sample the 2D
+        texture. Coordinates outside this range will wrap, but this behavior
+        should be considered an implementation detail: there are no plans to
+        change it, but it's a feature of the underlying vispy visual.
+    vertex_colors: (N, C) or (K0, ..., KL, N, C) array of color values
         Take care that the (optional) L additional dimensions match those of
-        vertex_values for slicing to work properly.
+        vertex_values for proper slicing.
         C may be 3 (RGB) or 4 (RGBA) channels.
     contrast_limits : list (2,)
         Color limits to be used for determining the colormap bounds for
@@ -351,7 +355,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertex_colors.setter
     def vertex_colors(self, vertex_colors: Optional[np.ndarray]):
-        """Array of values (N, C) used to directly color vertices."""
+        """Values used to directly color vertices."""
         self._vertex_colors = vertex_colors
         self._update_dims()
         self.events.data(value=self.data)
@@ -363,7 +367,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @faces.setter
     def faces(self, faces: np.ndarray):
-        """Array of indices of mesh triangles.."""
+        """Array of indices of mesh triangles."""
 
         self.faces = faces
 
