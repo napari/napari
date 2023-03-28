@@ -181,8 +181,10 @@ def test_installer_failures(qtbot, tmp_virtualenv: 'Session', monkeypatch):
         )
 
 
+# We skip on old Python as this is one of the slowest test.
 @pytest.mark.skipif(
-    not CondaInstallerTool.available(), reason="Conda is not available."
+    (not CondaInstallerTool.available()) or (sys.version_info < (3, 10)),
+    reason="Conda is not available.",
 )
 def test_conda_installer(qtbot, tmp_conda_env: Path):
     installer = InstallerQueue()
