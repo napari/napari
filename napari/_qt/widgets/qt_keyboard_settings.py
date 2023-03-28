@@ -220,10 +220,13 @@ class ShortcutEditor(QWidget):
             self._table.setColumnHidden(self._action_col, True)
 
             # Column set up.
-            self._table.setColumnWidth(self._action_name_col, 430)
-            self._table.setColumnWidth(self._shortcut_col, 115)
-            self._table.setColumnWidth(self._shortcut_col2, 115)
-            self._table.setColumnWidth(self._icon_col, 40)
+            self._table.setColumnWidth(self._action_name_col, 400)
+            self._table.setColumnWidth(self._shortcut_col, 125)
+            self._table.setColumnWidth(self._shortcut_col2, 125)
+            self._table.setColumnWidth(self._icon_col, 50)
+
+            # Add some padding to rows
+            self._table.setStyleSheet("QTableView::item { padding: 6px; }")
 
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
@@ -232,9 +235,10 @@ class ShortcutEditor(QWidget):
                 item = QTableWidgetItem(action.description)
                 item.setFlags(Qt.ItemFlag.NoItemFlags)
                 self._table.setItem(row, self._action_name_col, item)
+                # Ensure long descriptions can be wrapped in cells
                 item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
                 item.setFlags(item.flags() | Qt.TextWordWrap)
-                self._table.setRowHeight(row, 32)
+                self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
                 # selectable/editable.
