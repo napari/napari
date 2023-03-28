@@ -237,7 +237,9 @@ class ShortcutEditor(QWidget):
                 self._table.setItem(row, self._action_name_col, item)
                 # Ensure long descriptions can be wrapped in cells
                 item.setTextAlignment(int(Qt.AlignVCenter | Qt.AlignRight))
-                item.setFlags(item.flags() | Qt.ItemFlag(Qt.TextWordWrap))
+                item.setFlags(
+                    item.flags() | Qt.ItemFlag(Qt.TextFlag.TextWordWrap)
+                )
                 self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
@@ -252,7 +254,7 @@ class ShortcutEditor(QWidget):
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
                 item_shortcut.setTextAlignment(
-                    Qt.AlignVCenter | Qt.AlignCenter
+                    int(Qt.AlignVCenter | Qt.AlignRight)
                 )
 
                 item_shortcut2 = QTableWidgetItem(
@@ -262,7 +264,7 @@ class ShortcutEditor(QWidget):
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
                 item_shortcut2.setTextAlignment(
-                    Qt.AlignVCenter | Qt.AlignCenter
+                    int(Qt.AlignVCenter | Qt.AlignRight)
                 )
 
                 # action_name is stored in the table to use later, but is not shown on dialog.
