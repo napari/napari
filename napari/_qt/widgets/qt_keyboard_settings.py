@@ -224,6 +224,7 @@ class ShortcutEditor(QWidget):
             self._table.setColumnWidth(self._shortcut_col, 140)
             self._table.setColumnWidth(self._shortcut_col2, 120)
             self._table.setColumnWidth(self._icon_col, 40)
+            self._table.setWordWrap(True)
 
             # Add some padding to rows
             self._table.setStyleSheet("QTableView::item { padding: 6px; }")
@@ -237,7 +238,6 @@ class ShortcutEditor(QWidget):
                 self._table.setItem(row, self._action_name_col, item)
                 # Ensure long descriptions can be wrapped in cells
                 item.setTextAlignment(int(Qt.AlignVCenter | Qt.AlignRight))
-                item.setFlags(item.flags() | Qt.ItemFlag(Qt.TextWordWrap))
                 self._table.resizeRowToContents(row)
 
                 # Create empty item in order to make sure this column is not
