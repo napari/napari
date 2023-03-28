@@ -220,10 +220,10 @@ class ShortcutEditor(QWidget):
             self._table.setColumnHidden(self._action_col, True)
 
             # Column set up.
-            self._table.setColumnWidth(self._action_name_col, 250)
-            self._table.setColumnWidth(self._shortcut_col, 200)
-            self._table.setColumnWidth(self._shortcut_col2, 200)
-            self._table.setColumnWidth(self._icon_col, 50)
+            self._table.setColumnWidth(self._action_name_col, 430)
+            self._table.setColumnWidth(self._shortcut_col, 115)
+            self._table.setColumnWidth(self._shortcut_col2, 115)
+            self._table.setColumnWidth(self._icon_col, 40)
 
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
@@ -232,6 +232,9 @@ class ShortcutEditor(QWidget):
                 item = QTableWidgetItem(action.description)
                 item.setFlags(Qt.ItemFlag.NoItemFlags)
                 self._table.setItem(row, self._action_name_col, item)
+                item.setTextAlignment(Qt.AlignVCenter | Qt.AlignRight)
+                item.setFlags(item.flags() | Qt.TextWordWrap)
+                self._table.setRowHeight(row, 32)
 
                 # Create empty item in order to make sure this column is not
                 # selectable/editable.
@@ -244,6 +247,9 @@ class ShortcutEditor(QWidget):
                     Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
                 )
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
+                item_shortcut.setTextAlignment(
+                    Qt.AlignVCenter | Qt.AlignCenter
+                )
 
                 item_shortcut2 = QTableWidgetItem(
                     Shortcut(list(shortcuts)[1]).platform
@@ -251,6 +257,9 @@ class ShortcutEditor(QWidget):
                     else ""
                 )
                 self._table.setItem(row, self._shortcut_col2, item_shortcut2)
+                item_shortcut2.setTextAlignment(
+                    Qt.AlignVCenter | Qt.AlignCenter
+                )
 
                 # action_name is stored in the table to use later, but is not shown on dialog.
                 item_action = QTableWidgetItem(action_name)
