@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -85,6 +85,8 @@ class Shapes(Layer):
     features : dict[str, array-like] or Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
+    feature_defaults : dict[str, Any] or Dataframe-like
+        The default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -388,6 +390,7 @@ class Shapes(Layer):
         *,
         ndim=None,
         features=None,
+        feature_defaults=None,
         properties=None,
         property_choices=None,
         text=None,
@@ -469,6 +472,7 @@ class Shapes(Layer):
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
+            feature_defaults=feature_defaults,
             properties=properties,
             property_choices=property_choices,
             num_data=number_of_shapes(data),
@@ -588,14 +592,14 @@ class Shapes(Layer):
 
             # add the new color cycle mapping
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self.property_choices[color_property][0]
+            prop_value = self.feature_defaults[color_property][0]
             color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
             color_cycle_map[prop_value] = np.squeeze(curr_color)
             setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self.property_choices[color_property][0]
+            prop_value = self.feature_defaults[color_property][0]
             colormap = getattr(self, f'{attribute}_colormap')
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
@@ -736,6 +740,14 @@ class Shapes(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, Any], pd.DataFrame]
+    ) -> None:
+        self._feature_table.set_defaults(defaults)
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -1505,6 +1517,7 @@ class Shapes(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'features': self.features,
+                'feature_defaults': self.feature_defaults,
             }
         )
         return state
