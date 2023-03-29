@@ -625,15 +625,18 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 AVAILABLE_COLORMAPS[name] = cmap
             else:
                 colormap = _colormap_from_colors(colormap)
-                if colormap is not None:
-                    # Return early because we don't have a name for this colormap.
-                    return colormap
-                raise TypeError(
-                    trans._(
-                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
-                        deferred=True,
+                if colormap is None:
+                    raise TypeError(
+                        trans._(
+                            "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
+                            deferred=True,
+                        )
                     )
+
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
+                AVAILABLE_COLORMAPS[name] = cmap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
@@ -685,19 +688,20 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         else:
             colormap = _colormap_from_colors(colormap)
             if colormap is not None:
-                # Return early because we don't have a name for this colormap.
-                return colormap
-
-            warnings.warn(
-                trans._(
-                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
-                    deferred=True,
-                    cm_type=type(colormap),
+                name, _display_name = _increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
                 )
-            )
-
-            # Use default colormap
-            name = 'gray'
+                AVAILABLE_COLORMAPS[name] = colormap
+            else:
+                warnings.warn(
+                    trans._(
+                        'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                        deferred=True,
+                        cm_type=type(colormap),
+                    )
+                )
+                # Use default colormap
+                name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 
