@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import ensure_object_thread, QElidingLineEdit
+from superqt import QElidingLineEdit, ensure_object_thread
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.qthreading import _new_worker_qthread
