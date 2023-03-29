@@ -147,7 +147,7 @@ class QtDims(QWidget):
             # set new width to the width of the longest label being displayed
             newwidth = max(
                 [
-                    int(fm.boundingRect(dlab.full_text).width())
+                    int(fm.boundingRect(dlab.text()).width())
                     for dlab in displayed_labels
                 ]
             )

@@ -269,15 +269,15 @@ def test_update_dims_labels(qtbot):
 
     # check that the label text corresponds with the dims model
     # while being elided on the GUI
-    first_label.set_text('napari')
-    assert first_label.full_text == view.dims.axis_labels[0]
-    assert "…" in first_label.text()
+    first_label.setText('napari')
+    assert first_label.text() == view.dims.axis_labels[0]
+    assert "…" in first_label._elidedText()
     assert observed_axis_labels_event
 
     # increase width to check the full text is shown
     view.setFixedWidth(250)
-    assert first_label.full_text == view.dims.axis_labels[0]
     assert first_label.text() == view.dims.axis_labels[0]
+    assert first_label._elidedText() == view.dims.axis_labels[0]
 
 
 def test_slider_press_updates_last_used(qtbot):
