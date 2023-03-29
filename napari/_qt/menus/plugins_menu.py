@@ -34,7 +34,7 @@ class PluginsMenu(NapariMenu):
 
     def _build(self, event=None):
         self.clear()
-        action = self.addAction(trans._("Install/Uninstall Plugins..."))
+        action = self.addAction(trans._("Plugin Manager"))
         action.triggered.connect(self._show_plugin_install_dialog)
         action = self.addAction(trans._("Plugin Errors..."))
         action.setStatusTip(
@@ -93,7 +93,7 @@ class PluginsMenu(NapariMenu):
 
             def _add_toggle_widget(*, key=key, hook_type=hook_type):
                 full_name = menu_item_template.format(*key)
-                if full_name in self._win._dock_widgets.keys():
+                if full_name in self._win._dock_widgets:
                     dock_widget = self._win._dock_widgets[full_name]
                     if dock_widget.isVisible():
                         dock_widget.hide()

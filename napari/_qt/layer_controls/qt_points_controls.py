@@ -1,3 +1,4 @@
+import contextlib
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -312,10 +313,8 @@ class QtPointsControls(QtLayerControls):
                 self.sizeSlider.setMinimum(max(1, int(min_val - 1)))
             if max_val > self.sizeSlider.maximum():
                 self.sizeSlider.setMaximum(int(max_val + 1))
-            try:
+            with contextlib.suppress(TypeError):
                 self.sizeSlider.setValue(int(value))
-            except TypeError:
-                pass
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):

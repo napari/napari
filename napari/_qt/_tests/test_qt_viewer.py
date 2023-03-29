@@ -19,6 +19,7 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
+from napari._vispy._tests.utils import vispy_image_scene_size
 from napari._vispy.utils.gl import fix_data_dtype
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Points
@@ -695,3 +696,17 @@ def test_create_non_empty_viewer_model(qtbot):
     del viewer
     qtbot.wait(50)
     gc.collect()
+
+
+def test_axes_labels(make_napari_viewer):
+    viewer = make_napari_viewer(ndisplay=3)
+    layer = viewer.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
+
+    layer_visual = viewer._window._qt_viewer.layer_to_visual[layer]
+    axes_visual = viewer._window._qt_viewer.overlay_to_visual[
+        viewer._overlays['axes']
+    ]
+
+    layer_visual_size = vispy_image_scene_size(layer_visual)
+    assert tuple(layer_visual_size) == (8, 4, 2)
+    assert tuple(axes_visual.node.text.text) == ('2', '1', '0')
