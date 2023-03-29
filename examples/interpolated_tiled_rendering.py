@@ -4,7 +4,7 @@ from typing import Tuple, Union
 
 import toolz as tz
 import numpy as np
-from fibsem_tools import read_xarray
+
 from multiprocess import Process
 from psygnal import debounced
 from skimage.transform import resize
@@ -12,14 +12,14 @@ from skimage.util import img_as_uint
 from superqt import ensure_main_thread
 
 import napari
-from napari.experimental._progressive_loading import ChunkCacheManager
+from napari.experimental._progressive_loading import ChunkCacheManager, openorganelle_mouse_kidney_em
 from napari.layers._data_protocols import LayerDataProtocol, Index
 from napari.qt.threading import thread_worker
 from napari.utils.events import Event
 
 # config.async_loading = True
 
-LOGGER = logging.getLogger("tiled_rendering_2D")
+LOGGER = logging.getLogger("interpolated_tiled_rendering")
 LOGGER.setLevel(logging.DEBUG)
 
 streamHandler = logging.StreamHandler(sys.stdout)
@@ -60,8 +60,8 @@ def get_chunk(coord, array=None, container=None, dataset=None):
         real_array = np.asarray(
             array[
                 z,
-                y : (y + array.data.chunksize[-2]),
-                x : (x + array.data.chunksize[-1]),
+                y : (y + array.chunksize[-2]),
+                x : (x + array.chunksize[-1]),
             ].compute()
         )
         cache_manager.put(container, dataset, coord, real_array)
@@ -110,13 +110,13 @@ def interpolated_get_chunk(coord, array=None, container=None, dataset=None):
                     lcoord, array=array, container=container, dataset=dataset
                 )
             except:
-                lvalue = np.zeros([1] + list(array.data.chunksize[-2:]))
+                lvalue = np.zeros([1] + list(array.chunksize[-2:]))
             try:
                 rvalue = get_chunk(
                     rcoord, array=array, container=container, dataset=dataset
                 )
             except:
-                rvalue = np.zeros([1] + list(array.data.chunksize[-2:]))
+                rvalue = np.zeros([1] + list(array.chunksize[-2:]))
 
             # Linear weight between left/right, assumes parallel
             w = coord[0] - lcoord[0]
@@ -148,7 +148,7 @@ def chunks_for_scale(corner_pixels, array, scale):
     mins = corner_pixels[0, :] / (2**scale)
     maxs = corner_pixels[1, :] / (2**scale)
 
-    chunk_size = array.data.chunksize
+    chunk_size = array.chunksize
 
     # TODO kludge for 3D z-only interpolation
     zval = mins[-3]
@@ -374,6 +374,7 @@ def render_sequence(corner_pixels, full_shape, num_threads=1):
                 for thread in threads:
                     thread.join()
 
+                # TODO we should really be yielding async instead of in batches
                 # Yield the chunks that are done
                 for idx in range(len(results)):
                     LOGGER.info(
@@ -462,21 +463,23 @@ if __name__ == "__main__":
     viewer = napari.Viewer()
 
     cache_manager = ChunkCacheManager()
-    
-    large_image = {
-        "container": "s3://janelia-cosem-datasets/jrc_macrophage-2/jrc_macrophage-2.n5",
-        "dataset": "em/fibsem-uint16",
-        "scale_levels": 4,
-        "chunk_size": (384, 384, 384),
-    }
-    large_image["arrays"] = [
-        read_xarray(
-            f"{large_image['container']}/{large_image['dataset']}/s{scale}/",
-            storage_options={"anon": True},
-        )
-        for scale in range(large_image["scale_levels"])
-    ]
-    
+
+    # Previous
+    # large_image = {
+    #     "container": "s3://janelia-cosem-datasets/jrc_macrophage-2/jrc_macrophage-2.n5",
+    #     "dataset": "em/fibsem-uint16",
+    #     "scale_levels": 4,
+    #     "chunk_size": (384, 384, 384),
+    # }
+    # large_image["arrays"] = [
+    #     read_xarray(
+    #         f"{large_image['container']}/{large_image['dataset']}/s{scale}/",
+    #         storage_options={"anon": True},
+    #     )
+    #     for scale in range(large_image["scale_levels"])
+    # ]
+
+    large_image = openorganelle_mouse_kidney_em()    
 
     # TODO at least get this size from the image
     empty = VirtualData(np.uint16, large_image["arrays"][0].shape)
