@@ -2,12 +2,14 @@ import logging
 import sys
 from typing import Tuple, Union
 
+import concurrent.futures
+
 import numpy as np
 import toolz as tz
-from multiprocess import Process
+
 from psygnal import debounced
 from skimage.transform import resize
-from skimage.util import img_as_uint
+
 from superqt import ensure_main_thread
 
 import napari
@@ -33,38 +35,12 @@ LOGGER.addHandler(streamHandler)
 global worker
 worker = None
 
-
-# def get_chunk(coord, array=None, container=None, dataset=None):
-#     """Get a specified slice from an array (uses a cache).
-#     Parameters
-#     ----------
-#     coord : tuple
-#         an integer 3D coordinate into the array like (0, 0, 0)
-#     array : ndarray
-#         one of the scales from the multiscale image
-#     container: str
-#         the zarr container name (this is used to disambiguate the cache)
-#     dataset: str
-#         the group in the zarr (this is used to disambiguate the cache)
-#     chunk_size: tuple
-#         the size of chunk that you want to fetch
-#     Returns
-#     -------
-#     real_array : ndarray
-#         an ndarray of data sliced with chunk_slice
-#     """
-#     real_array = cache_manager.get(container, dataset, coord)
-#     if real_array is None:
-#         z, y, x = coord.astype(np.long)
-#         real_array = np.asarray(
-#             array[
-#                 z,
-#                 y : (y + array.chunksize[-2]),
-#                 x : (x + array.chunksize[-1]),
-#             ].compute()
-#         )
-#         cache_manager.put(container, dataset, coord, real_array)
-#     return real_array
+"""
+Current differences between this (2D) and are_the_chunks_in_view (3D):
+- 2D v 3D
+- 2D does not use chunk prioritization
+- 2D uses linear interpolation
+"""
 
 
 def interpolated_get_chunk(
@@ -105,8 +81,6 @@ def interpolated_get_chunk(
                 cache_manager=cache_manager,
             )
         else:
-            # TODO pickup here, it looks like both chunks are getting zeros
-
             # Get left and right keys
             # TODO int casting may be dangerous
             lchunk_slice = (
@@ -151,7 +125,6 @@ def interpolated_get_chunk(
             # Linear weight between left/right, assumes parallel
             w = chunk_slice[0].start - lchunk_slice[0].start
 
-            
             # TODO hardcoded dtype
             # TODO squeeze is a bad sign
             real_array = (
@@ -186,13 +159,14 @@ def chunks_for_scale(corner_pixels, array, scale):
 
     # TODO kludge for 3D z-only interpolation
     zval = mins[-3]
-
+    
     # Find the extent from the current corner pixels, limit by data shape
-    mins = (np.floor(mins / chunk_size) * chunk_size).astype(np.long)
+    # TODO risky int cast
+    mins = (np.floor(mins / chunk_size) * chunk_size).astype(int)
     maxs = np.min(
         (np.ceil(maxs / chunk_size) * chunk_size, np.array(array.shape)),
         axis=0,
-    ).astype(np.long)
+    ).astype(int)
 
     mins[-3] = maxs[-3] = zval
 
@@ -251,7 +225,7 @@ class VirtualData:
             return self.data_plane.__setitem__(key, value)
 
 
-def chunk_fetcher(chunk_slice, scale, array, full_shape, cache_manager=None):
+def get_and_process_chunk(chunk_slice, scale, array, full_shape, cache_manager=None):
     """Fetch and upscale a chunk
 
     Parameters
@@ -282,13 +256,12 @@ def chunk_fetcher(chunk_slice, scale, array, full_shape, cache_manager=None):
     )
     
     upscale_factor = [el * 2**scale for el in real_array.shape]
-
+    
     # Upscale the data to highest resolution
-    upscaled = img_as_uint(
-        resize(
-            real_array,
-            upscale_factor,
-        )
+    upscaled = resize(
+        real_array,
+        upscale_factor,
+        preserve_range=True,
     )
 
     # TODO imposes 3D
@@ -336,7 +309,6 @@ def chunk_fetcher(chunk_slice, scale, array, full_shape, cache_manager=None):
         tuple(upscaled_chunk_slice),
         scale,
         upscaled,
-        upscaled_chunk_size,
     )
 
 
@@ -360,10 +332,12 @@ def mutable_chunk_fetcher(
     full_shape : tuple
         a tuple storing the shape of the highest resolution level
     """
-    results[idx] = chunk_fetcher(
+    results[idx] = get_and_process_chunk(
         chunk_slice, scale, array, full_shape, cache_manager=cache_manager
     )
 
+
+from concurrent.futures import Executor
 
 @thread_worker
 def render_sequence(
@@ -399,7 +373,7 @@ def render_sequence(
         if num_threads == 1:
             # Single threaded:
             for chunk_slice in chunks_to_fetch:
-                yield chunk_fetcher(
+                yield get_and_process_chunk(
                     chunk_slice,
                     scale,
                     array,
@@ -413,52 +387,29 @@ def render_sequence(
                 chunks_to_fetch[i] for i in range(0, len(chunks_to_fetch))
             ]
 
-            job_sets = [
-                all_job_sets[idx : idx + num_threads]
-                for idx in range(0, len(all_job_sets), num_threads)
-            ]
-
-            for job_set in job_sets:
-                # We need a mutable result
-                results = [None] * len(job_set)
-
-                # Collect the arguments
-                arg_set = [
-                    [results, idx] + [args, scale, array]
-                    for idx, args in enumerate(job_set)
-                ]
-
-                # Make the threads
-                threads = [
-                    Process(target=mutable_chunk_fetcher, args=arg_list)
-                    for arg_list in arg_set
-                ]
-
-                # Start threads
-                for thread in threads:
-                    thread.start()
-
-                # Collect
-                for thread in threads:
-                    thread.join()
-
+            def mapper(chunk_slice):
+                get_and_process_chunk(
+                    chunk_slice,
+                    scale,
+                    array,
+                    full_shape,
+                    cache_manager=cache_manager,
+                )
+            
+            with concurrent.futures.ProcessPoolExecutor() as executor:
                 # TODO we should really be yielding async instead of in batches
                 # Yield the chunks that are done
-                for idx in range(len(results)):
-                    LOGGER.info(
-                        f"jobs done: scale {scale} job_idx {idx} job_set {job_set[idx]} with result {results[idx]}"
-                    )
-                    # Get job parameters
-                    z, y, x = job_set[idx]
-
-                    chunk_tuple = results[idx]
-
-                    LOGGER.info(
-                        f"scale of {scale} upscaled {chunk_tuple[-2].shape} chunksize {chunk_tuple[-1]} at {chunk_tuple[:3]}"
-                    )
-
-                    # Return upscaled coordinates, the scale, and chunk
-                    yield chunk_tuple
+                for idx, result in enumerate(executor.map(mapper, all_job_sets)):
+                        LOGGER.info(
+                            f"jobs done: scale {scale} job_idx {idx} with result {result}"
+                        )
+                
+                        LOGGER.info(
+                            f"scale of {scale} upscaled {result[-2].shape} chunksize {result[-1]} at {result[:3]}"
+                        )
+                
+                        # Return upscaled coordinates, the scale, and chunk
+                        yield result
 
 
 @tz.curry
@@ -511,12 +462,12 @@ def dims_update_handler(invar, full_shape=(), cache_manager=None):
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
         layer = viewer.layers[0]
-        chunk_slice, scale, chunk, chunk_size = coord
+        chunk_slice, scale, chunk = coord
         # chunk_size = chunk.shape
         LOGGER.info(
-            f"Writing chunk with size {chunk_size} to: {(viewer.dims.current_step[0], chunk_slice[0].start, chunk_slice[1].start)}"
+            f"Writing chunk with size {chunk.shape} to: {(viewer.dims.current_step[0], chunk_slice[0].start, chunk_slice[1].start)}"
         )
-        layer.data[chunk_slice] = chunk[: chunk_size[-2], : chunk_size[-1]]
+        layer.data[chunk_slice] = chunk
         layer.refresh()
 
     worker.yielded.connect(on_yield)
@@ -556,9 +507,6 @@ if __name__ == "__main__":
 
     layer = viewer.add_image(empty, contrast_limits=[20000, 30000])
 
-    layer.contrast_limits_range = (0, 1)
-    layer.contrast_limits = (0, 1)
-
     # Connect to camera
     viewer.camera.events.connect(
         debounced(
@@ -585,6 +533,7 @@ if __name__ == "__main__":
         )
     )
 
+    # Trigger first render
     dims_update_handler(
         viewer,
         full_shape=large_image["arrays"][0].shape,
