@@ -35,14 +35,13 @@ class QtDimSliderWidget(QWidget):
     This widget *must* be instantiated with a parent QtDims.
     """
 
-    axis_label_changed = Signal(int, str)  # axis, label
     fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
     play_started = Signal()
     play_stopped = Signal()
 
-    def __init__(self, parent: QWidget, axis: int):
+    def __init__(self, parent: QWidget, axis: int) -> None:
         super().__init__(parent=parent)
         self.axis = axis
         self.qt_dims = parent
@@ -193,13 +192,10 @@ class QtDimSliderWidget(QWidget):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
         self.axis_label.setText(label)
-        self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
         """Update dimension slider label."""
-        with self.dims.events.axis_labels.blocker():
-            self.dims.set_axis_label(self.axis, self.axis_label.text())
-        self.axis_label_changed.emit(self.axis, self.axis_label.text())
+        self.dims.set_axis_label(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):
         """Clear focus from dimension slider label."""
@@ -433,7 +429,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     editingFinished and when the user clicks on the spin buttons.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, *kwargs)
         self.valueChanged.connect(self.custom_change_event)
 
@@ -490,7 +486,7 @@ class QtPlayButton(QPushButton):
 
     def __init__(
         self, qt_dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP
-    ):
+    ) -> None:
         super().__init__()
         self.qt_dims_ref = ref(qt_dims)
         self.axis = axis
@@ -586,7 +582,7 @@ class AnimationWorker(QObject):
     finished = Signal()
     started = Signal()
 
-    def __init__(self, slider):
+    def __init__(self, slider) -> None:
         # FIXME there are attributes defined outsid of __init__.
         super().__init__()
         self._interval = 1

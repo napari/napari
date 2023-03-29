@@ -165,22 +165,30 @@ def test_mpl_colormap_exists():
         assert getattr(cm, name, None) is not None
 
 
-def test_colormap_error_suggestion():
+@pytest.mark.parametrize(
+    "name,display_name",
+    [
+        ('twilight_shifted', 'twilight shifted'),  # MPL
+        ('light_blues', 'light blues'),  # Vispy
+    ],
+)
+def test_colormap_error_suggestion(name, display_name):
     """
     Test that vispy/mpl errors, when using `display_name`, suggest `name`.
     """
-    name = '"twilight_shifted"'
-    display_name = 'twilight shifted'
-    with pytest.raises(KeyError) as excinfo:
+    with pytest.raises(
+        KeyError, match=rf"{display_name}.*you might want to use.*{name}"
+    ):
         vispy_or_mpl_colormap(display_name)
 
-    assert name in str(excinfo.value)
 
-    wrong_name = 'foobar'
-    with pytest.raises(KeyError) as excinfo:
-        vispy_or_mpl_colormap(wrong_name)
-
-    assert name in str(excinfo.value)
+def test_colormap_error_from_inexistent_name():
+    """
+    Test that vispy/mpl errors when using a wrong name.
+    """
+    name = 'foobar'
+    with pytest.raises(KeyError, match=rf"{name}.*Recognized colormaps are"):
+        vispy_or_mpl_colormap(name)
 
 
 np.random.seed(0)
@@ -213,8 +221,8 @@ _MULTI_COLORS_VARIANTS = (
     _MULTI_RGBA_COLORS,
     tuple(tuple(color) for color in _MULTI_RGB_COLORS),
     tuple(tuple(color) for color in _MULTI_RGBA_COLORS),
-    list(list(color) for color in _MULTI_RGB_COLORS),
-    list(list(color) for color in _MULTI_RGBA_COLORS),
+    [list(color) for color in _MULTI_RGB_COLORS],
+    [list(color) for color in _MULTI_RGBA_COLORS],
 )
 
 

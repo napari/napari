@@ -4,6 +4,7 @@ import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
+from napari.components.overlays.base import CanvasOverlay, SceneOverlay
 from napari.utils.events import disconnect_events
 
 
@@ -41,13 +42,15 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node):
+    def __init__(self, layer, node) -> None:
         super().__init__()
         self.events = None  # Some derived classes have events.
 
         self.layer = layer
         self._array_like = False
         self.node = node
+        self.first_visible = False
+        self.overlays = {}
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -67,6 +70,7 @@ class VispyBaseLayer(ABC):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
+        self.layer.events._overlays.connect(self._on_overlays_change)
 
     @property
     def _master_transform(self):
@@ -103,6 +107,7 @@ class VispyBaseLayer(ABC):
     @order.setter
     def order(self, order):
         self.node.order = order
+        self._on_blending_change()
 
     @abstractmethod
     def _on_data_change(self):
@@ -117,10 +122,65 @@ class VispyBaseLayer(ABC):
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self):
-        blending_kwargs = BLENDING_MODES[self.layer.blending]
+    def _on_blending_change(self, event=None):
+        blending = self.layer.blending
+        blending_kwargs = BLENDING_MODES[blending].copy()
+
+        if self.first_visible:
+            # if the first layer, then we should blend differently
+            # the goal is to prevent pathological blending with canvas
+            # for minimum, use the src color, ignore alpha & canvas
+            if blending == 'minimum':
+                src_color_blending = 'one'
+                dst_color_blending = 'zero'
+            # for additive, use the src alpha and blend to black
+            elif blending == 'additive':
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'zero'
+            # for all others, use translucent blending
+            else:
+                src_color_blending = 'src_alpha'
+                dst_color_blending = 'one_minus_src_alpha'
+            blending_kwargs = {
+                "depth_test": blending_kwargs['depth_test'],
+                "cull_face": False,
+                "blend": True,
+                "blend_func": (
+                    src_color_blending,
+                    dst_color_blending,
+                    'one',
+                    'one',
+                ),
+                "blend_equation": 'func_add',
+            }
+
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
+
+    def _on_overlays_change(self):
+        # avoid circular import; TODO: fix?
+        from napari._vispy.utils.visual import create_vispy_overlay
+
+        overlay_models = self.layer._overlays.values()
+
+        for overlay in overlay_models:
+            if overlay in self.overlays:
+                continue
+
+            overlay_visual = create_vispy_overlay(overlay, layer=self.layer)
+            self.overlays[overlay] = overlay_visual
+            if isinstance(overlay, CanvasOverlay):
+                overlay_visual.node.parent = self.node.parent.parent  # viewbox
+            elif isinstance(overlay, SceneOverlay):
+                overlay_visual.node.parent = self.node
+
+            overlay_visual.node.parent = self.node
+            overlay_visual.reset()
+
+        for overlay in list(self.overlays):
+            if overlay not in overlay_models:
+                overlay_visual = self.overlays.pop(overlay)
+                overlay_visual.close()
 
     def _on_matrix_change(self):
         transform = self.layer._transforms.simplified.set_slice(
@@ -168,15 +228,15 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
+        self._on_overlays_change()
 
-    def _on_poll(self, event=None):
+    def _on_poll(self, event=None):  # noqa: B027
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the
         visual can finish up what it was doing, such as loading data into
         VRAM or animating itself.
         """
-        pass
 
     def close(self):
         """Vispy visual is closing."""

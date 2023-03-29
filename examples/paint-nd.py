@@ -11,8 +11,8 @@ This is useful e.g. when proofreading segmentations within a time series.
 
 import numpy as np
 from skimage import data
-import napari
 
+import napari
 
 blobs = np.stack(
     [

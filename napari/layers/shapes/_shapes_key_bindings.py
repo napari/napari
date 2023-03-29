@@ -11,24 +11,7 @@ from napari.layers.utils.layer_utils import (
 from napari.utils.translations import trans
 
 
-@Shapes.bind_key(KeyCode.Space)
-def hold_to_pan_zoom(layer: Shapes):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
-
-
-@Shapes.bind_key(KeyCode.Shift)
+@Shapes.bind_key(KeyCode.Shift, overwrite=True)
 def hold_to_lock_aspect_ratio(layer: Shapes):
     """Hold to lock aspect ratio when resizing a shape."""
     # on key press
@@ -60,6 +43,16 @@ def register_shapes_action(description: str, repeatable: bool = False):
 
 def register_shapes_mode_action(description):
     return register_layer_attr_action(Shapes, description, 'mode')
+
+
+@register_shapes_mode_action(trans._('Transform'))
+def activate_shapes_transform_mode(layer):
+    layer.mode = Mode.TRANSFORM
+
+
+@register_shapes_mode_action(trans._('Pan/zoom'))
+def activate_shapes_pan_zoom_mode(layer):
+    layer.mode = Mode.PAN_ZOOM
 
 
 @register_shapes_mode_action(trans._('Add rectangles'))
@@ -104,12 +97,6 @@ def activate_select_mode(layer: Shapes):
     layer.mode = Mode.SELECT
 
 
-@register_shapes_mode_action(trans._('Pan/Zoom'))
-def activate_shape_pan_zoom_mode(layer: Shapes):
-    """Activate pan and zoom mode."""
-    layer.mode = Mode.PAN_ZOOM
-
-
 @register_shapes_mode_action(trans._('Insert vertex'))
 def activate_vertex_insert_mode(layer: Shapes):
     """Activate vertex insertion tool."""
@@ -123,6 +110,8 @@ def activate_vertex_remove_mode(layer: Shapes):
 
 
 shapes_fun_to_mode = [
+    (activate_shapes_pan_zoom_mode, Mode.PAN_ZOOM),
+    (activate_shapes_transform_mode, Mode.TRANSFORM),
     (activate_add_rectangle_mode, Mode.ADD_RECTANGLE),
     (activate_add_ellipse_mode, Mode.ADD_ELLIPSE),
     (activate_add_line_mode, Mode.ADD_LINE),
@@ -130,7 +119,6 @@ shapes_fun_to_mode = [
     (activate_add_polygon_mode, Mode.ADD_POLYGON),
     (activate_direct_mode, Mode.DIRECT),
     (activate_select_mode, Mode.SELECT),
-    (activate_shape_pan_zoom_mode, Mode.PAN_ZOOM),
     (activate_vertex_insert_mode, Mode.VERTEX_INSERT),
     (activate_vertex_remove_mode, Mode.VERTEX_REMOVE),
 ]

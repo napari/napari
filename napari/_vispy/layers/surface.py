@@ -14,7 +14,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer) -> None:
         node = SurfaceVisual()
         self._meshdata = None
         super().__init__(layer, node)
@@ -79,10 +79,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
 
         # disable normals in 2D to avoid shape errors
-        if ndisplay == 2:
-            meshdata = MeshData()
-        else:
-            meshdata = self.node.mesh_data
+        meshdata = MeshData() if ndisplay == 2 else self.node.mesh_data
         self._meshdata = meshdata
 
         self._on_face_normals_change()

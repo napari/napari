@@ -1,10 +1,7 @@
 import collections
 import gc
 import os
-import platform
-import subprocess
 import sys
-import time
 import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING
@@ -53,7 +50,7 @@ def fail_obj_graph(Klass):
     except ModuleNotFoundError:
         return
 
-    if not len(Klass._instances) == 0:
+    if len(Klass._instances) != 0:
         global COUNTER
         COUNTER += 1
         import gc
@@ -91,11 +88,8 @@ def napari_plugin_manager(monkeypatch):
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
     monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
-    try:
+    with suppress(AttributeError):
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    except AttributeError:  # headless tests
-        pass
-
     # prevent discovery of plugins in the environment
     # you can still use `pm.register` to explicitly register something.
     pm.discovery_blocker = patch.object(pm, 'discover')
@@ -227,10 +221,12 @@ def make_napari_viewer(
     def actual_factory(
         *model_args,
         ViewerClass=Viewer,
-        strict_qt=is_internal_test or os.getenv("NAPARI_STRICT_QT"),
+        strict_qt=None,
         block_plugin_discovery=True,
         **model_kwargs,
     ):
+        if strict_qt is None:
+            strict_qt = is_internal_test or os.getenv("NAPARI_STRICT_QT")
         nonlocal _strict
         _strict = strict_qt
 
@@ -362,41 +358,3 @@ def MouseEvent():
             'dims_point',
         ],
     )
-
-
-@pytest.fixture
-def linux_wm():
-    """Start a WM in the background for tests that need a WM.
-
-    This is required for tests that depend on UI events (e.g. setFocus).
-    See https://github.com/pytest-dev/pytest-qt/issues/206.
-
-    This will only run on Linux and in CI (determined by CI env var) - this is
-    unnecessary/irrelevant on macOS and Windows.
-
-    The window manager start command can be set via env var `WM_START_CMD`
-    (default is `herbstluftwm` - make sure it's installed).
-    """
-    wm_start_cmd = os.environ.get("WM_START_CMD", "herbstluftwm")
-    proc = None
-    if platform.system() == "Linux" and os.environ.get("CI"):
-        proc = subprocess.Popen([wm_start_cmd])
-        # give the WM 1s to start up and check it's still running
-        time.sleep(1)
-        if proc.poll() is not None:
-            raise RuntimeError(
-                f"window manager '{wm_start_cmd}' process [{proc.pid}] exited, "
-                f"return code: {proc.returncode}"
-            )
-
-    yield proc
-
-    if proc:
-        proc.terminate()
-        try:
-            proc.wait(timeout=20)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            raise RuntimeError(
-                f"failed to terminate window manager '{wm_start_cmd}'"
-            )

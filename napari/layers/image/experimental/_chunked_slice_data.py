@@ -42,7 +42,7 @@ class ChunkedSliceData(ImageSliceData):
         image: ArrayLike,
         thumbnail_source: ArrayLike,
         request: Optional[ChunkRequest] = None,
-    ):
+    ) -> None:
         super().__init__(layer, indices, image, thumbnail_source)
 
         # When ChunkedSliceData is first created self.request is

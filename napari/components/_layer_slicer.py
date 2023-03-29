@@ -58,7 +58,7 @@ class _LayerSlicer:
         with `@ensure_main_thread`).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Attributes
         ----------
@@ -74,7 +74,7 @@ class _LayerSlicer:
         """
         self.events = EmitterGroup(source=self, ready=Event)
         self._executor: Executor = ThreadPoolExecutor(max_workers=1)
-        self._force_sync = False
+        self._force_sync = True
         self._layers_to_task: Dict[Tuple[Layer], Future] = {}
         self._lock_layers_to_task = RLock()
 
@@ -119,7 +119,11 @@ class _LayerSlicer:
             )
 
     def submit(
-        self, *, layers: Iterable[Layer], dims: Dims
+        self,
+        *,
+        layers: Iterable[Layer],
+        dims: Dims,
+        force: bool = False,
     ) -> Optional[Future[dict]]:
         """Slices the given layers with the given dims.
 
@@ -140,6 +144,9 @@ class _LayerSlicer:
             The layers to slice.
         dims: Dims
             The dimensions values associated with the view to be sliced.
+        force: bool
+            True if slicing should be forced to occur, even when some cache thinks
+            it already has a valid slice ready. False otherwise.
 
         Returns
         -------
@@ -175,7 +182,9 @@ class _LayerSlicer:
 
         # Then execute sync slicing tasks to run concurrent with async ones.
         for layer in sync_layers:
-            layer._slice_dims(dims.point, dims.ndisplay, dims.order)
+            layer._slice_dims(
+                dims.point, dims.ndisplay, dims.order, force=force
+            )
 
         return task
 
@@ -206,7 +215,9 @@ class _LayerSlicer:
         -------
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
-        return {layer: request() for layer, request in requests.items()}
+        result = {layer: request() for layer, request in requests.items()}
+        self.events.ready(Event('ready', value=result))
+        return result
 
     def _on_slice_done(self, task: Future[Dict]) -> None:
         """
@@ -220,8 +231,6 @@ class _LayerSlicer:
         if task.cancelled():
             logger.debug('Cancelled task')
             return
-        result = task.result()
-        self.events.ready(Event('ready', value=result))
 
     def _try_to_remove_task(self, task: Future[Dict]) -> bool:
         """
@@ -252,6 +261,6 @@ class _LayerSlicer:
             layer_set = set(layers)
             for task_layers, task in self._layers_to_task.items():
                 if set(task_layers).issubset(layer_set):
-                    logger.debug(f'Found existing task for {task_layers}')
+                    logger.debug('Found existing task for %s', task_layers)
                     return task
         return None

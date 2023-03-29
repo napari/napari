@@ -120,7 +120,6 @@ def get_app(
     if app:
         set_values.discard("ipy_interactive")
         if set_values:
-
             warn(
                 trans._(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
@@ -300,7 +299,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
         splash.close()
     try:
         yield app
-    except Exception:
+    except Exception:  # noqa: BLE001
         notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 

@@ -30,8 +30,13 @@ class LoaderPoolGroup:
         The mapping from priority to loader pool.
     """
 
-    def __init__(self, octree_config: dict, on_done: DoneCallback = None):
+    def __init__(
+        self, octree_config: dict, on_done: DoneCallback = None
+    ) -> None:
         self._pools = self._create_pools(octree_config, on_done)
+        self._get_loader_priority = lru_cache(maxsize=64)(
+            self._get_loader_priority_impl
+        )
 
     def _create_pools(
         self, octree_config: dict, on_done: DoneCallback
@@ -69,8 +74,7 @@ class LoaderPoolGroup:
         use_priority = self._get_loader_priority(priority)
         return self._pools[use_priority]
 
-    @lru_cache(maxsize=64)
-    def _get_loader_priority(self, priority: int) -> int:
+    def _get_loader_priority_impl(self, priority: int) -> int:
         """Return the loader priority to use.
 
         This method is pretty fast, but since the mapping from priority to

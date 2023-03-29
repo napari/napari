@@ -13,7 +13,7 @@ from napari.utils.translations import trans
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None, texture_format=None):
+    def __init__(self, custom_node: Node = None, texture_format=None) -> None:
         if (
             texture_format == 'auto'
             and 'texture_float' not in get_gl_extensions()
@@ -38,7 +38,6 @@ class ImageLayerNode:
         )
 
     def get_node(self, ndisplay: int) -> Node:
-
         # Return custom node if we have one.
         if self._custom_node is not None:
             return self._custom_node
@@ -56,8 +55,7 @@ class VispyImageLayer(VispyBaseLayer):
         node=None,
         texture_format='auto',
         layer_node_class=ImageLayerNode,
-    ):
-
+    ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
         self._layer_node = layer_node_class(
             node, texture_format=texture_format
@@ -90,6 +88,9 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_plane_thickness_change
         )
         self.layer.plane.events.normal.connect(self._on_plane_normal_change)
+        self.layer.events.custom_interpolation_kernel_2d.connect(
+            self._on_custom_interpolation_kernel_2d_change
+        )
 
         # display_change is special (like data_change) because it requires a self.reset()
         # this means that we have to call it manually. Also, it must be called before reset
@@ -117,6 +118,8 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.parent = parent
         self.node.order = self.order
+        for overlay_visual in self.overlays.values():
+            overlay_visual.node.parent = self.node
         self.reset()
 
     def _on_data_change(self):
@@ -165,6 +168,10 @@ class VispyImageLayer(VispyBaseLayer):
             if self.layer._slice_input.ndisplay == 2
             else self.layer.interpolation3d
         )
+
+    def _on_custom_interpolation_kernel_2d_change(self):
+        if self.layer._slice_input.ndisplay == 2:
+            self.node.custom_kernel = self.layer.custom_interpolation_kernel_2d
 
     def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):
@@ -246,6 +253,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_plane_position_change()
         self._on_plane_normal_change()
         self._on_plane_thickness_change()
+        self._on_custom_interpolation_kernel_2d_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

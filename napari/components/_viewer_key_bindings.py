@@ -33,7 +33,6 @@ def register_viewer_action(description):
 
 @register_viewer_action(trans._("Reset scroll."))
 def reset_scroll_progress(viewer: Viewer):
-
     # on key press
     viewer.dims._scroll_progress = 0
     yield
@@ -75,6 +74,11 @@ def toggle_theme(viewer: ViewerModel):
 @register_viewer_action(trans._("Reset view to original state."))
 def reset_view(viewer: Viewer):
     viewer.reset_view()
+
+
+@register_viewer_action(trans._("Delete selected layers."))
+def delete_selected_layers(viewer: Viewer):
+    viewer.layers.remove_selected()
 
 
 @register_viewer_action(trans._("Increment dimensions slider to the left."))

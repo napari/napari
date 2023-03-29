@@ -6,13 +6,13 @@ from typing import Any, Tuple, Union
 
 import numpy as np
 import pytest
+from numpy.typing import DTypeLike
 
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Points
 from napari.layers._data_protocols import Index, LayerDataProtocol
-from napari.types import DTypeLike
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
@@ -38,7 +38,7 @@ class FakeSliceRequest:
 
 
 class FakeAsyncLayer:
-    def __init__(self):
+    def __init__(self) -> None:
         self._slice_request_count: int = 0
         self.slice_count: int = 0
         self.lock: RLock = RLock()
@@ -56,7 +56,7 @@ class FakeAsyncLayer:
 
 
 class FakeSyncLayer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.slice_count: int = 0
 
     def _slice_dims(self, *args, **kwargs) -> None:
@@ -70,7 +70,7 @@ class LockableData:
     it allows us to control when slicing tasks complete.
     """
 
-    def __init__(self, data: LayerDataProtocol):
+    def __init__(self, data: LayerDataProtocol) -> None:
         self.data = data
         self.lock = RLock()
 
@@ -95,6 +95,7 @@ class LockableData:
 @pytest.fixture()
 def layer_slicer():
     layer_slicer = _LayerSlicer()
+    layer_slicer._force_sync = False
     yield layer_slicer
     layer_slicer.shutdown()
 

@@ -98,22 +98,47 @@ class EventedMetaclass(main.ModelMetaclass):
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
                 EventedModel.__config__.json_encoders[f.type_] = encoder
-        # check for @_.setters defined on the class, so we can allow them
-        # in EventedModel.__setattr__
-        cls.__property_setters__ = {}
+        # check for properties defined on the class, so we can allow them
+        # in EventedModel.__setattr__ and create events
+        cls.__properties__ = {}
         for name, attr in namespace.items():
-            if isinstance(attr, property) and attr.fset is not None:
-                cls.__property_setters__[name] = attr
+            if isinstance(attr, property):
+                cls.__properties__[name] = attr
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
+
+
+def _update_dependents_from_property_code(
+    cls, prop_name, prop, deps, visited=()
+):
+    """Recursively find all the dependents of a property by inspecting the code object.
+
+    Update the given deps dictionary with the new findings.
+    """
+    for name in prop.fget.__code__.co_names:
+        if name in cls.__fields__:
+            deps.setdefault(name, set()).add(prop_name)
+        elif name in cls.__properties__ and name not in visited:
+            # to avoid infinite recursion, we shouldn't re-check getter we've already seen
+            visited = visited + (name,)
+            # sub_prop is the new property, but we leave prop_name the same
+            sub_prop = cls.__properties__[name]
+            _update_dependents_from_property_code(
+                cls, prop_name, sub_prop, deps, visited
+            )
 
 
 def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
-    Dependencies may be declared in the Model Config to emit an event
-    for a computed property when a model field that it depends on changes
-    e.g.  (@property 'c' depends on model fields 'a' and 'b')
+    Dependencies will be guessed by inspecting the code of each property
+    in order to emit an event for a computed property when a model field
+    that it depends on changes (e.g: @property 'c' depends on model fields
+    'a' and 'b'). Alternatvely, dependencies may be declared excplicitly
+    in the Model Config.
+
+    Note: accessing a field with `getattr()` instead of dot notation won't
+    be automatically detected.
 
     Examples
     --------
@@ -129,33 +154,42 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
             def c(self, val: Sequence[int]):
                 self.a, self.b = val
 
+            @property
+            def d(self) -> int:
+                return sum(self.c)
+
+            @d.setter
+            def d(self, val: int):
+                self.c = [val // 2, val // 2]
+
             class Config:
-                dependencies={'c': ['a', 'b']}
+                dependencies={
+                    'c': ['a', 'b'],
+                    'd': ['a', 'b']
+                }
     """
-    if not cls.__property_setters__:
+    if not cls.__properties__:
         return {}
 
     deps: Dict[str, Set[str]] = {}
 
     _deps = getattr(cls.__config__, 'dependencies', None)
     if _deps:
-        for prop, fields in _deps.items():
-            if prop not in cls.__property_setters__:
+        for prop_name, fields in _deps.items():
+            if prop_name not in cls.__properties__:
                 raise ValueError(
-                    'Fields with dependencies must be property.setters. '
-                    f'{prop!r} is not.'
+                    'Fields with dependencies must be properties. '
+                    f'{prop_name!r} is not.'
                 )
             for field in fields:
                 if field not in cls.__fields__:
                     warnings.warn(f"Unrecognized field dependency: {field}")
-                deps.setdefault(field, set()).add(prop)
+                deps.setdefault(field, set()).add(prop_name)
     else:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
-        for prop, setter in cls.__property_setters__.items():
-            for name in setter.fget.__code__.co_names:
-                if name in cls.__fields__:
-                    deps.setdefault(name, set()).add(prop)
+        for prop_name, prop in cls.__properties__.items():
+            _update_dependents_from_property_code(cls, prop_name, prop, deps)
     return deps
 
 
@@ -169,8 +203,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
 
-    # mapping of name -> property obj for methods that are property setters
-    __property_setters__: ClassVar[Dict[str, property]]
+    # mapping of name -> property obj for methods that are properties
+    __properties__: ClassVar[Dict[str, property]]
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
@@ -196,7 +230,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # field declares a _json_encode method.
         json_encoders = _BASE_JSON_ENCODERS
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self._events.source = self
@@ -208,7 +242,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         ]
 
         self._events.add(
-            **dict.fromkeys(field_events + list(self.__property_setters__))
+            **dict.fromkeys(field_events + list(self.__properties__))
         )
 
         # while seemingly redundant, this next line is very important to maintain
@@ -219,10 +253,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed
-        # so we first check to see if this field has a property.setter.
+        # so we first check to see if this field is a property
         # if so, we use it instead.
-        if name in self.__property_setters__:
-            self.__property_setters__[name].fset(self, value)
+        if name in self.__properties__:
+            setter = self.__properties__[name].fset
+            if setter is None:
+                # raise same error as normal properties
+                raise AttributeError(f"can't set attribute '{name}'")
+            setter(self, value)
         else:
             super().__setattr__(name, value)
 
@@ -234,19 +272,37 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         # grab current value
         before = getattr(self, name, object())
+        before_deps = {}
+        with warnings.catch_warnings():
+            # we still need to check for deprecated properties
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for dep in self.__field_dependents__.get(name, {}):
+                before_deps[dep] = getattr(self, dep, object())
 
         # set value using original setter
         self._super_setattr_(name, value)
 
         # if different we emit the event with new value
         after = getattr(self, name)
+        after_deps = {}
+        with warnings.catch_warnings():
+            # we still need to check for deprecated properties
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for dep in self.__field_dependents__.get(name, {}):
+                after_deps[dep] = getattr(self, dep, object())
+
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if not are_equal(after, before):
             getattr(self.events, name)(value=after)  # emit event
 
-            # emit events for any dependent computed property setters as well
-            for dep in self.__field_dependents__.get(name, {}):
-                getattr(self.events, dep)(value=getattr(self, dep))
+            # emit events for any dependent computed properties as well
+            for dep in before_deps:
+                # NOTE: this comparison might be expensive! If it is too much, we
+                #       can always remove the are_equal check and fire events for
+                #       all dependents indiscriminately
+                are_equal = pick_equality_operator(after_deps[dep])
+                if not are_equal(after_deps[dep], before_deps[dep]):
+                    getattr(self.events, dep)(value=after_deps[dep])
 
     # expose the private EmitterGroup publically
     @property

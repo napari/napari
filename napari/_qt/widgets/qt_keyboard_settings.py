@@ -46,8 +46,7 @@ class ShortcutEditor(QWidget):
         parent: QWidget = None,
         description: str = "",
         value: dict = None,
-    ):
-
+    ) -> None:
         super().__init__(parent=parent)
 
         # Flag to not run _set_keybinding method after setting special symbols.
@@ -84,7 +83,7 @@ class ShortcutEditor(QWidget):
                 actions = {}
             else:
                 actions = action_manager._get_provider_actions(layer)
-                for name in actions.keys():
+                for name in actions:
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
 
@@ -195,7 +194,6 @@ class ShortcutEditor(QWidget):
         actions = self.key_bindings_strs[layer_str]
 
         if len(actions) > 0:
-
             # Set up table based on number of actions and needed columns.
             self._table.setRowCount(len(actions))
             self._table.setColumnCount(5)
@@ -220,7 +218,6 @@ class ShortcutEditor(QWidget):
 
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
-
                 shortcuts = action_manager._shortcuts.get(action_name, [])
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
@@ -513,7 +510,7 @@ class ShortcutEditor(QWidget):
 
         value = {}
 
-        for action_name in action_manager._actions.keys():
+        for action_name in action_manager._actions:
             shortcuts = action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 
@@ -544,7 +541,7 @@ class ShortcutDelegate(QItemDelegate):
 class EditorWidget(QLineEdit):
     """Editor widget set in the delegate column in shortcut table."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
     def event(self, event):
@@ -603,7 +600,7 @@ class EditorWidget(QLineEdit):
         keys_li = []
         # Format how the shortcut is written (ex. 'Ctrl+B' is changed to 'Control-B')
         for val in parsed:
-            if val in KEY_SUBS.keys():
+            if val in KEY_SUBS:
                 keys_li.append(KEY_SUBS[val])
             else:
                 keys_li.append(val)
@@ -617,7 +614,7 @@ class ShortcutTranslator(QKeySequenceEdit):
     Convert QKeyEvent into QKeySequence.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.hide()
 

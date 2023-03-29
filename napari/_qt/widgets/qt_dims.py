@@ -30,8 +30,7 @@ class QtDims(QWidget):
         List of slider widgets.
     """
 
-    def __init__(self, dims: Dims, parent=None):
-
+    def __init__(self, dims: Dims, parent=None) -> None:
         super().__init__(parent=parent)
 
         self.SLIDERHEIGHT = 22
@@ -103,7 +102,7 @@ class QtDims(QWidget):
         self.stop()
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
-        for (axis, widget) in widgets:
+        for axis, widget in widgets:
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
@@ -117,6 +116,7 @@ class QtDims(QWidget):
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
+        self._resize_axis_labels()
 
     def _update_nsliders(self):
         """Updates the number of sliders based on the number of dimensions."""
@@ -131,20 +131,31 @@ class QtDims(QWidget):
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
-        widths to the width of the longest label. This keeps the sliders
-        left-aligned and allows the full label to be visible at all times,
-        with minimal space, without setting stretch on the layout.
+        widths to a minimum size. This allows the full label to be
+        visible at all times, with minimal space, without setting stretch on
+        the layout.
         """
-        fm = QFontMetrics(QFont("", 0))
-        labels = self.findChildren(QLineEdit, 'axis_label')
-        newwidth = max(fm.boundingRect(lab.text()).width() for lab in labels)
-
-        if any(self._displayed_sliders):
+        displayed_labels = [
+            self.slider_widgets[idx].axis_label
+            for idx, displayed in enumerate(self._displayed_sliders)
+            if displayed
+        ]
+        if displayed_labels:
+            fm = QFontMetrics(QFont("", 0))
+            labels = self.findChildren(QLineEdit, 'axis_label')
             # set maximum width to no more than 20% of slider width
-            maxwidth = self.slider_widgets[0].width() * 0.2
-            newwidth = min([newwidth, maxwidth])
-        for labl in labels:
-            labl.setFixedWidth(int(newwidth) + 10)
+            maxwidth = int(self.slider_widgets[0].width() * 0.2)
+            # set new base width to the width of the longest label being displayed
+            newwidth = max(
+                [
+                    int(fm.boundingRect(dlab.text()).width())
+                    for dlab in displayed_labels
+                ]
+            )
+
+            for labl in labels:
+                labl_width = min([newwidth + 10, maxwidth])
+                labl.setFixedWidth(labl_width)
 
     def _resize_slice_labels(self):
         """When the size of any dimension changes, we want to resize all of the
@@ -177,7 +188,9 @@ class QtDims(QWidget):
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
             slider_widget = QtDimSliderWidget(self, dim_axis)
-            slider_widget.axis_label_changed.connect(self._resize_axis_labels)
+            slider_widget.axis_label.textChanged.connect(
+                self._resize_axis_labels
+            )
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)
@@ -196,7 +209,7 @@ class QtDims(QWidget):
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
-        for slider_num in range(number_of_sliders, self.nsliders):
+        for _slider_num in range(number_of_sliders, self.nsliders):
             self._remove_slider_widget(0)
 
     def _remove_slider_widget(self, index):
@@ -316,7 +329,20 @@ class QtDims(QWidget):
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
-        return self._animation_thread and self._animation_thread.isRunning()
+        try:
+            return (
+                self._animation_thread and self._animation_thread.isRunning()
+            )
+        except RuntimeError as e:  # pragma: no cover
+            if (
+                "wrapped C/C++ object of type" not in e.args[0]
+                and "Internal C++ object" not in e.args[0]
+            ):
+                # checking if threat is partially deleted. Otherwise
+                # reraise exception. For more details see:
+                # https://github.com/napari/napari/pull/5499
+                raise
+            return False
 
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`.

@@ -29,7 +29,7 @@ from qtpy.QtWidgets import QTextEdit
 from napari._version import version as _napari_version
 from napari._version import version_tuple as _napari_version_tuple
 from napari.plugins import plugin_manager
-from napari.plugins.pypi import _user_agent
+from napari.plugins.npe2api import _user_agent
 from napari.utils._appdirs import user_plugin_dir, user_site_packages
 from napari.utils.misc import StringEnum, running_as_bundled_app
 from napari.utils.translations import trans
@@ -43,6 +43,7 @@ class InstallerActions(StringEnum):
     INSTALL = auto()
     UNINSTALL = auto()
     CANCEL = auto()
+    UPGRADE = auto()
 
 
 class InstallerTools(StringEnum):
@@ -107,7 +108,16 @@ class PipInstallerTool(AbstractInstallerTool):
     def arguments(self) -> Tuple[str, ...]:
         args = ['-m', 'pip']
         if self.action == InstallerActions.INSTALL:
-            args += ['install', '--upgrade', '-c', self._constraints_file()]
+            args += ['install', '-c', self._constraints_file()]
+            for origin in self.origins:
+                args += ['--extra-index-url', origin]
+        elif self.action == InstallerActions.UPGRADE:
+            args += [
+                'install',
+                '--upgrade',
+                '-c',
+                self._constraints_file(),
+            ]
             for origin in self.origins:
                 args += ['--extra-index-url', origin]
         elif self.action == InstallerActions.UNINSTALL:
@@ -169,11 +179,18 @@ class CondaInstallerTool(AbstractInstallerTool):
 
     @classmethod
     def available(cls):
-        return call([cls.executable(), "--version"]) == 0
+        executable = cls.executable()
+        try:
+            return call([executable, "--version"]) == 0
+        except FileNotFoundError:  # pragma: no cover
+            return False
 
     def arguments(self) -> Tuple[str, ...]:
         prefix = self.prefix or self._default_prefix()
-        args = [self.action.value, '-y', '--prefix', prefix]
+        if self.action == InstallerActions.UPGRADE:
+            args = ['update', '-y', '--prefix', prefix]
+        else:
+            args = [self.action.value, '-y', '--prefix', prefix]
         args.append('--override-channels')
         for channel in (*self.origins, *self._default_channels()):
             args.extend(["-c", channel])
@@ -195,6 +212,10 @@ class CondaInstallerTool(AbstractInstallerTool):
             if not env.contains("USERPROFILE"):
                 env.insert("HOME", os.path.expanduser("~"))
                 env.insert("USERPROFILE", os.path.expanduser("~"))
+        if sys.platform == 'darwin' and env.contains('PYTHONEXECUTABLE'):
+            # Fix for macOS when napari launched from terminal
+            # related to https://github.com/napari/napari/pull/5531
+            env.remove("PYTHONEXECUTABLE")
         return env
 
     @staticmethod
@@ -282,6 +303,44 @@ class InstallerQueue(QProcess):
         item = self._build_queue_item(
             tool=tool,
             action=InstallerActions.INSTALL,
+            pkgs=pkgs,
+            prefix=prefix,
+            origins=origins,
+            **kwargs,
+        )
+        return self._queue_item(item)
+
+    def upgrade(
+        self,
+        tool: InstallerTools,
+        pkgs: Sequence[str],
+        *,
+        prefix: Optional[str] = None,
+        origins: Sequence[str] = (),
+        **kwargs,
+    ) -> JobId:
+        """Upgrade packages in `pkgs` into `prefix` using `tool` with additional
+        `origins` as source for `pkgs`.
+
+        Parameters
+        ----------
+        tool : InstallerTools
+            Which type of installation tool to use.
+        pkgs : Sequence[str]
+            List of packages to install.
+        prefix : Optional[str], optional
+            Optional prefix to install packages into.
+        origins : Optional[Sequence[str]], optional
+            Additional sources for packages to be downloaded from.
+
+        Returns
+        -------
+        JobId : int
+            ID that can be used to cancel the process.
+        """
+        item = self._build_queue_item(
+            tool=tool,
+            action=InstallerActions.UPGRADE,
             pkgs=pkgs,
             prefix=prefix,
             origins=origins,
@@ -395,7 +454,11 @@ class InstallerQueue(QProcess):
         **kwargs,
     ) -> AbstractInstallerTool:
         return self._get_tool(tool)(
-            pkgs=pkgs, action=action, origins=origins, prefix=prefix, **kwargs
+            pkgs=pkgs,
+            action=action,
+            origins=origins,
+            prefix=prefix,
+            **kwargs,
         )
 
     def _queue_item(self, item: AbstractInstallerTool) -> JobId:
@@ -498,8 +561,11 @@ class InstallerQueue(QProcess):
 def _get_python_exe():
     # Note: is_bundled_app() returns False even if using a Briefcase bundle...
     # Workaround: see if sys.executable is set to something something napari on Mac
-    if sys.executable.endswith("napari") and sys.platform == 'darwin':
+    if (
+        sys.executable.endswith("napari")
+        and sys.platform == 'darwin'
+        and (python := Path(sys.prefix) / "bin" / "python3").is_file()
+    ):
         # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
-        if (python := Path(sys.prefix) / "bin" / "python3").is_file():
-            return str(python)
+        return str(python)
     return sys.executable

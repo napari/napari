@@ -179,7 +179,7 @@ def build_textures_from_dict(color_dict, empty_val=0, shape=(1000, 1000)):
 
 
 class VispyLabelsLayer(VispyImageLayer):
-    def __init__(self, layer, node=None, texture_format='r32f'):
+    def __init__(self, layer, node=None, texture_format='r32f') -> None:
         super().__init__(
             layer,
             node=node,

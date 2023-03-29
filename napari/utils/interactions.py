@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import sys
 import warnings
@@ -211,11 +212,9 @@ def mouse_release_callbacks(obj, event):
     """
     for func, gen in tuple(obj._mouse_drag_gen.items()):
         obj._persisted_mouse_event[gen].__wrapped__ = event
-        try:
+        with contextlib.suppress(StopIteration):
             # Run last part of the function to trigger release event
             next(gen)
-        except StopIteration:
-            pass
         # Finally delete the generator and stored event
         del obj._mouse_drag_gen[func]
         del obj._persisted_mouse_event[gen]
@@ -285,7 +284,7 @@ class Shortcut:
     instead of -.
     """
 
-    def __init__(self, shortcut: KeyBindingLike):
+    def __init__(self, shortcut: KeyBindingLike) -> None:
         """Parameters
         ----------
         shortcut : keybinding-like

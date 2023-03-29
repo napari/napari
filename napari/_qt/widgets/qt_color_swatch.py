@@ -78,7 +78,7 @@ class QColorSwatchEdit(QWidget):
         *,
         initial_color: Optional[AnyColorType] = None,
         tooltip: Optional[str] = None,
-    ):
+    ) -> None:
         super().__init__(parent=parent)
         self.setObjectName('QColorSwatchEdit')
 
@@ -150,7 +150,7 @@ class QColorSwatch(QFrame):
         parent: Optional[QWidget] = None,
         tooltip: Optional[str] = None,
         initial_color: Optional[ColorType] = None,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.setObjectName('colorSwatch')
         self.setToolTip(tooltip or trans._('click to set color'))
@@ -169,7 +169,7 @@ class QColorSwatch(QFrame):
     @Slot(np.ndarray)
     def _update_swatch_style(self, color: np.ndarray) -> None:
         """Convert the current color to rgba() string and update appearance."""
-        rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
+        rgba = f'rgba({",".join(str(int(x*255)) for x in  self._color)})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -211,7 +211,7 @@ class QColorLineEdit(QLineEdit):
         The parent widget, by default None
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._compl = QCompleter(list(get_color_dict()) + ['transparent'])
         self._compl.setCompletionMode(QCompleter.InlineCompletion)
@@ -236,7 +236,7 @@ class QColorLineEdit(QLineEdit):
 
 
 class CustomColorDialog(QColorDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setObjectName('CustomColorDialog')
 

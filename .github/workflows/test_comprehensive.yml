@@ -12,6 +12,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  COLUMNS: 120
+
 concurrency:
   group: comprehensive-test
 
@@ -34,6 +37,7 @@ jobs:
 
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
+    timeout-minutes: 60
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -47,16 +51,16 @@ jobs:
             backend: pyqt5
           # test with minimum specified requirements
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             backend: pyqt5
             MIN_REQ: 1
           # test with --async_only
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             toxenv: async-py38-linux-pyqt5
           # test without any Qt backends
           - python: 3.8
-            platform: ubuntu-18.04
+            platform: ubuntu-20.04
             toxenv: headless-py38-linux
 
 
@@ -85,12 +89,6 @@ jobs:
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
-      # run a minimal wm for linux tests that depend on UI events (e.g. setFocus)
-      # see https://github.com/pytest-dev/pytest-qt/issues/206
-      - name: Install WM on Linux
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y herbstluftwm
-
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -106,7 +104,7 @@ jobs:
       # in which case we are declaring one specific tox environment to run.
       # see tox.ini for more
       - name: Test with tox
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m tox
         env:
@@ -136,6 +134,7 @@ jobs:
 
   test_pip_install:
     name: ubuntu-latest 3.9 pip install
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -151,22 +150,19 @@ jobs:
 
       - uses: tlambert03/setup-qt-libs@v1
 
-      - name: Install WM
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y herbstluftwm
-
       - name: Install this commit
         run: |
           pip install --upgrade pip
           pip install ./napari-from-github[all,testing]
 
       - name: Test
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: python -m pytest --pyargs napari --color=yes
 
   test_examples:
     name: test examples
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -180,6 +176,6 @@ jobs:
           pip install setuptools tox tox-gh-actions
 
       - name: Test
-        uses: GabrielBB/xvfb-action@v1
+        uses: aganders3/headless-gui@v1
         with:
           run: tox -e py39-linux-pyside2-examples
