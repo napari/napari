@@ -8,8 +8,7 @@ import time
 import dask.array as da
 import numpy as np
 import toolz as tz
-from cachey import Cache
-from fibsem_tools import read_xarray
+
 from magicgui import magic_factory
 from psygnal import debounced
 from scipy.spatial.transform import Rotation as R
@@ -18,7 +17,11 @@ from superqt import ensure_main_thread
 import napari
 from napari.qt.threading import thread_worker
 
-from napari.experimental._progressive_loading import ChunkCacheManager, luethi_zenodo_7144919
+from napari.experimental._progressive_loading import (
+    ChunkCacheManager,
+    luethi_zenodo_7144919,
+    get_chunk,
+)
 
 LOGGER = logging.getLogger("poor-mans-octree")
 LOGGER.setLevel(logging.DEBUG)
@@ -154,102 +157,6 @@ def prioritised_chunk_loading(depth, distance, zoom, alpha=1.0, visible=None):
     if visible is not None:
         chunk_load_priority[np.logical_not(visible)] = np.inf
     return chunk_load_priority
-
-
-# @tz.curry
-# def update_point_colors(event, viewer, alpha=1.0):
-#     """Update the points based on their distance to current camera.
-
-#     Parameters:
-#     -----------
-#     viewer : napari.Viewer
-#         Current viewer
-#     event : camera.events.angles event
-#         The event triggered by changing the camera angles
-#     """
-#     # TODO we need a grid for each scale, or the grid needs to include all scales
-#     points_layer = viewer.layers['grid']
-#     points = points_layer.data
-#     distances = distance_from_camera_centre_line(points, viewer.camera)
-#     depth = visual_depth(points, viewer.camera)
-#     priorities = prioritised_chunk_loading(
-#         depth, distances, viewer.camera.zoom, alpha=alpha
-#     )
-#     points_layer.features = pd.DataFrame(
-#         {'distance': distances, 'depth': depth, 'priority': priorities}
-#     )
-#     # TODO want widget to change color
-#     points_layer.face_color = 'priority'
-#     points_layer.refresh()
-
-
-# @tz.curry
-# def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
-#     """
-#     chunk map is a dictionary mapping chunk centers to chunk slices
-#     array is the array containing the chunks
-#     """
-#     # TODO hack here to insert the recursive drawing
-#     points = np.array(list(chunk_map.keys()))
-#     distances = distance_from_camera_centre_line(points, viewer.camera)
-#     depth = visual_depth(points, viewer.camera)
-#     priorities = prioritised_chunk_loading(
-#         depth, distances, viewer.camera.zoom, alpha=alpha
-#     )
-#     first_priority_idx = np.argmin(priorities)
-#     first_priority_coord = tuple(points[first_priority_idx])
-#     chunk_slice = chunk_map[first_priority_coord]
-#     offset = [sl.start for sl in chunk_slice]
-#     # TODO note that this only updates the highest resolution
-#     hi_res_layer = viewer.layers['high-res']
-#     hi_res_layer.data = array[chunk_slice]
-#     hi_res_layer.translate = offset
-#     hi_res_layer.refresh()
-
-
-def get_chunk(
-    chunk_slice,
-    array=None,
-    container=None,
-    dataset=None,
-    cache_manager=None,
-    dtype=np.uint8,
-    num_retry=3,
-):
-    """Get a specified slice from an array (uses a cache).
-
-    Parameters
-    ----------
-    chunk_slice : tuple
-        a slice in array space
-    array : ndarray
-        one of the scales from the multiscale image
-    container: str
-        the zarr container name (this is used to disambiguate the cache)
-    dataset: str
-        the group in the zarr (this is used to disambiguate the cache)
-    chunk_size: tuple
-        the size of chunk that you want to fetch
-
-    Returns
-    -------
-    real_array : ndarray
-        an ndarray of data sliced with chunk_slice
-    """
-    real_array = cache_manager.get(container, dataset, chunk_slice)
-    retry = 0
-    while real_array is None and retry < num_retry:
-        try:
-            real_array = np.asarray(array[chunk_slice].compute(), dtype=dtype)
-            # TODO check for a race condition that is causing this exception
-            #      some dask backends are not thread-safe
-        except Exception:
-            print(
-                f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
-            )
-        cache_manager.put(container, dataset, chunk_slice, real_array)
-        retry += 1
-    return real_array
 
 
 @thread_worker

@@ -1,3 +1,5 @@
+import numpy as np
+
 from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
 
@@ -59,8 +61,54 @@ class ChunkCacheManager:
             self.get_container_key(container, dataset, chunk_slice)
         )
 
-# Example data loaders
 
+def get_chunk(
+    chunk_slice,
+    array=None,
+    container=None,
+    dataset=None,
+    cache_manager=None,
+    dtype=np.uint8,
+    num_retry=3,
+):
+    """Get a specified slice from an array (uses a cache).
+
+    Parameters
+    ----------
+    chunk_slice : tuple
+        a slice in array space
+    array : ndarray
+        one of the scales from the multiscale image
+    container: str
+        the zarr container name (this is used to disambiguate the cache)
+    dataset: str
+        the group in the zarr (this is used to disambiguate the cache)
+    chunk_size: tuple
+        the size of chunk that you want to fetch
+
+    Returns
+    -------
+    real_array : ndarray
+        an ndarray of data sliced with chunk_slice
+    """
+
+    real_array = cache_manager.get(container, dataset, chunk_slice)
+    retry = 0
+    while real_array is None and retry < num_retry:
+        try:
+            real_array = np.asarray(array[chunk_slice].compute(), dtype=dtype)
+            # TODO check for a race condition that is causing this exception
+            #      some dask backends are not thread-safe
+        except Exception:
+            print(
+                f"Can't find key: {chunk_slice}, {container}, {dataset}, {array.shape}"
+            )
+        cache_manager.put(container, dataset, chunk_slice, real_array)
+        retry += 1
+    return real_array
+
+
+# Example data loaders
 # TODO capture some sort of metadata about scale factors
 def openorganelle_mouse_kidney_labels():
     large_image = {
@@ -199,7 +247,7 @@ def luethi_zenodo_7144919():
             (1, 1.3, 1.3),
             (1, 2.6, 2.6),
         ],
-        "chunk_size": (1, 10, 256, 256)
+        "chunk_size": (1, 10, 256, 256),
     }
     large_image["arrays"] = []
     for scale in range(large_image["scale_levels"]):
@@ -213,3 +261,55 @@ def luethi_zenodo_7144919():
             # result.data[2, :, :, :].rechunk((10, 256, 256)).squeeze()
         )
     return large_image
+
+
+# Code from an earlier stage to support visual debugging
+# @tz.curry
+# def update_point_colors(event, viewer, alpha=1.0):
+#     """Update the points based on their distance to current camera.
+
+#     Parameters:
+#     -----------
+#     viewer : napari.Viewer
+#         Current viewer
+#     event : camera.events.angles event
+#         The event triggered by changing the camera angles
+#     """
+#     # TODO we need a grid for each scale, or the grid needs to include all scales
+#     points_layer = viewer.layers['grid']
+#     points = points_layer.data
+#     distances = distance_from_camera_centre_line(points, viewer.camera)
+#     depth = visual_depth(points, viewer.camera)
+#     priorities = prioritised_chunk_loading(
+#         depth, distances, viewer.camera.zoom, alpha=alpha
+#     )
+#     points_layer.features = pd.DataFrame(
+#         {'distance': distances, 'depth': depth, 'priority': priorities}
+#     )
+#     # TODO want widget to change color
+#     points_layer.face_color = 'priority'
+#     points_layer.refresh()
+
+
+# @tz.curry
+# def update_shown_chunk(event, viewer, chunk_map, array, alpha=1.0):
+#     """
+#     chunk map is a dictionary mapping chunk centers to chunk slices
+#     array is the array containing the chunks
+#     """
+#     # TODO hack here to insert the recursive drawing
+#     points = np.array(list(chunk_map.keys()))
+#     distances = distance_from_camera_centre_line(points, viewer.camera)
+#     depth = visual_depth(points, viewer.camera)
+#     priorities = prioritised_chunk_loading(
+#         depth, distances, viewer.camera.zoom, alpha=alpha
+#     )
+#     first_priority_idx = np.argmin(priorities)
+#     first_priority_coord = tuple(points[first_priority_idx])
+#     chunk_slice = chunk_map[first_priority_coord]
+#     offset = [sl.start for sl in chunk_slice]
+#     # TODO note that this only updates the highest resolution
+#     hi_res_layer = viewer.layers['high-res']
+#     hi_res_layer.data = array[chunk_slice]
+#     hi_res_layer.translate = offset
+#     hi_res_layer.refresh()

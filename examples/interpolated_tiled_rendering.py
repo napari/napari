@@ -2,9 +2,8 @@ import logging
 import sys
 from typing import Tuple, Union
 
-import toolz as tz
 import numpy as np
-
+import toolz as tz
 from multiprocess import Process
 from psygnal import debounced
 from skimage.transform import resize
@@ -12,8 +11,9 @@ from skimage.util import img_as_uint
 from superqt import ensure_main_thread
 
 import napari
-from napari.experimental._progressive_loading import ChunkCacheManager, openorganelle_mouse_kidney_em
-from napari.layers._data_protocols import LayerDataProtocol, Index
+from napari.experimental._progressive_loading import (
+    ChunkCacheManager, get_chunk, openorganelle_mouse_kidney_em)
+from napari.layers._data_protocols import Index, LayerDataProtocol
 from napari.qt.threading import thread_worker
 from napari.utils.events import Event
 
@@ -33,43 +33,43 @@ LOGGER.addHandler(streamHandler)
 global worker
 worker = None
 
-def get_chunk(coord, array=None, container=None, dataset=None):
-    """Get a specified slice from an array (uses a cache).
 
-    Parameters
-    ----------
-    coord : tuple
-        an integer 3D coordinate into the array like (0, 0, 0)
-    array : ndarray
-        one of the scales from the multiscale image
-    container: str
-        the zarr container name (this is used to disambiguate the cache)
-    dataset: str
-        the group in the zarr (this is used to disambiguate the cache)
-    chunk_size: tuple
-        the size of chunk that you want to fetch
-
-    Returns
-    -------
-    real_array : ndarray
-        an ndarray of data sliced with chunk_slice
-    """
-    real_array = cache_manager.get(container, dataset, coord)
-    if real_array is None:
-        z, y, x = coord.astype(np.long)
-        real_array = np.asarray(
-            array[
-                z,
-                y : (y + array.chunksize[-2]),
-                x : (x + array.chunksize[-1]),
-            ].compute()
-        )
-        cache_manager.put(container, dataset, coord, real_array)
-
-    return real_array
+# def get_chunk(coord, array=None, container=None, dataset=None):
+#     """Get a specified slice from an array (uses a cache).
+#     Parameters
+#     ----------
+#     coord : tuple
+#         an integer 3D coordinate into the array like (0, 0, 0)
+#     array : ndarray
+#         one of the scales from the multiscale image
+#     container: str
+#         the zarr container name (this is used to disambiguate the cache)
+#     dataset: str
+#         the group in the zarr (this is used to disambiguate the cache)
+#     chunk_size: tuple
+#         the size of chunk that you want to fetch
+#     Returns
+#     -------
+#     real_array : ndarray
+#         an ndarray of data sliced with chunk_slice
+#     """
+#     real_array = cache_manager.get(container, dataset, coord)
+#     if real_array is None:
+#         z, y, x = coord.astype(np.long)
+#         real_array = np.asarray(
+#             array[
+#                 z,
+#                 y : (y + array.chunksize[-2]),
+#                 x : (x + array.chunksize[-1]),
+#             ].compute()
+#         )
+#         cache_manager.put(container, dataset, coord, real_array)
+#     return real_array
 
 
-def interpolated_get_chunk(coord, array=None, container=None, dataset=None):
+def interpolated_get_chunk(
+    chunk_slice, array=None, container=None, dataset=None, cache_manager=None
+):
     """Get a specified slice from an array, with interpolation when necessary.
     Interpolation is linear.
     Out of bounds behavior is zeros outside the shape.
@@ -92,40 +92,74 @@ def interpolated_get_chunk(coord, array=None, container=None, dataset=None):
     real_array : ndarray
         an ndarray of data sliced with chunk_slice
     """
-    coord = np.array(coord)
-    real_array = cache_manager.get(container, dataset, coord)
+    real_array = cache_manager.get(container, dataset, chunk_slice)
     if real_array is None:
         # If we do not need to interpolate
-        if np.all(coord % 1 == 0):
+        # TODO this isn't safe enough
+        if all([(sl.start % 1 == 0) for sl in chunk_slice]):
             real_array = get_chunk(
-                coord, array=array, container=container, dataset=dataset
+                chunk_slice,
+                array=array,
+                container=container,
+                dataset=dataset,
+                cache_manager=cache_manager,
             )
         else:
+            # TODO pickup here, it looks like both chunks are getting zeros
+
             # Get left and right keys
-            lcoord = np.floor(coord)
-            rcoord = np.ceil(coord)
+            # TODO int casting may be dangerous
+            lchunk_slice = (
+                slice(
+                    int(np.floor(chunk_slice[0].start - 1)),
+                    int(np.floor(chunk_slice[0].stop - 1)),
+                ),
+                chunk_slice[1],
+                chunk_slice[2],
+            )
+            rchunk_slice = (
+                slice(
+                    int(np.ceil(chunk_slice[0].start + 1)),
+                    int(np.ceil(chunk_slice[0].stop + 1)),
+                ),
+                chunk_slice[1],
+                chunk_slice[2],
+            )
+
             # Handle out of bounds with zeros
             try:
                 lvalue = get_chunk(
-                    lcoord, array=array, container=container, dataset=dataset
+                    lchunk_slice,
+                    array=array,
+                    container=container,
+                    dataset=dataset,
+                    cache_manager=cache_manager,
                 )
             except:
                 lvalue = np.zeros([1] + list(array.chunksize[-2:]))
             try:
                 rvalue = get_chunk(
-                    rcoord, array=array, container=container, dataset=dataset
+                    rchunk_slice,
+                    array=array,
+                    container=container,
+                    dataset=dataset,
+                    cache_manager=cache_manager,
                 )
             except:
                 rvalue = np.zeros([1] + list(array.chunksize[-2:]))
 
             # Linear weight between left/right, assumes parallel
-            w = coord[0] - lcoord[0]
+            w = chunk_slice[0].start - lchunk_slice[0].start
 
+            
             # TODO hardcoded dtype
-            real_array = ((1 - w) * lvalue + w * rvalue).astype(np.uint16)
+            # TODO squeeze is a bad sign
+            real_array = (
+                ((1 - w) * lvalue + w * rvalue).astype(np.uint16).squeeze()
+            )
 
         # Save in cache
-        cache_manager.put(container, dataset, coord, real_array)
+        cache_manager.put(container, dataset, chunk_slice, real_array)
     return real_array
 
 
@@ -170,7 +204,11 @@ def chunks_for_scale(corner_pixels, array, scale):
     for x in xs:
         for y in ys:
             for z in zs:
-                yield (z, y, x)
+                yield (
+                    slice(z, (z + 1)),
+                    slice(y, (y + chunk_size[-2])),
+                    slice(x, (x + chunk_size[-1])),
+                )
 
 
 class VirtualData:
@@ -181,6 +219,7 @@ class VirtualData:
     When you try to fetch a ND coordinate, only the last 2 dimensions
     will be used as the (y, x) values.
     """
+
     def __init__(self, dtype, shape):
         self.dtype = dtype
         self.shape = shape
@@ -212,12 +251,12 @@ class VirtualData:
             return self.data_plane.__setitem__(key, value)
 
 
-def chunk_fetcher(coord, scale, array, full_shape):
+def chunk_fetcher(chunk_slice, scale, array, full_shape, cache_manager=None):
     """Fetch and upscale a chunk
 
     Parameters
     ----------
-    coord : tuple
+    chunk_slice : tuple of slices
         a key corresponding to the chunk to fetch
     scale : int
         scale level, assumes power of 2
@@ -227,27 +266,33 @@ def chunk_fetcher(coord, scale, array, full_shape):
         a tuple storing the shape of the highest resolution level
 
     """
-    z, y, x = coord
+    # z, y, x = coord
 
     full_shape = large_image["arrays"][0].shape
-    
+
     # Trigger a fetch of the data
     dataset = f"{large_image['dataset']}/s{scale}"
     LOGGER.info("render_sequence: get_chunk")
     real_array = interpolated_get_chunk(
-        (z, y, x),
+        chunk_slice,
         array=array,
         container=large_image["container"],
         dataset=dataset,
+        cache_manager=cache_manager,
     )
+    
+    upscale_factor = [el * 2**scale for el in real_array.shape]
 
     # Upscale the data to highest resolution
     upscaled = img_as_uint(
         resize(
             real_array,
-            [el * 2**scale for el in real_array.shape],
+            upscale_factor,
         )
     )
+
+    # TODO imposes 3D
+    z, y, x = [sl.start for sl in chunk_slice]
 
     # Use this to overwrite data and then use a colormap to debug where resolution levels go
     # upscaled = np.ones_like(upscaled) * scale
@@ -274,17 +319,30 @@ def chunk_fetcher(coord, scale, array, full_shape):
 
     upscaled = upscaled[: upscaled_chunk_size[-2], : upscaled_chunk_size[-1]]
 
+    # TODO This is unclean!
+    upscaled_chunk_slice = [None] * 3
+    for idx, sl in enumerate(chunk_slice):
+        start_coord = sl.start * 2**scale
+        stop_coord = sl.stop * 2**scale
+        # Check for ragged edges
+        if idx > 0:
+            stop_coord = start_coord + min(
+                stop_coord - start_coord, upscaled_chunk_size[idx - 1]
+            )
+
+        upscaled_chunk_slice[idx] = slice(start_coord, stop_coord)
+
     return (
-        z * 2**scale,
-        y * 2**scale,
-        x * 2**scale,
+        tuple(upscaled_chunk_slice),
         scale,
         upscaled,
         upscaled_chunk_size,
     )
 
 
-def mutable_chunk_fetcher(results, idx, coord, scale, array, full_shape):
+def mutable_chunk_fetcher(
+    results, idx, chunk_slice, scale, array, full_shape, cache_manager=None
+):
     """A support function for fetching chunks in a mutable way. This is used to support multithreading.
 
     Parameters
@@ -302,11 +360,15 @@ def mutable_chunk_fetcher(results, idx, coord, scale, array, full_shape):
     full_shape : tuple
         a tuple storing the shape of the highest resolution level
     """
-    results[idx] = chunk_fetcher(coord, scale, array, full_shape)
+    results[idx] = chunk_fetcher(
+        chunk_slice, scale, array, full_shape, cache_manager=cache_manager
+    )
 
 
 @thread_worker
-def render_sequence(corner_pixels, full_shape, num_threads=1):
+def render_sequence(
+    corner_pixels, full_shape, num_threads=1, cache_manager=None
+):
     """A generator that yields multiscale chunk tuples from low to high resolution.
 
     Parameters
@@ -336,8 +398,14 @@ def render_sequence(corner_pixels, full_shape, num_threads=1):
 
         if num_threads == 1:
             # Single threaded:
-            for coord in chunks_to_fetch:
-                yield chunk_fetcher(coord, scale, array, full_shape)
+            for chunk_slice in chunks_to_fetch:
+                yield chunk_fetcher(
+                    chunk_slice,
+                    scale,
+                    array,
+                    full_shape,
+                    cache_manager=cache_manager,
+                )
 
         else:
             # Make a list of num_threads length sublists
@@ -365,7 +433,7 @@ def render_sequence(corner_pixels, full_shape, num_threads=1):
                     Process(target=mutable_chunk_fetcher, args=arg_list)
                     for arg_list in arg_set
                 ]
-                
+
                 # Start threads
                 for thread in threads:
                     thread.start()
@@ -392,9 +460,9 @@ def render_sequence(corner_pixels, full_shape, num_threads=1):
                     # Return upscaled coordinates, the scale, and chunk
                     yield chunk_tuple
 
-                    
+
 @tz.curry
-def dims_update_handler(invar, full_shape=()):
+def dims_update_handler(invar, full_shape=(), cache_manager=None):
     """Start a new render sequence with the current viewer state
 
     Parameters
@@ -436,21 +504,19 @@ def dims_update_handler(invar, full_shape=()):
     LOGGER.info("dims_update_handler: start render_sequence")
 
     # Start a new multiscale render
-    worker = render_sequence(corners, full_shape)
+    worker = render_sequence(corners, full_shape, cache_manager=cache_manager)
 
     LOGGER.info("dims_update_handler: started render_sequence")
 
     # This will consume our chunks and update the numpy "canvas" and refresh
     def on_yield(coord):
         layer = viewer.layers[0]
-        z, y, x, scale, chunk, chunk_size = coord
+        chunk_slice, scale, chunk, chunk_size = coord
         # chunk_size = chunk.shape
         LOGGER.info(
-            f"Writing chunk with size {chunk_size} to: {(viewer.dims.current_step[0], y, x)}"
+            f"Writing chunk with size {chunk_size} to: {(viewer.dims.current_step[0], chunk_slice[0].start, chunk_slice[1].start)}"
         )
-        layer.data[
-            z, y : (y + chunk_size[-2]), x : (x + chunk_size[-1])
-        ] = chunk[: chunk_size[-2], : chunk_size[-1]]
+        layer.data[chunk_slice] = chunk[: chunk_size[-2], : chunk_size[-1]]
         layer.refresh()
 
     worker.yielded.connect(on_yield)
@@ -479,7 +545,7 @@ if __name__ == "__main__":
     #     for scale in range(large_image["scale_levels"])
     # ]
 
-    large_image = openorganelle_mouse_kidney_em()    
+    large_image = openorganelle_mouse_kidney_em()
 
     # TODO at least get this size from the image
     empty = VirtualData(np.uint16, large_image["arrays"][0].shape)
@@ -496,7 +562,12 @@ if __name__ == "__main__":
     # Connect to camera
     viewer.camera.events.connect(
         debounced(
-            ensure_main_thread(dims_update_handler(full_shape=large_image["arrays"][0].shape)),
+            ensure_main_thread(
+                dims_update_handler(
+                    full_shape=large_image["arrays"][0].shape,
+                    cache_manager=cache_manager,
+                )
+            ),
             timeout=1000,
         )
     )
@@ -504,8 +575,18 @@ if __name__ == "__main__":
     # Connect to dims (to get sliders)
     viewer.dims.events.connect(
         debounced(
-            ensure_main_thread(dims_update_handler(full_shape=large_image["arrays"][0].shape)),
+            ensure_main_thread(
+                dims_update_handler(
+                    full_shape=large_image["arrays"][0].shape,
+                    cache_manager=cache_manager,
+                )
+            ),
             timeout=1000,
         )
     )
 
+    dims_update_handler(
+        viewer,
+        full_shape=large_image["arrays"][0].shape,
+        cache_manager=cache_manager,
+    )
