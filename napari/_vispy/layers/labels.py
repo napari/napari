@@ -45,6 +45,7 @@ uniform vec2 LUT_shape;
 
 
 vec4 sample_label_color(float t) {
+    float empty = 0.;
     // get position in the texture grid (same as hash2d_get)
     vec2 pos = vec2(
         mod(int(t / LUT_shape.y), LUT_shape.x),
@@ -63,8 +64,10 @@ vec4 sample_label_color(float t) {
     // return vec4(pos_tex, 0, 1); // debug if texel is calculated correctly (correct)
     // return vec4(found / 15, 0, 0, 1); // debug if key is calculated correctly (correct, should be a black-to-red gradient)
 
-    // we get a different value, it's a hash collision: continue searching
-    while (abs(found - t) > 1e-8) {
+    // we get a different value:
+    // - if it's the empty key, exit;
+    // - otherwise, it's a hash collision: continue searching
+    while ((abs(found - t) > 1e-8) && (abs(found - empty) > 1e-8)) {
         t = t + 1;
         // same as above
         vec2 pos = vec2(
@@ -81,10 +84,13 @@ vec4 sample_label_color(float t) {
 
     // return vec4(pos_tex, 0, 1); // debug if final texel is calculated correctly
 
-    vec4 color = texture2D(
-        texture2D_values,
-        pos_tex
-    );
+    vec4 color = vec4(0);
+    if (abs(found - empty) > 1e-8) {
+        color = texture2D(
+            texture2D_values,
+            pos_tex
+        );
+    }
     return color;
 }
 
