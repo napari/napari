@@ -636,6 +636,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
+                colormap.update({'name': name, '_display_name': _display_name})
                 AVAILABLE_COLORMAPS[name] = cmap
 
         elif isinstance(colormap, dict):
@@ -691,6 +692,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
+                colormap.update({'name': name, '_display_name': _display_name})
                 AVAILABLE_COLORMAPS[name] = colormap
             else:
                 warnings.warn(
