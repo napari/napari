@@ -2,7 +2,7 @@
 Surface with texture and vertex_colors
 ======================================
 
-Display a 3D surface with texture mapping and colors
+Display a 3D surface with both texture and color maps.
 
 .. tags:: visualization-nD
 """
