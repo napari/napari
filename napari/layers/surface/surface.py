@@ -33,8 +33,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         * setting `vertex_colors`, replaces/overrides any color from
           `vertex_values`
         * setting both `texture` and `texcoords`, which applies the texture
-          (which may be transparent) on top the colors from `vertex_values` or
-          `vertex_colors`
+          (which may be transparent) on top of the colors from
+          `vertex_values` or `vertex_colors`
 
     Parameters
     ----------
