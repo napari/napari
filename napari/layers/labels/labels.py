@@ -846,12 +846,7 @@ class Labels(_ImageBase):
         )
         zoom_factor = tuple(new_shape / imshape)
 
-        # warning filter can be removed with SciPy 1.4
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
+        downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
         color_array = self.colormap.map(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
