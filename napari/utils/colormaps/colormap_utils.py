@@ -13,6 +13,7 @@ from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
     ColormapInterpolationMode,
+    DirectLabelColormap,
     LabelColormap,
 )
 from napari.utils.colormaps.inverse_colormaps import inverse_cmaps
@@ -440,6 +441,27 @@ def label_colormap(num_colors=256, seed=0.5):
         interpolation='zero',
         seed=seed,
     )
+
+
+def direct_colormap(color_dict=None):
+    """Make a direct colormap from a dictionary mapping labels to colors.
+
+    Parameters
+    ----------
+    color_dict : dict, optional
+        A dictionary mapping labels to colors.
+
+    Returns
+    -------
+    d : DirectLabelColormap
+        A napari colormap whose map() function applies the color dictionary
+        to an array.
+    """
+    # we don't actually use the color array, so pass dummy.
+    d = DirectLabelColormap(np.zeros(3))
+    if color_dict is not None:
+        d.color_dict.update(color_dict)
+    return d
 
 
 def vispy_or_mpl_colormap(name):

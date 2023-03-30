@@ -29,7 +29,11 @@ from napari.layers.utils.color_transformations import transform_color
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.utils import config
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import label_colormap, low_discrepancy_image
+from napari.utils.colormaps import (
+    direct_colormap,
+    label_colormap,
+    low_discrepancy_image,
+)
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.geometry import clamp_point_to_bounding_box
@@ -267,6 +271,7 @@ class Labels(_ImageBase):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors, seed)
+        self._direct_colormap = direct_colormap()
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
@@ -522,6 +527,7 @@ class Labels(_ImageBase):
             for label, color_str in color.items()
         }
         self._color = colors
+        self._direct_colormap = direct_colormap(colors)
 
         # `colors` may contain just the default None and background label
         # colors, in which case we need to be in AUTO color mode. Otherwise,
@@ -847,9 +853,13 @@ class Labels(_ImageBase):
         zoom_factor = tuple(new_shape / imshape)
 
         downsampled = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
-        color_array = self.colormap.map(downsampled.ravel())
+        if self.color_mode == LabelColorMode.AUTO:
+            color_array = self.colormap.map(downsampled.ravel())
+        else:  # direct
+            color_array = self._direct_colormap.map(downsampled.ravel())
         colormapped = color_array.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
+
         self.thumbnail = colormapped
 
     def new_colormap(self):

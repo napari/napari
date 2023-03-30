@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 from typing import Optional
 
@@ -173,4 +174,38 @@ class LabelColormap(Colormap):
 
         values_low_discr = low_discrepancy_image(values, seed=self.seed)
         mapped = super().map(values_low_discr)
+        return mapped
+
+
+class DirectLabelColormap(Colormap):
+    """Colormap using a direct mapping from labels to color using a dict.
+
+    Attributes
+    ----------
+    color_dict: defaultdict
+        The dictionary mapping labels to colors.
+    use_selection: bool
+        Whether to color using the selected label.
+    selection: float
+        The selected label.
+    """
+
+    color_dict: defaultdict = defaultdict(lambda: np.zeros(4))
+    use_selection: bool = False
+    selection: float = 0.0
+
+    def map(self, values):
+        # Convert to float32 to match the current GL shader implementation
+        values = np.atleast_1d(values).astype(np.float32)
+        mapped = np.zeros(values.shape + (4,), dtype=np.float32)
+        for idx in np.ndindex(values.shape):
+            value = values[idx]
+            if value in self.color_dict:
+                color = self.color_dict[value]
+                if len(color) == 3:
+                    color = np.append(color, 1)
+                mapped[idx] = color
+        # If using selected, disable all others
+        if self.use_selection:
+            mapped[values != self.selection] = 0
         return mapped
