@@ -238,7 +238,7 @@ class Labels(_ImageBase):
         self,
         data,
         *,
-        num_colors=50,
+        num_colors=49,
         features=None,
         properties=None,
         color=None,
