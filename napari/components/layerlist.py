@@ -1,8 +1,8 @@
 import itertools
 import warnings
 from collections import namedtuple
-from functools import cached_property
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
+from functools import cached_property, reduce
+from typing import TYPE_CHECKING, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -474,3 +474,8 @@ class LayerList(SelectableEventedList[Layer]):
             return []
 
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
+
+    @property
+    def axis_labels(self) -> Set[Optional[str]]:
+        layer_labels = (layer.axis_labels for layer in self.layers)
+        return reduce(set.union, layer_labels, set())

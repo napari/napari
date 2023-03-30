@@ -94,7 +94,11 @@ def _merge_layer_viewer_sigs_docs(func):
 
     # merge the signatures of Viewer and viewer.add_*
     func.__signature__ = _combine_signatures(
-        add_method, Viewer, return_annotation=Viewer, exclude=('self',)
+        # hack to get around duplicate param name
+        add_method,
+        Viewer,
+        return_annotation=Viewer,
+        exclude=('self', 'axis_labels'),
     )
 
     # merge the __annotations__

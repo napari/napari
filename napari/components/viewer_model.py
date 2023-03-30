@@ -129,8 +129,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
-    axis_labels : list of str
-        Dimension names.
 
     Attributes
     ----------
@@ -140,6 +138,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
+    axis_labels : tuple of optional strings
+        Dimension names.
     """
 
     # Using allow_mutation=False means these attributes aren't settable and don't
@@ -166,6 +166,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
+
+    axis_labels: Tuple[Optional[str], ...] = ()
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -208,6 +210,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.grid_height.connect(
             self._update_viewer_grid
         )
+
+        self.events.axis_labels.connect(self._on_axis_labels_changed)
 
         # Add extra events - ideally these will be removed too!
         self.events.add(
@@ -437,7 +441,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.position = tuple(
                 list(self.cursor.position) + [0] * dim_diff
             )
+
         self.events.layers_change()
+
+    def _on_axis_labels_changed(self, event) -> None:
+        self.dims.axis_labels = self.axis_labels
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -549,6 +557,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Update dims and grid model
         self._on_layers_change()
         self._on_grid_change()
+
+        # Prepend new axis labels from layer
+        new_labels = []
+        for axis in layer.axis_labels:
+            if axis not in self.axis_labels:
+                new_labels.append(axis)
+        self.axis_labels = tuple(new_labels) + self.axis_labels
+
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
@@ -613,6 +629,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         layer = event.value
 
+        all_labels = self.layers.axis_labels
+        new_labels = list(self.axis_labels)
+        for axis in layer.axis_labels:
+            if axis not in all_labels:
+                new_labels.remove(axis)
+        self.axis_labels = new_labels
+
         # Disconnect all connections from layer
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
@@ -671,6 +694,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         plane=None,
         experimental_clipping_planes=None,
         custom_interpolation_kernel_2d=None,
+        axis_labels: Optional[Sequence[Optional[str]]] = None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -848,6 +872,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
             'custom_interpolation_kernel_2d': custom_interpolation_kernel_2d,
+            'axis_labels': axis_labels,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -861,6 +886,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'metadata',
             'experimental_clipping_planes',
             'custom_interpolation_kernel_2d',
+            'axis_labels',
         }
 
         if channel_axis is None:

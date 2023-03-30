@@ -941,3 +941,35 @@ def test_slice_order_with_mixed_dims():
     assert image_2d._slice.image.view.shape == (4, 5)
     assert image_3d._slice.image.view.shape == (3, 5)
     assert image_4d._slice.image.view.shape == (2, 5)
+
+
+def test_layer_axis_labels():
+    viewer = ViewerModel()
+    assert viewer.axis_labels == ()
+    # Force this to 3 to avoid trimming behavior.
+    viewer.dims.ndim = 3
+
+    image = viewer.add_image(
+        np.ones((4, 3, 2)),
+        axis_labels=("time", "y", "x"),
+    )
+    assert viewer.axis_labels == ("time", "y", "x")
+    data = image.slice_data(viewer.dims)
+    assert viewer.ndisplay == 2
+    assert data.shape == (3, 2)
+
+    image = viewer.add_image(
+        np.ones((4, 3, 2)),
+        axis_labels=("x", "y", "z"),
+    )
+    assert viewer.axis_labels == ("z", "time", "y", "x")
+    data = image.slice_data(viewer.dims)
+    assert data.shape == (3, 4)
+
+    image = viewer.add_image(
+        np.ones((4, 3, 2)),
+        axis_labels=("channel", "time", "x"),
+    )
+    assert viewer.axis_labels == ("channel", "z", "time", "y", "x")
+    data = image.slice_data(viewer.dims)
+    assert data.shape == (2,)
