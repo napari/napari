@@ -192,7 +192,7 @@ def current_viewer() -> Optional[Viewer]:
         return None
 
 
-def all_open_viewers() -> list:
+def all_open_viewers() -> Optional[List[Viewer]]:
     """Return a list of all open napari viewers, or None."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
