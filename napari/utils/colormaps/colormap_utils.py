@@ -636,8 +636,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
-                cmap.update({'name': name, '_display_name': _display_name})
-                AVAILABLE_COLORMAPS[name] = cmap
+                colormap.update({'name': name, '_display_name': _display_name})
+                AVAILABLE_COLORMAPS[name] = colormap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
