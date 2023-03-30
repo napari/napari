@@ -780,14 +780,8 @@ class Labels(_ImageBase):
 
     @contrast_limits.setter
     def contrast_limits(self, value):
-        # Setting contrast_limits of labels layers leads to wrong visualization of the layer
-        if tuple(value) != (0, 1):
-            raise AttributeError(
-                trans._(
-                    "Setting contrast_limits on labels layers is not allowed.",
-                    deferred=True,
-                )
-            )
+        # Setting contrast_limits of labels layers leads to wrong visualization
+        # of the layer, so we ignore the value
         self._contrast_limits = (0, 1)
 
     def _reset_editable(self) -> None:
