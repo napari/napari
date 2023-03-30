@@ -653,52 +653,8 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
-        if color_mode == LabelColorMode.DIRECT:
-            # we remove the none color to avoid issues when converting keys to
-            # float; will add back at the end of this sequence
-            none_color = self.color.pop(None, [0.0, 0.0, 0.0, 0.0])
-            # np.fromiter is >2x faster than np.array(list(iter))...
-            dict_values = np.fromiter(
-                self.color.keys(), dtype=np.float32, count=len(self.color)
-            )
-            # ... but np.fromiter only works for 1D arrays
-            dict_colors = np.array(list(self.color.values()))
-            img_values = np.unique(self._data_view)  # use only current slice
-            missing_values = np.setdiff1d(
-                img_values, dict_values, assume_unique=True
-            )
-            values = np.concatenate([dict_values, missing_values])
-            colors = np.concatenate(
-                [
-                    dict_colors,
-                    np.repeat([none_color], len(missing_values), axis=0),
-                ],
-                axis=0,
-            )
-            float_values = low_discrepancy_image(values, seed=self.seed)
-            in_order_indices = np.argsort(float_values)
-            sorted_float_values = float_values[in_order_indices]
-            sorted_colors = colors[in_order_indices]
-            self._saved_colors = self.colormap.colors
-            self._saved_controls = self.colormap.controls
-            self.colormap.colors = sorted_colors
-            self.colormap.controls = np.concatenate(
-                [
-                    [sorted_float_values[0] / 2],
-                    (sorted_float_values[1:] + sorted_float_values[:-1]) / 2,
-                    [1],
-                ]
-            )
-            # re-add none color:
-            self.color[None] = none_color
-        elif color_mode == LabelColorMode.AUTO:
-            if hasattr(self, '_saved_colors'):
-                self.colormap.colors = self._saved_colors
-                self.colormap.controls = self._saved_controls
+        if color_mode == LabelColorMode.AUTO:
             super()._set_colormap(self._random_colormap)
-
-        else:
-            raise ValueError(trans._("Unsupported Color Mode"))
 
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
