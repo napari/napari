@@ -661,6 +661,8 @@ class Labels(_ImageBase):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.AUTO:
             super()._set_colormap(self._random_colormap)
+        else:
+            super()._set_colormap(self._direct_colormap)
 
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
