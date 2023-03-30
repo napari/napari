@@ -715,9 +715,6 @@ class Labels(_ImageBase):
     @show_selected_label.setter
     def show_selected_label(self, filter_val):
         self._show_selected_label = filter_val
-        if self._color_mode == LabelColorMode.AUTO:
-            self.colormap.use_selection = self._show_selected_label
-            self.colormap.selection = self._selected_label
         self.refresh()
 
     @Layer.mode.getter
@@ -854,23 +851,15 @@ class Labels(_ImageBase):
                         deferred=True,
                     )
                 )
-        if (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ) or self._color_mode == LabelColorMode.AUTO:
+        if not self.show_selected_label:
             # TODO: Trigger _selected_label mode in shader
             # TODO: Check not self.show_selected_label?
             image = self._as_type(raw_modified)
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
+        else:
             selected = self._selected_label
             image = np.where(
                 raw_modified == selected, selected, self._background_label
             )
-        else:
-            raise ValueError("Unsupported Color Mode")
         return image
 
     def _update_thumbnail(self):
