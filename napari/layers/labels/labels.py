@@ -637,11 +637,8 @@ class Labels(_ImageBase):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
-        if self._color_mode == LabelColorMode.AUTO:
-            self.colormap.selection = self._selected_label
-
-            if self.show_selected_label:
-                self.refresh()
+        if self.show_selected_label:
+            self.refresh()
 
     @property
     def color_mode(self):
@@ -869,17 +866,8 @@ class Labels(_ImageBase):
             and self._color_mode == LabelColorMode.DIRECT
         ):
             selected = self._selected_label
-            if selected not in self._label_color_index:
-                selected = None
-            index = self._label_color_index
             image = np.where(
-                raw_modified == selected,
-                index[selected],
-                np.where(
-                    raw_modified != self._background_label,
-                    index[None],
-                    index[self._background_label],
-                ),
+                raw_modified == selected, selected, self._background_label
             )
         else:
             raise ValueError("Unsupported Color Mode")
