@@ -142,8 +142,7 @@ class QtBaseImageControls(QtLayerControls):
         text : str
             Colormap name.
         """
-        with self.layer.events.colormap.blocker():
-            self.layer.colormap = self.colormapComboBox.currentData()
+        self.layer.colormap = self.colormapComboBox.currentData()
 
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""
