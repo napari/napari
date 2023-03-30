@@ -659,12 +659,11 @@ class Labels(_ImageBase):
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
+        self._color_mode = color_mode
         if color_mode == LabelColorMode.AUTO:
             super()._set_colormap(self._random_colormap)
         else:
             super()._set_colormap(self._direct_colormap)
-
-        self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
         self.events.color_mode()
         self.events.colormap()
